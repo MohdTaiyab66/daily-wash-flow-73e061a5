@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
@@ -51,6 +52,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/app/cars': typeof AuthenticatedAppCarsRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
     | '/app/cars'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/payouts'
     | '/admin/services'
     | '/admin'
     | '/app/cars'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
     | '/_authenticated/app/cars'
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/admin/services'
       preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payouts': {
+      id: '/admin/payouts'
+      path: '/payouts'
+      fullPath: '/admin/payouts'
+      preLoaderRoute: typeof AdminPayoutsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/partners': {
@@ -331,6 +350,7 @@ const AuthenticatedRouteRouteWithChildren =
 interface AdminRouteChildren {
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
+  AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -338,6 +358,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomersRoute: AdminCustomersRoute,
   AdminPartnersRoute: AdminPartnersRoute,
+  AdminPayoutsRoute: AdminPayoutsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
