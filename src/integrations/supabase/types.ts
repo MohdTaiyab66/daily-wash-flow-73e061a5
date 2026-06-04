@@ -14,7 +14,707 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          attendance_date: string
+          id: string
+          marked_at: string
+          partner_id: string
+          status: Database["public"]["Enums"]["availability_status"]
+        }
+        Insert: {
+          attendance_date?: string
+          id?: string
+          marked_at?: string
+          partner_id: string
+          status?: Database["public"]["Enums"]["availability_status"]
+        }
+        Update: {
+          attendance_date?: string
+          id?: string
+          marked_at?: string
+          partner_id?: string
+          status?: Database["public"]["Enums"]["availability_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          complaint_type: string
+          created_at: string
+          customer_id: string
+          description: string | null
+          id: string
+          partner_id: string | null
+          resolution_notes: string | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["complaint_status"]
+          updated_at: string
+        }
+        Insert: {
+          complaint_type: string
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          id?: string
+          partner_id?: string | null
+          resolution_notes?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          updated_at?: string
+        }
+        Update: {
+          complaint_type?: string
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          id?: string
+          partner_id?: string | null
+          resolution_notes?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_referrals: {
+        Row: {
+          approved_at: string | null
+          area: string | null
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          incentive_amount: number
+          incentive_paid: boolean
+          partner_id: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          area?: string | null
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          incentive_amount?: number
+          incentive_paid?: boolean
+          partner_id: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          area?: string | null
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          incentive_amount?: number
+          incentive_paid?: boolean
+          partner_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address_line: string
+          area: string | null
+          city: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          phone: string
+          pincode: string | null
+          subscription_end: string
+          subscription_plan: Database["public"]["Enums"]["subscription_plan"]
+          subscription_start: string
+          updated_at: string
+        }
+        Insert: {
+          address_line: string
+          area?: string | null
+          city?: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          phone: string
+          pincode?: string | null
+          subscription_end?: string
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          subscription_start?: string
+          updated_at?: string
+        }
+        Update: {
+          address_line?: string
+          area?: string | null
+          city?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string
+          pincode?: string | null
+          subscription_end?: string
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          subscription_start?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      earnings: {
+        Row: {
+          base_amount: number
+          cars_completed: number
+          created_at: string
+          earned_on: string
+          id: string
+          incentive_amount: number
+          partner_id: string
+          penalty_amount: number
+          referral_amount: number
+          total_amount: number | null
+        }
+        Insert: {
+          base_amount?: number
+          cars_completed?: number
+          created_at?: string
+          earned_on?: string
+          id?: string
+          incentive_amount?: number
+          partner_id: string
+          penalty_amount?: number
+          referral_amount?: number
+          total_amount?: number | null
+        }
+        Update: {
+          base_amount?: number
+          cars_completed?: number
+          created_at?: string
+          earned_on?: string
+          id?: string
+          incentive_amount?: number
+          partner_id?: string
+          penalty_amount?: number
+          referral_amount?: number
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_referrals: {
+        Row: {
+          created_at: string
+          days_completed: number
+          id: string
+          referee_id: string | null
+          referee_phone: string | null
+          referrer_id: string
+          reward_amount: number
+          reward_paid: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          days_completed?: number
+          id?: string
+          referee_id?: string | null
+          referee_phone?: string | null
+          referrer_id: string
+          reward_amount?: number
+          reward_paid?: boolean
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          days_completed?: number
+          id?: string
+          referee_id?: string | null
+          referee_phone?: string | null
+          referrer_id?: string
+          reward_amount?: number
+          reward_paid?: boolean
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_referrals_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          aadhaar_number: string | null
+          availability: Database["public"]["Enums"]["availability_status"]
+          bank_account_holder: string | null
+          bank_account_number: string | null
+          bank_ifsc: string | null
+          cars_selected: number
+          city: string
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          joined_on: string
+          pan_number: string | null
+          partner_code: string
+          phone: string
+          profile_photo_url: string | null
+          rate_per_car: number
+          rating: number
+          referral_code: string
+          referred_by: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          total_cars_completed: number
+          updated_at: string
+        }
+        Insert: {
+          aadhaar_number?: string | null
+          availability?: Database["public"]["Enums"]["availability_status"]
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          cars_selected?: number
+          city?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          joined_on?: string
+          pan_number?: string | null
+          partner_code?: string
+          phone: string
+          profile_photo_url?: string | null
+          rate_per_car?: number
+          rating?: number
+          referral_code?: string
+          referred_by?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_cars_completed?: number
+          updated_at?: string
+        }
+        Update: {
+          aadhaar_number?: string | null
+          availability?: Database["public"]["Enums"]["availability_status"]
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          cars_selected?: number
+          city?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          joined_on?: string
+          pan_number?: string | null
+          partner_code?: string
+          phone?: string
+          profile_photo_url?: string | null
+          rate_per_car?: number
+          rating?: number
+          referral_code?: string
+          referred_by?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_cars_completed?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          base_amount: number
+          cars_completed: number
+          created_at: string
+          id: string
+          incentive_amount: number
+          paid_at: string | null
+          partner_id: string
+          penalty_amount: number
+          referral_amount: number
+          status: Database["public"]["Enums"]["payout_status"]
+          total_amount: number
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          base_amount?: number
+          cars_completed?: number
+          created_at?: string
+          id?: string
+          incentive_amount?: number
+          paid_at?: string | null
+          partner_id: string
+          penalty_amount?: number
+          referral_amount?: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          total_amount?: number
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          base_amount?: number
+          cars_completed?: number
+          created_at?: string
+          id?: string
+          incentive_amount?: number
+          paid_at?: string | null
+          partner_id?: string
+          penalty_amount?: number
+          referral_amount?: number
+          status?: Database["public"]["Enums"]["payout_status"]
+          total_amount?: number
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_photos: {
+        Row: {
+          angle: Database["public"]["Enums"]["photo_angle"]
+          captured_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          metadata: Json | null
+          partner_id: string
+          service_id: string
+          stage: Database["public"]["Enums"]["photo_stage"]
+          storage_path: string
+        }
+        Insert: {
+          angle: Database["public"]["Enums"]["photo_angle"]
+          captured_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          metadata?: Json | null
+          partner_id: string
+          service_id: string
+          stage: Database["public"]["Enums"]["photo_stage"]
+          storage_path: string
+        }
+        Update: {
+          angle?: Database["public"]["Enums"]["photo_angle"]
+          captured_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          metadata?: Json | null
+          partner_id?: string
+          service_id?: string
+          stage?: Database["public"]["Enums"]["photo_stage"]
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_photos_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_photos_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          complete_lat: number | null
+          complete_lng: number | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          partner_id: string | null
+          rate_per_car: number
+          scheduled_date: string
+          sequence_no: number | null
+          start_lat: number | null
+          start_lng: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["service_status"]
+          time_slot: string
+          unavailable_notes: string | null
+          unavailable_reason:
+            | Database["public"]["Enums"]["unavailable_reason"]
+            | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          complete_lat?: number | null
+          complete_lng?: number | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          partner_id?: string | null
+          rate_per_car?: number
+          scheduled_date?: string
+          sequence_no?: number | null
+          start_lat?: number | null
+          start_lng?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["service_status"]
+          time_slot?: string
+          unavailable_notes?: string | null
+          unavailable_reason?:
+            | Database["public"]["Enums"]["unavailable_reason"]
+            | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          complete_lat?: number | null
+          complete_lng?: number | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          partner_id?: string | null
+          rate_per_car?: number
+          scheduled_date?: string
+          sequence_no?: number | null
+          start_lat?: number | null
+          start_lng?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["service_status"]
+          time_slot?: string
+          unavailable_notes?: string | null
+          unavailable_reason?:
+            | Database["public"]["Enums"]["unavailable_reason"]
+            | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_modules: {
+        Row: {
+          category: string
+          content: Json | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          slug: string
+          sort_order: number
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          content?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          slug: string
+          sort_order?: number
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          content?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      training_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          module_id: string
+          partner_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          module_id: string
+          partner_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          module_id?: string
+          partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_progress_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          color: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          make: string
+          model: string
+          parking_notes: string | null
+          registration_number: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          make: string
+          model: string
+          parking_notes?: string | null
+          registration_number: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          make?: string
+          model?: string
+          parking_notes?: string | null
+          registration_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +723,32 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      availability_status: "online" | "offline" | "leave" | "emergency_leave"
+      complaint_status: "open" | "investigating" | "resolved" | "dismissed"
+      partner_status:
+        | "pending_verification"
+        | "active"
+        | "suspended"
+        | "offline"
+      payout_status: "pending" | "processing" | "paid" | "failed"
+      photo_angle: "front" | "rear" | "left" | "right"
+      photo_stage: "before" | "after"
+      service_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "unavailable"
+        | "skipped"
+      subscription_plan:
+        | "daily_shine_monthly"
+        | "daily_shine_quarterly"
+        | "daily_shine_yearly"
+      unavailable_reason:
+        | "vehicle_not_available"
+        | "parking_locked"
+        | "customer_asked_to_skip"
+        | "access_not_available"
+        | "customer_not_responding"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +875,37 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      availability_status: ["online", "offline", "leave", "emergency_leave"],
+      complaint_status: ["open", "investigating", "resolved", "dismissed"],
+      partner_status: [
+        "pending_verification",
+        "active",
+        "suspended",
+        "offline",
+      ],
+      payout_status: ["pending", "processing", "paid", "failed"],
+      photo_angle: ["front", "rear", "left", "right"],
+      photo_stage: ["before", "after"],
+      service_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "unavailable",
+        "skipped",
+      ],
+      subscription_plan: [
+        "daily_shine_monthly",
+        "daily_shine_quarterly",
+        "daily_shine_yearly",
+      ],
+      unavailable_reason: [
+        "vehicle_not_available",
+        "parking_locked",
+        "customer_asked_to_skip",
+        "access_not_available",
+        "customer_not_responding",
+      ],
+    },
   },
 } as const
