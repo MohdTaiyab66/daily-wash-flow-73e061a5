@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
@@ -45,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminServicesRoute = AdminServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/services': typeof AdminServicesRoute
   '/admin': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/app/cars': typeof AuthenticatedAppCarsRoute
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/services'
     | '/admin/'
     | '/app/cars'
     | '/app/earnings'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/services'
     | '/admin'
     | '/app/cars'
     | '/app/earnings'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/admin/customers'
     | '/admin/partners'
+    | '/admin/services'
     | '/admin/'
     | '/_authenticated/app/cars'
     | '/_authenticated/app/earnings'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/services': {
+      id: '/admin/services'
+      path: '/services'
+      fullPath: '/admin/services'
+      preLoaderRoute: typeof AdminServicesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/partners': {
@@ -312,12 +331,14 @@ const AuthenticatedRouteRouteWithChildren =
 interface AdminRouteChildren {
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
+  AdminServicesRoute: typeof AdminServicesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomersRoute: AdminCustomersRoute,
   AdminPartnersRoute: AdminPartnersRoute,
+  AdminServicesRoute: AdminServicesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
