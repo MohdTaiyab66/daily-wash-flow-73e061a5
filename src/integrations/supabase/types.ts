@@ -720,7 +720,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_customer: {
+        Args: { p_customer_id: string; p_rate?: number }
+        Returns: number
+      }
+      list_available_customers: {
+        Args: never
+        Returns: {
+          address_line: string
+          area: string
+          color: string
+          customer_id: string
+          full_name: string
+          latitude: number
+          longitude: number
+          make: string
+          model: string
+          parking_notes: string
+          pincode: string
+          registration_number: string
+          vehicle_id: string
+        }[]
+      }
     }
     Enums: {
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
