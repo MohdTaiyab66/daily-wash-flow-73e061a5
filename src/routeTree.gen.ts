@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
@@ -49,6 +50,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCustomersRoute = AdminCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin': typeof AdminIndexRoute
   '/app/cars': typeof AuthenticatedAppCarsRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/app/cars': typeof AuthenticatedAppCarsRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/app'
+    | '/admin/customers'
     | '/admin/partners'
     | '/admin/'
     | '/app/cars'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin/customers'
     | '/admin/partners'
     | '/admin'
     | '/app/cars'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/_authenticated/app'
+    | '/admin/customers'
     | '/admin/partners'
     | '/admin/'
     | '/_authenticated/app/cars'
@@ -213,6 +225,13 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/admin/partners'
       preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customers': {
+      id: '/admin/customers'
+      path: '/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AdminCustomersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_authenticated/app': {
@@ -291,11 +310,13 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface AdminRouteChildren {
+  AdminCustomersRoute: typeof AdminCustomersRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCustomersRoute: AdminCustomersRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
