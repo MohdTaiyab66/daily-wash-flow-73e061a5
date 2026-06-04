@@ -17,6 +17,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppCarsRouteImport } from './routes/_authenticated/app.cars'
+import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -58,6 +59,12 @@ const AuthenticatedAppCarsRoute = AuthenticatedAppCarsRouteImport.update({
   path: '/cars',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppServiceIdRoute =
+  AuthenticatedAppServiceIdRouteImport.update({
+    id: '/service/$id',
+    path: '/service/$id',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,8 +107,16 @@ export interface FileRouteTypes {
     | '/app/earnings'
     | '/app/profile'
     | '/app/'
+    | '/app/service/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app/cars' | '/app/earnings' | '/app/profile' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/app/cars'
+    | '/app/earnings'
+    | '/app/profile'
+    | '/app'
+    | '/app/service/$id'
   id:
     | '__root__'
     | '/'
@@ -109,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/earnings'
     | '/_authenticated/app/profile'
     | '/_authenticated/app/'
+    | '/_authenticated/app/service/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCarsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/service/$id': {
+      id: '/_authenticated/app/service/$id'
+      path: '/service/$id'
+      fullPath: '/app/service/$id'
+      preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -183,6 +209,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEarningsRoute: typeof AuthenticatedAppEarningsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppServiceIdRoute: typeof AuthenticatedAppServiceIdRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -190,6 +217,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEarningsRoute: AuthenticatedAppEarningsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppServiceIdRoute: AuthenticatedAppServiceIdRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
