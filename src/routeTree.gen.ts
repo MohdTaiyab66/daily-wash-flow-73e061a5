@@ -22,7 +22,6 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
-import { Route as AuthenticatedAppCarsRouteImport } from './routes/_authenticated/app.cars'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -90,11 +89,6 @@ const AuthenticatedAppEarningsRoute =
     path: '/earnings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppCarsRoute = AuthenticatedAppCarsRouteImport.update({
-  id: '/cars',
-  path: '/cars',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -112,7 +106,6 @@ export interface FileRoutesByFullPath {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
-  '/app/cars': typeof AuthenticatedAppCarsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -126,7 +119,6 @@ export interface FileRoutesByTo {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin': typeof AdminIndexRoute
-  '/app/cars': typeof AuthenticatedAppCarsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -144,7 +136,6 @@ export interface FileRoutesById {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
-  '/_authenticated/app/cars': typeof AuthenticatedAppCarsRoute
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -162,7 +153,6 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
-    | '/app/cars'
     | '/app/earnings'
     | '/app/profile'
     | '/app/'
@@ -176,7 +166,6 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin'
-    | '/app/cars'
     | '/app/earnings'
     | '/app/profile'
     | '/app'
@@ -193,7 +182,6 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
-    | '/_authenticated/app/cars'
     | '/_authenticated/app/earnings'
     | '/_authenticated/app/profile'
     | '/_authenticated/app/'
@@ -300,13 +288,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppEarningsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/cars': {
-      id: '/_authenticated/app/cars'
-      path: '/cars'
-      fullPath: '/app/cars'
-      preLoaderRoute: typeof AuthenticatedAppCarsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -318,7 +299,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
-  AuthenticatedAppCarsRoute: typeof AuthenticatedAppCarsRoute
   AuthenticatedAppEarningsRoute: typeof AuthenticatedAppEarningsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -326,7 +306,6 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
-  AuthenticatedAppCarsRoute: AuthenticatedAppCarsRoute,
   AuthenticatedAppEarningsRoute: AuthenticatedAppEarningsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
@@ -374,3 +353,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

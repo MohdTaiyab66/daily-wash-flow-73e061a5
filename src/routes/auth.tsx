@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
@@ -75,7 +76,7 @@ function AuthPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
         <div className="mb-10">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground font-bold">UW</div>
+          <img src={logo} alt="Urban Wash" className="h-14 w-14 rounded-2xl object-cover" />
           <h1 className="mt-6 text-3xl font-semibold tracking-tight">Partner login</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {step === "phone" && "We'll send a one-time password to your phone."}
