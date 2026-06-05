@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Car, ShieldCheck, ArrowRight } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,7 +19,7 @@ function Index() {
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground font-bold">UW</div>
+          <img src={logo} alt="Urban Wash" className="h-9 w-9 rounded-xl object-cover" />
           <span className="font-semibold tracking-tight">Urban Wash</span>
         </div>
         <span className="text-xs text-muted-foreground">Lucknow · v0.1</span>
@@ -54,10 +55,10 @@ function Index() {
         </div>
 
         <div className="mt-16 grid grid-cols-2 gap-6 text-sm text-muted-foreground md:grid-cols-4">
-          <Stat k="20+" v="Mock customers seeded" />
-          <Stat k="₹80" v="Default per-car rate" />
-          <Stat k="30-day" v="Subscription cycle" />
-          <Stat k="4-angle" v="Photo verification" />
+          <Stat k="140+" v="Customers seeded" />
+          <Stat k="₹17" v="Per-car payout" />
+          <Stat k="15/20/25" v="Assignment sizes" />
+          <Stat k="8-photo" v="Before + after proof" />
         </div>
       </main>
     </div>
