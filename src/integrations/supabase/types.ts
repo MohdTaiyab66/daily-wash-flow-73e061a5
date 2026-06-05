@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          accepted_at: string
+          area: string
+          completed_at: string | null
+          created_at: string
+          estimated_distance_km: number
+          estimated_earnings: number
+          estimated_hours: number
+          fulfilled_cars: number
+          id: string
+          partner_id: string
+          rate_per_car: number
+          scheduled_date: string
+          search_radius_km: number
+          status: string
+          target_cars: number
+        }
+        Insert: {
+          accepted_at?: string
+          area: string
+          completed_at?: string | null
+          created_at?: string
+          estimated_distance_km: number
+          estimated_earnings: number
+          estimated_hours: number
+          fulfilled_cars?: number
+          id?: string
+          partner_id: string
+          rate_per_car?: number
+          scheduled_date?: string
+          search_radius_km?: number
+          status?: string
+          target_cars: number
+        }
+        Update: {
+          accepted_at?: string
+          area?: string
+          completed_at?: string | null
+          created_at?: string
+          estimated_distance_km?: number
+          estimated_earnings?: number
+          estimated_hours?: number
+          fulfilled_cars?: number
+          id?: string
+          partner_id?: string
+          rate_per_car?: number
+          scheduled_date?: string
+          search_radius_km?: number
+          status?: string
+          target_cars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           attendance_date: string
@@ -168,6 +230,7 @@ export type Database = {
           longitude: number | null
           phone: string
           pincode: string | null
+          preferred_time: string
           subscription_end: string
           subscription_plan: Database["public"]["Enums"]["subscription_plan"]
           subscription_start: string
@@ -186,6 +249,7 @@ export type Database = {
           longitude?: number | null
           phone: string
           pincode?: string | null
+          preferred_time?: string
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
@@ -204,6 +268,7 @@ export type Database = {
           longitude?: number | null
           phone?: string
           pincode?: string | null
+          preferred_time?: string
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
@@ -312,18 +377,27 @@ export type Database = {
       partners: {
         Row: {
           aadhaar_number: string | null
+          aadhaar_verified: boolean
+          attendance_pct: number
           availability: Database["public"]["Enums"]["availability_status"]
           bank_account_holder: string | null
           bank_account_number: string | null
           bank_ifsc: string | null
+          bank_verified: boolean
           cars_selected: number
           city: string
           created_at: string
           email: string | null
           full_name: string | null
+          home_area: string | null
+          home_lat: number | null
+          home_lng: number | null
           id: string
           joined_on: string
+          level: string
+          lifetime_earnings: number
           pan_number: string | null
+          pan_verified: boolean
           partner_code: string
           phone: string
           profile_photo_url: string | null
@@ -333,22 +407,32 @@ export type Database = {
           referred_by: string | null
           status: Database["public"]["Enums"]["partner_status"]
           total_cars_completed: number
+          training_completion_pct: number
           updated_at: string
         }
         Insert: {
           aadhaar_number?: string | null
+          aadhaar_verified?: boolean
+          attendance_pct?: number
           availability?: Database["public"]["Enums"]["availability_status"]
           bank_account_holder?: string | null
           bank_account_number?: string | null
           bank_ifsc?: string | null
+          bank_verified?: boolean
           cars_selected?: number
           city?: string
           created_at?: string
           email?: string | null
           full_name?: string | null
+          home_area?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id: string
           joined_on?: string
+          level?: string
+          lifetime_earnings?: number
           pan_number?: string | null
+          pan_verified?: boolean
           partner_code?: string
           phone: string
           profile_photo_url?: string | null
@@ -358,22 +442,32 @@ export type Database = {
           referred_by?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           total_cars_completed?: number
+          training_completion_pct?: number
           updated_at?: string
         }
         Update: {
           aadhaar_number?: string | null
+          aadhaar_verified?: boolean
+          attendance_pct?: number
           availability?: Database["public"]["Enums"]["availability_status"]
           bank_account_holder?: string | null
           bank_account_number?: string | null
           bank_ifsc?: string | null
+          bank_verified?: boolean
           cars_selected?: number
           city?: string
           created_at?: string
           email?: string | null
           full_name?: string | null
+          home_area?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id?: string
           joined_on?: string
+          level?: string
+          lifetime_earnings?: number
           pan_number?: string | null
+          pan_verified?: boolean
           partner_code?: string
           phone?: string
           profile_photo_url?: string | null
@@ -383,6 +477,7 @@ export type Database = {
           referred_by?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           total_cars_completed?: number
+          training_completion_pct?: number
           updated_at?: string
         }
         Relationships: [
@@ -507,6 +602,7 @@ export type Database = {
       }
       services: {
         Row: {
+          assignment_id: string | null
           complete_lat: number | null
           complete_lng: number | null
           completed_at: string | null
@@ -530,6 +626,7 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          assignment_id?: string | null
           complete_lat?: number | null
           complete_lng?: number | null
           completed_at?: string | null
@@ -553,6 +650,7 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          assignment_id?: string | null
           complete_lat?: number | null
           complete_lng?: number | null
           completed_at?: string | null
@@ -576,6 +674,13 @@ export type Database = {
           vehicle_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "services_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "services_customer_id_fkey"
             columns: ["customer_id"]
@@ -720,9 +825,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_assignment: { Args: { p_target_cars: number }; Returns: string }
       claim_customer: {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
+      }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      list_assignment_offers: {
+        Args: never
+        Returns: {
+          area: string
+          estimated_distance_km: number
+          estimated_earnings: number
+          estimated_hours: number
+          target_cars: number
+        }[]
       }
       list_available_customers: {
         Args: never
