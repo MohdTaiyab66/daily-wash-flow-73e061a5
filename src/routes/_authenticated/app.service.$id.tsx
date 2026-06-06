@@ -221,8 +221,8 @@ function PhotoSlot({
         {
           service_id: serviceId,
           partner_id: u.user!.id,
-          stage,
-          angle,
+          stage: stage as any,
+          angle: angle as any,
           storage_path: path,
           lat: pos?.lat ?? null,
           lng: pos?.lng ?? null,

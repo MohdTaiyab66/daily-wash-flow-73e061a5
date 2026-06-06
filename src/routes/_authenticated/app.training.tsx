@@ -58,7 +58,7 @@ function TrainingPage() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{m.title}</p>
-                {m.summary && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{m.summary}</p>}
+                {m.description && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{m.description}</p>}
               </div>
               {done ? (
                 <Badge className="border-0 bg-[color:var(--success)]/15 text-[color:var(--success)]">
