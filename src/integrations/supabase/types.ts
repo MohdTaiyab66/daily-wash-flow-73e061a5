@@ -20,51 +20,69 @@ export type Database = {
           area: string
           completed_at: string | null
           created_at: string
+          duration_days: number
+          end_date: string
           estimated_distance_km: number
           estimated_earnings: number
           estimated_hours: number
+          expected_start_time: string
           fulfilled_cars: number
           id: string
           partner_id: string
           rate_per_car: number
           scheduled_date: string
           search_radius_km: number
+          start_date: string
           status: string
           target_cars: number
+          total_earnings: number
+          working_days: number
         }
         Insert: {
           accepted_at?: string
           area: string
           completed_at?: string | null
           created_at?: string
+          duration_days?: number
+          end_date?: string
           estimated_distance_km: number
           estimated_earnings: number
           estimated_hours: number
+          expected_start_time?: string
           fulfilled_cars?: number
           id?: string
           partner_id: string
           rate_per_car?: number
           scheduled_date?: string
           search_radius_km?: number
+          start_date?: string
           status?: string
           target_cars: number
+          total_earnings?: number
+          working_days?: number
         }
         Update: {
           accepted_at?: string
           area?: string
           completed_at?: string | null
           created_at?: string
+          duration_days?: number
+          end_date?: string
           estimated_distance_km?: number
           estimated_earnings?: number
           estimated_hours?: number
+          expected_start_time?: string
           fulfilled_cars?: number
           id?: string
           partner_id?: string
           rate_per_car?: number
           scheduled_date?: string
           search_radius_km?: number
+          start_date?: string
           status?: string
           target_cars?: number
+          total_earnings?: number
+          working_days?: number
         }
         Relationships: [
           {
@@ -276,6 +294,60 @@ export type Database = {
         }
         Relationships: []
       }
+      dirty_vehicle_reports: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          partner_id: string
+          photo_front: string | null
+          photo_left: string | null
+          photo_rear: string | null
+          photo_right: string | null
+          reason: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          photo_front?: string | null
+          photo_left?: string | null
+          photo_rear?: string | null
+          photo_right?: string | null
+          reason: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          photo_front?: string | null
+          photo_left?: string | null
+          photo_rear?: string | null
+          photo_right?: string | null
+          reason?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dirty_vehicle_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dirty_vehicle_reports_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       earnings: {
         Row: {
           base_amount: number
@@ -319,6 +391,51 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parking_reports: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          partner_id: string
+          photo_path: string | null
+          reason: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          photo_path?: string | null
+          reason: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          photo_path?: string | null
+          reason?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parking_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_reports_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -542,6 +659,54 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_analytics: {
+        Row: {
+          area: string | null
+          cleaning_seconds: number
+          created_at: string
+          id: string
+          partner_id: string
+          service_id: string
+          total_seconds: number
+          travel_seconds: number
+        }
+        Insert: {
+          area?: string | null
+          cleaning_seconds?: number
+          created_at?: string
+          id?: string
+          partner_id: string
+          service_id: string
+          total_seconds?: number
+          travel_seconds?: number
+        }
+        Update: {
+          area?: string | null
+          cleaning_seconds?: number
+          created_at?: string
+          id?: string
+          partner_id?: string
+          service_id?: string
+          total_seconds?: number
+          travel_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_analytics_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_analytics_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: true
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -779,6 +944,51 @@ export type Database = {
           },
         ]
       }
+      unavailability_penalties: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          day_earnings_lost: number
+          for_date: string
+          id: string
+          partner_id: string
+          penalty_amount: number
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          day_earnings_lost?: number
+          for_date?: string
+          id?: string
+          partner_id: string
+          penalty_amount?: number
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          day_earnings_lost?: number
+          for_date?: string
+          id?: string
+          partner_id?: string
+          penalty_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unavailability_penalties_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unavailability_penalties_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           color: string | null
@@ -826,6 +1036,14 @@ export type Database = {
     }
     Functions: {
       accept_assignment: { Args: { p_target_cars: number }; Returns: string }
+      accept_assignment_v2: {
+        Args: { p_cars: number; p_duration: number }
+        Returns: string
+      }
+      cancel_assignment: {
+        Args: { p_assignment_id: string }
+        Returns: undefined
+      }
       claim_customer: {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
@@ -860,6 +1078,20 @@ export type Database = {
           pincode: string
           registration_number: string
           vehicle_id: string
+        }[]
+      }
+      preview_assignment: {
+        Args: { p_cars: number; p_duration: number }
+        Returns: {
+          cars: number
+          daily_earnings: number
+          duration_days: number
+          estimated_hours: number
+          estimated_radius_km: number
+          expected_end_time: string
+          expected_start_time: string
+          total_earnings: number
+          working_days: number
         }[]
       }
     }
