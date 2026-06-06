@@ -10,15 +10,15 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, Phone, MapPin, Navigation, XCircle } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, Phone, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { OfflineGuard } from "@/components/OfflineGuard";
 
-const ANGLES = ["front", "rear", "left", "right"] as const;
-type Angle = (typeof ANGLES)[number];
-type Stage = "before" | "after";
+const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
+type Angle = (typeof AFTER_ANGLES)[number];
 
-const REASONS = [
+const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
   { value: "parking_locked", label: "Locked vehicle / parking" },
   { value: "access_not_available", label: "No access" },
@@ -26,8 +26,11 @@ const REASONS = [
   { value: "customer_not_responding", label: "Customer unreachable" },
 ] as const;
 
+const DIRTY_REASONS = ["Heavy Mud", "Construction Dust", "Bird Droppings", "Needs Foam Wash", "Needs Pressure Wash", "Other"];
+const PARKING_REASONS = ["No Access", "Wall Side Blocked", "Narrow Parking", "Vehicle Too Close", "Other"];
+
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
-  component: ServiceDetail,
+  component: () => <OfflineGuard label="service verification"><ServiceDetail /></OfflineGuard>,
 });
 
 function ServiceDetail() {
@@ -68,25 +71,41 @@ function ServiceDetail() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["service", id] }),
   });
 
-  const beforeDone = new Set((photos ?? []).filter((p) => p.stage === "before").map((p) => p.angle as Angle));
+  // before = single photo (stored as stage='before', angle='front' to satisfy enum)
+  const beforeDone = (photos ?? []).some((p) => p.stage === "before");
   const afterDone = new Set((photos ?? []).filter((p) => p.stage === "after").map((p) => p.angle as Angle));
-  const allBefore = ANGLES.every((a) => beforeDone.has(a));
-  const allAfter = ANGLES.every((a) => afterDone.has(a));
+  const allAfter = AFTER_ANGLES.every((a) => afterDone.has(a));
 
   const complete = useMutation({
     mutationFn: async () => {
-      if (!allBefore || !allAfter) throw new Error("Capture all 8 photos first (4 before + 4 after)");
+      if (!beforeDone) throw new Error("Take the Before photo first");
+      if (!allAfter) throw new Error("Capture all 4 After photos");
       const pos = await getPosition();
+      const completedAt = new Date().toISOString();
       const { error } = await supabase
         .from("services")
         .update({
           status: "completed",
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt,
           complete_lat: pos?.lat ?? null,
           complete_lng: pos?.lng ?? null,
         })
         .eq("id", id);
       if (error) throw error;
+
+      // store analytics
+      if (service?.started_at) {
+        const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
+        const { data: u } = await supabase.auth.getUser();
+        await supabase.from("service_analytics").upsert({
+          service_id: id,
+          partner_id: u.user!.id,
+          area: (service.customers as any)?.area ?? null,
+          total_seconds: total,
+          cleaning_seconds: total,
+          travel_seconds: 0,
+        }, { onConflict: "service_id" });
+      }
     },
     onSuccess: () => {
       toast.success("Service complete · ₹17 earned");
@@ -104,7 +123,7 @@ function ServiceDetail() {
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
-      <button onClick={() => navigate({ to: "/app" })} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+      <button onClick={() => navigate({ to: "/app/route" })} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to route
       </button>
 
@@ -119,7 +138,7 @@ function ServiceDetail() {
         </div>
         <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
-          <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />+91 {c?.phone} · Preferred {c?.preferred_time}</p>
+          <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />+91 {c?.phone} · Required before {c?.preferred_time}</p>
         </div>
         {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
@@ -138,48 +157,52 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app" })} />
+          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app/route" })} />
         </div>
       )}
 
       {(service?.status === "in_progress" || service?.status === "completed") && (
         <>
-          <PhotoSection title="Before service" stage="before" serviceId={id} done={beforeDone} onUploaded={() => refetchPhotos()} />
-          <PhotoSection title="After service" stage="after" serviceId={id} done={afterDone} onUploaded={() => refetchPhotos()} />
+          {/* Before — single photo */}
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Before service</h2>
+          <p className="mt-1 text-xs text-muted-foreground">One photo. Camera only.</p>
+          <div className="mt-3">
+            <PhotoSlot serviceId={id} stage="before" angle="front" done={beforeDone} onUploaded={() => refetchPhotos()} label="Before photo" wide />
+          </div>
+
+          {/* After — 4 photos */}
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">After service</h2>
+          <p className="mt-1 text-xs text-muted-foreground">4 angles. Camera only.</p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {AFTER_ANGLES.map((a) => (
+              <PhotoSlot key={a} serviceId={id} stage="after" angle={a} done={afterDone.has(a)} onUploaded={() => refetchPhotos()} label={a} />
+            ))}
+          </div>
+
+          {/* Reports */}
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <DirtyVehicleDialog serviceId={id} />
+            <ParkingIssueDialog serviceId={id} />
+          </div>
 
           {service.status === "in_progress" && (
-            <Button size="lg" className="mt-5 w-full" disabled={!allBefore || !allAfter || complete.isPending} onClick={() => complete.mutate()}>
+            <Button size="lg" className="mt-5 w-full" disabled={!beforeDone || !allAfter || complete.isPending} onClick={() => complete.mutate()}>
               {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {allBefore && allAfter
+              {beforeDone && allAfter
                 ? "Mark complete · earn ₹17"
-                : `${beforeDone.size + afterDone.size}/8 photos uploaded`}
+                : `${(beforeDone ? 1 : 0) + afterDone.size}/5 photos uploaded`}
             </Button>
           )}
         </>
       )}
+      <div className="h-8" />
     </div>
   );
 }
 
-function PhotoSection({
-  title, stage, serviceId, done, onUploaded,
-}: { title: string; stage: Stage; serviceId: string; done: Set<Angle>; onUploaded: () => void }) {
-  return (
-    <>
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
-      <p className="mt-1 text-xs text-muted-foreground">Camera only. 4 angles required.</p>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        {ANGLES.map((a) => (
-          <PhotoSlot key={a} angle={a} stage={stage} serviceId={serviceId} done={done.has(a)} onUploaded={onUploaded} />
-        ))}
-      </div>
-    </>
-  );
-}
-
 function PhotoSlot({
-  angle, stage, serviceId, done, onUploaded,
-}: { angle: Angle; stage: Stage; serviceId: string; done: boolean; onUploaded: () => void }) {
+  serviceId, stage, angle, done, onUploaded, label, wide,
+}: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -214,7 +237,7 @@ function PhotoSlot({
   return (
     <button
       onClick={() => inputRef.current?.click()}
-      className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
+      className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
         done
           ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
           : "border-border text-muted-foreground hover:border-primary hover:text-primary"
@@ -229,7 +252,7 @@ function PhotoSlot({
         onChange={(e) => e.target.files?.[0] && handle(e.target.files[0])}
       />
       {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-      {angle}
+      {label}
     </button>
   );
 }
@@ -269,19 +292,14 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
       <DialogContent>
         <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
-          {REASONS.map((r) => (
+          {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
               <RadioGroupItem value={r.value} />
               {r.label}
             </Label>
           ))}
         </RadioGroup>
-        <Textarea
-          placeholder="Optional notes for support…"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="mt-3"
-        />
+        <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
           <Button onClick={submit} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit
@@ -289,6 +307,136 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DirtyVehicleDialog({ serviceId }: { serviceId: string }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const upload = async (angle: string, file: File) => {
+    const { data: u } = await supabase.auth.getUser();
+    const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); return; }
+    setPhotos((p) => ({ ...p, [angle]: path }));
+  };
+
+  const submit = async () => {
+    if (!reason) return toast.error("Pick a reason");
+    if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from("dirty_vehicle_reports").insert({
+      service_id: serviceId, partner_id: u.user!.id, reason, notes: notes || null,
+      photo_front: photos.front, photo_rear: photos.rear, photo_left: photos.left, photo_right: photos.right,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Dirty vehicle reported");
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm"><AlertTriangle className="mr-1.5 h-4 w-4" />Dirty vehicle</Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Report dirty vehicle</DialogTitle></DialogHeader>
+        <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
+          {DIRTY_REASONS.map((r) => (
+            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
+              <RadioGroupItem value={r} />{r}
+            </Label>
+          ))}
+        </RadioGroup>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {["front", "rear", "left", "right"].map((a) => (
+            <ReportPhoto key={a} angle={a} done={!!photos[a]} onPicked={(f) => upload(a, f)} />
+          ))}
+        </div>
+        <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
+        <DialogFooter>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ParkingIssueDialog({ serviceId }: { serviceId: string }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const upload = async (file: File) => {
+    const { data: u } = await supabase.auth.getUser();
+    const path = `${u.user!.id}/${serviceId}/parking-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true });
+    if (error) return toast.error(error.message);
+    setPhoto(path);
+  };
+
+  const submit = async () => {
+    if (!reason) return toast.error("Pick a reason");
+    if (!photo) return toast.error("Upload a proof photo");
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from("parking_reports").insert({
+      service_id: serviceId, partner_id: u.user!.id, reason, notes: notes || null, photo_path: photo,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Parking issue reported");
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm"><ParkingCircle className="mr-1.5 h-4 w-4" />Parking</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Parking issue</DialogTitle></DialogHeader>
+        <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
+          {PARKING_REASONS.map((r) => (
+            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
+              <RadioGroupItem value={r} />{r}
+            </Label>
+          ))}
+        </RadioGroup>
+        <ReportPhoto angle="Proof" done={!!photo} onPicked={upload} />
+        <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
+        <DialogFooter>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      onClick={() => ref.current?.click()}
+      className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
+        done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
+      }`}
+    >
+      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && onPicked(e.target.files[0])} />
+      {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
+    </button>
   );
 }
 
