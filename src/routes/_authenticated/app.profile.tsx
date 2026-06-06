@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Headphones, Share2, ChevronRight, CheckCircle2, AlertCircle,
-  Award, Droplets, Sparkles, Disc, Users, ShieldCheck, PlayCircle,
+  Award, History, FileText, Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
@@ -35,14 +35,13 @@ function ProfilePage() {
     { label: "Bank account", ok: !!partner?.bank_verified },
   ];
 
-  const sops = [
-    { icon: <Droplets className="h-4 w-4" />, title: "Daily Shine SOP" },
-    { icon: <Sparkles className="h-4 w-4" />, title: "Chemical usage" },
-    { icon: <BookOpen className="h-4 w-4" />, title: "Microfiber usage" },
-    { icon: <Disc className="h-4 w-4" />, title: "Tyre polish SOP" },
-    { icon: <Users className="h-4 w-4" />, title: "Customer behaviour SOP" },
-    { icon: <ShieldCheck className="h-4 w-4" />, title: "Vehicle safety SOP" },
-    { icon: <PlayCircle className="h-4 w-4" />, title: "Video tutorials" },
+  const menu: Array<{ icon: React.ReactNode; title: string; to?: any }> = [
+    { icon: <BookOpen className="h-4 w-4" />, title: "Training Center", to: "/app/training" },
+    { icon: <History className="h-4 w-4" />, title: "Activity History", to: "/app/history" },
+    { icon: <Share2 className="h-4 w-4" />, title: `Refer & earn · ${partner?.referral_code ?? ""}` },
+    { icon: <Headphones className="h-4 w-4" />, title: "Help & Support" },
+    { icon: <FileText className="h-4 w-4" />, title: "Policies" },
+    { icon: <Shield className="h-4 w-4" />, title: "SOP Library", to: "/app/training" },
   ];
 
   return (
@@ -83,36 +82,28 @@ function ProfilePage() {
         ))}
       </div>
 
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Training</h2>
-      <Card className="mt-3 p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Completion</p>
-          <p className="text-sm font-semibold">{Number(partner?.training_completion_pct ?? 0).toFixed(0)}%</p>
-        </div>
-        <div className="mt-2 h-2 rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${Number(partner?.training_completion_pct ?? 0)}%` }} />
-        </div>
-      </Card>
+      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">More</h2>
       <div className="mt-3 space-y-2">
-        {sops.map((s) => (
-          <Card key={s.title} className="flex items-center justify-between p-3.5">
-            <div className="flex items-center gap-3">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-accent-foreground">{s.icon}</span>
-              <span className="text-sm">{s.title}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Card>
-        ))}
+        {menu.map((m) => {
+          const inner = (
+            <Card className="flex items-center justify-between p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-accent-foreground">{m.icon}</span>
+                <span className="text-sm">{m.title}</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Card>
+          );
+          return m.to ? <Link key={m.title} to={m.to}>{inner}</Link> : <div key={m.title}>{inner}</div>;
+        })}
       </div>
 
-      <div className="mt-6 space-y-2">
-        <Row icon={<Share2 className="h-4 w-4" />} label={`Refer & earn · ${partner?.referral_code ?? ""}`} />
-        <Row icon={<Headphones className="h-4 w-4" />} label="Help & support" />
-      </div>
+      <p className="mt-6 text-center text-[10px] text-muted-foreground">Member since {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
-      <Button variant="outline" className="mt-6 w-full" onClick={signOut}>
+      <Button variant="outline" className="mt-3 w-full" onClick={signOut}>
         <LogOut className="mr-2 h-4 w-4" /> Sign out
       </Button>
+      <div className="h-6" />
     </div>
   );
 }

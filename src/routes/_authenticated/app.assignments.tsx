@@ -1,143 +1,191 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Timer, IndianRupee, Car, CheckCircle2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Loader2, MapPin, Timer, IndianRupee, Car, CheckCircle2, Calendar, Sun, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { OfflineGuard } from "@/components/OfflineGuard";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
-  component: AssignmentsPage,
+  component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
 });
 
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const [cars, setCars] = useState(20);
+  const [duration, setDuration] = useState(15);
+
   const { data: active } = useQuery({
-    queryKey: ["active-assignment"],
+    queryKey: ["active-assignment-builder"],
     queryFn: async () => {
-      const d = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("assignments")
         .select("*")
-        .eq("scheduled_date", d)
+        .eq("partner_id", u.user!.id)
         .eq("status", "active")
+        .gte("end_date", today)
         .maybeSingle();
       return data;
     },
   });
 
-  const { data: offers, isLoading } = useQuery({
-    queryKey: ["assignment-offers"],
+  const { data: preview, isFetching } = useQuery({
+    queryKey: ["preview", cars, duration],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("list_assignment_offers");
+      const { data, error } = await supabase.rpc("preview_assignment", { p_cars: cars, p_duration: duration });
       if (error) throw error;
-      return data ?? [];
+      return data?.[0] ?? null;
     },
     enabled: !active,
   });
 
   const accept = useMutation({
-    mutationFn: async (target: number) => {
-      const { data, error } = await supabase.rpc("accept_assignment", { p_target_cars: target });
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: cars, p_duration: duration });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       toast.success("Assignment accepted · route optimised");
-      qc.invalidateQueries({ queryKey: ["today-services"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["active-assignment"] });
-      navigate({ to: "/app" });
+      qc.invalidateQueries();
+      navigate({ to: "/app/route" });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
 
-  return (
-    <div className="mx-auto max-w-md px-5 pt-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Available assignments</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Choose your capacity for today. Routes are auto-optimised.</p>
-
-      {active && (
+  if (active) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Your assignment</h1>
         <Card className="mt-5 border-0 bg-foreground p-5 text-background">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-background/60">Active assignment</p>
-              <p className="mt-1 text-xl font-semibold">{active.area} · {active.target_cars} cars</p>
+              <p className="text-[10px] uppercase tracking-wider text-background/60">Active · {active.area}</p>
+              <p className="mt-1 text-3xl font-semibold">{active.target_cars} cars</p>
               <p className="mt-0.5 text-xs text-background/60">
-                ₹{active.estimated_earnings} · {active.estimated_hours}h · {active.estimated_distance_km} km
+                {active.duration_days} days · {active.working_days} working · starts {active.expected_start_time}
               </p>
             </div>
             <Badge className="border-0 bg-primary text-primary-foreground">Active</Badge>
           </div>
-          <Button variant="secondary" className="mt-4 w-full" onClick={() => navigate({ to: "/app" })}>
-            Go to route
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-background/10 pt-4 text-xs">
+            <div><p className="text-background/60">Daily</p><p className="mt-0.5 text-base font-semibold">₹{active.target_cars * 17}</p></div>
+            <div><p className="text-background/60">Total</p><p className="mt-0.5 text-base font-semibold">₹{Number(active.total_earnings || 0)}</p></div>
+          </div>
+          <Button asChild variant="secondary" className="mt-4 w-full">
+            <Link to="/app/route"><Navigation className="mr-2 h-4 w-4" />Go to route</Link>
           </Button>
         </Card>
-      )}
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          You can build a new assignment once this one ends on {new Date(active.end_date).toLocaleDateString("en-IN")}.
+        </p>
+      </div>
+    );
+  }
 
-      {!active && (
-        <div className="mt-5 space-y-3">
-          {isLoading && (
-            <div className="flex items-center justify-center py-10 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          )}
-          {offers?.length === 0 && (
-            <Card className="p-8 text-center text-sm text-muted-foreground">
-              No assignments available near you right now. Check back soon.
-            </Card>
-          )}
-          {offers?.map((o: any) => (
-            <Card key={o.target_cars} className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="flex items-center gap-1.5 text-sm font-medium">
-                    <MapPin className="h-4 w-4 text-primary" /> {o.area}
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight">{o.target_cars} cars</p>
-                  <p className="text-xs text-muted-foreground">₹17 per car</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Daily earnings</p>
-                  <p className="mt-1 text-2xl font-semibold text-primary">₹{Number(o.estimated_earnings)}</p>
-                </div>
-              </div>
+  const dailyEarn = preview ? Number(preview.daily_earnings) : cars * 17;
+  const totalEarn = preview ? Number(preview.total_earnings) : 0;
+  const workingDays = preview?.working_days ?? 0;
+  const radius = preview ? Number(preview.estimated_radius_km) : 0;
+  const hours = preview ? Number(preview.estimated_hours) : 0;
+  const startTime = preview?.expected_start_time ?? "07:00";
 
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-4 text-xs">
-                <div>
-                  <div className="flex items-center gap-1 text-muted-foreground"><Timer className="h-3 w-3" />Time</div>
-                  <p className="mt-1 font-medium">{o.estimated_hours}h</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1 text-muted-foreground"><Car className="h-3 w-3" />Distance</div>
-                  <p className="mt-1 font-medium">{o.estimated_distance_km} km</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1 text-muted-foreground"><IndianRupee className="h-3 w-3" />Rate</div>
-                  <p className="mt-1 font-medium">₹17</p>
-                </div>
-              </div>
+  return (
+    <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+      <h1 className="text-2xl font-semibold tracking-tight">Build your assignment</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Choose cars and duration. Earnings update live.</p>
 
-              <Button
-                size="lg"
-                className="mt-4 w-full"
-                disabled={accept.isPending}
-                onClick={() => accept.mutate(o.target_cars)}
-              >
-                {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                Accept assignment
-              </Button>
-            </Card>
-          ))}
+      {/* Cars slider */}
+      <Card className="mt-5 p-5">
+        <div className="flex items-baseline justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cars per day</p>
+          <p className="text-3xl font-semibold tracking-tight">{cars}</p>
         </div>
-      )}
+        <Slider value={[cars]} min={15} max={30} step={1} onValueChange={(v) => setCars(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>15</span><span>30</span></div>
+      </Card>
 
-      <p className="mt-6 text-[11px] text-muted-foreground">
-        Search expands automatically — 1 km → 2 km → 3 km → 5 km — until your capacity is filled.
-      </p>
+      {/* Duration slider */}
+      <Card className="mt-3 p-5">
+        <div className="flex items-baseline justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Duration</p>
+          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
+        </div>
+        <Slider value={[duration]} min={7} max={30} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
+      </Card>
+
+      {/* Live calculation */}
+      <Card className="mt-4 border-0 bg-foreground p-5 text-background">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-background/60">Total earnings</p>
+            <p className="mt-1 text-4xl font-semibold tracking-tight">₹{totalEarn.toLocaleString("en-IN")}</p>
+            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/day · {workingDays} working days</p>
+          </div>
+          {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-background/10 pt-4 text-xs">
+          <Mini icon={<Timer className="h-3 w-3" />} label="Time" value={`${hours}h`} />
+          <Mini icon={<MapPin className="h-3 w-3" />} label="Radius" value={`${radius} km`} />
+          <Mini icon={<Sun className="h-3 w-3" />} label="Starts" value={startTime} />
+        </div>
+      </Card>
+
+      {/* Rules */}
+      <Card className="mt-4 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignment rules</p>
+        <ul className="mt-3 space-y-2 text-xs">
+          <Rule>Same customers for the full {duration} days · consistent quality</Rule>
+          <Rule>Mondays are off — auto-excluded from working days</Rule>
+          <Rule>Flat rate ₹17 per completed car · no tiered pricing</Rule>
+          <Rule>Cancelling mid-assignment: ₹250 + that day's earnings deducted</Rule>
+        </ul>
+      </Card>
+
+      <Card className="mt-3 flex items-start gap-3 border-dashed p-4 text-xs">
+        <IndianRupee className="mt-0.5 h-4 w-4 text-primary" />
+        <div>
+          <p className="font-semibold">First payout</p>
+          <p className="mt-1 text-muted-foreground">First week's earnings are held as a security reserve and released after your first 15 active days.</p>
+        </div>
+      </Card>
+
+      {/* Sticky CTA */}
+      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto max-w-md p-4">
+          <Button size="lg" className="w-full" disabled={accept.isPending} onClick={() => accept.mutate()}>
+            {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+            Accept · {cars} cars × {duration} days · ₹{totalEarn.toLocaleString("en-IN")}
+          </Button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function Mini({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1 text-background/60">{icon}<span>{label}</span></div>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function Rule({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <Calendar className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+      <span className="text-muted-foreground">{children}</span>
+    </li>
   );
 }
