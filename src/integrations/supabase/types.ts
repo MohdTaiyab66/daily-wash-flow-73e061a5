@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      area_change_history: {
+        Row: {
+          changed_at: string
+          from_area: string | null
+          id: string
+          partner_id: string
+          to_area: string
+        }
+        Insert: {
+          changed_at?: string
+          from_area?: string | null
+          id?: string
+          partner_id: string
+          to_area: string
+        }
+        Update: {
+          changed_at?: string
+          from_area?: string | null
+          id?: string
+          partner_id?: string
+          to_area?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "area_change_history_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           accepted_at: string
@@ -495,6 +527,8 @@ export type Database = {
         Row: {
           aadhaar_number: string | null
           aadhaar_verified: boolean
+          area_change_count: number
+          area_locked_until: string | null
           attendance_pct: number
           availability: Database["public"]["Enums"]["availability_status"]
           bank_account_holder: string | null
@@ -505,6 +539,7 @@ export type Database = {
           city: string
           created_at: string
           email: string | null
+          first_assignment_completed: boolean
           full_name: string | null
           home_area: string | null
           home_lat: number | null
@@ -517,6 +552,8 @@ export type Database = {
           pan_verified: boolean
           partner_code: string
           phone: string
+          preferred_language: string
+          previous_area: string | null
           profile_photo_url: string | null
           rate_per_car: number
           rating: number
@@ -530,6 +567,8 @@ export type Database = {
         Insert: {
           aadhaar_number?: string | null
           aadhaar_verified?: boolean
+          area_change_count?: number
+          area_locked_until?: string | null
           attendance_pct?: number
           availability?: Database["public"]["Enums"]["availability_status"]
           bank_account_holder?: string | null
@@ -540,6 +579,7 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          first_assignment_completed?: boolean
           full_name?: string | null
           home_area?: string | null
           home_lat?: number | null
@@ -552,6 +592,8 @@ export type Database = {
           pan_verified?: boolean
           partner_code?: string
           phone: string
+          preferred_language?: string
+          previous_area?: string | null
           profile_photo_url?: string | null
           rate_per_car?: number
           rating?: number
@@ -565,6 +607,8 @@ export type Database = {
         Update: {
           aadhaar_number?: string | null
           aadhaar_verified?: boolean
+          area_change_count?: number
+          area_locked_until?: string | null
           attendance_pct?: number
           availability?: Database["public"]["Enums"]["availability_status"]
           bank_account_holder?: string | null
@@ -575,6 +619,7 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          first_assignment_completed?: boolean
           full_name?: string | null
           home_area?: string | null
           home_lat?: number | null
@@ -587,6 +632,8 @@ export type Database = {
           pan_verified?: boolean
           partner_code?: string
           phone?: string
+          preferred_language?: string
+          previous_area?: string | null
           profile_photo_url?: string | null
           rate_per_car?: number
           rating?: number
@@ -662,6 +709,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
       }
       service_analytics: {
         Row: {
@@ -989,6 +1057,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           color: string | null
@@ -1048,6 +1137,13 @@ export type Database = {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       haversine_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -1094,8 +1190,13 @@ export type Database = {
           working_days: number
         }[]
       }
+      set_partner_area: {
+        Args: { p_area: string; p_lat: number; p_lng: number }
+        Returns: undefined
+      }
     }
     Enums: {
+      app_role: "admin" | "supervisor" | "partner"
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
       complaint_status: "open" | "investigating" | "resolved" | "dismissed"
       partner_status:
@@ -1249,6 +1350,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "supervisor", "partner"],
       availability_status: ["online", "offline", "leave", "emergency_leave"],
       complaint_status: ["open", "investigating", "resolved", "dismissed"],
       partner_status: [
