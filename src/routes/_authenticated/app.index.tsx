@@ -119,7 +119,7 @@ function HomePage() {
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (completed / total) * 100 : 0}%` }} />
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/route"><Navigation className="mr-2 h-4 w-4" />View today's route</Link>
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />View today's route</Link>
           </Button>
         </Card>
       ) : (
@@ -146,7 +146,7 @@ function HomePage() {
       </div>
 
       <div className="mt-6 flex items-center gap-2">
-        <Button asChild className="flex-1"><Link to="/app/route"><Navigation className="mr-2 h-4 w-4" />Today's route</Link></Button>
+        <Button asChild className="flex-1"><Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Today's route</Link></Button>
         <Button asChild variant="outline" className="flex-1"><Link to="/app/assignments"><Briefcase className="mr-2 h-4 w-4" />Assignments</Link></Button>
       </div>
       <div className="h-4" />
