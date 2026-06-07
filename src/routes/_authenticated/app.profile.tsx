@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Headphones, Share2, ChevronRight, CheckCircle2, AlertCircle,
-  Award, History, FileText, Shield,
+  Award, History, FileText, Shield, MapPin, Lock, Languages,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
@@ -36,6 +36,7 @@ function ProfilePage() {
   ];
 
   const menu: Array<{ icon: React.ReactNode; title: string; to?: any }> = [
+    { icon: <MapPin className="h-4 w-4" />, title: partner?.home_area ? `Work area · ${partner.home_area}` : "Choose work area", to: "/app/area" },
     { icon: <BookOpen className="h-4 w-4" />, title: "Training Center", to: "/app/training" },
     { icon: <History className="h-4 w-4" />, title: "Activity History", to: "/app/history" },
     { icon: <Share2 className="h-4 w-4" />, title: `Refer & earn · ${partner?.referral_code ?? ""}` },
@@ -43,6 +44,8 @@ function ProfilePage() {
     { icon: <FileText className="h-4 w-4" />, title: "Policies" },
     { icon: <Shield className="h-4 w-4" />, title: "SOP Library", to: "/app/training" },
   ];
+
+  const areaLocked = !!partner?.area_locked_until && new Date(partner.area_locked_until) > new Date();
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
@@ -68,6 +71,27 @@ function ProfilePage() {
           <StatMini value={`₹${Number(partner?.lifetime_earnings ?? 0)}`} label="Lifetime" />
         </div>
       </Card>
+
+      {!partner?.home_area && (
+        <Link to="/app/area">
+          <Card className="mt-4 flex items-center justify-between border-primary/40 bg-primary/5 p-4">
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-semibold">Choose your work area</p>
+                <p className="text-[11px] text-muted-foreground">Required before you can accept assignments</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-primary" />
+          </Card>
+        </Link>
+      )}
+      {partner?.home_area && areaLocked && (
+        <Card className="mt-4 flex items-center gap-3 border-dashed p-3 text-xs text-muted-foreground">
+          <Lock className="h-3.5 w-3.5" />
+          <span>Area locked until {new Date(partner.area_locked_until!).toLocaleDateString("en-IN")}</span>
+        </Card>
+      )}
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Verifications</h2>
       <div className="mt-3 grid grid-cols-3 gap-2">

@@ -27,6 +27,7 @@ import { Route as AuthenticatedAppLiveRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
+import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -121,6 +122,11 @@ const AuthenticatedAppAssignmentsRoute =
     path: '/assignments',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
+  id: '/area',
+  path: '/area',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
+  '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/history': typeof AuthenticatedAppHistoryRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin': typeof AdminIndexRoute
+  '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/history': typeof AuthenticatedAppHistoryRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/': typeof AdminIndexRoute
+  '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
   '/_authenticated/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/_authenticated/app/history': typeof AuthenticatedAppHistoryRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
+    | '/app/area'
     | '/app/assignments'
     | '/app/earnings'
     | '/app/history'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin'
+    | '/app/area'
     | '/app/assignments'
     | '/app/earnings'
     | '/app/history'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/services'
     | '/admin/'
+    | '/_authenticated/app/area'
     | '/_authenticated/app/assignments'
     | '/_authenticated/app/earnings'
     | '/_authenticated/app/history'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAssignmentsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/area': {
+      id: '/_authenticated/app/area'
+      path: '/area'
+      fullPath: '/app/area'
+      preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -396,6 +415,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAreaRoute: typeof AuthenticatedAppAreaRoute
   AuthenticatedAppAssignmentsRoute: typeof AuthenticatedAppAssignmentsRoute
   AuthenticatedAppEarningsRoute: typeof AuthenticatedAppEarningsRoute
   AuthenticatedAppHistoryRoute: typeof AuthenticatedAppHistoryRoute
@@ -408,6 +428,7 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAreaRoute: AuthenticatedAppAreaRoute,
   AuthenticatedAppAssignmentsRoute: AuthenticatedAppAssignmentsRoute,
   AuthenticatedAppEarningsRoute: AuthenticatedAppEarningsRoute,
   AuthenticatedAppHistoryRoute: AuthenticatedAppHistoryRoute,
@@ -460,3 +481,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
