@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Navigation, Play, AlertTriangle, Clock, Car } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 
-export const Route = createFileRoute("/_authenticated/app")({
+export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
 });
 

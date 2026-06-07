@@ -123,7 +123,7 @@ function ServiceDetail() {
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
-      <button onClick={() => navigate({ to: "/app/route" })} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+      <button onClick={() => navigate({ to: "/app/live" })} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to route
       </button>
 
@@ -157,7 +157,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app/route" })} />
+          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app/live" })} />
         </div>
       )}
 

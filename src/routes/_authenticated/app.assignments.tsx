@@ -56,7 +56,7 @@ function AssignmentsPage() {
     onSuccess: () => {
       toast.success("Assignment accepted · route optimised");
       qc.invalidateQueries();
-      navigate({ to: "/app/route" });
+      navigate({ to: "/app/live" });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
@@ -81,7 +81,7 @@ function AssignmentsPage() {
             <div><p className="text-background/60">Total</p><p className="mt-0.5 text-base font-semibold">₹{Number(active.total_earnings || 0)}</p></div>
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/route"><Navigation className="mr-2 h-4 w-4" />Go to route</Link>
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Go to route</Link>
           </Button>
         </Card>
         <p className="mt-4 text-center text-xs text-muted-foreground">
