@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
   component: AuthPage,
 });
