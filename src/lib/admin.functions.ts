@@ -51,3 +51,31 @@ export const listAdminServices = createServerFn({ method: "GET" }).handler(async
     .limit(200);
   return data ?? [];
 });
+
+export const listSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("platform_settings").select("key,value,description").order("key");
+  return data ?? [];
+});
+
+export const updateSetting = createServerFn({ method: "POST" })
+  .inputValidator((d: { key: string; value: number }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({ value: data.value, updated_at: new Date().toISOString() })
+      .eq("key", data.key);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const listServicePhotos = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("service_photos")
+    .select("id,service_id,stage,angle,storage_path,captured_at,lat,lng,partners(full_name,partner_code),services(scheduled_date,customers(full_name,area))")
+    .order("captured_at", { ascending: false })
+    .limit(60);
+  return data ?? [];
+});
