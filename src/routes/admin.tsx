@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
@@ -8,12 +8,14 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/partners" | "/admin/customers" | "/admin/services" | "/admin/payouts"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/partners" | "/admin/customers" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/partners", label: "Partners", icon: Users },
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/services", label: "Services", icon: ClipboardList },
+    { to: "/admin/photos", label: "Photos", icon: Camera },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
+    { to: "/admin/settings", label: "Settings", icon: Settings },
   ];
   return (
     <div className="min-h-screen bg-muted/30">
