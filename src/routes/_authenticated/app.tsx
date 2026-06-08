@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
 import { Home, Briefcase, Wallet, Gift, User } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -17,6 +18,7 @@ function AppLayout() {
 }
 
 function TopBar() {
+  const { lang, setLang } = useI18n();
   return (
     <div className="mx-auto flex max-w-md items-center gap-2 px-5 pt-4">
       <img src={logo} alt="Urban Wash" className="h-9 w-9 rounded-lg object-cover" />
@@ -24,23 +26,38 @@ function TopBar() {
         <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Urban Wash</p>
         <p className="text-sm font-semibold">Partner</p>
       </div>
+      <div className="ml-auto inline-flex overflow-hidden rounded-full border border-border text-[11px] font-medium">
+        <button
+          onClick={() => setLang("en")}
+          className={`px-2.5 py-1 ${lang === "en" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
+        >
+          EN
+        </button>
+        <button
+          onClick={() => setLang("hi")}
+          className={`px-2.5 py-1 ${lang === "hi" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
+        >
+          हिं
+        </button>
+      </div>
     </div>
   );
 }
 
 function BottomNav() {
   const { pathname } = useLocation();
+  const { t } = useI18n();
   const tabs: Array<{
     to: "/app" | "/app/assignments" | "/app/earnings" | "/app/rewards" | "/app/profile";
     label: string;
     icon: typeof Home;
     exact?: boolean;
   }> = [
-    { to: "/app", label: "Home", icon: Home, exact: true },
-    { to: "/app/assignments", label: "Assignments", icon: Briefcase },
-    { to: "/app/earnings", label: "Earnings", icon: Wallet },
-    { to: "/app/rewards", label: "Rewards", icon: Gift },
-    { to: "/app/profile", label: "Profile", icon: User },
+    { to: "/app", label: t("home"), icon: Home, exact: true },
+    { to: "/app/assignments", label: t("assignments"), icon: Briefcase },
+    { to: "/app/earnings", label: t("earnings"), icon: Wallet },
+    { to: "/app/rewards", label: t("rewards"), icon: Gift },
+    { to: "/app/profile", label: t("profile"), icon: User },
   ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
