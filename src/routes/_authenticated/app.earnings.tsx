@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarDays, Lock, Car, Clock, MapPin } from "lucide-react";
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 const RATE = 17;
 
@@ -20,6 +21,7 @@ function startOfWeek(d: Date) {
 }
 
 function EarningsPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"today" | "week" | "month" | "lifetime">("week");
 
   const { data: stats } = useQuery({
@@ -80,40 +82,40 @@ function EarningsPage() {
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-4xl font-semibold tracking-tight">₹{total.toLocaleString("en-IN")}</p>
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
-        <Mini icon={<Car className="h-3 w-3" />} label="Cars" value={String(n)} />
-        <Mini icon={<Clock className="h-3 w-3" />} label="Avg/day" value={n ? `₹${Math.round(total / Math.max(1, stats?.daysActive ?? 1))}` : "₹0"} />
-        <Mini icon={<MapPin className="h-3 w-3" />} label="Rate" value={`₹${RATE}`} />
+        <Mini icon={<Car className="h-3 w-3" />} label={t("cars")} value={String(n)} />
+        <Mini icon={<Clock className="h-3 w-3" />} label={t("avg_day")} value={n ? `₹${Math.round(total / Math.max(1, stats?.daysActive ?? 1))}` : "₹0"} />
+        <Mini icon={<MapPin className="h-3 w-3" />} label={t("rate")} value={`₹${RATE}`} />
       </div>
     </Card>
   );
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Earnings</h1>
-      <p className="mt-1 text-sm text-muted-foreground">₹{RATE} per completed car · paid every Monday.</p>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("earnings")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t("earnings_sub")}</p>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-5">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="week">Week</TabsTrigger>
-          <TabsTrigger value="month">Month</TabsTrigger>
-          <TabsTrigger value="lifetime">All</TabsTrigger>
+          <TabsTrigger value="today">{t("today")}</TabsTrigger>
+          <TabsTrigger value="week">{t("week")}</TabsTrigger>
+          <TabsTrigger value="month">{t("month")}</TabsTrigger>
+          <TabsTrigger value="lifetime">{t("all")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="today" className="mt-4">{view("Today", stats?.today ?? 0, stats?.todayN ?? 0)}</TabsContent>
-        <TabsContent value="week" className="mt-4">{view("This week", stats?.week ?? 0, stats?.weekN ?? 0)}</TabsContent>
-        <TabsContent value="month" className="mt-4">{view("This month", stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
-        <TabsContent value="lifetime" className="mt-4">{view("Lifetime", stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
+        <TabsContent value="today" className="mt-4">{view(t("today"), stats?.today ?? 0, stats?.todayN ?? 0)}</TabsContent>
+        <TabsContent value="week" className="mt-4">{view(t("this_week"), stats?.week ?? 0, stats?.weekN ?? 0)}</TabsContent>
+        <TabsContent value="month" className="mt-4">{view(t("this_month"), stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
+        <TabsContent value="lifetime" className="mt-4">{view(t("lifetime"), stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
       </Tabs>
 
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Next payout</h2>
+      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("next_payout")}</h2>
       <Card className="mt-3 p-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Settling on</p>
+            <p className="text-xs text-muted-foreground">{t("settling_on")}</p>
             <p className="mt-1 text-lg font-semibold">{nextStr}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Amount</p>
+            <p className="text-xs text-muted-foreground">{t("amount")}</p>
             <p className="mt-1 text-lg font-semibold">₹{stats?.week ?? 0}</p>
           </div>
         </div>

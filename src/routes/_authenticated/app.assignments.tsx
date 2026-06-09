@@ -9,6 +9,7 @@ import { Loader2, MapPin, Timer, IndianRupee, Car, CheckCircle2, Calendar, Sun, 
 import { toast } from "sonner";
 import { useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/app/assignments")({
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { t } = useI18n();
 
   const [cars, setCars] = useState(20);
   const [duration, setDuration] = useState(15);
@@ -64,28 +66,28 @@ function AssignmentsPage() {
   if (active) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Your assignment</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("your_assignment")}</h1>
         <Card className="mt-5 border-0 bg-foreground p-5 text-background">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-background/60">Active · {active.area}</p>
-              <p className="mt-1 text-3xl font-semibold">{active.target_cars} cars</p>
+              <p className="text-[10px] uppercase tracking-wider text-background/60">{t("active")} · {active.area}</p>
+              <p className="mt-1 text-3xl font-semibold">{active.target_cars} {t("cars").toLowerCase()}</p>
               <p className="mt-0.5 text-xs text-background/60">
-                {active.duration_days} days · {active.working_days} working · starts {active.expected_start_time}
+                {active.duration_days} {t("days")} · {active.working_days} · {t("starts")} {active.expected_start_time}
               </p>
             </div>
-            <Badge className="border-0 bg-primary text-primary-foreground">Active</Badge>
+            <Badge className="border-0 bg-primary text-primary-foreground">{t("active")}</Badge>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-background/10 pt-4 text-xs">
-            <div><p className="text-background/60">Daily</p><p className="mt-0.5 text-base font-semibold">₹{active.target_cars * 17}</p></div>
-            <div><p className="text-background/60">Total</p><p className="mt-0.5 text-base font-semibold">₹{Number(active.total_earnings || 0)}</p></div>
+            <div><p className="text-background/60">{t("daily")}</p><p className="mt-0.5 text-base font-semibold">₹{active.target_cars * 17}</p></div>
+            <div><p className="text-background/60">{t("total")}</p><p className="mt-0.5 text-base font-semibold">₹{Number(active.total_earnings || 0)}</p></div>
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Go to route</Link>
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("go_to_route")}</Link>
           </Button>
         </Card>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          You can build a new assignment once this one ends on {new Date(active.end_date).toLocaleDateString("en-IN")}.
+          {new Date(active.end_date).toLocaleDateString("en-IN")}
         </p>
       </div>
     );
@@ -100,13 +102,13 @@ function AssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-      <h1 className="text-2xl font-semibold tracking-tight">Build your assignment</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Choose cars and duration. Earnings update live.</p>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t("builder_sub")}</p>
 
       {/* Cars slider */}
       <Card className="mt-5 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cars per day</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("cars_per_day")}</p>
           <p className="text-3xl font-semibold tracking-tight">{cars}</p>
         </div>
         <Slider value={[cars]} min={15} max={30} step={1} onValueChange={(v) => setCars(v[0])} className="mt-4" />
@@ -116,8 +118,8 @@ function AssignmentsPage() {
       {/* Duration slider */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Duration</p>
-          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("duration")}</p>
+          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">{t("days")}</span></p>
         </div>
         <Slider value={[duration]} min={7} max={30} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
@@ -127,22 +129,22 @@ function AssignmentsPage() {
       <Card className="mt-4 border-0 bg-foreground p-5 text-background">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-background/60">Total earnings</p>
+            <p className="text-[10px] uppercase tracking-wider text-background/60">{t("total_earnings")}</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight">₹{totalEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/day · {workingDays} working days</p>
+            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/{t("daily").toLowerCase()} · {workingDays} {t("days")}</p>
           </div>
           {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-background/10 pt-4 text-xs">
-          <Mini icon={<Timer className="h-3 w-3" />} label="Time" value={`${hours}h`} />
-          <Mini icon={<MapPin className="h-3 w-3" />} label="Radius" value={`${radius} km`} />
-          <Mini icon={<Sun className="h-3 w-3" />} label="Starts" value={startTime} />
+          <Mini icon={<Timer className="h-3 w-3" />} label={t("time")} value={`${hours}h`} />
+          <Mini icon={<MapPin className="h-3 w-3" />} label={t("radius")} value={`${radius} km`} />
+          <Mini icon={<Sun className="h-3 w-3" />} label={t("starts")} value={startTime} />
         </div>
       </Card>
 
       {/* Rules */}
       <Card className="mt-4 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignment rules</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("assignment_rules")}</p>
         <ul className="mt-3 space-y-2 text-xs">
           <Rule>Same customers for the full {duration} days · consistent quality</Rule>
           <Rule>Mondays are off — auto-excluded from working days</Rule>
@@ -164,7 +166,7 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4">
           <Button size="lg" className="w-full" disabled={accept.isPending} onClick={() => accept.mutate()}>
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            Accept · {cars} cars × {duration} days · ₹{totalEarn.toLocaleString("en-IN")}
+            {t("accept")} · {cars} × {duration} {t("days")} · ₹{totalEarn.toLocaleString("en-IN")}
           </Button>
         </div>
       </div>
