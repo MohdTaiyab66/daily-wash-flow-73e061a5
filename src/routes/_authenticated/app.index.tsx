@@ -9,6 +9,7 @@ import { Car, CheckCircle2, Clock, MapPin, Star, Timer, Award, Briefcase, Naviga
 import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { useI18n } from "@/lib/i18n";
+import { formatTime12 } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
@@ -105,7 +106,7 @@ function HomePage() {
             <div>
               <p className="text-[10px] uppercase tracking-wider text-background/60">{t("current_assignment")}</p>
               <p className="mt-1 text-lg font-semibold">{assignment.area}</p>
-              <p className="mt-0.5 text-xs text-background/60">{dayLabel} · {t("starts")} {assignment.expected_start_time}</p>
+              <p className="mt-0.5 text-xs text-background/60">{dayLabel} · {t("starts")} {formatTime12(assignment.expected_start_time)} · ETA {formatTime12("10:00")}</p>
             </div>
             <Badge className="border-0 bg-primary text-primary-foreground">{t("active")}</Badge>
           </div>

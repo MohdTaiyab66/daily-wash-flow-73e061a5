@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
+import { formatTime12 } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
@@ -73,7 +74,7 @@ function AssignmentsPage() {
               <p className="text-[10px] uppercase tracking-wider text-background/60">{t("active")} · {active.area}</p>
               <p className="mt-1 text-3xl font-semibold">{active.target_cars} {t("cars").toLowerCase()}</p>
               <p className="mt-0.5 text-xs text-background/60">
-                {active.duration_days} {t("days")} · {active.working_days} · {t("starts")} {active.expected_start_time}
+                {active.duration_days} {t("days")} · {active.working_days} · {t("starts")} {formatTime12(active.expected_start_time)}
               </p>
             </div>
             <Badge className="border-0 bg-primary text-primary-foreground">{t("active")}</Badge>
@@ -138,7 +139,7 @@ function AssignmentsPage() {
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-background/10 pt-4 text-xs">
           <Mini icon={<Timer className="h-3 w-3" />} label={t("time")} value={`${hours}h`} />
           <Mini icon={<MapPin className="h-3 w-3" />} label={t("radius")} value={`${radius} km`} />
-          <Mini icon={<Sun className="h-3 w-3" />} label={t("starts")} value={startTime} />
+          <Mini icon={<Sun className="h-3 w-3" />} label={t("starts")} value={formatTime12(startTime)} />
         </div>
       </Card>
 
