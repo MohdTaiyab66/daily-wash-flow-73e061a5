@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAdminServices } from "@/lib/admin.functions";
@@ -33,8 +33,10 @@ function ServicesPage() {
             </thead>
             <tbody>
               {data?.map((s: any) => (
-                <tr key={s.id} className="border-t border-border">
-                  <td className="px-4 py-3 whitespace-nowrap">{s.scheduled_date}</td>
+                <tr key={s.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Link to="/admin/service/$id" params={{ id: s.id }} className="text-primary underline-offset-2 hover:underline">{s.scheduled_date}</Link>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{s.time_slot}</td>
                   <td className="px-4 py-3">
                     <p className="font-medium">{s.customers?.full_name}</p>
