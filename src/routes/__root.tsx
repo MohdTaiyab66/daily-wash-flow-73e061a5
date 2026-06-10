@@ -78,14 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "urban wash partner" },
+      { name: "description", content: "Urban Wash Partner App enables car care partners to manage daily cleaning services, track earnings, and onboard new customers." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "urban wash partner" },
+      { property: "og:description", content: "Urban Wash Partner App enables car care partners to manage daily cleaning services, track earnings, and onboard new customers." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "urban wash partner" },
+      { name: "twitter:description", content: "Urban Wash Partner App enables car care partners to manage daily cleaning services, track earnings, and onboard new customers." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/MCVapbCo5XbPjsDOUeq7WwZlIHX2/social-images/social-1781118455783-LOGO.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/MCVapbCo5XbPjsDOUeq7WwZlIHX2/social-images/social-1781118455783-LOGO.webp" },
     ],
     links: [
       {
