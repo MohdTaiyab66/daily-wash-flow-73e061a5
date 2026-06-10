@@ -31,10 +31,10 @@ function PhotosPage() {
         {(data ?? []).map((p: any) => (
           <Card key={p.id} className="overflow-hidden">
             <div className="flex aspect-square items-center justify-center bg-muted text-xs text-muted-foreground">
-              {p.storage_path ? (
-                <span className="px-3 text-center break-all">{p.storage_path}</span>
+              {p.signed_url ? (
+                <img src={p.signed_url} alt={p.angle} className="h-full w-full object-cover" />
               ) : (
-                "No image path"
+                "No image"
               )}
             </div>
             <div className="space-y-2 p-4">

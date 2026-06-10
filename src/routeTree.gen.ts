@@ -19,9 +19,11 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
@@ -81,6 +83,11 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminImportRoute = AdminImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -95,6 +102,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
+  id: '/service/$id',
+  path: '/service/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedAppTrainingRoute =
   AuthenticatedAppTrainingRouteImport.update({
@@ -152,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/import': typeof AdminImportRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -166,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/service/$id': typeof AdminServiceIdRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
@@ -173,6 +187,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/import': typeof AdminImportRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -187,6 +202,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/service/$id': typeof AdminServiceIdRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
@@ -198,6 +214,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/import': typeof AdminImportRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -212,6 +229,7 @@ export interface FileRoutesById {
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/service/$id': typeof AdminServiceIdRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
 }
@@ -223,6 +241,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/admin/customers'
+    | '/admin/import'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -237,6 +256,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/service/$id'
     | '/app/'
     | '/app/service/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -244,6 +264,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin/customers'
+    | '/admin/import'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -258,6 +279,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/service/$id'
     | '/app'
     | '/app/service/$id'
   id:
@@ -268,6 +290,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/app'
     | '/admin/customers'
+    | '/admin/import'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -282,6 +305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/profile'
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
+    | '/admin/service/$id'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
   fileRoutesById: FileRoutesById
@@ -365,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPartnersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/import': {
+      id: '/admin/import'
+      path: '/import'
+      fullPath: '/admin/import'
+      preLoaderRoute: typeof AdminImportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers': {
       id: '/admin/customers'
       path: '/customers'
@@ -385,6 +416,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/admin/service/$id': {
+      id: '/admin/service/$id'
+      path: '/service/$id'
+      fullPath: '/admin/service/$id'
+      preLoaderRoute: typeof AdminServiceIdRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_authenticated/app/training': {
       id: '/_authenticated/app/training'
@@ -494,22 +532,26 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminImportRoute: typeof AdminImportRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminServiceIdRoute: typeof AdminServiceIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomersRoute: AdminCustomersRoute,
+  AdminImportRoute: AdminImportRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminServiceIdRoute: AdminServiceIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
