@@ -140,7 +140,7 @@ function ServiceDetail() {
         </div>
         <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
-          <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />+91 {c?.phone} · Required before {c?.preferred_time}</p>
+          <p className="text-xs font-medium text-foreground">Required before {requiredBefore(c?.preferred_time)}</p>
         </div>
         {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
@@ -148,9 +148,7 @@ function ServiceDetail() {
           <Button asChild variant="outline" size="sm">
             <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a>
           </Button>
-          <Button asChild variant="outline" size="sm">
-            <a href={`tel:+91${c?.phone}`}><Phone className="mr-1.5 h-4 w-4" /> Call</a>
-          </Button>
+          <MaskedCallButton serviceId={id} />
         </div>
       </Card>
 
