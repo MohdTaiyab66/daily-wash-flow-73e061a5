@@ -11,6 +11,7 @@ import { requiredBefore } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
 import { toast } from "sonner";
 import { useState } from "react";
+import { LiveMap } from "@/components/LiveMap";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -36,36 +37,44 @@ function RoutePage() {
 
   const visible = (services ?? []).filter((s) => s.status !== "completed");
 
+  // Active service hours: 5:00–13:00 local. Customer pins shown only when an
+  // active assignment exists for today with remaining stops AND we're in window.
+  const now = new Date();
+  const hr = now.getHours();
+  const inServiceHours = hr >= 5 && hr < 13;
+  const hasActiveAssignment = visible.length > 0;
+  const showCustomers = inServiceHours && hasActiveAssignment;
+
+  const stops = visible
+    .filter((s) => {
+      const c = s.customers as any;
+      return c?.latitude != null && c?.longitude != null;
+    })
+    .map((s) => {
+      const c = s.customers as any;
+      return {
+        id: s.id,
+        sequence_no: s.sequence_no,
+        lat: Number(c.latitude),
+        lng: Number(c.longitude),
+        label: c.full_name ?? "Customer",
+      };
+    });
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
       <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
       <p className="mt-1 text-sm text-muted-foreground">Optimised by distance and preferred time.</p>
 
-      {/* Map placeholder — to be wired to Google Maps when connector linked */}
-      <Card className="mt-5 overflow-hidden p-0">
-        <div className="relative h-48 bg-[radial-gradient(circle_at_30%_40%,oklch(0.95_0.04_60),oklch(0.92_0.02_60))]">
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <MapPin className="h-7 w-7 text-primary" />
-            <p className="mt-2 text-sm font-medium">Live map</p>
-            <p className="mt-1 max-w-[220px] text-[11px] text-muted-foreground">
-              Use Navigate on each stop — opens Google Maps with your customer's location.
-            </p>
-          </div>
-          {/* Decorative pins */}
-          {visible.slice(0, 6).map((_, i) => (
-            <span
-              key={i}
-              className="absolute h-2.5 w-2.5 rounded-full bg-primary shadow-md ring-2 ring-background"
-              style={{ top: `${20 + (i * 11) % 60}%`, left: `${15 + (i * 17) % 70}%` }}
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-3 border-t border-border text-center">
+      <div className="mt-5">
+        <LiveMap stops={stops} showCustomers={showCustomers} />
+        <Card className="mt-3 grid grid-cols-3 border-t border-border text-center p-0">
           <KPI label="Assigned" value={String(total)} />
           <KPI label="Done" value={String(done)} />
           <KPI label="Left" value={String(remaining)} />
-        </div>
-      </Card>
+        </Card>
+      </div>
+
 
       {/* Bottom panel — stop list */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Next stops</h2>
