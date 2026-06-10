@@ -10,10 +10,12 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, Phone, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
+import { MaskedCallButton } from "./app.live";
+import { requiredBefore } from "@/lib/format";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
@@ -138,7 +140,7 @@ function ServiceDetail() {
         </div>
         <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
-          <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />+91 {c?.phone} · Required before {c?.preferred_time}</p>
+          <p className="text-xs font-medium text-foreground">Required before {requiredBefore(c?.preferred_time)}</p>
         </div>
         {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
@@ -146,9 +148,7 @@ function ServiceDetail() {
           <Button asChild variant="outline" size="sm">
             <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a>
           </Button>
-          <Button asChild variant="outline" size="sm">
-            <a href={`tel:+91${c?.phone}`}><Phone className="mr-1.5 h-4 w-4" /> Call</a>
-          </Button>
+          <MaskedCallButton serviceId={id} />
         </div>
       </Card>
 
