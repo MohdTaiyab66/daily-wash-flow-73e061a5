@@ -99,8 +99,8 @@ function RoutePage() {
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    <Clock className="mr-1 inline h-3 w-3" />Required before {c?.preferred_time}
+                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                    <Clock className="mr-1 inline h-3 w-3" />Required before {requiredBefore(c?.preferred_time)}
                   </p>
                 </div>
               </div>
@@ -108,9 +108,7 @@ function RoutePage() {
                 <Button asChild size="sm" variant="outline" className="col-span-1">
                   <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
                 </Button>
-                <Button asChild size="sm" variant="outline" className="col-span-1">
-                  <a href={`tel:+91${c?.phone}`} aria-label="Call"><Phone className="h-4 w-4" /></a>
-                </Button>
+                <MaskedCallButton serviceId={s.id} compact />
                 <Button asChild size="sm" className="col-span-2">
                   <Link to="/app/service/$id" params={{ id: s.id }}>
                     {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start</>}
@@ -122,6 +120,34 @@ function RoutePage() {
         })}
       </div>
     </div>
+  );
+}
+
+export function MaskedCallButton({ serviceId, compact, full }: { serviceId: string; compact?: boolean; full?: boolean }) {
+  const call = useServerFn(initiateMaskedCall);
+  const [loading, setLoading] = useState(false);
+  const onClick = async () => {
+    setLoading(true);
+    try {
+      const r = await call({ data: { service_id: serviceId } });
+      toast.success(r.message ?? "Connecting...");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not place call");
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (compact) {
+    return (
+      <Button size="sm" variant="outline" className="col-span-1" onClick={onClick} disabled={loading} aria-label="Call Customer">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+      </Button>
+    );
+  }
+  return (
+    <Button variant="outline" size={full ? "lg" : "sm"} className={full ? "w-full" : ""} onClick={onClick} disabled={loading}>
+      {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />} Call Customer
+    </Button>
   );
 }
 
