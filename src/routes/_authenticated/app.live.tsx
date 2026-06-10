@@ -23,7 +23,7 @@ function RoutePage() {
       const d = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,customers(full_name,area,address_line,phone,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color)")
+        .select("id,status,time_slot,sequence_no,customers(full_name,area,address_line,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color)")
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
       return data ?? [];
