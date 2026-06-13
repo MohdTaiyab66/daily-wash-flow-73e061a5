@@ -12,6 +12,7 @@ import { initiateMaskedCall } from "@/lib/calling.functions";
 import { toast } from "sonner";
 import { useState } from "react";
 import { LiveMap } from "@/components/LiveMap";
+import { EndOfDayCard } from "@/components/EndOfDayCard";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -29,11 +30,14 @@ function RoutePage() {
         .order("sequence_no", { ascending: true });
       return data ?? [];
     },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 
   const total = services?.length ?? 0;
   const done = (services ?? []).filter((s) => s.status === "completed").length;
   const remaining = total - done;
+  const isEndOfDay = total > 0 && remaining === 0;
 
   const visible = (services ?? []).filter((s) => s.status !== "completed");
 
