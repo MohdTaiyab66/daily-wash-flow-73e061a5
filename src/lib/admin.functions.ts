@@ -34,9 +34,9 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_end,is_active,vehicles(make,model,registration_number)")
+    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,vehicles(make,model,registration_number)")
     .order("full_name")
-    .limit(100);
+    .limit(500);
   return data ?? [];
 });
 
@@ -72,13 +72,14 @@ export const updateSetting = createServerFn({ method: "POST" })
 
 export const listServicePhotos = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const { data } = await supabaseAdmin
     .from("service_photos")
     .select("id,service_id,stage,angle,storage_path,captured_at,lat,lng,partners(full_name,partner_code),services(scheduled_date,customers(full_name,area))")
+    .gte("captured_at", sevenDaysAgo)
     .order("captured_at", { ascending: false })
-    .limit(60);
+    .limit(120);
   const rows = data ?? [];
-  // Generate signed URLs for thumbnails (1h)
   const signed = await Promise.all(
     rows.map(async (p: any) => {
       if (!p.storage_path) return { ...p, signed_url: null };
@@ -135,12 +136,20 @@ export const getAdminServiceDetail = createServerFn({ method: "GET" })
     };
   });
 
+type VehicleInput = {
+  make: string;
+  model: string;
+  registration_number?: string;
+  color?: string;
+  parking_notes?: string;
+};
+
 export const createCustomerImport = createServerFn({ method: "POST" })
   .inputValidator((d: {
     full_name: string;
     phone: string;
-    address_line: string;
     area: string;
+    address_line?: string;
     pincode?: string;
     latitude?: number;
     longitude?: number;
@@ -149,22 +158,20 @@ export const createCustomerImport = createServerFn({ method: "POST" })
     subscription_end?: string;
     preferred_time?: string;
     is_active?: boolean;
-    vehicle_make: string;
-    vehicle_model: string;
-    vehicle_registration: string;
-    vehicle_color?: string;
-    parking_notes?: string;
+    vehicles: VehicleInput[];
     assigned_partner_id?: string | null;
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!data.vehicles?.length) throw new Error("At least one vehicle is required");
+
     const { data: cust, error: e1 } = await supabaseAdmin
       .from("customers")
       .insert({
         full_name: data.full_name,
         phone: data.phone,
-        address_line: data.address_line,
         area: data.area,
+        address_line: data.address_line || data.area,
         pincode: data.pincode || null,
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
@@ -179,20 +186,21 @@ export const createCustomerImport = createServerFn({ method: "POST" })
       .select()
       .single();
     if (e1) throw e1;
-    const { data: veh, error: e2 } = await supabaseAdmin
-      .from("vehicles")
-      .insert({
+
+    const vehRows = data.vehicles
+      .filter((v) => v.make && v.model)
+      .map((v) => ({
         customer_id: cust.id,
-        make: data.vehicle_make,
-        model: data.vehicle_model,
-        registration_number: data.vehicle_registration,
-        color: data.vehicle_color || null,
-        parking_notes: data.parking_notes || null,
-      })
-      .select()
-      .single();
+        make: v.make,
+        model: v.model,
+        registration_number: v.registration_number || `PENDING-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+        color: v.color || null,
+        parking_notes: v.parking_notes || null,
+      }));
+    const { error: e2 } = await supabaseAdmin.from("vehicles").insert(vehRows);
     if (e2) throw e2;
-    return { customer: cust, vehicle: veh };
+
+    return { customer: cust, vehicle_count: vehRows.length };
   });
 
 export const listAdminPartnersBrief = createServerFn({ method: "GET" }).handler(async () => {
@@ -204,3 +212,123 @@ export const listAdminPartnersBrief = createServerFn({ method: "GET" }).handler(
   return data ?? [];
 });
 
+// =================== Customer Profile ===================
+export const getCustomerProfile = createServerFn({ method: "GET" })
+  .inputValidator((d: { customer_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const today = new Date().toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    const [cust, vehicles, services, complaints, extensions] = await Promise.all([
+      supabaseAdmin.from("customers").select("*").eq("id", data.customer_id).maybeSingle(),
+      supabaseAdmin.from("vehicles").select("*").eq("customer_id", data.customer_id),
+      supabaseAdmin
+        .from("services")
+        .select("id,scheduled_date,status,completed_at,time_slot,gps_flag,partners(id,full_name,partner_code,phone)")
+        .eq("customer_id", data.customer_id)
+        .order("scheduled_date", { ascending: false })
+        .limit(60),
+      supabaseAdmin
+        .from("complaints")
+        .select("*")
+        .eq("customer_id", data.customer_id)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("subscription_extensions")
+        .select("*")
+        .eq("customer_id", data.customer_id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (!cust.data) throw new Error("Customer not found");
+
+    const serviceRows = services.data ?? [];
+    const lastCompleted = serviceRows.find((s: any) => s.status === "completed");
+    const upcoming = serviceRows.filter((s: any) => s.scheduled_date >= today && s.status === "pending");
+    const assignedPartner = upcoming[0]?.partners ?? lastCompleted?.partners ?? null;
+
+    // Days remaining
+    const end = cust.data.subscription_end ? new Date(cust.data.subscription_end) : null;
+    const start = cust.data.subscription_start ? new Date(cust.data.subscription_start) : null;
+    const daysRemaining = end ? Math.ceil((end.getTime() - Date.now()) / 86400000) : null;
+    const extensionDaysTotal = (extensions.data ?? []).reduce((s: number, e: any) => s + (e.days || 0), 0);
+
+    // Photos last 7 days
+    const serviceIds = serviceRows.map((s: any) => s.id);
+    let photoRows: any[] = [];
+    if (serviceIds.length) {
+      const { data: photos } = await supabaseAdmin
+        .from("service_photos")
+        .select("id,service_id,stage,angle,storage_path,captured_at,services(scheduled_date)")
+        .in("service_id", serviceIds)
+        .gte("captured_at", sevenDaysAgo)
+        .order("captured_at", { ascending: false });
+      photoRows = await Promise.all(
+        (photos ?? []).map(async (p: any) => {
+          const { data: s } = await supabaseAdmin.storage.from("service-photos").createSignedUrl(p.storage_path, 3600);
+          return { ...p, signed_url: s?.signedUrl ?? null };
+        }),
+      );
+    }
+
+    return {
+      customer: cust.data,
+      vehicles: vehicles.data ?? [],
+      assigned_partner: assignedPartner,
+      start_date: start ? start.toISOString().slice(0, 10) : null,
+      renewal_date: end ? end.toISOString().slice(0, 10) : null,
+      days_remaining: daysRemaining,
+      extension_days_total: extensionDaysTotal,
+      last_service_date: lastCompleted?.scheduled_date ?? null,
+      services: serviceRows,
+      complaints: complaints.data ?? [],
+      extensions: extensions.data ?? [],
+      photos: photoRows,
+    };
+  });
+
+export const extendCustomerSubscription = createServerFn({ method: "POST" })
+  .inputValidator((d: { customer_id: string; days: number; reason: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc("admin_extend_customer", {
+      p_customer_id: data.customer_id,
+      p_days: data.days,
+      p_reason: data.reason,
+    });
+    if (error) throw new Error(error.message);
+    return result;
+  });
+
+// =================== Renewals (advanced) ===================
+export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const today = new Date();
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const minus30 = new Date(today); minus30.setDate(minus30.getDate() - 30);
+  const plus30 = new Date(today); plus30.setDate(plus30.getDate() + 30);
+
+  const { data } = await supabaseAdmin
+    .from("customers")
+    .select("id,full_name,phone,area,subscription_plan,subscription_start,subscription_end,is_active")
+    .gte("subscription_end", iso(minus30))
+    .lte("subscription_end", iso(plus30))
+    .order("subscription_end");
+
+  // Map customer → assigned partner via most recent service
+  const ids = (data ?? []).map((c: any) => c.id);
+  let partnerByCustomer: Record<string, any> = {};
+  if (ids.length) {
+    const { data: svcRows } = await supabaseAdmin
+      .from("services")
+      .select("customer_id,scheduled_date,partners(id,full_name,partner_code)")
+      .in("customer_id", ids)
+      .order("scheduled_date", { ascending: false });
+    (svcRows ?? []).forEach((s: any) => {
+      if (!partnerByCustomer[s.customer_id] && s.partners) partnerByCustomer[s.customer_id] = s.partners;
+    });
+  }
+
+  return (data ?? []).map((c: any) => ({ ...c, partner: partnerByCustomer[c.id] ?? null }));
+});

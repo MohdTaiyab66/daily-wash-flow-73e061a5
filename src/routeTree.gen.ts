@@ -31,6 +31,7 @@ import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
+import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
@@ -151,6 +152,11 @@ const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
   path: '/service/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminCustomersRoute,
+} as any)
 const AuthenticatedAppTrainingRoute =
   AuthenticatedAppTrainingRouteImport.update({
     id: '/training',
@@ -214,7 +220,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -245,7 +252,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -280,7 +288,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/customers/$id'
     | '/admin/service/$id'
     | '/app/'
     | '/app/service/$id'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/customers/$id'
     | '/admin/service/$id'
     | '/app'
     | '/app/service/$id'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/profile'
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
+    | '/admin/customers/$id'
     | '/admin/service/$id'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
@@ -570,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServiceIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/customers/$id': {
+      id: '/admin/customers/$id'
+      path: '/$id'
+      fullPath: '/admin/customers/$id'
+      preLoaderRoute: typeof AdminCustomersIdRouteImport
+      parentRoute: typeof AdminCustomersRoute
+    }
     '/_authenticated/app/training': {
       id: '/_authenticated/app/training'
       path: '/training'
@@ -685,10 +704,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AdminCustomersRouteChildren {
+  AdminCustomersIdRoute: typeof AdminCustomersIdRoute
+}
+
+const AdminCustomersRouteChildren: AdminCustomersRouteChildren = {
+  AdminCustomersIdRoute: AdminCustomersIdRoute,
+}
+
+const AdminCustomersRouteWithChildren = AdminCustomersRoute._addFileChildren(
+  AdminCustomersRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
-  AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
@@ -707,7 +738,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
-  AdminCustomersRoute: AdminCustomersRoute,
+  AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
@@ -734,13 +765,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

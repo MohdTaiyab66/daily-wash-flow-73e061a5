@@ -1003,6 +1003,47 @@ export type Database = {
           },
         ]
       }
+      subscription_extensions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          days: number
+          id: string
+          new_end: string
+          previous_end: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          days: number
+          id?: string
+          new_end: string
+          previous_end: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          days?: number
+          id?: string
+          new_end?: string
+          previous_end?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_extensions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_modules: {
         Row: {
           category: string
@@ -1264,6 +1305,10 @@ export type Database = {
         Args: { p_cars: number; p_duration: number }
         Returns: string
       }
+      admin_extend_customer: {
+        Args: { p_customer_id: string; p_days: number; p_reason: string }
+        Returns: Json
+      }
       cancel_assignment: {
         Args: { p_assignment_id: string }
         Returns: undefined
@@ -1272,6 +1317,7 @@ export type Database = {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
       }
+      cleanup_old_service_photos: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
