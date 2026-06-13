@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, MapPin, Timer, IndianRupee, Car, CheckCircle2, Calendar, Sun, Navigation } from "lucide-react";
+import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
@@ -24,14 +23,14 @@ function AssignmentsPage() {
   const [cars, setCars] = useState(20);
   const [duration, setDuration] = useState(15);
 
-  const { data: active } = useQuery({
+  const { data: active, isLoading: loadingActive } = useQuery({
     queryKey: ["active-assignment-builder"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("assignments")
-        .select("*")
+        .select("id")
         .eq("partner_id", u.user!.id)
         .eq("status", "active")
         .gte("end_date", today)
@@ -39,6 +38,11 @@ function AssignmentsPage() {
       return data;
     },
   });
+
+  // Accepted assignments live on the My Assignment page — redirect.
+  useEffect(() => {
+    if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
+  }, [active?.id, navigate]);
 
   const { data: preview, isFetching } = useQuery({
     queryKey: ["preview", cars, duration],
