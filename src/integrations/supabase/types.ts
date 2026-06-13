@@ -46,6 +46,57 @@ export type Database = {
           },
         ]
       }
+      assignment_changes: {
+        Row: {
+          assignment_id: string
+          change_type: string
+          created_at: string
+          delta_cars: number
+          id: string
+          new_target: number
+          partner_id: string
+          previous_target: number
+          released_customer_ids: string[] | null
+        }
+        Insert: {
+          assignment_id: string
+          change_type: string
+          created_at?: string
+          delta_cars: number
+          id?: string
+          new_target: number
+          partner_id: string
+          previous_target: number
+          released_customer_ids?: string[] | null
+        }
+        Update: {
+          assignment_id?: string
+          change_type?: string
+          created_at?: string
+          delta_cars?: number
+          id?: string
+          new_target?: number
+          partner_id?: string
+          previous_target?: number
+          released_customer_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_changes_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_changes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           accepted_at: string
@@ -60,6 +111,8 @@ export type Database = {
           expected_start_time: string
           fulfilled_cars: number
           id: string
+          last_modified_at: string | null
+          modification_count: number
           partner_id: string
           rate_per_car: number
           scheduled_date: string
@@ -83,6 +136,8 @@ export type Database = {
           expected_start_time?: string
           fulfilled_cars?: number
           id?: string
+          last_modified_at?: string | null
+          modification_count?: number
           partner_id: string
           rate_per_car?: number
           scheduled_date?: string
@@ -106,6 +161,8 @@ export type Database = {
           expected_start_time?: string
           fulfilled_cars?: number
           id?: string
+          last_modified_at?: string | null
+          modification_count?: number
           partner_id?: string
           rate_per_car?: number
           scheduled_date?: string
@@ -841,6 +898,9 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_id: string
+          fraud_review: boolean
+          gps_distance_m: number | null
+          gps_flag: string | null
           id: string
           partner_id: string | null
           rate_per_car: number
@@ -865,6 +925,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id: string
+          fraud_review?: boolean
+          gps_distance_m?: number | null
+          gps_flag?: string | null
           id?: string
           partner_id?: string | null
           rate_per_car?: number
@@ -889,6 +952,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id?: string
+          fraud_review?: boolean
+          gps_distance_m?: number | null
+          gps_flag?: string | null
           id?: string
           partner_id?: string | null
           rate_per_car?: number
@@ -1119,9 +1185,78 @@ export type Database = {
           },
         ]
       }
+      wallet_ledger: {
+        Row: {
+          amount: number
+          assignment_id: string | null
+          balance_after: number | null
+          created_at: string
+          description: string | null
+          entry_type: string
+          id: string
+          partner_id: string
+          service_id: string | null
+        }
+        Insert: {
+          amount: number
+          assignment_id?: string | null
+          balance_after?: number | null
+          created_at?: string
+          description?: string | null
+          entry_type: string
+          id?: string
+          partner_id: string
+          service_id?: string | null
+        }
+        Update: {
+          amount?: number
+          assignment_id?: string | null
+          balance_after?: number | null
+          created_at?: string
+          description?: string | null
+          entry_type?: string
+          id?: string
+          partner_id?: string
+          service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_ledger_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      v_live_ops_today: {
+        Row: {
+          assigned_today: number | null
+          completed_today: number | null
+          dirty_today: number | null
+          fraud_flags_week: number | null
+          parking_today: number | null
+          pending_today: number | null
+          unavailable_today: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_assignment: { Args: { p_target_cars: number }; Returns: string }
@@ -1176,6 +1311,11 @@ export type Database = {
           vehicle_id: string
         }[]
       }
+      modify_assignment: {
+        Args: { p_assignment_id: string; p_delta: number }
+        Returns: Json
+      }
+      partner_reliability: { Args: { p_partner_id: string }; Returns: Json }
       preview_assignment: {
         Args: { p_cars: number; p_duration: number }
         Returns: {

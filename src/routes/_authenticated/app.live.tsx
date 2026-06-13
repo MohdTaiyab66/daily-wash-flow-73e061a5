@@ -12,6 +12,7 @@ import { initiateMaskedCall } from "@/lib/calling.functions";
 import { toast } from "sonner";
 import { useState } from "react";
 import { LiveMap } from "@/components/LiveMap";
+import { EndOfDayCard } from "@/components/EndOfDayCard";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -29,11 +30,14 @@ function RoutePage() {
         .order("sequence_no", { ascending: true });
       return data ?? [];
     },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 
   const total = services?.length ?? 0;
   const done = (services ?? []).filter((s) => s.status === "completed").length;
   const remaining = total - done;
+  const isEndOfDay = total > 0 && remaining === 0;
 
   const visible = (services ?? []).filter((s) => s.status !== "completed");
 
@@ -76,12 +80,14 @@ function RoutePage() {
       </div>
 
 
+      {isEndOfDay && <div className="mt-5"><EndOfDayCard /></div>}
+
       {/* Bottom panel — stop list */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Next stops</h2>
       <div className="mt-3 space-y-3 pb-6">
-        {visible.length === 0 && (
+        {visible.length === 0 && !isEndOfDay && (
           <Card className="p-6 text-center text-sm text-muted-foreground">
-            All done for today. Great work!
+            No stops scheduled today.
           </Card>
         )}
         {visible.map((s) => {

@@ -14,19 +14,27 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
+import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
+import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
+import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
+import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
+import { Route as AuthenticatedAppMyAssignmentRouteImport } from './routes/_authenticated/app.my-assignment'
 import { Route as AuthenticatedAppLiveRouteImport } from './routes/_authenticated/app.live'
 import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
@@ -58,6 +66,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminWalletRoute = AdminWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -66,6 +79,16 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRenewalsRoute = AdminRenewalsRouteImport.update({
+  id: '/renewals',
+  path: '/renewals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReliabilityRoute = AdminReliabilityRouteImport.update({
+  id: '/reliability',
+  path: '/reliability',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPhotosRoute = AdminPhotosRouteImport.update({
@@ -83,14 +106,34 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLiveRoute = AdminLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminImportRoute = AdminImportRouteImport.update({
   id: '/import',
   path: '/import',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFraudRoute = AdminFraudRouteImport.update({
+  id: '/fraud',
+  path: '/fraud',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
+  id: '/customer-map',
+  path: '/customer-map',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -124,6 +167,12 @@ const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppMyAssignmentRoute =
+  AuthenticatedAppMyAssignmentRouteImport.update({
+    id: '/my-assignment',
+    path: '/my-assignment',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppLiveRoute = AuthenticatedAppLiveRouteImport.update({
   id: '/live',
   path: '/live',
@@ -163,19 +212,27 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/live': typeof AdminLiveRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/reliability': typeof AdminReliabilityRoute
+  '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/wallet': typeof AdminWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/history': typeof AuthenticatedAppHistoryRoute
   '/app/live': typeof AuthenticatedAppLiveRoute
+  '/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
@@ -186,19 +243,27 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/live': typeof AdminLiveRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/reliability': typeof AdminReliabilityRoute
+  '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/wallet': typeof AdminWalletRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/app/history': typeof AuthenticatedAppHistoryRoute
   '/app/live': typeof AuthenticatedAppLiveRoute
+  '/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
@@ -213,19 +278,27 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/live': typeof AdminLiveRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/reliability': typeof AdminReliabilityRoute
+  '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/wallet': typeof AdminWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
   '/_authenticated/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
   '/_authenticated/app/history': typeof AuthenticatedAppHistoryRoute
   '/_authenticated/app/live': typeof AuthenticatedAppLiveRoute
+  '/_authenticated/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
@@ -240,19 +313,27 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/app'
+    | '/admin/attendance'
+    | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/fraud'
     | '/admin/import'
+    | '/admin/live'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/reliability'
+    | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/wallet'
     | '/admin/'
     | '/app/area'
     | '/app/assignments'
     | '/app/earnings'
     | '/app/history'
     | '/app/live'
+    | '/app/my-assignment'
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
@@ -263,19 +344,27 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin/attendance'
+    | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/fraud'
     | '/admin/import'
+    | '/admin/live'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/reliability'
+    | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/wallet'
     | '/admin'
     | '/app/area'
     | '/app/assignments'
     | '/app/earnings'
     | '/app/history'
     | '/app/live'
+    | '/app/my-assignment'
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
@@ -289,19 +378,27 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/_authenticated/app'
+    | '/admin/attendance'
+    | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/fraud'
     | '/admin/import'
+    | '/admin/live'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/reliability'
+    | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/wallet'
     | '/admin/'
     | '/_authenticated/app/area'
     | '/_authenticated/app/assignments'
     | '/_authenticated/app/earnings'
     | '/_authenticated/app/history'
     | '/_authenticated/app/live'
+    | '/_authenticated/app/my-assignment'
     | '/_authenticated/app/profile'
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
@@ -354,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/wallet': {
+      id: '/admin/wallet'
+      path: '/wallet'
+      fullPath: '/admin/wallet'
+      preLoaderRoute: typeof AdminWalletRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -366,6 +470,20 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/admin/services'
       preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/renewals': {
+      id: '/admin/renewals'
+      path: '/renewals'
+      fullPath: '/admin/renewals'
+      preLoaderRoute: typeof AdminRenewalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reliability': {
+      id: '/admin/reliability'
+      path: '/reliability'
+      fullPath: '/admin/reliability'
+      preLoaderRoute: typeof AdminReliabilityRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/photos': {
@@ -389,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPartnersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/live': {
+      id: '/admin/live'
+      path: '/live'
+      fullPath: '/admin/live'
+      preLoaderRoute: typeof AdminLiveRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/import': {
       id: '/admin/import'
       path: '/import'
@@ -396,11 +521,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/fraud': {
+      id: '/admin/fraud'
+      path: '/fraud'
+      fullPath: '/admin/fraud'
+      preLoaderRoute: typeof AdminFraudRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers': {
       id: '/admin/customers'
       path: '/customers'
       fullPath: '/admin/customers'
       preLoaderRoute: typeof AdminCustomersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customer-map': {
+      id: '/admin/customer-map'
+      path: '/customer-map'
+      fullPath: '/admin/customer-map'
+      preLoaderRoute: typeof AdminCustomerMapRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/attendance': {
+      id: '/admin/attendance'
+      path: '/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AdminAttendanceRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_authenticated/app': {
@@ -443,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/my-assignment': {
+      id: '/_authenticated/app/my-assignment'
+      path: '/my-assignment'
+      fullPath: '/app/my-assignment'
+      preLoaderRoute: typeof AuthenticatedAppMyAssignmentRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/live': {
@@ -496,6 +649,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEarningsRoute: typeof AuthenticatedAppEarningsRoute
   AuthenticatedAppHistoryRoute: typeof AuthenticatedAppHistoryRoute
   AuthenticatedAppLiveRoute: typeof AuthenticatedAppLiveRoute
+  AuthenticatedAppMyAssignmentRoute: typeof AuthenticatedAppMyAssignmentRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppRewardsRoute: typeof AuthenticatedAppRewardsRoute
   AuthenticatedAppTrainingRoute: typeof AuthenticatedAppTrainingRoute
@@ -509,6 +663,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEarningsRoute: AuthenticatedAppEarningsRoute,
   AuthenticatedAppHistoryRoute: AuthenticatedAppHistoryRoute,
   AuthenticatedAppLiveRoute: AuthenticatedAppLiveRoute,
+  AuthenticatedAppMyAssignmentRoute: AuthenticatedAppMyAssignmentRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppRewardsRoute: AuthenticatedAppRewardsRoute,
   AuthenticatedAppTrainingRoute: AuthenticatedAppTrainingRoute,
@@ -531,25 +686,39 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAttendanceRoute: typeof AdminAttendanceRoute
+  AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
+  AdminLiveRoute: typeof AdminLiveRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
+  AdminReliabilityRoute: typeof AdminReliabilityRoute
+  AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminServiceIdRoute: typeof AdminServiceIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAttendanceRoute: AdminAttendanceRoute,
+  AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRoute,
+  AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
+  AdminLiveRoute: AdminLiveRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,
+  AdminReliabilityRoute: AdminReliabilityRoute,
+  AdminRenewalsRoute: AdminRenewalsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminServiceIdRoute: AdminServiceIdRoute,
 }
@@ -565,13 +734,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

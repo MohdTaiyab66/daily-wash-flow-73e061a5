@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, MapPin, Timer, IndianRupee, Car, CheckCircle2, Calendar, Sun, Navigation } from "lucide-react";
+import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
@@ -24,14 +23,14 @@ function AssignmentsPage() {
   const [cars, setCars] = useState(20);
   const [duration, setDuration] = useState(15);
 
-  const { data: active } = useQuery({
+  const { data: active, isLoading: loadingActive } = useQuery({
     queryKey: ["active-assignment-builder"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("assignments")
-        .select("*")
+        .select("id")
         .eq("partner_id", u.user!.id)
         .eq("status", "active")
         .gte("end_date", today)
@@ -39,6 +38,11 @@ function AssignmentsPage() {
       return data;
     },
   });
+
+  // Accepted assignments live on the My Assignment page — redirect.
+  useEffect(() => {
+    if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
+  }, [active?.id, navigate]);
 
   const { data: preview, isFetching } = useQuery({
     queryKey: ["preview", cars, duration],
@@ -64,35 +68,10 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
 
-  if (active) {
-    return (
-      <div className="mx-auto max-w-md px-5 pt-5">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("your_assignment")}</h1>
-        <Card className="mt-5 border-0 bg-foreground p-5 text-background">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-background/60">{t("active")} · {active.area}</p>
-              <p className="mt-1 text-3xl font-semibold">{active.target_cars} {t("cars").toLowerCase()}</p>
-              <p className="mt-0.5 text-xs text-background/60">
-                {active.duration_days} {t("days")} · {active.working_days} · {t("starts")} {formatTime12(active.expected_start_time)}
-              </p>
-            </div>
-            <Badge className="border-0 bg-primary text-primary-foreground">{t("active")}</Badge>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-background/10 pt-4 text-xs">
-            <div><p className="text-background/60">{t("daily")}</p><p className="mt-0.5 text-base font-semibold">₹{active.target_cars * 17}</p></div>
-            <div><p className="text-background/60">{t("total")}</p><p className="mt-0.5 text-base font-semibold">₹{Number(active.total_earnings || 0)}</p></div>
-          </div>
-          <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("go_to_route")}</Link>
-          </Button>
-        </Card>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          {new Date(active.end_date).toLocaleDateString("en-IN")}
-        </p>
-      </div>
-    );
+  if (loadingActive || active) {
+    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
   }
+
 
   const dailyEarn = preview ? Number(preview.daily_earnings) : cars * 17;
   const totalEarn = preview ? Number(preview.total_earnings) : 0;
