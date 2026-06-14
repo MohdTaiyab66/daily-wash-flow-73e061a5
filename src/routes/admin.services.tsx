@@ -4,19 +4,28 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAdminServices } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/admin/services")({
   component: ServicesPage,
 });
 
 function ServicesPage() {
+  const [q, setQ] = useState("");
   const fn = useServerFn(listAdminServices);
-  const { data } = useQuery({ queryKey: ["admin-services"], queryFn: () => fn() });
+  const { data } = useQuery({ queryKey: ["admin-services", q], queryFn: () => fn({ data: { q } }) });
 
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">Services</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Upcoming & scheduled services</p>
+      <p className="mt-1 text-sm text-muted-foreground">Search by customer, phone, vehicle plate, or partner.</p>
+      <div className="mt-4 relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" className="pl-9" />
+      </div>
+
 
       <Card className="mt-6 overflow-hidden p-0">
         <div className="overflow-x-auto">

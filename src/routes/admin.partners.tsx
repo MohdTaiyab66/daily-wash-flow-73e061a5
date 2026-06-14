@@ -4,10 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAdminPartners } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EditPartnerDialog } from "@/components/EditPartnerDialog";
 
 export const Route = createFileRoute("/admin/partners")({
   component: PartnersPage,
 });
+
 
 function PartnersPage() {
   const fn = useServerFn(listAdminPartners);
@@ -30,7 +32,9 @@ function PartnersPage() {
                 <th className="px-4 py-3">Cars</th>
                 <th className="px-4 py-3">Rating</th>
                 <th className="px-4 py-3">Joined</th>
+                <th className="px-4 py-3 w-12"></th>
               </tr>
+
             </thead>
             <tbody>
               {data?.map((p) => (
@@ -50,11 +54,13 @@ function PartnersPage() {
                   <td className="px-4 py-3">{p.cars_selected}</td>
                   <td className="px-4 py-3">{Number(p.rating).toFixed(2)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.joined_on}</td>
+                  <td className="px-4 py-3"><EditPartnerDialog partner={p} /></td>
                 </tr>
               ))}
               {data?.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">No partners yet.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">No partners yet.</td></tr>
               )}
+
             </tbody>
           </table>
         </div>

@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExtendCustomerDialog } from "@/components/ExtendCustomerDialog";
-import { ArrowLeft, Car, Phone, MapPin, Calendar, Clock, User as UserIcon, AlertTriangle } from "lucide-react";
+import { MonthlyWashTracker } from "@/components/MonthlyWashTracker";
+import { ArrowLeft, Car, Phone, MapPin, Calendar, Clock, User as UserIcon, AlertTriangle, ParkingCircle, XCircle } from "lucide-react";
+
 
 export const Route = createFileRoute("/admin/customers/$id")({
   component: CustomerProfilePage,
@@ -71,6 +73,12 @@ function CustomerProfilePage() {
         </div>
       </Section>
 
+      <Section title="Monthly wash tracker">
+        <MonthlyWashTracker customer={c} />
+      </Section>
+
+
+
       <Section title={`Service photos (last 7 days · ${data.photos.length})`}>
         {data.photos.length === 0 ? (
           <p className="text-sm text-muted-foreground">No photos in the last 7 days.</p>
@@ -133,7 +141,59 @@ function CustomerProfilePage() {
         )}
       </Section>
 
+      <Section title={`Unavailable reports (${data.unavailable_reports?.length ?? 0})`}>
+        {!data.unavailable_reports?.length ? <p className="text-sm text-muted-foreground">None.</p> : (
+          <Card className="divide-y divide-border">
+            {data.unavailable_reports.map((r: any) => (
+              <div key={r.id} className="flex items-start justify-between p-3 text-sm">
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-destructive" />{r.unavailable_reason?.replace(/_/g, " ")}</p>
+                  {r.unavailable_notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.unavailable_notes}</p>}
+                  <p className="mt-0.5 text-xs text-muted-foreground">{r.partners?.full_name ?? "—"}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{r.scheduled_date}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+      </Section>
+
+      <Section title={`Dirty vehicle reports (${data.dirty_reports?.length ?? 0})`}>
+        {!data.dirty_reports?.length ? <p className="text-sm text-muted-foreground">None.</p> : (
+          <Card className="divide-y divide-border">
+            {data.dirty_reports.map((r: any) => (
+              <div key={r.id} className="flex items-start justify-between p-3 text-sm">
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" />{r.reason}</p>
+                  {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
+                  <p className="mt-0.5 text-xs text-muted-foreground">{(r.services as any)?.partners?.full_name ?? "—"}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{(r.services as any)?.scheduled_date}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+      </Section>
+
+      <Section title={`Parking issues (${data.parking_reports?.length ?? 0})`}>
+        {!data.parking_reports?.length ? <p className="text-sm text-muted-foreground">None.</p> : (
+          <Card className="divide-y divide-border">
+            {data.parking_reports.map((r: any) => (
+              <div key={r.id} className="flex items-start justify-between p-3 text-sm">
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><ParkingCircle className="h-3.5 w-3.5 text-destructive" />{r.reason}</p>
+                  {r.notes && <p className="mt-0.5 text-xs text-muted-foreground">{r.notes}</p>}
+                  <p className="mt-0.5 text-xs text-muted-foreground">{(r.services as any)?.partners?.full_name ?? "—"}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{(r.services as any)?.scheduled_date}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+      </Section>
+
       <Section title={`Extension history (${data.extensions.length})`}>
+
         {data.extensions.length === 0 ? (
           <p className="text-sm text-muted-foreground">No extensions yet.</p>
         ) : (

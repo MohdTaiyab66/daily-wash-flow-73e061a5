@@ -330,8 +330,12 @@ export type Database = {
           city: string
           created_at: string
           email: string | null
+          exterior_wash_done_date: string | null
+          exterior_wash_partner_id: string | null
           full_name: string
           id: string
+          interior_wash_done_date: string | null
+          interior_wash_partner_id: string | null
           is_active: boolean
           latitude: number | null
           longitude: number | null
@@ -349,8 +353,12 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          exterior_wash_done_date?: string | null
+          exterior_wash_partner_id?: string | null
           full_name: string
           id?: string
+          interior_wash_done_date?: string | null
+          interior_wash_partner_id?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
@@ -368,8 +376,12 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          exterior_wash_done_date?: string | null
+          exterior_wash_partner_id?: string | null
           full_name?: string
           id?: string
+          interior_wash_done_date?: string | null
+          interior_wash_partner_id?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
@@ -911,7 +923,10 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["service_status"]
           time_slot: string
+          unavailable_lat: number | null
+          unavailable_lng: number | null
           unavailable_notes: string | null
+          unavailable_photo: string | null
           unavailable_reason:
             | Database["public"]["Enums"]["unavailable_reason"]
             | null
@@ -938,7 +953,10 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          unavailable_lat?: number | null
+          unavailable_lng?: number | null
           unavailable_notes?: string | null
+          unavailable_photo?: string | null
           unavailable_reason?:
             | Database["public"]["Enums"]["unavailable_reason"]
             | null
@@ -965,7 +983,10 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          unavailable_lat?: number | null
+          unavailable_lng?: number | null
           unavailable_notes?: string | null
+          unavailable_photo?: string | null
           unavailable_reason?:
             | Database["public"]["Enums"]["unavailable_reason"]
             | null
@@ -1309,6 +1330,15 @@ export type Database = {
         Args: { p_customer_id: string; p_days: number; p_reason: string }
         Returns: Json
       }
+      admin_mark_monthly_wash: {
+        Args: {
+          p_customer_id: string
+          p_done_date: string
+          p_kind: string
+          p_partner_id: string
+        }
+        Returns: undefined
+      }
       cancel_assignment: {
         Args: { p_assignment_id: string }
         Returns: undefined
@@ -1379,6 +1409,17 @@ export type Database = {
       set_partner_area: {
         Args: { p_area: string; p_lat: number; p_lng: number }
         Returns: undefined
+      }
+      submit_service_unavailable: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_notes: string
+          p_photo: string
+          p_reason: string
+          p_service_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
