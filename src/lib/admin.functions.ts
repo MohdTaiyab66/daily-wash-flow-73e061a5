@@ -104,7 +104,7 @@ export const updatePartnerProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...patch } = data;
-    const { error } = await supabaseAdmin.from("partners").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await supabaseAdmin.from("partners").update({ ...patch, updated_at: new Date().toISOString() } as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
