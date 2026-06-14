@@ -284,11 +284,11 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     const { error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
-      p_notes: notes || null,
+      p_notes: notes || "",
       p_photo: photo,
-      p_lat: pos?.lat ?? null,
-      p_lng: pos?.lng ?? null,
-    });
+      p_lat: pos?.lat ?? 0,
+      p_lng: pos?.lng ?? 0,
+    } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Marked unavailable · ₹12 credited");
