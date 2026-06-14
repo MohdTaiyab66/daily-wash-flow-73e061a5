@@ -63,7 +63,7 @@ function AssignmentsPage() {
     onSuccess: () => {
       toast.success("Assignment accepted · route optimised");
       qc.invalidateQueries();
-      navigate({ to: "/app/live" });
+      navigate({ to: "/app/my-assignment" });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
