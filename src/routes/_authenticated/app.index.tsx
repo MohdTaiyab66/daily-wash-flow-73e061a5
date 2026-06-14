@@ -148,10 +148,10 @@ function HomePage() {
         <Stat icon={<Award className="h-4 w-4" />} label={t("level")} value={partner?.level ?? "Bronze"} />
       </div>
 
-      <div className="mt-6 flex items-center gap-2">
-        <Button asChild className="flex-1"><Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("todays_route")}</Link></Button>
-        <Button asChild variant="outline" className="flex-1"><Link to="/app/assignments"><Briefcase className="mr-2 h-4 w-4" />{t("assignments")}</Link></Button>
+      <div className="mt-6">
+        <Button asChild className="w-full"><Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("todays_route")}</Link></Button>
       </div>
+
       <div className="h-4" />
       <p className="mb-2 text-center text-[10px] text-muted-foreground"><Clock className="mr-1 inline h-3 w-3" />{t("locations_online_note")}</p>
     </div>
