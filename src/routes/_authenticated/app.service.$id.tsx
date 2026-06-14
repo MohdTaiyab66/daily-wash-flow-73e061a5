@@ -261,23 +261,37 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhoto = async (file: File) => {
+    setUploading(true);
+    const { data: u } = await supabase.auth.getUser();
+    const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+    setUploading(false);
+    if (error) { toast.error(error.message); return; }
+    setPhoto(path);
+  };
 
   const submit = async () => {
     if (!reason) { toast.error("Pick a reason"); return; }
+    if (!photo) { toast.error("Live photo is required"); return; }
     setSaving(true);
-    const { error } = await supabase
-      .from("services")
-      .update({
-        status: "unavailable",
-        unavailable_reason: reason as any,
-        unavailable_notes: notes || null,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", serviceId);
+    const pos = await getPosition();
+    const { error } = await supabase.rpc("submit_service_unavailable", {
+      p_service_id: serviceId,
+      p_reason: reason,
+      p_notes: notes || null,
+      p_photo: photo,
+      p_lat: pos?.lat ?? null,
+      p_lng: pos?.lng ?? null,
+    });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Marked unavailable");
+    toast.success("Marked unavailable · ₹12 credited");
     setOpen(false);
     onDone();
   };
@@ -289,7 +303,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
           <XCircle className="mr-2 h-4 w-4" /> Mark unavailable
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
@@ -299,16 +313,33 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
             </Label>
           ))}
         </RadioGroup>
+
+        <div className="mt-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live evidence photo (required)</p>
+          <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden"
+            onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
+          <button
+            onClick={() => inputRef.current?.click()}
+            className={`flex aspect-[3/1] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs ${
+              photo ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
+            }`}
+          >
+            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : photo ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+            {photo ? "Photo captured" : "Tap to capture (camera only)"}
+          </button>
+        </div>
+
         <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit
+          <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹12
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function DirtyVehicleDialog({ serviceId }: { serviceId: string }) {
   const [open, setOpen] = useState(false);

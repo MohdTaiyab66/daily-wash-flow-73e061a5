@@ -40,17 +40,90 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   return data ?? [];
 });
 
-export const listAdminServices = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const today = new Date().toISOString().slice(0, 10);
-  const { data } = await supabaseAdmin
-    .from("services")
-    .select("id,scheduled_date,status,time_slot,rate_per_car,customers(full_name,area),partners(full_name,partner_code)")
-    .gte("scheduled_date", today)
-    .order("scheduled_date")
-    .limit(200);
-  return data ?? [];
-});
+export const listAdminServices = createServerFn({ method: "GET" })
+  .inputValidator((d: { q?: string } | undefined) => d ?? {})
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const today = new Date().toISOString().slice(0, 10);
+    const q = (data?.q ?? "").trim();
+
+    if (!q) {
+      const { data: rows } = await supabaseAdmin
+        .from("services")
+        .select("id,scheduled_date,status,time_slot,rate_per_car,customers(full_name,area,phone),partners(full_name,partner_code),vehicles(registration_number)")
+        .gte("scheduled_date", today)
+        .order("scheduled_date")
+        .limit(200);
+      return rows ?? [];
+    }
+
+    // Search: customer name/phone, partner name, vehicle plate
+    const [byCust, byPlate, byPartner] = await Promise.all([
+      supabaseAdmin.from("customers").select("id").or(`full_name.ilike.%${q}%,phone.ilike.%${q}%`).limit(50),
+      supabaseAdmin.from("vehicles").select("id").ilike("registration_number", `%${q}%`).limit(50),
+      supabaseAdmin.from("partners").select("id").or(`full_name.ilike.%${q}%,partner_code.ilike.%${q}%,phone.ilike.%${q}%`).limit(50),
+    ]);
+    const custIds = (byCust.data ?? []).map((r: any) => r.id);
+    const vehIds = (byPlate.data ?? []).map((r: any) => r.id);
+    const partnerIds = (byPartner.data ?? []).map((r: any) => r.id);
+
+    let query = supabaseAdmin
+      .from("services")
+      .select("id,scheduled_date,status,time_slot,rate_per_car,customers(full_name,area,phone),partners(full_name,partner_code),vehicles(registration_number)")
+      .order("scheduled_date", { ascending: false })
+      .limit(200);
+
+    const ors: string[] = [];
+    if (custIds.length) ors.push(`customer_id.in.(${custIds.join(",")})`);
+    if (vehIds.length) ors.push(`vehicle_id.in.(${vehIds.join(",")})`);
+    if (partnerIds.length) ors.push(`partner_id.in.(${partnerIds.join(",")})`);
+    if (!ors.length) return [];
+    query = query.or(ors.join(","));
+    const { data: rows } = await query;
+    return rows ?? [];
+  });
+
+// Partner edit
+export const updatePartnerProfile = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    id: string;
+    full_name?: string;
+    phone?: string;
+    home_area?: string;
+    aadhaar_number?: string;
+    pan_number?: string;
+    bank_account_number?: string;
+    bank_ifsc?: string;
+    level?: string;
+    rating?: number;
+    status?: string;
+    aadhaar_verified?: boolean;
+    pan_verified?: boolean;
+    bank_verified?: boolean;
+  }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { id, ...patch } = data;
+    const { error } = await supabaseAdmin.from("partners").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Monthly wash
+export const markMonthlyWash = createServerFn({ method: "POST" })
+  .inputValidator((d: { customer_id: string; kind: "interior" | "exterior"; done_date: string; partner_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("admin_mark_monthly_wash", {
+      p_customer_id: data.customer_id,
+      p_kind: data.kind,
+      p_done_date: data.done_date,
+      p_partner_id: data.partner_id,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export const listSettings = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -272,6 +345,29 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
       );
     }
 
+    // Reports
+    const [dirty, parking, unavailable] = await Promise.all([
+      supabaseAdmin
+        .from("dirty_vehicle_reports")
+        .select("id,created_at,reason,notes,service_id,services!inner(customer_id,scheduled_date,partners(full_name))")
+        .eq("services.customer_id", data.customer_id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from("parking_reports")
+        .select("id,created_at,reason,notes,service_id,services!inner(customer_id,scheduled_date,partners(full_name))")
+        .eq("services.customer_id", data.customer_id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from("services")
+        .select("id,scheduled_date,unavailable_reason,unavailable_notes,partners(full_name)")
+        .eq("customer_id", data.customer_id)
+        .eq("status", "unavailable")
+        .order("scheduled_date", { ascending: false })
+        .limit(50),
+    ]);
+
     return {
       customer: cust.data,
       vehicles: vehicles.data ?? [],
@@ -285,6 +381,9 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
       complaints: complaints.data ?? [],
       extensions: extensions.data ?? [],
       photos: photoRows,
+      dirty_reports: dirty.data ?? [],
+      parking_reports: parking.data ?? [],
+      unavailable_reports: unavailable.data ?? [],
     };
   });
 
@@ -300,6 +399,7 @@ export const extendCustomerSubscription = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return result;
   });
+
 
 // =================== Renewals (advanced) ===================
 export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).handler(async () => {
