@@ -12,30 +12,8 @@ export const Route = createFileRoute("/_authenticated/app/area")({
   component: AreaPage,
 });
 
-// Listed Lucknow areas with approximate centroids
-const AREAS: { name: string; lat: number; lng: number }[] = [
-  { name: "Indira Nagar", lat: 26.8783, lng: 80.9989 },
-  { name: "Gomti Nagar", lat: 26.8467, lng: 81.0023 },
-  { name: "Gomti Nagar Extension", lat: 26.8889, lng: 81.0234 },
-  { name: "Aliganj", lat: 26.8956, lng: 80.9456 },
-  { name: "Jankipuram", lat: 26.9234, lng: 80.9189 },
-  { name: "Hazratganj", lat: 26.8489, lng: 80.945 },
-  { name: "Vikas Nagar", lat: 26.9012, lng: 80.9012 },
-  { name: "Ashiyana", lat: 26.7989, lng: 80.9089 },
-  { name: "Rajajipuram", lat: 26.8312, lng: 80.8723 },
-  { name: "Alambagh", lat: 26.8089, lng: 80.8889 },
-  { name: "Mahanagar", lat: 26.8856, lng: 80.9523 },
-];
+import { SERVICE_AREAS as AREAS, nearestServiceArea as nearestArea } from "@/lib/areas";
 
-function nearestArea(lat: number, lng: number) {
-  let best = AREAS[0];
-  let bestD = Infinity;
-  for (const a of AREAS) {
-    const d = Math.hypot(a.lat - lat, a.lng - lng);
-    if (d < bestD) { bestD = d; best = a; }
-  }
-  return best;
-}
 
 function AreaPage() {
   const navigate = useNavigate();

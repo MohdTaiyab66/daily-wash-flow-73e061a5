@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
+import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
+
 
 export const Route = createFileRoute("/admin/import")({
   component: ImportPage,
@@ -103,7 +105,26 @@ function ImportPage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Customer Name *"><Input value={form.full_name} onChange={setField("full_name")} /></Field>
             <Field label="Phone Number *"><Input value={form.phone} onChange={setField("phone")} placeholder="9876543210" /></Field>
-            <Field label="Area *" full><Input value={form.area} onChange={setField("area")} placeholder="Gomti Nagar" /></Field>
+            <Field label="Area *" full>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={form.area}
+                onChange={(e: any) => {
+                  const name = e.target.value;
+                  const a = SERVICE_AREAS.find((x) => x.name === name);
+                  setForm((f) => ({
+                    ...f,
+                    area: name,
+                    latitude: a ? String(a.lat) : f.latitude,
+                    longitude: a ? String(a.lng) : f.longitude,
+                  }));
+                }}
+              >
+                <option value="">— Select area —</option>
+                {SERVICE_AREA_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </Field>
+
             <Field label="Latitude"><Input value={form.latitude} onChange={setField("latitude")} placeholder="26.8467" /></Field>
             <Field label="Longitude"><Input value={form.longitude} onChange={setField("longitude")} placeholder="80.9462" /></Field>
           </div>
