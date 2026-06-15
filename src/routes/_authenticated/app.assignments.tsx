@@ -145,7 +145,7 @@ function AssignmentsPage() {
       {/* Sticky CTA */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
-          <Button size="lg" className="w-full" disabled={accept.isPending || (preview && availableCars === 0)} onClick={() => accept.mutate()}>
+          <Button size="lg" className="w-full" disabled={accept.isPending || Boolean(preview && availableCars === 0)} onClick={() => accept.mutate()}>
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
             {availableCars === 0 && preview ? "No customers available" : `${t("accept")} · ${availableCars || cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
           </Button>
