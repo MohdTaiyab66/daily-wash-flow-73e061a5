@@ -1,66 +1,51 @@
-# Urban Wash Trial Launch — Audit & Completion Plan
+# Urban Wash Trial Mode — Execution Plan
 
-This is a large scope (15 phases). To keep each step reviewable and avoid one giant unverifiable commit, I will ship in **4 batches**. After each batch you can test and tell me to continue.
-
----
-
-## Batch A — Data integrity & core fixes (Phases 2, 10, 14, parts of 1)
-
-**Goal:** verify the foundation is correct before adding image/realtime work.
-
-1. **Assignment acceptance audit (Phase 2)**
-   - Confirm `accept_assignment_v2` actually: creates `assignments` row, reserves `services` rows, scopes customers to `home_area` only (currently it sorts by area but doesn't strictly filter — will tighten to `WHERE c.area = v_home_area`).
-   - Confirm `/app/assignments` redirects to `/app/my-assignment` on success (already wired — will verify).
-   - Hide the Assignment Builder when `getMyAssignment` returns an active assignment (currently the builder route is always reachable — will redirect).
-2. **Duplicate Kalyanpur (Phase 10)** — dedupe area list (single source in `src/lib/areas.ts` or platform_settings) and update any seeded data.
-3. **Photo cleanup verification (Phase 14)** — confirm `cleanup_old_service_photos` cron is scheduled (only the function exists; will add `cron.schedule` if missing).
-4. **Quick audit log** — I'll list the state of every item in Phase 1 (login/OTP, area lock, earnings, referrals, rewards, training, Hindi, etc.) with ✅ / ⚠️ / ❌ so you can see what's actually built before I touch anything else.
+This is a large scope. I'll execute in **3 sequential batches**, finishing the Partner Panel completely before touching Admin. After each batch you confirm before I move on.
 
 ---
 
-## Batch B — Vehicle front image (Phase 3, 4, 5)
+## BATCH 1 — Partner Panel completion (no UI redesign)
 
-**Goal:** end-to-end vehicle photo from import → admin edit → partner views.
+**Database (single migration):**
+1. `vehicles.front_image_path TEXT` + create public `vehicle-images` storage bucket with RLS (public read, admin write).
+2. `customers.service_required_before TEXT` (values: `07:00`/`08:00`/`09:00`/`10:00`/`11:00`). Backfill from existing `preferred_time`.
+3. `platform_settings` keys: `route_visibility_until` (default `10:00`, allowed `10:00|11:00|12:00|13:00|all_day`), `trial_manual_assignment_enabled` (default `false`).
+4. New RPC `get_my_route(p_date)` returning pending + completed-today with vehicle image, service_required_before, completion_time, duration.
 
-1. **Schema:** add `vehicles.front_image_path text`; create public storage bucket `vehicle-images` with RLS (admin write, authenticated read).
-2. **Import (`/admin/import`):** add image upload column to CSV/manual flow + all the missing fields listed in Phase 4 (Interior/Exterior wash status, Extension Until, etc.).
-3. **Admin customer edit:** new `EditCustomerDialog` covering every field in Phase 5 — upload/replace/remove vehicle image.
-4. **Partner app display:** show vehicle image above customer/vehicle/color/plate on:
-   - `/app/my-assignment` (customer cards if shown)
-   - `/app/live` (today's route)
-   - `/app/service/$id`
+**Partner app changes:**
+- **My Assignment** (`app.my-assignment.tsx`): add Start Date, End Date, Completed Today, Remaining Today, Total Services, Expected Total Earnings, Available Payout, Progress %. Pull from extended `getMyAssignment`.
+- **Today's Route** (`app.live.tsx` / `app.index.tsx`): split into **Pending** and **Completed Today** sections. Completed card shows customer, vehicle, completion time, duration. Hide route after `route_visibility_until` unless `all_day`.
+- **Vehicle image**: render `vehicles.front_image_path` above customer/vehicle/color/plate in My Assignment list, Today's Route cards, and Service Details (`app.service.$id.tsx`).
+- **Service-required-before** badge replaces generic time slot on route + service detail.
+- **Partner map view** inside Today's Route: reuse `LiveMap` to show partner location + numbered customer pins + polyline route path.
 
----
-
-## Batch C — Admin ops surfaces (Phases 6, 7, 8, 11, 12)
-
-1. **Monthly wash tracker (Phase 6):** extend `MonthlyWashTracker` — date picker, partner picker, edit, remove (currently only "mark done"). Add `admin_unmark_monthly_wash` RPC.
-2. **Renewals dashboard (Phase 7):** rebuild `/admin/renewals` with the 4 filter tabs (today / 3d / 7d / month) and required columns.
-3. **Customer timeline (Phase 8):** expand profile timeline to show before/after photos, completion time, duration per service for last 7 days.
-4. **Route page "Completed Today" (Phase 11):** keep completed services visible in a collapsed section under active route on `/app/live`.
-5. **Admin Live Operations (Phase 12):** verify `/admin/live` shows all 7 metrics, add 15s auto-refresh.
+**Final partner-panel status report** (COMPLETED / PARTIAL / NOT IMPLEMENTED) for every Phase 1–15 item.
 
 ---
 
-## Batch D — Realtime + privacy + final bug pass (Phases 9, 13, 15)
+## BATCH 2 — Admin operational controls
 
-1. **Realtime (Phase 9):** enable Supabase Realtime on `customers`, `vehicles`, `services`, `assignments`; subscribe in partner app (`my-assignment`, `live`, `service/$id`) so admin edits reflect without refresh.
-2. **Masked calling (Phase 13):** audit current `calling.functions.ts`. If real masking provider isn't wired, keep the existing UI but ensure raw `customers.phone` is never returned to partner clients — strip it from `getMyAssignment`, route, and service detail payloads (server-side projection). Document that production masking needs a telephony provider (Exotel/Knowlarity) — secret + edge route.
-3. **Bug pass (Phase 15):** walk every flow listed, file fixes.
+1. **Manual Assignment** (`/admin/manual-assignment`): pick partner → multi-select customers → duration → submit. New RPC `admin_create_manual_assignment(...)` bypassing area filter, gated by `trial_manual_assignment_enabled`.
+2. **Trial Mode toggle** + **Route Visibility selector** in `/admin/settings`.
+3. **Customer editing** (`/admin/customers/$id`): full edit dialog covering every field listed (name, phone, area, lat/lng, vehicle, image upload, plate, color, parking, plan, service_required_before, start/extension/renewal dates, status, assigned partner). New RPC `admin_update_customer(...)`.
+4. **Customer import** (`/admin/import`): add vehicle image upload (mandatory), service_required_before dropdown, extension_until, renewal_date, status, assigned_partner.
+5. **Admin overview** (`/admin/index.tsx`): wrap each stat card in `<Link>` to its module.
+
+---
+
+## BATCH 3 — Admin map + realtime polish
+
+1. **Customer Map** (`/admin/customer-map`): plot all customers, color-coded (green active / orange renewal-due-7d / red inactive), popup with name, vehicle, plan, renewal, partner, status.
+2. **Realtime**: enable Realtime publication on `services`, `assignments`, `customers`; subscribe in My Assignment + Today's Route (component-scoped, cleanup on unmount).
+3. Final cross-module bug pass on all 12 modules from your section 12.
 
 ---
 
 ## Technical notes
-
-- **Area filtering fix** in `accept_assignment_v2`: change `ORDER BY CASE WHEN c.area = v_home_area THEN 0 ELSE 1 END` to a hard `AND c.area = v_home_area` filter (with a fallback message if <p_cars available in area).
-- **Realtime cost:** subscriptions will be component-scoped via `useEffect` + `removeChannel` cleanup to avoid the reconnection-loop billing trap.
-- **Phone privacy:** safest path is a SQL view `customers_partner_view` excluding `phone`, plus revoking `phone` column from any partner-facing RPC. Masked call stays as a server fn that takes `customer_id` (not number) and dials through the provider.
-- **Vehicle image storage:** public bucket so partner app can render `<img src>` without signed URLs (faster, no signing cost). Customer faces aren't in frame so no PII concern.
+- Manual assignment uses the existing `assignments` + `services` schema — no parallel system. The flag only relaxes the area filter and skips `min_assignment_days_new`.
+- Vehicle image bucket is public-read so partner app `<img src>` works without signed URLs; uploads gated by `has_role(..., 'admin')`.
+- Route visibility is enforced client-side (cheap, partner can't bypass anything meaningful — the assignment itself isn't hidden, only the route surface).
 
 ---
 
-## What I need from you
-
-Reply with **"start batch A"** (or pick a different starting batch) and I'll execute it end-to-end, then report back with the audit checklist and what's ready to test.
-
-If anything in the plan is wrong scope (e.g. you want masked calling done first, or you want all 15 phases jammed into one commit anyway), say so now.
+**Reply `go batch 1`** to start with Partner Panel, or tell me to reorder / drop items.

@@ -342,6 +342,7 @@ export type Database = {
           phone: string
           pincode: string | null
           preferred_time: string
+          service_required_before: string | null
           subscription_end: string
           subscription_plan: Database["public"]["Enums"]["subscription_plan"]
           subscription_start: string
@@ -365,6 +366,7 @@ export type Database = {
           phone: string
           pincode?: string | null
           preferred_time?: string
+          service_required_before?: string | null
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
@@ -388,6 +390,7 @@ export type Database = {
           phone?: string
           pincode?: string | null
           preferred_time?: string
+          service_required_before?: string | null
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
@@ -1211,6 +1214,7 @@ export type Database = {
           color: string | null
           created_at: string
           customer_id: string
+          front_image_path: string | null
           id: string
           make: string
           model: string
@@ -1221,6 +1225,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           customer_id: string
+          front_image_path?: string | null
           id?: string
           make: string
           model: string
@@ -1231,6 +1236,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           customer_id?: string
+          front_image_path?: string | null
           id?: string
           make?: string
           model?: string

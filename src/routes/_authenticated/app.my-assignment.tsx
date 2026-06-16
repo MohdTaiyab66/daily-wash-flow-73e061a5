@@ -5,7 +5,7 @@ import { getMyAssignment } from "@/lib/assignment.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigation, Wallet } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigation, Wallet, TrendingUp } from "lucide-react";
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 
 export const Route = createFileRoute("/_authenticated/app/my-assignment")({
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/app/my-assignment")({
 
 function MyAssignmentPage() {
   const fn = useServerFn(getMyAssignment);
-  const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn() });
+  const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
 
   if (data === undefined) return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
   if (data === null) {
@@ -31,7 +31,6 @@ function MyAssignmentPage() {
   }
 
   const a = data.assignment as any;
-  const progressPct = data.total_cars > 0 ? (data.completed_cars / data.total_cars) * 100 : 0;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
@@ -44,26 +43,37 @@ function MyAssignmentPage() {
             <p className="text-[10px] uppercase tracking-wider text-background/60">Active</p>
             <p className="mt-1 text-3xl font-semibold">{a.target_cars} cars/day</p>
             <p className="mt-0.5 text-xs text-background/60">
-              {a.duration_days} days · {a.working_days} working · ends {a.end_date}
+              {a.start_date} → {a.end_date} · {a.working_days} working days
             </p>
           </div>
           <Badge className="border-0 bg-primary text-primary-foreground">Active</Badge>
         </div>
         <div className="mt-4 h-1.5 rounded-full bg-background/15">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${data.progress_pct}%` }} />
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
-          <Mini label="Done" value={String(data.completed_cars)} />
-          <Mini label="Left" value={String(data.remaining_cars)} />
-          <Mini label="Total" value={String(data.total_cars)} />
+        <div className="mt-2 flex justify-between text-[10px] text-background/60">
+          <span>{data.progress_pct}% complete</span>
+          <span>{data.completed_cars}/{data.total_cars} services</span>
         </div>
       </Card>
 
+      {/* Today */}
+      <Card className="mt-4 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today</p>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <MiniLight label="Completed today" value={String(data.completed_today)} />
+          <MiniLight label="Remaining today" value={String(data.remaining_today)} />
+        </div>
+      </Card>
+
+      {/* Earnings */}
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <Tile icon={<IndianRupee className="h-3.5 w-3.5" />} label="Earned" value={`₹${data.earned.toLocaleString("en-IN")}`} />
+        <Tile icon={<TrendingUp className="h-3.5 w-3.5" />} label="Expected total" value={`₹${data.expected_total.toLocaleString("en-IN")}`} />
+        <Tile icon={<IndianRupee className="h-3.5 w-3.5" />} label="Earned so far" value={`₹${data.earned.toLocaleString("en-IN")}`} />
+        <Tile icon={<Wallet className="h-3.5 w-3.5" />} label="Available payout" value={`₹${data.available_payout.toLocaleString("en-IN")}`} />
         <Tile icon={<Wallet className="h-3.5 w-3.5" />} label="Held" value={`₹${data.held.toLocaleString("en-IN")}`} />
         <Tile icon={<Calendar className="h-3.5 w-3.5" />} label="Next payout" value={data.next_payout_date} />
-        <Tile icon={<Clock className="h-3.5 w-3.5" />} label="Day progress" value={`${data.day_progress}/${a.duration_days}`} />
+        <Tile icon={<Clock className="h-3.5 w-3.5" />} label="Total services" value={String(data.total_cars)} />
       </div>
 
       <Card className="mt-4 p-4">
@@ -91,14 +101,15 @@ function MyAssignmentPage() {
   );
 }
 
-function Mini({ label, value }: { label: string; value: string }) {
+function MiniLight({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-background/60">{label}</p>
-      <p className="mt-0.5 text-base font-semibold">{value}</p>
+    <div className="rounded-lg bg-muted p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
     </div>
   );
 }
+
 function Tile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <Card className="p-3">
