@@ -1332,9 +1332,31 @@ export type Database = {
         Args: { p_cars: number; p_duration: number }
         Returns: string
       }
+      admin_create_manual_assignment: {
+        Args: {
+          p_customer_ids: string[]
+          p_duration: number
+          p_partner_id: string
+        }
+        Returns: string
+      }
       admin_extend_customer: {
         Args: { p_customer_id: string; p_days: number; p_reason: string }
         Returns: Json
+      }
+      admin_list_unassigned_customers: {
+        Args: { p_area?: string }
+        Returns: {
+          area: string
+          full_name: string
+          id: string
+          phone: string
+          preferred_time: string
+          registration_number: string
+          subscription_end: string
+          vehicle_make: string
+          vehicle_model: string
+        }[]
       }
       admin_mark_monthly_wash: {
         Args: {
@@ -1344,6 +1366,33 @@ export type Database = {
           p_partner_id: string
         }
         Returns: undefined
+      }
+      admin_update_customer: {
+        Args: {
+          p_address_line: string
+          p_area: string
+          p_full_name: string
+          p_id: string
+          p_is_active: boolean
+          p_latitude: number
+          p_longitude: number
+          p_phone: string
+          p_pincode: string
+          p_preferred_time: string
+          p_service_required_before: string
+          p_subscription_end: string
+          p_subscription_plan: string
+          p_subscription_start: string
+        }
+        Returns: undefined
+      }
+      available_customers_by_area: {
+        Args: never
+        Returns: {
+          area: string
+          available: number
+          total_active: number
+        }[]
       }
       cancel_assignment: {
         Args: { p_assignment_id: string }
