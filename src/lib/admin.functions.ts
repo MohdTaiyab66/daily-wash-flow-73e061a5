@@ -5,7 +5,7 @@ export const adminCreateManualAssignment = createServerFn({ method: "POST" })
   .inputValidator((d: { partner_id: string; customer_ids: string[]; duration_days: number }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: result, error } = await supabaseAdmin.rpc("admin_create_manual_assignment", {
+    const { data: result, error } = await (supabaseAdmin.rpc as any)("admin_create_manual_assignment", {
       p_partner_id: data.partner_id,
       p_customer_ids: data.customer_ids,
       p_duration: data.duration_days,
@@ -18,18 +18,18 @@ export const adminListUnassignedCustomers = createServerFn({ method: "GET" })
   .inputValidator((d: { area?: string } | undefined) => d ?? {})
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc("admin_list_unassigned_customers", {
+    const { data: rows, error } = await (supabaseAdmin.rpc as any)("admin_list_unassigned_customers", {
       p_area: data?.area || null,
     });
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []) as Array<{ id: string; full_name: string; area: string; phone: string; subscription_end: string; preferred_time: string; vehicle_make: string; vehicle_model: string; registration_number: string }>;
   });
 
 export const getAvailableCustomersByArea = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("available_customers_by_area");
+  const { data, error } = await (supabaseAdmin.rpc as any)("available_customers_by_area");
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []) as Array<{ area: string; available: number; total_active: number }>;
 });
 
 export const adminUpdateCustomer = createServerFn({ method: "POST" })
@@ -51,7 +51,7 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.rpc("admin_update_customer", {
+    const { error } = await (supabaseAdmin.rpc as any)("admin_update_customer", {
       p_id: data.id,
       p_full_name: data.full_name ?? null,
       p_phone: data.phone ?? null,
