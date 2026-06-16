@@ -1,5 +1,77 @@
 import { createServerFn } from "@tanstack/react-start";
 
+// =================== Manual Assignment (trial mode) ===================
+export const adminCreateManualAssignment = createServerFn({ method: "POST" })
+  .inputValidator((d: { partner_id: string; customer_ids: string[]; duration_days: number }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc("admin_create_manual_assignment", {
+      p_partner_id: data.partner_id,
+      p_customer_ids: data.customer_ids,
+      p_duration: data.duration_days,
+    });
+    if (error) throw new Error(error.message);
+    return { assignment_id: result };
+  });
+
+export const adminListUnassignedCustomers = createServerFn({ method: "GET" })
+  .inputValidator((d: { area?: string } | undefined) => d ?? {})
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("admin_list_unassigned_customers", {
+      p_area: data?.area || null,
+    });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const getAvailableCustomersByArea = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("available_customers_by_area");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
+
+export const adminUpdateCustomer = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    id: string;
+    full_name?: string;
+    phone?: string;
+    area?: string;
+    address_line?: string;
+    pincode?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    subscription_plan?: string;
+    subscription_start?: string;
+    subscription_end?: string;
+    preferred_time?: string;
+    service_required_before?: string | null;
+    is_active?: boolean;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("admin_update_customer", {
+      p_id: data.id,
+      p_full_name: data.full_name ?? null,
+      p_phone: data.phone ?? null,
+      p_area: data.area ?? null,
+      p_address_line: data.address_line ?? null,
+      p_pincode: data.pincode ?? null,
+      p_latitude: data.latitude ?? null,
+      p_longitude: data.longitude ?? null,
+      p_subscription_plan: data.subscription_plan ?? null,
+      p_subscription_start: data.subscription_start ?? null,
+      p_subscription_end: data.subscription_end ?? null,
+      p_preferred_time: data.preferred_time ?? null,
+      p_service_required_before: data.service_required_before ?? null,
+      p_is_active: data.is_active ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [partners, customers, services, completed, today] = await Promise.all([
