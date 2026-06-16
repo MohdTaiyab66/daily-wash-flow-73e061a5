@@ -15,7 +15,8 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
-import { requiredBefore } from "@/lib/format";
+import { formatTime12 } from "@/lib/format";
+import { VehicleImage } from "@/components/VehicleImage";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
@@ -129,26 +130,29 @@ function ServiceDetail() {
         <ArrowLeft className="h-4 w-4" /> Back to route
       </button>
 
-      <Card className="mt-4 p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="font-semibold">{c?.full_name}</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
+      <Card className="mt-4 overflow-hidden p-0">
+        <VehicleImage path={v?.front_image_path} className="h-40 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <div className="p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-semibold">{c?.full_name}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
+            </div>
+            <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
           </div>
-          <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
-        </div>
-        <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-          <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
-          <p className="text-xs font-medium text-foreground">Required before {requiredBefore(c?.preferred_time)}</p>
-        </div>
-        {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
+          <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
+            <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
+          </div>
+          {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" size="sm">
-            <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a>
-          </Button>
-          <MaskedCallButton serviceId={id} />
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button asChild variant="outline" size="sm">
+              <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a>
+            </Button>
+            <MaskedCallButton serviceId={id} />
+          </div>
         </div>
       </Card>
 
