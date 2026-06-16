@@ -22,6 +22,7 @@ import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
@@ -105,6 +106,11 @@ const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminManualAssignmentRoute = AdminManualAssignmentRouteImport.update({
+  id: '/manual-assignment',
+  path: '/manual-assignment',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLiveRoute = AdminLiveRouteImport.update({
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
+  '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
+  '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
+  '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
+    | '/admin/manual-assignment'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
+    | '/admin/manual-assignment'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
+    | '/admin/manual-assignment'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -517,6 +529,13 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/admin/partners'
       preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/manual-assignment': {
+      id: '/admin/manual-assignment'
+      path: '/manual-assignment'
+      fullPath: '/admin/manual-assignment'
+      preLoaderRoute: typeof AdminManualAssignmentRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/live': {
@@ -723,6 +742,7 @@ interface AdminRouteChildren {
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
+  AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
@@ -742,6 +762,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
+  AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExtendCustomerDialog } from "@/components/ExtendCustomerDialog";
+import { EditCustomerDialog } from "@/components/EditCustomerDialog";
 import { MonthlyWashTracker } from "@/components/MonthlyWashTracker";
 import { ArrowLeft, Car, Phone, MapPin, Calendar, Clock, User as UserIcon, AlertTriangle, ParkingCircle, XCircle } from "lucide-react";
 
@@ -44,7 +45,10 @@ function CustomerProfilePage() {
             <Badge variant={statusColor as any}>{status}</Badge>
           </div>
         </div>
-        <ExtendCustomerDialog customerId={c.id} currentEnd={data.renewal_date} />
+        <div className="flex items-center gap-2">
+          <EditCustomerDialog customer={c} />
+          <ExtendCustomerDialog customerId={c.id} currentEnd={data.renewal_date} />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
