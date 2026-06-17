@@ -70,13 +70,18 @@ function SettingsPage() {
               <select className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm" value={values[s.key] ?? "all_day"} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))}>
                 {['10:00','11:00','12:00','13:00','all_day'].map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
+            ) : BOOL_KEYS.has(s.key) ? (
+              <select className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm" value={values[s.key] ?? "true"} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))}>
+                <option value="true">ON</option>
+                <option value="false">OFF</option>
+              </select>
             ) : (
               <Input type="number" className="w-32" value={values[s.key] ?? ""} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))} />
             )}
             <Button
               size="sm"
               disabled={mut.isPending || String(s.value) === values[s.key]}
-              onClick={() => mut.mutate({ key: s.key, value: s.key === "route_visibility_until" ? values[s.key] : Number(values[s.key]) })}
+              onClick={() => mut.mutate({ key: s.key, value: s.key === "route_visibility_until" || BOOL_KEYS.has(s.key) ? values[s.key] : Number(values[s.key]) })}
             >
               Save
             </Button>
