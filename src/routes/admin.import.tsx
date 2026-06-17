@@ -18,6 +18,7 @@ export const Route = createFileRoute("/admin/import")({
 });
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
+const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
 const TIMES = [
   "06:00 - 09:00",
   "06:30 - 09:00",
@@ -26,8 +27,8 @@ const TIMES = [
   "09:00 - 11:00",
 ];
 
-type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string; front_image_path: string };
-const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "", front_image_path: "" });
+type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string; front_image_path: string; package_amount: string };
+const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "", front_image_path: "", package_amount: "" });
 
 function ImportPage() {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ function ImportPage() {
           subscription_end: form.extended_until || form.subscription_end,
           preferred_time: form.preferred_time,
           is_active: form.is_active,
-          vehicles: vehicles.filter((v) => v.make && v.model),
+          vehicles: vehicles.filter((v) => v.make && v.model).map((v) => ({ ...v, package_amount: v.package_amount ? Number(v.package_amount) : undefined })),
           assigned_partner_id: form.assigned_partner_id || null,
         },
       }),
@@ -191,6 +192,12 @@ function ImportPage() {
               <Field label={i === 0 ? "Make *" : "Make"}><Input value={v.make} onChange={setVehicle(i, "make")} placeholder="Maruti" /></Field>
               <Field label={i === 0 ? "Model *" : "Model"}><Input value={v.model} onChange={setVehicle(i, "model")} placeholder="Swift" /></Field>
               <Field label="Plate Number (optional)" full><Input value={v.registration_number} onChange={setVehicle(i, "registration_number")} placeholder="UP 32 AB 1234" /></Field>
+              <Field label="Package">
+                <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={v.package_amount} onChange={setVehicle(i, "package_amount")}>
+                  <option value="">— Select package —</option>
+                  {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
+                </select>
+              </Field>
               <Field label="Vehicle Color"><Input value={v.color} onChange={setVehicle(i, "color")} /></Field>
               <Field label="Parking Notes" full><Textarea value={v.parking_notes} onChange={setVehicle(i, "parking_notes")} /></Field>
               <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
