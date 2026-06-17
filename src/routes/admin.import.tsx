@@ -60,6 +60,16 @@ function ImportPage() {
   const setVehicle = (idx: number, k: keyof VehicleForm) => (e: any) =>
     setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, [k]: e.target ? e.target.value : e } : v)));
 
+  const uploadVehicleImage = async (idx: number, file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `admin-import/${Date.now()}-${idx}.${ext}`;
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await supabase.storage.from("vehicle-images").upload(path, file, { upsert: true, contentType: file.type });
+    if (error) return toast.error(error.message);
+    setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, front_image_path: path } : v)));
+    toast.success("Vehicle photo uploaded");
+  };
+
   const mut = useMutation({
     mutationFn: () =>
       create({
@@ -87,7 +97,7 @@ function ImportPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.full_name || !form.phone || !form.area || !vehicles[0].make || !vehicles[0].model) {
+    if (!form.full_name || !form.phone || !form.area || !vehicles[0].make || !vehicles[0].model || !vehicles[0].front_image_path) {
       toast.error("Please fill required fields");
       return;
     }
