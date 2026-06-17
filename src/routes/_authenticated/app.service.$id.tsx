@@ -274,7 +274,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     setUploading(true);
     const { data: u } = await supabase.auth.getUser();
     const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
     setUploading(false);
     if (error) { toast.error(error.message); return; }
     setPhoto(path);
@@ -285,7 +285,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     if (!photo) { toast.error("Live photo is required"); return; }
     setSaving(true);
     const pos = await getPosition();
-    const { error } = await supabase.rpc("submit_service_unavailable", {
+    const { data, error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
       p_notes: notes || "",
@@ -295,7 +295,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Marked unavailable · ₹12 credited");
+    toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
     setOpen(false);
     onDone();
   };
@@ -355,7 +355,7 @@ function DirtyVehicleDialog({ serviceId }: { serviceId: string }) {
   const upload = async (angle: string, file: File) => {
     const { data: u } = await supabase.auth.getUser();
     const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
     if (error) { toast.error(error.message); return; }
     setPhotos((p) => ({ ...p, [angle]: path }));
   };
@@ -415,7 +415,7 @@ function ParkingIssueDialog({ serviceId }: { serviceId: string }) {
   const upload = async (file: File) => {
     const { data: u } = await supabase.auth.getUser();
     const path = `${u.user!.id}/${serviceId}/parking-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
     if (error) return toast.error(error.message);
     setPhoto(path);
   };
