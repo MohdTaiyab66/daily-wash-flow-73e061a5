@@ -8,9 +8,10 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
+    { to: "/admin/trial-readiness", label: "Trial Readiness", icon: ClipboardList },
     { to: "/admin/manual-assignment", label: "Manual Assign", icon: UserCheck },
     { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },
     { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },

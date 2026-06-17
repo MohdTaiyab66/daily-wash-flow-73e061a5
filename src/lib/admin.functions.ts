@@ -71,6 +71,15 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const createVehicleImageUploadUrl = createServerFn({ method: "POST" })
+  .inputValidator((d: { path: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage.from("vehicle-images").createSignedUploadUrl(data.path);
+    if (error) throw new Error(error.message);
+    return signed;
+  });
+
 
 export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -287,6 +296,7 @@ type VehicleInput = {
   registration_number?: string;
   color?: string;
   parking_notes?: string;
+  front_image_path?: string;
 };
 
 export const createCustomerImport = createServerFn({ method: "POST" })
@@ -341,6 +351,7 @@ export const createCustomerImport = createServerFn({ method: "POST" })
         registration_number: v.registration_number || `PENDING-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
         color: v.color || null,
         parking_notes: v.parking_notes || null,
+        front_image_path: v.front_image_path || null,
       }));
     const { error: e2 } = await supabaseAdmin.from("vehicles").insert(vehRows);
     if (e2) throw e2;

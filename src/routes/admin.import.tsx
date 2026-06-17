@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { createCustomerImport, listAdminPartnersBrief } from "@/lib/admin.functions";
+import { createCustomerImport, createVehicleImageUploadUrl, listAdminPartnersBrief } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus } from "lucide-react";
+import { Camera, Check, Loader2, UserPlus } from "lucide-react";
 import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
 
 
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin/import")({
   component: ImportPage,
 });
 
-const PLANS = ["daily_shine_monthly", "weekly_plan", "premium_monthly"];
+const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const TIMES = [
   "06:00 - 09:00",
   "06:30 - 09:00",
@@ -26,14 +26,15 @@ const TIMES = [
   "09:00 - 11:00",
 ];
 
-type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string };
-const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "" });
+type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string; front_image_path: string };
+const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "", front_image_path: "" });
 
 function ImportPage() {
   const navigate = useNavigate();
   const listPartners = useServerFn(listAdminPartnersBrief);
   const { data: partners } = useQuery({ queryKey: ["partners-brief"], queryFn: () => listPartners() });
   const create = useServerFn(createCustomerImport);
+  const createUploadUrl = useServerFn(createVehicleImageUploadUrl);
 
   const today = new Date().toISOString().slice(0, 10);
   const inThirty = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -59,6 +60,17 @@ function ImportPage() {
 
   const setVehicle = (idx: number, k: keyof VehicleForm) => (e: any) =>
     setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, [k]: e.target ? e.target.value : e } : v)));
+
+  const uploadVehicleImage = async (idx: number, file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `admin-import/${Date.now()}-${idx}.${ext}`;
+    const { supabase } = await import("@/integrations/supabase/client");
+    const signed = await createUploadUrl({ data: { path } });
+    const { error } = await supabase.storage.from("vehicle-images").uploadToSignedUrl(path, signed.token, file, { contentType: file.type });
+    if (error) return toast.error(error.message);
+    setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, front_image_path: path } : v)));
+    toast.success("Vehicle photo uploaded");
+  };
 
   const mut = useMutation({
     mutationFn: () =>
@@ -87,7 +99,7 @@ function ImportPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.full_name || !form.phone || !form.area || !vehicles[0].make || !vehicles[0].model) {
+    if (!form.full_name || !form.phone || !form.area || !vehicles[0].make || !vehicles[0].model || !vehicles[0].front_image_path) {
       toast.error("Please fill required fields");
       return;
     }
@@ -181,6 +193,13 @@ function ImportPage() {
               <Field label="Plate Number (optional)" full><Input value={v.registration_number} onChange={setVehicle(i, "registration_number")} placeholder="UP 32 AB 1234" /></Field>
               <Field label="Vehicle Color"><Input value={v.color} onChange={setVehicle(i, "color")} /></Field>
               <Field label="Parking Notes" full><Textarea value={v.parking_notes} onChange={setVehicle(i, "parking_notes")} /></Field>
+              <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
+                <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVehicleImage(i, e.target.files[0])} />
+                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                  {v.front_image_path ? "Photo uploaded" : "Upload car photo"}
+                </label>
+              </Field>
             </div>
           </Card>
         ))}

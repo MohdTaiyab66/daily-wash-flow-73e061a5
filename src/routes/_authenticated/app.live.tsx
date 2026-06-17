@@ -14,12 +14,14 @@ import { useState } from "react";
 import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
 });
 
 function RoutePage() {
+  useRealtimeInvalidation(["services", "assignments", "customers", "vehicles"], [["route-today"], ["active-assignment-summary"], ["today-services-mini"]]);
   const { data: services } = useQuery({
     queryKey: ["route-today"],
     queryFn: async () => {

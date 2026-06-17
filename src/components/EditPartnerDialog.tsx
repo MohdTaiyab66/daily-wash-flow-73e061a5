@@ -68,7 +68,7 @@ export function EditPartnerDialog({ partner }: { partner: any }) {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="offline">Offline</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
                 <SelectItem value="pending_verification">Pending verification</SelectItem>
               </SelectContent>
