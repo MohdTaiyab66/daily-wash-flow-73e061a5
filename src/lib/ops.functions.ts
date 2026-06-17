@@ -123,7 +123,7 @@ export const listCustomersForMap = createServerFn({ method: "GET" }).handler(asy
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,area,address_line,latitude,longitude,subscription_end,is_active")
+    .select("id,full_name,phone,area,address_line,latitude,longitude,subscription_plan,subscription_end,is_active,vehicles(make,model,registration_number),services(scheduled_date,partners(full_name,partner_code))")
     .not("latitude", "is", null)
     .not("longitude", "is", null);
   const today = new Date().toISOString().slice(0, 10);
@@ -133,8 +133,33 @@ export const listCustomersForMap = createServerFn({ method: "GET" }).handler(asy
     let bucket: "active" | "renewal_due" | "inactive" = "active";
     if (!c.is_active || (c.subscription_end && c.subscription_end < today)) bucket = "inactive";
     else if (c.subscription_end && c.subscription_end <= in7s) bucket = "renewal_due";
-    return { ...c, bucket };
+    const assigned = (c.services ?? []).find((s: any) => s.partners) ?? null;
+    return { ...c, bucket, assigned_partner: assigned?.partners ?? null };
   });
+});
+
+export const getTrialReadinessReport = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const today = new Date().toISOString().slice(0, 10);
+  const [activeCustomers, assignedCustomers, activePartners, servicesToday, pendingToday, completedToday] = await Promise.all([
+    supabaseAdmin.from("customers").select("*", { count: "exact", head: true }).eq("is_active", true),
+    supabaseAdmin.from("services").select("customer_id", { count: "exact", head: true }).not("partner_id", "is", null).gte("scheduled_date", today),
+    supabaseAdmin.from("partners").select("*", { count: "exact", head: true }).in("status", ["active", "pending_verification"]),
+    supabaseAdmin.from("services").select("*", { count: "exact", head: true }).eq("scheduled_date", today),
+    supabaseAdmin.from("services").select("*", { count: "exact", head: true }).eq("scheduled_date", today).in("status", ["pending", "in_progress"]),
+    supabaseAdmin.from("services").select("*", { count: "exact", head: true }).eq("scheduled_date", today).eq("status", "completed"),
+  ]);
+  const { data: byArea } = await (supabaseAdmin.rpc as any)("available_customers_by_area");
+  const availableCustomers = (byArea ?? []).reduce((sum: number, r: any) => sum + Number(r.available ?? 0), 0);
+  return {
+    activeCustomers: activeCustomers.count ?? 0,
+    assignedCustomers: assignedCustomers.count ?? 0,
+    availableCustomers,
+    activePartners: activePartners.count ?? 0,
+    servicesToday: servicesToday.count ?? 0,
+    pendingServices: pendingToday.count ?? 0,
+    completedServices: completedToday.count ?? 0,
+  };
 });
 
 // ============== Wallet Ledger (admin) ==============
