@@ -10,7 +10,7 @@ import { Loader2, Pencil } from "lucide-react";
 import { adminUpdateCustomer } from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 
-const PLANS = ["daily_shine_monthly", "weekly_plan", "premium_monthly"];
+const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const TIMES = ["06:00 - 09:00", "06:30 - 09:00", "07:00 - 09:00", "08:30 - 10:30", "09:00 - 11:00"];
 const REQUIRED_BEFORE = ["07:00", "08:00", "09:00", "10:00", "11:00"];
 
