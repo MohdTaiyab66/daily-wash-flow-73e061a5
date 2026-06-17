@@ -138,6 +138,7 @@ function ServiceDetail() {
               <p className="font-semibold">{c?.full_name}</p>
               <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
+              <p className="mt-0.5 text-xs font-medium">Package: {v?.package_amount ? `₹${v.package_amount}` : "—"}</p>
             </div>
             <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
           </div>
