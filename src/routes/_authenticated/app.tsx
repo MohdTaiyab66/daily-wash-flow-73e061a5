@@ -1,5 +1,8 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
-import { Home, Briefcase, Wallet, Gift, User } from "lucide-react";
+import { Home, Briefcase, Wallet, Gift, User, Bell } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { useI18n } from "@/lib/i18n";
 
@@ -19,6 +22,35 @@ function AppLayout() {
 
 function TopBar() {
   const { lang, setLang } = useI18n();
+  const qc = useQueryClient();
+  const { data: unread = 0 } = useQuery({
+    queryKey: ["partner-notifications-unread"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return 0;
+      const { count } = await supabase
+        .from("partner_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("partner_id", u.user.id)
+        .is("read_at", null);
+      return count ?? 0;
+    },
+    refetchInterval: 60000,
+  });
+  useEffect(() => {
+    let channel: any;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      channel = supabase
+        .channel("topbar-notif")
+        .on("postgres_changes", { event: "*", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
+          () => qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] }))
+        .subscribe();
+    })();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, [qc]);
+
   return (
     <div className="mx-auto flex max-w-md items-center gap-2 px-5 pt-4">
       <img src={logo} alt="Urban Wash" className="h-9 w-9 rounded-lg object-cover" />
@@ -26,19 +58,25 @@ function TopBar() {
         <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Urban Wash</p>
         <p className="text-sm font-semibold">Partner</p>
       </div>
-      <div className="ml-auto inline-flex overflow-hidden rounded-full border border-border text-[11px] font-medium">
-        <button
-          onClick={() => setLang("en")}
-          className={`px-2.5 py-1 ${lang === "en" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
-        >
-          EN
-        </button>
-        <button
-          onClick={() => setLang("hi")}
-          className={`px-2.5 py-1 ${lang === "hi" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
-        >
-          हिं
-        </button>
+      <div className="ml-auto flex items-center gap-2">
+        <Link to="/app/notifications" className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-border">
+          <Bell className="h-4 w-4" />
+          {unread > 0 && (
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
+        </Link>
+        <div className="inline-flex overflow-hidden rounded-full border border-border text-[11px] font-medium">
+          <button
+            onClick={() => setLang("en")}
+            className={`px-2.5 py-1 ${lang === "en" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
+          >EN</button>
+          <button
+            onClick={() => setLang("hi")}
+            className={`px-2.5 py-1 ${lang === "hi" ? "bg-foreground text-background" : "bg-card text-muted-foreground"}`}
+          >हिं</button>
+        </div>
       </div>
     </div>
   );

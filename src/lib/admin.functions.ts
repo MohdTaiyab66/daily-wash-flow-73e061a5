@@ -259,9 +259,15 @@ export const updateSetting = createServerFn({ method: "POST" })
   .inputValidator((d: { key: string; value: number | string | boolean }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let v: any = data.value;
+    if (typeof v === "string") {
+      if (v === "true") v = true;
+      else if (v === "false") v = false;
+      else if (v !== "" && !isNaN(Number(v))) v = Number(v);
+    }
     const { error } = await supabaseAdmin
       .from("platform_settings")
-      .update({ value: data.value, updated_at: new Date().toISOString() })
+      .update({ value: v, updated_at: new Date().toISOString() })
       .eq("key", data.key);
     if (error) throw error;
     return { ok: true };

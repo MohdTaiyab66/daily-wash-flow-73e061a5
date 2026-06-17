@@ -38,6 +38,7 @@ import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
+import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
 import { Route as AuthenticatedAppMyAssignmentRouteImport } from './routes/_authenticated/app.my-assignment'
 import { Route as AuthenticatedAppLiveRouteImport } from './routes/_authenticated/app.live'
 import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
@@ -192,6 +193,12 @@ const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppNotificationsRoute =
+  AuthenticatedAppNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMyAssignmentRoute =
   AuthenticatedAppMyAssignmentRouteImport.update({
     id: '/my-assignment',
@@ -260,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/app/history': typeof AuthenticatedAppHistoryRoute
   '/app/live': typeof AuthenticatedAppLiveRoute
   '/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
+  '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
@@ -295,6 +303,7 @@ export interface FileRoutesByTo {
   '/app/history': typeof AuthenticatedAppHistoryRoute
   '/app/live': typeof AuthenticatedAppLiveRoute
   '/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
+  '/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
@@ -334,6 +343,7 @@ export interface FileRoutesById {
   '/_authenticated/app/history': typeof AuthenticatedAppHistoryRoute
   '/_authenticated/app/live': typeof AuthenticatedAppLiveRoute
   '/_authenticated/app/my-assignment': typeof AuthenticatedAppMyAssignmentRoute
+  '/_authenticated/app/notifications': typeof AuthenticatedAppNotificationsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/app/history'
     | '/app/live'
     | '/app/my-assignment'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/app/history'
     | '/app/live'
     | '/app/my-assignment'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/history'
     | '/_authenticated/app/live'
     | '/_authenticated/app/my-assignment'
+    | '/_authenticated/app/notifications'
     | '/_authenticated/app/profile'
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
@@ -668,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/notifications': {
+      id: '/_authenticated/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AuthenticatedAppNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/my-assignment': {
       id: '/_authenticated/app/my-assignment'
       path: '/my-assignment'
@@ -727,6 +747,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppHistoryRoute: typeof AuthenticatedAppHistoryRoute
   AuthenticatedAppLiveRoute: typeof AuthenticatedAppLiveRoute
   AuthenticatedAppMyAssignmentRoute: typeof AuthenticatedAppMyAssignmentRoute
+  AuthenticatedAppNotificationsRoute: typeof AuthenticatedAppNotificationsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppRewardsRoute: typeof AuthenticatedAppRewardsRoute
   AuthenticatedAppTrainingRoute: typeof AuthenticatedAppTrainingRoute
@@ -741,6 +762,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppHistoryRoute: AuthenticatedAppHistoryRoute,
   AuthenticatedAppLiveRoute: AuthenticatedAppLiveRoute,
   AuthenticatedAppMyAssignmentRoute: AuthenticatedAppMyAssignmentRoute,
+  AuthenticatedAppNotificationsRoute: AuthenticatedAppNotificationsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppRewardsRoute: AuthenticatedAppRewardsRoute,
   AuthenticatedAppTrainingRoute: AuthenticatedAppTrainingRoute,
