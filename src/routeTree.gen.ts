@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
+import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
@@ -71,6 +72,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminWalletRoute = AdminWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrialReadinessRoute = AdminTrialReadinessRouteImport.update({
+  id: '/trial-readiness',
+  path: '/trial-readiness',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByTo {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
@@ -308,6 +316,7 @@ export interface FileRoutesById {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/admin/'
     | '/app/area'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/admin'
     | '/app/area'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/admin/'
     | '/_authenticated/app/area'
@@ -480,6 +492,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/admin/wallet'
       preLoaderRoute: typeof AdminWalletRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/trial-readiness': {
+      id: '/admin/trial-readiness'
+      path: '/trial-readiness'
+      fullPath: '/admin/trial-readiness'
+      preLoaderRoute: typeof AdminTrialReadinessRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/settings': {
@@ -750,6 +769,7 @@ interface AdminRouteChildren {
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminServiceIdRoute: typeof AdminServiceIdRoute
@@ -770,6 +790,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminTrialReadinessRoute: AdminTrialReadinessRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminServiceIdRoute: AdminServiceIdRoute,
