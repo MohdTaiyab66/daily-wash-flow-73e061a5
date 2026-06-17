@@ -84,7 +84,7 @@ function NotificationsPage() {
                 {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
                 <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
                   <span>{new Date(n.created_at).toLocaleString("en-IN")}</span>
-                  {n.link && <Link to={n.link} className="font-medium text-primary">Open →</Link>}
+                  {n.link && <Link to={n.link as any} className="font-medium text-primary">Open →</Link>}
                 </div>
               </div>
             </div>
