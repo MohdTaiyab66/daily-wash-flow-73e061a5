@@ -28,16 +28,17 @@ function CustomerProfilePage() {
     queryFn: () => fn({ data: { customer_id: id } }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: () => deleteFn({ data: { id: (data?.customer as any)?.id } }),
+    onSuccess: () => { toast.success("Customer deleted"); qc.invalidateQueries({ queryKey: ["admin-customers"] }); navigate({ to: "/admin/customers" }); },
+    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
+  });
+
   if (isLoading) return <div className="text-sm text-muted-foreground">Loading…</div>;
   if (!data) return <div className="text-sm text-muted-foreground">Not found.</div>;
 
   const c = data.customer as any;
   const primaryVehicle = data.vehicles?.[0] as any;
-  const deleteMut = useMutation({
-    mutationFn: () => deleteFn({ data: { id: c.id } }),
-    onSuccess: () => { toast.success("Customer deleted"); qc.invalidateQueries({ queryKey: ["admin-customers"] }); navigate({ to: "/admin/customers" }); },
-    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
-  });
   const status = data.days_remaining == null ? "—" : data.days_remaining < 0 ? "Expired" : data.days_remaining <= 7 ? "Due soon" : "Active";
   const statusColor = status === "Expired" ? "destructive" : status === "Due soon" ? "secondary" : "default";
 
