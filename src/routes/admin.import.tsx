@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { createCustomerImport, listAdminPartnersBrief } from "@/lib/admin.functions";
+import { createCustomerImport, createVehicleImageUploadUrl, listAdminPartnersBrief } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ function ImportPage() {
   const listPartners = useServerFn(listAdminPartnersBrief);
   const { data: partners } = useQuery({ queryKey: ["partners-brief"], queryFn: () => listPartners() });
   const create = useServerFn(createCustomerImport);
+  const createUploadUrl = useServerFn(createVehicleImageUploadUrl);
 
   const today = new Date().toISOString().slice(0, 10);
   const inThirty = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -64,7 +65,8 @@ function ImportPage() {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `admin-import/${Date.now()}-${idx}.${ext}`;
     const { supabase } = await import("@/integrations/supabase/client");
-    const { error } = await supabase.storage.from("vehicle-images").upload(path, file, { upsert: true, contentType: file.type });
+    const signed = await createUploadUrl({ data: { path } });
+    const { error } = await supabase.storage.from("vehicle-images").uploadToSignedUrl(path, signed.token, file, { contentType: file.type });
     if (error) return toast.error(error.message);
     setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, front_image_path: path } : v)));
     toast.success("Vehicle photo uploaded");
