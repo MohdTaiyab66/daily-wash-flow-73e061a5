@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigation, Wallet, TrendingUp } from "lucide-react";
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/my-assignment")({
   component: MyAssignmentPage,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/app/my-assignment")({
 
 function MyAssignmentPage() {
   const fn = useServerFn(getMyAssignment);
+  useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"]]);
   const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
 
   if (data === undefined) return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
