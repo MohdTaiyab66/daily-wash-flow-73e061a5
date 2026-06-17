@@ -33,6 +33,7 @@ import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
+import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
@@ -164,6 +165,12 @@ const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
   path: '/service/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPartnerAssignmentIdRoute =
+  AdminPartnerAssignmentIdRouteImport.update({
+    id: '/partner-assignment/$id',
+    path: '/partner-assignment/$id',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -291,6 +299,7 @@ export interface FileRoutesByTo {
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -329,6 +338,7 @@ export interface FileRoutesById {
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/app/rewards'
     | '/app/training'
     | '/admin/customers/$id'
+    | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/app/'
     | '/app/service/$id'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/app/rewards'
     | '/app/training'
     | '/admin/customers/$id'
+    | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/app'
     | '/app/service/$id'
@@ -438,6 +450,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
     | '/admin/customers/$id'
+    | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
@@ -620,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServiceIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/partner-assignment/$id': {
+      id: '/admin/partner-assignment/$id'
+      path: '/partner-assignment/$id'
+      fullPath: '/admin/partner-assignment/$id'
+      preLoaderRoute: typeof AdminPartnerAssignmentIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers/$id': {
       id: '/admin/customers/$id'
       path: '/$id'
@@ -772,6 +792,7 @@ interface AdminRouteChildren {
   AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminPartnerAssignmentIdRoute: typeof AdminPartnerAssignmentIdRoute
   AdminServiceIdRoute: typeof AdminServiceIdRoute
 }
 
@@ -793,6 +814,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTrialReadinessRoute: AdminTrialReadinessRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminPartnerAssignmentIdRoute: AdminPartnerAssignmentIdRoute,
   AdminServiceIdRoute: AdminServiceIdRoute,
 }
 
