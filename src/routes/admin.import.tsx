@@ -191,6 +191,13 @@ function ImportPage() {
               <Field label="Plate Number (optional)" full><Input value={v.registration_number} onChange={setVehicle(i, "registration_number")} placeholder="UP 32 AB 1234" /></Field>
               <Field label="Vehicle Color"><Input value={v.color} onChange={setVehicle(i, "color")} /></Field>
               <Field label="Parking Notes" full><Textarea value={v.parking_notes} onChange={setVehicle(i, "parking_notes")} /></Field>
+              <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
+                <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVehicleImage(i, e.target.files[0])} />
+                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                  {v.front_image_path ? "Photo uploaded" : "Upload car photo"}
+                </label>
+              </Field>
             </div>
           </Card>
         ))}
