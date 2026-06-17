@@ -71,6 +71,15 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const createVehicleImageUploadUrl = createServerFn({ method: "POST" })
+  .inputValidator((d: { path: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage.from("vehicle-images").createSignedUploadUrl(data.path);
+    if (error) throw new Error(error.message);
+    return signed;
+  });
+
 
 export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
