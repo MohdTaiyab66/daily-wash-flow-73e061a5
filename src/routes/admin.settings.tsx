@@ -26,7 +26,9 @@ const LABELS: Record<string, string> = {
   referral_partner_reward: "Partner referral reward (₹)",
   referral_customer_reward: "Customer referral reward (₹)",
   route_visibility_until: "Route visibility time",
+  auto_notify_partners_on_new_customer: "Auto-notify partners when new customers added",
 };
+const BOOL_KEYS = new Set(["auto_notify_partners_on_new_customer"]);
 
 function SettingsPage() {
   const listFn = useServerFn(listSettings);
