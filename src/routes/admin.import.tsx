@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus } from "lucide-react";
+import { Camera, Check, Loader2, UserPlus } from "lucide-react";
 import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
 
 
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin/import")({
   component: ImportPage,
 });
 
-const PLANS = ["daily_shine_monthly", "weekly_plan", "premium_monthly"];
+const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const TIMES = [
   "06:00 - 09:00",
   "06:30 - 09:00",
@@ -26,8 +26,8 @@ const TIMES = [
   "09:00 - 11:00",
 ];
 
-type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string };
-const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "" });
+type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string; front_image_path: string };
+const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "", front_image_path: "" });
 
 function ImportPage() {
   const navigate = useNavigate();
