@@ -544,6 +544,50 @@ export type Database = {
           },
         ]
       }
+      partner_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          partner_id: string
+          read_at: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          partner_id: string
+          read_at?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          partner_id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_notifications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_referrals: {
         Row: {
           created_at: string
@@ -620,6 +664,7 @@ export type Database = {
           joined_on: string
           level: string
           lifetime_earnings: number
+          notify_when_customers_added: boolean
           pan_number: string | null
           pan_verified: boolean
           partner_code: string
@@ -660,6 +705,7 @@ export type Database = {
           joined_on?: string
           level?: string
           lifetime_earnings?: number
+          notify_when_customers_added?: boolean
           pan_number?: string | null
           pan_verified?: boolean
           partner_code?: string
@@ -700,6 +746,7 @@ export type Database = {
           joined_on?: string
           level?: string
           lifetime_earnings?: number
+          notify_when_customers_added?: boolean
           pan_number?: string | null
           pan_verified?: boolean
           partner_code?: string
