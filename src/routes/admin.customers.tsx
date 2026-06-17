@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAdminCustomers } from "@/lib/admin.functions";
@@ -12,9 +12,12 @@ export const Route = createFileRoute("/admin/customers")({
 });
 
 function CustomersPage() {
+  const { pathname } = useLocation();
   const fn = useServerFn(listAdminCustomers);
   const { data } = useQuery({ queryKey: ["admin-customers"], queryFn: () => fn() });
   const [q, setQ] = useState("");
+
+  if (pathname !== "/admin/customers") return <Outlet />;
 
   const today = new Date().toISOString().slice(0, 10);
   const rows = useMemo(() => {
