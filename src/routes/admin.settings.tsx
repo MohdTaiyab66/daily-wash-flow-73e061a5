@@ -17,12 +17,15 @@ const LABELS: Record<string, string> = {
   unavailable_compensation: "Unavailable day compensation (₹)",
   hold_amount_days: "Hold amount duration (days)",
   area_lock_days: "Area lock duration (days)",
+  min_cars_required: "Minimum cars required",
+  max_cars_allowed: "Maximum cars allowed",
   min_assignment_days: "Minimum assignment days",
   min_assignment_days_new: "Minimum days (new partner)",
   max_assignment_days: "Maximum assignment days",
   cancel_penalty: "Cancellation penalty (₹)",
   referral_partner_reward: "Partner referral reward (₹)",
   referral_customer_reward: "Customer referral reward (₹)",
+  route_visibility_until: "Route visibility time",
 };
 
 function SettingsPage() {
@@ -41,7 +44,7 @@ function SettingsPage() {
   }, [data]);
 
   const mut = useMutation({
-    mutationFn: (v: { key: string; value: number }) => updateFn({ data: v }),
+    mutationFn: (v: { key: string; value: number | string }) => updateFn({ data: v }),
     onSuccess: () => {
       toast.success("Setting updated");
       qc.invalidateQueries({ queryKey: ["platform-settings"] });
@@ -61,16 +64,17 @@ function SettingsPage() {
               <p className="text-sm font-medium">{LABELS[s.key] ?? s.key}</p>
               <p className="text-xs text-muted-foreground">{s.description ?? s.key}</p>
             </div>
-            <Input
-              type="number"
-              className="w-32"
-              value={values[s.key] ?? ""}
-              onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))}
-            />
+            {s.key === "route_visibility_until" ? (
+              <select className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm" value={values[s.key] ?? "all_day"} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))}>
+                {['10:00','11:00','12:00','13:00','all_day'].map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            ) : (
+              <Input type="number" className="w-32" value={values[s.key] ?? ""} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))} />
+            )}
             <Button
               size="sm"
               disabled={mut.isPending || String(s.value) === values[s.key]}
-              onClick={() => mut.mutate({ key: s.key, value: Number(values[s.key]) })}
+              onClick={() => mut.mutate({ key: s.key, value: s.key === "route_visibility_until" ? values[s.key] : Number(values[s.key]) })}
             >
               Save
             </Button>

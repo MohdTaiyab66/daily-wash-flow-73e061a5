@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Pencil } from "lucide-react";
-import { adminUpdateCustomer } from "@/lib/admin.functions";
+import { adminUpdateCustomer, createVehicleImageUploadUrl } from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
@@ -19,6 +19,8 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const fn = useServerFn(adminUpdateCustomer);
+  const createUploadUrl = useServerFn(createVehicleImageUploadUrl);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [f, setF] = useState({
     full_name: customer.full_name ?? "",
@@ -35,6 +37,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     service_required_before: customer.service_required_before ?? "",
     is_active: customer.is_active ?? true,
     package_amount: customer.package_amount?.toString() ?? "",
+    front_image_path: customer.front_image_path ?? "",
   });
 
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
@@ -56,6 +59,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
       service_required_before: f.service_required_before || null,
       is_active: f.is_active,
       package_amount: f.package_amount ? Number(f.package_amount) : null,
+      front_image_path: f.front_image_path || null,
     }}),
     onSuccess: () => {
       toast.success("Customer updated");
@@ -65,6 +69,24 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     },
     onError: (e: any) => toast.error(e?.message ?? "Update failed"),
   });
+
+  const uploadVehicleImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `admin-edit/${customer.id}-${Date.now()}.${ext}`;
+      const { supabase } = await import("@/integrations/supabase/client");
+      const signed = await createUploadUrl({ data: { path } });
+      const { error } = await supabase.storage.from("vehicle-images").uploadToSignedUrl(path, signed.token, file, { contentType: file.type });
+      if (error) throw error;
+      setF((p) => ({ ...p, front_image_path: path }));
+      toast.success("Vehicle photo uploaded");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Photo upload failed");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -95,6 +117,12 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
               <option value="">—</option>
               {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
             </select>
+          </Field>
+          <Field label="Vehicle front image" full>
+            <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVehicleImage(e.target.files[0])} />
+              {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? "Photo uploaded" : "Upload car front photo"}
+            </label>
           </Field>
           <Field label="Status">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.is_active ? "1" : "0"} onChange={(e: any) => setF((p) => ({ ...p, is_active: e.target.value === "1" }))}>

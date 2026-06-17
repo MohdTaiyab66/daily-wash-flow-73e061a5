@@ -49,6 +49,7 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
     service_required_before?: string | null;
     is_active?: boolean;
     package_amount?: number | null;
+    front_image_path?: string | null;
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -68,7 +69,19 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
       p_service_required_before: data.service_required_before ?? null,
       p_is_active: data.is_active ?? null,
       p_package_amount: data.package_amount ?? null,
+      p_front_image_path: data.front_image_path ?? null,
     });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteCustomer = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("services").delete().eq("customer_id", data.id).in("status", ["pending", "in_progress"]);
+    await supabaseAdmin.from("vehicles").delete().eq("customer_id", data.id);
+    const { error } = await supabaseAdmin.from("customers").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -107,7 +120,7 @@ export const listAdminPartners = createServerFn({ method: "GET" }).handler(async
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("partners")
-    .select("id,partner_code,full_name,phone,city,status,availability,cars_selected,rating,total_cars_completed,joined_on")
+    .select("id,partner_code,full_name,phone,city,status,availability,cars_selected,rating,total_cars_completed,joined_on,home_area,aadhaar_number,pan_number,bank_account_number,bank_ifsc,level,aadhaar_verified,pan_verified,bank_verified,lifetime_earnings")
     .order("joined_on", { ascending: false })
     .limit(100);
   return data ?? [];
@@ -183,11 +196,39 @@ export const updatePartnerProfile = createServerFn({ method: "POST" })
     aadhaar_verified?: boolean;
     pan_verified?: boolean;
     bank_verified?: boolean;
+    lifetime_earnings?: number;
   }) => d)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { id, ...patch } = data;
-    const { error } = await supabaseAdmin.from("partners").update({ ...patch, updated_at: new Date().toISOString() } as any).eq("id", id);
+    const { error } = await (supabaseAdmin.rpc as any)("admin_update_partner", {
+      p_id: data.id,
+      p_full_name: data.full_name ?? null,
+      p_phone: data.phone ?? null,
+      p_home_area: data.home_area ?? null,
+      p_aadhaar_number: data.aadhaar_number ?? null,
+      p_pan_number: data.pan_number ?? null,
+      p_bank_account_number: data.bank_account_number ?? null,
+      p_bank_ifsc: data.bank_ifsc ?? null,
+      p_level: data.level ?? null,
+      p_rating: data.rating ?? null,
+      p_status: data.status ?? null,
+      p_aadhaar_verified: data.aadhaar_verified ?? null,
+      p_pan_verified: data.pan_verified ?? null,
+      p_bank_verified: data.bank_verified ?? null,
+      p_lifetime_earnings: data.lifetime_earnings ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminCancelAssignment = createServerFn({ method: "POST" })
+  .inputValidator((d: { assignment_id: string; note?: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin.rpc as any)("admin_cancel_assignment", {
+      p_assignment_id: data.assignment_id,
+      p_note: data.note ?? null,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -215,7 +256,7 @@ export const listSettings = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const updateSetting = createServerFn({ method: "POST" })
-  .inputValidator((d: { key: string; value: number }) => d)
+  .inputValidator((d: { key: string; value: number | string | boolean }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
@@ -285,7 +326,7 @@ export const getAdminServiceDetail = createServerFn({ method: "GET" })
       (parking.data ?? []).map(async (r: any) => ({ ...r, photo_url: await sign(r.photo_path) })),
     );
     return {
-      service: svc.data,
+      service: svc.data ? { ...svc.data, unavailable_photo_url: await sign((svc.data as any).unavailable_photo) } : null,
       photos: photoRows,
       dirty: dirtyRows,
       parking: parkingRows,
