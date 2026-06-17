@@ -19,6 +19,7 @@ function AreaPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
+  const [detectedCoords, setDetectedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -44,6 +45,7 @@ function AreaPage() {
       (pos) => {
         const a = nearestArea(pos.coords.latitude, pos.coords.longitude);
         setSelected(a.name);
+        setDetectedCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLocating(false);
         toast.success(`Detected: ${a.name}`);
       },
@@ -59,8 +61,9 @@ function AreaPage() {
       return;
     }
     const area = AREAS.find((a) => a.name === pick)!;
+    const coords = selected === pick && detectedCoords ? detectedCoords : { lat: area.lat, lng: area.lng };
     setSaving(true);
-    const { error } = await supabase.rpc("set_partner_area", { p_area: area.name, p_lat: area.lat, p_lng: area.lng });
+    const { error } = await supabase.rpc("set_partner_area", { p_area: area.name, p_lat: coords.lat, p_lng: coords.lng });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Work area saved");
