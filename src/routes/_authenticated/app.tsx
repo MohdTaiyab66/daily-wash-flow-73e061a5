@@ -1,5 +1,8 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
-import { Home, Briefcase, Wallet, Gift, User } from "lucide-react";
+import { Home, Briefcase, Wallet, Gift, User, Bell } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { useI18n } from "@/lib/i18n";
 
