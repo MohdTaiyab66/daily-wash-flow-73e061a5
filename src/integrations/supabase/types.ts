@@ -1335,6 +1335,10 @@ export type Database = {
         Args: { p_cars: number; p_duration: number }
         Returns: string
       }
+      admin_cancel_assignment: {
+        Args: { p_assignment_id: string; p_note?: string }
+        Returns: undefined
+      }
       admin_create_manual_assignment: {
         Args: {
           p_customer_ids: string[]
@@ -1370,23 +1374,65 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_update_customer: {
+      admin_update_customer:
+        | {
+            Args: {
+              p_address_line: string
+              p_area: string
+              p_full_name: string
+              p_id: string
+              p_is_active: boolean
+              p_latitude: number
+              p_longitude: number
+              p_package_amount?: number
+              p_phone: string
+              p_pincode: string
+              p_preferred_time: string
+              p_service_required_before: string
+              p_subscription_end: string
+              p_subscription_plan: string
+              p_subscription_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_address_line: string
+              p_area: string
+              p_front_image_path?: string
+              p_full_name: string
+              p_id: string
+              p_is_active: boolean
+              p_latitude: number
+              p_longitude: number
+              p_package_amount?: number
+              p_phone: string
+              p_pincode: string
+              p_preferred_time: string
+              p_service_required_before: string
+              p_subscription_end: string
+              p_subscription_plan: string
+              p_subscription_start: string
+            }
+            Returns: undefined
+          }
+      admin_update_partner: {
         Args: {
-          p_address_line: string
-          p_area: string
-          p_full_name: string
+          p_aadhaar_number?: string
+          p_aadhaar_verified?: boolean
+          p_bank_account_number?: string
+          p_bank_ifsc?: string
+          p_bank_verified?: boolean
+          p_full_name?: string
+          p_home_area?: string
           p_id: string
-          p_is_active: boolean
-          p_latitude: number
-          p_longitude: number
-          p_package_amount?: number
-          p_phone: string
-          p_pincode: string
-          p_preferred_time: string
-          p_service_required_before: string
-          p_subscription_end: string
-          p_subscription_plan: string
-          p_subscription_start: string
+          p_level?: string
+          p_lifetime_earnings?: number
+          p_pan_number?: string
+          p_pan_verified?: boolean
+          p_phone?: string
+          p_rating?: number
+          p_status?: string
         }
         Returns: undefined
       }

@@ -97,6 +97,15 @@ export const modifyAssignment = createServerFn({ method: "POST" })
     return result;
   });
 
+export const cancelMyAssignment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { assignment_id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ============== Wallet Ledger (partner self-view) ==============
 export const getMyLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

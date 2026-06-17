@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyAssignment } from "@/lib/assignment.functions";
+import { cancelMyAssignment, getMyAssignment } from "@/lib/assignment.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigation, Wallet, TrendingUp } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigation, Wallet, TrendingUp, XCircle, Loader2 } from "lucide-react";
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/my-assignment")({
   component: MyAssignmentPage,
@@ -15,8 +16,15 @@ export const Route = createFileRoute("/_authenticated/app/my-assignment")({
 
 function MyAssignmentPage() {
   const fn = useServerFn(getMyAssignment);
+  const cancelFn = useServerFn(cancelMyAssignment);
+  const qc = useQueryClient();
   useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"]]);
   const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
+  const cancelMut = useMutation({
+    mutationFn: (assignmentId: string) => cancelFn({ data: { assignment_id: assignmentId } }),
+    onSuccess: () => { toast.success("Assignment cancelled"); qc.invalidateQueries(); },
+    onError: (e: any) => toast.error(e?.message ?? "Cancel failed"),
+  });
 
   if (data === undefined) return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
   if (data === null) {
@@ -99,6 +107,10 @@ function MyAssignmentPage() {
         <Button asChild variant="outline"><Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Today's route</Link></Button>
         <Button asChild variant="outline"><Link to="/app/earnings"><Wallet className="mr-2 h-4 w-4" />Wallet</Link></Button>
       </div>
+      <Button className="mt-3 w-full" variant="outline" disabled={cancelMut.isPending} onClick={() => confirm("Cancel this assignment and release pending customers?") && cancelMut.mutate(a.id)}>
+        {cancelMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+        Cancel assignment
+      </Button>
     </div>
   );
 }

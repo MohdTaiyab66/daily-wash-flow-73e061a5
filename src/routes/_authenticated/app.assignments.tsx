@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
@@ -22,6 +23,26 @@ function AssignmentsPage() {
 
   const [cars, setCars] = useState(20);
   const [duration, setDuration] = useState(15);
+  useRealtimeInvalidation(["platform_settings"], [["assignment-settings"], ["preview", cars, duration]]);
+
+  const { data: settings } = useQuery({
+    queryKey: ["assignment-settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("platform_settings").select("key,value").in("key", ["min_cars_required", "max_cars_allowed", "rate_per_car"]);
+      const m: Record<string, number> = {};
+      (data ?? []).forEach((s: any) => (m[s.key] = Number(s.value)));
+      return { minCars: Math.max(1, m.min_cars_required ?? 1), maxCars: m.max_cars_allowed ?? 30, rate: m.rate_per_car ?? 17 };
+    },
+  });
+
+  const minCars = settings?.minCars ?? 1;
+  const maxCars = settings?.maxCars ?? 30;
+  const rate = settings?.rate ?? 17;
+
+  useEffect(() => {
+    if (cars < minCars) setCars(minCars);
+    if (cars > maxCars) setCars(maxCars);
+  }, [cars, minCars, maxCars]);
 
   const { data: active, isLoading: loadingActive } = useQuery({
     queryKey: ["active-assignment-builder"],
@@ -73,7 +94,7 @@ function AssignmentsPage() {
   }
 
 
-  const dailyEarn = preview ? Number(preview.daily_earnings) : cars * 17;
+  const dailyEarn = preview ? Number(preview.daily_earnings) : cars * rate;
   const totalEarn = preview ? Number(preview.total_earnings) : 0;
   const availableCars = preview ? Number(preview.cars ?? 0) : 0;
   const availableInArea = preview ? Number((preview as any).available_customers ?? availableCars) : 0;
@@ -82,7 +103,7 @@ function AssignmentsPage() {
   const radius = preview ? Number(preview.estimated_radius_km) : 0;
   const hours = preview ? Number(preview.estimated_hours) : 0;
   const startTime = preview?.expected_start_time ?? "07:00";
-  const canAccept = Boolean(preview) && availableInArea >= cars && availableCars >= cars;
+  const canAccept = Boolean(preview) && availableCars > 0 && availableCars >= minCars;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
@@ -95,8 +116,8 @@ function AssignmentsPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("cars_per_day")}</p>
           <p className="text-3xl font-semibold tracking-tight">{cars}</p>
         </div>
-        <Slider value={[cars]} min={15} max={30} step={1} onValueChange={(v) => setCars(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>15</span><span>30</span></div>
+        <Slider value={[cars]} min={minCars} max={maxCars} step={1} onValueChange={(v) => setCars(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minCars}</span><span>{maxCars}</span></div>
       </Card>
 
       {/* Duration slider */}
@@ -138,7 +159,7 @@ function AssignmentsPage() {
         <ul className="mt-3 space-y-2 text-xs">
           <Rule>Same customers for the full {duration} days · consistent quality</Rule>
           <Rule>Mondays are off — auto-excluded from working days</Rule>
-          <Rule>Flat rate ₹17 per completed car · no tiered pricing</Rule>
+          <Rule>Flat rate ₹{rate} per completed car · no tiered pricing</Rule>
           <Rule>Cancelling mid-assignment: ₹250 + that day's earnings deducted</Rule>
         </ul>
       </Card>
@@ -156,7 +177,7 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4">
           <Button size="lg" className="w-full" disabled={accept.isPending || !canAccept} onClick={() => accept.mutate()}>
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {!preview ? "Checking customers…" : !canAccept ? (availableInArea > 0 ? `Only ${availableInArea} customers available` : "No customers available") : `${t("accept")} · ${cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
+            {!preview ? "Checking customers…" : !canAccept ? (availableInArea > 0 ? `Only ${availableInArea} customers available` : "No customers available") : `${t("accept")} · ${availableCars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
           </Button>
         </div>
       </div>

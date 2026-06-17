@@ -70,6 +70,7 @@ function ServiceDetailAdmin() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Unavailable report</h2>
           <p className="mt-2 text-sm">Reason: {s.unavailable_reason}</p>
           {s.unavailable_notes && <p className="mt-1 text-xs text-muted-foreground">{s.unavailable_notes}</p>}
+          {s.unavailable_photo_url && <img src={s.unavailable_photo_url} alt="Unavailable proof" className="mt-3 max-w-sm rounded-md" />}
         </Card>
       )}
 
