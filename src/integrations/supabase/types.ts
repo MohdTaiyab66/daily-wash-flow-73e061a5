@@ -1218,6 +1218,7 @@ export type Database = {
           id: string
           make: string
           model: string
+          package_amount: number | null
           parking_notes: string | null
           registration_number: string
         }
@@ -1229,6 +1230,7 @@ export type Database = {
           id?: string
           make: string
           model: string
+          package_amount?: number | null
           parking_notes?: string | null
           registration_number: string
         }
@@ -1240,6 +1242,7 @@ export type Database = {
           id?: string
           make?: string
           model?: string
+          package_amount?: number | null
           parking_notes?: string | null
           registration_number?: string
         }
@@ -1376,6 +1379,7 @@ export type Database = {
           p_is_active: boolean
           p_latitude: number
           p_longitude: number
+          p_package_amount?: number
           p_phone: string
           p_pincode: string
           p_preferred_time: string
@@ -1450,6 +1454,7 @@ export type Database = {
       preview_assignment: {
         Args: { p_cars: number; p_duration: number }
         Returns: {
+          available_customers: number
           cars: number
           daily_earnings: number
           duration_days: number
@@ -1457,6 +1462,7 @@ export type Database = {
           estimated_radius_km: number
           expected_end_time: string
           expected_start_time: string
+          message: string
           total_earnings: number
           working_days: number
         }[]

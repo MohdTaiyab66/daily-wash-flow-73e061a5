@@ -13,6 +13,7 @@ import { SERVICE_AREA_NAMES } from "@/lib/areas";
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const TIMES = ["06:00 - 09:00", "06:30 - 09:00", "07:00 - 09:00", "08:30 - 10:30", "09:00 - 11:00"];
 const REQUIRED_BEFORE = ["07:00", "08:00", "09:00", "10:00", "11:00"];
+const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
 
 export function EditCustomerDialog({ customer }: { customer: any }) {
   const [open, setOpen] = useState(false);
@@ -33,6 +34,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     preferred_time: customer.preferred_time ?? "06:00 - 09:00",
     service_required_before: customer.service_required_before ?? "",
     is_active: customer.is_active ?? true,
+    package_amount: customer.package_amount?.toString() ?? "",
   });
 
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
@@ -53,6 +55,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
       preferred_time: f.preferred_time,
       service_required_before: f.service_required_before || null,
       is_active: f.is_active,
+      package_amount: f.package_amount ? Number(f.package_amount) : null,
     }}),
     onSuccess: () => {
       toast.success("Customer updated");
@@ -85,6 +88,12 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
           <Field label="Plan">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.subscription_plan} onChange={set("subscription_plan")}>
               {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </Field>
+          <Field label="Package">
+            <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.package_amount} onChange={set("package_amount")}>
+              <option value="">—</option>
+              {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
             </select>
           </Field>
           <Field label="Status">

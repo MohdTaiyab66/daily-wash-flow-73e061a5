@@ -46,7 +46,7 @@ function CustomerProfilePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <EditCustomerDialog customer={c} />
+          <EditCustomerDialog customer={{ ...c, package_amount: data.vehicles?.[0]?.package_amount ?? "" }} />
           <ExtendCustomerDialog customerId={c.id} currentEnd={data.renewal_date} />
         </div>
       </div>
@@ -71,6 +71,7 @@ function CustomerProfilePage() {
             <Card key={v.id} className="p-4">
               <div className="flex items-center gap-2 text-sm font-medium"><Car className="h-4 w-4" />{v.make} {v.model}</div>
               <p className="mt-1 text-xs text-muted-foreground">{v.registration_number}{v.color ? ` · ${v.color}` : ""}</p>
+              <p className="mt-1 text-xs font-medium">Package: {v.package_amount ? `₹${v.package_amount}` : "—"}</p>
               {v.parking_notes && <p className="mt-2 text-xs text-muted-foreground">{v.parking_notes}</p>}
             </Card>
           ))}

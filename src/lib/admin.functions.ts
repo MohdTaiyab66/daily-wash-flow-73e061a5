@@ -48,6 +48,7 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
     preferred_time?: string;
     service_required_before?: string | null;
     is_active?: boolean;
+    package_amount?: number | null;
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -66,6 +67,7 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
       p_preferred_time: data.preferred_time ?? null,
       p_service_required_before: data.service_required_before ?? null,
       p_is_active: data.is_active ?? null,
+      p_package_amount: data.package_amount ?? null,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -115,7 +117,7 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,vehicles(make,model,registration_number)")
+    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,vehicles(make,model,registration_number,package_amount)")
     .order("full_name")
     .limit(500);
   return data ?? [];
@@ -297,6 +299,7 @@ type VehicleInput = {
   color?: string;
   parking_notes?: string;
   front_image_path?: string;
+  package_amount?: number;
 };
 
 export const createCustomerImport = createServerFn({ method: "POST" })
@@ -352,6 +355,7 @@ export const createCustomerImport = createServerFn({ method: "POST" })
         color: v.color || null,
         parking_notes: v.parking_notes || null,
         front_image_path: v.front_image_path || null,
+        package_amount: v.package_amount ?? null,
       }));
     const { error: e2 } = await supabaseAdmin.from("vehicles").insert(vehRows);
     if (e2) throw e2;

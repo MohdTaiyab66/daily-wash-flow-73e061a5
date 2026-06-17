@@ -76,10 +76,13 @@ function AssignmentsPage() {
   const dailyEarn = preview ? Number(preview.daily_earnings) : cars * 17;
   const totalEarn = preview ? Number(preview.total_earnings) : 0;
   const availableCars = preview ? Number(preview.cars ?? 0) : 0;
+  const availableInArea = preview ? Number((preview as any).available_customers ?? availableCars) : 0;
+  const previewMessage = preview ? String((preview as any).message ?? "") : "";
   const workingDays = preview?.working_days ?? 0;
   const radius = preview ? Number(preview.estimated_radius_km) : 0;
   const hours = preview ? Number(preview.estimated_hours) : 0;
   const startTime = preview?.expected_start_time ?? "07:00";
+  const canAccept = Boolean(preview) && availableInArea >= cars && availableCars >= cars;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
@@ -123,6 +126,12 @@ function AssignmentsPage() {
         </div>
       </Card>
 
+      {previewMessage && (
+        <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">
+          {availableInArea > 0 ? `Only ${availableInArea} customers available in this area.` : previewMessage}
+        </Card>
+      )}
+
       {/* Rules */}
       <Card className="mt-4 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("assignment_rules")}</p>
@@ -145,9 +154,9 @@ function AssignmentsPage() {
       {/* Sticky CTA */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
-          <Button size="lg" className="w-full" disabled={accept.isPending || Boolean(preview && availableCars === 0)} onClick={() => accept.mutate()}>
+          <Button size="lg" className="w-full" disabled={accept.isPending || !canAccept} onClick={() => accept.mutate()}>
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {availableCars === 0 && preview ? "No customers available" : `${t("accept")} · ${availableCars || cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
+            {!preview ? "Checking customers…" : !canAccept ? (availableInArea > 0 ? `Only ${availableInArea} customers available` : "No customers available") : `${t("accept")} · ${cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
           </Button>
         </div>
       </div>
