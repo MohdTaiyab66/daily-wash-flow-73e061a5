@@ -560,3 +560,158 @@ export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).handl
 
   return (data ?? []).map((c: any) => ({ ...c, partner: partnerByCustomer[c.id] ?? null }));
 });
+
+// =================== Partner assignment manager (admin) ===================
+export const getPartnerAssignmentDetail = createServerFn({ method: "GET" })
+  .inputValidator((d: { partner_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: partner } = await supabaseAdmin
+      .from("partners")
+      .select("id,partner_code,full_name,phone,home_area,status,availability,rating,cars_selected,lifetime_earnings")
+      .eq("id", data.partner_id)
+      .maybeSingle();
+    if (!partner) throw new Error("Partner not found");
+
+    const { data: assignment } = await supabaseAdmin
+      .from("assignments")
+      .select("*")
+      .eq("partner_id", data.partner_id)
+      .eq("status", "active")
+      .gte("end_date", today)
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!assignment) return { partner, assignment: null, customers: [], available: [] };
+
+    const { data: services } = await supabaseAdmin
+      .from("services")
+      .select("id,customer_id,scheduled_date,status,customers(full_name,area,phone)")
+      .eq("assignment_id", assignment.id)
+      .order("scheduled_date");
+
+    const byCust = new Map<string, any>();
+    (services ?? []).forEach((s: any) => {
+      const k = s.customer_id;
+      if (!byCust.has(k)) byCust.set(k, {
+        customer_id: k,
+        full_name: s.customers?.full_name ?? "—",
+        area: s.customers?.area ?? "",
+        phone: s.customers?.phone ?? "",
+        total: 0,
+        completed: 0,
+      });
+      const e = byCust.get(k);
+      e.total += 1;
+      if (s.status === "completed") e.completed += 1;
+    });
+
+    const { data: avail } = await (supabaseAdmin.rpc as any)("admin_list_unassigned_customers", {
+      p_area: (assignment as any).area ?? null,
+    });
+
+    return {
+      partner,
+      assignment,
+      customers: Array.from(byCust.values()),
+      available: (avail ?? []) as any[],
+    };
+  });
+
+export const adminUpdateAssignment = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    assignment_id: string;
+    rate_per_car?: number;
+    target_cars?: number;
+    expected_start_time?: string;
+    end_date?: string;
+    total_earnings?: number;
+    estimated_hours?: number;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { assignment_id, ...rest } = data;
+    const patch: Record<string, any> = {};
+    Object.entries(rest).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") patch[k] = v;
+    });
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await (supabaseAdmin.from("assignments") as any).update(patch).eq("id", assignment_id);
+    if (error) throw new Error(error.message);
+    if (patch.rate_per_car !== undefined) {
+      await (supabaseAdmin.from("services") as any)
+        .update({ rate_per_car: patch.rate_per_car })
+        .eq("assignment_id", assignment_id)
+        .eq("status", "pending");
+    }
+    return { ok: true };
+  });
+
+export const adminAddCustomerToAssignment = createServerFn({ method: "POST" })
+  .inputValidator((d: { assignment_id: string; customer_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: a } = await supabaseAdmin
+      .from("assignments")
+      .select("id,partner_id,start_date,end_date,rate_per_car")
+      .eq("id", data.assignment_id)
+      .maybeSingle();
+    if (!a) throw new Error("Assignment not found");
+    const { data: veh } = await supabaseAdmin
+      .from("vehicles")
+      .select("id")
+      .eq("customer_id", data.customer_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!veh) throw new Error("Customer has no vehicle");
+    const { data: cust } = await supabaseAdmin
+      .from("customers")
+      .select("preferred_time")
+      .eq("id", data.customer_id)
+      .maybeSingle();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date((a as any).start_date);
+    const endDate = new Date((a as any).end_date);
+    const cursor = startDate > today ? startDate : today;
+
+    const rows: any[] = [];
+    for (let d = new Date(cursor); d <= endDate; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() === 1) continue;
+      rows.push({
+        partner_id: (a as any).partner_id,
+        customer_id: data.customer_id,
+        vehicle_id: (veh as any).id,
+        assignment_id: (a as any).id,
+        scheduled_date: d.toISOString().slice(0, 10),
+        time_slot: (cust as any)?.preferred_time ?? "06:00 - 09:00",
+        rate_per_car: (a as any).rate_per_car,
+        status: "pending",
+      });
+    }
+    if (rows.length) {
+      const { error } = await (supabaseAdmin.from("services") as any).insert(rows);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, added: rows.length };
+  });
+
+export const adminRemoveCustomerFromAssignment = createServerFn({ method: "POST" })
+  .inputValidator((d: { assignment_id: string; customer_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const today = new Date().toISOString().slice(0, 10);
+    const { error } = await supabaseAdmin
+      .from("services")
+      .delete()
+      .eq("assignment_id", data.assignment_id)
+      .eq("customer_id", data.customer_id)
+      .eq("status", "pending")
+      .gte("scheduled_date", today);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
