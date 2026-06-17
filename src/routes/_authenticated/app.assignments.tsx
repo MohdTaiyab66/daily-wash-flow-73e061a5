@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun } from "lucide-react";
+import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun, BellRing, Crosshair, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -23,7 +23,7 @@ function AssignmentsPage() {
 
   const [cars, setCars] = useState(20);
   const [duration, setDuration] = useState(15);
-  useRealtimeInvalidation(["platform_settings"], [["assignment-settings"], ["preview", cars, duration]]);
+  useRealtimeInvalidation(["platform_settings", "customers"], [["assignment-settings"], ["preview", cars, duration], ["me-partner-builder"]]);
 
   const { data: settings } = useQuery({
     queryKey: ["assignment-settings"],
@@ -44,15 +44,27 @@ function AssignmentsPage() {
     if (cars > maxCars) setCars(maxCars);
   }, [cars, minCars, maxCars]);
 
+  const { data: partner, isLoading: loadingPartner } = useQuery({
+    queryKey: ["me-partner-builder"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("partners")
+        .select("id,home_area,notify_when_customers_added").eq("id", u.user.id).maybeSingle();
+      return data;
+    },
+  });
+
   const { data: active, isLoading: loadingActive } = useQuery({
     queryKey: ["active-assignment-builder"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("assignments")
         .select("id")
-        .eq("partner_id", u.user!.id)
+        .eq("partner_id", u.user.id)
         .eq("status", "active")
         .gte("end_date", today)
         .maybeSingle();
@@ -65,19 +77,22 @@ function AssignmentsPage() {
     if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
   }, [active?.id, navigate]);
 
-  const { data: preview, isFetching } = useQuery({
+  const hasArea = !!partner?.home_area;
+
+  const { data: preview, isFetching, error: previewError } = useQuery({
     queryKey: ["preview", cars, duration],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("preview_assignment", { p_cars: cars, p_duration: duration });
       if (error) throw error;
       return data?.[0] ?? null;
     },
-    enabled: !active,
+    enabled: !active && hasArea,
+    retry: 1,
   });
 
   const accept = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: cars, p_duration: duration });
+    mutationFn: async (acceptCars: number) => {
+      const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: acceptCars, p_duration: duration });
       if (error) throw error;
       return data;
     },
@@ -89,26 +104,69 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
 
-  if (loadingActive || active) {
+  const toggleNotify = useMutation({
+    mutationFn: async (on: boolean) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("partners").update({ notify_when_customers_added: on }).eq("id", u.user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("We'll notify you when new customers arrive in your area");
+      qc.invalidateQueries({ queryKey: ["me-partner-builder"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not update"),
+  });
+
+  if (loadingActive || loadingPartner || active) {
     return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
   }
 
+  // STEP 1 — Partner must pick an area first
+  if (!hasArea) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
 
-  const dailyEarn = preview ? Number(preview.daily_earnings) : cars * rate;
-  const totalEarn = preview ? Number(preview.total_earnings) : 0;
-  const availableCars = preview ? Number(preview.cars ?? 0) : 0;
-  const availableInArea = preview ? Number((preview as any).available_customers ?? availableCars) : 0;
+        <Card className="mt-5 p-6 text-center">
+          <MapPin className="mx-auto h-10 w-10 text-primary" />
+          <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We need to know where you'll service customers before we can show you available cars and earnings.
+          </p>
+          <Button asChild size="lg" className="mt-5 w-full">
+            <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Select work area / use current location</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   const previewMessage = preview ? String((preview as any).message ?? "") : "";
+  const availableInArea = preview ? Number((preview as any).available_customers ?? 0) : 0;
+  const acceptableCars = preview ? Math.min(cars, availableInArea) : 0;
   const workingDays = preview?.working_days ?? 0;
+  const dailyEarn = acceptableCars * rate;
+  const totalEarn = dailyEarn * workingDays;
   const radius = preview ? Number(preview.estimated_radius_km) : 0;
   const hours = preview ? Number(preview.estimated_hours) : 0;
   const startTime = preview?.expected_start_time ?? "07:00";
-  const canAccept = Boolean(preview) && availableCars > 0 && availableCars >= minCars;
+
+  const fullyAvailable = preview && availableInArea >= cars;
+  const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
+  const noneAvailable = preview && availableInArea === 0;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{t("builder_sub")}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("builder_sub")}</p>
+        </div>
+        <Link to="/app/area" className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+          <MapPin className="h-3 w-3" />{partner.home_area}
+        </Link>
+      </div>
 
       {/* Cars slider */}
       <Card className="mt-5 p-5">
@@ -130,13 +188,19 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
       </Card>
 
+      {previewError && (
+        <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{(previewError as Error).message}</span></div>
+        </Card>
+      )}
+
       {/* Live calculation */}
       <Card className="mt-4 border-0 bg-foreground p-5 text-background">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-background/60">{t("total_earnings")}</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight">₹{totalEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/{t("daily").toLowerCase()} · {workingDays} {t("days")}</p>
+            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/{t("daily").toLowerCase()} · {workingDays} {t("days")}{partialAvailable ? ` · capped at ${availableInArea} cars` : ""}</p>
           </div>
           {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
         </div>
@@ -147,10 +211,53 @@ function AssignmentsPage() {
         </div>
       </Card>
 
-      {previewMessage && (
-        <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">
-          {availableInArea > 0 ? `Only ${availableInArea} customers available in this area.` : previewMessage}
+      {/* No / partial customers flow */}
+      {preview && !fullyAvailable && (
+        <Card className={`mt-3 p-4 ${noneAvailable ? "border-destructive/40 bg-destructive/10" : "border-warning/40 bg-warning/10"}`}>
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">
+                {noneAvailable
+                  ? `No customers currently available in ${partner.home_area}.`
+                  : `Only ${availableInArea} customer${availableInArea === 1 ? "" : "s"} currently available in ${partner.home_area}.`}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {noneAvailable
+                  ? "Pick another area or wait — we can ping you the moment a customer is added."
+                  : `You can accept these ${availableInArea} cars now, change area, or wait for more customers.`}
+              </p>
+              <div className="mt-3 grid gap-2">
+                {partialAvailable && (
+                  <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
+                    {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                    Accept {availableInArea} car{availableInArea === 1 ? "" : "s"} · ₹{(availableInArea * rate * workingDays).toLocaleString("en-IN")}
+                  </Button>
+                )}
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
+                </Button>
+                {noneAvailable && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost"
+                  disabled={toggleNotify.isPending || partner.notify_when_customers_added}
+                  onClick={() => toggleNotify.mutate(true)}>
+                  <BellRing className="mr-2 h-4 w-4" />
+                  {partner.notify_when_customers_added
+                    ? "We'll notify you when new customers arrive"
+                    : "Notify me when customers become available"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </Card>
+      )}
+
+      {previewMessage && fullyAvailable && (
+        <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
       {/* Rules */}
@@ -175,9 +282,20 @@ function AssignmentsPage() {
       {/* Sticky CTA */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
-          <Button size="lg" className="w-full" disabled={accept.isPending || !canAccept} onClick={() => accept.mutate()}>
+          <Button
+            size="lg"
+            className="w-full"
+            disabled={accept.isPending || !fullyAvailable}
+            onClick={() => accept.mutate(cars)}
+          >
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {!preview ? "Checking customers…" : !canAccept ? (availableInArea > 0 ? `Only ${availableInArea} customers available` : "No customers available") : `${t("accept")} · ${availableCars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
+            {isFetching && !preview
+              ? "Checking customers…"
+              : noneAvailable
+                ? "No customers available — see options above"
+                : partialAvailable
+                  ? `Only ${availableInArea} available — see options above`
+                  : `${t("accept")} · ${cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
           </Button>
         </div>
       </div>
