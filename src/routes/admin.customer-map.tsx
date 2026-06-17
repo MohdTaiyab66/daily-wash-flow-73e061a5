@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { listCustomersForMap } from "@/lib/ops.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useEffect, useRef, useState } from "react";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/admin/customer-map")({
   component: CustomerMapPage,
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/admin/customer-map")({
 
 function CustomerMapPage() {
   const fn = useServerFn(listCustomersForMap);
+  useRealtimeInvalidation(["customers", "vehicles", "services"], [["admin-customer-map"]]);
   const { data } = useQuery({ queryKey: ["admin-customer-map"], queryFn: () => fn() });
   const rows = data ?? [];
   const groups: Record<string, any[]> = {};
@@ -31,6 +34,10 @@ function CustomerMapPage() {
         <Legend tone="bg-emerald-600" label={`Active · ${counts.active}`} />
         <Legend tone="bg-amber-500" label={`Renewal due · ${counts.renewal_due}`} />
         <Legend tone="bg-destructive" label={`Inactive · ${counts.inactive}`} />
+      </div>
+
+      <div className="mt-6">
+        <CustomerPinMap rows={rows} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -56,6 +63,56 @@ function CustomerMapPage() {
       </div>
     </div>
   );
+}
+
+function CustomerPinMap({ rows }: { rows: any[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!window.google?.maps) {
+        const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
+        if (!key) throw new Error("missing key");
+        await new Promise<void>((resolve) => {
+          window.__initLovableMap = () => resolve();
+          const s = document.createElement("script");
+          s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap`;
+          s.async = true;
+          document.head.appendChild(s);
+        });
+      }
+      if (!ref.current || mapRef.current) return;
+      mapRef.current = new window.google.maps.Map(ref.current, { center: { lat: 26.8467, lng: 80.9462 }, zoom: 12, mapTypeControl: false, streetViewControl: false });
+    };
+    load().catch(() => setError(true));
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !window.google?.maps) return;
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+    const bounds = new window.google.maps.LatLngBounds();
+    rows.forEach((c) => {
+      const pos = { lat: Number(c.latitude), lng: Number(c.longitude) };
+      const marker = new window.google.maps.Marker({ position: pos, map: mapRef.current, title: c.full_name, icon: markerIcon(c.bucket) });
+      const vehicle = c.vehicles?.[0];
+      const info = new window.google.maps.InfoWindow({ content: `<div style="font:14px system-ui;min-width:220px"><b>${c.full_name}</b><br/>+91 ${c.phone ?? "—"}<br/>${c.area ?? "—"}<br/>${vehicle ? `${vehicle.make ?? ""} ${vehicle.model ?? ""} · ${vehicle.registration_number ?? ""}` : "No vehicle"}<br/>Plan: ${c.subscription_plan ?? "—"}<br/>Renewal: ${c.subscription_end ?? "—"}<br/>Partner: ${c.assigned_partner?.full_name ?? "Unassigned"}</div>` });
+      marker.addListener("click", () => info.open({ anchor: marker, map: mapRef.current }));
+      markersRef.current.push(marker);
+      bounds.extend(pos);
+    });
+    if (rows.length) mapRef.current.fitBounds(bounds, 48);
+  }, [rows]);
+
+  return <Card className="overflow-hidden p-0"><div ref={ref} className="h-[520px] w-full bg-muted" />{error && <p className="p-4 text-sm text-muted-foreground">Map unavailable.</p>}</Card>;
+}
+
+function markerIcon(bucket: string) {
+  const color = bucket === "active" ? "#16a34a" : bucket === "renewal_due" ? "#f59e0b" : "#dc2626";
+  return { path: window.google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: color, fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 };
 }
 
 function dotFor(b: string) {
