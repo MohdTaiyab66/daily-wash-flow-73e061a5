@@ -43,11 +43,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
   const markersRef = useRef<any[]>([]);
   const partnerMarkerRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
+  const fittedRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partnerPos, setPartnerPos] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<{ km: number; mins: number } | null>(null);
   const compute = useServerFn(computeRoute);
+
+  // Stable key derived from stop ids — prevents map effect re-running when underlying refs change
+  const stopsKey = useMemo(() => stops.map((s) => s.id).join(","), [stops]);
+  const stableStops = useMemo(() => stops, [stopsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize map
   useEffect(() => {
