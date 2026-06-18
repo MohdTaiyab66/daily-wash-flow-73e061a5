@@ -1604,6 +1604,7 @@ export type Database = {
         | "customer_asked_to_skip"
         | "access_not_available"
         | "customer_not_responding"
+        | "dirty_vehicle"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1761,6 +1762,7 @@ export const Constants = {
         "customer_asked_to_skip",
         "access_not_available",
         "customer_not_responding",
+        "dirty_vehicle",
       ],
     },
   },

@@ -30,6 +30,7 @@ const UNAVAILABLE_REASONS = [
 ] as const;
 
 const DIRTY_REASONS = ["Heavy Mud", "Construction Dust", "Bird Droppings", "Needs Foam Wash", "Needs Pressure Wash", "Other"];
+const COMPENSATION = 12;
 const PARKING_REASONS = ["No Access", "Wall Side Blocked", "Narrow Parking", "Vehicle Too Close", "Other"];
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
@@ -46,6 +47,24 @@ function ServiceDetail() {
     queryFn: async () => {
       const { data } = await supabase.from("services").select("*, customers(*), vehicles(*)").eq("id", id).maybeSingle();
       return data;
+    },
+  });
+
+  const { data: nextServiceId } = useQuery({
+    queryKey: ["next-pending-service", id],
+    enabled: service?.status === "completed" || service?.status === "unavailable",
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      const { data } = await supabase.from("services")
+        .select("id,sequence_no")
+        .eq("partner_id", u.user!.id)
+        .eq("scheduled_date", today)
+        .in("status", ["pending", "in_progress"])
+        .neq("id", id)
+        .order("sequence_no", { ascending: true })
+        .limit(1);
+      return data?.[0]?.id ?? null;
     },
   });
 
@@ -112,10 +131,18 @@ function ServiceDetail() {
     },
     onSuccess: () => {
       toast.success("Service complete · ₹17 earned");
-      navigate({ to: "/app" });
+      qc.invalidateQueries({ queryKey: ["service", id] });
+      qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const goNext = () => {
+    if (nextServiceId) navigate({ to: "/app/service/$id", params: { id: nextServiceId } });
+    else navigate({ to: "/app/live" });
+  };
 
   const c = service?.customers as any;
   const v = service?.vehicles as any;
@@ -162,7 +189,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app/live" })} />
+          <UnavailableDialog serviceId={id} onDone={goNext} />
         </div>
       )}
 
@@ -186,7 +213,7 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <DirtyVehicleDialog serviceId={id} />
+            <DirtyVehicleDialog serviceId={id} onDone={goNext} />
             <ParkingIssueDialog serviceId={id} />
           </div>
 
@@ -199,6 +226,23 @@ function ServiceDetail() {
             </Button>
           )}
         </>
+      )}
+
+      {(service?.status === "completed" || service?.status === "unavailable") && (
+        <div className="mt-5 space-y-3">
+          <Card className="border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-4 text-center">
+            <Check className="mx-auto h-6 w-6 text-[color:var(--success)]" />
+            <p className="mt-1.5 text-sm font-semibold">
+              {service?.status === "completed" ? "Service complete · ₹17 earned" : `Marked unavailable · ₹${COMPENSATION} credited`}
+            </p>
+          </Card>
+          <Button size="lg" className="w-full" onClick={goNext}>
+            {nextServiceId ? "Next service →" : "All done · back to route"}
+          </Button>
+          <Button size="lg" variant="outline" className="w-full" onClick={() => navigate({ to: "/app/live" })}>
+            Back to today's route
+          </Button>
+        </div>
       )}
       <div className="h-8" />
     </div>
@@ -270,6 +314,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
 
   const handlePhoto = async (file: File) => {
     setUploading(true);
@@ -297,6 +342,9 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+    qc.invalidateQueries({ queryKey: ["service", serviceId] });
+    qc.invalidateQueries({ queryKey: ["route-today"] });
+    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     setOpen(false);
     onDone();
   };
@@ -346,12 +394,13 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 }
 
 
-function DirtyVehicleDialog({ serviceId }: { serviceId: string }) {
+function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   const upload = async (angle: string, file: File) => {
     const { data: u } = await supabase.auth.getUser();
@@ -366,14 +415,29 @@ function DirtyVehicleDialog({ serviceId }: { serviceId: string }) {
     if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("dirty_vehicle_reports").insert({
+    const pos = await getPosition();
+    const { error: e1 } = await supabase.from("dirty_vehicle_reports").insert({
       service_id: serviceId, partner_id: u.user!.id, reason, notes: notes || null,
       photo_front: photos.front, photo_rear: photos.rear, photo_left: photos.left, photo_right: photos.right,
     });
+    if (e1) { setSaving(false); return toast.error(e1.message); }
+    // Mark service as unavailable + credit ₹12 (vehicle too dirty to clean)
+    const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
+      p_service_id: serviceId,
+      p_reason: "dirty_vehicle",
+      p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
+      p_photo: photos.front,
+      p_lat: pos?.lat ?? 0,
+      p_lng: pos?.lng ?? 0,
+    } as any);
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Dirty vehicle reported");
+    if (e2) return toast.error(e2.message);
+    toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
+    qc.invalidateQueries({ queryKey: ["service", serviceId] });
+    qc.invalidateQueries({ queryKey: ["route-today"] });
+    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     setOpen(false);
+    onDone?.();
   };
 
   return (

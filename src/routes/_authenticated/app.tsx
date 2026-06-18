@@ -39,16 +39,17 @@ function TopBar() {
   });
   useEffect(() => {
     let channel: any;
+    let cancelled = false;
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
+      if (!u.user || cancelled) return;
       channel = supabase
-        .channel("topbar-notif")
+        .channel(`topbar-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
           () => qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] }))
         .subscribe();
     })();
-    return () => { if (channel) supabase.removeChannel(channel); };
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
   }, [qc]);
 
   return (

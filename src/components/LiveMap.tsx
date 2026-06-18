@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Loader2, MapPin } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -43,11 +43,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
   const markersRef = useRef<any[]>([]);
   const partnerMarkerRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
+  const fittedRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partnerPos, setPartnerPos] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<{ km: number; mins: number } | null>(null);
   const compute = useServerFn(computeRoute);
+
+  // Stable key derived from stop ids — prevents map effect re-running when underlying refs change
+  const stopsKey = useMemo(() => stops.map((s) => s.id).join(","), [stops]);
+  const stableStops = useMemo(() => stops, [stopsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize map
   useEffect(() => {
@@ -101,7 +106,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
     }
   }, [ready, partnerPos]);
 
-  // Render customer markers + route
+  // Render customer markers + route — depends on stable stops key so it only re-runs when stops actually change
   useEffect(() => {
     if (!ready) return;
     const g = window.google;
@@ -112,13 +117,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       polylineRef.current.setMap(null);
       polylineRef.current = null;
     }
-    setStats(null);
 
-    if (!showCustomers || stops.length === 0) return;
+    if (!showCustomers || stableStops.length === 0) {
+      setStats(null);
+      fittedRef.current = null;
+      return;
+    }
 
     const bounds = new g.maps.LatLngBounds();
     if (partnerPos) bounds.extend(partnerPos);
-    stops.forEach((s) => {
+    stableStops.forEach((s) => {
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
@@ -128,12 +136,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       markersRef.current.push(marker);
       bounds.extend({ lat: s.lat, lng: s.lng });
     });
-    mapRef.current.fitBounds(bounds, 48);
+    // Only fit bounds the first time this stop-set is shown so the user can pan freely without snap-back
+    if (fittedRef.current !== stopsKey) {
+      mapRef.current.fitBounds(bounds, 48);
+      fittedRef.current = stopsKey;
+    }
 
     // Compute optimized route
-    if (partnerPos && stops.length >= 1) {
-      const destination = stops[stops.length - 1];
-      const waypoints = stops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
+    if (partnerPos && stableStops.length >= 1) {
+      const destination = stableStops[stableStops.length - 1];
+      const waypoints = stableStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
       compute({
         data: {
           origin: partnerPos,
@@ -156,7 +168,9 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
         })
         .catch(() => {});
     }
-  }, [ready, showCustomers, stops, partnerPos, compute]);
+  // Intentionally exclude partnerPos so the map doesn't refit / re-fetch the route on every GPS tick
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, showCustomers, stableStops, stopsKey, compute]);
 
   return (
     <Card className="overflow-hidden p-0">

@@ -52,7 +52,7 @@ function RoutePage() {
   });
 
   const total = services?.length ?? 0;
-  const done = (services ?? []).filter((s) => s.status === "completed").length;
+  const done = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
   const remaining = total - done;
   const isEndOfDay = total > 0 && remaining === 0;
 
@@ -67,8 +67,9 @@ function RoutePage() {
     routeVisible = nowMins < cutoffMins;
   }
 
-  const pending = (services ?? []).filter((s) => s.status !== "completed");
+  const pending = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
+  const unavailable = (services ?? []).filter((s) => s.status === "unavailable");
 
   const stops = pending
     .filter((s) => {
@@ -185,6 +186,30 @@ function RoutePage() {
                       <CheckCircle2 className="mr-1 inline h-3 w-3 text-[color:var(--success)]" />
                       {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                       {dur != null && ` · ${dur} min`}
+                    </p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {unavailable.length > 0 && (
+        <>
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Unavailable today</h2>
+          <div className="mt-3 space-y-2">
+            {unavailable.map((s) => {
+              const c = s.customers as any;
+              const v = s.vehicles as any;
+              return (
+                <Card key={s.id} className="flex items-center gap-3 p-3">
+                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      <AlertTriangle className="mr-1 inline h-3 w-3 text-destructive" />Unavailable · ₹12 credited
                     </p>
                   </div>
                 </Card>

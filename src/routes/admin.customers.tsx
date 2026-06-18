@@ -5,6 +5,7 @@ import { listAdminCustomers } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { VehicleImage } from "@/components/VehicleImage";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/admin/customers")({
@@ -59,11 +60,18 @@ function CustomersPage() {
                   <Badge variant={tone as any}>{tag}</Badge>
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">{c.area}{c.pincode ? ` · ${c.pincode}` : ""}</p>
-                {c.vehicles?.[0] && (
-                  <p className="mt-3 rounded-md bg-muted px-2 py-1.5 text-xs">
-                    {c.vehicles[0].make} {c.vehicles[0].model}{c.vehicles[0].registration_number ? ` · ${c.vehicles[0].registration_number}` : ""}
-                    {c.vehicles.length > 1 && <span className="ml-1 text-muted-foreground">+{c.vehicles.length - 1}</span>}
-                  </p>
+                {c.vehicles?.length > 0 && (
+                  <div className="mt-3 flex gap-2">
+                    {c.vehicles.slice(0, 2).map((v: any) => (
+                      <div key={v.id} className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-muted/40 p-1.5">
+                        <VehicleImage path={v.front_image_path} className="h-10 w-14 shrink-0 rounded" alt={`${v.make} ${v.model}`} />
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-medium">{v.make} {v.model}</p>
+                          <p className="truncate text-[10px] text-muted-foreground">{v.registration_number}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
                 <p className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground">Renews {c.subscription_end}</p>
               </Card>
