@@ -52,7 +52,7 @@ function RoutePage() {
   });
 
   const total = services?.length ?? 0;
-  const done = (services ?? []).filter((s) => s.status === "completed").length;
+  const done = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
   const remaining = total - done;
   const isEndOfDay = total > 0 && remaining === 0;
 
