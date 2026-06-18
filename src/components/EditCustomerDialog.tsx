@@ -6,8 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Pencil } from "lucide-react";
-import { adminUpdateCustomer, createVehicleImageUploadUrl } from "@/lib/admin.functions";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+  adminUpdateCustomer,
+  createVehicleImageUploadUrl,
+  adminUpsertSecondaryVehicle,
+  adminDeleteVehicle,
+} from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
@@ -15,12 +20,17 @@ const TIMES = ["06:00 - 09:00", "06:30 - 09:00", "07:00 - 09:00", "08:30 - 10:30
 const REQUIRED_BEFORE = ["07:00", "08:00", "09:00", "10:00", "11:00"];
 const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
 
-export function EditCustomerDialog({ customer }: { customer: any }) {
+export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any; vehicles?: any[] }) {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const fn = useServerFn(adminUpdateCustomer);
   const createUploadUrl = useServerFn(createVehicleImageUploadUrl);
+  const upsertVehicle = useServerFn(adminUpsertSecondaryVehicle);
+  const deleteVehicle = useServerFn(adminDeleteVehicle);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingImage2, setUploadingImage2] = useState(false);
+
+  const second = vehicles[1];
 
   const [f, setF] = useState({
     full_name: customer.full_name ?? "",
@@ -40,27 +50,60 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     front_image_path: customer.front_image_path ?? "",
   });
 
+  const [v2, setV2] = useState({
+    id: second?.id ?? "",
+    make: second?.make ?? "",
+    model: second?.model ?? "",
+    registration_number: second?.registration_number ?? "",
+    color: second?.color ?? "",
+    package_amount: second?.package_amount?.toString() ?? "",
+    front_image_path: second?.front_image_path ?? "",
+    parking_notes: second?.parking_notes ?? "",
+  });
+
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
+  const set2 = (k: keyof typeof v2) => (e: any) => setV2((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
 
   const mut = useMutation({
-    mutationFn: () => fn({ data: {
-      id: customer.id,
-      full_name: f.full_name,
-      phone: f.phone,
-      area: f.area,
-      address_line: f.address_line,
-      pincode: f.pincode || null,
-      latitude: f.latitude ? Number(f.latitude) : null,
-      longitude: f.longitude ? Number(f.longitude) : null,
-      subscription_plan: f.subscription_plan,
-      subscription_start: f.subscription_start,
-      subscription_end: f.subscription_end,
-      preferred_time: f.preferred_time,
-      service_required_before: f.service_required_before || null,
-      is_active: f.is_active,
-      package_amount: f.package_amount ? Number(f.package_amount) : null,
-      front_image_path: f.front_image_path || null,
-    }}),
+    mutationFn: async () => {
+      await fn({ data: {
+        id: customer.id,
+        full_name: f.full_name,
+        phone: f.phone,
+        area: f.area,
+        address_line: f.address_line,
+        pincode: f.pincode || null,
+        latitude: f.latitude ? Number(f.latitude) : null,
+        longitude: f.longitude ? Number(f.longitude) : null,
+        subscription_plan: f.subscription_plan,
+        subscription_start: f.subscription_start,
+        subscription_end: f.subscription_end,
+        preferred_time: f.preferred_time,
+        service_required_before: f.service_required_before || null,
+        is_active: f.is_active,
+        package_amount: f.package_amount ? Number(f.package_amount) : null,
+        front_image_path: f.front_image_path || null,
+      }});
+
+      // Save second vehicle if user filled essential fields
+      const hasAny = v2.make || v2.model || v2.registration_number || v2.package_amount || v2.front_image_path;
+      if (hasAny) {
+        if (!v2.make || !v2.model || !v2.registration_number) {
+          throw new Error("Second vehicle needs make, model, and registration number");
+        }
+        await upsertVehicle({ data: {
+          customer_id: customer.id,
+          vehicle_id: v2.id || null,
+          make: v2.make,
+          model: v2.model,
+          registration_number: v2.registration_number,
+          color: v2.color || null,
+          package_amount: v2.package_amount ? Number(v2.package_amount) : null,
+          front_image_path: v2.front_image_path || null,
+          parking_notes: v2.parking_notes || null,
+        }});
+      }
+    },
     onSuccess: () => {
       toast.success("Customer updated");
       qc.invalidateQueries({ queryKey: ["customer-profile", customer.id] });
@@ -70,21 +113,33 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     onError: (e: any) => toast.error(e?.message ?? "Update failed"),
   });
 
-  const uploadVehicleImage = async (file: File) => {
-    setUploadingImage(true);
+  const removeSecond = useMutation({
+    mutationFn: () => deleteVehicle({ data: { vehicle_id: v2.id } }),
+    onSuccess: () => {
+      toast.success("Second vehicle removed");
+      setV2({ id: "", make: "", model: "", registration_number: "", color: "", package_amount: "", front_image_path: "", parking_notes: "" });
+      qc.invalidateQueries({ queryKey: ["customer-profile", customer.id] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Remove failed"),
+  });
+
+  const uploadImage = async (file: File, slot: 1 | 2) => {
+    const setU = slot === 1 ? setUploadingImage : setUploadingImage2;
+    setU(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `admin-edit/${customer.id}-${Date.now()}.${ext}`;
+      const path = `admin-edit/${customer.id}-v${slot}-${Date.now()}.${ext}`;
       const { supabase } = await import("@/integrations/supabase/client");
       const signed = await createUploadUrl({ data: { path } });
       const { error } = await supabase.storage.from("vehicle-images").uploadToSignedUrl(path, signed.token, file, { contentType: file.type });
       if (error) throw error;
-      setF((p) => ({ ...p, front_image_path: path }));
+      if (slot === 1) setF((p) => ({ ...p, front_image_path: path }));
+      else setV2((p) => ({ ...p, front_image_path: path }));
       toast.success("Vehicle photo uploaded");
     } catch (e: any) {
       toast.error(e?.message ?? "Photo upload failed");
     } finally {
-      setUploadingImage(false);
+      setU(false);
     }
   };
 
@@ -120,7 +175,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
           </Field>
           <Field label="Vehicle front image" full>
             <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVehicleImage(e.target.files[0])} />
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 1)} />
               {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? "Photo uploaded" : "Upload car front photo"}
             </label>
           </Field>
@@ -144,6 +199,37 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
             </select>
           </Field>
         </div>
+
+        <div className="mt-5 rounded-md border border-border p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold">Second vehicle (optional)</p>
+            {v2.id && (
+              <Button variant="ghost" size="sm" onClick={() => confirm("Remove second vehicle?") && removeSecond.mutate()} disabled={removeSecond.isPending}>
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />Remove
+              </Button>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Make"><Input value={v2.make} onChange={set2("make")} placeholder="Maruti" /></Field>
+            <Field label="Model"><Input value={v2.model} onChange={set2("model")} placeholder="Swift" /></Field>
+            <Field label="Registration"><Input value={v2.registration_number} onChange={set2("registration_number")} placeholder="UP32 AB 1234" /></Field>
+            <Field label="Color"><Input value={v2.color} onChange={set2("color")} /></Field>
+            <Field label="Package">
+              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={v2.package_amount} onChange={set2("package_amount")}>
+                <option value="">—</option>
+                {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
+              </select>
+            </Field>
+            <Field label="Parking notes"><Input value={v2.parking_notes} onChange={set2("parking_notes")} /></Field>
+            <Field label="Vehicle front image" full>
+              <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v2.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 2)} />
+                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? "Photo uploaded" : "Upload car front photo"}
+              </label>
+            </Field>
+          </div>
+        </div>
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
