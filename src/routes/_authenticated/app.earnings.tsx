@@ -38,7 +38,7 @@ function EarningsPage() {
         .from("services")
         .select("scheduled_date,rate_per_car,status")
         .eq("partner_id", id)
-        .eq("status", "completed");
+        .in("status", ["completed", "unavailable"]);
 
       const { data: analytics } = await supabase
         .from("service_analytics")
@@ -46,8 +46,9 @@ function EarningsPage() {
 
       const acc = { today: 0, week: 0, month: 0, lifetime: 0, todayN: 0, weekN: 0, monthN: 0, lifetimeN: 0 };
       const days = new Set<string>();
+      const UNAVAILABLE_RATE = 12;
       for (const s of services ?? []) {
-        const r = Number(s.rate_per_car || RATE);
+        const r = s.status === "unavailable" ? UNAVAILABLE_RATE : Number(s.rate_per_car || RATE);
         acc.lifetime += r; acc.lifetimeN++;
         days.add(s.scheduled_date);
         if (s.scheduled_date >= monthStart) { acc.month += r; acc.monthN++; }
