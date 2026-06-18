@@ -189,7 +189,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={() => navigate({ to: "/app/live" })} />
+          <UnavailableDialog serviceId={id} onDone={goNext} />
         </div>
       )}
 
@@ -213,7 +213,7 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <DirtyVehicleDialog serviceId={id} />
+            <DirtyVehicleDialog serviceId={id} onDone={goNext} />
             <ParkingIssueDialog serviceId={id} />
           </div>
 
@@ -226,6 +226,23 @@ function ServiceDetail() {
             </Button>
           )}
         </>
+      )}
+
+      {(service?.status === "completed" || service?.status === "unavailable") && (
+        <div className="mt-5 space-y-3">
+          <Card className="border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-4 text-center">
+            <Check className="mx-auto h-6 w-6 text-[color:var(--success)]" />
+            <p className="mt-1.5 text-sm font-semibold">
+              {service?.status === "completed" ? "Service complete · ₹17 earned" : `Marked unavailable · ₹${COMPENSATION} credited`}
+            </p>
+          </Card>
+          <Button size="lg" className="w-full" onClick={goNext}>
+            {nextServiceId ? "Next service →" : "All done · back to route"}
+          </Button>
+          <Button size="lg" variant="outline" className="w-full" onClick={() => navigate({ to: "/app/live" })}>
+            Back to today's route
+          </Button>
+        </div>
       )}
       <div className="h-8" />
     </div>
