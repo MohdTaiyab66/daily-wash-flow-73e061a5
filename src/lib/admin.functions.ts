@@ -95,6 +95,49 @@ export const createVehicleImageUploadUrl = createServerFn({ method: "POST" })
     return signed;
   });
 
+export const adminUpsertSecondaryVehicle = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    customer_id: string;
+    vehicle_id?: string | null;
+    make: string;
+    model: string;
+    registration_number: string;
+    color?: string | null;
+    package_amount?: number | null;
+    front_image_path?: string | null;
+    parking_notes?: string | null;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const payload = {
+      customer_id: data.customer_id,
+      make: data.make,
+      model: data.model,
+      registration_number: data.registration_number,
+      color: data.color || null,
+      package_amount: data.package_amount ?? null,
+      front_image_path: data.front_image_path || null,
+      parking_notes: data.parking_notes || null,
+    };
+    if (data.vehicle_id) {
+      const { error } = await supabaseAdmin.from("vehicles").update(payload).eq("id", data.vehicle_id);
+      if (error) throw new Error(error.message);
+      return { id: data.vehicle_id };
+    }
+    const { data: row, error } = await supabaseAdmin.from("vehicles").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return { id: row!.id };
+  });
+
+export const adminDeleteVehicle = createServerFn({ method: "POST" })
+  .inputValidator((d: { vehicle_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("vehicles").delete().eq("id", data.vehicle_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
