@@ -30,6 +30,7 @@ const UNAVAILABLE_REASONS = [
 ] as const;
 
 const DIRTY_REASONS = ["Heavy Mud", "Construction Dust", "Bird Droppings", "Needs Foam Wash", "Needs Pressure Wash", "Other"];
+const COMPENSATION = 12;
 const PARKING_REASONS = ["No Access", "Wall Side Blocked", "Narrow Parking", "Vehicle Too Close", "Other"];
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
