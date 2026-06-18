@@ -314,6 +314,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
 
   const handlePhoto = async (file: File) => {
     setUploading(true);
