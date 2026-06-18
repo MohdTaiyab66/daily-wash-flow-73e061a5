@@ -58,7 +58,7 @@ function CustomerProfilePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <EditCustomerDialog customer={{ ...c, package_amount: primaryVehicle?.package_amount ?? "", front_image_path: primaryVehicle?.front_image_path ?? "" }} />
+          <EditCustomerDialog customer={{ ...c, package_amount: primaryVehicle?.package_amount ?? "", front_image_path: primaryVehicle?.front_image_path ?? "" }} vehicles={data.vehicles ?? []} />
           <ExtendCustomerDialog customerId={c.id} currentEnd={data.renewal_date} />
           <Button variant="outline" size="sm" onClick={() => confirm("Delete this customer and pending services?") && deleteMut.mutate()} disabled={deleteMut.isPending}>
             <Trash2 className="mr-2 h-3.5 w-3.5" />Delete
