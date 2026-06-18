@@ -342,6 +342,9 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+    qc.invalidateQueries({ queryKey: ["service", serviceId] });
+    qc.invalidateQueries({ queryKey: ["route-today"] });
+    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     setOpen(false);
     onDone();
   };
