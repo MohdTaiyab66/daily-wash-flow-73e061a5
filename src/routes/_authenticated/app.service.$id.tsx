@@ -131,10 +131,18 @@ function ServiceDetail() {
     },
     onSuccess: () => {
       toast.success("Service complete · ₹17 earned");
-      navigate({ to: "/app" });
+      qc.invalidateQueries({ queryKey: ["service", id] });
+      qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const goNext = () => {
+    if (nextServiceId) navigate({ to: "/app/service/$id", params: { id: nextServiceId } });
+    else navigate({ to: "/app/live" });
+  };
 
   const c = service?.customers as any;
   const v = service?.vehicles as any;
