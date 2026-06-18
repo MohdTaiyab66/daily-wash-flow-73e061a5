@@ -67,8 +67,9 @@ function RoutePage() {
     routeVisible = nowMins < cutoffMins;
   }
 
-  const pending = (services ?? []).filter((s) => s.status !== "completed");
+  const pending = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
+  const unavailable = (services ?? []).filter((s) => s.status === "unavailable");
 
   const stops = pending
     .filter((s) => {
