@@ -106,7 +106,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
     }
   }, [ready, partnerPos]);
 
-  // Render customer markers + route
+  // Render customer markers + route — depends on stable stops key so it only re-runs when stops actually change
   useEffect(() => {
     if (!ready) return;
     const g = window.google;
@@ -117,13 +117,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       polylineRef.current.setMap(null);
       polylineRef.current = null;
     }
-    setStats(null);
 
-    if (!showCustomers || stops.length === 0) return;
+    if (!showCustomers || stableStops.length === 0) {
+      setStats(null);
+      fittedRef.current = null;
+      return;
+    }
 
     const bounds = new g.maps.LatLngBounds();
     if (partnerPos) bounds.extend(partnerPos);
-    stops.forEach((s) => {
+    stableStops.forEach((s) => {
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
@@ -133,12 +136,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       markersRef.current.push(marker);
       bounds.extend({ lat: s.lat, lng: s.lng });
     });
-    mapRef.current.fitBounds(bounds, 48);
+    // Only fit bounds the first time this stop-set is shown so the user can pan freely without snap-back
+    if (fittedRef.current !== stopsKey) {
+      mapRef.current.fitBounds(bounds, 48);
+      fittedRef.current = stopsKey;
+    }
 
     // Compute optimized route
-    if (partnerPos && stops.length >= 1) {
-      const destination = stops[stops.length - 1];
-      const waypoints = stops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
+    if (partnerPos && stableStops.length >= 1) {
+      const destination = stableStops[stableStops.length - 1];
+      const waypoints = stableStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
       compute({
         data: {
           origin: partnerPos,
@@ -161,7 +168,9 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
         })
         .catch(() => {});
     }
-  }, [ready, showCustomers, stops, partnerPos, compute]);
+  // Intentionally exclude partnerPos so the map doesn't refit / re-fetch the route on every GPS tick
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, showCustomers, stableStops, stopsKey, compute]);
 
   return (
     <Card className="overflow-hidden p-0">
