@@ -50,6 +50,24 @@ function ServiceDetail() {
     },
   });
 
+  const { data: nextServiceId } = useQuery({
+    queryKey: ["next-pending-service", id],
+    enabled: service?.status === "completed" || service?.status === "unavailable",
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      const { data } = await supabase.from("services")
+        .select("id,sequence_no")
+        .eq("partner_id", u.user!.id)
+        .eq("scheduled_date", today)
+        .in("status", ["pending", "in_progress"])
+        .neq("id", id)
+        .order("sequence_no", { ascending: true })
+        .limit(1);
+      return data?.[0]?.id ?? null;
+    },
+  });
+
   const { data: photos, refetch: refetchPhotos } = useQuery({
     queryKey: ["service-photos", id],
     queryFn: async () => {
