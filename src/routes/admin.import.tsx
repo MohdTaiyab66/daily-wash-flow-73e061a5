@@ -52,7 +52,7 @@ function ImportPage() {
     subscription_start: today,
     subscription_end: inThirty,
     extended_until: "",
-    preferred_time: TIMES[0],
+    preferred_time: TIMES[0].value,
     is_active: true,
     assigned_partner_id: "",
   });
