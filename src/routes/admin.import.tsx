@@ -155,7 +155,7 @@ function ImportPage() {
             </Field>
             <Field label="Preferred Time Before">
               <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.preferred_time} onChange={setField("preferred_time")}>
-                {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </Field>
             <Field label="Start Date"><Input type="date" value={form.subscription_start} onChange={setField("subscription_start")} /></Field>
