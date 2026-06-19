@@ -18,6 +18,7 @@ import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
 import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
@@ -89,6 +90,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRevenueRoute = AdminRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRenewalsRoute = AdminRenewalsRouteImport.update({
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByTo {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/reliability'
     | '/admin/renewals'
+    | '/admin/revenue'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/reliability'
     | '/admin/renewals'
+    | '/admin/revenue'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/reliability'
     | '/admin/renewals'
+    | '/admin/revenue'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -539,6 +551,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/admin/services'
       preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/revenue': {
+      id: '/admin/revenue'
+      path: '/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminRevenueRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/renewals': {
@@ -809,6 +828,7 @@ interface AdminRouteChildren {
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminReliabilityRoute: typeof AdminReliabilityRoute
   AdminRenewalsRoute: typeof AdminRenewalsRoute
+  AdminRevenueRoute: typeof AdminRevenueRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
@@ -831,6 +851,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPhotosRoute: AdminPhotosRoute,
   AdminReliabilityRoute: AdminReliabilityRoute,
   AdminRenewalsRoute: AdminRenewalsRoute,
+  AdminRevenueRoute: AdminRevenueRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminTrialReadinessRoute: AdminTrialReadinessRoute,
