@@ -16,9 +16,16 @@ import {
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
-const TIMES = ["06:00 - 09:00", "06:30 - 09:00", "07:00 - 09:00", "08:30 - 10:30", "09:00 - 11:00"];
-const REQUIRED_BEFORE = ["07:00", "08:00", "09:00", "10:00", "11:00"];
+const BEFORE_TIMES = [
+  { value: "06:00", label: "Before 6 AM" },
+  { value: "07:00", label: "Before 7 AM" },
+  { value: "08:00", label: "Before 8 AM" },
+  { value: "09:00", label: "Before 9 AM" },
+  { value: "10:00", label: "Before 10 AM" },
+  { value: "11:00", label: "Before 11 AM" },
+];
 const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
+
 
 export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any; vehicles?: any[] }) {
   const [open, setOpen] = useState(false);

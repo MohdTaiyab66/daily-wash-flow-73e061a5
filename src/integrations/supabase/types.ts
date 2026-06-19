@@ -339,6 +339,8 @@ export type Database = {
           is_active: boolean
           latitude: number | null
           longitude: number | null
+          paid_at: string | null
+          payment_status: string
           phone: string
           pincode: string | null
           preferred_time: string
@@ -363,6 +365,8 @@ export type Database = {
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
+          paid_at?: string | null
+          payment_status?: string
           phone: string
           pincode?: string | null
           preferred_time?: string
@@ -387,6 +391,8 @@ export type Database = {
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
+          paid_at?: string | null
+          payment_status?: string
           phone?: string
           pincode?: string | null
           preferred_time?: string
@@ -1421,48 +1427,56 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_update_customer:
-        | {
-            Args: {
-              p_address_line: string
-              p_area: string
-              p_full_name: string
-              p_id: string
-              p_is_active: boolean
-              p_latitude: number
-              p_longitude: number
-              p_package_amount?: number
-              p_phone: string
-              p_pincode: string
-              p_preferred_time: string
-              p_service_required_before: string
-              p_subscription_end: string
-              p_subscription_plan: string
-              p_subscription_start: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_address_line: string
-              p_area: string
-              p_front_image_path?: string
-              p_full_name: string
-              p_id: string
-              p_is_active: boolean
-              p_latitude: number
-              p_longitude: number
-              p_package_amount?: number
-              p_phone: string
-              p_pincode: string
-              p_preferred_time: string
-              p_service_required_before: string
-              p_subscription_end: string
-              p_subscription_plan: string
-              p_subscription_start: string
-            }
-            Returns: undefined
-          }
+      admin_revenue_customers: {
+        Args: never
+        Returns: {
+          amount: number
+          area: string
+          full_name: string
+          id: string
+          is_active: boolean
+          paid_at: string
+          payment_status: string
+          subscription_end: string
+        }[]
+      }
+      admin_revenue_summary: {
+        Args: never
+        Returns: {
+          active_customers: number
+          expected_revenue: number
+          paid_count: number
+          paid_revenue: number
+          pending_count: number
+          pending_revenue: number
+          total_customers: number
+        }[]
+      }
+      admin_set_customer_payment: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_customer: {
+        Args: {
+          p_address_line: string
+          p_area: string
+          p_front_image_path?: string
+          p_full_name: string
+          p_id: string
+          p_is_active: boolean
+          p_latitude: number
+          p_longitude: number
+          p_package_amount?: number
+          p_phone: string
+          p_pincode: string
+          p_preferred_time: string
+          p_service_required_before: string
+          p_subscription_end: string
+          p_subscription_plan: string
+          p_subscription_start: string
+        }
+        Returns: undefined
+      }
       admin_update_partner: {
         Args: {
           p_aadhaar_number?: string
@@ -1563,6 +1577,17 @@ export type Database = {
       set_partner_area: {
         Args: { p_area: string; p_lat: number; p_lng: number }
         Returns: undefined
+      }
+      submit_parking_issue: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_notes: string
+          p_photo: string
+          p_reason: string
+          p_service_id: string
+        }
+        Returns: Json
       }
       submit_service_unavailable: {
         Args: {
