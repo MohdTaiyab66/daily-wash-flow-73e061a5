@@ -196,7 +196,7 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
+    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,payment_status,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
     .order("full_name")
     .limit(500);
   return data ?? [];
