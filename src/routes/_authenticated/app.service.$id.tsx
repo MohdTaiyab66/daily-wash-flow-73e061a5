@@ -214,8 +214,9 @@ function ServiceDetail() {
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
             <DirtyVehicleDialog serviceId={id} onDone={goNext} />
-            <ParkingIssueDialog serviceId={id} />
+            <ParkingIssueDialog serviceId={id} onDone={goNext} />
           </div>
+
 
           {service.status === "in_progress" && (
             <Button size="lg" className="mt-5 w-full" disabled={!beforeDone || !allAfter || complete.isPending} onClick={() => complete.mutate()}>
