@@ -194,17 +194,18 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
           </Field>
           <Field label="Start date"><Input type="date" value={f.subscription_start} onChange={set("subscription_start")} /></Field>
           <Field label="Renewal date"><Input type="date" value={f.subscription_end} onChange={set("subscription_end")} /></Field>
-          <Field label="Preferred time slot">
+          <Field label="Preferred time (before)">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.preferred_time} onChange={set("preferred_time")}>
-              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {BEFORE_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </Field>
           <Field label="Service required before">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.service_required_before} onChange={set("service_required_before")}>
               <option value="">—</option>
-              {REQUIRED_BEFORE.map((t) => <option key={t} value={t}>{t}</option>)}
+              {BEFORE_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </Field>
+
         </div>
 
         <div className="mt-5 rounded-md border border-border p-3">
