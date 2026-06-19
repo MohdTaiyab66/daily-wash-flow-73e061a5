@@ -17,6 +17,8 @@ function AdminLayout() {
     { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },
     { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
     { to: "/admin/renewals", label: "Renewals", icon: RotateCcw },
+    { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
+
     { to: "/admin/customer-map", label: "Customer Map", icon: Map },
     { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
     { to: "/admin/partners", label: "Partners", icon: Users },
