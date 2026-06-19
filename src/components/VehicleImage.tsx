@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Car } from "lucide-react";
 
-/** Renders a vehicle's front image from the private vehicle-images bucket using a signed URL. */
+/** Renders a vehicle's front image. If signedUrl is passed, uses it directly (admin server-signed). */
 export function VehicleImage({
   path,
+  signedUrl,
   className = "",
   alt = "Vehicle",
 }: {
   path?: string | null;
+  signedUrl?: string | null;
   className?: string;
   alt?: string;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(signedUrl ?? null);
 
   useEffect(() => {
+    if (signedUrl) { setUrl(signedUrl); return; }
     let cancelled = false;
     if (!path) {
       setUrl(null);
@@ -29,9 +32,9 @@ export function VehicleImage({
     return () => {
       cancelled = true;
     };
-  }, [path]);
+  }, [path, signedUrl]);
 
-  if (!path) {
+  if (!path && !signedUrl) {
     return (
       <div className={`flex items-center justify-center bg-muted ${className}`}>
         <Car className="h-6 w-6 text-muted-foreground" />

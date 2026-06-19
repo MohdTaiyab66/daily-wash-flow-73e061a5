@@ -20,12 +20,14 @@ export const Route = createFileRoute("/admin/import")({
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
 const TIMES = [
-  "06:00 - 09:00",
-  "06:30 - 09:00",
-  "07:00 - 09:00",
-  "08:30 - 10:30",
-  "09:00 - 11:00",
+  { value: "06:00", label: "Before 6 AM" },
+  { value: "07:00", label: "Before 7 AM" },
+  { value: "08:00", label: "Before 8 AM" },
+  { value: "09:00", label: "Before 9 AM" },
+  { value: "10:00", label: "Before 10 AM" },
+  { value: "11:00", label: "Before 11 AM" },
 ];
+
 
 type VehicleForm = { make: string; model: string; registration_number: string; color: string; parking_notes: string; front_image_path: string; package_amount: string };
 const emptyVehicle = (): VehicleForm => ({ make: "", model: "", registration_number: "", color: "", parking_notes: "", front_image_path: "", package_amount: "" });
@@ -50,7 +52,7 @@ function ImportPage() {
     subscription_start: today,
     subscription_end: inThirty,
     extended_until: "",
-    preferred_time: TIMES[0],
+    preferred_time: TIMES[0].value,
     is_active: true,
     assigned_partner_id: "",
   });
@@ -153,7 +155,7 @@ function ImportPage() {
             </Field>
             <Field label="Preferred Time Before">
               <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.preferred_time} onChange={setField("preferred_time")}>
-                {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </Field>
             <Field label="Start Date"><Input type="date" value={form.subscription_start} onChange={setField("subscription_start")} /></Field>

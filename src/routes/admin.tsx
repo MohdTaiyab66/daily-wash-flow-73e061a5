@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
@@ -8,7 +8,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
     { to: "/admin/trial-readiness", label: "Trial Readiness", icon: ClipboardList },
@@ -17,6 +17,8 @@ function AdminLayout() {
     { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },
     { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
     { to: "/admin/renewals", label: "Renewals", icon: RotateCcw },
+    { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
+
     { to: "/admin/customer-map", label: "Customer Map", icon: Map },
     { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
     { to: "/admin/partners", label: "Partners", icon: Users },

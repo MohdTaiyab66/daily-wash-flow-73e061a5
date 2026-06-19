@@ -52,13 +52,19 @@ function CustomersPage() {
           return (
             <Link key={c.id} to="/admin/customers/$id" params={{ id: c.id }} className="block">
               <Card className="p-5 transition hover:border-foreground/40 hover:shadow-sm">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{c.full_name}</p>
                     <p className="text-xs text-muted-foreground">+91 {c.phone}</p>
                   </div>
-                  <Badge variant={tone as any}>{tag}</Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant={tone as any}>{tag}</Badge>
+                    <Badge variant={c.payment_status === "paid" ? "default" : "destructive"} className="text-[10px]">
+                      {c.payment_status === "paid" ? "Paid" : "Pending ₹"}
+                    </Badge>
+                  </div>
                 </div>
+
                 <p className="mt-3 text-xs text-muted-foreground">{c.area}{c.pincode ? ` · ${c.pincode}` : ""}</p>
                 {c.vehicles?.length > 0 && (
                   <div className="mt-3 flex gap-2">

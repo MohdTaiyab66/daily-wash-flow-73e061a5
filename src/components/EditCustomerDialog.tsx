@@ -16,9 +16,16 @@ import {
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
-const TIMES = ["06:00 - 09:00", "06:30 - 09:00", "07:00 - 09:00", "08:30 - 10:30", "09:00 - 11:00"];
-const REQUIRED_BEFORE = ["07:00", "08:00", "09:00", "10:00", "11:00"];
+const BEFORE_TIMES = [
+  { value: "06:00", label: "Before 6 AM" },
+  { value: "07:00", label: "Before 7 AM" },
+  { value: "08:00", label: "Before 8 AM" },
+  { value: "09:00", label: "Before 9 AM" },
+  { value: "10:00", label: "Before 10 AM" },
+  { value: "11:00", label: "Before 11 AM" },
+];
 const PACKAGES = [799, 899, 999, 1099, 1499, 1598];
+
 
 export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any; vehicles?: any[] }) {
   const [open, setOpen] = useState(false);
@@ -187,17 +194,18 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
           </Field>
           <Field label="Start date"><Input type="date" value={f.subscription_start} onChange={set("subscription_start")} /></Field>
           <Field label="Renewal date"><Input type="date" value={f.subscription_end} onChange={set("subscription_end")} /></Field>
-          <Field label="Preferred time slot">
+          <Field label="Preferred time (before)">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.preferred_time} onChange={set("preferred_time")}>
-              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {BEFORE_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </Field>
           <Field label="Service required before">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.service_required_before} onChange={set("service_required_before")}>
               <option value="">—</option>
-              {REQUIRED_BEFORE.map((t) => <option key={t} value={t}>{t}</option>)}
+              {BEFORE_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </Field>
+
         </div>
 
         <div className="mt-5 rounded-md border border-border p-3">

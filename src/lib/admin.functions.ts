@@ -138,6 +138,29 @@ export const adminDeleteVehicle = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const adminSetCustomerPayment = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string; status: "paid" | "pending" }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin.rpc as any)("admin_set_customer_payment", { p_id: data.id, p_status: data.status });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminRevenueSummary = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [{ data: sum }, { data: rows }] = await Promise.all([
+    (supabaseAdmin.rpc as any)("admin_revenue_summary"),
+    (supabaseAdmin.rpc as any)("admin_revenue_customers"),
+  ]);
+  return {
+    summary: (sum?.[0] ?? null) as null | { total_customers: number; active_customers: number; expected_revenue: number; paid_revenue: number; pending_revenue: number; paid_count: number; pending_count: number },
+    customers: (rows ?? []) as Array<{ id: string; full_name: string; area: string; payment_status: "paid" | "pending"; paid_at: string | null; amount: number; subscription_end: string; is_active: boolean }>,
+  };
+});
+
+
+
 
 export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -173,7 +196,7 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
+    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,payment_status,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
     .order("full_name")
     .limit(500);
   return data ?? [];
@@ -470,9 +493,10 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
-    const [cust, vehicles, services, complaints, extensions] = await Promise.all([
+    const [cust, vehiclesRaw, services, complaints, extensions] = await Promise.all([
       supabaseAdmin.from("customers").select("*").eq("id", data.customer_id).maybeSingle(),
       supabaseAdmin.from("vehicles").select("*").eq("customer_id", data.customer_id),
+
       supabaseAdmin
         .from("services")
         .select("id,scheduled_date,status,completed_at,time_slot,gps_flag,partners(id,full_name,partner_code,phone)")
@@ -545,9 +569,17 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
         .limit(50),
     ]);
 
+    // Sign vehicle image URLs so admin sees photos reliably regardless of bucket policy
+    const vehicles = await Promise.all((vehiclesRaw.data ?? []).map(async (v: any) => {
+      if (!v.front_image_path) return { ...v, signed_image_url: null };
+      const { data: s } = await supabaseAdmin.storage.from("vehicle-images").createSignedUrl(v.front_image_path, 3600);
+      return { ...v, signed_image_url: s?.signedUrl ?? null };
+    }));
+
     return {
       customer: cust.data,
-      vehicles: vehicles.data ?? [],
+      vehicles,
+
       assigned_partner: assignedPartner,
       start_date: start ? start.toISOString().slice(0, 10) : null,
       renewal_date: end ? end.toISOString().slice(0, 10) : null,
