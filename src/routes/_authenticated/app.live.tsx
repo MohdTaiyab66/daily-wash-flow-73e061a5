@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MapPin, Phone, Navigation, Play, AlertTriangle, Clock, Car, Loader2, CheckCircle2 } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
@@ -30,7 +31,7 @@ function RoutePage() {
       const d = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
       return data ?? [];
@@ -82,7 +83,8 @@ function RoutePage() {
 
   const pendingRaw = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
-  const unavailable = (services ?? []).filter((s) => s.status === "unavailable");
+  const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
+  const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   // Optimise: bucket by deadline, nearest-neighbor by distance within bucket.
   const pending = optimizeRoute(
@@ -150,7 +152,7 @@ function RoutePage() {
           const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
           return (
             <Card key={s.id} className="overflow-hidden p-0">
-              <VehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
+              <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
@@ -202,7 +204,7 @@ function RoutePage() {
                 : null;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
@@ -210,6 +212,30 @@ function RoutePage() {
                       <CheckCircle2 className="mr-1 inline h-3 w-3 text-[color:var(--success)]" />
                       {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                       {dur != null && ` · ${dur} min`}
+                    </p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {dirty.length > 0 && (
+        <>
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Dirty vehicles today</h2>
+          <div className="mt-3 space-y-2">
+            {dirty.map((s) => {
+              const c = s.customers as any;
+              const v = s.vehicles as any;
+              return (
+                <Card key={s.id} className="flex items-center gap-3 p-3">
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      <AlertTriangle className="mr-1 inline h-3 w-3 text-destructive" />Dirty vehicle · ₹12 credited
                     </p>
                   </div>
                 </Card>
@@ -228,7 +254,7 @@ function RoutePage() {
               const v = s.vehicles as any;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
@@ -280,5 +306,21 @@ function KPI({ label, value }: { label: string; value: string }) {
       <p className="text-xl font-semibold">{value}</p>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
+  );
+}
+
+function ZoomableVehicleImage({ path, className, alt }: { path?: string | null; className?: string; alt?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => path && setOpen(true)} className={`block w-full p-0 ${path ? "cursor-zoom-in" : "cursor-default"}`} aria-label="View vehicle photo">
+        <VehicleImage path={path} className={className} alt={alt} />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <VehicleImage path={path} className="h-auto max-h-[80vh] w-full" alt={alt} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
