@@ -151,7 +151,7 @@ function RoutePage() {
           const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
           return (
             <Card key={s.id} className="overflow-hidden p-0">
-              <VehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
+              <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
@@ -203,7 +203,7 @@ function RoutePage() {
                 : null;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
@@ -211,6 +211,30 @@ function RoutePage() {
                       <CheckCircle2 className="mr-1 inline h-3 w-3 text-[color:var(--success)]" />
                       {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                       {dur != null && ` · ${dur} min`}
+                    </p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {dirty.length > 0 && (
+        <>
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Dirty vehicles today</h2>
+          <div className="mt-3 space-y-2">
+            {dirty.map((s) => {
+              const c = s.customers as any;
+              const v = s.vehicles as any;
+              return (
+                <Card key={s.id} className="flex items-center gap-3 p-3">
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      <AlertTriangle className="mr-1 inline h-3 w-3 text-destructive" />Dirty vehicle · ₹12 credited
                     </p>
                   </div>
                 </Card>
@@ -229,7 +253,7 @@ function RoutePage() {
               const v = s.vehicles as any;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
