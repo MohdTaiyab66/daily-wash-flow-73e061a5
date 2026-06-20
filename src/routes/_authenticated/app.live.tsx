@@ -140,14 +140,14 @@ function RoutePage() {
             Route is hidden until tomorrow. Contact admin if you need access.
           </Card>
         )}
-        {routeVisible && pending.map((s) => {
+        {routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
           const navUrl = c?.latitude
             ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
-          const priority = cutoffTime && /^(0?[6-8]):/.test(String(cutoffTime));
+          const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
           return (
             <Card key={s.id} className="overflow-hidden p-0">
               <VehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
