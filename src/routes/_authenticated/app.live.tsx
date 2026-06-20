@@ -15,6 +15,8 @@ import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import { optimizeRoute } from "@/lib/route-optimize";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
