@@ -15,6 +15,8 @@ import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import { optimizeRoute } from "@/lib/route-optimize";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -67,23 +69,45 @@ function RoutePage() {
     routeVisible = nowMins < cutoffMins;
   }
 
-  const pending = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
+  // Current GPS for nearest-neighbor seeding. Optional — falls back to first stop.
+  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 },
+    );
+  }, []);
+
+  const pendingRaw = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
   const unavailable = (services ?? []).filter((s) => s.status === "unavailable");
 
-  const stops = pending
-    .filter((s) => {
+  // Optimise: bucket by deadline, nearest-neighbor by distance within bucket.
+  const pending = optimizeRoute(
+    pendingRaw.map((s) => {
       const c = s.customers as any;
-      return c?.latitude != null && c?.longitude != null;
-    })
-    .map((s) => {
+      return {
+        ...s,
+        lat: c?.latitude != null ? Number(c.latitude) : null,
+        lng: c?.longitude != null ? Number(c.longitude) : null,
+        deadline: c?.service_required_before ?? c?.preferred_time ?? null,
+      };
+    }),
+    pos,
+  );
+
+  const stops = pending
+    .filter((s) => s.lat != null && s.lng != null)
+    .map((s, i) => {
       const c = s.customers as any;
       return {
         id: s.id,
-        sequence_no: s.sequence_no,
-        lat: Number(c.latitude),
-        lng: Number(c.longitude),
-        label: c.full_name ?? "Customer",
+        sequence_no: i + 1,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+        label: c?.full_name ?? "Customer",
       };
     });
 
@@ -116,21 +140,21 @@ function RoutePage() {
             Route is hidden until tomorrow. Contact admin if you need access.
           </Card>
         )}
-        {routeVisible && pending.map((s) => {
+        {routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
           const navUrl = c?.latitude
             ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
-          const priority = cutoffTime && /^(0?[6-8]):/.test(String(cutoffTime));
+          const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
           return (
             <Card key={s.id} className="overflow-hidden p-0">
               <VehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
-                    {s.sequence_no}
+                    {idx + 1}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">

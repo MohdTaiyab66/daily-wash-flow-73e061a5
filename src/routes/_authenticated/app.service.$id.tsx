@@ -57,14 +57,23 @@ function ServiceDetail() {
       const today = new Date().toISOString().slice(0, 10);
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase.from("services")
-        .select("id,sequence_no")
+        .select("id,customers(latitude,longitude,service_required_before,preferred_time)")
         .eq("partner_id", u.user!.id)
         .eq("scheduled_date", today)
         .in("status", ["pending", "in_progress"])
-        .neq("id", id)
-        .order("sequence_no", { ascending: true })
-        .limit(1);
-      return data?.[0]?.id ?? null;
+        .neq("id", id);
+      const { pickNextStop } = await import("@/lib/route-optimize");
+      const c = (service as any)?.customers;
+      const from = c?.latitude != null && c?.longitude != null
+        ? { lat: Number(c.latitude), lng: Number(c.longitude) }
+        : null;
+      const candidates = (data ?? []).map((s: any) => ({
+        id: s.id,
+        lat: s.customers?.latitude != null ? Number(s.customers.latitude) : null,
+        lng: s.customers?.longitude != null ? Number(s.customers.longitude) : null,
+        deadline: s.customers?.service_required_before ?? s.customers?.preferred_time ?? null,
+      }));
+      return pickNextStop(candidates, from)?.id ?? null;
     },
   });
 
