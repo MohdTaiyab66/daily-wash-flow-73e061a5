@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -67,6 +67,40 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     front_image_path: second?.front_image_path ?? "",
     parking_notes: second?.parking_notes ?? "",
   });
+
+  // Reload form values whenever the dialog opens or the customer data refreshes,
+  // so successive edits pick up the latest server state instead of stale initial state.
+  useEffect(() => {
+    if (!open) return;
+    setF({
+      full_name: customer.full_name ?? "",
+      phone: customer.phone ?? "",
+      area: customer.area ?? "",
+      address_line: customer.address_line ?? "",
+      pincode: customer.pincode ?? "",
+      latitude: customer.latitude?.toString() ?? "",
+      longitude: customer.longitude?.toString() ?? "",
+      subscription_plan: customer.subscription_plan ?? "daily_shine_monthly",
+      subscription_start: customer.subscription_start ?? "",
+      subscription_end: customer.subscription_end ?? "",
+      preferred_time: customer.preferred_time ?? "06:00",
+      service_required_before: customer.service_required_before ?? "",
+      is_active: customer.is_active ?? true,
+      package_amount: customer.package_amount?.toString() ?? "",
+      front_image_path: customer.front_image_path ?? "",
+    });
+    setV2({
+      id: second?.id ?? "",
+      make: second?.make ?? "",
+      model: second?.model ?? "",
+      registration_number: second?.registration_number ?? "",
+      color: second?.color ?? "",
+      package_amount: second?.package_amount?.toString() ?? "",
+      front_image_path: second?.front_image_path ?? "",
+      parking_notes: second?.parking_notes ?? "",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, customer.id, customer.updated_at]);
 
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
   const set2 = (k: keyof typeof v2) => (e: any) => setV2((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
