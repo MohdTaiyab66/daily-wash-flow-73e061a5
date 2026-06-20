@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MapPin, Phone, Navigation, Play, AlertTriangle, Clock, Car, Loader2, CheckCircle2 } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
