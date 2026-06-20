@@ -308,3 +308,19 @@ function KPI({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function ZoomableVehicleImage({ path, className, alt }: { path?: string | null; className?: string; alt?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => path && setOpen(true)} className={`block w-full p-0 ${path ? "cursor-zoom-in" : "cursor-default"}`} aria-label="View vehicle photo">
+        <VehicleImage path={path} className={className} alt={alt} />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <VehicleImage path={path} className="h-auto max-h-[80vh] w-full" alt={alt} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
