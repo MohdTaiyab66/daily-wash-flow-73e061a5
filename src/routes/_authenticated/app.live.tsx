@@ -154,7 +154,7 @@ function RoutePage() {
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
-                    {s.sequence_no}
+                    {idx + 1}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
