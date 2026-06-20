@@ -30,7 +30,7 @@ function RoutePage() {
       const d = new Date().toISOString().slice(0, 10);
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
       return data ?? [];
@@ -82,7 +82,8 @@ function RoutePage() {
 
   const pendingRaw = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
-  const unavailable = (services ?? []).filter((s) => s.status === "unavailable");
+  const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
+  const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   // Optimise: bucket by deadline, nearest-neighbor by distance within bucket.
   const pending = optimizeRoute(
