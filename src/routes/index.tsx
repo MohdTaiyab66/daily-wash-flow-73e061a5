@@ -74,7 +74,7 @@ function Index() {
   );
 }
 
-function RoleCard({ to, search, title, subtitle, icon, cta, tone = "light" }: { to: string; search?: Record<string, string>; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" | "orange" }) {
+function RoleCard({ to, search, title, subtitle, icon, cta, tone = "light" }: { to: string; search?: any; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" | "orange" }) {
   const toneClass =
     tone === "ink" ? "bg-foreground text-background border-foreground"
     : tone === "orange" ? "bg-primary text-primary-foreground border-primary"
