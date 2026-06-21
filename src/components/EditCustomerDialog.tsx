@@ -37,6 +37,7 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingImage2, setUploadingImage2] = useState(false);
 
+  const primary = vehicles[0];
   const second = vehicles[1];
 
   const [f, setF] = useState({
@@ -54,7 +55,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     service_required_before: customer.service_required_before ?? "",
     is_active: customer.is_active ?? true,
     package_amount: customer.package_amount?.toString() ?? "",
-    front_image_path: customer.front_image_path ?? "",
+    make: primary?.make ?? "",
+    model: primary?.model ?? "",
+    registration_number: primary?.registration_number ?? "",
+    color: primary?.color ?? "",
+    parking_notes: primary?.parking_notes ?? "",
+    front_image_path: primary?.front_image_path ?? customer.front_image_path ?? "",
   });
 
   const [v2, setV2] = useState({
@@ -87,7 +93,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
       service_required_before: customer.service_required_before ?? "",
       is_active: customer.is_active ?? true,
       package_amount: customer.package_amount?.toString() ?? "",
-      front_image_path: customer.front_image_path ?? "",
+      make: primary?.make ?? "",
+      model: primary?.model ?? "",
+      registration_number: primary?.registration_number ?? "",
+      color: primary?.color ?? "",
+      parking_notes: primary?.parking_notes ?? "",
+      front_image_path: primary?.front_image_path ?? customer.front_image_path ?? "",
     });
     setV2({
       id: second?.id ?? "",
@@ -100,7 +111,7 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
       parking_notes: second?.parking_notes ?? "",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, customer.id, customer.updated_at]);
+  }, [open, customer.id, customer.updated_at, vehicles]);
 
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
   const set2 = (k: keyof typeof v2) => (e: any) => setV2((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
