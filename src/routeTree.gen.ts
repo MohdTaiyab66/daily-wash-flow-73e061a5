@@ -13,7 +13,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CIndexRouteImport } from './routes/c/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
@@ -32,7 +34,12 @@ import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
+import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
+import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
+import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
@@ -46,6 +53,7 @@ import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
+import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles.add'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -67,10 +75,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CIndexRoute = CIndexRouteImport.update({
+  id: '/c/',
+  path: '/c/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const CAuthRoute = CAuthRouteImport.update({
+  id: '/c/auth',
+  path: '/c/auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWalletRoute = AdminWalletRouteImport.update({
   id: '/wallet',
@@ -162,10 +180,35 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const CAuthedRouteRoute = CAuthedRouteRouteImport.update({
+  id: '/c/_authed',
+  path: '/c',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
+  id: '/vehicles',
+  path: '/vehicles',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedProfileRoute = CAuthedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedHomeRoute = CAuthedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedBookingsRoute = CAuthedBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => CAuthedRouteRoute,
 } as any)
 const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
   id: '/service/$id',
@@ -238,6 +281,11 @@ const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
   path: '/area',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => CAuthedVehiclesRoute,
+} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -249,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -267,7 +316,9 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
+  '/c/auth': typeof CAuthRoute
   '/admin/': typeof AdminIndexRoute
+  '/c/': typeof CIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/app/earnings': typeof AuthenticatedAppEarningsRoute
@@ -281,12 +332,18 @@ export interface FileRoutesByFullPath {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/c/bookings': typeof CAuthedBookingsRoute
+  '/c/home': typeof CAuthedHomeRoute
+  '/c/profile': typeof CAuthedProfileRoute
+  '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/c': typeof CIndexRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
@@ -304,6 +361,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
+  '/c/auth': typeof CAuthRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
@@ -318,8 +376,13 @@ export interface FileRoutesByTo {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/c/bookings': typeof CAuthedBookingsRoute
+  '/c/home': typeof CAuthedHomeRoute
+  '/c/profile': typeof CAuthedProfileRoute
+  '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -327,6 +390,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -345,7 +409,9 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
+  '/c/auth': typeof CAuthRoute
   '/admin/': typeof AdminIndexRoute
+  '/c/': typeof CIndexRoute
   '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
   '/_authenticated/app/assignments': typeof AuthenticatedAppAssignmentsRoute
   '/_authenticated/app/earnings': typeof AuthenticatedAppEarningsRoute
@@ -359,8 +425,13 @@ export interface FileRoutesById {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/c/_authed/bookings': typeof CAuthedBookingsRoute
+  '/c/_authed/home': typeof CAuthedHomeRoute
+  '/c/_authed/profile': typeof CAuthedProfileRoute
+  '/c/_authed/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/_authed/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -368,6 +439,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/c'
     | '/app'
     | '/admin/attendance'
     | '/admin/customer-map'
@@ -386,7 +458,9 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/trial-readiness'
     | '/admin/wallet'
+    | '/c/auth'
     | '/admin/'
+    | '/c/'
     | '/app/area'
     | '/app/assignments'
     | '/app/earnings'
@@ -400,12 +474,18 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/c/bookings'
+    | '/c/home'
+    | '/c/profile'
+    | '/c/vehicles'
     | '/app/'
     | '/app/service/$id'
+    | '/c/vehicles/add'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/c'
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
@@ -423,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/trial-readiness'
     | '/admin/wallet'
+    | '/c/auth'
     | '/admin'
     | '/app/area'
     | '/app/assignments'
@@ -437,14 +518,20 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/c/bookings'
+    | '/c/home'
+    | '/c/profile'
+    | '/c/vehicles'
     | '/app'
     | '/app/service/$id'
+    | '/c/vehicles/add'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/c/_authed'
     | '/_authenticated/app'
     | '/admin/attendance'
     | '/admin/customer-map'
@@ -463,7 +550,9 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/trial-readiness'
     | '/admin/wallet'
+    | '/c/auth'
     | '/admin/'
+    | '/c/'
     | '/_authenticated/app/area'
     | '/_authenticated/app/assignments'
     | '/_authenticated/app/earnings'
@@ -477,8 +566,13 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/c/_authed/bookings'
+    | '/c/_authed/home'
+    | '/c/_authed/profile'
+    | '/c/_authed/vehicles'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/c/_authed/vehicles/add'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -486,6 +580,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CAuthedRouteRoute: typeof CAuthedRouteRouteWithChildren
+  CAuthRoute: typeof CAuthRoute
+  CIndexRoute: typeof CIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -518,12 +615,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/c/': {
+      id: '/c/'
+      path: '/c'
+      fullPath: '/c/'
+      preLoaderRoute: typeof CIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/c/auth': {
+      id: '/c/auth'
+      path: '/c/auth'
+      fullPath: '/c/auth'
+      preLoaderRoute: typeof CAuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/wallet': {
       id: '/admin/wallet'
@@ -651,12 +762,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/c/_authed': {
+      id: '/c/_authed'
+      path: '/c'
+      fullPath: '/c'
+      preLoaderRoute: typeof CAuthedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/_authed/vehicles': {
+      id: '/c/_authed/vehicles'
+      path: '/vehicles'
+      fullPath: '/c/vehicles'
+      preLoaderRoute: typeof CAuthedVehiclesRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/profile': {
+      id: '/c/_authed/profile'
+      path: '/profile'
+      fullPath: '/c/profile'
+      preLoaderRoute: typeof CAuthedProfileRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/home': {
+      id: '/c/_authed/home'
+      path: '/home'
+      fullPath: '/c/home'
+      preLoaderRoute: typeof CAuthedHomeRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/bookings': {
+      id: '/c/_authed/bookings'
+      path: '/bookings'
+      fullPath: '/c/bookings'
+      preLoaderRoute: typeof CAuthedBookingsRouteImport
+      parentRoute: typeof CAuthedRouteRoute
     }
     '/admin/service/$id': {
       id: '/admin/service/$id'
@@ -748,6 +894,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/area'
       preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/_authed/vehicles/add': {
+      id: '/c/_authed/vehicles/add'
+      path: '/add'
+      fullPath: '/c/vehicles/add'
+      preLoaderRoute: typeof CAuthedVehiclesAddRouteImport
+      parentRoute: typeof CAuthedVehiclesRoute
     }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
@@ -863,11 +1016,44 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CAuthedVehiclesRouteChildren {
+  CAuthedVehiclesAddRoute: typeof CAuthedVehiclesAddRoute
+}
+
+const CAuthedVehiclesRouteChildren: CAuthedVehiclesRouteChildren = {
+  CAuthedVehiclesAddRoute: CAuthedVehiclesAddRoute,
+}
+
+const CAuthedVehiclesRouteWithChildren = CAuthedVehiclesRoute._addFileChildren(
+  CAuthedVehiclesRouteChildren,
+)
+
+interface CAuthedRouteRouteChildren {
+  CAuthedBookingsRoute: typeof CAuthedBookingsRoute
+  CAuthedHomeRoute: typeof CAuthedHomeRoute
+  CAuthedProfileRoute: typeof CAuthedProfileRoute
+  CAuthedVehiclesRoute: typeof CAuthedVehiclesRouteWithChildren
+}
+
+const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
+  CAuthedBookingsRoute: CAuthedBookingsRoute,
+  CAuthedHomeRoute: CAuthedHomeRoute,
+  CAuthedProfileRoute: CAuthedProfileRoute,
+  CAuthedVehiclesRoute: CAuthedVehiclesRouteWithChildren,
+}
+
+const CAuthedRouteRouteWithChildren = CAuthedRouteRoute._addFileChildren(
+  CAuthedRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  CAuthedRouteRoute: CAuthedRouteRouteWithChildren,
+  CAuthRoute: CAuthRoute,
+  CIndexRoute: CIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

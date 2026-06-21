@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Bubbles, Wrench, ChevronDown } from "lucide-react";
+import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,7 +19,7 @@ const SERVICE_ICON: Record<string, any> = {
   daily_shine: Sparkles,
   one_time_basic: Droplets,
   one_time_plus: Droplets,
-  deep_clean: Bubbles,
+  deep_clean: ShowerHead,
   interior_deep: Wrench,
 };
 
