@@ -216,15 +216,23 @@ export const listAdminPartners = createServerFn({ method: "GET" }).handler(async
 
 export const listAdminCustomers = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+    const { data } = await supabaseAdmin
     .from("customers")
-    .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,payment_status,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
+      .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,payment_status,vehicles(id,make,model,registration_number,package_amount,front_image_path,created_at)")
     .order("full_name")
     .limit(500);
-  return (data ?? []).map((c: any) => ({
+  return await Promise.all((data ?? []).map(async (c: any) => ({
     ...c,
-    vehicles: [...(c.vehicles ?? [])].sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
-  }));
+    vehicles: await Promise.all(
+      [...(c.vehicles ?? [])]
+        .sort((a: any, b: any) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")))
+        .map(async (v: any) => {
+          if (!v.front_image_path) return { ...v, signed_image_url: null };
+          const { data: signed } = await supabaseAdmin.storage.from("vehicle-images").createSignedUrl(v.front_image_path, 3600);
+          return { ...v, signed_image_url: signed?.signedUrl ?? null };
+        }),
+    ),
+  })));
 });
 
 export const listAdminServices = createServerFn({ method: "GET" })
