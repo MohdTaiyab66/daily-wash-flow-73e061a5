@@ -1,8 +1,19 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useLocation, redirect } from "@tanstack/react-router";
 import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
+  beforeLoad: async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u?.user) throw redirect({ to: "/auth" });
+    const { data: isAdmin, error } = await supabase.rpc("has_role", {
+      _user_id: u.user.id,
+      _role: "admin",
+    });
+    if (error || !isAdmin) throw redirect({ to: "/" });
+  },
   component: AdminLayout,
 });
 
