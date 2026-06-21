@@ -1509,6 +1509,7 @@ export type Database = {
         Args: { p_assignment_id: string }
         Returns: undefined
       }
+      claim_admin_if_empty: { Args: never; Returns: boolean }
       claim_customer: {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
