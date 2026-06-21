@@ -53,25 +53,47 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin.rpc as any)("admin_update_customer", {
-      p_id: data.id,
-      p_full_name: data.full_name ?? null,
-      p_phone: data.phone ?? null,
-      p_area: data.area ?? null,
-      p_address_line: data.address_line ?? null,
-      p_pincode: data.pincode ?? null,
-      p_latitude: data.latitude ?? null,
-      p_longitude: data.longitude ?? null,
-      p_subscription_plan: data.subscription_plan ?? null,
-      p_subscription_start: data.subscription_start ?? null,
-      p_subscription_end: data.subscription_end ?? null,
-      p_preferred_time: data.preferred_time ?? null,
-      p_service_required_before: data.service_required_before ?? null,
-      p_is_active: data.is_active ?? null,
-      p_package_amount: data.package_amount ?? null,
-      p_front_image_path: data.front_image_path ?? null,
-    });
+    const customerPatch = {
+      full_name: data.full_name?.trim() || null,
+      phone: data.phone?.trim() || null,
+      area: data.area?.trim() || null,
+      address_line: data.address_line?.trim() || null,
+      pincode: data.pincode?.trim() || null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      subscription_plan: data.subscription_plan || "daily_shine_monthly",
+      subscription_start: data.subscription_start || new Date().toISOString().slice(0, 10),
+      subscription_end: data.subscription_end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      preferred_time: data.preferred_time || "06:00",
+      service_required_before: data.service_required_before || null,
+      is_active: data.is_active ?? true,
+      updated_at: new Date().toISOString(),
+    };
+    if (!customerPatch.full_name) throw new Error("Customer name is required");
+    if (!customerPatch.phone) throw new Error("Phone is required");
+    if (!customerPatch.area) throw new Error("Area is required");
+    if (!customerPatch.address_line) throw new Error("Address is required");
+
+    const { error } = await supabaseAdmin.from("customers").update(customerPatch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    const { data: primary } = await supabaseAdmin
+      .from("vehicles")
+      .select("id")
+      .eq("customer_id", data.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (primary) {
+      const { error: vehicleError } = await supabaseAdmin
+        .from("vehicles")
+        .update({
+          package_amount: data.package_amount ?? null,
+          front_image_path: data.front_image_path || null,
+        } as any)
+        .eq("id", (primary as any).id);
+      if (vehicleError) throw new Error(vehicleError.message);
+    }
     return { ok: true };
   });
 
@@ -199,7 +221,10 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
     .select("id,full_name,phone,area,address_line,pincode,subscription_plan,subscription_start,subscription_end,is_active,payment_status,vehicles(id,make,model,registration_number,package_amount,front_image_path)")
     .order("full_name")
     .limit(500);
-  return data ?? [];
+  return (data ?? []).map((c: any) => ({
+    ...c,
+    vehicles: [...(c.vehicles ?? [])].sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
+  }));
 });
 
 export const listAdminServices = createServerFn({ method: "GET" })
@@ -495,7 +520,7 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
 
     const [cust, vehiclesRaw, services, complaints, extensions] = await Promise.all([
       supabaseAdmin.from("customers").select("*").eq("id", data.customer_id).maybeSingle(),
-      supabaseAdmin.from("vehicles").select("*").eq("customer_id", data.customer_id),
+      supabaseAdmin.from("vehicles").select("*").eq("customer_id", data.customer_id).order("created_at", { ascending: true }),
 
       supabaseAdmin
         .from("services")

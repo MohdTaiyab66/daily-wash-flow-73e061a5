@@ -204,7 +204,7 @@ function RoutePage() {
                 : null;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
@@ -230,7 +230,7 @@ function RoutePage() {
               const v = s.vehicles as any;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
@@ -254,7 +254,7 @@ function RoutePage() {
               const v = s.vehicles as any;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
-                  <ZoomableVehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" />
+                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>

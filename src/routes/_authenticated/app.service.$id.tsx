@@ -222,8 +222,9 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} onDone={goNext} />}
             <DirtyVehicleDialog serviceId={id} onDone={goNext} />
-            <ParkingIssueDialog serviceId={id} onDone={goNext} />
+            <ParkingIssueDialog serviceId={id} />
           </div>
 
 
@@ -517,10 +518,9 @@ function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`Parking issue reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
+    toast.success("Parking issue reported");
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
-    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     setOpen(false);
     onDone?.();
   };
@@ -543,7 +543,7 @@ function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?:
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
           <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit · ₹{COMPENSATION}
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit
           </Button>
         </DialogFooter>
       </DialogContent>
