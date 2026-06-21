@@ -1,51 +1,83 @@
-# Urban Wash Trial Mode — Execution Plan
 
-This is a large scope. I'll execute in **3 sequential batches**, finishing the Partner Panel completely before touching Admin. After each batch you confirm before I move on.
+# Urban Wash Customer App V1 — Phased Plan
 
----
+Mobile-first **PWA** living inside the same project as the Partner & Admin apps. Shares one Lovable Cloud backend, one auth, one realtime layer. Customers reach it at `/c/*` routes; partners stay on `/app/*`; admins on `/admin/*`. One codebase, three audiences.
 
-## BATCH 1 — Partner Panel completion (no UI redesign)
+## Design system (applies to every phase)
 
-**Database (single migration):**
-1. `vehicles.front_image_path TEXT` + create public `vehicle-images` storage bucket with RLS (public read, admin write).
-2. `customers.service_required_before TEXT` (values: `07:00`/`08:00`/`09:00`/`10:00`/`11:00`). Backfill from existing `preferred_time`.
-3. `platform_settings` keys: `route_visibility_until` (default `10:00`, allowed `10:00|11:00|12:00|13:00|all_day`), `trial_manual_assignment_enabled` (default `false`).
-4. New RPC `get_my_route(p_date)` returning pending + completed-today with vehicle image, service_required_before, completion_time, duration.
+- Background `#FFFFFF`, primary `#F97316` (Urban Wash Orange), ink `#0F172A`, muted `#64748B`, success `#16A34A`, danger `#EF4444`.
+- Font: **Outfit** (display) + **Figtree** (body), via @fontsource.
+- Rounded-2xl cards, soft shadows, large vehicle hero images, framer-motion micro-animations, bottom tab bar on mobile.
+- All tokens go in `src/styles.css`; no hardcoded color classes. Reuse shadcn primitives.
 
-**Partner app changes:**
-- **My Assignment** (`app.my-assignment.tsx`): add Start Date, End Date, Completed Today, Remaining Today, Total Services, Expected Total Earnings, Available Payout, Progress %. Pull from extended `getMyAssignment`.
-- **Today's Route** (`app.live.tsx` / `app.index.tsx`): split into **Pending** and **Completed Today** sections. Completed card shows customer, vehicle, completion time, duration. Hide route after `route_visibility_until` unless `all_day`.
-- **Vehicle image**: render `vehicles.front_image_path` above customer/vehicle/color/plate in My Assignment list, Today's Route cards, and Service Details (`app.service.$id.tsx`).
-- **Service-required-before** badge replaces generic time slot on route + service detail.
-- **Partner map view** inside Today's Route: reuse `LiveMap` to show partner location + numbered customer pins + polyline route path.
+## Phase 0 — Foundations (1 working session)
 
-**Final partner-panel status report** (COMPLETED / PARTIAL / NOT IMPLEMENTED) for every Phase 1–15 item.
+- New customer route tree under `src/routes/c/` with `_authed` layout (OTP-gated).
+- Shared design tokens, fonts, bottom tab bar, push/notification permission helper.
+- New tables: `customer_profiles` (auth.users link), `customer_addresses`, `area_waitlist` (Notify Me captures), `app_content` (banners/videos per service), `vehicle_catalog` (make/model/category/image), `service_catalog` (name, desc, price tiers, add-ons, video, category targeting, active), `bookings`, `booking_addons`, `complaints` (extend), `referrals` (extend), `subscription_pauses`, `push_tokens`.
+- All new tables get GRANTs + RLS scoped to `auth.uid()`. Admin policies via `has_role`.
+- Seed `vehicle_catalog` with the brand/model list + auto-classification (Hatchback/Compact Sedan vs Sedan/SUV).
 
----
+## Phase 1 — Onboarding & Home (1 session)
 
-## BATCH 2 — Admin operational controls
+- Location screen: GPS or manual search across the 12 service areas.
+- "Coming soon" + Notify Me capture for out-of-area.
+- Phone OTP login (reuses existing Supabase phone auth used by partners).
+- Vehicle add flow with typeahead against `vehicle_catalog`, auto-category, fields (color, reg #, parking notes, image).
+- Home: location pill, vehicle switcher (Hoora-style), service category cards with banner image + 30s video.
 
-1. **Manual Assignment** (`/admin/manual-assignment`): pick partner → multi-select customers → duration → submit. New RPC `admin_create_manual_assignment(...)` bypassing area filter, gated by `trial_manual_assignment_enabled`.
-2. **Trial Mode toggle** + **Route Visibility selector** in `/admin/settings`.
-3. **Customer editing** (`/admin/customers/$id`): full edit dialog covering every field listed (name, phone, area, lat/lng, vehicle, image upload, plate, color, parking, plan, service_required_before, start/extension/renewal dates, status, assigned partner). New RPC `admin_update_customer(...)`.
-4. **Customer import** (`/admin/import`): add vehicle image upload (mandatory), service_required_before dropdown, extension_until, renewal_date, status, assigned_partner.
-5. **Admin overview** (`/admin/index.tsx`): wrap each stat card in `<Link>` to its module.
+## Phase 2 — Services, Subscriptions & Booking (1–2 sessions)
 
----
+- Service detail page (video, benefits, pricing per category, add-ons).
+- Daily Shine subscription flows (monthly default) with add-ons, multi-vehicle discount (2 cars 5%, 3+ 10%, all admin-configurable).
+- One-Time Wash, Deep Clean, Interior Deep Clean — pricing from `service_catalog`, never hardcoded.
+- Booking funnel: Vehicle → Service → Add-ons → Address → Preferred time (Before 7/8/9/10/11/12) → Schedule → Review → Pay → Success.
+- **Razorpay integration** (UPI/Cards/Wallets/NetBanking). Server function creates order; webhook (`/api/public/webhooks/razorpay`) verifies signature and marks `bookings.paid_at` / inserts subscription. Will request Razorpay key & secret via add_secret when this phase starts.
 
-## BATCH 3 — Admin map + realtime polish
+## Phase 3 — Subscription Lifecycle, Gallery & Complaints (1 session)
 
-1. **Customer Map** (`/admin/customer-map`): plot all customers, color-coded (green active / orange renewal-due-7d / red inactive), popup with name, vehicle, plan, renewal, partner, status.
-2. **Realtime**: enable Realtime publication on `services`, `assignments`, `customers`; subscribe in My Assignment + Today's Route (component-scoped, cleanup on unmount).
-3. Final cross-module bug pass on all 12 modules from your section 12.
+- Active Subscriptions screen: plan, vehicle, dates, completed/remaining/unavailable/extended/compensation days, partner assigned.
+- My Bookings (Upcoming/Completed/Cancelled).
+- **Service Gallery** by day — before/after photos from existing `service_photos`, 30-day retention.
+- Service Status History (Completed, Unavailable, Dirty Vehicle, Parking Issue, Missed, Compensated, Extended).
+- Complaint flow (2-hour window after completion) → writes to `complaints`, admin notified.
+- Subscription Pause (reasons, auto-extend renewal date).
 
----
+## Phase 4 — Realtime, Notifications & Profile (1 session)
 
-## Technical notes
-- Manual assignment uses the existing `assignments` + `services` schema — no parallel system. The flag only relaxes the area filter and skips `min_assignment_days_new`.
-- Vehicle image bucket is public-read so partner app `<img src>` works without signed URLs; uploads gated by `has_role(..., 'admin')`.
-- Route visibility is enforced client-side (cheap, partner can't bypass anything meaningful — the assignment itself isn't hidden, only the route surface).
+- Realtime via existing `supabase_realtime` publication on `services` and `bookings` — Partner Assigned / Arrived / Started / Completed / Photos / Dirty / Unavailable / Extension events push to the customer instantly.
+- Web Push (PWA) via FCM messaging worker for renewal due, payment success, complaint resolved, pause/resume.
+- Profile: personal details, vehicles, addresses, subscriptions, payments, referral code, support, terms, privacy, delete account.
+- Referral system reading `referrals` table; rewards admin-configurable.
 
----
+## Phase 5 — Admin CMS extensions (1 session)
 
-**Reply `go batch 1`** to start with Partner Panel, or tell me to reorder / drop items.
+Extend the existing admin panel — no new dashboard:
+- Service catalog editor (create/edit/delete services, prices per category, add-ons, banner, 30s video upload).
+- Vehicle catalog editor (brands/models/category mapping).
+- Pricing & discount config (multi-vehicle %, referral rewards) into `platform_settings`.
+- Booking, complaint, pause-request, extension queues.
+- Customer-app push composer (broadcast / area / segment).
+
+## Phase 6 — PWA polish & launch
+
+- `manifest.webmanifest`, install prompt, Urban Wash icon set, splash, theme color `#F97316`.
+- Offline shell only for the home + gallery views via `vite-plugin-pwa` (`NetworkFirst`).
+- Lighthouse pass; Android + iOS install QA; published-URL push smoke test.
+
+## Technical Details (for reference)
+
+- **No new edge functions.** All app-internal logic uses TanStack `createServerFn` under `src/lib/customer.functions.ts`. Razorpay webhook is a server route at `src/routes/api/public/webhooks/razorpay.ts` with HMAC verification.
+- **One auth.** Same Supabase user can hold roles `customer`, `partner`, `admin` via `user_roles` — gates by role.
+- **One project, three route trees:** `src/routes/c/_authed/*` (customer), existing `src/routes/_authenticated/app.*` (partner), existing `src/routes/admin.*` (admin).
+- **Pricing is data, not code.** `service_catalog` rows drive every screen; admin edits propagate via React Query invalidation + realtime.
+- **Image/video storage:** new `customer-media` and `service-media` buckets with signed URLs.
+- **State:** TanStack Query everywhere, suspense queries in loaders under the customer auth gate.
+
+## What I need from you before starting
+
+1. **Confirm phase 1 start.** I'll begin with Phase 0 + Phase 1 (foundations, onboarding, vehicle add, home).
+2. **Razorpay account ready?** Not blocking until Phase 2.
+3. **Any service prices I should treat as locked starting values** (the ones in your brief), or do you want me to leave the catalog empty and seed from the admin UI?
+
+Reply "go" and I'll start Phase 0 + Phase 1.
