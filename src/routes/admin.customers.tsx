@@ -70,7 +70,7 @@ function CustomersPage() {
                   <div className="mt-3 flex gap-2">
                     {c.vehicles.slice(0, 2).map((v: any) => (
                       <div key={v.id} className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-muted/40 p-1.5">
-                        <VehicleImage path={v.front_image_path} className="h-10 w-14 shrink-0 rounded" alt={`${v.make} ${v.model}`} />
+                        <VehicleImage path={v.front_image_path} signedUrl={v.signed_image_url} className="h-10 w-14 shrink-0 rounded" alt={`${v.make} ${v.model}`} />
                         <div className="min-w-0">
                           <p className="truncate text-[11px] font-medium">{v.make} {v.model}</p>
                           <p className="truncate text-[10px] text-muted-foreground">{v.registration_number}</p>
