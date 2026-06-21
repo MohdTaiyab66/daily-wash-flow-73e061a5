@@ -134,6 +134,11 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
         service_required_before: f.service_required_before || null,
         is_active: f.is_active,
         package_amount: f.package_amount ? Number(f.package_amount) : null,
+        make: f.make,
+        model: f.model,
+        registration_number: f.registration_number,
+        color: f.color || null,
+        parking_notes: f.parking_notes || null,
         front_image_path: f.front_image_path || null,
       }});
 
@@ -225,6 +230,11 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
               {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
             </select>
           </Field>
+          <Field label="Vehicle make"><Input value={f.make} onChange={set("make")} /></Field>
+          <Field label="Vehicle model"><Input value={f.model} onChange={set("model")} /></Field>
+          <Field label="Registration"><Input value={f.registration_number} onChange={set("registration_number")} /></Field>
+          <Field label="Vehicle color"><Input value={f.color} onChange={set("color")} /></Field>
+          <Field label="Parking notes" full><Input value={f.parking_notes} onChange={set("parking_notes")} /></Field>
           <Field label="Vehicle front image" full>
             <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 1)} />
