@@ -53,7 +53,8 @@ function Index() {
             cta="Open Partner App"
           />
           <RoleCard
-            to="/admin"
+            to="/auth"
+            search={{ redirect: "/admin" }}
             title="Admin Dashboard"
             subtitle="Manage partners, customers, services and payouts."
             icon={<ShieldCheck className="h-6 w-6" />}
@@ -73,7 +74,7 @@ function Index() {
   );
 }
 
-function RoleCard({ to, title, subtitle, icon, cta, tone = "light" }: { to: string; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" | "orange" }) {
+function RoleCard({ to, search, title, subtitle, icon, cta, tone = "light" }: { to: string; search?: any; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" | "orange" }) {
   const toneClass =
     tone === "ink" ? "bg-foreground text-background border-foreground"
     : tone === "orange" ? "bg-primary text-primary-foreground border-primary"
@@ -89,6 +90,7 @@ function RoleCard({ to, title, subtitle, icon, cta, tone = "light" }: { to: stri
   return (
     <Link
       to={to}
+      search={search}
       className={`group flex flex-col justify-between rounded-3xl border p-7 transition-all hover:-translate-y-0.5 hover:shadow-lg ${toneClass}`}
     >
       <div>

@@ -50,6 +50,11 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" }).middleware
     service_required_before?: string | null;
     is_active?: boolean;
     package_amount?: number | null;
+    make?: string | null;
+    model?: string | null;
+    registration_number?: string | null;
+    color?: string | null;
+    parking_notes?: string | null;
     front_image_path?: string | null;
   }) => d)
   .handler(async ({ data }) => {
@@ -86,12 +91,18 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" }).middleware
       .limit(1)
       .maybeSingle();
     if (primary) {
+      const vehiclePatch: Record<string, unknown> = {
+        package_amount: data.package_amount ?? null,
+        front_image_path: data.front_image_path || null,
+      };
+      if (data.make !== undefined) vehiclePatch.make = data.make?.trim() || "Unknown";
+      if (data.model !== undefined) vehiclePatch.model = data.model?.trim() || "Unknown";
+      if (data.registration_number !== undefined) vehiclePatch.registration_number = data.registration_number?.trim() || `PENDING-${data.id.slice(0, 8).toUpperCase()}`;
+      if (data.color !== undefined) vehiclePatch.color = data.color?.trim() || null;
+      if (data.parking_notes !== undefined) vehiclePatch.parking_notes = data.parking_notes?.trim() || null;
       const { error: vehicleError } = await supabaseAdmin
         .from("vehicles")
-        .update({
-          package_amount: data.package_amount ?? null,
-          front_image_path: data.front_image_path || null,
-        } as any)
+        .update(vehiclePatch as any)
         .eq("id", (primary as any).id);
       if (vehicleError) throw new Error(vehicleError.message);
     }

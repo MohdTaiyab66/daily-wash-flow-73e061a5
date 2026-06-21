@@ -37,6 +37,7 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingImage2, setUploadingImage2] = useState(false);
 
+  const primary = vehicles[0];
   const second = vehicles[1];
 
   const [f, setF] = useState({
@@ -54,7 +55,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     service_required_before: customer.service_required_before ?? "",
     is_active: customer.is_active ?? true,
     package_amount: customer.package_amount?.toString() ?? "",
-    front_image_path: customer.front_image_path ?? "",
+    make: primary?.make ?? "",
+    model: primary?.model ?? "",
+    registration_number: primary?.registration_number ?? "",
+    color: primary?.color ?? "",
+    parking_notes: primary?.parking_notes ?? "",
+    front_image_path: primary?.front_image_path ?? customer.front_image_path ?? "",
   });
 
   const [v2, setV2] = useState({
@@ -87,7 +93,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
       service_required_before: customer.service_required_before ?? "",
       is_active: customer.is_active ?? true,
       package_amount: customer.package_amount?.toString() ?? "",
-      front_image_path: customer.front_image_path ?? "",
+      make: primary?.make ?? "",
+      model: primary?.model ?? "",
+      registration_number: primary?.registration_number ?? "",
+      color: primary?.color ?? "",
+      parking_notes: primary?.parking_notes ?? "",
+      front_image_path: primary?.front_image_path ?? customer.front_image_path ?? "",
     });
     setV2({
       id: second?.id ?? "",
@@ -100,7 +111,7 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
       parking_notes: second?.parking_notes ?? "",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, customer.id, customer.updated_at]);
+  }, [open, customer.id, customer.updated_at, vehicles]);
 
   const set = (k: keyof typeof f) => (e: any) => setF((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
   const set2 = (k: keyof typeof v2) => (e: any) => setV2((p) => ({ ...p, [k]: e?.target ? e.target.value : e }));
@@ -123,6 +134,11 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
         service_required_before: f.service_required_before || null,
         is_active: f.is_active,
         package_amount: f.package_amount ? Number(f.package_amount) : null,
+        make: f.make,
+        model: f.model,
+        registration_number: f.registration_number,
+        color: f.color || null,
+        parking_notes: f.parking_notes || null,
         front_image_path: f.front_image_path || null,
       }});
 
@@ -214,6 +230,11 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
               {PACKAGES.map((p) => <option key={p} value={p}>₹{p}</option>)}
             </select>
           </Field>
+          <Field label="Vehicle make"><Input value={f.make} onChange={set("make")} /></Field>
+          <Field label="Vehicle model"><Input value={f.model} onChange={set("model")} /></Field>
+          <Field label="Registration"><Input value={f.registration_number} onChange={set("registration_number")} /></Field>
+          <Field label="Vehicle color"><Input value={f.color} onChange={set("color")} /></Field>
+          <Field label="Parking notes" full><Input value={f.parking_notes} onChange={set("parking_notes")} /></Field>
           <Field label="Vehicle front image" full>
             <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 1)} />
