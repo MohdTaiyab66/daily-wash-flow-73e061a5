@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireAdmin } from "@/lib/admin-middleware";
 
 // =================== Manual Assignment (trial mode) ===================
-export const adminCreateManualAssignment = createServerFn({ method: "POST" })
+export const adminCreateManualAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { partner_id: string; customer_ids: string[]; duration_days: number }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -14,7 +15,7 @@ export const adminCreateManualAssignment = createServerFn({ method: "POST" })
     return { assignment_id: result };
   });
 
-export const adminListUnassignedCustomers = createServerFn({ method: "GET" })
+export const adminListUnassignedCustomers = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { area?: string } | undefined) => d ?? {})
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -25,14 +26,14 @@ export const adminListUnassignedCustomers = createServerFn({ method: "GET" })
     return (rows ?? []) as Array<{ id: string; full_name: string; area: string; phone: string; subscription_end: string; preferred_time: string; vehicle_make: string; vehicle_model: string; registration_number: string }>;
   });
 
-export const getAvailableCustomersByArea = createServerFn({ method: "GET" }).handler(async () => {
+export const getAvailableCustomersByArea = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin.rpc as any)("available_customers_by_area");
   if (error) throw new Error(error.message);
   return (data ?? []) as Array<{ area: string; available: number; total_active: number }>;
 });
 
-export const adminUpdateCustomer = createServerFn({ method: "POST" })
+export const adminUpdateCustomer = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: {
     id: string;
     full_name?: string;
@@ -97,7 +98,7 @@ export const adminUpdateCustomer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminDeleteCustomer = createServerFn({ method: "POST" })
+export const adminDeleteCustomer = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -108,7 +109,7 @@ export const adminDeleteCustomer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const createVehicleImageUploadUrl = createServerFn({ method: "POST" })
+export const createVehicleImageUploadUrl = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { path: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -117,7 +118,7 @@ export const createVehicleImageUploadUrl = createServerFn({ method: "POST" })
     return signed;
   });
 
-export const adminUpsertSecondaryVehicle = createServerFn({ method: "POST" })
+export const adminUpsertSecondaryVehicle = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: {
     customer_id: string;
     vehicle_id?: string | null;
@@ -151,7 +152,7 @@ export const adminUpsertSecondaryVehicle = createServerFn({ method: "POST" })
     return { id: row!.id };
   });
 
-export const adminDeleteVehicle = createServerFn({ method: "POST" })
+export const adminDeleteVehicle = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { vehicle_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -160,7 +161,7 @@ export const adminDeleteVehicle = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminSetCustomerPayment = createServerFn({ method: "POST" })
+export const adminSetCustomerPayment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { id: string; status: "paid" | "pending" }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -169,7 +170,7 @@ export const adminSetCustomerPayment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminRevenueSummary = createServerFn({ method: "GET" }).handler(async () => {
+export const adminRevenueSummary = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: sum }, { data: rows }] = await Promise.all([
     (supabaseAdmin.rpc as any)("admin_revenue_summary"),
@@ -184,7 +185,7 @@ export const adminRevenueSummary = createServerFn({ method: "GET" }).handler(asy
 
 
 
-export const getAdminOverview = createServerFn({ method: "GET" }).handler(async () => {
+export const getAdminOverview = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [partners, customers, services, completed, today] = await Promise.all([
     supabaseAdmin.from("partners").select("*", { count: "exact", head: true }),
@@ -204,7 +205,7 @@ export const getAdminOverview = createServerFn({ method: "GET" }).handler(async 
   };
 });
 
-export const listAdminPartners = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdminPartners = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("partners")
@@ -214,7 +215,7 @@ export const listAdminPartners = createServerFn({ method: "GET" }).handler(async
   return data ?? [];
 });
 
-export const listAdminCustomers = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdminCustomers = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
     .from("customers")
@@ -235,7 +236,7 @@ export const listAdminCustomers = createServerFn({ method: "GET" }).handler(asyn
   })));
 });
 
-export const listAdminServices = createServerFn({ method: "GET" })
+export const listAdminServices = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { q?: string } | undefined) => d ?? {})
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -279,7 +280,7 @@ export const listAdminServices = createServerFn({ method: "GET" })
   });
 
 // Partner edit
-export const updatePartnerProfile = createServerFn({ method: "POST" })
+export const updatePartnerProfile = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: {
     id: string;
     full_name?: string;
@@ -320,7 +321,7 @@ export const updatePartnerProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminCancelAssignment = createServerFn({ method: "POST" })
+export const adminCancelAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { assignment_id: string; note?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -333,7 +334,7 @@ export const adminCancelAssignment = createServerFn({ method: "POST" })
   });
 
 // Monthly wash
-export const markMonthlyWash = createServerFn({ method: "POST" })
+export const markMonthlyWash = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string; kind: "interior" | "exterior"; done_date: string; partner_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -348,13 +349,13 @@ export const markMonthlyWash = createServerFn({ method: "POST" })
   });
 
 
-export const listSettings = createServerFn({ method: "GET" }).handler(async () => {
+export const listSettings = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.from("platform_settings").select("key,value,description").order("key");
   return data ?? [];
 });
 
-export const updateSetting = createServerFn({ method: "POST" })
+export const updateSetting = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { key: string; value: number | string | boolean }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -372,7 +373,7 @@ export const updateSetting = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const listServicePhotos = createServerFn({ method: "GET" }).handler(async () => {
+export const listServicePhotos = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const { data } = await supabaseAdmin
@@ -392,7 +393,7 @@ export const listServicePhotos = createServerFn({ method: "GET" }).handler(async
   return signed;
 });
 
-export const getAdminServiceDetail = createServerFn({ method: "GET" })
+export const getAdminServiceDetail = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { service_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -448,7 +449,7 @@ type VehicleInput = {
   package_amount?: number;
 };
 
-export const createCustomerImport = createServerFn({ method: "POST" })
+export const createCustomerImport = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: {
     full_name: string;
     phone: string;
@@ -509,7 +510,7 @@ export const createCustomerImport = createServerFn({ method: "POST" })
     return { customer: cust, vehicle_count: vehRows.length };
   });
 
-export const listAdminPartnersBrief = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdminPartnersBrief = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("partners")
@@ -519,7 +520,7 @@ export const listAdminPartnersBrief = createServerFn({ method: "GET" }).handler(
 });
 
 // =================== Customer Profile ===================
-export const getCustomerProfile = createServerFn({ method: "GET" })
+export const getCustomerProfile = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -629,7 +630,7 @@ export const getCustomerProfile = createServerFn({ method: "GET" })
     };
   });
 
-export const extendCustomerSubscription = createServerFn({ method: "POST" })
+export const extendCustomerSubscription = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string; days: number; reason: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -644,7 +645,7 @@ export const extendCustomerSubscription = createServerFn({ method: "POST" })
 
 
 // =================== Renewals (advanced) ===================
-export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date();
   const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -676,7 +677,7 @@ export const listAdminRenewalsAdvanced = createServerFn({ method: "GET" }).handl
 });
 
 // =================== Partner assignment manager (admin) ===================
-export const getPartnerAssignmentDetail = createServerFn({ method: "GET" })
+export const getPartnerAssignmentDetail = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { partner_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -734,7 +735,7 @@ export const getPartnerAssignmentDetail = createServerFn({ method: "GET" })
     };
   });
 
-export const adminUpdateAssignment = createServerFn({ method: "POST" })
+export const adminUpdateAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: {
     assignment_id: string;
     rate_per_car?: number;
@@ -763,7 +764,7 @@ export const adminUpdateAssignment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminAddCustomerToAssignment = createServerFn({ method: "POST" })
+export const adminAddCustomerToAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { assignment_id: string; customer_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -814,7 +815,7 @@ export const adminAddCustomerToAssignment = createServerFn({ method: "POST" })
     return { ok: true, added: rows.length };
   });
 
-export const adminRemoveCustomerFromAssignment = createServerFn({ method: "POST" })
+export const adminRemoveCustomerFromAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { assignment_id: string; customer_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

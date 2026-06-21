@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireAdmin } from "@/lib/admin-middleware";
 
 // ============== Admin Live Ops Dashboard ==============
-export const getLiveOps = createServerFn({ method: "GET" }).handler(async () => {
+export const getLiveOps = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date().toISOString().slice(0, 10);
   const [counts, recentCompleted, recentUnavail, recentDirty, recentParking] = await Promise.all([
@@ -45,7 +46,7 @@ export const getLiveOps = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 // ============== Fraud / GPS Validation Queue ==============
-export const listFraudFlags = createServerFn({ method: "GET" }).handler(async () => {
+export const listFraudFlags = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("services")
@@ -56,7 +57,7 @@ export const listFraudFlags = createServerFn({ method: "GET" }).handler(async ()
   return data ?? [];
 });
 
-export const clearFraudFlag = createServerFn({ method: "POST" })
+export const clearFraudFlag = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { service_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -69,7 +70,7 @@ export const clearFraudFlag = createServerFn({ method: "POST" })
   });
 
 // ============== Partner Reliability ==============
-export const listPartnerReliability = createServerFn({ method: "GET" }).handler(async () => {
+export const listPartnerReliability = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: partners } = await supabaseAdmin
     .from("partners")
@@ -85,7 +86,7 @@ export const listPartnerReliability = createServerFn({ method: "GET" }).handler(
 });
 
 // ============== Attendance Dashboard ==============
-export const getAttendanceToday = createServerFn({ method: "GET" }).handler(async () => {
+export const getAttendanceToday = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabaseAdmin
@@ -99,7 +100,7 @@ export const getAttendanceToday = createServerFn({ method: "GET" }).handler(asyn
 });
 
 // ============== Renewals Dashboard ==============
-export const getRenewals = createServerFn({ method: "GET" }).handler(async () => {
+export const getRenewals = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date();
   const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -119,7 +120,7 @@ export const getRenewals = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 // ============== Customer Map ==============
-export const listCustomersForMap = createServerFn({ method: "GET" }).handler(async () => {
+export const listCustomersForMap = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("customers")
@@ -138,7 +139,7 @@ export const listCustomersForMap = createServerFn({ method: "GET" }).handler(asy
   });
 });
 
-export const getTrialReadinessReport = createServerFn({ method: "GET" }).handler(async () => {
+export const getTrialReadinessReport = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date().toISOString().slice(0, 10);
   const [activeCustomers, assignedCustomers, activePartners, servicesToday, pendingToday, completedToday] = await Promise.all([
@@ -163,7 +164,7 @@ export const getTrialReadinessReport = createServerFn({ method: "GET" }).handler
 });
 
 // ============== Wallet Ledger (admin) ==============
-export const listAdminLedger = createServerFn({ method: "GET" })
+export const listAdminLedger = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { partner_id?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -178,7 +179,7 @@ export const listAdminLedger = createServerFn({ method: "GET" })
   });
 
 // ============== Assignment Change History (admin) ==============
-export const listAdminAssignmentChanges = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdminAssignmentChanges = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("assignment_changes")
