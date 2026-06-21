@@ -53,7 +53,7 @@ function Index() {
             cta="Open Partner App"
           />
           <RoleCard
-            to="/admin"
+            to="/auth?redirect=/admin"
             title="Admin Dashboard"
             subtitle="Manage partners, customers, services and payouts."
             icon={<ShieldCheck className="h-6 w-6" />}
