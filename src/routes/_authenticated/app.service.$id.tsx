@@ -508,7 +508,7 @@ function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     if (!photo) return toast.error("Upload a proof photo");
     setSaving(true);
     const pos = await getPosition();
-    const { data, error } = await supabase.rpc("submit_parking_issue", {
+    const { error } = await supabase.rpc("submit_parking_issue", {
       p_service_id: serviceId,
       p_reason: reason,
       p_notes: notes || "",
