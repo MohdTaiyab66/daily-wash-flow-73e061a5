@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Car, ShieldCheck, ArrowRight } from "lucide-react";
+import { Car, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/")({
@@ -36,7 +36,15 @@ function Index() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <RoleCard
+            to="/c"
+            title="Customer App"
+            subtitle="Book daily car cleaning, manage subscriptions, see service photos."
+            icon={<Sparkles className="h-6 w-6" />}
+            cta="Open Customer App"
+            tone="orange"
+          />
           <RoleCard
             to="/auth"
             title="Partner App"
@@ -65,22 +73,30 @@ function Index() {
   );
 }
 
-function RoleCard({ to, title, subtitle, icon, cta, tone = "light" }: { to: string; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" }) {
+function RoleCard({ to, title, subtitle, icon, cta, tone = "light" }: { to: string; title: string; subtitle: string; icon: React.ReactNode; cta: string; tone?: "light" | "ink" | "orange" }) {
+  const toneClass =
+    tone === "ink" ? "bg-foreground text-background border-foreground"
+    : tone === "orange" ? "bg-primary text-primary-foreground border-primary"
+    : "bg-card text-foreground border-border";
+  const iconClass =
+    tone === "ink" ? "bg-background/10 text-background"
+    : tone === "orange" ? "bg-background/15 text-primary-foreground"
+    : "bg-accent text-accent-foreground";
+  const subClass =
+    tone === "ink" ? "text-background/70"
+    : tone === "orange" ? "text-primary-foreground/85"
+    : "text-muted-foreground";
   return (
     <Link
       to={to}
-      className={`group flex flex-col justify-between rounded-3xl border p-7 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
-        tone === "ink"
-          ? "bg-foreground text-background border-foreground"
-          : "bg-card text-foreground border-border"
-      }`}
+      className={`group flex flex-col justify-between rounded-3xl border p-7 transition-all hover:-translate-y-0.5 hover:shadow-lg ${toneClass}`}
     >
       <div>
-        <div className={`grid h-12 w-12 place-items-center rounded-2xl ${tone === "ink" ? "bg-background/10 text-background" : "bg-accent text-accent-foreground"}`}>
+        <div className={`grid h-12 w-12 place-items-center rounded-2xl ${iconClass}`}>
           {icon}
         </div>
         <h2 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h2>
-        <p className={`mt-2 text-sm ${tone === "ink" ? "text-background/70" : "text-muted-foreground"}`}>{subtitle}</p>
+        <p className={`mt-2 text-sm ${subClass}`}>{subtitle}</p>
       </div>
       <div className="mt-8 inline-flex items-center gap-1 text-sm font-medium">
         {cta} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

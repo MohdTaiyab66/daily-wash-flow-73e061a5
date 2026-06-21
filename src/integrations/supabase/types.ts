@@ -46,6 +46,33 @@ export type Database = {
           },
         ]
       }
+      area_waitlist: {
+        Row: {
+          area: string
+          created_at: string
+          full_name: string | null
+          id: string
+          notified: boolean
+          phone: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          notified?: boolean
+          phone: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          notified?: boolean
+          phone?: string
+        }
+        Relationships: []
+      }
       assignment_changes: {
         Row: {
           assignment_id: string
@@ -215,6 +242,123 @@ export type Database = {
           },
         ]
       }
+      booking_addons: {
+        Row: {
+          addon_key: string
+          addon_name: string
+          booking_id: string
+          created_at: string
+          id: string
+          price: number
+        }
+        Insert: {
+          addon_key: string
+          addon_name: string
+          booking_id: string
+          created_at?: string
+          id?: string
+          price: number
+        }
+        Update: {
+          addon_key?: string
+          addon_name?: string
+          booking_id?: string
+          created_at?: string
+          id?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          addon_amount: number
+          address_id: string | null
+          base_amount: number
+          created_at: string
+          discount_amount: number
+          id: string
+          payment_status: string
+          preferred_before_time: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          scheduled_date: string | null
+          service_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          addon_amount?: number
+          address_id?: string | null
+          base_amount?: number
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          payment_status?: string
+          preferred_before_time?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          scheduled_date?: string | null
+          service_id: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          addon_amount?: number
+          address_id?: string | null
+          base_amount?: number
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          payment_status?: string
+          preferred_before_time?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          scheduled_date?: string | null
+          service_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "customer_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaints: {
         Row: {
           complaint_type: string
@@ -276,6 +420,87 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          address_line: string
+          area: string
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          latitude: number | null
+          longitude: number | null
+          parking_notes: string | null
+          pincode: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line: string
+          area: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          parking_notes?: string | null
+          pincode?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line?: string
+          area?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          parking_notes?: string | null
+          pincode?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      customer_profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          marketing_opt_in: boolean
+          phone: string | null
+          preferred_area: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          marketing_opt_in?: boolean
+          phone?: string | null
+          preferred_area?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          marketing_opt_in?: boolean
+          phone?: string | null
+          preferred_area?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_referrals: {
         Row: {
           approved_at: string | null
@@ -322,6 +547,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_vehicles: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          id: string
+          image_path: string | null
+          is_default: boolean
+          make: string
+          model: string
+          parking_notes: string | null
+          registration_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          is_default?: boolean
+          make: string
+          model: string
+          parking_notes?: string | null
+          registration_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          is_default?: boolean
+          make?: string
+          model?: string
+          parking_notes?: string | null
+          registration_number?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -856,6 +1126,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_analytics: {
         Row: {
           area: string | null
@@ -903,6 +1197,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_catalog: {
+        Row: {
+          active: boolean
+          addons: Json
+          banner_url: string | null
+          benefits: string[] | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          name: string
+          price_hatchback: number
+          price_sedan_suv: number
+          service_type: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          addons?: Json
+          banner_url?: string | null
+          benefits?: string[] | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name: string
+          price_hatchback?: number
+          price_sedan_suv?: number
+          service_type: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          addons?: Json
+          banner_url?: string | null
+          benefits?: string[] | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name?: string
+          price_hatchback?: number
+          price_sedan_suv?: number
+          service_type?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
       }
       service_photos: {
         Row: {
@@ -1121,6 +1472,56 @@ export type Database = {
           },
         ]
       }
+      subscription_pauses: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          days_extended: number
+          end_date: string
+          id: string
+          notes: string | null
+          reason: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          days_extended?: number
+          end_date: string
+          id?: string
+          notes?: string | null
+          reason: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          days_extended?: number
+          end_date?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_pauses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_modules: {
         Row: {
           category: string
@@ -1259,6 +1660,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_catalog: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          image_url: string | null
+          make: string
+          model: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          make: string
+          model: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          make?: string
+          model?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1603,7 +2037,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "supervisor" | "partner"
+      app_role: "admin" | "supervisor" | "partner" | "customer"
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
       complaint_status: "open" | "investigating" | "resolved" | "dismissed"
       partner_status:
@@ -1758,7 +2192,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "supervisor", "partner"],
+      app_role: ["admin", "supervisor", "partner", "customer"],
       availability_status: ["online", "offline", "leave", "emergency_leave"],
       complaint_status: ["open", "investigating", "resolved", "dismissed"],
       partner_status: [
