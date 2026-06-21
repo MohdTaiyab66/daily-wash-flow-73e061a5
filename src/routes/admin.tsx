@@ -15,7 +15,7 @@ export const Route = createFileRoute("/admin")({
       _user_id: u.user.id,
       _role: "admin",
     });
-    if (error || !isAdmin) throw redirect({ to: "/" });
+    if (error || !isAdmin) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
   },
   component: AdminLayout,
 });
