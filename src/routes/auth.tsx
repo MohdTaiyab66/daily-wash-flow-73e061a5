@@ -11,6 +11,9 @@ import logo from "@/assets/logo.jpeg";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/") ? search.redirect : undefined,
+  }),
   component: AuthPage,
 });
 
@@ -25,6 +28,9 @@ function phonePassword(phone: string) {
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const nextRoute = redirect?.startsWith("/admin") ? "/admin" : "/app";
+  const isAdminLogin = nextRoute === "/admin";
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -45,7 +51,7 @@ function AuthPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (data.session) {
       setLoading(false);
-      navigate({ to: "/app" });
+      navigate({ to: nextRoute });
       return;
     }
     // First time → ask name
@@ -67,7 +73,7 @@ function AuthPage() {
     // Try sign in
     const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
     if (e2) { toast.error(e2.message); return; }
-    navigate({ to: "/app" });
+    navigate({ to: nextRoute });
   };
 
   return (
@@ -78,7 +84,7 @@ function AuthPage() {
         </button>
         <div className="mb-10">
           <img src={logo} alt="Urban Wash" className="h-14 w-14 rounded-2xl object-cover" />
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight">Partner login</h1>
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight">{isAdminLogin ? "Admin login" : "Partner login"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {step === "phone" && "We'll send a one-time password to your phone."}
             {step === "otp" && `Enter the 4-digit code sent to +91 ${phone}.`}
@@ -96,7 +102,7 @@ function AuthPage() {
               </div>
             </div>
             <Button size="lg" className="w-full" onClick={sendOtp}>Send OTP</Button>
-            <p className="text-xs text-muted-foreground">By continuing, you agree to Urban Wash Partner terms.</p>
+            <p className="text-xs text-muted-foreground">By continuing, you agree to Urban Wash {isAdminLogin ? "Admin" : "Partner"} terms.</p>
           </div>
         )}
 
@@ -121,7 +127,7 @@ function AuthPage() {
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ravi Kumar" className="mt-2" />
             </div>
             <Button size="lg" className="w-full" onClick={signUp} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create partner account
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create {isAdminLogin ? "admin" : "partner"} account
             </Button>
           </div>
         )}

@@ -7,7 +7,7 @@ export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
   beforeLoad: async () => {
     const { data: u } = await supabase.auth.getUser();
-    if (!u?.user) throw redirect({ to: "/auth" });
+    if (!u?.user) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
     // One-time bootstrap: if no admin exists yet, the first signed-in visitor
     // claims the role. After that, this RPC is a no-op.
     await supabase.rpc("claim_admin_if_empty" as any);
