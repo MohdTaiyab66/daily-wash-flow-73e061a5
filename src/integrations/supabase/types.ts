@@ -775,6 +775,33 @@ export type Database = {
           },
         ]
       }
+      multi_vehicle_discounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          percent: number
+          updated_at: string
+          vehicle_count: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          percent: number
+          updated_at?: string
+          vehicle_count: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          percent?: number
+          updated_at?: string
+          vehicle_count?: number
+        }
+        Relationships: []
+      }
       parking_reports: {
         Row: {
           created_at: string
@@ -1150,6 +1177,72 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_config: {
+        Row: {
+          active: boolean
+          id: number
+          referred_reward: number
+          referrer_reward: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          id?: number
+          referred_reward?: number
+          referrer_reward?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          id?: number
+          referred_reward?: number
+          referrer_reward?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_addons: {
+        Row: {
+          active: boolean
+          applies_to_slugs: string[]
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          name: string
+          price_hatchback: number
+          price_sedan_suv: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to_slugs?: string[]
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name: string
+          price_hatchback?: number
+          price_sedan_suv?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to_slugs?: string[]
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name?: string
+          price_hatchback?: number
+          price_sedan_suv?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_analytics: {
         Row: {
           area: string | null
@@ -1208,6 +1301,8 @@ export type Database = {
           description: string | null
           duration_minutes: number | null
           id: string
+          includes_hatchback: string[]
+          includes_sedan_suv: string[]
           name: string
           price_hatchback: number
           price_sedan_suv: number
@@ -1226,6 +1321,8 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          includes_hatchback?: string[]
+          includes_sedan_suv?: string[]
           name: string
           price_hatchback?: number
           price_sedan_suv?: number
@@ -1244,6 +1341,8 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          includes_hatchback?: string[]
+          includes_sedan_suv?: string[]
           name?: string
           price_hatchback?: number
           price_sedan_suv?: number
