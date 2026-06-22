@@ -129,7 +129,10 @@ function CustomerHome() {
       {/* Top bar: location (left) · vehicle chip (right) */}
       <div className="flex items-start justify-between gap-3">
         <button
-          onClick={() => navigate({ to: "/c" })}
+          onClick={() => {
+            try { localStorage.removeItem("uw_customer_area"); } catch {}
+            if (typeof window !== "undefined") window.location.href = "/c?change=1";
+          }}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <MapPin className="h-3.5 w-3.5" />
