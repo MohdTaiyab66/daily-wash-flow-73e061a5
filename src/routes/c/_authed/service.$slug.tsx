@@ -333,7 +333,7 @@ function ServiceDetail() {
         {/* Summary */}
         <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
           <Row label="Base"><span>₹{basePrice}</span></Row>
-          {addonPrice > 0 && <Row label={`Add-ons (${selectedAddons.size})`}><span>₹{addonPrice}</span></Row>}
+          {addonPrice > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{addonPrice}</span></Row>}
           {discountPct > 0 && (
             <Row label={`Multi-vehicle discount (${discountPct}%)`}>
               <span className="text-success">−₹{discountAmt}</span>
