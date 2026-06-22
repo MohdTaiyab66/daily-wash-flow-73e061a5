@@ -1,21 +1,26 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { MapPin, Search, Navigation, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  MapPin, Navigation, Loader2, CheckCircle2, Sparkles, ShieldCheck,
+  Timer, Star, ArrowRight, BellRing,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { SERVICE_AREAS, SERVICE_AREA_NAMES, nearestServiceArea } from "@/lib/areas";
+import { SERVICE_AREA_NAMES, nearestServiceArea } from "@/lib/areas";
 import { supabase } from "@/integrations/supabase/client";
+import hero from "@/assets/hero-car-wash.jpg";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/c/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Urban Wash — Doorstep Car Care" },
-      { name: "description", content: "Daily car cleaning subscriptions in Lucknow. Choose your area, pick a plan, and we'll take care of your car every morning." },
+      { title: "Urban Wash — Doorstep Car Care in Lucknow" },
+      { name: "description", content: "Daily, weekly and deep-clean doorstep car wash in Lucknow. Vetted partners, before/after photos, pay only after service." },
       { property: "og:title", content: "Urban Wash — Doorstep Car Care" },
-      { property: "og:description", content: "Daily doorstep car cleaning in Lucknow." },
+      { property: "og:description", content: "Doorstep car wash subscriptions starting at ₹999/month in Lucknow." },
     ],
   }),
   component: CustomerLanding,
@@ -23,15 +28,24 @@ export const Route = createFileRoute("/c/")({
 
 const SUPPORTED = new Set(SERVICE_AREA_NAMES.map((s) => s.toLowerCase()));
 
+function matchArea(address: string): string | null {
+  const a = address.toLowerCase();
+  for (const name of SERVICE_AREA_NAMES) {
+    if (a.includes(name.toLowerCase())) return name;
+  }
+  return null;
+}
+
 function CustomerLanding() {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
+  const [address, setAddress] = useState("");
+  const [pincode, setPincode] = useState("");
   const [locating, setLocating] = useState(false);
-  const [outOfArea, setOutOfArea] = useState<string | null>(null);
+  const [outOfArea, setOutOfArea] = useState(false);
   const [notifyPhone, setNotifyPhone] = useState("");
   const [notified, setNotified] = useState(false);
+  const [checking, setChecking] = useState(false);
 
-  // Skip ahead if a saved area + session exist
   useEffect(() => {
     (async () => {
       const saved = localStorage.getItem("uw_customer_area");
@@ -40,158 +54,218 @@ function CustomerLanding() {
     })();
   }, [navigate]);
 
-  const pickArea = (name: string) => {
-    localStorage.setItem("uw_customer_area", name);
+  const proceed = (area: string, fullAddress?: string) => {
+    localStorage.setItem("uw_customer_area", area);
+    if (fullAddress) localStorage.setItem("uw_customer_full_address", fullAddress);
+    if (pincode) localStorage.setItem("uw_customer_pincode", pincode);
     navigate({ to: "/c/auth" });
   };
 
-  const useGPS = () => {
-    if (!("geolocation" in navigator)) {
-      toast.error("Geolocation not available");
+  const check = () => {
+    if (address.trim().length < 8) {
+      toast.error("Please enter your full address (house, street, area)");
       return;
     }
+    setChecking(true);
+    const matched = matchArea(address);
+    setTimeout(() => {
+      setChecking(false);
+      if (matched) proceed(matched, address.trim());
+      else setOutOfArea(true);
+    }, 250);
+  };
+
+  const useGPS = () => {
+    if (!("geolocation" in navigator)) { toast.error("Geolocation not available"); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (p) => {
         setLocating(false);
         const a = nearestServiceArea(p.coords.latitude, p.coords.longitude);
         const dx = Math.hypot(a.lat - p.coords.latitude, a.lng - p.coords.longitude);
-        if (dx > 0.15) {
-          setOutOfArea("your current location");
-          return;
-        }
-        pickArea(a.name);
+        if (dx > 0.15) { setOutOfArea(true); return; }
+        setAddress((prev) => prev || `Near ${a.name}, Lucknow`);
+        toast.success(`Detected: ${a.name}`);
       },
-      () => {
-        setLocating(false);
-        toast.error("Couldn't read your location");
-      },
+      () => { setLocating(false); toast.error("Couldn't read your location"); },
       { enableHighAccuracy: true, timeout: 8000 },
     );
   };
 
   const submitWaitlist = async () => {
-    if (!/^\d{10}$/.test(notifyPhone)) {
-      toast.error("Enter a valid 10-digit phone");
-      return;
-    }
+    if (!/^\d{10}$/.test(notifyPhone)) { toast.error("Enter a valid 10-digit phone"); return; }
     const { error } = await (supabase as any).from("area_waitlist").insert({
       phone: notifyPhone,
-      area: outOfArea ?? q ?? "Unknown",
+      area: address.trim() || "Unknown",
     });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     setNotified(true);
   };
 
-  const filtered = q
-    ? SERVICE_AREAS.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()))
-    : SERVICE_AREAS;
-  const matchesSupported = q && SUPPORTED.has(q.toLowerCase());
-  const showOutOfArea = q.trim().length >= 3 && filtered.length === 0;
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto flex max-w-md flex-col px-5 pt-10 pb-12">
-        <div className="flex items-center gap-2.5">
-          <img src={logo} alt="Urban Wash" className="h-10 w-10 rounded-xl object-cover" />
-          <span className="text-lg font-semibold tracking-tight">Urban Wash</span>
-        </div>
-
-        <h1 className="mt-8 text-3xl font-semibold tracking-tight">Where do you need us?</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          We're live across Lucknow. Pick your area to continue.
-        </p>
-
-        <Button
-          onClick={useGPS}
-          disabled={locating}
-          variant="outline"
-          className="mt-6 h-12 justify-start gap-3 rounded-2xl border-primary/30 text-primary"
-        >
-          {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-          Use my current location
-        </Button>
-
-        <div className="mt-3 relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => { setQ(e.target.value); setOutOfArea(null); setNotified(false); }}
-            placeholder="Search area, e.g. Gomti Nagar"
-            className="h-12 rounded-2xl pl-10"
-          />
-        </div>
-
-        {!outOfArea && !showOutOfArea && (
-          <div className="mt-5 space-y-2">
-            {filtered.map((a) => (
-              <button
-                key={a.name}
-                onClick={() => pickArea(a.name)}
-                className="group flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 text-left transition-colors hover:border-primary/40 hover:bg-accent"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-accent-foreground">
-                    <MapPin className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <div className="text-sm font-medium">{a.name}</div>
-                    <div className="text-[11px] text-muted-foreground">Lucknow · serviceable</div>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-              </button>
-            ))}
-            {matchesSupported && null}
+      <div className="mx-auto max-w-md">
+        {/* Hero */}
+        <div className="relative overflow-hidden bg-foreground text-background">
+          <div className="absolute inset-0 opacity-30">
+            <img src={hero} alt="" className="h-full w-full object-cover" width={1280} height={896} />
           </div>
-        )}
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/70 to-foreground" />
+          <div className="relative px-5 pb-10 pt-8">
+            <div className="flex items-center gap-2.5">
+              <img src={logo} alt="" className="h-9 w-9 rounded-xl object-cover" />
+              <span className="text-base font-semibold tracking-tight">Urban Wash</span>
+              <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+                Lucknow
+              </span>
+            </div>
 
-        {(outOfArea || showOutOfArea) && (
-          <div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center">
-            {!notified ? (
-              <>
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-accent text-accent-foreground">
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <h2 className="mt-3 text-base font-semibold">Urban Wash is coming soon</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  We're not in {outOfArea ?? `"${q}"`} yet. Leave your number and we'll notify you the moment we launch.
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <div className="flex flex-1">
-                    <span className="inline-flex items-center rounded-l-xl border border-r-0 border-input bg-muted px-3 text-xs text-muted-foreground">+91</span>
-                    <Input
-                      value={notifyPhone}
-                      onChange={(e) => setNotifyPhone(e.target.value.replace(/\D/g, ""))}
-                      placeholder="98765 43210"
-                      inputMode="numeric"
-                      maxLength={10}
-                      className="rounded-l-none rounded-r-xl"
-                    />
-                  </div>
-                  <Button onClick={submitWaitlist}>Notify me</Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-success/15 text-success">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <h2 className="mt-3 text-base font-semibold">You're on the list</h2>
-                <p className="mt-1 text-sm text-muted-foreground">We'll text you the moment Urban Wash launches in your area.</p>
-              </>
+            <h1 className="mt-10 text-[34px] font-bold leading-[1.05] tracking-tight">
+              Doorstep car care, <br/>
+              <span className="text-primary">every single morning.</span>
+            </h1>
+            <p className="mt-3 text-sm text-background/75">
+              Subscribe once. Sparkling car before you leave for work — daily.
+              Vetted partners, before/after photos, pay only after service.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2 text-[11px]">
+              <Pill icon={<ShieldCheck className="h-3 w-3" />}>Verified partners</Pill>
+              <Pill icon={<Timer className="h-3 w-3" />}>Done before 10 AM</Pill>
+              <Pill icon={<Star className="h-3 w-3" />}>4.9 ★ in pilot</Pill>
+            </div>
+          </div>
+        </div>
+
+        {/* Address card */}
+        <div className="-mt-6 px-5">
+          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold tracking-tight">Where should we wash your car?</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Enter your full address. We'll check if we serve your locality.
+            </p>
+
+            <Button
+              onClick={useGPS}
+              disabled={locating}
+              variant="outline"
+              size="sm"
+              className="mt-4 w-full justify-start gap-2 rounded-xl border-primary/30 text-primary hover:bg-accent"
+            >
+              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+              Use my current location
+            </Button>
+
+            <div className="mt-4 space-y-2">
+              <Textarea
+                value={address}
+                onChange={(e) => { setAddress(e.target.value); setOutOfArea(false); setNotified(false); }}
+                placeholder="House / Flat no, Street, Area, Landmark — e.g. A-203 Greens Apt, Vipul Khand, Gomti Nagar"
+                rows={3}
+                className="resize-none rounded-xl"
+              />
+              <Input
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                placeholder="Pincode (optional)"
+                className="rounded-xl"
+              />
+            </div>
+
+            {!outOfArea && (
+              <Button onClick={check} disabled={checking} size="lg" className="mt-4 w-full rounded-xl">
+                {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Check availability <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            )}
+
+            {outOfArea && (
+              <div className="mt-4 rounded-2xl border border-border bg-accent/40 p-4 text-center">
+                {!notified ? (
+                  <>
+                    <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-card">
+                      <MapPin className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="mt-2 text-sm font-semibold">We're coming soon to your area</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Drop your number — we'll text you the moment we launch.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <div className="flex flex-1">
+                        <span className="inline-flex items-center rounded-l-lg border border-r-0 border-input bg-card px-2.5 text-xs text-muted-foreground">+91</span>
+                        <Input
+                          value={notifyPhone}
+                          onChange={(e) => setNotifyPhone(e.target.value.replace(/\D/g, ""))}
+                          placeholder="98765 43210"
+                          inputMode="numeric"
+                          maxLength={10}
+                          className="rounded-l-none rounded-r-lg"
+                        />
+                      </div>
+                      <Button onClick={submitWaitlist} size="sm"><BellRing className="mr-1 h-3.5 w-3.5" />Notify</Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-success/15 text-success">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <h3 className="mt-2 text-sm font-semibold">You're on the list</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">We'll text you the moment we launch.</p>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
 
-        <div className="mt-10 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-          Already a partner?
-          <Link to="/auth" className="font-medium text-primary">Open Partner App</Link>
+          {/* Why */}
+          <div className="mt-7">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why Urban Wash</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Feature icon={<Sparkles className="h-4 w-4" />} title="Daily shine">From ₹999/mo · 30+ cleans a month</Feature>
+              <Feature icon={<ShieldCheck className="h-4 w-4" />} title="Trusted partners">Background-checked & trained</Feature>
+              <Feature icon={<Timer className="h-4 w-4" />} title="Before 10 AM">Pick the slot, sleep easy</Feature>
+              <Feature icon={<Star className="h-4 w-4" />} title="Photo proof">Before & after for every wash</Feature>
+            </div>
+          </div>
+
+          {/* Pricing teaser */}
+          <div className="mt-7 rounded-3xl border border-border bg-foreground p-5 text-background">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">Plans from</div>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="text-4xl font-bold tracking-tight">₹999</span>
+              <span className="text-sm text-background/70">/month · Hatchback</span>
+            </div>
+            <p className="mt-2 text-xs text-background/70">
+              Daily exterior + alternate-day interior. Pause anytime. Cancel anytime.
+            </p>
+          </div>
+
+          <div className="mt-8 flex items-center justify-center gap-1 pb-10 text-xs text-muted-foreground">
+            Already a partner?
+            <Link to="/auth" className="font-semibold text-primary">Open Partner App</Link>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Pill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-background/10 px-2.5 py-1 backdrop-blur">
+      {icon}{children}
+    </span>
+  );
+}
+
+function Feature({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3.5">
+      <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground">{icon}</span>
+      <div className="mt-2.5 text-sm font-semibold">{title}</div>
+      <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{children}</div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
@@ -24,6 +25,8 @@ type Row = {
 
 function BookingsPage() {
   const [tab, setTab] = useState<Tab>("upcoming");
+  const navigate = useNavigate();
+
 
   const q = useQuery({
     queryKey: ["customer-bookings", tab],
@@ -87,7 +90,11 @@ function BookingsPage() {
         ) : (
           <div className="space-y-3">
             {items.map((b) => (
-              <div key={b.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
+              <button
+                key={b.id}
+                onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
+                className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40"
+              >
                 <div className="min-w-0">
                   <div className="text-sm font-semibold">{b.service_catalog?.name ?? "Service"}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
@@ -101,7 +108,7 @@ function BookingsPage() {
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
