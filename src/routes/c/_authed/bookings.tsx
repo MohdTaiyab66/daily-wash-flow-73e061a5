@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight } from "lucide-react";
@@ -26,6 +26,11 @@ type Row = {
 function BookingsPage() {
   const [tab, setTab] = useState<Tab>("upcoming");
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  if (pathname !== "/c/bookings") {
+    return <Outlet />;
+  }
 
 
   const q = useQuery({
