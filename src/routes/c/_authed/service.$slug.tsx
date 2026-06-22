@@ -42,6 +42,8 @@ function ServiceDetail() {
   const [addrOpen, setAddrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
