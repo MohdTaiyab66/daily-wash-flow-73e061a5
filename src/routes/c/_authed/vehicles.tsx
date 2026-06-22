@@ -4,6 +4,8 @@ import { Plus, Trash2, Car } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { VehicleAvatar } from "@/components/VehicleAvatar";
+import { vehicleBodyLabel } from "@/lib/vehicle-category";
 
 export const Route = createFileRoute("/c/_authed/vehicles")({
   ssr: false,
@@ -11,7 +13,7 @@ export const Route = createFileRoute("/c/_authed/vehicles")({
   component: VehiclesPage,
 });
 
-type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null };
+type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null; image_url?: string | null };
 
 function VehiclesPage() {
   const qc = useQueryClient();
@@ -20,7 +22,20 @@ function VehiclesPage() {
     queryFn: async (): Promise<Vehicle[]> => {
       const { data, error } = await (supabase as any).from("customer_vehicles").select("*").order("created_at");
       if (error) throw error;
-      return (data ?? []) as Vehicle[];
+      const rows = (data ?? []) as Vehicle[];
+      const catalogImages = await Promise.all(
+        rows.map(async (v) => {
+          const { data: img } = await (supabase as any)
+            .from("vehicle_catalog")
+            .select("image_url")
+            .ilike("make", v.make)
+            .ilike("model", v.model)
+            .limit(1)
+            .maybeSingle();
+          return { ...v, image_url: img?.image_url ?? null };
+        })
+      );
+      return catalogImages;
     },
   });
 
@@ -53,11 +68,12 @@ function VehiclesPage() {
           </div>
         )}
         {(q.data ?? []).map((v) => (
-          <div key={v.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
+          <div key={v.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+            <VehicleAvatar imageUrl={v.image_url} make={v.make} model={v.model} color={v.color} className="h-14 w-16 rounded-2xl" />
             <div className="min-w-0">
               <div className="font-semibold">{v.make} {v.model}</div>
               <div className="mt-0.5 text-xs text-muted-foreground">
-                {v.registration_number}{v.color ? ` · ${v.color}` : ""} · {v.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}
+                {v.registration_number}{v.color ? ` · ${v.color}` : ""} · {v.model.toUpperCase()} — {vehicleBodyLabel(v.make, v.model, v.category)}
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={() => confirm(`Remove ${v.make} ${v.model}?`) && del.mutate(v.id)}>
