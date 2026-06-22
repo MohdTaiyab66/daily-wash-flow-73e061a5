@@ -8,19 +8,19 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/c/_authed/vehicles")({
   ssr: false,
   head: () => ({ meta: [{ title: "My Vehicles — Urban Wash" }] }),
-  component: VehiclesPage,
+  component: VehiclesRoute,
 });
 
 type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null };
 
-function VehiclesPage() {
+function VehiclesRoute() {
   const { pathname } = useLocation();
+
+  return pathname === "/c/vehicles" ? <VehiclesPage /> : <Outlet />;
+}
+
+function VehiclesPage() {
   const qc = useQueryClient();
-
-  if (pathname !== "/c/vehicles") {
-    return <Outlet />;
-  }
-
   const q = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
