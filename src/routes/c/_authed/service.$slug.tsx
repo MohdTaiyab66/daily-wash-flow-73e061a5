@@ -178,8 +178,8 @@ function ServiceDetail() {
       addon_amount: addonPrice,
       discount_amount: discountAmt,
       total_amount: total,
-      status: "pending_assignment",
-      payment_status: "cash_on_service",
+      status: "pending_payment",
+      payment_status: "pending",
     }).select("id").single();
     if (error) { setSubmitting(false); toast.error(error.message || "Could not confirm booking"); return; }
 
