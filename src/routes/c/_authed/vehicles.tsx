@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Car } from "lucide-react";
 import { toast } from "sonner";
@@ -8,16 +8,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/c/_authed/vehicles")({
   ssr: false,
   head: () => ({ meta: [{ title: "My Vehicles — Urban Wash" }] }),
-  component: VehiclesRoute,
+  component: VehiclesPage,
 });
 
 type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null };
-
-function VehiclesRoute() {
-  const { pathname } = useLocation();
-
-  return pathname === "/c/vehicles" ? <VehiclesPage /> : <Outlet />;
-}
 
 function VehiclesPage() {
   const qc = useQueryClient();
