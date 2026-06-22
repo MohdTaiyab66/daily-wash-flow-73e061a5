@@ -37,6 +37,7 @@ type AddonRow = {
 
 function MyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
