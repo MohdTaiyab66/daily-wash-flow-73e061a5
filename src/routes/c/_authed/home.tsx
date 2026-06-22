@@ -138,7 +138,8 @@ function CustomerHome() {
             return (
               <Link
                 key={s.id}
-                to={"/c/home"}
+                to="/c/service/$slug"
+                params={{ slug: s.slug }}
                 className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
               >
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
@@ -161,7 +162,7 @@ function CustomerHome() {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          Booking checkout & payment coming in the next release.
+          Pay after service. Razorpay coming soon.
         </p>
           </>
         )}
