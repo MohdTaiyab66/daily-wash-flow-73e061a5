@@ -1,83 +1,72 @@
+# Urban Wash Customer App V1 — Build Plan
 
-# Urban Wash Customer App V1 — Phased Plan
+Your spec is large enough that shipping it as one change would burn a lot of credits and be impossible to review. I'm splitting it into 6 phases. Each phase is independently testable and ends with a working app.
 
-Mobile-first **PWA** living inside the same project as the Partner & Admin apps. Shares one Lovable Cloud backend, one auth, one realtime layer. Customers reach it at `/c/*` routes; partners stay on `/app/*`; admins on `/admin/*`. One codebase, three audiences.
+A lot of the foundation already exists from prior turns:
+- Customer auth (phone OTP), `/c` shell with Home / Bookings / Profile / Vehicles
+- `customer_profiles`, `customer_vehicles`, `customer_addresses`, `bookings`, `booking_addons`, `area_waitlist`, `service_catalog` tables
+- Area-gating + "coming soon / Notify me"
+- Service detail → address → confirm flow (cash-on-service)
+- Orange / black / white theme matching partner app
 
-## Design system (applies to every phase)
+## Phase A — Data model + admin-driven catalog (foundation)
+Goal: make EVERYTHING admin-editable, no hardcoded prices.
 
-- Background `#FFFFFF`, primary `#F97316` (Urban Wash Orange), ink `#0F172A`, muted `#64748B`, success `#16A34A`, danger `#EF4444`.
-- Font: **Outfit** (display) + **Figtree** (body), via @fontsource.
-- Rounded-2xl cards, soft shadows, large vehicle hero images, framer-motion micro-animations, bottom tab bar on mobile.
-- All tokens go in `src/styles.css`; no hardcoded color classes. Reuse shadcn primitives.
+- Migration: extend `service_catalog` with `category` (hatchback_compact | sedan_suv), `video_url`, `benefits[]`, `duration_min`, `active`, `sort_order`, `addon_ids[]`.
+- New `service_addons` table (name, price_hatch, price_suv, icon_url, applies_to_service_ids[]).
+- New `vehicle_catalog` enrichment: `category` enum (hatchback | compact_sedan | sedan | suv), `image_url`, `brand`, `model`. Seed with ~150 popular Indian models (Maruti / Hyundai / Honda / Toyota / Mahindra / Tata / Kia / MG / Skoda / VW / Renault / Nissan / Jeep + premium).
+- New `multi_vehicle_discounts` table (vehicle_count, percent) — admin configurable.
+- New `referral_config` + `customer_referrals` already exists, wire up admin edits.
+- Seed all your exact prices (₹999/₹1199 daily shine, ₹349/₹399/₹499 one-time, ₹1099/₹1399 deep clean, ₹899/₹999 interior deep clean, add-ons ₹25/₹49/₹149/₹199/₹499/₹999/₹1999) as initial rows — but read from DB everywhere.
+- Admin pages: `/admin/services` (CRUD + image/video upload), `/admin/addons`, `/admin/vehicle-catalog`, `/admin/discounts`, `/admin/referrals`.
 
-## Phase 0 — Foundations (1 working session)
+## Phase B — Vehicle intelligence + auto-categorization
+- Vehicle add page with typeahead search against `vehicle_catalog` — type "fortuner" → shows "Toyota Fortuner" with image.
+- On select, category is auto-resolved (customer never picks).
+- Multi-vehicle support already in schema; add UI for default vehicle + per-location grouping.
+- Show large vehicle image + name on home (Hoora-style switcher).
 
-- New customer route tree under `src/routes/c/` with `_authed` layout (OTP-gated).
-- Shared design tokens, fonts, bottom tab bar, push/notification permission helper.
-- New tables: `customer_profiles` (auth.users link), `customer_addresses`, `area_waitlist` (Notify Me captures), `app_content` (banners/videos per service), `vehicle_catalog` (make/model/category/image), `service_catalog` (name, desc, price tiers, add-ons, video, category targeting, active), `bookings`, `booking_addons`, `complaints` (extend), `referrals` (extend), `subscription_pauses`, `push_tokens`.
-- All new tables get GRANTs + RLS scoped to `auth.uid()`. Admin policies via `has_role`.
-- Seed `vehicle_catalog` with the brand/model list + auto-classification (Hatchback/Compact Sedan vs Sedan/SUV).
+## Phase C — Booking funnel v2 (replaces current service.$slug)
+Vehicle → Service → Add-ons (with icons + pictures) → Address → Time slot (Before 7/8/9/10/11 AM, 12 PM) → Schedule date → Review (shows multi-vehicle discount auto-applied) → Payment → Success.
 
-## Phase 1 — Onboarding & Home (1 session)
+- Daily Shine = subscription (creates row in `subscriptions` with renewal date, remaining services).
+- One-Time / Deep Clean = single booking.
+- 30-sec video player on service detail.
 
-- Location screen: GPS or manual search across the 12 service areas.
-- "Coming soon" + Notify Me capture for out-of-area.
-- Phone OTP login (reuses existing Supabase phone auth used by partners).
-- Vehicle add flow with typeahead against `vehicle_catalog`, auto-category, fields (color, reg #, parking notes, image).
-- Home: location pill, vehicle switcher (Hoora-style), service category cards with banner image + 30s video.
+## Phase D — Razorpay payment (BLOCKED — needs your keys)
+- Server fn `createRazorpayOrder` (uses secret).
+- Server fn `verifyRazorpayPayment` (HMAC verify → insert booking as paid).
+- Migration: add `razorpay_order_id`, `razorpay_payment_id`, `razorpay_signature` to `bookings`.
+- Checkout.js modal in service page; "Pay at service" fallback toggle.
 
-## Phase 2 — Services, Subscriptions & Booking (1–2 sessions)
+**I need you to add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` via the secrets prompt before I can build this phase.**
 
-- Service detail page (video, benefits, pricing per category, add-ons).
-- Daily Shine subscription flows (monthly default) with add-ons, multi-vehicle discount (2 cars 5%, 3+ 10%, all admin-configurable).
-- One-Time Wash, Deep Clean, Interior Deep Clean — pricing from `service_catalog`, never hardcoded.
-- Booking funnel: Vehicle → Service → Add-ons → Address → Preferred time (Before 7/8/9/10/11/12) → Schedule → Review → Pay → Success.
-- **Razorpay integration** (UPI/Cards/Wallets/NetBanking). Server function creates order; webhook (`/api/public/webhooks/razorpay`) verifies signature and marks `bookings.paid_at` / inserts subscription. Will request Razorpay key & secret via add_secret when this phase starts.
+## Phase E — Subscriptions, service gallery, complaints, live partner
+- `/c/subscriptions` — plan, vehicle, start/renewal, completed/remaining, unavailable/extended/compensation days, assigned partner.
+- `/c/bookings/$id` — before/after photos (from `service_photos`), partner name, completion time, duration. 30-day retention banner.
+- Complaint button visible for 2h after `completed_at`; types match your list; inserts into `complaints`.
+- Pause flow → writes `subscription_pauses` (already exists), auto-extends renewal.
+- Live partner arrival: subscribe to `services` realtime; toast + push when `status = in_progress` / `arrived`.
 
-## Phase 3 — Subscription Lifecycle, Gallery & Complaints (1 session)
+## Phase F — Notifications, referrals, profile polish
+- Push tokens via `push_tokens` (already exists); web push for now, FCM/APNs when you go native.
+- In-app notifications list (partner assigned/arrived/started/completed, renewal, payment, complaint resolved, extension, pause/resume).
+- Referral screen with share code + reward config from admin.
+- Profile menu: Personal / Vehicles / Addresses / Subscriptions / Payments / Referral / Support / T&C / Privacy / Delete Account.
 
-- Active Subscriptions screen: plan, vehicle, dates, completed/remaining/unavailable/extended/compensation days, partner assigned.
-- My Bookings (Upcoming/Completed/Cancelled).
-- **Service Gallery** by day — before/after photos from existing `service_photos`, 30-day retention.
-- Service Status History (Completed, Unavailable, Dirty Vehicle, Parking Issue, Missed, Compensated, Extended).
-- Complaint flow (2-hour window after completion) → writes to `complaints`, admin notified.
-- Subscription Pause (reasons, auto-extend renewal date).
+## Native Android + iOS
+TanStack Start builds a web app. To ship to Play Store / App Store we wrap with **Capacitor** (adds `android/` and `ios/` projects, reuses the same code). I'll add this in Phase F.
 
-## Phase 4 — Realtime, Notifications & Profile (1 session)
+## Realtime sync
+Enable realtime publication on `service_catalog`, `service_addons`, `bookings`, `services`, `subscriptions` so admin price changes / partner status changes reflect instantly in customer + partner apps.
 
-- Realtime via existing `supabase_realtime` publication on `services` and `bookings` — Partner Assigned / Arrived / Started / Completed / Photos / Dirty / Unavailable / Extension events push to the customer instantly.
-- Web Push (PWA) via FCM messaging worker for renewal due, payment success, complaint resolved, pause/resume.
-- Profile: personal details, vehicles, addresses, subscriptions, payments, referral code, support, terms, privacy, delete account.
-- Referral system reading `referrals` table; rewards admin-configurable.
+---
 
-## Phase 5 — Admin CMS extensions (1 session)
+## What I need from you to start
 
-Extend the existing admin panel — no new dashboard:
-- Service catalog editor (create/edit/delete services, prices per category, add-ons, banner, 30s video upload).
-- Vehicle catalog editor (brands/models/category mapping).
-- Pricing & discount config (multi-vehicle %, referral rewards) into `platform_settings`.
-- Booking, complaint, pause-request, extension queues.
-- Customer-app push composer (broadcast / area / segment).
+1. **Confirm we start with Phase A** (foundation migration + admin catalog editors). Without it everything else is hardcoded and not what you asked for.
+2. **Add Razorpay secrets** when you're ready — I'll prompt for them at the start of Phase D so Phase A–C aren't blocked.
+3. **30-sec videos** — do you have them yet, or should admin upload come first and you add videos later?
+4. Reply "go" and I'll start Phase A (one migration + admin pages, ~1 batch of edits).
 
-## Phase 6 — PWA polish & launch
-
-- `manifest.webmanifest`, install prompt, Urban Wash icon set, splash, theme color `#F97316`.
-- Offline shell only for the home + gallery views via `vite-plugin-pwa` (`NetworkFirst`).
-- Lighthouse pass; Android + iOS install QA; published-URL push smoke test.
-
-## Technical Details (for reference)
-
-- **No new edge functions.** All app-internal logic uses TanStack `createServerFn` under `src/lib/customer.functions.ts`. Razorpay webhook is a server route at `src/routes/api/public/webhooks/razorpay.ts` with HMAC verification.
-- **One auth.** Same Supabase user can hold roles `customer`, `partner`, `admin` via `user_roles` — gates by role.
-- **One project, three route trees:** `src/routes/c/_authed/*` (customer), existing `src/routes/_authenticated/app.*` (partner), existing `src/routes/admin.*` (admin).
-- **Pricing is data, not code.** `service_catalog` rows drive every screen; admin edits propagate via React Query invalidation + realtime.
-- **Image/video storage:** new `customer-media` and `service-media` buckets with signed URLs.
-- **State:** TanStack Query everywhere, suspense queries in loaders under the customer auth gate.
-
-## What I need from you before starting
-
-1. **Confirm phase 1 start.** I'll begin with Phase 0 + Phase 1 (foundations, onboarding, vehicle add, home).
-2. **Razorpay account ready?** Not blocking until Phase 2.
-3. **Any service prices I should treat as locked starting values** (the ones in your brief), or do you want me to leave the catalog empty and seed from the admin UI?
-
-Reply "go" and I'll start Phase 0 + Phase 1.
+Findings from your scan that I am NOT touching in this build (mentioned per your earlier instruction): everything outside the 11 IDs you listed previously.
