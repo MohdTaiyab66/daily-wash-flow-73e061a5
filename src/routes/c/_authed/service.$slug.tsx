@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Check } from "lucide-react";
+import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,9 +38,10 @@ function ServiceDetail() {
     return d.toISOString().slice(0, 10);
   });
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
+  const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
@@ -110,10 +111,12 @@ function ServiceDetail() {
 
   const addonPrice = useMemo(() => {
     if (!addonsQ.data) return 0;
-    return addonsQ.data
-      .filter((a) => selectedAddons.has(a.id))
-      .reduce((s, a) => s + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
-  }, [addonsQ.data, selectedAddons, isSUV]);
+    return addonsQ.data.reduce((s, a) => {
+      const q = addonQty[a.id] ?? 0;
+      if (!q) return s;
+      return s + q * (isSUV ? a.price_sedan_suv : a.price_hatchback);
+    }, 0);
+  }, [addonsQ.data, addonQty, isSUV]);
 
   const vehicleCount = vehiclesQ.data?.length ?? 1;
   const discountPct = useMemo(() => {
@@ -124,14 +127,16 @@ function ServiceDetail() {
   const subtotal = basePrice + addonPrice;
   const discountAmt = Math.round((subtotal * discountPct) / 100);
   const total = subtotal - discountAmt;
+  const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
-  const toggleAddon = (id: string) => {
-    setSelectedAddons((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+  const setQty = (id: string, q: number) => {
+    setAddonQty((prev) => {
+      const next = { ...prev };
+      if (q <= 0) delete next[id]; else next[id] = Math.min(q, 20);
       return next;
     });
   };
+
 
   const confirm = async () => {
     if (!service) return;
@@ -147,7 +152,9 @@ function ServiceDetail() {
       vehicle_id: vehicle.id,
       address_id: address.id,
       scheduled_date: date,
+      scheduled_time: slot,
       preferred_before_time: slot,
+      notes: notes || null,
       base_amount: basePrice,
       addon_amount: addonPrice,
       discount_amount: discountAmt,
@@ -155,19 +162,26 @@ function ServiceDetail() {
       status: "pending_assignment",
       payment_status: "cash_on_service",
     }).select("id").single();
-    if (error) { setSubmitting(false); toast.error(error.message); return; }
+    if (error) { setSubmitting(false); toast.error(error.message || "Could not confirm booking"); return; }
 
-    if (selectedAddons.size && addonsQ.data) {
-      const rows = addonsQ.data
-        .filter((a) => selectedAddons.has(a.id))
-        .map((a) => ({
+    const addonEntries = Object.entries(addonQty).filter(([, q]) => q > 0);
+    if (addonEntries.length && addonsQ.data) {
+      const byId = new Map(addonsQ.data.map((a) => [a.id, a]));
+      const rows = addonEntries.flatMap(([id, q]) => {
+        const a = byId.get(id);
+        if (!a) return [];
+        return [{
           booking_id: booking.id,
           addon_key: a.id,
           addon_name: a.name,
           price: isSUV ? a.price_sedan_suv : a.price_hatchback,
-        }));
-      await (supabase as any).from("booking_addons").insert(rows);
+          quantity: q,
+        }];
+      });
+      const { error: addonErr } = await (supabase as any).from("booking_addons").insert(rows);
+      if (addonErr) { setSubmitting(false); toast.error(addonErr.message); return; }
     }
+
 
     setSubmitting(false);
     toast.success("Booking confirmed!");
@@ -260,30 +274,46 @@ function ServiceDetail() {
 
         {/* Add-ons */}
         {addonsQ.data && addonsQ.data.length > 0 && (
-          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Optional">
+          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Tap + to add more">
             <div className="space-y-2">
               {addonsQ.data.map((a) => {
                 const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-                const checked = selectedAddons.has(a.id);
+                const q = addonQty[a.id] ?? 0;
+                const active = q > 0;
                 return (
-                  <button key={a.id} onClick={() => toggleAddon(a.id)}
-                    className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${
-                      checked ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                  <div key={a.id}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 ${
+                      active ? "border-primary bg-accent" : "border-border"
                     }`}>
-                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${checked ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                      {checked && <Check className="h-3 w-3" />}
-                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">{a.name}</div>
                       {a.description && <div className="mt-0.5 text-[11px] text-muted-foreground">{a.description}</div>}
+                      <div className="mt-1 text-[11px] text-muted-foreground">+₹{p} each{q > 1 ? ` · ₹${p * q} total` : ""}</div>
                     </div>
-                    <div className="text-sm font-semibold">+₹{p}</div>
-                  </button>
+                    {q === 0 ? (
+                      <Button type="button" size="sm" variant="outline" onClick={() => setQty(a.id, 1)} className="shrink-0 rounded-full">
+                        <Plus className="h-3.5 w-3.5" /> Add
+                      </Button>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-2 rounded-full border border-primary bg-card px-1 py-0.5">
+                        <button type="button" onClick={() => setQty(a.id, q - 1)} aria-label="Decrease"
+                          className="grid h-7 w-7 place-items-center rounded-full hover:bg-muted">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[1.25rem] text-center text-sm font-semibold">{q}</span>
+                        <button type="button" onClick={() => setQty(a.id, q + 1)} aria-label="Increase"
+                          className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground hover:opacity-90">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </SectionCard>
         )}
+
 
         {/* Date + Slot */}
         <SectionCard icon={<Calendar className="h-4 w-4" />} title="When">
@@ -303,7 +333,7 @@ function ServiceDetail() {
         {/* Summary */}
         <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
           <Row label="Base"><span>₹{basePrice}</span></Row>
-          {addonPrice > 0 && <Row label={`Add-ons (${selectedAddons.size})`}><span>₹{addonPrice}</span></Row>}
+          {addonPrice > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{addonPrice}</span></Row>}
           {discountPct > 0 && (
             <Row label={`Multi-vehicle discount (${discountPct}%)`}>
               <span className="text-success">−₹{discountAmt}</span>

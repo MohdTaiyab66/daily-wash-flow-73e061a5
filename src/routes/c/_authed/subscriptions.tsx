@@ -53,9 +53,26 @@ function MyPlanPage() {
 
   const all = bookingsQ.data ?? [];
   const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
-  const activeSub = subs.find(
+  const realSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
+
+  // Demo subscription shown when the customer has no active plan yet,
+  // so they get a feel for how Daily Shine tracking will look.
+  const isDemo = !realSub;
+  const demoStart = new Date(Date.now() - 12 * 86400000);
+  const activeSub: (Booking & { _demo?: boolean }) | undefined = realSub ?? {
+    id: "demo",
+    scheduled_date: demoStart.toISOString().slice(0, 10),
+    status: "active",
+    payment_status: "cash_on_service",
+    total_amount: 1499,
+    base_amount: 1499,
+    addon_amount: 0,
+    service_id: "demo",
+    service_catalog: { name: "Daily Shine — Exterior + 4× Interior", service_type: "subscription", slug: "daily-shine" },
+    _demo: true,
+  };
 
   // Plan period: 30 days from scheduled_date
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
@@ -68,18 +85,22 @@ function MyPlanPage() {
 
   // Wash status — track interior + exterior for current sub
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const interiorBookings = all.filter(
+  const interiorReal = all.filter(
     (b) =>
       (b.service_catalog?.slug?.includes("interior") || b.service_catalog?.slug?.includes("deep")) &&
       new Date(b.scheduled_date) >= monthStart &&
       b.status === "completed",
   );
-  const exteriorBookings = all.filter(
+  const exteriorReal = all.filter(
     (b) =>
       (b.service_catalog?.slug?.includes("exterior") || b.service_catalog?.slug?.includes("basic") || b.service_catalog?.slug?.includes("daily")) &&
       new Date(b.scheduled_date) >= monthStart &&
       b.status === "completed",
   );
+  const interiorCount = isDemo ? 2 : interiorReal.length;
+  const exteriorCount = isDemo ? 12 : exteriorReal.length;
+  const interiorLast = isDemo ? new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) : interiorReal[0]?.scheduled_date;
+  const exteriorLast = isDemo ? new Date(Date.now() - 86400000).toISOString().slice(0, 10) : exteriorReal[0]?.scheduled_date;
 
   const addonsQ = useQuery({
     queryKey: ["customer-addons", subs.map((s) => s.id).join(",")],
@@ -130,11 +151,17 @@ function MyPlanPage() {
 
       {activeSub && (
         <>
+          {isDemo && (
+            <div className="mt-5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-[11px] text-primary">
+              <span className="font-semibold">Demo preview · </span>
+              Subscribe to Daily Shine to start tracking your real services here.
+            </div>
+          )}
           {/* Active plan hero */}
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wide text-primary">Active plan</p>
+                <p className="text-[11px] uppercase tracking-wide text-primary">{isDemo ? "Demo plan" : "Active plan"}</p>
                 <h2 className="mt-0.5 truncate text-xl font-semibold">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
@@ -164,12 +191,16 @@ function MyPlanPage() {
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs">
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs" disabled={isDemo}>
                   <Pause className="h-3.5 w-3.5" /> Pause
                 </Button>
-                {expiringSoon && (
-                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
-                    <RefreshCw className="h-3.5 w-3.5" /> Renew
+                {(expiringSoon || isDemo) && (
+                  <Button asChild={isDemo} size="sm" className="h-8 gap-1 rounded-full text-xs">
+                    {isDemo ? (
+                      <Link to="/c/home"><RefreshCw className="h-3.5 w-3.5" /> Subscribe</Link>
+                    ) : (
+                      <><RefreshCw className="h-3.5 w-3.5" /> Renew</>
+                    )}
                   </Button>
                 )}
               </div>
@@ -183,25 +214,26 @@ function MyPlanPage() {
               <WashCard
                 title="Interior wash"
                 icon={Wrench}
-                count={interiorBookings.length}
-                target={1}
-                lastDate={interiorBookings[0]?.scheduled_date}
+                count={interiorCount}
+                target={4}
+                lastDate={interiorLast}
               />
               <WashCard
                 title="Exterior wash"
                 icon={Droplets}
-                count={exteriorBookings.length}
-                target={30}
-                lastDate={exteriorBookings[0]?.scheduled_date}
+                count={exteriorCount}
+                target={26}
+                lastDate={exteriorLast}
               />
             </div>
           </div>
 
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <StatCard icon={CheckCircle2} label="Completed" value={completedCount} tone="success" />
-            <StatCard icon={Clock} label="Upcoming" value={pendingCount} tone="primary" />
+            <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
+            <StatCard icon={Clock} label="Upcoming" value={isDemo ? 2 : pendingCount} tone="primary" />
           </div>
+
 
           {/* Add-ons */}
           <div className="mt-5">
