@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing, Car } from "lucide-react";
+import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/c/_authed/home")({
@@ -104,13 +105,7 @@ function CustomerHome() {
             onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : navigate({ to: "/c/vehicles/add" }))}
             className="group flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 pr-3 shadow-sm transition-all hover:border-primary/40"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-accent">
-              {catalogImageQ.data ? (
-                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
-              ) : (
-                <Car className="h-4 w-4 text-accent-foreground" />
-              )}
-            </span>
+            <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-9 w-9 rounded-full" />
             <span className="flex flex-col items-start leading-tight">
               <span className="text-[11px] font-semibold uppercase tracking-wide">{activeVehicle.model}</span>
               <span className="text-[10px] text-muted-foreground">{bodyLabel}</span>
@@ -141,13 +136,7 @@ function CustomerHome() {
                 <span className="font-medium text-foreground">{activeVehicle.model.toUpperCase()} — {bodyLabel}</span>
               </p>
             </div>
-            <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card">
-              {catalogImageQ.data ? (
-                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
-              ) : (
-                <Car className="h-7 w-7 text-muted-foreground" />
-              )}
-            </div>
+            <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-16 w-24 rounded-2xl bg-card" />
           </div>
           <Link to="/c/vehicles/add" className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
             <Plus className="h-3.5 w-3.5" /> Add another vehicle
