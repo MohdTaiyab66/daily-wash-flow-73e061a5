@@ -79,13 +79,6 @@ function ServiceDetail() {
     },
   });
 
-  const discountQ = useQuery({
-    queryKey: ["mv-discount"],
-    queryFn: async () => {
-      const { data } = await (supabase as any).from("multi_vehicle_discounts").select("*").eq("active", true).order("vehicle_count");
-      return data ?? [];
-    },
-  });
 
   useEffect(() => {
     if (!vehicleId) {
