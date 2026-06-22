@@ -66,7 +66,7 @@ function AddVehicle() {
   const catalogQ = useQuery({
     queryKey: ["vehicle-catalog-all"],
     queryFn: async (): Promise<CatalogRow[]> => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("vehicle_catalog")
         .select("id,make,model,category,image_url")
         .eq("active", true)
@@ -132,7 +132,7 @@ function AddVehicle() {
         registration_number: reg.trim().toUpperCase(),
         parking_notes: noteParts.join(" • ") || null,
       };
-      const { error } = await (supabase as any).from("customer_vehicles").insert(payload);
+      const { error } = await supabase.from("customer_vehicles").insert(payload);
       if (error) {
         // Surface a friendly message for the most common failures.
         if (error.code === "23505")
@@ -148,7 +148,7 @@ function AddVehicle() {
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
       navigate({ to: "/c/home" });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to add"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to add"),
   });
 
   const clearFilters = () => {
@@ -266,7 +266,7 @@ function AddVehicle() {
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             Couldn't load the vehicle list.{" "}
-            {String((catalogQ.error as any)?.message ?? "Check connection and retry.")}
+            {catalogQ.error instanceof Error ? catalogQ.error.message : "Check connection and retry."}
           </div>
         </div>
       )}
