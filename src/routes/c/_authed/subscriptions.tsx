@@ -53,9 +53,26 @@ function MyPlanPage() {
 
   const all = bookingsQ.data ?? [];
   const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
-  const activeSub = subs.find(
+  const realSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
+
+  // Demo subscription shown when the customer has no active plan yet,
+  // so they get a feel for how Daily Shine tracking will look.
+  const isDemo = !realSub;
+  const demoStart = new Date(Date.now() - 12 * 86400000);
+  const activeSub: (Booking & { _demo?: boolean }) | undefined = realSub ?? {
+    id: "demo",
+    scheduled_date: demoStart.toISOString().slice(0, 10),
+    status: "active",
+    payment_status: "cash_on_service",
+    total_amount: 1499,
+    base_amount: 1499,
+    addon_amount: 0,
+    service_id: "demo",
+    service_catalog: { name: "Daily Shine — Exterior + 4× Interior", service_type: "subscription", slug: "daily-shine" },
+    _demo: true,
+  };
 
   // Plan period: 30 days from scheduled_date
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
@@ -68,18 +85,22 @@ function MyPlanPage() {
 
   // Wash status — track interior + exterior for current sub
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const interiorBookings = all.filter(
+  const interiorReal = all.filter(
     (b) =>
       (b.service_catalog?.slug?.includes("interior") || b.service_catalog?.slug?.includes("deep")) &&
       new Date(b.scheduled_date) >= monthStart &&
       b.status === "completed",
   );
-  const exteriorBookings = all.filter(
+  const exteriorReal = all.filter(
     (b) =>
       (b.service_catalog?.slug?.includes("exterior") || b.service_catalog?.slug?.includes("basic") || b.service_catalog?.slug?.includes("daily")) &&
       new Date(b.scheduled_date) >= monthStart &&
       b.status === "completed",
   );
+  const interiorCount = isDemo ? 2 : interiorReal.length;
+  const exteriorCount = isDemo ? 12 : exteriorReal.length;
+  const interiorLast = isDemo ? new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) : interiorReal[0]?.scheduled_date;
+  const exteriorLast = isDemo ? new Date(Date.now() - 86400000).toISOString().slice(0, 10) : exteriorReal[0]?.scheduled_date;
 
   const addonsQ = useQuery({
     queryKey: ["customer-addons", subs.map((s) => s.id).join(",")],
