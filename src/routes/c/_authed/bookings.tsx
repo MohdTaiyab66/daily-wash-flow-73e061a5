@@ -12,22 +12,33 @@ export const Route = createFileRoute("/c/_authed/bookings")({
 });
 
 type Tab = "upcoming" | "previous";
+type Row = {
+  id: string;
+  scheduled_date: string;
+  preferred_before_time: string | null;
+  status: string;
+  payment_status: string | null;
+  total_amount: number;
+  service_catalog: { name: string; slug: string } | null;
+};
 
 function BookingsPage() {
   const [tab, setTab] = useState<Tab>("upcoming");
+
   const q = useQuery({
-    queryKey: ["customer-services", tab],
-    queryFn: async () => {
+    queryKey: ["customer-bookings", tab],
+    queryFn: async (): Promise<Row[]> => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await (supabase as any)
-        .from("services")
-        .select("id, status, scheduled_date, scheduled_window, service_type, total_amount")
+      const { data, error } = await (supabase as any)
+        .from("bookings")
+        .select("id, scheduled_date, preferred_before_time, status, payment_status, total_amount, service_catalog:service_id(name, slug)")
         .order("scheduled_date", { ascending: tab === "upcoming" })
         .limit(50);
-      const rows = (data ?? []) as any[];
+      if (error) throw error;
+      const rows = (data ?? []) as Row[];
       return tab === "upcoming"
-        ? rows.filter((r) => r.scheduled_date >= today && r.status !== "completed" && r.status !== "cancelled")
-        : rows.filter((r) => r.scheduled_date < today || r.status === "completed" || r.status === "cancelled");
+        ? rows.filter((r) => r.scheduled_date >= today && !["completed", "cancelled"].includes(r.status))
+        : rows.filter((r) => r.scheduled_date < today || ["completed", "cancelled"].includes(r.status));
     },
   });
 
@@ -75,17 +86,18 @@ function BookingsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {items.map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
+            {items.map((b) => (
+              <div key={b.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold capitalize">{String(s.service_type).replaceAll("_", " ")}</div>
+                  <div className="text-sm font-semibold">{b.service_catalog?.name ?? "Service"}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    {s.scheduled_date} · {s.scheduled_window ?? ""}
+                    {b.scheduled_date}{b.preferred_before_time ? ` · ${b.preferred_before_time}` : ""}
                   </div>
+                  <div className="mt-1 text-xs font-medium">₹{b.total_amount}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium capitalize text-accent-foreground">
-                    {s.status}
+                    {b.status.replaceAll("_", " ")}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>

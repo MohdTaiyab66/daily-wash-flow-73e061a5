@@ -55,6 +55,7 @@ import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles.add'
+import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const TrustRoute = TrustRouteImport.update({
@@ -292,6 +293,11 @@ const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
   path: '/add',
   getParentRoute: () => CAuthedVehiclesRoute,
 } as any)
+const CAuthedServiceSlugRoute = CAuthedServiceSlugRouteImport.update({
+  id: '/service/$slug',
+  path: '/service/$slug',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRoutesByTo {
@@ -390,6 +397,7 @@ export interface FileRoutesByTo {
   '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRoutesById {
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/c/_authed/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
 export interface FileRouteTypes {
@@ -490,6 +499,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/app/'
     | '/app/service/$id'
+    | '/c/service/$slug'
     | '/c/vehicles/add'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/app'
     | '/app/service/$id'
+    | '/c/service/$slug'
     | '/c/vehicles/add'
   id:
     | '__root__'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/c/_authed/vehicles'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles/add'
   fileRoutesById: FileRoutesById
 }
@@ -922,6 +934,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedVehiclesAddRouteImport
       parentRoute: typeof CAuthedVehiclesRoute
     }
+    '/c/_authed/service/$slug': {
+      id: '/c/_authed/service/$slug'
+      path: '/service/$slug'
+      fullPath: '/c/service/$slug'
+      preLoaderRoute: typeof CAuthedServiceSlugRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -1053,6 +1072,7 @@ interface CAuthedRouteRouteChildren {
   CAuthedHomeRoute: typeof CAuthedHomeRoute
   CAuthedProfileRoute: typeof CAuthedProfileRoute
   CAuthedVehiclesRoute: typeof CAuthedVehiclesRouteWithChildren
+  CAuthedServiceSlugRoute: typeof CAuthedServiceSlugRoute
 }
 
 const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
@@ -1060,6 +1080,7 @@ const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
   CAuthedHomeRoute: CAuthedHomeRoute,
   CAuthedProfileRoute: CAuthedProfileRoute,
   CAuthedVehiclesRoute: CAuthedVehiclesRouteWithChildren,
+  CAuthedServiceSlugRoute: CAuthedServiceSlugRoute,
 }
 
 const CAuthedRouteRouteWithChildren = CAuthedRouteRoute._addFileChildren(
