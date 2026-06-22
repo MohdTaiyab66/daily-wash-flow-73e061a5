@@ -250,6 +250,7 @@ export type Database = {
           created_at: string
           id: string
           price: number
+          quantity: number
         }
         Insert: {
           addon_key: string
@@ -258,6 +259,7 @@ export type Database = {
           created_at?: string
           id?: string
           price: number
+          quantity?: number
         }
         Update: {
           addon_key?: string
@@ -266,6 +268,7 @@ export type Database = {
           created_at?: string
           id?: string
           price?: number
+          quantity?: number
         }
         Relationships: [
           {
@@ -285,11 +288,13 @@ export type Database = {
           created_at: string
           discount_amount: number
           id: string
+          notes: string | null
           payment_status: string
           preferred_before_time: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           scheduled_date: string | null
+          scheduled_time: string | null
           service_id: string
           status: string
           total_amount: number
@@ -304,11 +309,13 @@ export type Database = {
           created_at?: string
           discount_amount?: number
           id?: string
+          notes?: string | null
           payment_status?: string
           preferred_before_time?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           scheduled_date?: string | null
+          scheduled_time?: string | null
           service_id: string
           status?: string
           total_amount?: number
@@ -323,11 +330,13 @@ export type Database = {
           created_at?: string
           discount_amount?: number
           id?: string
+          notes?: string | null
           payment_status?: string
           preferred_before_time?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           scheduled_date?: string | null
+          scheduled_time?: string | null
           service_id?: string
           status?: string
           total_amount?: number
