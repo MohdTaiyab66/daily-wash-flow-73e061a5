@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Car } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,13 @@ export const Route = createFileRoute("/c/_authed/vehicles")({
 type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null };
 
 function VehiclesPage() {
+  const { pathname } = useLocation();
   const qc = useQueryClient();
+
+  if (pathname !== "/c/vehicles") {
+    return <Outlet />;
+  }
+
   const q = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
