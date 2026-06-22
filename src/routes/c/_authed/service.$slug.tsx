@@ -38,6 +38,20 @@ function ServiceDetail() {
     return d.toISOString().slice(0, 10);
   });
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
+  const [notes, setNotes] = useState("");
+  const [addrOpen, setAddrOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const { slug } = useParams({ from: "/c/_authed/service/$slug" });
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
+  const [addressId, setAddressId] = useState<string | null>(null);
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [addrOpen, setAddrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
