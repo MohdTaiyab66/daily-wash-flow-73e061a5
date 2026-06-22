@@ -26,8 +26,8 @@ type CatalogRow = {
 
 const CATEGORIES = [
   { key: "all", label: "All" },
-  { key: "hatchback_compact_sedan", label: "Hatchback / Compact" },
-  { key: "sedan_suv", label: "Sedan / SUV" },
+  { key: "hatchback_compact_sedan", label: "Small car tier" },
+  { key: "sedan_suv", label: "Large car tier" },
 ] as const;
 
 function highlight(text: string, term: string) {
