@@ -665,3 +665,22 @@ function StatCard({
     </div>
   );
 }
+
+function RecommendedAddon({ name, price, icon: Icon }: { name: string; price: number; icon: any }) {
+  return (
+    <Link
+      to="/c/service/$slug"
+      params={{ slug: "daily-shine" }}
+      className="group flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[12px] font-semibold">{name}</div>
+        <div className="text-[10px] text-muted-foreground">₹{price} each</div>
+      </div>
+      <Plus className="h-3.5 w-3.5 shrink-0 text-primary transition-transform group-hover:scale-110" />
+    </Link>
+  );
+}
