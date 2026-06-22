@@ -176,7 +176,7 @@ function CustomerHome() {
         ) : (
           <>
         <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
-        <p className="text-xs text-muted-foreground">Prices for {category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}</p>
+        <p className="text-xs text-muted-foreground">Prices for {bodyLabel || (category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact")}</p>
 
         <div className="mt-4 space-y-3">
           {servicesQ.isLoading && Array.from({ length: 4 }).map((_, i) => (
@@ -236,7 +236,7 @@ function CustomerHome() {
                   <div className="text-xs text-muted-foreground">{v.registration_number}</div>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {v.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback"}
+                  {vehicleBodyLabel(v.make, v.model, v.category)}
                 </span>
               </button>
             ))}
