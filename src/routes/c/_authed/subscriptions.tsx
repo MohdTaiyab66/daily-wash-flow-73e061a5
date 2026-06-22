@@ -233,6 +233,19 @@ function MyPlanPage() {
             </div>
           </div>
 
+          {/* Schedule a wash */}
+          <div className="mt-5 rounded-3xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold tracking-tight">Schedule a wash</h3>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Pick a date and time slot — we'll send a partner.</p>
+              </div>
+              <Button size="sm" className="shrink-0 rounded-full" onClick={() => setScheduleOpen(true)}>
+                <CalendarPlus className="mr-1 h-3.5 w-3.5" /> Schedule
+              </Button>
+            </div>
+          </div>
+
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
             <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
