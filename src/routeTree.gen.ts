@@ -38,6 +38,8 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
+import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
+import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
 import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
 import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
 import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
@@ -56,6 +58,7 @@ import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
+import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const TrustRoute = TrustRouteImport.update({
@@ -202,6 +205,16 @@ const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
   path: '/vehicles',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const CAuthedSubscriptionsRoute = CAuthedSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedReferralsRoute = CAuthedReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
 const CAuthedProfileRoute = CAuthedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -298,6 +311,11 @@ const CAuthedServiceSlugRoute = CAuthedServiceSlugRouteImport.update({
   path: '/service/$slug',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CAuthedBookingsRoute,
+} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -345,12 +363,15 @@ export interface FileRoutesByFullPath {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
-  '/c/bookings': typeof CAuthedBookingsRoute
+  '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/profile': typeof CAuthedProfileRoute
+  '/c/referrals': typeof CAuthedReferralsRoute
+  '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
@@ -391,12 +412,15 @@ export interface FileRoutesByTo {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
-  '/c/bookings': typeof CAuthedBookingsRoute
+  '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/profile': typeof CAuthedProfileRoute
+  '/c/referrals': typeof CAuthedReferralsRoute
+  '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
@@ -442,12 +466,15 @@ export interface FileRoutesById {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
-  '/c/_authed/bookings': typeof CAuthedBookingsRoute
+  '/c/_authed/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/_authed/home': typeof CAuthedHomeRoute
   '/c/_authed/profile': typeof CAuthedProfileRoute
+  '/c/_authed/referrals': typeof CAuthedReferralsRoute
+  '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles/add': typeof CAuthedVehiclesAddRoute
 }
@@ -496,9 +523,12 @@ export interface FileRouteTypes {
     | '/c/bookings'
     | '/c/home'
     | '/c/profile'
+    | '/c/referrals'
+    | '/c/subscriptions'
     | '/c/vehicles'
     | '/app/'
     | '/app/service/$id'
+    | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
   fileRoutesByTo: FileRoutesByTo
@@ -542,9 +572,12 @@ export interface FileRouteTypes {
     | '/c/bookings'
     | '/c/home'
     | '/c/profile'
+    | '/c/referrals'
+    | '/c/subscriptions'
     | '/c/vehicles'
     | '/app'
     | '/app/service/$id'
+    | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
   id:
@@ -592,9 +625,12 @@ export interface FileRouteTypes {
     | '/c/_authed/bookings'
     | '/c/_authed/home'
     | '/c/_authed/profile'
+    | '/c/_authed/referrals'
+    | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles/add'
   fileRoutesById: FileRoutesById
@@ -815,6 +851,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedVehiclesRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
+    '/c/_authed/subscriptions': {
+      id: '/c/_authed/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/c/subscriptions'
+      preLoaderRoute: typeof CAuthedSubscriptionsRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/referrals': {
+      id: '/c/_authed/referrals'
+      path: '/referrals'
+      fullPath: '/c/referrals'
+      preLoaderRoute: typeof CAuthedReferralsRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
     '/c/_authed/profile': {
       id: '/c/_authed/profile'
       path: '/profile'
@@ -941,6 +991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedServiceSlugRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
+    '/c/_authed/bookings/$id': {
+      id: '/c/_authed/bookings/$id'
+      path: '/$id'
+      fullPath: '/c/bookings/$id'
+      preLoaderRoute: typeof CAuthedBookingsIdRouteImport
+      parentRoute: typeof CAuthedBookingsRoute
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -1055,6 +1112,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CAuthedBookingsRouteChildren {
+  CAuthedBookingsIdRoute: typeof CAuthedBookingsIdRoute
+}
+
+const CAuthedBookingsRouteChildren: CAuthedBookingsRouteChildren = {
+  CAuthedBookingsIdRoute: CAuthedBookingsIdRoute,
+}
+
+const CAuthedBookingsRouteWithChildren = CAuthedBookingsRoute._addFileChildren(
+  CAuthedBookingsRouteChildren,
+)
+
 interface CAuthedVehiclesRouteChildren {
   CAuthedVehiclesAddRoute: typeof CAuthedVehiclesAddRoute
 }
@@ -1068,17 +1137,21 @@ const CAuthedVehiclesRouteWithChildren = CAuthedVehiclesRoute._addFileChildren(
 )
 
 interface CAuthedRouteRouteChildren {
-  CAuthedBookingsRoute: typeof CAuthedBookingsRoute
+  CAuthedBookingsRoute: typeof CAuthedBookingsRouteWithChildren
   CAuthedHomeRoute: typeof CAuthedHomeRoute
   CAuthedProfileRoute: typeof CAuthedProfileRoute
+  CAuthedReferralsRoute: typeof CAuthedReferralsRoute
+  CAuthedSubscriptionsRoute: typeof CAuthedSubscriptionsRoute
   CAuthedVehiclesRoute: typeof CAuthedVehiclesRouteWithChildren
   CAuthedServiceSlugRoute: typeof CAuthedServiceSlugRoute
 }
 
 const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
-  CAuthedBookingsRoute: CAuthedBookingsRoute,
+  CAuthedBookingsRoute: CAuthedBookingsRouteWithChildren,
   CAuthedHomeRoute: CAuthedHomeRoute,
   CAuthedProfileRoute: CAuthedProfileRoute,
+  CAuthedReferralsRoute: CAuthedReferralsRoute,
+  CAuthedSubscriptionsRoute: CAuthedSubscriptionsRoute,
   CAuthedVehiclesRoute: CAuthedVehiclesRouteWithChildren,
   CAuthedServiceSlugRoute: CAuthedServiceSlugRoute,
 }

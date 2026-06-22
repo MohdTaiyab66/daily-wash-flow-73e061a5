@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,9 @@ type Service = {
 };
 type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string };
 type Address = { id: string; label: string; address_line: string; area: string; pincode: string | null };
+type Addon = { id: string; name: string; description: string | null; price_hatchback: number; price_sedan_suv: number; applies_to_slugs: string[] };
 
-const TIME_SLOTS = ["07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "06:00 PM", "07:00 PM"];
+const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
 
 function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
