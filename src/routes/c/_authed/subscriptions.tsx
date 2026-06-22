@@ -315,7 +315,242 @@ function MyPlanPage() {
           </div>
         </>
       )}
+
+      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} />
     </div>
+  );
+}
+
+const SLOT_OPTIONS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
+
+type SvcOpt = { id: string; slug: string; name: string; price_hatchback: number; price_sedan_suv: number };
+type VehOpt = { id: string; make: string; model: string; category: string; registration_number: string };
+type AddrOpt = { id: string; label: string; address_line: string; area: string; is_default: boolean | null };
+
+function ScheduleWashDialog({
+  open,
+  onOpenChange,
+  userId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  userId: string | null;
+}) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [serviceId, setServiceId] = useState<string>("");
+  const [vehicleId, setVehicleId] = useState<string>("");
+  const [addressId, setAddressId] = useState<string>("");
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [slot, setSlot] = useState<string>(SLOT_OPTIONS[3]);
+  const [saving, setSaving] = useState(false);
+
+  const svcQ = useQuery({
+    queryKey: ["schedule-services"],
+    enabled: open,
+    queryFn: async (): Promise<SvcOpt[]> => {
+      const { data } = await (supabase as any)
+        .from("service_catalog")
+        .select("id, slug, name, price_hatchback, price_sedan_suv")
+        .eq("active", true)
+        .order("sort_order");
+      return (data ?? []) as SvcOpt[];
+    },
+  });
+  const vehQ = useQuery({
+    queryKey: ["schedule-vehicles"],
+    enabled: open,
+    queryFn: async (): Promise<VehOpt[]> => {
+      const { data } = await (supabase as any)
+        .from("customer_vehicles")
+        .select("id, make, model, category, registration_number")
+        .order("created_at");
+      return (data ?? []) as VehOpt[];
+    },
+  });
+  const addrQ = useQuery({
+    queryKey: ["schedule-addresses"],
+    enabled: open,
+    queryFn: async (): Promise<AddrOpt[]> => {
+      const { data } = await (supabase as any)
+        .from("customer_addresses")
+        .select("id, label, address_line, area, is_default")
+        .order("created_at");
+      return (data ?? []) as AddrOpt[];
+    },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (!serviceId && svcQ.data?.length) {
+      const preferred =
+        svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
+      setServiceId(preferred.id);
+    }
+    if (!vehicleId && vehQ.data?.length) {
+      const stored = localStorage.getItem("uw_customer_vehicle");
+      setVehicleId(stored && vehQ.data.some((v) => v.id === stored) ? stored : vehQ.data[0].id);
+    }
+    if (!addressId && addrQ.data?.length) {
+      const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
+      setAddressId(def.id);
+    }
+  }, [open, svcQ.data, vehQ.data, addrQ.data, serviceId, vehicleId, addressId]);
+
+  const service = svcQ.data?.find((s) => s.id === serviceId);
+  const vehicle = vehQ.data?.find((v) => v.id === vehicleId);
+  const isSUV = vehicle?.category === "sedan_suv";
+  const price = useMemo(() => {
+    if (!service) return 0;
+    return Number(isSUV ? service.price_sedan_suv : service.price_hatchback);
+  }, [service, isSUV]);
+
+  const confirm = async () => {
+    if (!userId) { toast.error("Please sign in again"); return; }
+    if (!service) { toast.error("Pick a service"); return; }
+    if (!vehicle) { toast.error("Add a vehicle first"); return; }
+    if (!addressId) { toast.error("Add a service address first"); return; }
+    setSaving(true);
+    const { data: booking, error } = await (supabase as any)
+      .from("bookings")
+      .insert({
+        user_id: userId,
+        service_id: service.id,
+        vehicle_id: vehicle.id,
+        address_id: addressId,
+        scheduled_date: date,
+        scheduled_time: slot,
+        preferred_before_time: slot,
+        base_amount: price,
+        addon_amount: 0,
+        discount_amount: 0,
+        total_amount: price,
+        status: "pending_assignment",
+        payment_status: "cash_on_service",
+      })
+      .select("id")
+      .single();
+    setSaving(false);
+    if (error) { toast.error(error.message || "Could not schedule"); return; }
+    toast.success(`Scheduled for ${date} · ${slot}`);
+    qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+    onOpenChange(false);
+    navigate({ to: "/c/bookings/$id", params: { id: booking.id } });
+  };
+
+  const noVehicles = !vehQ.isLoading && (vehQ.data?.length ?? 0) === 0;
+  const noAddresses = !addrQ.isLoading && (addrQ.data?.length ?? 0) === 0;
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Schedule a wash</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {(noVehicles || noAddresses) && (
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 text-xs">
+              {noVehicles && (
+                <div className="flex items-center justify-between gap-2">
+                  <span>Add a vehicle to schedule.</span>
+                  <Button asChild size="sm" variant="outline"><Link to="/c/vehicles/add">Add vehicle</Link></Button>
+                </div>
+              )}
+              {noAddresses && !noVehicles && (
+                <div className="flex items-center justify-between gap-2">
+                  <span>Add a service address to schedule.</span>
+                  <Button asChild size="sm" variant="outline"><Link to="/c/profile">Add address</Link></Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <Label className="text-xs">Service</Label>
+            <select
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+            >
+              {(svcQ.data ?? []).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · ₹{isSUV ? s.price_sedan_suv : s.price_hatchback}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Vehicle</Label>
+              <select
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                disabled={noVehicles}
+                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+              >
+                {(vehQ.data ?? []).map((v) => (
+                  <option key={v.id} value={v.id}>{v.model} · {v.registration_number}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">Address</Label>
+              <select
+                value={addressId}
+                onChange={(e) => setAddressId(e.target.value)}
+                disabled={noAddresses}
+                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+              >
+                {(addrQ.data ?? []).map((a) => (
+                  <option key={a.id} value={a.id}>{a.label || "Address"} · {a.area}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Date</Label>
+            <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} className="mt-1" />
+          </div>
+
+          <div>
+            <Label className="text-xs">Time slot</Label>
+            <div className="mt-1 grid grid-cols-3 gap-2">
+              {SLOT_OPTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSlot(s)}
+                  className={`rounded-xl border py-2 text-[11px] font-medium transition-colors ${
+                    slot === s ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-baseline justify-between rounded-xl bg-accent/40 px-3 py-2">
+            <span className="text-xs text-muted-foreground">Total · pay after service</span>
+            <span className="text-base font-semibold">₹{price}</span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={confirm} disabled={saving || noVehicles || noAddresses}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm booking
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
