@@ -109,42 +109,42 @@ function CustomerLanding() {
       <div className="mx-auto max-w-md">
         {/* Hero */}
         <div className="relative overflow-hidden bg-foreground text-background">
-          <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 opacity-25">
             <img src={hero} alt="" className="h-full w-full object-cover" width={1280} height={896} />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/70 to-foreground" />
-          <div className="relative px-5 pb-10 pt-8">
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-foreground/75 to-foreground" />
+          <div className="relative px-5 pb-12 pt-6">
             <div className="flex items-center gap-2.5">
-              <img src={logo} alt="" className="h-9 w-9 rounded-xl object-cover" />
-              <span className="text-base font-semibold tracking-tight">Urban Wash</span>
-              <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
-                Lucknow
+              <img src={logo} alt="" className="h-8 w-8 rounded-lg object-cover" />
+              <span className="text-sm font-semibold tracking-tight">Urban Wash</span>
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/30">
+                <MapPin className="h-2.5 w-2.5" /> Lucknow
               </span>
             </div>
 
-            <h1 className="mt-10 text-[34px] font-bold leading-[1.05] tracking-tight">
-              Doorstep car care, <br/>
-              <span className="text-primary">every single morning.</span>
+            <h1 className="mt-8 text-[30px] font-bold leading-[1.08] tracking-tight">
+              Doorstep car care,
+              <br />
+              <span className="text-primary">every morning.</span>
             </h1>
-            <p className="mt-3 text-sm text-background/75">
+            <p className="mt-2.5 text-[13px] leading-relaxed text-background/70">
               Subscribe once. Sparkling car before you leave for work — daily.
-              Vetted partners, before/after photos, pay only after service.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2 text-[11px]">
-              <Pill icon={<ShieldCheck className="h-3 w-3" />}>Verified partners</Pill>
-              <Pill icon={<Timer className="h-3 w-3" />}>Done before 10 AM</Pill>
-              <Pill icon={<Star className="h-3 w-3" />}>4.9 ★ in pilot</Pill>
+            <div className="mt-4 flex flex-wrap gap-1.5 text-[10px]">
+              <Pill icon={<ShieldCheck className="h-3 w-3" />}>Verified</Pill>
+              <Pill icon={<Timer className="h-3 w-3" />}>Before 10 AM</Pill>
+              <Pill icon={<Star className="h-3 w-3" />}>4.9 ★</Pill>
             </div>
           </div>
         </div>
 
         {/* Address card */}
-        <div className="-mt-6 px-5">
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold tracking-tight">Where should we wash your car?</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Enter your full address. We'll check if we serve your locality.
+        <div className="-mt-8 px-5">
+          <div className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-foreground/5">
+            <h2 className="text-base font-semibold tracking-tight">Where should we wash?</h2>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Enter your address — we'll check serviceability.
             </p>
 
             <Button
@@ -152,31 +152,33 @@ function CustomerLanding() {
               disabled={locating}
               variant="outline"
               size="sm"
-              className="mt-4 w-full justify-start gap-2 rounded-xl border-primary/30 text-primary hover:bg-accent"
+              className="mt-4 w-full justify-center gap-2 rounded-xl border-primary/30 text-primary hover:bg-accent"
             >
               {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
               Use my current location
             </Button>
 
-            <div className="mt-4 space-y-2">
-              <Textarea
-                value={address}
-                onChange={(e) => { setAddress(e.target.value); setOutOfArea(false); setNotified(false); }}
-                placeholder="House / Flat no, Street, Area, Landmark — e.g. A-203 Greens Apt, Vipul Khand, Gomti Nagar"
-                rows={3}
-                className="resize-none rounded-xl"
-              />
-              <Input
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
-                placeholder="Pincode (optional)"
-                className="rounded-xl"
-              />
+            <div className="my-3 flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
             </div>
 
+            <Textarea
+              value={address}
+              onChange={(e) => { setAddress(e.target.value); setOutOfArea(false); setNotified(false); }}
+              placeholder="House / flat, street, area, landmark"
+              rows={2}
+              className="resize-none rounded-xl text-sm"
+            />
+            <Input
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              placeholder="Pincode (optional)"
+              className="mt-2 rounded-xl text-sm"
+            />
+
             {!outOfArea && (
-              <Button onClick={check} disabled={checking} size="lg" className="mt-4 w-full rounded-xl">
+              <Button onClick={check} disabled={checking} size="lg" className="mt-4 w-full rounded-xl font-semibold">
                 {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Check availability <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -189,7 +191,7 @@ function CustomerLanding() {
                     <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-card">
                       <MapPin className="h-4 w-4 text-primary" />
                     </div>
-                    <h3 className="mt-2 text-sm font-semibold">We're coming soon to your area</h3>
+                    <h3 className="mt-2 text-sm font-semibold">Coming soon to your area</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Drop your number — we'll text you the moment we launch.
                     </p>
@@ -223,28 +225,28 @@ function CustomerLanding() {
 
           {/* Why */}
           <div className="mt-7">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why Urban Wash</h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Feature icon={<Sparkles className="h-4 w-4" />} title="Daily shine">From ₹999/mo · 30+ cleans a month</Feature>
-              <Feature icon={<ShieldCheck className="h-4 w-4" />} title="Trusted partners">Background-checked & trained</Feature>
-              <Feature icon={<Timer className="h-4 w-4" />} title="Before 10 AM">Pick the slot, sleep easy</Feature>
-              <Feature icon={<Star className="h-4 w-4" />} title="Photo proof">Before & after for every wash</Feature>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Why Urban Wash</h3>
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              <Feature icon={<Sparkles className="h-4 w-4" />} title="Daily shine">From ₹999/mo</Feature>
+              <Feature icon={<ShieldCheck className="h-4 w-4" />} title="Trusted">Vetted partners</Feature>
+              <Feature icon={<Timer className="h-4 w-4" />} title="Before 10 AM">Sleep easy</Feature>
+              <Feature icon={<Star className="h-4 w-4" />} title="Photo proof">Before & after</Feature>
             </div>
           </div>
 
           {/* Pricing teaser */}
-          <div className="mt-7 rounded-3xl border border-border bg-foreground p-5 text-background">
+          <div className="mt-6 rounded-3xl border border-border bg-foreground p-5 text-background">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">Plans from</div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-4xl font-bold tracking-tight">₹999</span>
               <span className="text-sm text-background/70">/month · Hatchback</span>
             </div>
             <p className="mt-2 text-xs text-background/70">
-              Daily exterior + alternate-day interior. Pause anytime. Cancel anytime.
+              Daily exterior + alternate-day interior. Pause anytime.
             </p>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-1 pb-10 text-xs text-muted-foreground">
+          <div className="mt-6 flex items-center justify-center gap-1 pb-10 text-xs text-muted-foreground">
             Already a partner?
             <Link to="/auth" className="font-semibold text-primary">Open Partner App</Link>
           </div>
