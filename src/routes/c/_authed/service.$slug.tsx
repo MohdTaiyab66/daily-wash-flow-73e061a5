@@ -349,12 +349,42 @@ function ServiceDetail() {
           </div>
         </SectionCard>
 
+        {/* Coupon */}
+        <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Apply coupon" hint={vehicleCount > 1 ? `${vehicleCount} vehicles on account` : undefined}>
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between rounded-xl border border-success/40 bg-success/10 px-3 py-2 text-sm">
+              <div>
+                <div className="font-semibold text-success">{appliedCoupon.code} applied</div>
+                <div className="text-[11px] text-muted-foreground">{appliedCoupon.percent}% off this booking</div>
+              </div>
+              <Button type="button" size="sm" variant="ghost" onClick={removeCoupon}>Remove</Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <Input
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  className="rounded-xl uppercase"
+                />
+                <Button type="button" onClick={applyCoupon} variant="outline" className="shrink-0 rounded-xl">Apply</Button>
+              </div>
+              {vehicleCount > 1 && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Tip: use <span className="font-semibold text-foreground">EXTRA10</span> for 10% off when booking for your additional vehicle.
+                </p>
+              )}
+            </>
+          )}
+        </SectionCard>
+
         {/* Summary */}
         <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
           <Row label="Base"><span>₹{basePrice}</span></Row>
           {addonPrice > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{addonPrice}</span></Row>}
-          {discountPct > 0 && (
-            <Row label={`Multi-vehicle discount (${discountPct}%)`}>
+          {appliedCoupon && discountAmt > 0 && (
+            <Row label={`Coupon ${appliedCoupon.code} (${discountPct}%)`}>
               <span className="text-success">−₹{discountAmt}</span>
             </Row>
           )}
