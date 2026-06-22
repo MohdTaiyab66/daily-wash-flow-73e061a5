@@ -254,6 +254,7 @@ function AddVehicle() {
               </button>
             )}
           </div>
+          {isSearching && <div className="mt-2">{renderResults(true)}</div>}
 
           {/* Active filter summary + one-tap clear */}
           {hasFilters && (
@@ -324,66 +325,17 @@ function AddVehicle() {
           </div>
 
           {/* Results */}
-          <div className="mt-4">
-            {catalogQ.isLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border p-8 text-center">
-                <Car className="mx-auto h-8 w-8 text-muted-foreground" />
-                <p className="mt-3 text-sm font-medium">No matches</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {query.trim() ? `Nothing called "${query.trim()}"` : "Nothing in this filter combo."}
-                  {brand ? ` under ${brand}` : ""}.
-                </p>
-                {hasFilters && (
-                  <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
-                    Clear filters
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-[11px] text-muted-foreground">
-                  {filtered.length} model{filtered.length === 1 ? "" : "s"} across {grouped.length} brand{grouped.length === 1 ? "" : "s"}
-                </div>
-                {grouped.map(([make, rows]) => (
-                  <div key={make}>
-                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{make}</div>
-                    <div className="space-y-1.5">
-                      {rows.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => setSelected(c)}
-                          className="flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-left hover:border-primary/40 hover:bg-accent"
-                        >
-                          <div>
-                            <div className="text-sm font-semibold">{highlight(c.model, query.trim())}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {c.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}
-                            </div>
-                          </div>
-                          <span className="text-xs text-primary">Select</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {!isSearching && <div className="mt-4">{renderResults(false)}</div>}
         </>
       ) : (
         <div className="mt-5 space-y-4">
           <div className="rounded-2xl border border-primary/30 bg-accent/40 p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <VehicleAvatar imageUrl={selected.image_url} make={selected.make} model={selected.model} color={color} className="h-14 w-16 rounded-2xl" />
               <div>
                 <div className="text-base font-semibold">{selected.make} {selected.model}</div>
                 <div className="text-xs text-muted-foreground">
-                  Auto-classified: {selected.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}
+                  Auto-classified: {selected.model.toUpperCase()} — {vehicleBodyLabel(selected.make, selected.model, selected.category)}
                 </div>
               </div>
               <Check className="h-5 w-5 text-primary" />
