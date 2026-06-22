@@ -68,11 +68,11 @@ function ProfilePage() {
       <div className="-mt-5 px-5">
         <div className="grid grid-cols-3 gap-3">
           <TileCard to="/c/bookings" icon={<ClipboardList className="h-5 w-5" />} label="My bookings" />
-          <TileCard icon={<Wallet className="h-5 w-5" />} label="Wallet" badge="₹0" />
+          <TileCard to="/c/subscriptions" icon={<Wallet className="h-5 w-5" />} label="Subscriptions" />
           <TileCard icon={<Headphones className="h-5 w-5" />} label="Help & Support" />
         </div>
 
-        <div className="mt-3 rounded-2xl border border-border bg-card p-4">
+        <Link to="/c/referrals" className="mt-3 block rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-warning/15">
@@ -85,7 +85,7 @@ function ProfilePage() {
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
-        </div>
+        </Link>
 
         <div className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
           <Row icon={<MapPin className="h-4 w-4" />} label="Saved addresses" />
