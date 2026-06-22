@@ -198,3 +198,36 @@ function CustomerHome() {
     </div>
   );
 }
+
+function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) {
+  const notify = async () => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const phone = u.user?.phone ?? null;
+      await (supabase as any).from("area_waitlist").insert({
+        area_name: area,
+        phone,
+      });
+      toast.success("We'll notify you when we launch in your area!");
+    } catch {
+      toast.error("Could not save. Try again.");
+    }
+  };
+  return (
+    <div className="flex flex-col items-center px-4 py-8 text-center">
+      <h2 className="text-3xl font-extrabold tracking-tight text-muted-foreground">
+        WE ARE <br />
+        COMING <span className="text-primary">SOON</span>
+      </h2>
+      <p className="mt-4 max-w-xs text-sm text-muted-foreground">
+        We're currently live in select areas and expanding quickly. Get notified when we are near you!
+      </p>
+      <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
+        <BellRing className="mr-2 h-4 w-4" /> Notify me!
+      </Button>
+      <button onClick={onChange} className="mt-4 text-sm font-medium text-primary underline underline-offset-4">
+        Change location
+      </button>
+    </div>
+  );
+}
