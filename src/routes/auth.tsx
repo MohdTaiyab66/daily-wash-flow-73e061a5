@@ -19,11 +19,8 @@ export const Route = createFileRoute("/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-function phoneEmail(phone: string) {
-  return `${phone}@partner.urbanwash.app`;
-}
-function phonePassword(phone: string) {
-  return `UW@${phone}#2026`;
+function toE164(phone: string) {
+  return `+91${phone}`;
 }
 
 function AuthPage() {
@@ -39,40 +36,58 @@ function AuthPage() {
 
   const sendOtp = async () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit phone"); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: toE164(phone),
+      options: { channel: "sms" },
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message || "Could not send OTP"); return; }
     setStep("otp");
-    toast.success("OTP sent. Use 1234 to continue (demo)");
+    toast.success("OTP sent to your phone");
   };
 
   const verifyOtp = async () => {
-    if (otp !== "1234") { toast.error("Invalid OTP. Use 1234"); return; }
+    if (!/^\d{4,6}$/.test(otp)) { toast.error("Enter the OTP from your SMS"); return; }
     setLoading(true);
-    const email = phoneEmail(phone);
-    const password = phonePassword(phone);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (data.session) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: toE164(phone),
+      token: otp,
+      type: "sms",
+    });
+    if (error || !data.session) {
       setLoading(false);
-      navigate({ to: nextRoute });
+      toast.error(error?.message || "Invalid or expired OTP");
       return;
     }
-    // First time → ask name
+    // Check if partner profile already has a name
+    const userId = data.session.user.id;
+    const { data: partner } = await supabase
+      .from("partners")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle();
     setLoading(false);
-    if (error) setStep("name");
+    if (!partner?.full_name) {
+      setStep("name");
+    } else {
+      navigate({ to: nextRoute });
+    }
   };
 
-  const signUp = async () => {
+  const saveName = async () => {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
-    const email = phoneEmail(phone);
-    const password = phonePassword(phone);
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: name.trim(), phone } },
-    });
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    if (!uid) { setLoading(false); toast.error("Session expired, please sign in again"); setStep("phone"); return; }
+    await supabase.auth.updateUser({ data: { full_name: name.trim() } });
+    const { error } = await supabase
+      .from("partners")
+      .update({ full_name: name.trim() })
+      .eq("id", uid);
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    // Try sign in
-    const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
-    if (e2) { toast.error(e2.message); return; }
     navigate({ to: nextRoute });
   };
 
@@ -87,7 +102,7 @@ function AuthPage() {
           <h1 className="mt-6 text-3xl font-semibold tracking-tight">{isAdminLogin ? "Admin login" : "Partner login"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {step === "phone" && "We'll send a one-time password to your phone."}
-            {step === "otp" && `Enter the 4-digit code sent to +91 ${phone}.`}
+            {step === "otp" && `Enter the code sent to +91 ${phone}.`}
             {step === "name" && "Welcome! Tell us your name to finish signing up."}
           </p>
         </div>
@@ -101,7 +116,9 @@ function AuthPage() {
                 <Input id="phone" inputMode="numeric" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="98765 43210" className="rounded-l-none" />
               </div>
             </div>
-            <Button size="lg" className="w-full" onClick={sendOtp}>Send OTP</Button>
+            <Button size="lg" className="w-full" onClick={sendOtp} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send OTP
+            </Button>
             <p className="text-xs text-muted-foreground">By continuing, you agree to Urban Wash {isAdminLogin ? "Admin" : "Partner"} terms.</p>
           </div>
         )}
@@ -109,9 +126,8 @@ function AuthPage() {
         {step === "otp" && (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="otp">4-digit code</Label>
-              <Input id="otp" inputMode="numeric" maxLength={4} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="mt-2 text-center text-2xl tracking-[0.5em]" />
-              <p className="mt-2 text-xs text-muted-foreground">Demo OTP: <span className="font-mono">1234</span></p>
+              <Label htmlFor="otp">Verification code</Label>
+              <Input id="otp" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="mt-2 text-center text-2xl tracking-[0.5em]" />
             </div>
             <Button size="lg" className="w-full" onClick={verifyOtp} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
@@ -126,8 +142,8 @@ function AuthPage() {
               <Label htmlFor="name">Full name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ravi Kumar" className="mt-2" />
             </div>
-            <Button size="lg" className="w-full" onClick={signUp} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create {isAdminLogin ? "admin" : "partner"} account
+            <Button size="lg" className="w-full" onClick={saveName} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue
             </Button>
           </div>
         )}
