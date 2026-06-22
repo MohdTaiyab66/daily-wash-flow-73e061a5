@@ -28,7 +28,7 @@ function VehiclesPage() {
   const q = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("customer_vehicles")
         .select("*")
         .order("created_at");
@@ -36,7 +36,7 @@ function VehiclesPage() {
       const rows = (data ?? []) as Vehicle[];
       const catalogImages = await Promise.all(
         rows.map(async (v) => {
-          const { data: img } = await (supabase as any)
+          const { data: img } = await supabase
             .from("vehicle_catalog")
             .select("image_url")
             .ilike("make", v.make)
@@ -52,14 +52,14 @@ function VehiclesPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("customer_vehicles").delete().eq("id", id);
+      const { error } = await supabase.from("customer_vehicles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Vehicle removed");
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed to remove"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to remove"),
   });
 
   return (
