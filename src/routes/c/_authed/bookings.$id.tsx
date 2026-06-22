@@ -98,11 +98,15 @@ function BookingDetail() {
             <div className="mt-4 border-t border-border pt-4">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Add-ons</div>
               <ul className="space-y-1.5 text-sm">
-                {addons.data.map((a: any) => (
-                  <li key={a.id} className="flex items-center justify-between">
-                    <span>{a.addon_name}</span><span className="text-muted-foreground">₹{a.price}</span>
-                  </li>
-                ))}
+                {addons.data.map((a: any) => {
+                  const q = a.quantity ?? 1;
+                  return (
+                    <li key={a.id} className="flex items-center justify-between">
+                      <span>{a.addon_name}{q > 1 ? ` × ${q}` : ""}</span>
+                      <span className="text-muted-foreground">₹{Number(a.price) * q}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
