@@ -480,8 +480,8 @@ function ScheduleWashDialog({
         addon_amount: 0,
         discount_amount: 0,
         total_amount: price,
-        status: "pending_assignment",
-        payment_status: "cash_on_service",
+        status: "pending_payment",
+        payment_status: "pending",
       })
       .select("id")
       .single();
