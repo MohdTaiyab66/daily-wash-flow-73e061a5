@@ -83,14 +83,14 @@ function CustomerAuth() {
         preferred_area: area,
       }, { onConflict: "user_id" });
       if (area && address) {
-        await (supabase as any).from("customer_addresses").upsert({
+        await (supabase as any).from("customer_addresses").insert({
           user_id: u.user.id,
           label: "Home",
           address_line: address,
           area,
           pincode: pincode || null,
           is_default: true,
-        }, { onConflict: "user_id,label" });
+        });
       }
     }
     setLoading(false);
