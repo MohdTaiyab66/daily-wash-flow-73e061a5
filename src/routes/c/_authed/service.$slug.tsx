@@ -258,10 +258,37 @@ function ServiceDetail() {
           )}
         </SectionCard>
 
+        {/* Add-ons */}
+        {addonsQ.data && addonsQ.data.length > 0 && (
+          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Optional">
+            <div className="space-y-2">
+              {addonsQ.data.map((a) => {
+                const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                const checked = selectedAddons.has(a.id);
+                return (
+                  <button key={a.id} onClick={() => toggleAddon(a.id)}
+                    className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${
+                      checked ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                    }`}>
+                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${checked ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                      {checked && <Check className="h-3 w-3" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium">{a.name}</div>
+                      {a.description && <div className="mt-0.5 text-[11px] text-muted-foreground">{a.description}</div>}
+                    </div>
+                    <div className="text-sm font-semibold">+₹{p}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </SectionCard>
+        )}
+
         {/* Date + Slot */}
         <SectionCard icon={<Calendar className="h-4 w-4" />} title="When">
           <Input type="date" min={new Date().toISOString().slice(0, 10)} value={date} onChange={(e) => setDate(e.target.value)} />
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {TIME_SLOTS.map((s) => (
               <button key={s} onClick={() => setSlot(s)}
                 className={`rounded-xl border py-2 text-xs font-medium ${
@@ -272,6 +299,21 @@ function ServiceDetail() {
             ))}
           </div>
         </SectionCard>
+
+        {/* Summary */}
+        <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
+          <Row label="Base"><span>₹{basePrice}</span></Row>
+          {addonPrice > 0 && <Row label={`Add-ons (${selectedAddons.size})`}><span>₹{addonPrice}</span></Row>}
+          {discountPct > 0 && (
+            <Row label={`Multi-vehicle discount (${discountPct}%)`}>
+              <span className="text-success">−₹{discountAmt}</span>
+            </Row>
+          )}
+          <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
+            <span className="font-semibold">Total</span>
+            <span className="text-lg font-semibold">₹{total}</span>
+          </div>
+        </div>
       </div>
 
       {/* Sticky checkout bar */}
@@ -279,11 +321,11 @@ function ServiceDetail() {
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 py-3">
           <div>
             <div className="text-xs text-muted-foreground">Total</div>
-            <div className="text-xl font-semibold">₹{price}</div>
-            <div className="text-[10px] text-muted-foreground">Pay after service</div>
+            <div className="text-xl font-semibold">₹{total}</div>
+            <div className="text-[10px] text-muted-foreground">Pay after service · Razorpay soon</div>
           </div>
           <Button onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm booking <ChevronRight className="ml-1 h-4 w-4" />
+            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -291,6 +333,10 @@ function ServiceDetail() {
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
   );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="mt-1.5 flex items-baseline justify-between"><span className="text-muted-foreground">{label}</span>{children}</div>;
 }
 
 function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
