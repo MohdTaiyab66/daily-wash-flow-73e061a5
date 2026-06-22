@@ -151,11 +151,17 @@ function MyPlanPage() {
 
       {activeSub && (
         <>
+          {isDemo && (
+            <div className="mt-5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-[11px] text-primary">
+              <span className="font-semibold">Demo preview · </span>
+              Subscribe to Daily Shine to start tracking your real services here.
+            </div>
+          )}
           {/* Active plan hero */}
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wide text-primary">Active plan</p>
+                <p className="text-[11px] uppercase tracking-wide text-primary">{isDemo ? "Demo plan" : "Active plan"}</p>
                 <h2 className="mt-0.5 truncate text-xl font-semibold">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
@@ -185,12 +191,16 @@ function MyPlanPage() {
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs">
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs" disabled={isDemo}>
                   <Pause className="h-3.5 w-3.5" /> Pause
                 </Button>
-                {expiringSoon && (
-                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
-                    <RefreshCw className="h-3.5 w-3.5" /> Renew
+                {(expiringSoon || isDemo) && (
+                  <Button asChild={isDemo} size="sm" className="h-8 gap-1 rounded-full text-xs">
+                    {isDemo ? (
+                      <Link to="/c/home"><RefreshCw className="h-3.5 w-3.5" /> Subscribe</Link>
+                    ) : (
+                      <><RefreshCw className="h-3.5 w-3.5" /> Renew</>
+                    )}
                   </Button>
                 )}
               </div>
@@ -204,25 +214,26 @@ function MyPlanPage() {
               <WashCard
                 title="Interior wash"
                 icon={Wrench}
-                count={interiorBookings.length}
-                target={1}
-                lastDate={interiorBookings[0]?.scheduled_date}
+                count={interiorCount}
+                target={4}
+                lastDate={interiorLast}
               />
               <WashCard
                 title="Exterior wash"
                 icon={Droplets}
-                count={exteriorBookings.length}
-                target={30}
-                lastDate={exteriorBookings[0]?.scheduled_date}
+                count={exteriorCount}
+                target={26}
+                lastDate={exteriorLast}
               />
             </div>
           </div>
 
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <StatCard icon={CheckCircle2} label="Completed" value={completedCount} tone="success" />
-            <StatCard icon={Clock} label="Upcoming" value={pendingCount} tone="primary" />
+            <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
+            <StatCard icon={Clock} label="Upcoming" value={isDemo ? 2 : pendingCount} tone="primary" />
           </div>
+
 
           {/* Add-ons */}
           <div className="mt-5">
