@@ -371,11 +371,14 @@ function ScheduleWashDialog({
   open,
   onOpenChange,
   userId,
+  kind = "any",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
+  kind?: "any" | "interior" | "exterior";
 }) {
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [serviceId, setServiceId] = useState<string>("");
