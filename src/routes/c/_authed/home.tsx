@@ -224,7 +224,8 @@ function CustomerHome() {
           <>
             <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
             <p className="text-xs text-muted-foreground">
-              Prices for {bodyLabel || (category === "sedan_suv" ? "large car tier" : "small car tier")}
+              Prices for{" "}
+              {bodyLabel || (category === "sedan_suv" ? "large car tier" : "small car tier")}
             </p>
 
             <div className="mt-4 space-y-3">
