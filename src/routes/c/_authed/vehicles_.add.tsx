@@ -266,7 +266,9 @@ function AddVehicle() {
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             Couldn't load the vehicle list.{" "}
-            {catalogQ.error instanceof Error ? catalogQ.error.message : "Check connection and retry."}
+            {catalogQ.error instanceof Error
+              ? catalogQ.error.message
+              : "Check connection and retry."}
           </div>
         </div>
       )}
