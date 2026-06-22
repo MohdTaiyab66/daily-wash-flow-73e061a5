@@ -37,9 +37,10 @@ function ServiceDetail() {
     const d = new Date(); d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
   });
-  const [slot, setSlot] = useState<string>(TIME_SLOTS[1]);
+  const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [addrOpen, setAddrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
@@ -67,6 +68,22 @@ function ServiceDetail() {
     },
   });
 
+  const addonsQ = useQuery({
+    queryKey: ["service-addons", slug],
+    queryFn: async (): Promise<Addon[]> => {
+      const { data } = await (supabase as any).from("service_addons").select("*").eq("active", true).order("sort_order");
+      return ((data ?? []) as Addon[]).filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
+    },
+  });
+
+  const discountQ = useQuery({
+    queryKey: ["mv-discount"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("multi_vehicle_discounts").select("*").eq("active", true).order("vehicle_count");
+      return data ?? [];
+    },
+  });
+
   useEffect(() => {
     if (!vehicleId) {
       const stored = localStorage.getItem("uw_customer_vehicle");
@@ -84,10 +101,37 @@ function ServiceDetail() {
   const service = serviceQ.data;
   const vehicle = vehiclesQ.data?.find((v) => v.id === vehicleId);
   const address = addressesQ.data?.find((a) => a.id === addressId);
-  const price = useMemo(() => {
-    if (!service || !vehicle) return service?.price_hatchback ?? 0;
-    return vehicle.category === "sedan_suv" ? service.price_sedan_suv : service.price_hatchback;
-  }, [service, vehicle]);
+  const isSUV = vehicle?.category === "sedan_suv";
+
+  const basePrice = useMemo(() => {
+    if (!service) return 0;
+    return isSUV ? service.price_sedan_suv : service.price_hatchback;
+  }, [service, isSUV]);
+
+  const addonPrice = useMemo(() => {
+    if (!addonsQ.data) return 0;
+    return addonsQ.data
+      .filter((a) => selectedAddons.has(a.id))
+      .reduce((s, a) => s + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
+  }, [addonsQ.data, selectedAddons, isSUV]);
+
+  const vehicleCount = vehiclesQ.data?.length ?? 1;
+  const discountPct = useMemo(() => {
+    const tiers = (discountQ.data ?? []).filter((d: any) => d.vehicle_count <= vehicleCount);
+    return tiers.length ? Math.max(...tiers.map((d: any) => d.percent)) : 0;
+  }, [discountQ.data, vehicleCount]);
+
+  const subtotal = basePrice + addonPrice;
+  const discountAmt = Math.round((subtotal * discountPct) / 100);
+  const total = subtotal - discountAmt;
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddons((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const confirm = async () => {
     if (!service) return;
@@ -97,26 +141,40 @@ function ServiceDetail() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSubmitting(false); toast.error("Please sign in again"); return; }
 
-    const { data, error } = await (supabase as any).from("bookings").insert({
+    const { data: booking, error } = await (supabase as any).from("bookings").insert({
       user_id: u.user.id,
       service_id: service.id,
       vehicle_id: vehicle.id,
       address_id: address.id,
       scheduled_date: date,
       preferred_before_time: slot,
-      base_amount: price,
-      addon_amount: 0,
-      discount_amount: 0,
-      total_amount: price,
+      base_amount: basePrice,
+      addon_amount: addonPrice,
+      discount_amount: discountAmt,
+      total_amount: total,
       status: "pending_assignment",
       payment_status: "cash_on_service",
     }).select("id").single();
+    if (error) { setSubmitting(false); toast.error(error.message); return; }
+
+    if (selectedAddons.size && addonsQ.data) {
+      const rows = addonsQ.data
+        .filter((a) => selectedAddons.has(a.id))
+        .map((a) => ({
+          booking_id: booking.id,
+          addon_key: a.id,
+          addon_name: a.name,
+          price: isSUV ? a.price_sedan_suv : a.price_hatchback,
+        }));
+      await (supabase as any).from("booking_addons").insert(rows);
+    }
+
     setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
     toast.success("Booking confirmed!");
     qc.invalidateQueries({ queryKey: ["customer-bookings"] });
     navigate({ to: "/c/bookings" });
   };
+
 
   if (serviceQ.isLoading) {
     return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
