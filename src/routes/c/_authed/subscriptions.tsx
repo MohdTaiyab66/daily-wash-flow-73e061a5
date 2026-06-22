@@ -356,7 +356,7 @@ function MyPlanPage() {
         </>
       )}
 
-      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} />
+      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} kind={scheduleKind} />
     </div>
   );
 }
