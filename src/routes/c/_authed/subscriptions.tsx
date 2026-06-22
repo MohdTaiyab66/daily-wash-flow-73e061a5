@@ -429,9 +429,16 @@ function ScheduleWashDialog({
 
   useEffect(() => {
     if (!open) return;
-    if (!serviceId && svcQ.data?.length) {
-      const preferred =
-        svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
+    if (svcQ.data?.length) {
+      let preferred: SvcOpt | undefined;
+      if (kind === "interior") {
+        preferred = svcQ.data.find((s) => s.slug.includes("interior") || s.slug.includes("deep"));
+      } else if (kind === "exterior") {
+        preferred = svcQ.data.find((s) => s.slug.includes("basic") || s.slug.includes("exterior"));
+      }
+      if (!preferred) {
+        preferred = svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
+      }
       setServiceId(preferred.id);
     }
     if (!vehicleId && vehQ.data?.length) {
@@ -442,7 +449,8 @@ function ScheduleWashDialog({
       const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
       setAddressId(def.id);
     }
-  }, [open, svcQ.data, vehQ.data, addrQ.data, serviceId, vehicleId, addressId]);
+  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId]);
+
 
   const service = svcQ.data?.find((s) => s.id === serviceId);
   const vehicle = vehQ.data?.find((v) => v.id === vehicleId);
