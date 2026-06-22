@@ -119,8 +119,12 @@ function CustomerHome() {
         </Link>
       )}
 
-      {/* Services */}
+      {/* Services / Coming-soon gate */}
       <div className="mt-7">
+        {area && !SERVICE_AREA_NAMES.includes(area) ? (
+          <ComingSoon area={area} onChange={() => navigate({ to: "/c" })} />
+        ) : (
+          <>
         <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
         <p className="text-xs text-muted-foreground">Prices for {category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}</p>
 
