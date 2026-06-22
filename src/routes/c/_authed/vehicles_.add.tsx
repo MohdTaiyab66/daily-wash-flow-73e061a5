@@ -102,6 +102,7 @@ function AddVehicle() {
   }, [filtered]);
 
   const hasFilters = brand !== null || cat !== "all" || query.trim().length > 0;
+  const isSearching = query.trim().length > 0;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -145,6 +146,70 @@ function AddVehicle() {
     setBrand(null);
     setCat("all");
     setQuery("");
+  };
+
+  const renderResults = (compact = false) => {
+    if (catalogQ.isLoading) {
+      return (
+        <div className="space-y-2">
+          {Array.from({ length: compact ? 3 : 5 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
+      );
+    }
+
+    if (filtered.length === 0) {
+      return (
+        <div className="rounded-3xl border border-dashed border-border p-8 text-center">
+          <Car className="mx-auto h-8 w-8 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium">No matches</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {query.trim() ? `Nothing called "${query.trim()}"` : "Nothing in this filter combo."}
+            {brand ? ` under ${brand}` : ""}.
+          </p>
+          {hasFilters && (
+            <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className={compact ? "rounded-3xl border border-border bg-card p-3 shadow-sm" : "space-y-4"}>
+        <div className="mb-2 text-[11px] text-muted-foreground">
+          {filtered.length} model{filtered.length === 1 ? "" : "s"} across {grouped.length} brand{grouped.length === 1 ? "" : "s"}
+        </div>
+        <div className="space-y-3">
+          {grouped.map(([make, rows]) => (
+            <div key={make}>
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{make}</div>
+              <div className="space-y-1.5">
+                {rows.map((c) => {
+                  const body = vehicleBodyLabel(c.make, c.model, c.category);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelected(c)}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+                    >
+                      <VehicleAvatar imageUrl={c.image_url} make={c.make} model={c.model} className="h-12 w-14 rounded-xl" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold">{highlight(`${c.make} ${c.model}`, query.trim())}</div>
+                        <div className="text-[11px] text-muted-foreground">{c.model.toUpperCase()} — {body}</div>
+                      </div>
+                      <span className="shrink-0 text-xs text-primary">Select</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
