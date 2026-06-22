@@ -74,12 +74,24 @@ function CustomerAuth() {
     const { data: u } = await supabase.auth.getUser();
     if (u?.user) {
       const area = localStorage.getItem("uw_customer_area");
+      const address = localStorage.getItem("uw_customer_full_address");
+      const pincode = localStorage.getItem("uw_customer_pincode");
       await (supabase as any).from("customer_profiles").upsert({
         user_id: u.user.id,
         full_name: name.trim(),
         phone,
         preferred_area: area,
       }, { onConflict: "user_id" });
+      if (area && address) {
+        await (supabase as any).from("customer_addresses").upsert({
+          user_id: u.user.id,
+          label: "Home",
+          address_line: address,
+          area,
+          pincode: pincode || null,
+          is_default: true,
+        }, { onConflict: "user_id,label" });
+      }
     }
     setLoading(false);
     navigate({ to: "/c/home" });
