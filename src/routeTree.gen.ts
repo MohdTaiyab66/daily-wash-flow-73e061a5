@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -56,6 +57,11 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles.add'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/trust': typeof TrustRoute
   '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/trust': typeof TrustRoute
   '/c': typeof CIndexRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/trust': typeof TrustRoute
   '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/trust'
     | '/c'
     | '/app'
     | '/admin/attendance'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/trust'
     | '/c'
     | '/admin/attendance'
     | '/admin/customer-map'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/trust'
     | '/c/_authed'
     | '/_authenticated/app'
     | '/admin/attendance'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  TrustRoute: typeof TrustRoute
   CAuthedRouteRoute: typeof CAuthedRouteRouteWithChildren
   CAuthRoute: typeof CAuthRoute
   CIndexRoute: typeof CIndexRoute
@@ -587,6 +600,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -1051,6 +1071,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  TrustRoute: TrustRoute,
   CAuthedRouteRoute: CAuthedRouteRouteWithChildren,
   CAuthRoute: CAuthRoute,
   CIndexRoute: CIndexRoute,
@@ -1058,13 +1079,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
