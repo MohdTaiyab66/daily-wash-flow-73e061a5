@@ -12,6 +12,8 @@ import {
   ShowerHead,
   ChevronDown,
   BellRing,
+  Check,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,13 +48,19 @@ type Service = {
   price_sedan_suv: number;
   service_type: string;
   sort_order: number;
+  duration_minutes: number | null;
 };
 
 const SERVICE_ICON: Record<string, LucideIcon> = {
+  "daily-shine": Sparkles,
+  "one-time-wash-basic": Droplets,
+  "one-time-wash-premium": ShowerHead,
+  "deep-clean": Wrench,
+  "interior-deep-clean": Wrench,
   daily_shine: Sparkles,
   one_time_basic: Droplets,
-  one_time_plus: Droplets,
-  deep_clean: ShowerHead,
+  one_time_plus: ShowerHead,
+  deep_clean: Wrench,
   interior_deep: Wrench,
 };
 
@@ -99,7 +107,6 @@ function CustomerHome() {
     ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category)
     : "";
 
-  // Lookup catalog image for the active vehicle (by make + model)
   const catalogImageQ = useQuery({
     queryKey: ["vehicle-catalog-image", activeVehicle?.make, activeVehicle?.model],
     enabled: !!activeVehicle,
@@ -124,9 +131,15 @@ function CustomerHome() {
   const priceFor = (s: Service) =>
     category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
 
+  const services = servicesQ.data ?? [];
+  const subscription = services.find((s) => s.service_type === "subscription");
+  const oneTime = services.filter((s) => s.service_type !== "subscription");
+
+  const showCatalog = !area || SERVICE_AREA_NAMES.includes(area);
+
   return (
     <div className="px-5 pt-6">
-      {/* Top bar: location (left) · vehicle chip (right) */}
+      {/* Top bar */}
       <div className="flex items-start justify-between gap-3">
         <button
           onClick={() => {
@@ -183,9 +196,7 @@ function CustomerHome() {
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {activeVehicle.registration_number} ·{" "}
-                <span className="font-medium text-foreground">
-                  {activeVehicle.model.toUpperCase()} — {bodyLabel}
-                </span>
+                <span className="font-medium text-foreground">{bodyLabel}</span>
               </p>
             </div>
             <VehicleAvatar
@@ -219,67 +230,105 @@ function CustomerHome() {
         </Link>
       )}
 
-      {/* Services / Coming-soon gate */}
-      <div className="mt-7">
-        {area && !SERVICE_AREA_NAMES.includes(area) ? (
+      {!showCatalog ? (
+        <div className="mt-7">
           <ComingSoon area={area} onChange={() => navigate({ to: "/c" })} />
-        ) : (
-          <>
-            <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
-            <p className="text-xs text-muted-foreground">
-              Prices for{" "}
-              {bodyLabel || (category === "sedan_suv" ? "large car tier" : "small car tier")}
-            </p>
-
-            <div className="mt-4 space-y-3">
-              {servicesQ.isLoading &&
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
-                ))}
-              {(servicesQ.data ?? []).map((s) => {
-                const Icon = SERVICE_ICON[s.slug] ?? Sparkles;
-                const recurring = s.service_type === "subscription";
-                return (
-                  <Link
-                    key={s.id}
-                    to="/c/service/$slug"
-                    params={{ slug: s.slug }}
-                    className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
-                  >
-                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
-                      <Icon className="h-6 w-6" />
+        </div>
+      ) : (
+        <>
+          {/* Subscription hero */}
+          {subscription && (
+            <section className="mt-7">
+              <div className="mb-3 flex items-baseline justify-between">
+                <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Best value
+                </span>
+              </div>
+              <Link
+                to="/c/service/$slug"
+                params={{ slug: subscription.slug }}
+                className="relative block overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+                      <Sparkles className="h-3 w-3" /> Daily plan
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="truncate text-base font-semibold">{s.name}</h4>
-                        {recurring && (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            SUBSCRIPTION
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                        {s.description}
-                      </p>
-                      <p className="mt-1.5 text-sm font-semibold text-foreground">
-                        ₹{priceFor(s)}
-                        {recurring ? (
-                          <span className="text-xs font-normal text-muted-foreground"> /month</span>
-                        ) : null}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                );
-              })}
-            </div>
+                    <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">{subscription.description}</p>
+                  </div>
+                  <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
+                </div>
+                <div className="mt-4 flex items-baseline justify-between border-t border-border/60 pt-3">
+                  <div>
+                    <span className="text-2xl font-bold">₹{priceFor(subscription)}</span>
+                    <span className="ml-1 text-xs text-muted-foreground">/month</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    View plan <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+              </Link>
+            </section>
+          )}
 
-            <p className="mt-4 text-center text-[11px] text-muted-foreground">
-              Pay after service. Razorpay coming soon.
-            </p>
-          </>
-        )}
-      </div>
+          {/* One-time washes */}
+          {oneTime.length > 0 && (
+            <section className="mt-7">
+              <div className="mb-3 flex items-baseline justify-between">
+                <h3 className="text-base font-semibold tracking-tight">One-time washes</h3>
+                <span className="text-[11px] text-muted-foreground">
+                  {bodyLabel ? `Prices for ${bodyLabel}` : ""}
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {servicesQ.isLoading &&
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
+                  ))}
+                {oneTime.map((s) => {
+                  const Icon = SERVICE_ICON[s.slug] ?? Droplets;
+                  return (
+                    <Link
+                      key={s.id}
+                      to="/c/service/$slug"
+                      params={{ slug: s.slug }}
+                      className="group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+                    >
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent text-primary">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-sm font-semibold">{s.name}</h4>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
+                          {s.description}
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-3">
+                          <span className="text-sm font-bold text-foreground">₹{priceFor(s)}</span>
+                          {s.duration_minutes ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <Clock className="h-3 w-3" /> {s.duration_minutes} min
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Trust strip */}
+          <div className="mt-6 grid grid-cols-3 gap-2 text-center text-[10px] text-muted-foreground">
+            <TrustChip><Check className="h-3 w-3 text-success" /> Vetted partners</TrustChip>
+            <TrustChip><Check className="h-3 w-3 text-success" /> Photo proof</TrustChip>
+            <TrustChip><Check className="h-3 w-3 text-success" /> Pay after</TrustChip>
+          </div>
+        </>
+      )}
 
       {/* Vehicle switcher sheet */}
       <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
@@ -321,7 +370,15 @@ function CustomerHome() {
   );
 }
 
-function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) {
+function TrustChip({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-center gap-1 rounded-full border border-border bg-card px-2 py-1.5">
+      {children}
+    </div>
+  );
+}
+
+function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () => void }) {
   const notify = async () => {
     try {
       const { data: u } = await supabase.auth.getUser();
