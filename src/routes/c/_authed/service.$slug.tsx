@@ -274,30 +274,46 @@ function ServiceDetail() {
 
         {/* Add-ons */}
         {addonsQ.data && addonsQ.data.length > 0 && (
-          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Optional">
+          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Tap + to add more">
             <div className="space-y-2">
               {addonsQ.data.map((a) => {
                 const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-                const checked = selectedAddons.has(a.id);
+                const q = addonQty[a.id] ?? 0;
+                const active = q > 0;
                 return (
-                  <button key={a.id} onClick={() => toggleAddon(a.id)}
-                    className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left ${
-                      checked ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                  <div key={a.id}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 ${
+                      active ? "border-primary bg-accent" : "border-border"
                     }`}>
-                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${checked ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                      {checked && <Check className="h-3 w-3" />}
-                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">{a.name}</div>
                       {a.description && <div className="mt-0.5 text-[11px] text-muted-foreground">{a.description}</div>}
+                      <div className="mt-1 text-[11px] text-muted-foreground">+₹{p} each{q > 1 ? ` · ₹${p * q} total` : ""}</div>
                     </div>
-                    <div className="text-sm font-semibold">+₹{p}</div>
-                  </button>
+                    {q === 0 ? (
+                      <Button type="button" size="sm" variant="outline" onClick={() => setQty(a.id, 1)} className="shrink-0 rounded-full">
+                        <Plus className="h-3.5 w-3.5" /> Add
+                      </Button>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-2 rounded-full border border-primary bg-card px-1 py-0.5">
+                        <button type="button" onClick={() => setQty(a.id, q - 1)} aria-label="Decrease"
+                          className="grid h-7 w-7 place-items-center rounded-full hover:bg-muted">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[1.25rem] text-center text-sm font-semibold">{q}</span>
+                        <button type="button" onClick={() => setQty(a.id, q + 1)} aria-label="Increase"
+                          className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground hover:opacity-90">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </SectionCard>
         )}
+
 
         {/* Date + Slot */}
         <SectionCard icon={<Calendar className="h-4 w-4" />} title="When">
