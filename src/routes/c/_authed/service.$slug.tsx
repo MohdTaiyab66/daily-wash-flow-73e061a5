@@ -152,7 +152,9 @@ function ServiceDetail() {
       vehicle_id: vehicle.id,
       address_id: address.id,
       scheduled_date: date,
+      scheduled_time: slot,
       preferred_before_time: slot,
+      notes: notes || null,
       base_amount: basePrice,
       addon_amount: addonPrice,
       discount_amount: discountAmt,
@@ -160,19 +162,26 @@ function ServiceDetail() {
       status: "pending_assignment",
       payment_status: "cash_on_service",
     }).select("id").single();
-    if (error) { setSubmitting(false); toast.error(error.message); return; }
+    if (error) { setSubmitting(false); toast.error(error.message || "Could not confirm booking"); return; }
 
-    if (selectedAddons.size && addonsQ.data) {
-      const rows = addonsQ.data
-        .filter((a) => selectedAddons.has(a.id))
-        .map((a) => ({
+    const addonEntries = Object.entries(addonQty).filter(([, q]) => q > 0);
+    if (addonEntries.length && addonsQ.data) {
+      const byId = new Map(addonsQ.data.map((a) => [a.id, a]));
+      const rows = addonEntries.flatMap(([id, q]) => {
+        const a = byId.get(id);
+        if (!a) return [];
+        return [{
           booking_id: booking.id,
           addon_key: a.id,
           addon_name: a.name,
           price: isSUV ? a.price_sedan_suv : a.price_hatchback,
-        }));
-      await (supabase as any).from("booking_addons").insert(rows);
+          quantity: q,
+        }];
+      });
+      const { error: addonErr } = await (supabase as any).from("booking_addons").insert(rows);
+      if (addonErr) { setSubmitting(false); toast.error(addonErr.message); return; }
     }
+
 
     setSubmitting(false);
     toast.success("Booking confirmed!");
