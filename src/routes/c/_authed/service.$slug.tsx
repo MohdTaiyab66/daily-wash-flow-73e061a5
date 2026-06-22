@@ -41,6 +41,7 @@ function ServiceDetail() {
   const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -158,11 +159,48 @@ function ServiceDetail() {
 
 
   const confirm = async () => {
-    if (!service) return;
-    if (!vehicle) { toast.error("Add a vehicle first"); return; }
-    if (!address) { toast.error("Add a service address"); return; }
+    const fail = (message: string) => {
+      setConfirmError(message);
+      toast.error(message);
+    };
+    setConfirmError(null);
+    if (!service) { fail("Service is still loading. Please try again."); return; }
+    if (!vehicle) { fail("Add or select a vehicle first."); return; }
+    if (!date) { fail("Choose a service date."); return; }
     setSubmitting(true);
     try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error("Please sign in again before confirming.");
+
+      let bookingAddressId = address?.id ?? null;
+      if (!bookingAddressId) {
+        const savedArea = localStorage.getItem("uw_customer_area")?.trim();
+        const savedAddress = localStorage.getItem("uw_customer_full_address")?.trim();
+        const savedPincode = localStorage.getItem("uw_customer_pincode")?.trim();
+
+        if (savedArea && savedAddress) {
+          const { data: createdAddress, error: addressError } = await (supabase as any)
+            .from("customer_addresses")
+            .insert({
+              user_id: currentUser.user.id,
+              label: "Home",
+              address_line: savedAddress,
+              area: savedArea,
+              pincode: savedPincode || null,
+              is_default: true,
+            })
+            .select("id")
+            .single();
+          if (addressError) throw addressError;
+          bookingAddressId = createdAddress.id;
+          setAddressId(createdAddress.id);
+          qc.invalidateQueries({ queryKey: ["customer-addresses"] });
+        } else {
+          setAddrOpen(true);
+          throw new Error("Add your service address to confirm this booking.");
+        }
+      }
+
       const selectedAddons = Object.entries(addonQty)
         .filter(([, quantity]) => quantity > 0)
         .map(([id, quantity]) => ({ id, quantity }));
@@ -170,7 +208,7 @@ function ServiceDetail() {
       const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
-        p_address_id: address.id,
+        p_address_id: bookingAddressId,
         p_scheduled_date: date,
         p_scheduled_time: slot,
         p_notes: notes || null,
@@ -179,17 +217,14 @@ function ServiceDetail() {
       });
 
       if (error) throw error;
+      if (!bookingId) throw new Error("Booking was not created. Please try again.");
 
       toast.success("Booking confirmed!");
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-      if (bookingId) {
-        navigate({ to: "/c/bookings/$id", params: { id: bookingId } });
-      } else {
-        navigate({ to: "/c/bookings" });
-      }
+      await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
     } catch (err: any) {
-      toast.error(err?.message || "Could not confirm booking");
+      fail(err?.message || "Could not confirm booking");
     } finally {
       setSubmitting(false);
     }
@@ -388,9 +423,10 @@ function ServiceDetail() {
           <div>
             <div className="text-xs text-muted-foreground">Total</div>
             <div className="text-xl font-semibold">₹{total}</div>
-            <div className="text-[10px] text-muted-foreground">Pay after service · Razorpay soon</div>
+            <div className="text-[10px] text-muted-foreground">Pay after service · receipt created after confirm</div>
+            {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
           </div>
-          <Button onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
+          <Button type="button" onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight } from "lucide-react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
   head: () => ({ meta: [{ title: "My Bookings — Urban Wash" }] }),
-  component: BookingsPage,
+  component: BookingsRoute,
 });
 
 type Tab = "upcoming" | "previous";
@@ -22,6 +22,16 @@ type Row = {
   total_amount: number;
   service_catalog: { name: string; slug: string } | null;
 };
+
+function BookingsRoute() {
+  const { pathname } = useLocation();
+
+  if (pathname !== "/c/bookings") {
+    return <Outlet />;
+  }
+
+  return <BookingsPage />;
+}
 
 function BookingsPage() {
   const [tab, setTab] = useState<Tab>("upcoming");
