@@ -111,10 +111,12 @@ function ServiceDetail() {
 
   const addonPrice = useMemo(() => {
     if (!addonsQ.data) return 0;
-    return addonsQ.data
-      .filter((a) => selectedAddons.has(a.id))
-      .reduce((s, a) => s + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
-  }, [addonsQ.data, selectedAddons, isSUV]);
+    return addonsQ.data.reduce((s, a) => {
+      const q = addonQty[a.id] ?? 0;
+      if (!q) return s;
+      return s + q * (isSUV ? a.price_sedan_suv : a.price_hatchback);
+    }, 0);
+  }, [addonsQ.data, addonQty, isSUV]);
 
   const vehicleCount = vehiclesQ.data?.length ?? 1;
   const discountPct = useMemo(() => {
@@ -125,14 +127,16 @@ function ServiceDetail() {
   const subtotal = basePrice + addonPrice;
   const discountAmt = Math.round((subtotal * discountPct) / 100);
   const total = subtotal - discountAmt;
+  const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
-  const toggleAddon = (id: string) => {
-    setSelectedAddons((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+  const setQty = (id: string, q: number) => {
+    setAddonQty((prev) => {
+      const next = { ...prev };
+      if (q <= 0) delete next[id]; else next[id] = Math.min(q, 20);
       return next;
     });
   };
+
 
   const confirm = async () => {
     if (!service) return;
