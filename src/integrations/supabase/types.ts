@@ -2057,6 +2057,19 @@ export type Database = {
         Returns: number
       }
       cleanup_old_service_photos: { Args: never; Returns: Json }
+      confirm_customer_booking: {
+        Args: {
+          p_addons?: Json
+          p_address_id: string
+          p_coupon_code?: string
+          p_notes?: string
+          p_scheduled_date: string
+          p_scheduled_time: string
+          p_service_id: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -466,32 +466,28 @@ function ScheduleWashDialog({
     if (!vehicle) { toast.error("Add a vehicle first"); return; }
     if (!addressId) { toast.error("Add a service address first"); return; }
     setSaving(true);
-    const { data: booking, error } = await (supabase as any)
-      .from("bookings")
-      .insert({
-        user_id: userId,
-        service_id: service.id,
-        vehicle_id: vehicle.id,
-        address_id: addressId,
-        scheduled_date: date,
-        scheduled_time: slot,
-        preferred_before_time: slot,
-        base_amount: price,
-        addon_amount: 0,
-        discount_amount: 0,
-        total_amount: price,
-        status: "pending_payment",
-        payment_status: "pending",
-      })
-      .select("id")
-      .single();
-    setSaving(false);
-    if (error) { toast.error(error.message || "Could not schedule"); return; }
-    toast.success(`Scheduled for ${date} · ${slot}`);
-    qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-    onOpenChange(false);
-    navigate({ to: "/c/bookings/$id", params: { id: booking.id } });
+    try {
+      const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
+        p_service_id: service.id,
+        p_vehicle_id: vehicle.id,
+        p_address_id: addressId,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_notes: "Scheduled from My Plan",
+        p_coupon_code: null,
+        p_addons: [],
+      });
+      if (error) throw error;
+      toast.success(`Scheduled for ${date} · ${slot}`);
+      qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+      qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+      onOpenChange(false);
+      navigate({ to: "/c/bookings/$id", params: { id: bookingId } });
+    } catch (err: any) {
+      toast.error(err?.message || "Could not schedule");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const noVehicles = !vehQ.isLoading && (vehQ.data?.length ?? 0) === 0;

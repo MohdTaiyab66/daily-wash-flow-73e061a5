@@ -162,50 +162,37 @@ function ServiceDetail() {
     if (!vehicle) { toast.error("Add a vehicle first"); return; }
     if (!address) { toast.error("Add a service address"); return; }
     setSubmitting(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) { setSubmitting(false); toast.error("Please sign in again"); return; }
+    try {
+      const selectedAddons = Object.entries(addonQty)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([id, quantity]) => ({ id, quantity }));
 
-    const { data: booking, error } = await (supabase as any).from("bookings").insert({
-      user_id: u.user.id,
-      service_id: service.id,
-      vehicle_id: vehicle.id,
-      address_id: address.id,
-      scheduled_date: date,
-      scheduled_time: slot,
-      preferred_before_time: slot,
-      notes: notes || null,
-      base_amount: basePrice,
-      addon_amount: addonPrice,
-      discount_amount: discountAmt,
-      total_amount: total,
-      status: "pending_payment",
-      payment_status: "pending",
-    }).select("id").single();
-    if (error) { setSubmitting(false); toast.error(error.message || "Could not confirm booking"); return; }
-
-    const addonEntries = Object.entries(addonQty).filter(([, q]) => q > 0);
-    if (addonEntries.length && addonsQ.data) {
-      const byId = new Map(addonsQ.data.map((a) => [a.id, a]));
-      const rows = addonEntries.flatMap(([id, q]) => {
-        const a = byId.get(id);
-        if (!a) return [];
-        return [{
-          booking_id: booking.id,
-          addon_key: a.id,
-          addon_name: a.name,
-          price: isSUV ? a.price_sedan_suv : a.price_hatchback,
-          quantity: q,
-        }];
+      const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
+        p_service_id: service.id,
+        p_vehicle_id: vehicle.id,
+        p_address_id: address.id,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_notes: notes || null,
+        p_coupon_code: appliedCoupon?.code ?? null,
+        p_addons: selectedAddons,
       });
-      const { error: addonErr } = await (supabase as any).from("booking_addons").insert(rows);
-      if (addonErr) { setSubmitting(false); toast.error(addonErr.message); return; }
+
+      if (error) throw error;
+
+      toast.success("Booking confirmed!");
+      qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+      qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+      if (bookingId) {
+        navigate({ to: "/c/bookings/$id", params: { id: bookingId } });
+      } else {
+        navigate({ to: "/c/bookings" });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Could not confirm booking");
+    } finally {
+      setSubmitting(false);
     }
-
-
-    setSubmitting(false);
-    toast.success("Booking confirmed!");
-    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-    navigate({ to: "/c/bookings" });
   };
 
 
