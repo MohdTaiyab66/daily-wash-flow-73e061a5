@@ -38,9 +38,16 @@ type AddonRow = {
 function MyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior">("any");
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
+
+  const openSchedule = (kind: "any" | "interior" | "exterior" = "any") => {
+    setScheduleKind(kind);
+    setScheduleOpen(true);
+  };
+
 
   const bookingsQ = useQuery({
     queryKey: ["customer-bookings-all", userId],
@@ -237,12 +244,38 @@ function MyPlanPage() {
           <div className="mt-5 rounded-3xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold tracking-tight">Schedule a wash</h3>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Pick a date and time slot — we'll send a partner.</p>
+                <h3 className="text-sm font-semibold tracking-tight">Schedule your wash</h3>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Pick interior, exterior or both — partner arrives in your slot.
+                </p>
               </div>
-              <Button size="sm" className="shrink-0 rounded-full" onClick={() => setScheduleOpen(true)}>
-                <CalendarPlus className="mr-1 h-3.5 w-3.5" /> Schedule
-              </Button>
+              <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => openSchedule("exterior")}
+                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
+              >
+                <Droplets className="h-4 w-4 text-primary" />
+                <div className="mt-1.5 text-[11px] font-semibold">Exterior</div>
+                <div className="text-[10px] text-muted-foreground">Quick rinse</div>
+              </button>
+              <button
+                onClick={() => openSchedule("interior")}
+                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
+              >
+                <Wrench className="h-4 w-4 text-primary" />
+                <div className="mt-1.5 text-[11px] font-semibold">Interior</div>
+                <div className="text-[10px] text-muted-foreground">Vacuum & wipe</div>
+              </button>
+              <button
+                onClick={() => openSchedule("any")}
+                className="rounded-xl border border-primary bg-primary/10 p-2.5 text-left"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div className="mt-1.5 text-[11px] font-semibold">Custom</div>
+                <div className="text-[10px] text-muted-foreground">Choose service</div>
+              </button>
             </div>
           </div>
 
@@ -256,25 +289,32 @@ function MyPlanPage() {
           {/* Add-ons */}
           <div className="mt-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-tight">Add-ons</h3>
-              <Link to="/c/home" className="inline-flex items-center gap-1 text-xs text-primary">
-                <Plus className="h-3.5 w-3.5" /> Add more
+              <h3 className="text-sm font-semibold tracking-tight">Available add-ons</h3>
+              <Link to="/c/service/$slug" params={{ slug: "daily-shine" }} className="inline-flex items-center gap-1 text-xs text-primary">
+                <Plus className="h-3.5 w-3.5" /> Add all
               </Link>
             </div>
-            <div className="mt-2 space-y-2">
-              {(addonsQ.data ?? []).length === 0 && !addonsQ.isLoading && (
-                <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  No add-ons yet. Polish, ceramic shield, interior shampoo and more available.
-                </p>
-              )}
-              {(addonsQ.data ?? []).map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
-                  <span className="font-medium">{a.addon_name}</span>
-                  <span className="text-xs text-muted-foreground">₹{a.price}</span>
-                </div>
-              ))}
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <RecommendedAddon name="Exterior Polish" price={49} icon={Sparkles} />
+              <RecommendedAddon name="Dusting" price={25} icon={Droplets} />
+              <RecommendedAddon name="Extra Interior" price={149} icon={Wrench} />
+              <RecommendedAddon name="Extra Exterior" price={149} icon={Droplets} />
             </div>
+            {(addonsQ.data ?? []).length > 0 && (
+              <div className="mt-3 space-y-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Your purchased add-ons
+                </div>
+                {(addonsQ.data ?? []).map((a) => (
+                  <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+                    <span className="font-medium">{a.addon_name}</span>
+                    <span className="text-xs text-muted-foreground">₹{a.price}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
 
           {/* Recent services */}
           <div className="mt-5">
@@ -316,7 +356,7 @@ function MyPlanPage() {
         </>
       )}
 
-      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} />
+      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} kind={scheduleKind} />
     </div>
   );
 }
@@ -331,11 +371,14 @@ function ScheduleWashDialog({
   open,
   onOpenChange,
   userId,
+  kind = "any",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
+  kind?: "any" | "interior" | "exterior";
 }) {
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [serviceId, setServiceId] = useState<string>("");
@@ -386,9 +429,16 @@ function ScheduleWashDialog({
 
   useEffect(() => {
     if (!open) return;
-    if (!serviceId && svcQ.data?.length) {
-      const preferred =
-        svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
+    if (svcQ.data?.length) {
+      let preferred: SvcOpt | undefined;
+      if (kind === "interior") {
+        preferred = svcQ.data.find((s) => s.slug.includes("interior") || s.slug.includes("deep"));
+      } else if (kind === "exterior") {
+        preferred = svcQ.data.find((s) => s.slug.includes("basic") || s.slug.includes("exterior"));
+      }
+      if (!preferred) {
+        preferred = svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
+      }
       setServiceId(preferred.id);
     }
     if (!vehicleId && vehQ.data?.length) {
@@ -399,7 +449,8 @@ function ScheduleWashDialog({
       const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
       setAddressId(def.id);
     }
-  }, [open, svcQ.data, vehQ.data, addrQ.data, serviceId, vehicleId, addressId]);
+  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId]);
+
 
   const service = svcQ.data?.find((s) => s.id === serviceId);
   const vehicle = vehQ.data?.find((v) => v.id === vehicleId);
@@ -612,5 +663,24 @@ function StatCard({
       </div>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
+  );
+}
+
+function RecommendedAddon({ name, price, icon: Icon }: { name: string; price: number; icon: any }) {
+  return (
+    <Link
+      to="/c/service/$slug"
+      params={{ slug: "daily-shine" }}
+      className="group flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[12px] font-semibold">{name}</div>
+        <div className="text-[10px] text-muted-foreground">₹{price} each</div>
+      </div>
+      <Plus className="h-3.5 w-3.5 shrink-0 text-primary transition-transform group-hover:scale-110" />
+    </Link>
   );
 }
