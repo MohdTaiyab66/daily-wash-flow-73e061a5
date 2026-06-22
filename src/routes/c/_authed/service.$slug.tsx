@@ -121,15 +121,39 @@ function ServiceDetail() {
   }, [addonsQ.data, addonQty, isSUV]);
 
   const vehicleCount = vehiclesQ.data?.length ?? 1;
-  const discountPct = useMemo(() => {
-    const tiers = (discountQ.data ?? []).filter((d: any) => d.vehicle_count <= vehicleCount);
-    return tiers.length ? Math.max(...tiers.map((d: any) => d.percent)) : 0;
-  }, [discountQ.data, vehicleCount]);
 
+  // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle to use code)
   const subtotal = basePrice + addonPrice;
+  const discountPct = appliedCoupon?.percent ?? 0;
   const discountAmt = Math.round((subtotal * discountPct) / 100);
   const total = subtotal - discountAmt;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
+
+  // Coupon catalog — discount on services for an additional vehicle.
+  // Customer must already own 2+ vehicles to redeem.
+  const COUPONS: Record<string, { percent: number; minVehicles: number; label: string }> = {
+    EXTRA10: { percent: 10, minVehicles: 2, label: "10% off on additional vehicle" },
+    EXTRA15: { percent: 15, minVehicles: 3, label: "15% off on additional vehicle" },
+    MULTI20: { percent: 20, minVehicles: 4, label: "20% off on additional vehicle" },
+  };
+
+  const applyCoupon = () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) { toast.error("Enter a coupon code"); return; }
+    const c = COUPONS[code];
+    if (!c) { toast.error("Invalid coupon code"); return; }
+    if (vehicleCount < c.minVehicles) {
+      toast.error(`Coupon needs ${c.minVehicles}+ vehicles on your account`);
+      return;
+    }
+    setAppliedCoupon({ code, percent: c.percent });
+    toast.success(`Coupon ${code} applied — ${c.percent}% off`);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+  };
 
   const setQty = (id: string, q: number) => {
     setAddonQty((prev) => {
