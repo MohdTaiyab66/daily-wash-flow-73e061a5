@@ -1,12 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing, Car } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  MapPin,
+  Plus,
+  ChevronRight,
+  Sparkles,
+  Droplets,
+  Wrench,
+  ShowerHead,
+  ChevronDown,
+  BellRing,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/c/_authed/home")({
@@ -15,10 +27,28 @@ export const Route = createFileRoute("/c/_authed/home")({
   component: CustomerHome,
 });
 
-type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null; image_path: string | null };
-type Service = { id: string; slug: string; name: string; description: string; banner_url: string | null; price_hatchback: number; price_sedan_suv: number; service_type: string; sort_order: number };
+type Vehicle = {
+  id: string;
+  make: string;
+  model: string;
+  category: string;
+  registration_number: string;
+  color: string | null;
+  image_path: string | null;
+};
+type Service = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  banner_url: string | null;
+  price_hatchback: number;
+  price_sedan_suv: number;
+  service_type: string;
+  sort_order: number;
+};
 
-const SERVICE_ICON: Record<string, any> = {
+const SERVICE_ICON: Record<string, LucideIcon> = {
   daily_shine: Sparkles,
   one_time_basic: Droplets,
   one_time_plus: Droplets,
@@ -40,7 +70,10 @@ function CustomerHome() {
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
-      const { data, error } = await (supabase as any).from("customer_vehicles").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("customer_vehicles")
+        .select("*")
+        .order("created_at");
       if (error) throw error;
       return (data ?? []) as Vehicle[];
     },
@@ -49,7 +82,11 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
-      const { data, error } = await (supabase as any).from("service_catalog").select("*").eq("active", true).order("sort_order");
+      const { data, error } = await supabase
+        .from("service_catalog")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order");
       if (error) throw error;
       return (data ?? []) as Service[];
     },
@@ -67,7 +104,7 @@ function CustomerHome() {
     queryKey: ["vehicle-catalog-image", activeVehicle?.make, activeVehicle?.model],
     enabled: !!activeVehicle,
     queryFn: async (): Promise<string | null> => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("vehicle_catalog")
         .select("image_url")
         .ilike("make", activeVehicle!.make)
@@ -84,7 +121,8 @@ function CustomerHome() {
     setVehicleSheetOpen(false);
   };
 
-  const priceFor = (s: Service) => (category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback);
+  const priceFor = (s: Service) =>
+    category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
 
   return (
     <div className="px-5 pt-6">
@@ -101,18 +139,22 @@ function CustomerHome() {
 
         {activeVehicle ? (
           <button
-            onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : navigate({ to: "/c/vehicles/add" }))}
+            onClick={() =>
+              vehicles.length > 1 ? setVehicleSheetOpen(true) : navigate({ to: "/c/vehicles/add" })
+            }
             className="group flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 pr-3 shadow-sm transition-all hover:border-primary/40"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-accent">
-              {catalogImageQ.data ? (
-                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
-              ) : (
-                <Car className="h-4 w-4 text-accent-foreground" />
-              )}
-            </span>
+            <VehicleAvatar
+              imageUrl={catalogImageQ.data}
+              make={activeVehicle.make}
+              model={activeVehicle.model}
+              color={activeVehicle.color}
+              className="h-9 w-9 rounded-full"
+            />
             <span className="flex flex-col items-start leading-tight">
-              <span className="text-[11px] font-semibold uppercase tracking-wide">{activeVehicle.model}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wide">
+                {activeVehicle.model}
+              </span>
               <span className="text-[10px] text-muted-foreground">{bodyLabel}</span>
             </span>
             {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -138,18 +180,23 @@ function CustomerHome() {
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {activeVehicle.registration_number} ·{" "}
-                <span className="font-medium text-foreground">{activeVehicle.model.toUpperCase()} — {bodyLabel}</span>
+                <span className="font-medium text-foreground">
+                  {activeVehicle.model.toUpperCase()} — {bodyLabel}
+                </span>
               </p>
             </div>
-            <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card">
-              {catalogImageQ.data ? (
-                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
-              ) : (
-                <Car className="h-7 w-7 text-muted-foreground" />
-              )}
-            </div>
+            <VehicleAvatar
+              imageUrl={catalogImageQ.data}
+              make={activeVehicle.make}
+              model={activeVehicle.model}
+              color={activeVehicle.color}
+              className="h-16 w-24 rounded-2xl bg-card"
+            />
           </div>
-          <Link to="/c/vehicles/add" className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
+          <Link
+            to="/c/vehicles/add"
+            className="mt-3 inline-flex items-center gap-1 text-xs text-primary"
+          >
             <Plus className="h-3.5 w-3.5" /> Add another vehicle
           </Link>
         </div>
@@ -175,45 +222,58 @@ function CustomerHome() {
           <ComingSoon area={area} onChange={() => navigate({ to: "/c" })} />
         ) : (
           <>
-        <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
-        <p className="text-xs text-muted-foreground">Prices for {bodyLabel || (category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact")}</p>
+            <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
+            <p className="text-xs text-muted-foreground">
+              Prices for{" "}
+              {bodyLabel || (category === "sedan_suv" ? "large car tier" : "small car tier")}
+            </p>
 
-        <div className="mt-4 space-y-3">
-          {servicesQ.isLoading && Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
-          ))}
-          {(servicesQ.data ?? []).map((s) => {
-            const Icon = SERVICE_ICON[s.slug] ?? Sparkles;
-            const recurring = s.service_type === "subscription";
-            return (
-              <Link
-                key={s.id}
-                to="/c/service/$slug"
-                params={{ slug: s.slug }}
-                className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
-              >
-                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
-                  <Icon className="h-6 w-6" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="truncate text-base font-semibold">{s.name}</h4>
-                    {recurring && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">SUBSCRIPTION</span>}
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{s.description}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-foreground">
-                    ₹{priceFor(s)}{recurring ? <span className="text-xs font-normal text-muted-foreground"> /month</span> : null}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            );
-          })}
-        </div>
+            <div className="mt-4 space-y-3">
+              {servicesQ.isLoading &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
+                ))}
+              {(servicesQ.data ?? []).map((s) => {
+                const Icon = SERVICE_ICON[s.slug] ?? Sparkles;
+                const recurring = s.service_type === "subscription";
+                return (
+                  <Link
+                    key={s.id}
+                    to="/c/service/$slug"
+                    params={{ slug: s.slug }}
+                    className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+                  >
+                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
+                      <Icon className="h-6 w-6" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="truncate text-base font-semibold">{s.name}</h4>
+                        {recurring && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            SUBSCRIPTION
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {s.description}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-foreground">
+                        ₹{priceFor(s)}
+                        {recurring ? (
+                          <span className="text-xs font-normal text-muted-foreground"> /month</span>
+                        ) : null}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                );
+              })}
+            </div>
 
-        <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          Pay after service. Razorpay coming soon.
-        </p>
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">
+              Pay after service. Razorpay coming soon.
+            </p>
           </>
         )}
       </div>
@@ -221,18 +281,24 @@ function CustomerHome() {
       {/* Vehicle switcher sheet */}
       <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Switch vehicle</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Switch vehicle</DialogTitle>
+          </DialogHeader>
           <div className="space-y-2">
             {vehicles.map((v) => (
               <button
                 key={v.id}
                 onClick={() => pickVehicle(v.id)}
                 className={`flex w-full items-center justify-between rounded-2xl border p-3 text-left ${
-                  v.id === activeVehicle?.id ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                  v.id === activeVehicle?.id
+                    ? "border-primary bg-accent"
+                    : "border-border hover:bg-muted"
                 }`}
               >
                 <div>
-                  <div className="font-medium">{v.make} {v.model}</div>
+                  <div className="font-medium">
+                    {v.make} {v.model}
+                  </div>
                   <div className="text-xs text-muted-foreground">{v.registration_number}</div>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -241,7 +307,9 @@ function CustomerHome() {
               </button>
             ))}
             <Button asChild variant="outline" className="w-full">
-              <Link to="/c/vehicles/add"><Plus className="mr-1 h-4 w-4" /> Add another</Link>
+              <Link to="/c/vehicles/add">
+                <Plus className="mr-1 h-4 w-4" /> Add another
+              </Link>
             </Button>
           </div>
         </DialogContent>
@@ -255,7 +323,7 @@ function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) 
     try {
       const { data: u } = await supabase.auth.getUser();
       const phone = u.user?.phone ?? null;
-      await (supabase as any).from("area_waitlist").insert({
+      await supabase.from("area_waitlist").insert({
         area,
         phone: phone ?? "",
       });
@@ -271,12 +339,16 @@ function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) 
         COMING <span className="text-primary">SOON</span>
       </h2>
       <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-        We're currently live in select areas and expanding quickly. Get notified when we are near you!
+        We're currently live in select areas and expanding quickly. Get notified when we are near
+        you!
       </p>
       <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
         <BellRing className="mr-2 h-4 w-4" /> Notify me!
       </Button>
-      <button onClick={onChange} className="mt-4 text-sm font-medium text-primary underline underline-offset-4">
+      <button
+        onClick={onChange}
+        className="mt-4 text-sm font-medium text-primary underline underline-offset-4"
+      >
         Change location
       </button>
     </div>
