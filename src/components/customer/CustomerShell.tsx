@@ -1,12 +1,12 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Car, Calendar, User } from "lucide-react";
+import { Home, Sparkles, Calendar, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function CustomerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const nav = [
     { to: "/c/home", label: "Home", icon: Home },
-    { to: "/c/vehicles", label: "Vehicles", icon: Car },
+    { to: "/c/subscriptions", label: "My Plan", icon: Sparkles },
     { to: "/c/bookings", label: "Bookings", icon: Calendar },
     { to: "/c/profile", label: "Profile", icon: User },
   ] as const;
