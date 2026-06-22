@@ -163,6 +163,8 @@ function CustomerHome() {
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
           Booking checkout & payment coming in the next release.
         </p>
+          </>
+        )}
       </div>
 
       {/* Vehicle switcher sheet */}
