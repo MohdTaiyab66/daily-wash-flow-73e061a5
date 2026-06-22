@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown } from "lucide-react";
+import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SERVICE_AREA_NAMES } from "@/lib/areas";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -117,8 +119,12 @@ function CustomerHome() {
         </Link>
       )}
 
-      {/* Services */}
+      {/* Services / Coming-soon gate */}
       <div className="mt-7">
+        {area && !SERVICE_AREA_NAMES.includes(area) ? (
+          <ComingSoon area={area} onChange={() => navigate({ to: "/c" })} />
+        ) : (
+          <>
         <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
         <p className="text-xs text-muted-foreground">Prices for {category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}</p>
 
@@ -157,6 +163,8 @@ function CustomerHome() {
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
           Booking checkout & payment coming in the next release.
         </p>
+          </>
+        )}
       </div>
 
       {/* Vehicle switcher sheet */}
@@ -187,6 +195,39 @@ function CustomerHome() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) {
+  const notify = async () => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const phone = u.user?.phone ?? null;
+      await (supabase as any).from("area_waitlist").insert({
+        area_name: area,
+        phone,
+      });
+      toast.success("We'll notify you when we launch in your area!");
+    } catch {
+      toast.error("Could not save. Try again.");
+    }
+  };
+  return (
+    <div className="flex flex-col items-center px-4 py-8 text-center">
+      <h2 className="text-3xl font-extrabold tracking-tight text-muted-foreground">
+        WE ARE <br />
+        COMING <span className="text-primary">SOON</span>
+      </h2>
+      <p className="mt-4 max-w-xs text-sm text-muted-foreground">
+        We're currently live in select areas and expanding quickly. Get notified when we are near you!
+      </p>
+      <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
+        <BellRing className="mr-2 h-4 w-4" /> Notify me!
+      </Button>
+      <button onClick={onChange} className="mt-4 text-sm font-medium text-primary underline underline-offset-4">
+        Change location
+      </button>
     </div>
   );
 }
