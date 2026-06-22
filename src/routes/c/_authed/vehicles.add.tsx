@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Loader2, Check, X } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { ArrowLeft, Search, Loader2, Check, X, Car, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,23 @@ const CATEGORIES = [
   { key: "sedan_suv", label: "Sedan / SUV" },
 ] as const;
 
+function highlight(text: string, term: string) {
+  if (!term) return text;
+  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${safe})`, "ig"));
+  return parts.map((p, i) =>
+    p.toLowerCase() === term.toLowerCase() ? (
+      <mark key={i} className="rounded bg-primary/20 px-0.5 text-foreground">{p}</mark>
+    ) : (
+      <span key={i}>{p}</span>
+    )
+  );
+}
+
 function AddVehicle() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string | null>(null);
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]["key"]>("all");
@@ -35,7 +49,10 @@ function AddVehicle() {
   const [variant, setVariant] = useState("");
   const [parking, setParking] = useState("");
 
-  // Load full catalog once; filter client-side for speed.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+
   const catalogQ = useQuery({
     queryKey: ["vehicle-catalog-all"],
     queryFn: async (): Promise<CatalogRow[]> => {
@@ -82,17 +99,20 @@ function AddVehicle() {
     return Array.from(m.entries());
   }, [filtered]);
 
+  const hasFilters = brand !== null || cat !== "all" || query.trim().length > 0;
+
   const save = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("Pick a car first");
-      if (reg.trim().length < 4) throw new Error("Enter registration number");
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("Not signed in");
+      if (reg.trim().length < 4) throw new Error("Enter a valid registration number");
+      const { data: u, error: ue } = await supabase.auth.getUser();
+      if (ue) throw new Error(ue.message);
+      if (!u.user) throw new Error("You're signed out. Please sign in again.");
       const noteParts: string[] = [];
       if (variant.trim()) noteParts.push(`Variant: ${variant.trim()}`);
       if (year.trim()) noteParts.push(`Year: ${year.trim()}`);
       if (parking.trim()) noteParts.push(parking.trim());
-      const { error } = await (supabase as any).from("customer_vehicles").insert({
+      const payload = {
         user_id: u.user.id,
         make: selected.make,
         model: selected.model,
@@ -100,8 +120,16 @@ function AddVehicle() {
         color: color.trim() || null,
         registration_number: reg.trim().toUpperCase(),
         parking_notes: noteParts.join(" • ") || null,
-      });
-      if (error) throw error;
+      };
+      const { error } = await (supabase as any).from("customer_vehicles").insert(payload);
+      if (error) {
+        // Surface a friendly message for the most common failures.
+        if (error.code === "23505") throw new Error("You've already added this registration number.");
+        if (error.code === "42501" || error.message?.toLowerCase().includes("row-level security")) {
+          throw new Error("Permission denied. Please sign out and sign in again.");
+        }
+        throw new Error(error.message || "Could not save vehicle");
+      }
     },
     onSuccess: () => {
       toast.success("Vehicle added");
@@ -125,6 +153,22 @@ function AddVehicle() {
       <h1 className="text-2xl font-semibold tracking-tight">Add a vehicle</h1>
       <p className="mt-1 text-sm text-muted-foreground">Filter by brand or search — we'll set the right pricing tier.</p>
 
+      {userId === null && (
+        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            You appear to be signed out. <Link to="/c/auth" className="underline">Sign in</Link> to save your vehicle.
+          </div>
+        </div>
+      )}
+
+      {catalogQ.error && (
+        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>Couldn't load the vehicle list. {String((catalogQ.error as any)?.message ?? "Check connection and retry.")}</div>
+        </div>
+      )}
+
       {!selected ? (
         <>
           {/* Search */}
@@ -138,11 +182,38 @@ function AddVehicle() {
               className="h-12 rounded-2xl pl-10 pr-10"
             />
             {query && (
-              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <button onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
+
+          {/* Active filter summary + one-tap clear */}
+          {hasFilters && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {query.trim() && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
+                  "{query.trim()}"
+                  <button onClick={() => setQuery("")} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {brand && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
+                  {brand}
+                  <button onClick={() => setBrand(null)} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {cat !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
+                  {CATEGORIES.find((c) => c.key === cat)?.label}
+                  <button onClick={() => setCat("all")} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              <button onClick={clearFilters} className="ml-auto rounded-full border border-border px-3 py-1 text-[11px] font-semibold text-primary hover:bg-accent">
+                Clear all
+              </button>
+            </div>
+          )}
 
           {/* Category chips */}
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -161,12 +232,7 @@ function AddVehicle() {
 
           {/* Brand chips */}
           <div className="mt-3">
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Brand</span>
-              {(brand || cat !== "all" || query) && (
-                <button onClick={clearFilters} className="text-[11px] text-primary underline">Clear</button>
-              )}
-            </div>
+            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Brand</div>
             <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setBrand(null)}
@@ -199,12 +265,24 @@ function AddVehicle() {
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <p className="rounded-2xl border border-dashed p-6 text-center text-xs text-muted-foreground">
-                No matches. Try a different keyword or brand — or contact support to add your model.
-              </p>
+              <div className="rounded-3xl border border-dashed border-border p-8 text-center">
+                <Car className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="mt-3 text-sm font-medium">No matches</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {query.trim() ? `Nothing called "${query.trim()}"` : "Nothing in this filter combo."}
+                  {brand ? ` under ${brand}` : ""}.
+                </p>
+                {hasFilters && (
+                  <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-[11px] text-muted-foreground">{filtered.length} model{filtered.length === 1 ? "" : "s"}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {filtered.length} model{filtered.length === 1 ? "" : "s"} across {grouped.length} brand{grouped.length === 1 ? "" : "s"}
+                </div>
                 {grouped.map(([make, rows]) => (
                   <div key={make}>
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{make}</div>
@@ -216,7 +294,7 @@ function AddVehicle() {
                           className="flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-left hover:border-primary/40 hover:bg-accent"
                         >
                           <div>
-                            <div className="text-sm font-semibold">{c.model}</div>
+                            <div className="text-sm font-semibold">{highlight(c.model, query.trim())}</div>
                             <div className="text-[11px] text-muted-foreground">
                               {c.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}
                             </div>
@@ -271,7 +349,7 @@ function AddVehicle() {
             <Input value={parking} onChange={(e) => setParking(e.target.value)} placeholder="B-block basement, slot 14" className="mt-1.5" />
           </div>
 
-          <Button size="lg" className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button size="lg" className="w-full" onClick={() => save.mutate()} disabled={save.isPending || !userId}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save vehicle
           </Button>
