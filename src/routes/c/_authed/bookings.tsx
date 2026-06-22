@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
   head: () => ({ meta: [{ title: "My Bookings — Urban Wash" }] }),
-  component: BookingsPage,
+  component: BookingsRoute,
 });
 
 type Tab = "upcoming" | "previous";
@@ -23,14 +23,19 @@ type Row = {
   service_catalog: { name: string; slug: string } | null;
 };
 
-function BookingsPage() {
-  const [tab, setTab] = useState<Tab>("upcoming");
-  const navigate = useNavigate();
+function BookingsRoute() {
   const { pathname } = useLocation();
 
   if (pathname !== "/c/bookings") {
     return <Outlet />;
   }
+
+  return <BookingsPage />;
+}
+
+function BookingsPage() {
+  const [tab, setTab] = useState<Tab>("upcoming");
+  const navigate = useNavigate();
 
 
   const q = useQuery({
