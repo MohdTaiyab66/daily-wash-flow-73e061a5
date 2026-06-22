@@ -206,8 +206,8 @@ function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) 
       const { data: u } = await supabase.auth.getUser();
       const phone = u.user?.phone ?? null;
       await (supabase as any).from("area_waitlist").insert({
-        area_name: area,
-        phone,
+        area,
+        phone: phone ?? "",
       });
       toast.success("We'll notify you when we launch in your area!");
     } catch {
