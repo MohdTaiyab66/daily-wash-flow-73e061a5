@@ -48,6 +48,8 @@ function CustomerLanding() {
 
   useEffect(() => {
     (async () => {
+      // Allow returning here to change location: only auto-skip when explicitly requested
+      if (typeof window !== "undefined" && window.location.search.includes("change=1")) return;
       const saved = localStorage.getItem("uw_customer_area");
       const { data } = await supabase.auth.getSession();
       if (saved && data.session) navigate({ to: "/c/home" });

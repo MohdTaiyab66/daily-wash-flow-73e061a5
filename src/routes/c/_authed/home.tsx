@@ -129,7 +129,10 @@ function CustomerHome() {
       {/* Top bar: location (left) · vehicle chip (right) */}
       <div className="flex items-start justify-between gap-3">
         <button
-          onClick={() => navigate({ to: "/c" })}
+          onClick={() => {
+            try { localStorage.removeItem("uw_customer_area"); } catch {}
+            if (typeof window !== "undefined") window.location.href = "/c?change=1";
+          }}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <MapPin className="h-3.5 w-3.5" />
@@ -346,7 +349,10 @@ function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) 
         <BellRing className="mr-2 h-4 w-4" /> Notify me!
       </Button>
       <button
-        onClick={onChange}
+        onClick={() => {
+          try { localStorage.removeItem("uw_customer_area"); } catch {}
+          if (typeof window !== "undefined") window.location.href = "/c?change=1";
+        }}
         className="mt-4 text-sm font-medium text-primary underline underline-offset-4"
       >
         Change location
