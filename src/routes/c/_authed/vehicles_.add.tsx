@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VehicleAvatar } from "@/components/VehicleAvatar";
+import { vehicleBodyLabel } from "@/lib/vehicle-category";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/add")({
   ssr: false,
@@ -14,7 +16,7 @@ export const Route = createFileRoute("/c/_authed/vehicles_/add")({
   component: AddVehicle,
 });
 
-type CatalogRow = { id: string; make: string; model: string; category: string };
+type CatalogRow = { id: string; make: string; model: string; category: string; image_url: string | null };
 
 const CATEGORIES = [
   { key: "all", label: "All" },
@@ -58,7 +60,7 @@ function AddVehicle() {
     queryFn: async (): Promise<CatalogRow[]> => {
       const { data, error } = await (supabase as any)
         .from("vehicle_catalog")
-        .select("id,make,model,category")
+        .select("id,make,model,category,image_url")
         .eq("active", true)
         .order("make")
         .order("model")
