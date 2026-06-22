@@ -1,79 +1,331 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Pause, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Subscriptions — Urban Wash" }] }),
-  component: SubscriptionsPage,
+  head: () => ({ meta: [{ title: "My Plan — Urban Wash" }] }),
+  component: MyPlanPage,
 });
 
-type Row = {
+type Booking = {
   id: string;
   scheduled_date: string;
   status: string;
+  payment_status: string;
   total_amount: number;
-  service_catalog: { name: string; service_type: string } | null;
+  base_amount: number;
+  addon_amount: number;
+  service_id: string;
+  service_catalog: { name: string; service_type: string; slug: string } | null;
 };
 
-function SubscriptionsPage() {
-  const q = useQuery({
-    queryKey: ["customer-subscriptions"],
-    queryFn: async (): Promise<Row[]> => {
-      const { data } = await (supabase as any)
+type AddonRow = {
+  id: string;
+  booking_id: string;
+  addon_name: string;
+  price: number;
+  created_at: string;
+};
+
+function MyPlanPage() {
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+
+  const bookingsQ = useQuery({
+    queryKey: ["customer-bookings-all", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<Booking[]> => {
+      const { data, error } = await (supabase as any)
         .from("bookings")
-        .select("id, scheduled_date, status, total_amount, service_catalog:service_id(name, service_type)")
+        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, service_catalog:service_id(name, service_type, slug)")
         .order("scheduled_date", { ascending: false })
-        .limit(50);
-      const rows = (data ?? []) as Row[];
-      return rows.filter((r) => r.service_catalog?.service_type === "subscription");
+        .limit(120);
+      if (error) throw error;
+      return (data ?? []) as Booking[];
     },
   });
 
-  const items = q.data ?? [];
+  const all = bookingsQ.data ?? [];
+  const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
+  const activeSub = subs.find(
+    (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
+  ) ?? subs[0];
+
+  // Plan period: 30 days from scheduled_date
+  const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
+  const planEnd = planStart ? new Date(planStart.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+  const today = new Date();
+  const totalDays = 30;
+  const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
+  const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
+  const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+
+  // Wash status — track interior + exterior for current sub
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const interiorBookings = all.filter(
+    (b) =>
+      (b.service_catalog?.slug?.includes("interior") || b.service_catalog?.slug?.includes("deep")) &&
+      new Date(b.scheduled_date) >= monthStart &&
+      b.status === "completed",
+  );
+  const exteriorBookings = all.filter(
+    (b) =>
+      (b.service_catalog?.slug?.includes("exterior") || b.service_catalog?.slug?.includes("basic") || b.service_catalog?.slug?.includes("daily")) &&
+      new Date(b.scheduled_date) >= monthStart &&
+      b.status === "completed",
+  );
+
+  const addonsQ = useQuery({
+    queryKey: ["customer-addons", subs.map((s) => s.id).join(",")],
+    enabled: subs.length > 0,
+    queryFn: async (): Promise<AddonRow[]> => {
+      const ids = subs.map((s) => s.id);
+      const { data, error } = await (supabase as any)
+        .from("booking_addons")
+        .select("id, booking_id, addon_name, price, created_at")
+        .in("booking_id", ids)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as AddonRow[];
+    },
+  });
+
+  const recent = all.slice(0, 8);
+  const completedCount = all.filter((b) => b.status === "completed").length;
+  const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
 
   return (
-    <div className="px-5 pt-6">
-      <h1 className="text-2xl font-semibold tracking-tight">My subscriptions</h1>
-      <p className="mt-1 text-xs text-muted-foreground">Daily shine plans you've subscribed to.</p>
+    <div className="px-5 pt-6 pb-12">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">My Plan</h1>
+          <p className="mt-1 text-xs text-muted-foreground">Track your Daily Shine service.</p>
+        </div>
+        <Sparkles className="h-6 w-6 text-primary" />
+      </div>
 
-      <div className="mt-5 space-y-3">
-        {q.isLoading && Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
-        ))}
+      {bookingsQ.isLoading && (
+        <div className="mt-6 space-y-3">
+          <div className="h-32 animate-pulse rounded-3xl bg-muted" />
+          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+        </div>
+      )}
 
-        {!q.isLoading && items.length === 0 && (
-          <div className="flex flex-col items-center rounded-3xl border border-dashed border-border p-10 text-center">
-            <Sparkles className="h-8 w-8 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">No active subscriptions.</p>
-            <Button asChild className="mt-4 rounded-full"><Link to="/c/home">Browse plans</Link></Button>
-          </div>
-        )}
+      {!bookingsQ.isLoading && !activeSub && (
+        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border p-10 text-center">
+          <Sparkles className="h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-3 text-base font-semibold">No active plan</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Subscribe to Daily Shine to enjoy daily car care.</p>
+          <Button asChild className="mt-5 rounded-full">
+            <Link to="/c/home">Browse plans</Link>
+          </Button>
+        </div>
+      )}
 
-        {items.map((s) => (
-          <div key={s.id} className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold">{s.service_catalog?.name}</div>
-                <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" /> Started {s.scheduled_date}
-                </div>
+      {activeSub && (
+        <>
+          {/* Active plan hero */}
+          <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-primary">Active plan</p>
+                <h2 className="mt-0.5 truncate text-xl font-semibold">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
+                </p>
               </div>
-              <span className="rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-medium capitalize text-success">
-                {s.status.replaceAll("_", " ")}
+              <span className="shrink-0 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-medium capitalize text-success">
+                {activeSub.status.replaceAll("_", " ")}
               </span>
             </div>
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs">
-              <span className="font-semibold">₹{s.total_amount}/mo</span>
-              <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs">
-                <Pause className="h-3 w-3" /> Pause
-              </Button>
+
+            {/* Progress */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Day {elapsed} of {totalDays}</span>
+                <span className={expiringSoon ? "font-semibold text-primary" : ""}>
+                  {daysLeft} day{daysLeft === 1 ? "" : "s"} left
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all"
+                  style={{ width: `${(elapsed / totalDays) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+              <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs">
+                  <Pause className="h-3.5 w-3.5" /> Pause
+                </Button>
+                {expiringSoon && (
+                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
+                    <RefreshCw className="h-3.5 w-3.5" /> Renew
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        ))}
+
+          {/* This month's washes */}
+          <div className="mt-5">
+            <h3 className="text-sm font-semibold tracking-tight">This month</h3>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <WashCard
+                title="Interior wash"
+                icon={Wrench}
+                count={interiorBookings.length}
+                target={1}
+                lastDate={interiorBookings[0]?.scheduled_date}
+              />
+              <WashCard
+                title="Exterior wash"
+                icon={Droplets}
+                count={exteriorBookings.length}
+                target={30}
+                lastDate={exteriorBookings[0]?.scheduled_date}
+              />
+            </div>
+          </div>
+
+          {/* Counters */}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <StatCard icon={CheckCircle2} label="Completed" value={completedCount} tone="success" />
+            <StatCard icon={Clock} label="Upcoming" value={pendingCount} tone="primary" />
+          </div>
+
+          {/* Add-ons */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold tracking-tight">Add-ons</h3>
+              <Link to="/c/home" className="inline-flex items-center gap-1 text-xs text-primary">
+                <Plus className="h-3.5 w-3.5" /> Add more
+              </Link>
+            </div>
+            <div className="mt-2 space-y-2">
+              {(addonsQ.data ?? []).length === 0 && !addonsQ.isLoading && (
+                <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  No add-ons yet. Polish, ceramic shield, interior shampoo and more available.
+                </p>
+              )}
+              {(addonsQ.data ?? []).map((a) => (
+                <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+                  <span className="font-medium">{a.addon_name}</span>
+                  <span className="text-xs text-muted-foreground">₹{a.price}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent services */}
+          <div className="mt-5">
+            <h3 className="text-sm font-semibold tracking-tight">Recent services</h3>
+            <div className="mt-2 space-y-2">
+              {recent.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  No services yet.
+                </p>
+              )}
+              {recent.map((b) => (
+                <Link
+                  key={b.id}
+                  to="/c/bookings/$id"
+                  params={{ id: b.id }}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{b.service_catalog?.name ?? "Service"}</div>
+                    <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Calendar className="h-3 w-3" /> {b.scheduled_date}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${
+                      b.status === "completed"
+                        ? "bg-success/15 text-success"
+                        : b.status === "cancelled"
+                          ? "bg-destructive/15 text-destructive"
+                          : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {b.status.replaceAll("_", " ")}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function WashCard({
+  title,
+  icon: Icon,
+  count,
+  target,
+  lastDate,
+}: {
+  title: string;
+  icon: any;
+  count: number;
+  target: number;
+  lastDate?: string;
+}) {
+  const done = count >= target;
+  const pct = Math.min(100, (count / target) * 100);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <Icon className={`h-4 w-4 ${done ? "text-success" : "text-primary"}`} />
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {done ? "Done" : "Pending"}
+        </span>
       </div>
+      <p className="mt-2 text-sm font-semibold">{title}</p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        {count} / {target} this month
+      </p>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+      </div>
+      {lastDate && <p className="mt-2 text-[10px] text-muted-foreground">Last: {lastDate}</p>}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  tone: "success" | "primary";
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2">
+        <Icon className={`h-4 w-4 ${tone === "success" ? "text-success" : "text-primary"}`} />
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
   );
 }

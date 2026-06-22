@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing } from "lucide-react";
+import { MapPin, Plus, ChevronRight, Sparkles, Droplets, Wrench, ShowerHead, ChevronDown, BellRing, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
+import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/c/_authed/home")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/c/_authed/home")({
   component: CustomerHome,
 });
 
-type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null };
+type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; color: string | null; image_path: string | null };
 type Service = { id: string; slug: string; name: string; description: string; banner_url: string | null; price_hatchback: number; price_sedan_suv: number; service_type: string; sort_order: number };
 
 const SERVICE_ICON: Record<string, any> = {
@@ -57,6 +58,25 @@ function CustomerHome() {
   const vehicles = vehiclesQ.data ?? [];
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
   const category = activeVehicle?.category ?? "hatchback_compact_sedan";
+  const bodyLabel = activeVehicle
+    ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category)
+    : "";
+
+  // Lookup catalog image for the active vehicle (by make + model)
+  const catalogImageQ = useQuery({
+    queryKey: ["vehicle-catalog-image", activeVehicle?.make, activeVehicle?.model],
+    enabled: !!activeVehicle,
+    queryFn: async (): Promise<string | null> => {
+      const { data } = await (supabase as any)
+        .from("vehicle_catalog")
+        .select("image_url")
+        .ilike("make", activeVehicle!.make)
+        .ilike("model", activeVehicle!.model)
+        .limit(1)
+        .maybeSingle();
+      return data?.image_url ?? null;
+    },
+  });
 
   const pickVehicle = (id: string) => {
     setSelectedVehicleId(id);
@@ -68,54 +88,84 @@ function CustomerHome() {
 
   return (
     <div className="px-5 pt-6">
-      {/* Location */}
-      <button
-        onClick={() => navigate({ to: "/c" })}
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <MapPin className="h-3.5 w-3.5" />
-        <span className="font-medium text-foreground">{area || "Pick area"}</span>
-        <ChevronDown className="h-3.5 w-3.5" />
-      </button>
+      {/* Top bar: location (left) · vehicle chip (right) */}
+      <div className="flex items-start justify-between gap-3">
+        <button
+          onClick={() => navigate({ to: "/c" })}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          <span className="font-medium text-foreground">{area || "Pick area"}</span>
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
 
-      {/* Vehicle switcher */}
-      <div className="mt-3 rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5">
         {activeVehicle ? (
-          <button onClick={() => vehicles.length > 1 && setVehicleSheetOpen(true)} className="w-full text-left">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Your car</p>
-              {vehicles.length > 1 && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-            </div>
-            <div className="mt-1 flex items-end justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">{activeVehicle.make} {activeVehicle.model}</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {activeVehicle.registration_number} · {activeVehicle.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}
-                </p>
-              </div>
-              <div className="grid h-16 w-24 place-items-center rounded-2xl bg-card text-3xl">🚗</div>
-            </div>
+          <button
+            onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : navigate({ to: "/c/vehicles/add" }))}
+            className="group flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 pr-3 shadow-sm transition-all hover:border-primary/40"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-accent">
+              {catalogImageQ.data ? (
+                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
+              ) : (
+                <Car className="h-4 w-4 text-accent-foreground" />
+              )}
+            </span>
+            <span className="flex flex-col items-start leading-tight">
+              <span className="text-[11px] font-semibold uppercase tracking-wide">{activeVehicle.model}</span>
+              <span className="text-[10px] text-muted-foreground">{bodyLabel}</span>
+            </span>
+            {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
           </button>
         ) : (
-          <Link to="/c/vehicles/add" className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Add your car</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight">Get started in 30 seconds</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Add your vehicle to see pricing.</p>
-            </div>
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground">
-              <Plus className="h-5 w-5" />
-            </span>
+          <Link
+            to="/c/vehicles/add"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add vehicle
           </Link>
         )}
       </div>
 
-      {activeVehicle && (
+      {/* Vehicle hero card */}
+      {activeVehicle ? (
+        <div className="mt-4 rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Your car</p>
+              <h2 className="mt-1 truncate text-2xl font-semibold tracking-tight">
+                {activeVehicle.make} {activeVehicle.model}
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {activeVehicle.registration_number} ·{" "}
+                <span className="font-medium text-foreground">{activeVehicle.model.toUpperCase()} — {bodyLabel}</span>
+              </p>
+            </div>
+            <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card">
+              {catalogImageQ.data ? (
+                <img src={catalogImageQ.data} alt={activeVehicle.model} className="h-full w-full object-cover" />
+              ) : (
+                <Car className="h-7 w-7 text-muted-foreground" />
+              )}
+            </div>
+          </div>
+          <Link to="/c/vehicles/add" className="mt-3 inline-flex items-center gap-1 text-xs text-primary">
+            <Plus className="h-3.5 w-3.5" /> Add another vehicle
+          </Link>
+        </div>
+      ) : (
         <Link
           to="/c/vehicles/add"
-          className="mt-2 inline-flex items-center gap-1 text-xs text-primary"
+          className="mt-4 flex items-center justify-between rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5"
         >
-          <Plus className="h-3.5 w-3.5" /> Add another vehicle
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Add your car</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">Get started in 30 seconds</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Add your vehicle to see pricing.</p>
+          </div>
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground">
+            <Plus className="h-5 w-5" />
+          </span>
         </Link>
       )}
 
@@ -126,7 +176,7 @@ function CustomerHome() {
         ) : (
           <>
         <h3 className="text-lg font-semibold tracking-tight">Choose a service</h3>
-        <p className="text-xs text-muted-foreground">Prices for {category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact"}</p>
+        <p className="text-xs text-muted-foreground">Prices for {bodyLabel || (category === "sedan_suv" ? "Sedan / SUV" : "Hatchback / Compact")}</p>
 
         <div className="mt-4 space-y-3">
           {servicesQ.isLoading && Array.from({ length: 4 }).map((_, i) => (
@@ -186,7 +236,7 @@ function CustomerHome() {
                   <div className="text-xs text-muted-foreground">{v.registration_number}</div>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {v.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback"}
+                  {vehicleBodyLabel(v.make, v.model, v.category)}
                 </span>
               </button>
             ))}
