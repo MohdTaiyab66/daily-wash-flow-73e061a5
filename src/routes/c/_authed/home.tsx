@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   MapPin,
   Plus,
@@ -47,7 +48,7 @@ type Service = {
   sort_order: number;
 };
 
-const SERVICE_ICON: Record<string, any> = {
+const SERVICE_ICON: Record<string, LucideIcon> = {
   daily_shine: Sparkles,
   one_time_basic: Droplets,
   one_time_plus: Droplets,
@@ -69,7 +70,7 @@ function CustomerHome() {
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("customer_vehicles")
         .select("*")
         .order("created_at");
@@ -81,7 +82,7 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("service_catalog")
         .select("*")
         .eq("active", true)
@@ -103,7 +104,7 @@ function CustomerHome() {
     queryKey: ["vehicle-catalog-image", activeVehicle?.make, activeVehicle?.model],
     enabled: !!activeVehicle,
     queryFn: async (): Promise<string | null> => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("vehicle_catalog")
         .select("image_url")
         .ilike("make", activeVehicle!.make)
@@ -322,7 +323,7 @@ function ComingSoon({ area, onChange }: { area: string; onChange: () => void }) 
     try {
       const { data: u } = await supabase.auth.getUser();
       const phone = u.user?.phone ?? null;
-      await (supabase as any).from("area_waitlist").insert({
+      await supabase.from("area_waitlist").insert({
         area,
         phone: phone ?? "",
       });
