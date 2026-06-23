@@ -39,12 +39,12 @@ type AddonRow = {
 function MyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior">("any");
+  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
-  const openSchedule = (kind: "any" | "interior" | "exterior" = "any") => {
+  const openSchedule = (kind: "any" | "interior" | "exterior" | "dusting" = "any") => {
     setScheduleKind(kind);
     setScheduleOpen(true);
   };
