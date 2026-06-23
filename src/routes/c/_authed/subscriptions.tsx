@@ -647,9 +647,70 @@ function ScheduleWashDialog({
             </div>
           </div>
 
+          {kind !== "any" && (
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <label className="flex cursor-pointer items-start gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={recurring}
+                  onChange={(e) => setRecurring(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <span>
+                  <span className="font-semibold">Repeat weekly</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Pre-book your unused {PLAN_SERVICE_LABELS[kind].toLowerCase()} on a fixed weekday. Partner is notified a day before each visit.
+                  </span>
+                </span>
+              </label>
+              {recurring && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[11px]">Weekday</Label>
+                    <div className="mt-1 grid grid-cols-7 gap-1">
+                      {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d, i) => (
+                        <button
+                          key={d}
+                          type="button"
+                          disabled={i === 1}
+                          onClick={() => setWeekday(i)}
+                          className={`rounded-lg border py-1 text-[10px] font-medium ${
+                            i === 1
+                              ? "cursor-not-allowed border-border text-muted-foreground/40 line-through"
+                              : weekday === i
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">No service on Mondays.</p>
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">How many times</Label>
+                    <select
+                      value={occurrences}
+                      onChange={(e) => setOccurrences(Number(e.target.value))}
+                      className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                    >
+                      {[1,2,3,4,5,6,8,10,12].map((n) => (
+                        <option key={n} value={n}>{n} visit{n > 1 ? "s" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
-            <Label className="text-xs">Date</Label>
+            <Label className="text-xs">{recurring ? "Start from" : "Date"}</Label>
             <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} className="mt-1" />
+            {!recurring && new Date(date).getDay() === 1 && (
+              <p className="mt-1 text-[11px] text-destructive">Mondays are off-days for Daily Shine. Pick another date.</p>
+            )}
           </div>
 
           <div>
