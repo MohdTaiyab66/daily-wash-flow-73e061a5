@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
