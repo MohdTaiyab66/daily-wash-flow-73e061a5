@@ -11,6 +11,12 @@ import { Camera, CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCirc
 import { toast } from "sonner";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
+type DirtyReport = {
+  reason: string | null; notes: string | null;
+  photo_front: string | null; photo_rear: string | null;
+  photo_left: string | null; photo_right: string | null;
+  created_at: string;
+} | null;
 type RecentService = {
   service_id: string;
   booking_id: string;
@@ -23,6 +29,10 @@ type RecentService = {
   partner_name: string | null;
   vehicle_label: string | null;
   photos: Photo[];
+  unavailable_reason: string | null;
+  unavailable_notes: string | null;
+  unavailable_photo: string | null;
+  dirty_report: DirtyReport;
   complaint_window_ends_at: string;
   can_complain: boolean;
   has_complaint: boolean;
@@ -72,7 +82,9 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
   }, [recentQ.data, seenIds]);
 
   const demoList: RecentService[] = useMemo(() => {
-    const completed = new Date(Date.now() - 35 * 60 * 1000).toISOString(); // 35 min ago
+    const completed = new Date(Date.now() - 35 * 60 * 1000).toISOString();
+    const earlier = new Date(Date.now() - 26 * 3600 * 1000).toISOString();
+    const yesterday = new Date(Date.now() - 20 * 3600 * 1000).toISOString();
     return [
       {
         service_id: "demo-svc",
@@ -86,8 +98,53 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
         partner_name: "Rahul (Demo Partner)",
         vehicle_label: "Hyundai Creta",
         photos: [],
+        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
+        dirty_report: null,
         complaint_window_ends_at: new Date(Date.parse(completed) + 2 * 3600 * 1000).toISOString(),
         can_complain: true,
+        has_complaint: false,
+      },
+      {
+        service_id: "demo-dirty",
+        booking_id: "demo-bk-2",
+        scheduled_date: yesterday.slice(0, 10),
+        completed_at: yesterday,
+        status: "completed",
+        service_name: "Daily Shine — Dusting",
+        service_slug: "daily-shine-dusting",
+        partner_id: null,
+        partner_name: "Aman (Demo Partner)",
+        vehicle_label: "Hyundai Creta",
+        photos: [],
+        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
+        dirty_report: {
+          reason: "Heavy mud / dust",
+          notes: "Car returned from a long drive — extra dirt on rims. Wiped clean.",
+          photo_front: null, photo_rear: null, photo_left: null, photo_right: null,
+          created_at: yesterday,
+        },
+        complaint_window_ends_at: new Date(Date.parse(yesterday) + 2 * 3600 * 1000).toISOString(),
+        can_complain: false,
+        has_complaint: false,
+      },
+      {
+        service_id: "demo-unavail",
+        booking_id: "demo-bk-3",
+        scheduled_date: earlier.slice(0, 10),
+        completed_at: earlier,
+        status: "unavailable",
+        service_name: "Daily Shine — Exterior",
+        service_slug: "daily-shine",
+        partner_id: null,
+        partner_name: "Rahul (Demo Partner)",
+        vehicle_label: "Hyundai Creta",
+        photos: [],
+        unavailable_reason: "car_not_parked",
+        unavailable_notes: "Car was not at the usual parking spot.",
+        unavailable_photo: null,
+        dirty_report: null,
+        complaint_window_ends_at: earlier,
+        can_complain: false,
         has_complaint: false,
       },
     ];
