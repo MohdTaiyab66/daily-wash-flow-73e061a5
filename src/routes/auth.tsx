@@ -113,7 +113,6 @@ function AuthPage() {
       setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
     }
 
-    const uid = signInData.session.user.id;
     await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
 
     try {
