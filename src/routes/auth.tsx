@@ -27,8 +27,8 @@ const partnerPassword = (phone: string) => `UWP@${phone}#2026`;
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const nextRoute = redirect?.startsWith("/admin") ? "/admin" : "/app";
-  const isAdminLogin = nextRoute === "/admin";
+  const nextRoute = redirect?.startsWith("/admin") ? redirect : redirect?.startsWith("/app") ? redirect : "/app";
+  const isAdminLogin = nextRoute.startsWith("/admin");
   const emailFor = (p: string) => (isAdminLogin ? adminEmail(p) : partnerEmail(p));
 
   const [step, setStep] = useState<Step>("phone");
@@ -45,10 +45,10 @@ function AuthPage() {
         return;
       }
       const email = data.user?.email || "";
-      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: "/admin" });
-      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: "/app" });
+      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: nextRoute as any });
+      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: nextRoute as any });
     })();
-  }, [isAdminLogin, navigate]);
+  }, [isAdminLogin, navigate, nextRoute]);
 
   const ensureStaffRole = async (role: "admin" | "partner", fullName?: string) => {
     const { data, error } = await supabase.rpc("ensure_staff_login_role" as any, {
