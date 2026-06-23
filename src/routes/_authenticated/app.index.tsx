@@ -15,8 +15,6 @@ export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
 });
 
-const RATE = 17;
-
 function HomePage() {
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
@@ -44,9 +42,12 @@ function HomePage() {
     queryKey: ["today-services-mini"],
     queryFn: async () => {
       const d = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
       const { data } = await supabase
         .from("services")
         .select("id,status,started_at,completed_at,rate_per_car")
+        .eq("partner_id", u.user.id)
         .eq("scheduled_date", d);
       return data ?? [];
     },
@@ -55,7 +56,9 @@ function HomePage() {
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
   const total = today?.length ?? 0;
   const remaining = total - completed;
-  const earnings = completed * RATE;
+  const earnings = (today ?? [])
+    .filter((s) => s.status === "completed")
+    .reduce((sum, s) => sum + Number(s.rate_per_car || 0), 0);
 
   const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
   const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();

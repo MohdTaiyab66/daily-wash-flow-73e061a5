@@ -67,37 +67,39 @@ function AuthPage() {
   const verifyOtp = async () => {
     if (otp !== "1234") { toast.error("Invalid OTP. Use 1234"); return; }
     setLoading(true);
-    const email = emailFor(phone);
-    const password = partnerPassword(phone);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (data?.session) {
+    try {
+      const email = emailFor(phone);
+      const password = partnerPassword(phone);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (data?.session) {
       // Existing account – check profile completeness for partners
-      if (!isAdminLogin) {
-        const uid = data.session.user.id;
-        const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
-        if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
-        try {
-          await ensureStaffRole("partner", partner.full_name);
-        } catch (e: any) {
-          setLoading(false);
-          toast.error(e.message || "Partner access is not enabled for this phone");
-          return;
+        if (!isAdminLogin) {
+          const uid = data.session.user.id;
+          const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
+          if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+          try {
+            await ensureStaffRole("partner", partner.full_name);
+          } catch (e: any) {
+            toast.error(e.message || "Partner access is not enabled for this phone");
+            return;
+          }
+        } else {
+          try {
+            await ensureStaffRole("admin");
+          } catch (e: any) {
+            toast.error(e.message || "Admin access is not enabled for this phone");
+            return;
+          }
         }
-      } else {
-        try {
-          await ensureStaffRole("admin");
-        } catch (e: any) {
-          setLoading(false);
-          toast.error(e.message || "Admin access is not enabled for this phone");
-          return;
-        }
+        navigate({ to: nextRoute });
+        return;
       }
+      if (error) setStep("name");
+    } catch (e: any) {
+      toast.error(e?.message || "Login failed. Please try again.");
+    } finally {
       setLoading(false);
-      navigate({ to: nextRoute });
-      return;
     }
-    setLoading(false);
-    if (error) setStep("name");
   };
 
   const saveName = async () => {
