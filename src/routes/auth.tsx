@@ -39,12 +39,24 @@ function AuthPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      const email = data.session?.user?.email || "";
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        await supabase.auth.signOut({ scope: "local" });
+        return;
+      }
+      const email = data.user?.email || "";
       if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: "/admin" });
       else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: "/app" });
     })();
   }, [isAdminLogin, navigate]);
+
+  const ensureStaffRole = async (role: "admin" | "partner", fullName?: string) => {
+    const { data, error } = await supabase.rpc("ensure_staff_login_role" as any, {
+      p_role: role,
+      p_full_name: fullName || null,
+    });
+    if (error || !data) throw new Error(error?.message || `${role === "admin" ? "Admin" : "Partner"} access is not enabled for this phone`);
+  };
 
   const sendOtp = () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit phone"); return; }
@@ -64,8 +76,21 @@ function AuthPage() {
         const uid = data.session.user.id;
         const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
         if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+        try {
+          await ensureStaffRole("partner", partner.full_name);
+        } catch (e: any) {
+          setLoading(false);
+          toast.error(e.message || "Partner access is not enabled for this phone");
+          return;
+        }
       } else {
-        await supabase.rpc("claim_admin_if_empty");
+        try {
+          await ensureStaffRole("admin");
+        } catch (e: any) {
+          setLoading(false);
+          toast.error(e.message || "Admin access is not enabled for this phone");
+          return;
+        }
       }
       setLoading(false);
       navigate({ to: nextRoute });
@@ -95,16 +120,14 @@ function AuthPage() {
       setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
     }
 
-    const uid = signInData.session.user.id;
     await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
 
-    if (isAdminLogin) {
-      await supabase.rpc("claim_admin_if_empty");
-    } else {
-      await (supabase as any).from("partners").upsert(
-        { id: uid, full_name: name.trim(), phone, email },
-        { onConflict: "id" }
-      );
+    try {
+      await ensureStaffRole(role as "admin" | "partner", name.trim());
+    } catch (e: any) {
+      setLoading(false);
+      toast.error(e.message || "Access is not enabled for this phone");
+      return;
     }
 
     setLoading(false);
