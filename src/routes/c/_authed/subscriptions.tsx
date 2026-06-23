@@ -417,6 +417,9 @@ function ScheduleWashDialog({
   });
   const [slot, setSlot] = useState<string>(SLOT_OPTIONS[3]);
   const [saving, setSaving] = useState(false);
+  const [recurring, setRecurring] = useState<boolean>(false);
+  const [weekday, setWeekday] = useState<number>(0); // 0=Sun
+  const [occurrences, setOccurrences] = useState<number>(4);
 
   const svcQ = useQuery({
     queryKey: ["schedule-services"],
@@ -505,8 +508,38 @@ function ScheduleWashDialog({
     if (!service) { toast.error(kind === "any" ? "Pick a service" : "This plan service is not available yet"); return; }
     if (!vehicle) { toast.error("Please select one of your vehicles"); return; }
     if (!addressId) { toast.error("Add a service address first"); return; }
+    // Block Mondays for Daily Shine
+    if (!recurring) {
+      const dow = new Date(date).getDay(); // 1 = Monday
+      if (dow === 1 && (service.slug?.startsWith("daily-shine") || kind !== "any")) {
+        toast.error("Daily Shine does not run on Mondays. Please pick another date.");
+        return;
+      }
+    } else if (weekday === 1) {
+      toast.error("Daily Shine does not run on Mondays. Pick another weekday.");
+      return;
+    }
     setSaving(true);
     try {
+      if (recurring) {
+        const { data: ids, error } = await (supabase as any).rpc("schedule_plan_services_recurring", {
+          p_service_id: service.id,
+          p_vehicle_id: vehicle.id,
+          p_address_id: addressId,
+          p_weekday: weekday,
+          p_occurrences: occurrences,
+          p_start_date: date,
+          p_scheduled_time: slot,
+        });
+        if (error) throw error;
+        const dayName = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][weekday];
+        toast.success(`Scheduled ${(ids ?? []).length} ${dayName} visits · partner notified day before each`);
+        qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+        onOpenChange(false);
+        if (ids && ids[0]) navigate({ to: "/c/bookings/$id", params: { id: ids[0] } });
+        return;
+      }
       const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
