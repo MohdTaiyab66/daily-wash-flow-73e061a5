@@ -179,16 +179,36 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
   const canComplain = !demo ? service.can_complain && msLeft > 0 && !service.has_complaint : true;
 
+  const isUnavailable = service.status === "unavailable";
+  const hasDirty = !!service.dirty_report;
+  const reasonLabel = (r: string | null | undefined) => {
+    if (!r) return "Service skipped";
+    const map: Record<string, string> = {
+      car_not_parked: "Car not at parking",
+      gate_locked: "Gate / building locked",
+      customer_unreachable: "Customer unreachable",
+      vehicle_moved: "Vehicle was moved",
+      heavy_rain: "Heavy rain",
+      other: "Other reason",
+    };
+    return map[r] ?? r.replaceAll("_", " ");
+  };
+
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex items-start gap-3 p-4">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/15 text-success">
-          <CheckCircle2 className="h-5 w-5" />
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+          isUnavailable ? "bg-amber-500/15 text-amber-600" : hasDirty ? "bg-orange-500/15 text-orange-600" : "bg-success/15 text-success"
+        }`}>
+          {isUnavailable ? <ShieldAlert className="h-5 w-5" /> : hasDirty ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold">{service.service_name ?? "Service complete"}</p>
+            <p className="truncate text-sm font-semibold">
+              {isUnavailable ? `Skipped · ${service.service_name ?? "Service"}` : service.service_name ?? "Service complete"}
+            </p>
             {demo && <Badge variant="outline" className="h-5 text-[9px]">DEMO</Badge>}
+            {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             by {service.partner_name ?? "your partner"} · {service.vehicle_label}
@@ -196,15 +216,34 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
           <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {completed.toLocaleDateString()} · {completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
+          {isUnavailable && (
+            <div className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-700">
+              <span className="font-medium">{reasonLabel(service.unavailable_reason)}.</span>
+              {service.unavailable_notes ? <> {service.unavailable_notes}</> : null}
+            </div>
+          )}
+          {hasDirty && (
+            <div className="mt-2 rounded-lg bg-orange-500/10 px-2.5 py-1.5 text-[11px] text-orange-700">
+              <span className="font-medium">{service.dirty_report?.reason ?? "Extra dirt noted"}.</span>
+              {service.dirty_report?.notes ? <> {service.dirty_report.notes}</> : null}
+            </div>
+          )}
         </div>
       </div>
 
-      <PhotoStrip photos={service.photos} demo={demo} />
+      {!isUnavailable && <PhotoStrip photos={service.photos} demo={demo} />}
+      {isUnavailable && service.unavailable_photo && (
+        <div className="bg-muted/40 px-4 py-2">
+          <SignedPhoto path={service.unavailable_photo} stage="proof" />
+        </div>
+      )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <div className="inline-flex items-center gap-1.5 text-[11px]">
           <Clock3 className="h-3.5 w-3.5 text-primary" />
-          {service.has_complaint ? (
+          {isUnavailable ? (
+            <span className="text-muted-foreground">No charge — marked unavailable</span>
+          ) : service.has_complaint ? (
             <span className="text-muted-foreground">Complaint submitted</span>
           ) : msLeft > 0 ? (
             <span className="font-medium text-primary">Report issue · {minutesLeft} min left</span>
@@ -212,11 +251,14 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
             <span className="text-muted-foreground">Complaint window closed</span>
           )}
         </div>
-        <ComplaintButton service={service} canComplain={canComplain} demo={demo} onSubmitted={onSubmitted} />
+        {!isUnavailable && (
+          <ComplaintButton service={service} canComplain={canComplain} demo={demo} onSubmitted={onSubmitted} />
+        )}
       </div>
     </Card>
   );
 }
+
 
 function PhotoStrip({ photos, demo }: { photos: Photo[]; demo?: boolean }) {
   if (demo) {
