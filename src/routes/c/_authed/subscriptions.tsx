@@ -389,7 +389,7 @@ function ScheduleWashDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
-  kind?: "any" | "interior" | "exterior";
+  kind?: "any" | "interior" | "exterior" | "dusting";
 }) {
 
   const qc = useQueryClient();
