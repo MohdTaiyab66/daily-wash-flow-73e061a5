@@ -43,7 +43,6 @@ function ServiceDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
-  const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
 
   const serviceQ = useQuery({
@@ -130,31 +129,25 @@ function ServiceDetail() {
   const total = subtotal - discountAmt;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
-  // Coupon catalog — discount on services for an additional vehicle.
-  // Customer must already own 2+ vehicles to redeem.
-  const COUPONS: Record<string, { percent: number; minVehicles: number; label: string }> = {
-    EXTRA10: { percent: 10, minVehicles: 2, label: "10% off on additional vehicle" },
-    EXTRA15: { percent: 15, minVehicles: 3, label: "15% off on additional vehicle" },
-    MULTI20: { percent: 20, minVehicles: 4, label: "20% off on additional vehicle" },
-  };
+  // Multi-vehicle coupon: auto-detected from number of cars on the account.
+  // 2 cars → 10%, 3 cars → 15%, 4+ cars → 20%.
+  const eligibleCoupon = useMemo(() => {
+    if (vehicleCount >= 4) return { code: "MULTI20", percent: 20 };
+    if (vehicleCount === 3) return { code: "EXTRA15", percent: 15 };
+    if (vehicleCount === 2) return { code: "EXTRA10", percent: 10 };
+    return null;
+  }, [vehicleCount]);
 
-  const applyCoupon = () => {
-    const code = couponInput.trim().toUpperCase();
-    if (!code) { toast.error("Enter a coupon code"); return; }
-    const c = COUPONS[code];
-    if (!c) { toast.error("Invalid coupon code"); return; }
-    if (vehicleCount < c.minVehicles) {
-      toast.error(`Coupon needs ${c.minVehicles}+ vehicles on your account`);
+  const applyBestCoupon = () => {
+    if (!eligibleCoupon) {
+      toast.error("Add another car to your account to unlock multi-car discounts.");
       return;
     }
-    setAppliedCoupon({ code, percent: c.percent });
-    toast.success(`Coupon ${code} applied — ${c.percent}% off`);
+    setAppliedCoupon(eligibleCoupon);
+    toast.success(`${eligibleCoupon.percent}% multi-car discount applied`);
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponInput("");
-  };
+  const removeCoupon = () => setAppliedCoupon(null);
 
   const setQty = (id: string, q: number) => {
     setAddonQty((prev) => {
@@ -378,33 +371,37 @@ function ServiceDetail() {
           </div>
         </SectionCard>
 
-        {/* Coupon */}
-        <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Apply coupon" hint={vehicleCount > 1 ? `${vehicleCount} vehicles on account` : undefined}>
+        {/* Multi-car discount */}
+        <SectionCard
+          icon={<Sparkles className="h-4 w-4" />}
+          title="Multi-car discount"
+          hint={`${vehicleCount} car${vehicleCount === 1 ? "" : "s"} on account`}
+        >
           {appliedCoupon ? (
             <div className="flex items-center justify-between rounded-xl border border-success/40 bg-success/10 px-3 py-2 text-sm">
               <div>
-                <div className="font-semibold text-success">{appliedCoupon.code} applied</div>
-                <div className="text-[11px] text-muted-foreground">{appliedCoupon.percent}% off this booking</div>
+                <div className="font-semibold text-success">{appliedCoupon.percent}% off applied</div>
+                <div className="text-[11px] text-muted-foreground">Multi-car discount auto-applied</div>
               </div>
               <Button type="button" size="sm" variant="ghost" onClick={removeCoupon}>Remove</Button>
             </div>
-          ) : (
-            <>
-              <div className="flex gap-2">
-                <Input
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  placeholder="Enter coupon code"
-                  className="rounded-xl uppercase"
-                />
-                <Button type="button" onClick={applyCoupon} variant="outline" className="shrink-0 rounded-xl">Apply</Button>
+          ) : eligibleCoupon ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">You unlock {eligibleCoupon.percent}% off</div>
+                <div className="text-[11px] text-muted-foreground">For having {vehicleCount} cars on Daily Shine</div>
               </div>
-              {vehicleCount > 1 && (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  Tip: use <span className="font-semibold text-foreground">EXTRA10</span> for 10% off when booking for your additional vehicle.
-                </p>
-              )}
-            </>
+              <Button type="button" size="sm" onClick={applyBestCoupon} className="shrink-0 rounded-full">Apply coupon</Button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
+              Add another car to unlock multi-car discounts: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
+              <div className="mt-2">
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <Link to="/c/vehicles/add">Add another car</Link>
+                </Button>
+              </div>
+            </div>
           )}
         </SectionCard>
 

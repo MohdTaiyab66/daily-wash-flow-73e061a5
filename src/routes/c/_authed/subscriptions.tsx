@@ -87,11 +87,12 @@ function MyPlanPage() {
     _demo: true,
   };
 
-  // Plan period: 30 days from scheduled_date
+  // Plan period: Daily Shine = 24 working days (no service on Mondays).
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  const planEnd = planStart ? new Date(planStart.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+  // 24 working days ≈ 28 calendar days (one Monday skipped per week).
+  const totalDays = 24;
+  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
-  const totalDays = 30;
   const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
@@ -235,7 +236,7 @@ function MyPlanPage() {
                 title="Exterior wash"
                 icon={Droplets}
                 count={exteriorCount}
-                target={26}
+                target={20}
                 lastDate={exteriorLast}
               />
             </div>
@@ -416,6 +417,9 @@ function ScheduleWashDialog({
   });
   const [slot, setSlot] = useState<string>(SLOT_OPTIONS[3]);
   const [saving, setSaving] = useState(false);
+  const [recurring, setRecurring] = useState<boolean>(false);
+  const [weekday, setWeekday] = useState<number>(0); // 0=Sun
+  const [occurrences, setOccurrences] = useState<number>(4);
 
   const svcQ = useQuery({
     queryKey: ["schedule-services"],
@@ -504,8 +508,38 @@ function ScheduleWashDialog({
     if (!service) { toast.error(kind === "any" ? "Pick a service" : "This plan service is not available yet"); return; }
     if (!vehicle) { toast.error("Please select one of your vehicles"); return; }
     if (!addressId) { toast.error("Add a service address first"); return; }
+    // Block Mondays for Daily Shine
+    if (!recurring) {
+      const dow = new Date(date).getDay(); // 1 = Monday
+      if (dow === 1 && (service.slug?.startsWith("daily-shine") || kind !== "any")) {
+        toast.error("Daily Shine does not run on Mondays. Please pick another date.");
+        return;
+      }
+    } else if (weekday === 1) {
+      toast.error("Daily Shine does not run on Mondays. Pick another weekday.");
+      return;
+    }
     setSaving(true);
     try {
+      if (recurring) {
+        const { data: ids, error } = await (supabase as any).rpc("schedule_plan_services_recurring", {
+          p_service_id: service.id,
+          p_vehicle_id: vehicle.id,
+          p_address_id: addressId,
+          p_weekday: weekday,
+          p_occurrences: occurrences,
+          p_start_date: date,
+          p_scheduled_time: slot,
+        });
+        if (error) throw error;
+        const dayName = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][weekday];
+        toast.success(`Scheduled ${(ids ?? []).length} ${dayName} visits · partner notified day before each`);
+        qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+        onOpenChange(false);
+        if (ids && ids[0]) navigate({ to: "/c/bookings/$id", params: { id: ids[0] } });
+        return;
+      }
       const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -613,9 +647,70 @@ function ScheduleWashDialog({
             </div>
           </div>
 
+          {kind !== "any" && (
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <label className="flex cursor-pointer items-start gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={recurring}
+                  onChange={(e) => setRecurring(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <span>
+                  <span className="font-semibold">Repeat weekly</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Pre-book your unused {PLAN_SERVICE_LABELS[kind].toLowerCase()} on a fixed weekday. Partner is notified a day before each visit.
+                  </span>
+                </span>
+              </label>
+              {recurring && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[11px]">Weekday</Label>
+                    <div className="mt-1 grid grid-cols-7 gap-1">
+                      {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d, i) => (
+                        <button
+                          key={d}
+                          type="button"
+                          disabled={i === 1}
+                          onClick={() => setWeekday(i)}
+                          className={`rounded-lg border py-1 text-[10px] font-medium ${
+                            i === 1
+                              ? "cursor-not-allowed border-border text-muted-foreground/40 line-through"
+                              : weekday === i
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">No service on Mondays.</p>
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">How many times</Label>
+                    <select
+                      value={occurrences}
+                      onChange={(e) => setOccurrences(Number(e.target.value))}
+                      className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                    >
+                      {[1,2,3,4,5,6,8,10,12].map((n) => (
+                        <option key={n} value={n}>{n} visit{n > 1 ? "s" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
-            <Label className="text-xs">Date</Label>
+            <Label className="text-xs">{recurring ? "Start from" : "Date"}</Label>
             <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} className="mt-1" />
+            {!recurring && new Date(date).getDay() === 1 && (
+              <p className="mt-1 text-[11px] text-destructive">Mondays are off-days for Daily Shine. Pick another date.</p>
+            )}
           </div>
 
           <div>

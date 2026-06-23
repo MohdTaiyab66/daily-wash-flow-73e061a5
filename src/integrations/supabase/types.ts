@@ -2154,6 +2154,7 @@ export type Database = {
           can_complain: boolean
           complaint_window_ends_at: string
           completed_at: string
+          dirty_report: Json
           has_complaint: boolean
           partner_id: string
           partner_name: string
@@ -2163,6 +2164,9 @@ export type Database = {
           service_name: string
           service_slug: string
           status: string
+          unavailable_notes: string
+          unavailable_photo: string
+          unavailable_reason: string
           vehicle_label: string
         }[]
       }
@@ -2202,6 +2206,18 @@ export type Database = {
           total_earnings: number
           working_days: number
         }[]
+      }
+      schedule_plan_services_recurring: {
+        Args: {
+          p_address_id: string
+          p_occurrences: number
+          p_scheduled_time: string
+          p_service_id: string
+          p_start_date: string
+          p_vehicle_id: string
+          p_weekday: number
+        }
+        Returns: string[]
       }
       set_partner_area: {
         Args: { p_area: string; p_lat: number; p_lng: number }

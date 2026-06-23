@@ -11,6 +11,12 @@ import { Camera, CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCirc
 import { toast } from "sonner";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
+type DirtyReport = {
+  reason: string | null; notes: string | null;
+  photo_front: string | null; photo_rear: string | null;
+  photo_left: string | null; photo_right: string | null;
+  created_at: string;
+} | null;
 type RecentService = {
   service_id: string;
   booking_id: string;
@@ -23,6 +29,10 @@ type RecentService = {
   partner_name: string | null;
   vehicle_label: string | null;
   photos: Photo[];
+  unavailable_reason: string | null;
+  unavailable_notes: string | null;
+  unavailable_photo: string | null;
+  dirty_report: DirtyReport;
   complaint_window_ends_at: string;
   can_complain: boolean;
   has_complaint: boolean;
@@ -72,7 +82,9 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
   }, [recentQ.data, seenIds]);
 
   const demoList: RecentService[] = useMemo(() => {
-    const completed = new Date(Date.now() - 35 * 60 * 1000).toISOString(); // 35 min ago
+    const completed = new Date(Date.now() - 35 * 60 * 1000).toISOString();
+    const earlier = new Date(Date.now() - 26 * 3600 * 1000).toISOString();
+    const yesterday = new Date(Date.now() - 20 * 3600 * 1000).toISOString();
     return [
       {
         service_id: "demo-svc",
@@ -86,8 +98,53 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
         partner_name: "Rahul (Demo Partner)",
         vehicle_label: "Hyundai Creta",
         photos: [],
+        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
+        dirty_report: null,
         complaint_window_ends_at: new Date(Date.parse(completed) + 2 * 3600 * 1000).toISOString(),
         can_complain: true,
+        has_complaint: false,
+      },
+      {
+        service_id: "demo-dirty",
+        booking_id: "demo-bk-2",
+        scheduled_date: yesterday.slice(0, 10),
+        completed_at: yesterday,
+        status: "completed",
+        service_name: "Daily Shine — Dusting",
+        service_slug: "daily-shine-dusting",
+        partner_id: null,
+        partner_name: "Aman (Demo Partner)",
+        vehicle_label: "Hyundai Creta",
+        photos: [],
+        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
+        dirty_report: {
+          reason: "Heavy mud / dust",
+          notes: "Car returned from a long drive — extra dirt on rims. Wiped clean.",
+          photo_front: null, photo_rear: null, photo_left: null, photo_right: null,
+          created_at: yesterday,
+        },
+        complaint_window_ends_at: new Date(Date.parse(yesterday) + 2 * 3600 * 1000).toISOString(),
+        can_complain: false,
+        has_complaint: false,
+      },
+      {
+        service_id: "demo-unavail",
+        booking_id: "demo-bk-3",
+        scheduled_date: earlier.slice(0, 10),
+        completed_at: earlier,
+        status: "unavailable",
+        service_name: "Daily Shine — Exterior",
+        service_slug: "daily-shine",
+        partner_id: null,
+        partner_name: "Rahul (Demo Partner)",
+        vehicle_label: "Hyundai Creta",
+        photos: [],
+        unavailable_reason: "car_not_parked",
+        unavailable_notes: "Car was not at the usual parking spot.",
+        unavailable_photo: null,
+        dirty_report: null,
+        complaint_window_ends_at: earlier,
+        can_complain: false,
         has_complaint: false,
       },
     ];
@@ -122,16 +179,36 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
   const canComplain = !demo ? service.can_complain && msLeft > 0 && !service.has_complaint : true;
 
+  const isUnavailable = service.status === "unavailable";
+  const hasDirty = !!service.dirty_report;
+  const reasonLabel = (r: string | null | undefined) => {
+    if (!r) return "Service skipped";
+    const map: Record<string, string> = {
+      car_not_parked: "Car not at parking",
+      gate_locked: "Gate / building locked",
+      customer_unreachable: "Customer unreachable",
+      vehicle_moved: "Vehicle was moved",
+      heavy_rain: "Heavy rain",
+      other: "Other reason",
+    };
+    return map[r] ?? r.replaceAll("_", " ");
+  };
+
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex items-start gap-3 p-4">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/15 text-success">
-          <CheckCircle2 className="h-5 w-5" />
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+          isUnavailable ? "bg-amber-500/15 text-amber-600" : hasDirty ? "bg-orange-500/15 text-orange-600" : "bg-success/15 text-success"
+        }`}>
+          {isUnavailable ? <ShieldAlert className="h-5 w-5" /> : hasDirty ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold">{service.service_name ?? "Service complete"}</p>
+            <p className="truncate text-sm font-semibold">
+              {isUnavailable ? `Skipped · ${service.service_name ?? "Service"}` : service.service_name ?? "Service complete"}
+            </p>
             {demo && <Badge variant="outline" className="h-5 text-[9px]">DEMO</Badge>}
+            {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             by {service.partner_name ?? "your partner"} · {service.vehicle_label}
@@ -139,15 +216,34 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
           <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {completed.toLocaleDateString()} · {completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
+          {isUnavailable && (
+            <div className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-700">
+              <span className="font-medium">{reasonLabel(service.unavailable_reason)}.</span>
+              {service.unavailable_notes ? <> {service.unavailable_notes}</> : null}
+            </div>
+          )}
+          {hasDirty && (
+            <div className="mt-2 rounded-lg bg-orange-500/10 px-2.5 py-1.5 text-[11px] text-orange-700">
+              <span className="font-medium">{service.dirty_report?.reason ?? "Extra dirt noted"}.</span>
+              {service.dirty_report?.notes ? <> {service.dirty_report.notes}</> : null}
+            </div>
+          )}
         </div>
       </div>
 
-      <PhotoStrip photos={service.photos} demo={demo} />
+      {!isUnavailable && <PhotoStrip photos={service.photos} demo={demo} />}
+      {isUnavailable && service.unavailable_photo && (
+        <div className="bg-muted/40 px-4 py-2">
+          <SignedPhoto path={service.unavailable_photo} stage="proof" />
+        </div>
+      )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <div className="inline-flex items-center gap-1.5 text-[11px]">
           <Clock3 className="h-3.5 w-3.5 text-primary" />
-          {service.has_complaint ? (
+          {isUnavailable ? (
+            <span className="text-muted-foreground">No charge — marked unavailable</span>
+          ) : service.has_complaint ? (
             <span className="text-muted-foreground">Complaint submitted</span>
           ) : msLeft > 0 ? (
             <span className="font-medium text-primary">Report issue · {minutesLeft} min left</span>
@@ -155,11 +251,14 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
             <span className="text-muted-foreground">Complaint window closed</span>
           )}
         </div>
-        <ComplaintButton service={service} canComplain={canComplain} demo={demo} onSubmitted={onSubmitted} />
+        {!isUnavailable && (
+          <ComplaintButton service={service} canComplain={canComplain} demo={demo} onSubmitted={onSubmitted} />
+        )}
       </div>
     </Card>
   );
 }
+
 
 function PhotoStrip({ photos, demo }: { photos: Photo[]; demo?: boolean }) {
   if (demo) {
