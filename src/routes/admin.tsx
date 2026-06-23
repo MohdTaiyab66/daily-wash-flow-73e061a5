@@ -8,9 +8,11 @@ export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u?.user) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
-    // One-time bootstrap: if no admin exists yet, the first signed-in visitor
-    // claims the role. After that, this RPC is a no-op.
-    await supabase.rpc("claim_admin_if_empty" as any);
+    if (!u.user.email?.endsWith("@admin.urbanwash.app")) {
+      await supabase.auth.signOut({ scope: "local" });
+      throw redirect({ to: "/auth", search: { redirect: "/admin" } });
+    }
+    await supabase.rpc("ensure_staff_login_role" as any, { p_role: "admin", p_full_name: null });
     const { data: isAdmin, error } = await supabase.rpc("has_role", {
       _user_id: u.user.id,
       _role: "admin",
@@ -66,7 +68,7 @@ function AdminLayout() {
             })}
           </nav>
           <div className="px-6 py-4 text-[11px] text-muted-foreground">
-            Mock admin · no auth (MVP)
+            Secure admin console
           </div>
         </aside>
 
