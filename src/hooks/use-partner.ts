@@ -5,9 +5,11 @@ export function usePartner() {
   return useQuery({
     queryKey: ["me-partner"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!u.user) return null;
-      const { data } = await supabase.from("partners").select("*").eq("id", u.user.id).maybeSingle();
+      const { data, error } = await supabase.from("partners").select("*").eq("id", u.user.id).maybeSingle();
+      if (error) throw error;
       return data;
     },
   });
@@ -21,9 +23,12 @@ export function useIsOnline() {
 export function useToggleOnline() {
   const qc = useQueryClient();
   return async (on: boolean) => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    await supabase.from("partners").update({ availability: on ? "online" : "offline" }).eq("id", u.user.id);
+    const { data: u, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!u.user) throw new Error("Please sign in again");
+    const { error } = await supabase.from("partners").update({ availability: on ? "online" : "offline" }).eq("id", u.user.id);
+    if (error) throw error;
+    qc.setQueryData(["me-partner"], (current: any) => current ? { ...current, availability: on ? "online" : "offline" } : current);
     qc.invalidateQueries({ queryKey: ["me-partner"] });
   };
 }

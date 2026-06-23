@@ -27,8 +27,8 @@ const partnerPassword = (phone: string) => `UWP@${phone}#2026`;
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const nextRoute = redirect?.startsWith("/admin") ? "/admin" : "/app";
-  const isAdminLogin = nextRoute === "/admin";
+  const nextRoute = redirect?.startsWith("/admin") ? redirect : redirect?.startsWith("/app") ? redirect : "/app";
+  const isAdminLogin = nextRoute.startsWith("/admin");
   const emailFor = (p: string) => (isAdminLogin ? adminEmail(p) : partnerEmail(p));
 
   const [step, setStep] = useState<Step>("phone");
@@ -45,10 +45,10 @@ function AuthPage() {
         return;
       }
       const email = data.user?.email || "";
-      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: "/admin" });
-      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: "/app" });
+      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: nextRoute as any });
+      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: nextRoute as any });
     })();
-  }, [isAdminLogin, navigate]);
+  }, [isAdminLogin, navigate, nextRoute]);
 
   const ensureStaffRole = async (role: "admin" | "partner", fullName?: string) => {
     const { data, error } = await supabase.rpc("ensure_staff_login_role" as any, {
@@ -67,37 +67,39 @@ function AuthPage() {
   const verifyOtp = async () => {
     if (otp !== "1234") { toast.error("Invalid OTP. Use 1234"); return; }
     setLoading(true);
-    const email = emailFor(phone);
-    const password = partnerPassword(phone);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (data?.session) {
-      // Existing account – check profile completeness for partners
-      if (!isAdminLogin) {
-        const uid = data.session.user.id;
-        const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
-        if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
-        try {
-          await ensureStaffRole("partner", partner.full_name);
-        } catch (e: any) {
-          setLoading(false);
-          toast.error(e.message || "Partner access is not enabled for this phone");
-          return;
+    try {
+      const email = emailFor(phone);
+      const password = partnerPassword(phone);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (data?.session) {
+        // Existing account – check profile completeness for partners
+        if (!isAdminLogin) {
+          const uid = data.session.user.id;
+          const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
+          if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+          try {
+            await ensureStaffRole("partner", partner.full_name);
+          } catch (e: any) {
+            toast.error(e.message || "Partner access is not enabled for this phone");
+            return;
+          }
+        } else {
+          try {
+            await ensureStaffRole("admin");
+          } catch (e: any) {
+            toast.error(e.message || "Admin access is not enabled for this phone");
+            return;
+          }
         }
-      } else {
-        try {
-          await ensureStaffRole("admin");
-        } catch (e: any) {
-          setLoading(false);
-          toast.error(e.message || "Admin access is not enabled for this phone");
-          return;
-        }
+        navigate({ to: nextRoute as any });
+        return;
       }
+      if (error) setStep("name");
+    } catch (e: any) {
+      toast.error(e?.message || "Login failed. Please try again.");
+    } finally {
       setLoading(false);
-      navigate({ to: nextRoute });
-      return;
     }
-    setLoading(false);
-    if (error) setStep("name");
   };
 
   const saveName = async () => {
@@ -131,7 +133,7 @@ function AuthPage() {
     }
 
     setLoading(false);
-    navigate({ to: nextRoute });
+    navigate({ to: nextRoute as any });
   };
 
   return (

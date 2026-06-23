@@ -15,8 +15,6 @@ export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
 });
 
-const RATE = 17;
-
 function HomePage() {
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
@@ -44,9 +42,12 @@ function HomePage() {
     queryKey: ["today-services-mini"],
     queryFn: async () => {
       const d = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
       const { data } = await supabase
         .from("services")
         .select("id,status,started_at,completed_at,rate_per_car")
+        .eq("partner_id", u.user.id)
         .eq("scheduled_date", d);
       return data ?? [];
     },
@@ -55,7 +56,9 @@ function HomePage() {
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
   const total = today?.length ?? 0;
   const remaining = total - completed;
-  const earnings = completed * RATE;
+  const earnings = (today ?? [])
+    .filter((s) => s.status === "completed")
+    .reduce((sum, s) => sum + Number(s.rate_per_car || 0), 0);
 
   const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
   const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();
@@ -123,6 +126,25 @@ function HomePage() {
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
             <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("view_todays_route")}</Link>
+          </Button>
+        </Card>
+      ) : total > 0 ? (
+        <Card className="mt-5 border-0 bg-foreground p-5 text-background">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-background/60">Today's bookings</p>
+              <p className="mt-1 text-lg font-semibold">{total} customer service{total === 1 ? "" : "s"}</p>
+              <p className="mt-0.5 text-xs text-background/60">Bookings accepted from customers are ready in your route.</p>
+            </div>
+            <Badge className="border-0 bg-primary text-primary-foreground">Live</Badge>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
+            <div><p className="text-background/60">Assigned</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
+            <div><p className="text-background/60">Done</p><p className="mt-0.5 text-base font-semibold">{completed}</p></div>
+            <div><p className="text-background/60">Left</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
+          </div>
+          <Button asChild variant="secondary" className="mt-4 w-full">
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Open today's route</Link>
           </Button>
         </Card>
       ) : (

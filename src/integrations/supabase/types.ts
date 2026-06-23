@@ -285,10 +285,13 @@ export type Database = {
           addon_amount: number
           address_id: string | null
           base_amount: number
+          claimed_at: string | null
           created_at: string
           discount_amount: number
           id: string
           notes: string | null
+          ops_service_id: string | null
+          partner_id: string | null
           payment_status: string
           preferred_before_time: string | null
           razorpay_order_id: string | null
@@ -306,10 +309,13 @@ export type Database = {
           addon_amount?: number
           address_id?: string | null
           base_amount?: number
+          claimed_at?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
           notes?: string | null
+          ops_service_id?: string | null
+          partner_id?: string | null
           payment_status?: string
           preferred_before_time?: string | null
           razorpay_order_id?: string | null
@@ -327,10 +333,13 @@ export type Database = {
           addon_amount?: number
           address_id?: string | null
           base_amount?: number
+          claimed_at?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
           notes?: string | null
+          ops_service_id?: string | null
+          partner_id?: string | null
           payment_status?: string
           preferred_before_time?: string | null
           razorpay_order_id?: string | null
@@ -350,6 +359,20 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_ops_service_id_fkey"
+            columns: ["ops_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
@@ -2056,6 +2079,10 @@ export type Database = {
         Args: { p_customer_id: string; p_rate?: number }
         Returns: number
       }
+      claim_customer_booking: {
+        Args: { p_booking_id: string }
+        Returns: string
+      }
       cleanup_old_service_photos: { Args: never; Returns: Json }
       confirm_customer_booking: {
         Args: {
@@ -2114,6 +2141,22 @@ export type Database = {
           pincode: string
           registration_number: string
           vehicle_id: string
+        }[]
+      }
+      list_partner_booking_requests: {
+        Args: never
+        Returns: {
+          address_line: string
+          area: string
+          booking_id: string
+          created_at: string
+          customer_name: string
+          registration_number: string
+          scheduled_date: string
+          scheduled_time: string
+          service_name: string
+          total_amount: number
+          vehicle_label: string
         }[]
       }
       modify_assignment: {
