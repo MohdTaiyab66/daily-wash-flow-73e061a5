@@ -21,7 +21,7 @@ type Service = {
   price_hatchback: number; price_sedan_suv: number; service_type: string; benefits: string[] | null;
   duration_minutes: number | null;
 };
-type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string };
+type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; is_default?: boolean | null };
 type Address = { id: string; label: string; address_line: string; area: string; pincode: string | null };
 type Addon = { id: string; name: string; description: string | null; price_hatchback: number; price_sedan_suv: number; applies_to_slugs: string[] };
 
@@ -82,9 +82,16 @@ function ServiceDetail() {
 
 
   useEffect(() => {
-    if (!vehicleId) {
+    if (vehiclesQ.data?.length) {
       const stored = localStorage.getItem("uw_customer_vehicle");
-      setVehicleId(stored ?? vehiclesQ.data?.[0]?.id ?? null);
+      const nextVehicleId =
+        stored && vehiclesQ.data.some((v) => v.id === stored)
+          ? stored
+          : (vehiclesQ.data.find((v) => v.is_default)?.id ?? vehiclesQ.data[0].id);
+      if (!vehicleId || !vehiclesQ.data.some((v) => v.id === vehicleId)) {
+        setVehicleId(nextVehicleId);
+        localStorage.setItem("uw_customer_vehicle", nextVehicleId);
+      }
     }
   }, [vehiclesQ.data, vehicleId]);
 

@@ -7,6 +7,10 @@ export const Route = createFileRoute("/c/_authed")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/c/auth" });
+    if (!data.user.email?.endsWith("@customer.urbanwash.app")) {
+      await supabase.auth.signOut({ scope: "local" });
+      throw redirect({ to: "/c/auth" });
+    }
   },
   component: () => (
     <CustomerShell>

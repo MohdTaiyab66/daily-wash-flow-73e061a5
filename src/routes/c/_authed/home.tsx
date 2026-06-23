@@ -64,6 +64,8 @@ const SERVICE_ICON: Record<string, LucideIcon> = {
   interior_deep: Wrench,
 };
 
+const PLAN_INCLUDED_SERVICE_SLUGS = ["daily-shine-exterior", "daily-shine-interior", "daily-shine-dusting"];
+
 function CustomerHome() {
   const navigate = useNavigate();
   const [area, setArea] = useState<string>("");
@@ -133,7 +135,7 @@ function CustomerHome() {
 
   const services = servicesQ.data ?? [];
   const subscription = services.find((s) => s.service_type === "subscription");
-  const oneTime = services.filter((s) => s.service_type !== "subscription");
+  const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
   const showCatalog = !area || SERVICE_AREA_NAMES.includes(area);
 
