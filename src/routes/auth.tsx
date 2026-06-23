@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
+import { prepareStaffLogin } from "@/lib/staff-auth.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -36,6 +38,7 @@ function AuthPage() {
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const prepareLogin = useServerFn(prepareStaffLogin);
 
   useEffect(() => {
     (async () => {
@@ -94,7 +97,17 @@ function AuthPage() {
         navigate({ to: nextRoute as any });
         return;
       }
-      if (error) setStep("name");
+      if (error) {
+        if (isAdminLogin) {
+          const prepared = await prepareLogin({ data: { phone, otp, role: "admin", fullName: "Admin" } });
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: prepared.email, password });
+          if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
+          await ensureStaffRole("admin");
+          navigate({ to: nextRoute as any });
+          return;
+        }
+        setStep("name");
+      }
     } catch (e: any) {
       toast.error(e?.message || "Login failed. Please try again.");
     } finally {
@@ -109,14 +122,12 @@ function AuthPage() {
     const password = partnerPassword(phone);
     const role = isAdminLogin ? "admin" : "partner";
 
-    // Try sign-up; if account exists, sign in.
-    const { error: signUpErr } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: name.trim(), phone, role } },
-    });
-    if (signUpErr && !/already|registered|exists/i.test(signUpErr.message)) {
-      setLoading(false); toast.error(signUpErr.message); return;
+    try {
+      await prepareLogin({ data: { phone, otp, role, fullName: name.trim() } });
+    } catch (e: any) {
+      setLoading(false); toast.error(e?.message || "Could not prepare login"); return;
     }
+
     const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
     if (signInErr || !signInData.session) {
       setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
