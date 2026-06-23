@@ -252,7 +252,7 @@ function MyPlanPage() {
               </div>
               <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               <button
                 onClick={() => openSchedule("exterior")}
                 className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
@@ -270,6 +270,14 @@ function MyPlanPage() {
                 <div className="text-[10px] text-muted-foreground">Vacuum & wipe</div>
               </button>
               <button
+                onClick={() => openSchedule("dusting")}
+                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div className="mt-1.5 text-[11px] font-semibold">Dusting</div>
+                <div className="text-[10px] text-muted-foreground">Daily touch-up</div>
+              </button>
+              <button
                 onClick={() => openSchedule("any")}
                 className="rounded-xl border border-primary bg-primary/10 p-2.5 text-left"
               >
@@ -280,11 +288,15 @@ function MyPlanPage() {
             </div>
           </div>
 
+          {/* Recent service feed with photos + complaint window */}
+          <RecentServiceFeed userId={userId} demo={isDemo} />
+
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
             <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
             <StatCard icon={Clock} label="Upcoming" value={isDemo ? 2 : pendingCount} tone="primary" />
           </div>
+
 
 
           {/* Add-ons */}
