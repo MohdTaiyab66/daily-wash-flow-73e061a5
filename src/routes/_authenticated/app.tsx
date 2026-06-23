@@ -26,8 +26,8 @@ function TopBar() {
   const { data: unread = 0 } = useQuery({
     queryKey: ["partner-notifications-unread"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return 0;
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError || !u.user) return 0;
       const { count } = await supabase
         .from("partner_notifications")
         .select("id", { count: "exact", head: true })
@@ -41,8 +41,8 @@ function TopBar() {
     let channel: any;
     let cancelled = false;
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user || cancelled) return;
+      const { data: u, error } = await supabase.auth.getUser();
+      if (error || !u.user || cancelled) return;
       channel = supabase
         .channel(`topbar-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },

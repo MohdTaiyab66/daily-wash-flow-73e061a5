@@ -28,7 +28,14 @@ export function OfflineGuard({ children, label = "this section" }: { children: R
           <p className="mt-1 text-sm text-muted-foreground">Go online to access {label}.</p>
         </div>
         <Button
-          onClick={async () => { await toggle(true); toast.success("You are Online"); }}
+          onClick={async () => {
+            try {
+              await toggle(true);
+              toast.success("You are Online");
+            } catch (e: any) {
+              toast.error(e?.message || "Could not go online. Please try again.");
+            }
+          }}
           className="w-full"
         >
           Go online
