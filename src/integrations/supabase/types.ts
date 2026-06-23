@@ -2070,6 +2070,13 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_staff_login_role: {
+        Args: {
+          p_full_name?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
