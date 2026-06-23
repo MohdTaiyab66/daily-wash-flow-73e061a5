@@ -448,6 +448,8 @@ function ScheduleWashDialog({
         preferred = svcQ.data.find((s) => s.slug.includes("interior") || s.slug.includes("deep"));
       } else if (kind === "exterior") {
         preferred = svcQ.data.find((s) => s.slug.includes("basic") || s.slug.includes("exterior"));
+      } else if (kind === "dusting") {
+        preferred = svcQ.data.find((s) => s.slug.includes("dusting") || s.slug.includes("dust") || s.slug.includes("touch"));
       }
       if (!preferred) {
         preferred = svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
