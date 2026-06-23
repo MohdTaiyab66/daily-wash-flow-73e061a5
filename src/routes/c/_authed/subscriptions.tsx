@@ -87,11 +87,12 @@ function MyPlanPage() {
     _demo: true,
   };
 
-  // Plan period: 30 days from scheduled_date
+  // Plan period: Daily Shine = 24 working days (no service on Mondays).
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  const planEnd = planStart ? new Date(planStart.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+  // 24 working days ≈ 28 calendar days (one Monday skipped per week).
+  const totalDays = 24;
+  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
-  const totalDays = 30;
   const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
@@ -235,7 +236,7 @@ function MyPlanPage() {
                 title="Exterior wash"
                 icon={Droplets}
                 count={exteriorCount}
-                target={26}
+                target={20}
                 lastDate={exteriorLast}
               />
             </div>
