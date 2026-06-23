@@ -28,6 +28,7 @@ export function useToggleOnline() {
     if (!u.user) throw new Error("Please sign in again");
     const { error } = await supabase.from("partners").update({ availability: on ? "online" : "offline" }).eq("id", u.user.id);
     if (error) throw error;
+    qc.setQueryData(["me-partner"], (current: any) => current ? { ...current, availability: on ? "online" : "offline" } : current);
     qc.invalidateQueries({ queryKey: ["me-partner"] });
   };
 }
