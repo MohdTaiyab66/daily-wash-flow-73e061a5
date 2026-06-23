@@ -2104,6 +2104,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_my_service_photo_url: {
+        Args: { p_expires?: number; p_storage_path: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2141,6 +2145,25 @@ export type Database = {
           pincode: string
           registration_number: string
           vehicle_id: string
+        }[]
+      }
+      list_my_recent_services: {
+        Args: { p_days?: number }
+        Returns: {
+          booking_id: string
+          can_complain: boolean
+          complaint_window_ends_at: string
+          completed_at: string
+          has_complaint: boolean
+          partner_id: string
+          partner_name: string
+          photos: Json
+          scheduled_date: string
+          service_id: string
+          service_name: string
+          service_slug: string
+          status: string
+          vehicle_label: string
         }[]
       }
       list_partner_booking_requests: {
@@ -2194,6 +2217,14 @@ export type Database = {
           p_service_id: string
         }
         Returns: Json
+      }
+      submit_service_complaint: {
+        Args: {
+          p_complaint_type: string
+          p_description: string
+          p_service_id: string
+        }
+        Returns: string
       }
       submit_service_unavailable: {
         Args: {

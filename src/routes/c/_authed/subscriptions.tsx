@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -38,12 +39,12 @@ type AddonRow = {
 function MyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior">("any");
+  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
-  const openSchedule = (kind: "any" | "interior" | "exterior" = "any") => {
+  const openSchedule = (kind: "any" | "interior" | "exterior" | "dusting" = "any") => {
     setScheduleKind(kind);
     setScheduleOpen(true);
   };
@@ -251,7 +252,7 @@ function MyPlanPage() {
               </div>
               <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               <button
                 onClick={() => openSchedule("exterior")}
                 className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
@@ -269,6 +270,14 @@ function MyPlanPage() {
                 <div className="text-[10px] text-muted-foreground">Vacuum & wipe</div>
               </button>
               <button
+                onClick={() => openSchedule("dusting")}
+                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                <div className="mt-1.5 text-[11px] font-semibold">Dusting</div>
+                <div className="text-[10px] text-muted-foreground">Daily touch-up</div>
+              </button>
+              <button
                 onClick={() => openSchedule("any")}
                 className="rounded-xl border border-primary bg-primary/10 p-2.5 text-left"
               >
@@ -279,11 +288,15 @@ function MyPlanPage() {
             </div>
           </div>
 
+          {/* Recent service feed with photos + complaint window */}
+          <RecentServiceFeed userId={userId} demo={isDemo} />
+
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
             <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
             <StatCard icon={Clock} label="Upcoming" value={isDemo ? 2 : pendingCount} tone="primary" />
           </div>
+
 
 
           {/* Add-ons */}
@@ -376,7 +389,7 @@ function ScheduleWashDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
-  kind?: "any" | "interior" | "exterior";
+  kind?: "any" | "interior" | "exterior" | "dusting";
 }) {
 
   const qc = useQueryClient();
@@ -435,6 +448,8 @@ function ScheduleWashDialog({
         preferred = svcQ.data.find((s) => s.slug.includes("interior") || s.slug.includes("deep"));
       } else if (kind === "exterior") {
         preferred = svcQ.data.find((s) => s.slug.includes("basic") || s.slug.includes("exterior"));
+      } else if (kind === "dusting") {
+        preferred = svcQ.data.find((s) => s.slug.includes("dusting") || s.slug.includes("dust") || s.slug.includes("touch"));
       }
       if (!preferred) {
         preferred = svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
