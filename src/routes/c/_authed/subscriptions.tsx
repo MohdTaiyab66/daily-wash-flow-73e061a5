@@ -376,9 +376,21 @@ function MyPlanPage() {
 
 const SLOT_OPTIONS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
 
-type SvcOpt = { id: string; slug: string; name: string; price_hatchback: number; price_sedan_suv: number };
-type VehOpt = { id: string; make: string; model: string; category: string; registration_number: string };
+type SvcOpt = { id: string; slug: string; name: string; price_hatchback: number; price_sedan_suv: number; service_type: string };
+type VehOpt = { id: string; make: string; model: string; category: string; registration_number: string; is_default: boolean | null };
 type AddrOpt = { id: string; label: string; address_line: string; area: string; is_default: boolean | null };
+
+const PLAN_SERVICE_SLUGS: Record<"interior" | "exterior" | "dusting", string> = {
+  interior: "daily-shine-interior",
+  exterior: "daily-shine-exterior",
+  dusting: "daily-shine-dusting",
+};
+
+const PLAN_SERVICE_LABELS: Record<"interior" | "exterior" | "dusting", string> = {
+  interior: "Interior wash",
+  exterior: "Exterior wash",
+  dusting: "Dusting",
+};
 
 function ScheduleWashDialog({
   open,
@@ -411,7 +423,7 @@ function ScheduleWashDialog({
     queryFn: async (): Promise<SvcOpt[]> => {
       const { data } = await (supabase as any)
         .from("service_catalog")
-        .select("id, slug, name, price_hatchback, price_sedan_suv")
+        .select("id, slug, name, price_hatchback, price_sedan_suv, service_type")
         .eq("active", true)
         .order("sort_order");
       return (data ?? []) as SvcOpt[];
@@ -423,7 +435,7 @@ function ScheduleWashDialog({
     queryFn: async (): Promise<VehOpt[]> => {
       const { data } = await (supabase as any)
         .from("customer_vehicles")
-        .select("id, make, model, category, registration_number")
+        .select("id, make, model, category, registration_number, is_default")
         .order("created_at");
       return (data ?? []) as VehOpt[];
     },
@@ -444,21 +456,24 @@ function ScheduleWashDialog({
     if (!open) return;
     if (svcQ.data?.length) {
       let preferred: SvcOpt | undefined;
-      if (kind === "interior") {
-        preferred = svcQ.data.find((s) => s.slug.includes("interior") || s.slug.includes("deep"));
-      } else if (kind === "exterior") {
-        preferred = svcQ.data.find((s) => s.slug.includes("basic") || s.slug.includes("exterior"));
-      } else if (kind === "dusting") {
-        preferred = svcQ.data.find((s) => s.slug.includes("dusting") || s.slug.includes("dust") || s.slug.includes("touch"));
+      if (kind !== "any") {
+        preferred = svcQ.data.find((s) => s.slug === PLAN_SERVICE_SLUGS[kind]);
       }
       if (!preferred) {
         preferred = svcQ.data.find((s) => s.slug.includes("one-time") || s.slug.includes("one_time")) ?? svcQ.data[0];
       }
       setServiceId(preferred.id);
     }
-    if (!vehicleId && vehQ.data?.length) {
+    if (vehQ.data?.length) {
       const stored = localStorage.getItem("uw_customer_vehicle");
-      setVehicleId(stored && vehQ.data.some((v) => v.id === stored) ? stored : vehQ.data[0].id);
+      const nextVehicleId =
+        stored && vehQ.data.some((v) => v.id === stored)
+          ? stored
+          : (vehQ.data.find((v) => v.is_default)?.id ?? vehQ.data[0].id);
+      if (!vehicleId || !vehQ.data.some((v) => v.id === vehicleId)) {
+        setVehicleId(nextVehicleId);
+        localStorage.setItem("uw_customer_vehicle", nextVehicleId);
+      }
     }
     if (!addressId && addrQ.data?.length) {
       const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
@@ -469,6 +484,15 @@ function ScheduleWashDialog({
 
   const service = svcQ.data?.find((s) => s.id === serviceId);
   const vehicle = vehQ.data?.find((v) => v.id === vehicleId);
+  const planServices = useMemo(
+    () => (svcQ.data ?? []).filter((s) => Object.values(PLAN_SERVICE_SLUGS).includes(s.slug)),
+    [svcQ.data],
+  );
+  const customServices = useMemo(
+    () => (svcQ.data ?? []).filter((s) => !Object.values(PLAN_SERVICE_SLUGS).includes(s.slug) && s.service_type !== "subscription"),
+    [svcQ.data],
+  );
+  const serviceOptions = kind === "any" ? customServices : planServices;
   const isSUV = vehicle?.category === "sedan_suv";
   const price = useMemo(() => {
     if (!service) return 0;
@@ -477,8 +501,8 @@ function ScheduleWashDialog({
 
   const confirm = async () => {
     if (!userId) { toast.error("Please sign in again"); return; }
-    if (!service) { toast.error("Pick a service"); return; }
-    if (!vehicle) { toast.error("Add a vehicle first"); return; }
+    if (!service) { toast.error(kind === "any" ? "Pick a service" : "This plan service is not available yet"); return; }
+    if (!vehicle) { toast.error("Please select one of your vehicles"); return; }
     if (!addressId) { toast.error("Add a service address first"); return; }
     setSaving(true);
     try {
@@ -538,14 +562,20 @@ function ScheduleWashDialog({
             <select
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
+              disabled={kind !== "any"}
               className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
             >
-              {(svcQ.data ?? []).map((s) => (
+              {serviceOptions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} · ₹{isSUV ? s.price_sedan_suv : s.price_hatchback}
+                  {s.name} · {Number(isSUV ? s.price_sedan_suv : s.price_hatchback) === 0 ? "Included" : `₹${isSUV ? s.price_sedan_suv : s.price_hatchback}`}
                 </option>
               ))}
             </select>
+            {kind !== "any" && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Scheduling your unused {PLAN_SERVICE_LABELS[kind]} from Daily Shine. Use Custom for extra paid services.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -553,14 +583,20 @@ function ScheduleWashDialog({
               <Label className="text-xs">Vehicle</Label>
               <select
                 value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
+                onChange={(e) => {
+                  setVehicleId(e.target.value);
+                  localStorage.setItem("uw_customer_vehicle", e.target.value);
+                }}
                 disabled={noVehicles}
                 className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
               >
                 {(vehQ.data ?? []).map((v) => (
-                  <option key={v.id} value={v.id}>{v.model} · {v.registration_number}</option>
+                  <option key={v.id} value={v.id}>{v.make} {v.model} · {v.registration_number}</option>
                 ))}
               </select>
+              {(vehQ.data?.length ?? 0) > 1 && (
+                <p className="mt-1 text-[11px] text-muted-foreground">Choose which subscribed car this wash is for.</p>
+              )}
             </div>
             <div>
               <Label className="text-xs">Address</Label>
@@ -601,8 +637,8 @@ function ScheduleWashDialog({
           </div>
 
           <div className="flex items-baseline justify-between rounded-xl bg-accent/40 px-3 py-2">
-            <span className="text-xs text-muted-foreground">Total · pay after service</span>
-            <span className="text-base font-semibold">₹{price}</span>
+            <span className="text-xs text-muted-foreground">Total · {price === 0 ? "included in plan" : "pay after service"}</span>
+            <span className="text-base font-semibold">{price === 0 ? "Included" : `₹${price}`}</span>
           </div>
         </div>
         <DialogFooter>
