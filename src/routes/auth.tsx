@@ -76,6 +76,13 @@ function AuthPage() {
         const uid = data.session.user.id;
         const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
         if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+        try {
+          await ensureStaffRole("partner", partner.full_name);
+        } catch (e: any) {
+          setLoading(false);
+          toast.error(e.message || "Partner access is not enabled for this phone");
+          return;
+        }
       } else {
         try {
           await ensureStaffRole("admin");
