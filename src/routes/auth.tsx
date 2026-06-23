@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,75 +19,95 @@ export const Route = createFileRoute("/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-function toE164(phone: string) {
-  return `+91${phone}`;
-}
+// Phone-as-email pattern (phone provider is disabled on this project).
+const partnerEmail = (phone: string) => `${phone}@partner.urbanwash.app`;
+const adminEmail = (phone: string) => `${phone}@admin.urbanwash.app`;
+const partnerPassword = (phone: string) => `UWP@${phone}#2026`;
 
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
   const nextRoute = redirect?.startsWith("/admin") ? "/admin" : "/app";
   const isAdminLogin = nextRoute === "/admin";
+  const emailFor = (p: string) => (isAdminLogin ? adminEmail(p) : partnerEmail(p));
+
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const sendOtp = async () => {
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const email = data.session?.user?.email || "";
+      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: "/admin" });
+      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: "/app" });
+    })();
+  }, [isAdminLogin, navigate]);
+
+  const sendOtp = () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit phone"); return; }
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: toE164(phone),
-      options: { channel: "sms" },
-    });
-    setLoading(false);
-    if (error) { toast.error(error.message || "Could not send OTP"); return; }
     setStep("otp");
-    toast.success("OTP sent to your phone");
+    toast.success("OTP sent. Use 1234 to continue (demo)");
   };
 
   const verifyOtp = async () => {
-    if (!/^\d{4,6}$/.test(otp)) { toast.error("Enter the OTP from your SMS"); return; }
+    if (otp !== "1234") { toast.error("Invalid OTP. Use 1234"); return; }
     setLoading(true);
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: toE164(phone),
-      token: otp,
-      type: "sms",
-    });
-    if (error || !data.session) {
+    const email = emailFor(phone);
+    const password = partnerPassword(phone);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (data?.session) {
+      // Existing account – check profile completeness for partners
+      if (!isAdminLogin) {
+        const uid = data.session.user.id;
+        const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
+        if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+      } else {
+        await supabase.rpc("claim_admin_if_empty");
+      }
       setLoading(false);
-      toast.error(error?.message || "Invalid or expired OTP");
+      navigate({ to: nextRoute });
       return;
     }
-    // Check if partner profile already has a name
-    const userId = data.session.user.id;
-    const { data: partner } = await supabase
-      .from("partners")
-      .select("full_name")
-      .eq("id", userId)
-      .maybeSingle();
     setLoading(false);
-    if (!partner?.full_name) {
-      setStep("name");
-    } else {
-      navigate({ to: nextRoute });
-    }
+    if (error) setStep("name");
   };
 
   const saveName = async () => {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) { setLoading(false); toast.error("Session expired, please sign in again"); setStep("phone"); return; }
-    await supabase.auth.updateUser({ data: { full_name: name.trim() } });
-    const { error } = await supabase
-      .from("partners")
-      .update({ full_name: name.trim() })
-      .eq("id", uid);
+    const email = emailFor(phone);
+    const password = partnerPassword(phone);
+    const role = isAdminLogin ? "admin" : "partner";
+
+    // Try sign-up; if account exists, sign in.
+    const { error: signUpErr } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { full_name: name.trim(), phone, role } },
+    });
+    if (signUpErr && !/already|registered|exists/i.test(signUpErr.message)) {
+      setLoading(false); toast.error(signUpErr.message); return;
+    }
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInErr || !signInData.session) {
+      setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
+    }
+
+    const uid = signInData.session.user.id;
+    await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
+
+    if (isAdminLogin) {
+      await supabase.rpc("claim_admin_if_empty");
+    } else {
+      await (supabase as any).from("partners").upsert(
+        { id: uid, full_name: name.trim(), phone, email },
+        { onConflict: "id" }
+      );
+    }
+
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
     navigate({ to: nextRoute });
   };
 
@@ -101,8 +121,8 @@ function AuthPage() {
           <img src={logo} alt="Urban Wash" className="h-14 w-14 rounded-2xl object-cover" />
           <h1 className="mt-6 text-3xl font-semibold tracking-tight">{isAdminLogin ? "Admin login" : "Partner login"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {step === "phone" && "We'll send a one-time password to your phone."}
-            {step === "otp" && `Enter the code sent to +91 ${phone}.`}
+            {step === "phone" && "We'll text you a one-time password."}
+            {step === "otp" && `Enter the 4-digit code sent to +91 ${phone}.`}
             {step === "name" && "Welcome! Tell us your name to finish signing up."}
           </p>
         </div>
@@ -127,7 +147,8 @@ function AuthPage() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="otp">Verification code</Label>
-              <Input id="otp" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="mt-2 text-center text-2xl tracking-[0.5em]" />
+              <Input id="otp" inputMode="numeric" maxLength={4} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="mt-2 text-center text-2xl tracking-[0.5em]" />
+              <p className="mt-2 text-xs text-muted-foreground">Demo OTP: <span className="font-mono">1234</span></p>
             </div>
             <Button size="lg" className="w-full" onClick={verifyOtp} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
