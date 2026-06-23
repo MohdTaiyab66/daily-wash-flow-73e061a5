@@ -125,6 +125,25 @@ function HomePage() {
             <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("view_todays_route")}</Link>
           </Button>
         </Card>
+      ) : total > 0 ? (
+        <Card className="mt-5 border-0 bg-foreground p-5 text-background">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-background/60">Today's bookings</p>
+              <p className="mt-1 text-lg font-semibold">{total} customer service{total === 1 ? "" : "s"}</p>
+              <p className="mt-0.5 text-xs text-background/60">Bookings accepted from customers are ready in your route.</p>
+            </div>
+            <Badge className="border-0 bg-primary text-primary-foreground">Live</Badge>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
+            <div><p className="text-background/60">Assigned</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
+            <div><p className="text-background/60">Done</p><p className="mt-0.5 text-base font-semibold">{completed}</p></div>
+            <div><p className="text-background/60">Left</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
+          </div>
+          <Button asChild variant="secondary" className="mt-4 w-full">
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Open today's route</Link>
+          </Button>
+        </Card>
       ) : (
         <Card className="mt-5 flex flex-col items-center gap-3 p-8 text-center">
           <Briefcase className="h-6 w-6 text-muted-foreground" />

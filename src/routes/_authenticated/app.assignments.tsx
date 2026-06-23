@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun, BellRing, Crosshair, AlertTriangle } from "lucide-react";
+import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun, BellRing, Crosshair, AlertTriangle, Inbox, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -72,6 +72,17 @@ function AssignmentsPage() {
     },
   });
 
+  const { data: bookingRequests = [], isLoading: loadingBookings } = useQuery({
+    queryKey: ["partner-booking-requests"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_partner_booking_requests");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !active && !!partner?.home_area,
+    refetchInterval: 30000,
+  });
+
   // Accepted assignments live on the My Assignment page — redirect.
   useEffect(() => {
     if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
@@ -102,6 +113,20 @@ function AssignmentsPage() {
       navigate({ to: "/app/my-assignment" });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
+  });
+
+  const claimBooking = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { data, error } = await (supabase as any).rpc("claim_customer_booking", { p_booking_id: bookingId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Booking added to today's route");
+      qc.invalidateQueries();
+      navigate({ to: "/app/live" });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not accept booking"),
   });
 
   const toggleNotify = useMutation({
@@ -193,6 +218,38 @@ function AssignmentsPage() {
           <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{(previewError as Error).message}</span></div>
         </Card>
       )}
+
+      <Card className="mt-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer bookings</p>
+            <h2 className="mt-1 text-base font-semibold">Ready to add to your route</h2>
+          </div>
+          <Inbox className="h-5 w-5 text-primary" />
+        </div>
+        <div className="mt-3 space-y-2">
+          {loadingBookings && <p className="py-3 text-sm text-muted-foreground">Checking new bookings…</p>}
+          {!loadingBookings && bookingRequests.length === 0 && (
+            <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">No customer bookings waiting in {partner.home_area} right now.</p>
+          )}
+          {bookingRequests.slice(0, 4).map((b: any) => (
+            <div key={b.booking_id} className="rounded-xl border border-border p-3">
+              <div className="flex items-start gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><UserRound className="h-4 w-4" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{b.service_name}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{b.customer_name} · {b.vehicle_label || "Vehicle"} {b.registration_number ? `· ${b.registration_number}` : ""}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{b.scheduled_date} · {b.scheduled_time || "Flexible"} · ₹{b.total_amount}</p>
+                </div>
+              </div>
+              <Button size="sm" className="mt-3 w-full" disabled={claimBooking.isPending} onClick={() => claimBooking.mutate(b.booking_id)}>
+                {claimBooking.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                Accept booking
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {/* Live calculation */}
       <Card className="mt-4 border-0 bg-foreground p-5 text-background">
