@@ -91,7 +91,7 @@ function AuthPage() {
             return;
           }
         }
-        navigate({ to: nextRoute });
+        navigate({ to: nextRoute as any });
         return;
       }
       if (error) setStep("name");
@@ -133,7 +133,7 @@ function AuthPage() {
     }
 
     setLoading(false);
-    navigate({ to: nextRoute });
+    navigate({ to: nextRoute as any });
   };
 
   return (
