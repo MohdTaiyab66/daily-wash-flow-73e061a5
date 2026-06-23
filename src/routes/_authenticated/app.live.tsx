@@ -29,9 +29,12 @@ function RoutePage() {
     queryKey: ["route-today"],
     queryFn: async () => {
       const d = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
       const { data } = await supabase
         .from("services")
         .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
       return data ?? [];

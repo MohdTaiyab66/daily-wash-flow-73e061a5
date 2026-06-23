@@ -72,7 +72,7 @@ function AuthPage() {
       const password = partnerPassword(phone);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (data?.session) {
-      // Existing account – check profile completeness for partners
+        // Existing account – check profile completeness for partners
         if (!isAdminLogin) {
           const uid = data.session.user.id;
           const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();

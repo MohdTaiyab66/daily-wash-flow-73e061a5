@@ -573,7 +573,7 @@ async function getPosition(): Promise<{ lat: number; lng: number } | null> {
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
       () => resolve(null),
-      { timeout: 4000, maximumAge: 30000 },
+      { enableHighAccuracy: false, timeout: 1500, maximumAge: 300000 },
     );
   });
 }
