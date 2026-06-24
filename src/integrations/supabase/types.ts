@@ -974,6 +974,47 @@ export type Database = {
           },
         ]
       }
+      partner_reliability_events: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          delta: number
+          event_type: Database["public"]["Enums"]["reliability_event_type"]
+          id: string
+          note: string | null
+          partner_id: string
+          service_id: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          delta: number
+          event_type: Database["public"]["Enums"]["reliability_event_type"]
+          id?: string
+          note?: string | null
+          partner_id: string
+          service_id?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          delta?: number
+          event_type?: Database["public"]["Enums"]["reliability_event_type"]
+          id?: string
+          note?: string | null
+          partner_id?: string
+          service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_reliability_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           aadhaar_number: string | null
@@ -1013,6 +1054,8 @@ export type Database = {
           rating: number
           referral_code: string
           referred_by: string | null
+          reliability_events_count: number
+          reliability_score: number
           status: Database["public"]["Enums"]["partner_status"]
           total_cars_completed: number
           training_completion_pct: number
@@ -1056,6 +1099,8 @@ export type Database = {
           rating?: number
           referral_code?: string
           referred_by?: string | null
+          reliability_events_count?: number
+          reliability_score?: number
           status?: Database["public"]["Enums"]["partner_status"]
           total_cars_completed?: number
           training_completion_pct?: number
@@ -1099,6 +1144,8 @@ export type Database = {
           rating?: number
           referral_code?: string
           referred_by?: string | null
+          reliability_events_count?: number
+          reliability_score?: number
           status?: Database["public"]["Enums"]["partner_status"]
           total_cars_completed?: number
           training_completion_pct?: number
@@ -1580,6 +1627,8 @@ export type Database = {
           id: string
           lat: number | null
           lng: number | null
+          lock_until: string | null
+          locked_partner_id: string | null
           offer_expires_at: string | null
           radius_km: number
           service_required_before: string | null
@@ -1599,6 +1648,8 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          lock_until?: string | null
+          locked_partner_id?: string | null
           offer_expires_at?: string | null
           radius_km?: number
           service_required_before?: string | null
@@ -1618,6 +1669,8 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          lock_until?: string | null
+          locked_partner_id?: string | null
           offer_expires_at?: string | null
           radius_km?: number
           service_required_before?: string | null
@@ -2233,6 +2286,10 @@ export type Database = {
           total_active: number
         }[]
       }
+      can_reassign_subscription: {
+        Args: { _actor_role: string; _queue_id: string }
+        Returns: boolean
+      }
       cancel_assignment: {
         Args: { p_assignment_id: string }
         Returns: undefined
@@ -2353,6 +2410,16 @@ export type Database = {
           vehicle_label: string
         }[]
       }
+      log_reliability_event: {
+        Args: {
+          _assignment_id?: string
+          _event_type: Database["public"]["Enums"]["reliability_event_type"]
+          _note?: string
+          _partner_id: string
+          _service_id?: string
+        }
+        Returns: undefined
+      }
       modify_assignment: {
         Args: { p_assignment_id: string; p_delta: number }
         Returns: Json
@@ -2454,6 +2521,14 @@ export type Database = {
       payout_status: "pending" | "processing" | "paid" | "failed"
       photo_angle: "front" | "rear" | "left" | "right"
       photo_stage: "before" | "after"
+      reliability_event_type:
+        | "assignment_accepted"
+        | "service_completed"
+        | "on_time_service"
+        | "customer_complaint"
+        | "missed_service"
+        | "assignment_cancelled"
+        | "repeated_unavailability"
       service_status:
         | "pending"
         | "in_progress"
@@ -2610,6 +2685,15 @@ export const Constants = {
       payout_status: ["pending", "processing", "paid", "failed"],
       photo_angle: ["front", "rear", "left", "right"],
       photo_stage: ["before", "after"],
+      reliability_event_type: [
+        "assignment_accepted",
+        "service_completed",
+        "on_time_service",
+        "customer_complaint",
+        "missed_service",
+        "assignment_cancelled",
+        "repeated_unavailability",
+      ],
       service_status: [
         "pending",
         "in_progress",
