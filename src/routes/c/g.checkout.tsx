@@ -103,16 +103,34 @@ function GuestCheckout() {
 
         {/* Vehicle (guest) */}
         <div className="rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-primary" />
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Vehicle</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4 text-primary" />
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Vehicle</p>
+            </div>
+            <button
+              onClick={() => navigate({ to: "/c/g/vehicles" })}
+              className="text-xs text-primary font-medium"
+            >
+              {cart.vehicle ? "Switch" : "Add"}
+            </button>
           </div>
-          <p className="mt-1 text-sm font-semibold">
-            {isSUV ? "Sedan / SUV" : "Hatchback"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            You'll add registration after login.
-          </p>
+          {cart.vehicle ? (
+            <>
+              <p className="mt-1 text-sm font-semibold">
+                {cart.vehicle.make} {cart.vehicle.model}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {cart.vehicle.bodyLabel ?? (isSUV ? "Sedan / SUV" : "Hatchback")}
+                {cart.vehicle.registration ? ` • ${cart.vehicle.registration}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-sm font-semibold">{isSUV ? "Sedan / SUV" : "Hatchback"}</p>
+              <p className="text-xs text-muted-foreground">Add your car to lock in this price.</p>
+            </>
+          )}
         </div>
 
         {/* Address */}
