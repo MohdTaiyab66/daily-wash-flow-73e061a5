@@ -31,7 +31,7 @@ function LocationSearch() {
     localStorage.setItem("uw_customer_area", name);
     localStorage.setItem("uw_customer_full_address", `${name}, Lucknow`);
     toast.success(`Location set: ${name}`);
-    navigate({ to: "/c/home" });
+    navigate({ to: "/c/services" });
   };
 
   const useGPS = () => {
