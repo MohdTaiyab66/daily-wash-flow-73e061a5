@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CIndexRouteImport } from './routes/c/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CWelcomeRouteImport } from './routes/c/welcome'
+import { Route as CServicesRouteImport } from './routes/c/services'
 import { Route as CLocationRouteImport } from './routes/c/location'
 import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
@@ -101,6 +102,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const CWelcomeRoute = CWelcomeRouteImport.update({
   id: '/c/welcome',
   path: '/c/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CServicesRoute = CServicesRouteImport.update({
+  id: '/c/services',
+  path: '/c/services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CLocationRoute = CLocationRouteImport.update({
@@ -367,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
+  '/c/services': typeof CServicesRoute
   '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
@@ -420,6 +427,7 @@ export interface FileRoutesByTo {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
+  '/c/services': typeof CServicesRoute
   '/c/welcome': typeof CWelcomeRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
@@ -476,6 +484,7 @@ export interface FileRoutesById {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
+  '/c/services': typeof CServicesRoute
   '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
@@ -533,6 +542,7 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
+    | '/c/services'
     | '/c/welcome'
     | '/admin/'
     | '/c/'
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
+    | '/c/services'
     | '/c/welcome'
     | '/admin'
     | '/app/area'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
+    | '/c/services'
     | '/c/welcome'
     | '/admin/'
     | '/c/'
@@ -680,6 +692,7 @@ export interface RootRouteChildren {
   CAuthedRouteRoute: typeof CAuthedRouteRouteWithChildren
   CAuthRoute: typeof CAuthRoute
   CLocationRoute: typeof CLocationRouteWithChildren
+  CServicesRoute: typeof CServicesRoute
   CWelcomeRoute: typeof CWelcomeRoute
   CIndexRoute: typeof CIndexRoute
 }
@@ -740,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/c/welcome'
       fullPath: '/c/welcome'
       preLoaderRoute: typeof CWelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/services': {
+      id: '/c/services'
+      path: '/c/services'
+      fullPath: '/c/services'
+      preLoaderRoute: typeof CServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/location': {
@@ -1230,19 +1250,10 @@ const rootRouteChildren: RootRouteChildren = {
   CAuthedRouteRoute: CAuthedRouteRouteWithChildren,
   CAuthRoute: CAuthRoute,
   CLocationRoute: CLocationRouteWithChildren,
+  CServicesRoute: CServicesRoute,
   CWelcomeRoute: CWelcomeRoute,
   CIndexRoute: CIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
