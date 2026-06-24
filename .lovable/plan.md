@@ -1,89 +1,88 @@
-# Daily Shine Auto-Assignment Marketplace
+# Daily Shine Marketplace — Round 2 Enhancements
 
-When a customer's Daily Shine (or Hybrid Daily Shine) payment succeeds, the customer enters an "Awaiting Partner Assignment" queue. The system offers the booking to partners in priority order with timers, expands the radius if no one accepts, and assigns the first acceptor — then optimizes their route.
+Scope: improve partner acceptance UX, smarter ranking, customer trust signal, and run a true end-to-end verification of the flow. No new tables.
 
-## Scope
+## 1. Richer Partner Offer Card
 
-Subscription services with `service_catalog.kind IN ('daily_shine','hybrid_daily_shine')`. Single code path for both. One-shot bookings keep their existing flow.
+File: `src/components/partner/DailyShineOfferCard.tsx`
 
-## Data model (new)
+Show before Accept/Decline:
+- 🚗 Vehicle: `make model` + category (from `customer_vehicles`)
+- 📍 Area name (from customer address)
+- ⏰ Service deadline window (e.g. "Before 8:00 AM" from `platform_settings.daily_shine_cutoff` or default)
+- 📏 Distance from partner's current route in meters (already computed server-side; surface it)
+- 💰 `+₹X/day` and `+₹X/month` projected extra earnings (already returned, relabel + show both)
+- 🕒 Approx. minutes added to route — new field `route_delta_minutes` returned from offer
 
-**`subscription_assignment_queue`** — one row per pending subscription booking.
-- `booking_id` (unique), `customer_id`, `area`, `lat`, `lng`, `service_required_before`, `vehicle_category`
-- `status`: `awaiting | offered | accepted | broadcast_area | broadcast_city | assigned | failed`
-- `assigned_partner_id`, `current_offer_partner_id`, `offer_expires_at`
-- `radius_km` (starts 0 → 2 → 5 → 10 → 15), `attempts_log jsonb`
-- `created_at`, `updated_at`
+Server: extend `pick_next_partner_for_queue` / `offer_next_for_queue` RPCs and `subscription_offers` row payload with `route_delta_seconds`, `distance_from_route_m`, `extra_per_day_paise`, `extra_per_month_paise`, `vehicle_label`, `area_label`, `deadline_label`. Compute `route_delta_seconds` via a lightweight insertion heuristic in `src/lib/route-optimize.ts` (already exists) — wrap as `estimateInsertionCostSeconds(partnerId, newPoint)` and expose through a server function the RPC can call, OR compute in TS inside `offerNextPartner` server-fn (preferred — keep SQL simple).
 
-**`subscription_offers`** — audit + active offer rows.
-- `queue_id`, `partner_id`, `offered_at`, `expires_at`, `response` (`pending|accepted|declined|timeout`), `responded_at`, `distance_m`, `projected_extra_earnings`
+Decision: move the ranking + enrichment from RPC into the existing `offerNextPartner` server function so we can use the TS route-optimizer. The RPC becomes a thin "list candidate partners in radius" query.
 
-**`partners`** — add `max_daily_cars int default 25`, `accepting_new boolean default true`.
+## 2. Smart Assignment Score
 
-**`platform_settings`** keys: `auto_assign_enabled` (bool), `auto_assign_timeout_sec` (30/60/90), `auto_assign_radius_steps` (jsonb `[2,5,10,15]`), `auto_assign_max_per_partner` (int), `auto_assign_min_per_partner` (int).
+Currently: distance + area + capacity.
+New ranking inside `offerNextPartner`:
 
-All tables: GRANT to `authenticated` + `service_role`, RLS on, policies scoped via `has_role` / `auth.uid()`.
+```text
+score =
+   0.45 * (1 - route_delta_minutes / 20)      // route impact (clamped)
+ + 0.20 * (1 - distance_km / radius_km)        // proximity
+ + 0.15 * partner.rating / 5                   // reliability
+ + 0.10 * (1 - current_load / max_daily_cars)  // capacity headroom
+ + 0.10 * deadline_urgency                     // 1 if <2h to deadline, else 0.3
+```
 
-## Server logic
+Sort candidates desc by score; offer to top one. Persist the score breakdown in `subscription_offers.score_breakdown` jsonb so admin can audit.
 
-`src/lib/subscription-assignment.functions.ts` (createServerFn, server-only helpers in `.server.ts`):
+Migration: add nullable columns to `subscription_offers`:
+- `route_delta_seconds int`
+- `distance_from_route_m int`
+- `extra_per_day_paise int`
+- `extra_per_month_paise int`
+- `score numeric`
+- `score_breakdown jsonb`
 
-- `enqueueSubscriptionBooking({ bookingId })` — called from existing payment-success path. Inserts queue row, calls `offerNextPartner`.
-- `offerNextPartner({ queueId })` — picks best candidate (see ranking), inserts `subscription_offers`, sets `current_offer_partner_id` + `offer_expires_at = now + timeout`, sends `partner_notifications` row + realtime broadcast.
-- `respondToOffer({ offerId, accept })` — partner action. On accept: transaction creates/extends today's `assignment` for that partner, inserts `services` rows for remaining days of subscription window, recomputes route via existing `route-optimize.ts`, marks queue `assigned`, notifies customer. On decline/timeout: `offerNextPartner` again.
-- `expireStaleOffers()` — cron-style sweep called by a public `/api/public/cron/assignment-tick` route (signature-verified) every minute; promotes `awaiting → broadcast_area → broadcast_city` per radius steps.
+(`vehicle_label`/`area_label`/`deadline_label` derived at render time from joins — no new columns.)
 
-Ranking (single SQL): partners with `accepting_new=true`, `status='active'`, `home_area = customer.area`, current day-load `< max_daily_cars`, ordered by:
-1. min distance to any of partner's today services (haversine), else distance from `home_lat/lng`
-2. higher `rating`
-3. lower current day-load
+## 3. Customer Assignment Notification
 
-For area broadcast: same query without `home_area` filter, with radius cap. For city broadcast: expand radius across `auto_assign_radius_steps`.
+On partner accept (`respondToOffer` accept branch):
+- Insert a `customer_notifications` row OR (since table may not exist) reuse existing customer toast/banner pattern. Check: query `supabase-tables` shows no `customer_notifications` — use the existing `AwaitingPartnerBanner` realtime channel. When `subscription_assignment_queue.status = 'assigned'`, banner flips to a success card showing:
+  - Partner name + photo
+  - ⭐ rating
+  - Assigned date (now)
+  - Service start date (tomorrow or today if before cutoff)
+- File: `src/components/customer/AwaitingPartnerBanner.tsx` — add `AssignedPartnerCard` sub-view rendered when status==='assigned', fetching partner via existing join.
 
-## Frontend
+No new notification table needed for v1; banner + realtime is sufficient. Push notification can be added later via existing `push_tokens`.
 
-**Customer**
-- `src/routes/c/_authed/subscriptions.tsx` — show "Awaiting Partner Assignment" badge with live status (realtime channel on `subscription_assignment_queue` filtered by user). On `assigned`, show partner name, rating, start date.
-- Post-payment toast updated to "Subscription activated. Assigning partner for your area."
+## 4. End-to-End Verification
 
-**Partner**
-- `src/routes/_authenticated/app.assignments.tsx` — top card "New Daily Shine Customer Available" when an offer exists for them. Shows area, vehicle, projected extra ₹, distance from route (e.g. "150 m from your route"), Accept/Decline, live countdown to `offer_expires_at`. Realtime subscription on `subscription_offers` filtered by partner.
-- Area broadcast: same card, no timer, "First to accept wins".
-- `src/routes/_authenticated/app.profile.tsx` — add Max Daily Cars selector (15/20/25/30/35) and Accepting-new toggle.
+Drive Playwright through the full flow against localhost:
+1. Customer login → select vehicle → buy Daily Shine → mock Razorpay success
+2. Verify `subscription_assignment_queue` row created (`status=awaiting`)
+3. Verify `subscription_offers` row created with enriched fields populated
+4. Login as partner → see offer card with all 7 info rows
+5. Click Accept → verify:
+   - `subscription_assignment_queue.status='assigned'`
+   - `assignments` row exists/extended for today
+   - `services` rows generated for remaining days
+   - `earnings` updated
+6. Switch to customer view → banner shows "Partner Assigned" card with name/rating/dates
+7. Switch to admin → `admin.manual-assignment` shows the assignment
 
-**Admin**
-- `src/routes/admin.settings.tsx` — add Auto-Assignment section (timeout, radius steps, min/max per partner, ON/OFF).
-- `src/routes/admin.manual-assignment.tsx` — show queue rows + manual-override Assign button.
+Capture screenshots at each step. Report any breakage and fix before declaring done.
 
-## Route optimization
+## Files Touched
 
-On accept, run existing `route-optimize.ts` for partner+date and persist the new `sequence_no` on `services`. Insert the new customer at the best position, not appended.
+- `src/components/partner/DailyShineOfferCard.tsx` — richer card UI
+- `src/components/customer/AwaitingPartnerBanner.tsx` — assigned-partner success view
+- `src/lib/subscription-assignment.functions.ts` — move ranking + enrichment to TS, persist score
+- `src/lib/route-optimize.ts` — add `estimateInsertionCostSeconds` helper
+- Migration — add 6 columns to `subscription_offers`
 
-## Realtime
+## Out of Scope (defer)
 
-`ALTER PUBLICATION supabase_realtime ADD TABLE subscription_assignment_queue, subscription_offers;` Customer, partner, admin all subscribe via `useEffect` channels (per cloud-realtime rules).
-
-## Cron
-
-Public route `src/routes/api/public/cron/assignment-tick.ts` — HMAC-verified, calls `expireStaleOffers()`. Configured via pg_cron to hit `project--{id}.lovable.app/api/public/cron/assignment-tick` every 60s.
-
-## Files to add / edit
-
-- Migration: tables, columns, settings, RLS, realtime publication
-- `src/lib/subscription-assignment.functions.ts` (new)
-- `src/lib/subscription-assignment.server.ts` (new — ranking SQL, route recompute)
-- `src/routes/api/public/cron/assignment-tick.ts` (new)
-- `src/routes/c/_authed/subscriptions.tsx` (edit)
-- `src/routes/_authenticated/app.assignments.tsx` (edit — offer card)
-- `src/routes/_authenticated/app.profile.tsx` (edit — capacity)
-- `src/routes/admin.settings.tsx` (edit — auto-assign config)
-- `src/routes/admin.manual-assignment.tsx` (edit — queue view)
-- Hook payment-success path (existing booking confirmation) to call `enqueueSubscriptionBooking` when service kind is daily_shine / hybrid_daily_shine
-
-## Open questions
-
-1. **Trigger point**: Should enqueue happen on `payment_status='paid'` for the booking, or only after admin marks subscription active? I'll default to immediately on successful payment.
-2. **Subscription window**: Use `customers.subscription_start..subscription_end` to materialize daily `services` rows, or just register the partner and let the existing daily cron generate services? Default: register partner on the queue row, then existing assignment flow picks up daily services.
-3. **No partner found**: After city broadcast exhausts, mark `failed` and notify admin via `partner_notifications` to a synthetic admin channel? Default yes.
-
-I'll assume the defaults above unless you say otherwise.
+- Push notifications to customer device
+- Partner offer history UI
+- Admin score-breakdown visualization (data persisted, UI later)

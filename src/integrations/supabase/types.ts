@@ -1694,8 +1694,11 @@ export type Database = {
       subscription_offers: {
         Row: {
           created_at: string
+          distance_from_route_m: number | null
           distance_m: number | null
           expires_at: string | null
+          extra_per_day_paise: number | null
+          extra_per_month_paise: number | null
           id: string
           offered_at: string
           partner_id: string
@@ -1703,12 +1706,18 @@ export type Database = {
           queue_id: string
           responded_at: string | null
           response: string
+          route_delta_seconds: number | null
           scope: string
+          score: number | null
+          score_breakdown: Json | null
         }
         Insert: {
           created_at?: string
+          distance_from_route_m?: number | null
           distance_m?: number | null
           expires_at?: string | null
+          extra_per_day_paise?: number | null
+          extra_per_month_paise?: number | null
           id?: string
           offered_at?: string
           partner_id: string
@@ -1716,12 +1725,18 @@ export type Database = {
           queue_id: string
           responded_at?: string | null
           response?: string
+          route_delta_seconds?: number | null
           scope?: string
+          score?: number | null
+          score_breakdown?: Json | null
         }
         Update: {
           created_at?: string
+          distance_from_route_m?: number | null
           distance_m?: number | null
           expires_at?: string | null
+          extra_per_day_paise?: number | null
+          extra_per_month_paise?: number | null
           id?: string
           offered_at?: string
           partner_id?: string
@@ -1729,7 +1744,10 @@ export type Database = {
           queue_id?: string
           responded_at?: string | null
           response?: string
+          route_delta_seconds?: number | null
           scope?: string
+          score?: number | null
+          score_breakdown?: Json | null
         }
         Relationships: [
           {
@@ -2344,6 +2362,17 @@ export type Database = {
       pick_next_partner_for_queue: {
         Args: { p_queue_id: string; p_radius_km?: number; p_scope?: string }
         Returns: string
+      }
+      pick_scored_partner_for_queue: {
+        Args: { p_queue_id: string; p_radius_km?: number; p_scope?: string }
+        Returns: {
+          dist_km: number
+          distance_from_route_m: number
+          partner_id: string
+          route_delta_sec: number
+          score: number
+          score_breakdown: Json
+        }[]
       }
       preview_assignment: {
         Args: { p_cars: number; p_duration: number }
