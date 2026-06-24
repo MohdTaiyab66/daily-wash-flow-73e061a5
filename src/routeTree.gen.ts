@@ -28,6 +28,7 @@ import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
@@ -157,6 +158,11 @@ const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminManualAssignmentRoute = AdminManualAssignmentRouteImport.update({
@@ -363,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -417,6 +424,7 @@ export interface FileRoutesByTo {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -474,6 +482,7 @@ export interface FileRoutesById {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
@@ -532,6 +541,7 @@ export interface FileRouteTypes {
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
+    | '/admin/marketplace'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
+    | '/admin/marketplace'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
+    | '/admin/marketplace'
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
@@ -830,6 +842,13 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/admin/partners'
       preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace': {
+      id: '/admin/marketplace'
+      path: '/marketplace'
+      fullPath: '/admin/marketplace'
+      preLoaderRoute: typeof AdminMarketplaceRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/manual-assignment': {
@@ -1152,6 +1171,7 @@ interface AdminRouteChildren {
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
+  AdminMarketplaceRoute: typeof AdminMarketplaceRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
@@ -1176,6 +1196,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
+  AdminMarketplaceRoute: AdminMarketplaceRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,
