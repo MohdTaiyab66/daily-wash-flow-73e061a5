@@ -41,6 +41,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
+import { Route as CGVehiclesRouteImport } from './routes/c/g.vehicles'
 import { Route as CGCheckoutRouteImport } from './routes/c/g.checkout'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
@@ -61,6 +62,7 @@ import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
+import { Route as CGVehiclesAddRouteImport } from './routes/c/g.vehicles.add'
 import { Route as CGServiceSlugRouteImport } from './routes/c/g.service.$slug'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
@@ -226,6 +228,11 @@ const CLocationSearchRoute = CLocationSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => CLocationRoute,
 } as any)
+const CGVehiclesRoute = CGVehiclesRouteImport.update({
+  id: '/c/g/vehicles',
+  path: '/c/g/vehicles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CGCheckoutRoute = CGCheckoutRouteImport.update({
   id: '/c/g/checkout',
   path: '/c/g/checkout',
@@ -332,6 +339,11 @@ const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
   path: '/area',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const CGVehiclesAddRoute = CGVehiclesAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => CGVehiclesRoute,
+} as any)
 const CGServiceSlugRoute = CGServiceSlugRouteImport.update({
   id: '/c/g/service/$slug',
   path: '/c/g/service/$slug',
@@ -409,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/g/checkout': typeof CGCheckoutRoute
+  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -416,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
   '/c/g/service/$slug': typeof CGServiceSlugRoute
+  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -464,6 +478,7 @@ export interface FileRoutesByTo {
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/g/checkout': typeof CGCheckoutRoute
+  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -471,6 +486,7 @@ export interface FileRoutesByTo {
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
   '/c/g/service/$slug': typeof CGServiceSlugRoute
+  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -524,6 +540,7 @@ export interface FileRoutesById {
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
   '/c/g/checkout': typeof CGCheckoutRoute
+  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -531,6 +548,7 @@ export interface FileRoutesById {
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
   '/c/g/service/$slug': typeof CGServiceSlugRoute
+  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -584,6 +602,7 @@ export interface FileRouteTypes {
     | '/c/subscriptions'
     | '/c/vehicles'
     | '/c/g/checkout'
+    | '/c/g/vehicles'
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
@@ -591,6 +610,7 @@ export interface FileRouteTypes {
     | '/c/service/$slug'
     | '/c/vehicles/add'
     | '/c/g/service/$slug'
+    | '/c/g/vehicles/add'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -639,6 +659,7 @@ export interface FileRouteTypes {
     | '/c/subscriptions'
     | '/c/vehicles'
     | '/c/g/checkout'
+    | '/c/g/vehicles'
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
@@ -646,6 +667,7 @@ export interface FileRouteTypes {
     | '/c/service/$slug'
     | '/c/vehicles/add'
     | '/c/g/service/$slug'
+    | '/c/g/vehicles/add'
   id:
     | '__root__'
     | '/'
@@ -698,6 +720,7 @@ export interface FileRouteTypes {
     | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
     | '/c/g/checkout'
+    | '/c/g/vehicles'
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
@@ -705,6 +728,7 @@ export interface FileRouteTypes {
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
     | '/c/g/service/$slug'
+    | '/c/g/vehicles/add'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -720,6 +744,7 @@ export interface RootRouteChildren {
   CWelcomeRoute: typeof CWelcomeRoute
   CIndexRoute: typeof CIndexRoute
   CGCheckoutRoute: typeof CGCheckoutRoute
+  CGVehiclesRoute: typeof CGVehiclesRouteWithChildren
   CGServiceSlugRoute: typeof CGServiceSlugRoute
 }
 
@@ -949,6 +974,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CLocationSearchRouteImport
       parentRoute: typeof CLocationRoute
     }
+    '/c/g/vehicles': {
+      id: '/c/g/vehicles'
+      path: '/c/g/vehicles'
+      fullPath: '/c/g/vehicles'
+      preLoaderRoute: typeof CGVehiclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/c/g/checkout': {
       id: '/c/g/checkout'
       path: '/c/g/checkout'
@@ -1088,6 +1120,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/area'
       preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/g/vehicles/add': {
+      id: '/c/g/vehicles/add'
+      path: '/add'
+      fullPath: '/c/g/vehicles/add'
+      preLoaderRoute: typeof CGVehiclesAddRouteImport
+      parentRoute: typeof CGVehiclesRoute
     }
     '/c/g/service/$slug': {
       id: '/c/g/service/$slug'
@@ -1281,6 +1320,18 @@ const CLocationRouteWithChildren = CLocationRoute._addFileChildren(
   CLocationRouteChildren,
 )
 
+interface CGVehiclesRouteChildren {
+  CGVehiclesAddRoute: typeof CGVehiclesAddRoute
+}
+
+const CGVehiclesRouteChildren: CGVehiclesRouteChildren = {
+  CGVehiclesAddRoute: CGVehiclesAddRoute,
+}
+
+const CGVehiclesRouteWithChildren = CGVehiclesRoute._addFileChildren(
+  CGVehiclesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1294,6 +1345,7 @@ const rootRouteChildren: RootRouteChildren = {
   CWelcomeRoute: CWelcomeRoute,
   CIndexRoute: CIndexRoute,
   CGCheckoutRoute: CGCheckoutRoute,
+  CGVehiclesRoute: CGVehiclesRouteWithChildren,
   CGServiceSlugRoute: CGServiceSlugRoute,
 }
 export const routeTree = rootRouteImport
