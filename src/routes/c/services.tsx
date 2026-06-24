@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { readGuestCart } from "@/lib/guest-cart";
 
 export const Route = createFileRoute("/c/services")({
   ssr: false,
