@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { track } from "@/lib/funnel";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/c/")({
@@ -19,22 +18,18 @@ function CustomerSplash() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    track("visit_splash");
     let cancelled = false;
     const t = window.setTimeout(async () => {
       if (cancelled) return;
       const { data } = await supabase.auth.getSession();
       const isCustomer = data.session?.user?.email?.endsWith("@customer.urbanwash.app");
-      const savedArea = typeof window !== "undefined" ? localStorage.getItem("uw_customer_area") : null;
-      if (isCustomer && savedArea) {
-        navigate({ to: "/c/home" });
-      } else if (savedArea) {
-        // Guest who already picked an area — go straight to browse
-        navigate({ to: "/c/services" });
+      if (isCustomer) {
+        const savedArea = typeof window !== "undefined" ? localStorage.getItem("uw_customer_area") : null;
+        navigate({ to: savedArea ? "/c/home" : "/c/location", replace: true });
       } else {
-        navigate({ to: "/c/welcome" });
+        navigate({ to: "/c/auth", replace: true });
       }
-    }, 2200);
+    }, 1000);
     return () => { cancelled = true; clearTimeout(t); };
   }, [navigate]);
 

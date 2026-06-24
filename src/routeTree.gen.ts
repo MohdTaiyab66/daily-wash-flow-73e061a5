@@ -16,8 +16,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CIndexRouteImport } from './routes/c/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as CWelcomeRouteImport } from './routes/c/welcome'
-import { Route as CServicesRouteImport } from './routes/c/services'
 import { Route as CLocationRouteImport } from './routes/c/location'
 import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
@@ -33,7 +31,6 @@ import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
-import { Route as AdminFunnelRouteImport } from './routes/admin.funnel'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
@@ -42,8 +39,6 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
-import { Route as CGVehiclesRouteImport } from './routes/c/g.vehicles'
-import { Route as CGCheckoutRouteImport } from './routes/c/g.checkout'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
 import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
@@ -63,8 +58,6 @@ import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
-import { Route as CGVehiclesAddRouteImport } from './routes/c/g.vehicles.add'
-import { Route as CGServiceSlugRouteImport } from './routes/c/g.service.$slug'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
@@ -103,16 +96,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
-} as any)
-const CWelcomeRoute = CWelcomeRouteImport.update({
-  id: '/c/welcome',
-  path: '/c/welcome',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CServicesRoute = CServicesRouteImport.update({
-  id: '/c/services',
-  path: '/c/services',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const CLocationRoute = CLocationRouteImport.update({
   id: '/c/location',
@@ -189,11 +172,6 @@ const AdminImportRoute = AdminImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFunnelRoute = AdminFunnelRouteImport.update({
-  id: '/funnel',
-  path: '/funnel',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminFraudRoute = AdminFraudRouteImport.update({
   id: '/fraud',
   path: '/fraud',
@@ -233,16 +211,6 @@ const CLocationSearchRoute = CLocationSearchRouteImport.update({
   id: '/search',
   path: '/search',
   getParentRoute: () => CLocationRoute,
-} as any)
-const CGVehiclesRoute = CGVehiclesRouteImport.update({
-  id: '/c/g/vehicles',
-  path: '/c/g/vehicles',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CGCheckoutRoute = CGCheckoutRouteImport.update({
-  id: '/c/g/checkout',
-  path: '/c/g/checkout',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
   id: '/vehicles',
@@ -345,16 +313,6 @@ const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
   path: '/area',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const CGVehiclesAddRoute = CGVehiclesAddRouteImport.update({
-  id: '/add',
-  path: '/add',
-  getParentRoute: () => CGVehiclesRoute,
-} as any)
-const CGServiceSlugRoute = CGServiceSlugRouteImport.update({
-  id: '/c/g/service/$slug',
-  path: '/c/g/service/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
   id: '/vehicles_/add',
   path: '/vehicles/add',
@@ -388,7 +346,6 @@ export interface FileRoutesByFullPath {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
-  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -404,8 +361,6 @@ export interface FileRoutesByFullPath {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
-  '/c/services': typeof CServicesRoute
-  '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
@@ -427,16 +382,12 @@ export interface FileRoutesByFullPath {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
-  '/c/g/checkout': typeof CGCheckoutRoute
-  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
-  '/c/g/service/$slug': typeof CGServiceSlugRoute
-  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -447,7 +398,6 @@ export interface FileRoutesByTo {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
-  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -463,8 +413,6 @@ export interface FileRoutesByTo {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
-  '/c/services': typeof CServicesRoute
-  '/c/welcome': typeof CWelcomeRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
@@ -485,16 +433,12 @@ export interface FileRoutesByTo {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
-  '/c/g/checkout': typeof CGCheckoutRoute
-  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
-  '/c/g/service/$slug': typeof CGServiceSlugRoute
-  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -509,7 +453,6 @@ export interface FileRoutesById {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
-  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -525,8 +468,6 @@ export interface FileRoutesById {
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
-  '/c/services': typeof CServicesRoute
-  '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
   '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
@@ -548,16 +489,12 @@ export interface FileRoutesById {
   '/c/_authed/referrals': typeof CAuthedReferralsRoute
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
-  '/c/g/checkout': typeof CGCheckoutRoute
-  '/c/g/vehicles': typeof CGVehiclesRouteWithChildren
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
-  '/c/g/service/$slug': typeof CGServiceSlugRoute
-  '/c/g/vehicles/add': typeof CGVehiclesAddRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -572,7 +509,6 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
-    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -588,8 +524,6 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
-    | '/c/services'
-    | '/c/welcome'
     | '/admin/'
     | '/c/'
     | '/app/area'
@@ -611,16 +545,12 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
-    | '/c/g/checkout'
-    | '/c/g/vehicles'
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
-    | '/c/g/service/$slug'
-    | '/c/g/vehicles/add'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -631,7 +561,6 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
-    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -647,8 +576,6 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
-    | '/c/services'
-    | '/c/welcome'
     | '/admin'
     | '/app/area'
     | '/app/assignments'
@@ -669,16 +596,12 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
-    | '/c/g/checkout'
-    | '/c/g/vehicles'
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
-    | '/c/g/service/$slug'
-    | '/c/g/vehicles/add'
   id:
     | '__root__'
     | '/'
@@ -692,7 +615,6 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
-    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -708,8 +630,6 @@ export interface FileRouteTypes {
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
-    | '/c/services'
-    | '/c/welcome'
     | '/admin/'
     | '/c/'
     | '/_authenticated/app/area'
@@ -731,16 +651,12 @@ export interface FileRouteTypes {
     | '/c/_authed/referrals'
     | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
-    | '/c/g/checkout'
-    | '/c/g/vehicles'
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
-    | '/c/g/service/$slug'
-    | '/c/g/vehicles/add'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -752,12 +668,7 @@ export interface RootRouteChildren {
   CAuthedRouteRoute: typeof CAuthedRouteRouteWithChildren
   CAuthRoute: typeof CAuthRoute
   CLocationRoute: typeof CLocationRouteWithChildren
-  CServicesRoute: typeof CServicesRoute
-  CWelcomeRoute: typeof CWelcomeRoute
   CIndexRoute: typeof CIndexRoute
-  CGCheckoutRoute: typeof CGCheckoutRoute
-  CGVehiclesRoute: typeof CGVehiclesRouteWithChildren
-  CGServiceSlugRoute: typeof CGServiceSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -810,20 +721,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/c/welcome': {
-      id: '/c/welcome'
-      path: '/c/welcome'
-      fullPath: '/c/welcome'
-      preLoaderRoute: typeof CWelcomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/services': {
-      id: '/c/services'
-      path: '/c/services'
-      fullPath: '/c/services'
-      preLoaderRoute: typeof CServicesRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/c/location': {
       id: '/c/location'
@@ -930,13 +827,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImportRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/funnel': {
-      id: '/admin/funnel'
-      path: '/funnel'
-      fullPath: '/admin/funnel'
-      preLoaderRoute: typeof AdminFunnelRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/fraud': {
       id: '/admin/fraud'
       path: '/fraud'
@@ -992,20 +882,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/location/search'
       preLoaderRoute: typeof CLocationSearchRouteImport
       parentRoute: typeof CLocationRoute
-    }
-    '/c/g/vehicles': {
-      id: '/c/g/vehicles'
-      path: '/c/g/vehicles'
-      fullPath: '/c/g/vehicles'
-      preLoaderRoute: typeof CGVehiclesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/g/checkout': {
-      id: '/c/g/checkout'
-      path: '/c/g/checkout'
-      fullPath: '/c/g/checkout'
-      preLoaderRoute: typeof CGCheckoutRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/c/_authed/vehicles': {
       id: '/c/_authed/vehicles'
@@ -1140,20 +1016,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/c/g/vehicles/add': {
-      id: '/c/g/vehicles/add'
-      path: '/add'
-      fullPath: '/c/g/vehicles/add'
-      preLoaderRoute: typeof CGVehiclesAddRouteImport
-      parentRoute: typeof CGVehiclesRoute
-    }
-    '/c/g/service/$slug': {
-      id: '/c/g/service/$slug'
-      path: '/c/g/service/$slug'
-      fullPath: '/c/g/service/$slug'
-      preLoaderRoute: typeof CGServiceSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/c/_authed/vehicles_/add': {
       id: '/c/_authed/vehicles_/add'
       path: '/vehicles/add'
@@ -1246,7 +1108,6 @@ interface AdminRouteChildren {
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminFraudRoute: typeof AdminFraudRoute
-  AdminFunnelRoute: typeof AdminFunnelRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
@@ -1270,7 +1131,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminFraudRoute: AdminFraudRoute,
-  AdminFunnelRoute: AdminFunnelRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
@@ -1341,18 +1201,6 @@ const CLocationRouteWithChildren = CLocationRoute._addFileChildren(
   CLocationRouteChildren,
 )
 
-interface CGVehiclesRouteChildren {
-  CGVehiclesAddRoute: typeof CGVehiclesAddRoute
-}
-
-const CGVehiclesRouteChildren: CGVehiclesRouteChildren = {
-  CGVehiclesAddRoute: CGVehiclesAddRoute,
-}
-
-const CGVehiclesRouteWithChildren = CGVehiclesRoute._addFileChildren(
-  CGVehiclesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1362,12 +1210,7 @@ const rootRouteChildren: RootRouteChildren = {
   CAuthedRouteRoute: CAuthedRouteRouteWithChildren,
   CAuthRoute: CAuthRoute,
   CLocationRoute: CLocationRouteWithChildren,
-  CServicesRoute: CServicesRoute,
-  CWelcomeRoute: CWelcomeRoute,
   CIndexRoute: CIndexRoute,
-  CGCheckoutRoute: CGCheckoutRoute,
-  CGVehiclesRoute: CGVehiclesRouteWithChildren,
-  CGServiceSlugRoute: CGServiceSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
