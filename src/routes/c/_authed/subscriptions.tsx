@@ -267,13 +267,14 @@ function MyPlanPage() {
           </div>
 
           {/* Recent service feed with photos + complaint window */}
-          <RecentServiceFeed userId={userId} demo={isDemo} />
+          <RecentServiceFeed userId={userId} />
 
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <StatCard icon={CheckCircle2} label="Completed" value={isDemo ? 14 : completedCount} tone="success" />
-            <StatCard icon={Clock} label="Upcoming" value={isDemo ? 2 : pendingCount} tone="primary" />
+            <StatCard icon={CheckCircle2} label="Completed" value={completedCount} tone="success" />
+            <StatCard icon={Clock} label="Upcoming" value={pendingCount} tone="primary" />
           </div>
+
 
 
 
