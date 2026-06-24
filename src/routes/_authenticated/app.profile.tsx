@@ -9,6 +9,7 @@ import {
   Award, History, FileText, Shield, MapPin, Lock, Languages,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
   component: ProfilePage,
@@ -94,6 +95,8 @@ function ProfilePage() {
           <span>{t("area_locked_until")} {new Date(partner.area_locked_until!).toLocaleDateString("en-IN")}</span>
         </Card>
       )}
+
+      <CapacitySettingsCard partnerId={partner?.id ?? null} />
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("verifications")}</h2>
       <div className="mt-3 grid grid-cols-3 gap-2">

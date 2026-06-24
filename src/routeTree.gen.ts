@@ -62,6 +62,7 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
+import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const TrustRoute = TrustRouteImport.update({
@@ -334,6 +335,12 @@ const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CAuthedBookingsRoute,
 } as any)
+const ApiPublicCronAssignmentTickRoute =
+  ApiPublicCronAssignmentTickRouteImport.update({
+    id: '/api/public/cron/assignment-tick',
+    path: '/api/public/cron/assignment-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -392,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -444,6 +452,7 @@ export interface FileRoutesByTo {
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -501,6 +510,7 @@ export interface FileRoutesById {
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
@@ -558,6 +568,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
+    | '/api/public/cron/assignment-tick'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -610,6 +621,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
+    | '/api/public/cron/assignment-tick'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -666,6 +678,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/api/public/cron/assignment-tick'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
@@ -681,6 +694,7 @@ export interface RootRouteChildren {
   CAuthRoute: typeof CAuthRoute
   CLocationRoute: typeof CLocationRouteWithChildren
   CIndexRoute: typeof CIndexRoute
+  ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1056,6 +1070,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsIdRouteImport
       parentRoute: typeof CAuthedBookingsRoute
     }
+    '/api/public/cron/assignment-tick': {
+      id: '/api/public/cron/assignment-tick'
+      path: '/api/public/cron/assignment-tick'
+      fullPath: '/api/public/cron/assignment-tick'
+      preLoaderRoute: typeof ApiPublicCronAssignmentTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -1232,17 +1253,8 @@ const rootRouteChildren: RootRouteChildren = {
   CAuthRoute: CAuthRoute,
   CLocationRoute: CLocationRouteWithChildren,
   CIndexRoute: CIndexRoute,
+  ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

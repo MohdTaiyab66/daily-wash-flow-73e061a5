@@ -9,6 +9,9 @@ import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigati
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { toast } from "sonner";
+import { DailyShineOfferCard } from "@/components/partner/DailyShineOfferCard";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app/my-assignment")({
   component: MyAssignmentPage,
@@ -18,6 +21,8 @@ function MyAssignmentPage() {
   const fn = useServerFn(getMyAssignment);
   const cancelFn = useServerFn(cancelMyAssignment);
   const qc = useQueryClient();
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setPartnerId(data.user?.id ?? null)); }, []);
   useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"]]);
   const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
   const cancelMut = useMutation({
@@ -30,7 +35,8 @@ function MyAssignmentPage() {
   if (data === null) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5">
-        <Card className="flex flex-col items-center gap-3 p-8 text-center">
+        <DailyShineOfferCard partnerId={partnerId} />
+        <Card className="mt-3 flex flex-col items-center gap-3 p-8 text-center">
           <Briefcase className="h-6 w-6 text-muted-foreground" />
           <p className="font-medium">No active assignment</p>
           <p className="text-sm text-muted-foreground">Build one from the marketplace.</p>
@@ -46,6 +52,8 @@ function MyAssignmentPage() {
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">My assignment</h1>
       <p className="mt-1 text-sm text-muted-foreground">{a.area} · Day {data.day_progress} of {a.duration_days}</p>
+
+      <DailyShineOfferCard partnerId={partnerId} />
 
       <Card className="mt-5 border-0 bg-foreground p-5 text-background">
         <div className="flex items-start justify-between">
