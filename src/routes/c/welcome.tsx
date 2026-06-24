@@ -12,6 +12,9 @@ import hero from "@/assets/hero-car-wash.jpg";
 export const Route = createFileRoute("/c/welcome")({
   ssr: false,
   head: () => ({ meta: [{ title: "Welcome — Urban Wash" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+  }),
   component: CustomerWelcome,
 });
 
@@ -22,6 +25,12 @@ const customerPassword = (phone: string) => `UWC@${phone}#2026`;
 
 function CustomerWelcome() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goAfterAuth = () => {
+    if (redirect) { navigate({ to: redirect as any }); return; }
+    const area = localStorage.getItem("uw_customer_area");
+    navigate({ to: area ? "/c/home" : "/c/location" });
+  };
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -34,11 +43,11 @@ function CustomerWelcome() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
-        const area = localStorage.getItem("uw_customer_area");
-        navigate({ to: area ? "/c/home" : "/c/location" });
+        goAfterAuth();
       }
     })();
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sendOtp = () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit mobile number"); return; }
@@ -54,8 +63,7 @@ function CustomerWelcome() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (data.session) {
-      const area = localStorage.getItem("uw_customer_area");
-      navigate({ to: area ? "/c/home" : "/c/location" });
+      goAfterAuth();
       return;
     }
     if (error) setStep("name");
@@ -83,10 +91,13 @@ function CustomerWelcome() {
       }, { onConflict: "user_id" });
     }
     setLoading(false);
-    navigate({ to: "/c/location" });
+    goAfterAuth();
   };
 
-  const skipLogin = () => navigate({ to: "/c/location" });
+  const skipLogin = () => {
+    const area = localStorage.getItem("uw_customer_area");
+    navigate({ to: area ? "/c/services" : "/c/location" });
+  };
 
   // 12-cell grid of service illustrations (uses the hero image cropped via background-position)
   const tiles = Array.from({ length: 12 });

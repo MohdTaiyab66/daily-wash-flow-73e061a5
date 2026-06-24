@@ -1,72 +1,105 @@
-# Urban Wash Customer App V1 — Build Plan
+# Guest-First Customer Flow
 
-Your spec is large enough that shipping it as one change would burn a lot of credits and be impossible to review. I'm splitting it into 6 phases. Each phase is independently testable and ends with a working app.
+Make the entire discovery + booking flow usable without login. Login is only enforced at payment and a few sensitive actions (complaints, subscriptions, profile/history, save permanent address).
 
-A lot of the foundation already exists from prior turns:
-- Customer auth (phone OTP), `/c` shell with Home / Bookings / Profile / Vehicles
-- `customer_profiles`, `customer_vehicles`, `customer_addresses`, `bookings`, `booking_addons`, `area_waitlist`, `service_catalog` tables
-- Area-gating + "coming soon / Notify me"
-- Service detail → address → confirm flow (cash-on-service)
-- Orange / black / white theme matching partner app
+## Architecture changes
 
-## Phase A — Data model + admin-driven catalog (foundation)
-Goal: make EVERYTHING admin-editable, no hardcoded prices.
+### 1. Move discovery routes out of `_authed/`
+Currently all of `home`, `service.$slug`, `vehicles`, `vehicles_.add`, `subscriptions`, `bookings*`, `profile`, `referrals` live under `_authed/` (which forces login).
 
-- Migration: extend `service_catalog` with `category` (hatchback_compact | sedan_suv), `video_url`, `benefits[]`, `duration_min`, `active`, `sort_order`, `addon_ids[]`.
-- New `service_addons` table (name, price_hatch, price_suv, icon_url, applies_to_service_ids[]).
-- New `vehicle_catalog` enrichment: `category` enum (hatchback | compact_sedan | sedan | suv), `image_url`, `brand`, `model`. Seed with ~150 popular Indian models (Maruti / Hyundai / Honda / Toyota / Mahindra / Tata / Kia / MG / Skoda / VW / Renault / Nissan / Jeep + premium).
-- New `multi_vehicle_discounts` table (vehicle_count, percent) — admin configurable.
-- New `referral_config` + `customer_referrals` already exists, wire up admin edits.
-- Seed all your exact prices (₹999/₹1199 daily shine, ₹349/₹399/₹499 one-time, ₹1099/₹1399 deep clean, ₹899/₹999 interior deep clean, add-ons ₹25/₹49/₹149/₹199/₹499/₹999/₹1999) as initial rows — but read from DB everywhere.
-- Admin pages: `/admin/services` (CRUD + image/video upload), `/admin/addons`, `/admin/vehicle-catalog`, `/admin/discounts`, `/admin/referrals`.
+Reclassify:
+- **Public (move out of `_authed/`)**: `home`, `service.$slug`, `vehicles`, `vehicles_.add` (works against guest cart), `subscriptions` (browse only — purchase gated).
+- **Auth-required (stay in `_authed/`)**: `bookings`, `bookings.$id`, `profile`, `referrals`, complaint submission.
 
-## Phase B — Vehicle intelligence + auto-categorization
-- Vehicle add page with typeahead search against `vehicle_catalog` — type "fortuner" → shows "Toyota Fortuner" with image.
-- On select, category is auto-resolved (customer never picks).
-- Multi-vehicle support already in schema; add UI for default vehicle + per-location grouping.
-- Show large vehicle image + name on home (Hoora-style switcher).
+Implementation: rename files from `src/routes/c/_authed/<x>.tsx` → `src/routes/c/<x>.tsx`. Update `createFileRoute` strings (drop `/_authed`). Update internal `<Link to="/c/_authed/...">` references project-wide to `/c/...`.
 
-## Phase C — Booking funnel v2 (replaces current service.$slug)
-Vehicle → Service → Add-ons (with icons + pictures) → Address → Time slot (Before 7/8/9/10/11 AM, 12 PM) → Schedule date → Review (shows multi-vehicle discount auto-applied) → Payment → Success.
+The existing `src/routes/c/services.tsx` placeholder is replaced — the real public home becomes `/c/home`.
 
-- Daily Shine = subscription (creates row in `subscriptions` with renewal date, remaining services).
-- One-Time / Deep Clean = single booking.
-- 30-sec video player on service detail.
+### 2. Guest session store
+New `src/lib/guest-cart.ts`:
+```ts
+type GuestCart = {
+  vehicle?: GuestVehicle;     // not yet persisted to DB
+  serviceSlug?: string;
+  addons?: string[];
+  address?: GuestAddress;
+  slot?: { date: string; window: string };
+  area?: string;              // already in localStorage
+};
+```
+- Backed by `localStorage` key `uw_guest_cart`.
+- Tiny zustand-style hook `useGuestCart()` (plain `useSyncExternalStore`).
+- Cleared after successful booking restore.
 
-## Phase D — Razorpay payment (BLOCKED — needs your keys)
-- Server fn `createRazorpayOrder` (uses secret).
-- Server fn `verifyRazorpayPayment` (HMAC verify → insert booking as paid).
-- Migration: add `razorpay_order_id`, `razorpay_payment_id`, `razorpay_signature` to `bookings`.
-- Checkout.js modal in service page; "Pay at service" fallback toggle.
+### 3. Login gate component
+`src/components/customer/RequireAuth.tsx`:
+- `useRequireAuth()` returns `(action: () => void) => void`.
+- If user signed in → run action.
+- Else → stash an "intent" into `localStorage` (`uw_pending_intent`) and `navigate({ to: '/c/welcome', search: { redirect: currentPath } })`.
 
-**I need you to add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` via the secrets prompt before I can build this phase.**
+Welcome screen reads `redirect` search param; after successful OTP it navigates back and the page can read the intent.
 
-## Phase E — Subscriptions, service gallery, complaints, live partner
-- `/c/subscriptions` — plan, vehicle, start/renewal, completed/remaining, unavailable/extended/compensation days, assigned partner.
-- `/c/bookings/$id` — before/after photos (from `service_photos`), partner name, completion time, duration. 30-day retention banner.
-- Complaint button visible for 2h after `completed_at`; types match your list; inserts into `complaints`.
-- Pause flow → writes `subscription_pauses` (already exists), auto-extends renewal.
-- Live partner arrival: subscribe to `services` realtime; toast + push when `status = in_progress` / `arrived`.
+### 4. New checkout route
+`src/routes/c/checkout.tsx` (public):
+- Reads `guestCart`.
+- Renders summary, vehicle, slot, address, total.
+- "Proceed to Pay" button:
+  - If signed in → call existing booking creation server fn → Razorpay (stub) → confirmation.
+  - If guest → call `useRequireAuth(() => proceedToPay())`. After login, intent restores and pay continues.
 
-## Phase F — Notifications, referrals, profile polish
-- Push tokens via `push_tokens` (already exists); web push for now, FCM/APNs when you go native.
-- In-app notifications list (partner assigned/arrived/started/completed, renewal, payment, complaint resolved, extension, pause/resume).
-- Referral screen with share code + reward config from admin.
-- Profile menu: Personal / Vehicles / Addresses / Subscriptions / Payments / Referral / Support / T&C / Privacy / Delete Account.
+Confirmation page: `src/routes/c/booking.confirmed.tsx`.
 
-## Native Android + iOS
-TanStack Start builds a web app. To ship to Play Store / App Store we wrap with **Capacitor** (adds `android/` and `ios/` projects, reuses the same code). I'll add this in Phase F.
+### 5. Welcome screen redirect handling
+Update `src/routes/c/welcome.tsx`:
+- Accept `?redirect=/c/checkout` search.
+- After OTP/name complete → `navigate({ to: redirect ?? '/c/home' })`.
+- Keep "Skip Login" → goes to `/c/location` only on first run; if location already set, → `/c/home`.
 
-## Realtime sync
-Enable realtime publication on `service_catalog`, `service_addons`, `bookings`, `services`, `subscriptions` so admin price changes / partner status changes reflect instantly in customer + partner apps.
+### 6. Splash → flow
+Update `src/routes/c/index.tsx`:
+- If logged in → `/c/home`.
+- Else if `uw_area` set → `/c/home` (guest).
+- Else → `/c/welcome`.
 
----
+Welcome "Skip Login" → `/c/location` (unchanged) → `/c/home` (instead of `/c/services`).
 
-## What I need from you to start
+### 7. Gate sensitive actions inside existing pages
+Wrap these handlers with `useRequireAuth`:
+- `home.tsx` profile icon / "My bookings" tile.
+- `subscriptions.tsx` purchase button.
+- `service.$slug.tsx` "Book now" → routes to `/c/checkout` (works for guest); "Save vehicle permanently" prompt → gated.
+- Any complaint button.
 
-1. **Confirm we start with Phase A** (foundation migration + admin catalog editors). Without it everything else is hardcoded and not what you asked for.
-2. **Add Razorpay secrets** when you're ready — I'll prompt for them at the start of Phase D so Phase A–C aren't blocked.
-3. **30-sec videos** — do you have them yet, or should admin upload come first and you add videos later?
-4. Reply "go" and I'll start Phase A (one migration + admin pages, ~1 batch of edits).
+Vehicle add page works on guest cart when not logged in (saves locally); when logged in, saves to DB as today.
 
-Findings from your scan that I am NOT touching in this build (mentioned per your earlier instruction): everything outside the 11 IDs you listed previously.
+## Files to create
+- `src/lib/guest-cart.ts`
+- `src/components/customer/RequireAuth.tsx`
+- `src/routes/c/checkout.tsx`
+- `src/routes/c/booking.confirmed.tsx`
+
+## Files to move (rename)
+- `src/routes/c/_authed/home.tsx` → `src/routes/c/home.tsx`
+- `src/routes/c/_authed/service.$slug.tsx` → `src/routes/c/service.$slug.tsx`
+- `src/routes/c/_authed/vehicles.tsx` → `src/routes/c/vehicles.tsx`
+- `src/routes/c/_authed/vehicles_.add.tsx` → `src/routes/c/vehicles_.add.tsx`
+- `src/routes/c/_authed/subscriptions.tsx` → `src/routes/c/subscriptions.tsx`
+
+(Keep `bookings*`, `profile`, `referrals` under `_authed/`.)
+
+## Files to edit
+- `src/routes/c/index.tsx`, `welcome.tsx`, `location.tsx`, `location.search.tsx` — redirect chain.
+- `src/components/customer/CustomerShell.tsx` — works for both guest and authed; bottom-nav items that require auth use `useRequireAuth`.
+- Internal `Link to="/c/_authed/..."` references across `home.tsx`, `subscriptions.tsx`, `service.$slug.tsx`, `bookings*`, `profile`, etc. — search-replace.
+- Delete `src/routes/c/services.tsx` (superseded by public `/c/home`).
+- `src/routes/c/auth.tsx` redirect stays.
+
+## Out of scope (not in this turn)
+- Real Razorpay integration (stub button that pretends to succeed for now — flagged with TODO).
+- Backend booking server fn changes — reuse what exists; if a needed createServerFn for guest→authed handoff is missing, add a thin `confirmBookingAfterAuth` fn that consumes the restored cart.
+
+## Verification
+- Build (auto).
+- Hit `/c/` cold (no localStorage) → splash → welcome → skip → location → home renders services.
+- From guest home: open a service → add vehicle (saved to guest cart) → /c/checkout → "Proceed to pay" → welcome with `?redirect=/c/checkout` → OTP `1234` → returns to checkout with cart intact.
+- Logged-in user: skip OTP, go straight to pay.

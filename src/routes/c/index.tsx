@@ -26,6 +26,9 @@ function CustomerSplash() {
       const savedArea = typeof window !== "undefined" ? localStorage.getItem("uw_customer_area") : null;
       if (isCustomer && savedArea) {
         navigate({ to: "/c/home" });
+      } else if (savedArea) {
+        // Guest who already picked an area — go straight to browse
+        navigate({ to: "/c/services" });
       } else {
         navigate({ to: "/c/welcome" });
       }

@@ -41,6 +41,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
+import { Route as CGCheckoutRouteImport } from './routes/c/g.checkout'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
 import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
@@ -60,6 +61,7 @@ import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
+import { Route as CGServiceSlugRouteImport } from './routes/c/g.service.$slug'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
@@ -224,6 +226,11 @@ const CLocationSearchRoute = CLocationSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => CLocationRoute,
 } as any)
+const CGCheckoutRoute = CGCheckoutRouteImport.update({
+  id: '/c/g/checkout',
+  path: '/c/g/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
@@ -325,6 +332,11 @@ const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
   path: '/area',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const CGServiceSlugRoute = CGServiceSlugRouteImport.update({
+  id: '/c/g/service/$slug',
+  path: '/c/g/service/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
   id: '/vehicles_/add',
   path: '/vehicles/add',
@@ -396,12 +408,14 @@ export interface FileRoutesByFullPath {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
+  '/c/g/checkout': typeof CGCheckoutRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
+  '/c/g/service/$slug': typeof CGServiceSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -449,12 +463,14 @@ export interface FileRoutesByTo {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
+  '/c/g/checkout': typeof CGCheckoutRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
+  '/c/g/service/$slug': typeof CGServiceSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -507,12 +523,14 @@ export interface FileRoutesById {
   '/c/_authed/referrals': typeof CAuthedReferralsRoute
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
+  '/c/g/checkout': typeof CGCheckoutRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
+  '/c/g/service/$slug': typeof CGServiceSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -565,12 +583,14 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
+    | '/c/g/checkout'
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
+    | '/c/g/service/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -618,12 +638,14 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
+    | '/c/g/checkout'
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
+    | '/c/g/service/$slug'
   id:
     | '__root__'
     | '/'
@@ -675,12 +697,14 @@ export interface FileRouteTypes {
     | '/c/_authed/referrals'
     | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
+    | '/c/g/checkout'
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
+    | '/c/g/service/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -695,6 +719,8 @@ export interface RootRouteChildren {
   CServicesRoute: typeof CServicesRoute
   CWelcomeRoute: typeof CWelcomeRoute
   CIndexRoute: typeof CIndexRoute
+  CGCheckoutRoute: typeof CGCheckoutRoute
+  CGServiceSlugRoute: typeof CGServiceSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -923,6 +949,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CLocationSearchRouteImport
       parentRoute: typeof CLocationRoute
     }
+    '/c/g/checkout': {
+      id: '/c/g/checkout'
+      path: '/c/g/checkout'
+      fullPath: '/c/g/checkout'
+      preLoaderRoute: typeof CGCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/c/_authed/vehicles': {
       id: '/c/_authed/vehicles'
       path: '/vehicles'
@@ -1055,6 +1088,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/area'
       preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/g/service/$slug': {
+      id: '/c/g/service/$slug'
+      path: '/c/g/service/$slug'
+      fullPath: '/c/g/service/$slug'
+      preLoaderRoute: typeof CGServiceSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/c/_authed/vehicles_/add': {
       id: '/c/_authed/vehicles_/add'
@@ -1253,17 +1293,9 @@ const rootRouteChildren: RootRouteChildren = {
   CServicesRoute: CServicesRoute,
   CWelcomeRoute: CWelcomeRoute,
   CIndexRoute: CIndexRoute,
+  CGCheckoutRoute: CGCheckoutRoute,
+  CGServiceSlugRoute: CGServiceSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
