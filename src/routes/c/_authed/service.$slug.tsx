@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +29,36 @@ type Addon = { id: string; name: string; description: string | null; price_hatch
 
 const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+function loadRazorpayCheckout() {
+  return new Promise<void>((resolve, reject) => {
+    if (window.Razorpay) { resolve(); return; }
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Razorpay checkout failed to load")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Razorpay checkout failed to load"));
+    document.body.appendChild(script);
+  });
+}
+
 function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const createOrder = useServerFn(createRazorpayOrder);
+  const verifyPayment = useServerFn(verifyRazorpayPayment);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
   const [date, setDate] = useState<string>(() => {
@@ -219,10 +247,51 @@ function ServiceDetail() {
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
 
-      toast.success("Booking confirmed!");
+      if (service.service_type !== "subscription") {
+        toast.success("Booking confirmed!");
+        qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+        qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
+        return;
+      }
+
+      await loadRazorpayCheckout();
+      const order = await createOrder({ data: { bookingId: String(bookingId) } });
+      await new Promise<void>((resolve, reject) => {
+        const checkout = new window.Razorpay!({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Urban Wash",
+          description: service.name,
+          order_id: order.orderId,
+          prefill: { email: currentUser.user.email ?? "" },
+          notes: { booking_id: String(bookingId) },
+          modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
+          handler: async (response: any) => {
+            try {
+              await verifyPayment({
+                data: {
+                  bookingId: String(bookingId),
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+        });
+        checkout.open();
+      });
+
+      toast.success("Payment complete. Assigning your partner now.");
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-      await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
+      qc.invalidateQueries({ queryKey: ["sub-queue", currentUser.user.id] });
+      await navigate({ to: "/c/subscriptions" });
     } catch (err: any) {
       fail(err?.message || "Could not confirm booking");
     } finally {
@@ -427,11 +496,13 @@ function ServiceDetail() {
           <div>
             <div className="text-xs text-muted-foreground">Total</div>
             <div className="text-xl font-semibold">₹{total}</div>
-            <div className="text-[10px] text-muted-foreground">Pay after service · receipt created after confirm</div>
+            <div className="text-[10px] text-muted-foreground">
+              {service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+            </div>
             {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
           </div>
           <Button type="button" onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm <ChevronRight className="ml-1 h-4 w-4" />
+            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>

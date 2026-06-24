@@ -200,7 +200,7 @@ function BookingDetail() {
               <span className="text-lg font-semibold">₹{b.total_amount}</span>
             </div>
             <div className="flex items-center justify-between pt-1 text-[11px] text-muted-foreground">
-              <span>Method: Pay after service</span>
+              <span>Method: {b.razorpay_payment_id ? "Razorpay" : "Pay after service"}</span>
               <PaymentBadge status={b.payment_status} />
             </div>
           </div>
