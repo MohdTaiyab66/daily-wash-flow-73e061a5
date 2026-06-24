@@ -51,9 +51,11 @@ const PLAN_INCLUDED = ["daily-shine-exterior", "daily-shine-interior", "daily-sh
 function PublicHome() {
   const navigate = useNavigate();
   const [area, setArea] = useState("");
+  const [guestVehicle, setGuestVehicle] = useState<ReturnType<typeof readGuestCart>["vehicle"]>();
 
   useEffect(() => {
     setArea(localStorage.getItem("uw_customer_area") ?? "");
+    setGuestVehicle(readGuestCart().vehicle);
   }, []);
 
   const servicesQ = useQuery({
