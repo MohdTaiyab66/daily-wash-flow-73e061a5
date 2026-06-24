@@ -1,88 +1,109 @@
-# Daily Shine Marketplace — Round 2 Enhancements
 
-Scope: improve partner acceptance UX, smarter ranking, customer trust signal, and run a true end-to-end verification of the flow. No new tables.
+# Pre-Launch: Reliability, Retention & Marketplace Visibility
 
-## 1. Richer Partner Offer Card
+Four shippable upgrades to the Daily Shine system. Each is independently useful and gated behind admin/partner visibility.
 
-File: `src/components/partner/DailyShineOfferCard.tsx`
+---
 
-Show before Accept/Decline:
-- 🚗 Vehicle: `make model` + category (from `customer_vehicles`)
-- 📍 Area name (from customer address)
-- ⏰ Service deadline window (e.g. "Before 8:00 AM" from `platform_settings.daily_shine_cutoff` or default)
-- 📏 Distance from partner's current route in meters (already computed server-side; surface it)
-- 💰 `+₹X/day` and `+₹X/month` projected extra earnings (already returned, relabel + show both)
-- 🕒 Approx. minutes added to route — new field `route_delta_minutes` returned from offer
+## 1. Partner Reliability Engine
 
-Server: extend `pick_next_partner_for_queue` / `offer_next_for_queue` RPCs and `subscription_offers` row payload with `route_delta_seconds`, `distance_from_route_m`, `extra_per_day_paise`, `extra_per_month_paise`, `vehicle_label`, `area_label`, `deadline_label`. Compute `route_delta_seconds` via a lightweight insertion heuristic in `src/lib/route-optimize.ts` (already exists) — wrap as `estimateInsertionCostSeconds(partnerId, newPoint)` and expose through a server function the RPC can call, OR compute in TS inside `offerNextPartner` server-fn (preferred — keep SQL simple).
+Make reliability a real, visible score driven by events.
 
-Decision: move the ranking + enrichment from RPC into the existing `offerNextPartner` server function so we can use the TS route-optimizer. The RPC becomes a thin "list candidate partners in radius" query.
+**Schema (migration):**
+- Add `reliability_score int default 100` and `reliability_events_count int default 0` to `partners`.
+- New table `partner_reliability_events`:
+  - `partner_id`, `event_type` (enum), `delta int`, `service_id?`, `assignment_id?`, `note text`, `created_at`.
+- Event deltas:
 
-## 2. Smart Assignment Score
+  ```text
+  assignment_accepted     +1
+  service_completed       +2
+  on_time_service         +1
+  customer_complaint      -5
+  missed_service          -8
+  assignment_cancelled    -4
+  repeated_unavailability -3
+  ```
 
-Currently: distance + area + capacity.
-New ranking inside `offerNextPartner`:
+- Trigger `apply_reliability_event()` clamps score 0–100 on insert.
+- Helper RPC `log_reliability_event(partner_id, event_type, ...)`.
 
-```text
-score =
-   0.45 * (1 - route_delta_minutes / 20)      // route impact (clamped)
- + 0.20 * (1 - distance_km / radius_km)        // proximity
- + 0.15 * partner.rating / 5                   // reliability
- + 0.10 * (1 - current_load / max_daily_cars)  // capacity headroom
- + 0.10 * deadline_urgency                     // 1 if <2h to deadline, else 0.3
-```
+**Auto-wiring (triggers):**
+- On `subscription_offers.status` → `accepted` → log `assignment_accepted`.
+- On `services.status` → `completed` → log `service_completed` (and `on_time_service` when completed before SLA window).
+- On `services.status` → `missed` → log `missed_service`.
+- On `complaints` insert → log `customer_complaint`.
+- On `subscription_assignment_queue.status` → `cancelled_by_partner` → log `assignment_cancelled`.
 
-Sort candidates desc by score; offer to top one. Persist the score breakdown in `subscription_offers.score_breakdown` jsonb so admin can audit.
+**UI:**
+- `app.profile.tsx` (partner): new "Reliability Score: NN/100" card with last 5 events.
+- `admin.partners.tsx` + `admin.partner-assignment.$id.tsx`: show score column/badge.
+- Existing `admin.reliability.tsx`: feed it from new table (replace any placeholders).
 
-Migration: add nullable columns to `subscription_offers`:
-- `route_delta_seconds int`
-- `distance_from_route_m int`
-- `extra_per_day_paise int`
-- `extra_per_month_paise int`
-- `score numeric`
-- `score_breakdown jsonb`
+---
 
-(`vehicle_label`/`area_label`/`deadline_label` derived at render time from joins — no new columns.)
+## 2. Assignment Acceptance Context (time-first framing)
 
-## 3. Customer Assignment Notification
+Already showing ₹/day and ₹/month on the offer card. Add the time framing partners actually care about.
 
-On partner accept (`respondToOffer` accept branch):
-- Insert a `customer_notifications` row OR (since table may not exist) reuse existing customer toast/banner pattern. Check: query `supabase-tables` shows no `customer_notifications` — use the existing `AwaitingPartnerBanner` realtime channel. When `subscription_assignment_queue.status = 'assigned'`, banner flips to a success card showing:
-  - Partner name + photo
-  - ⭐ rating
-  - Assigned date (now)
-  - Service start date (tomorrow or today if before cutoff)
-- File: `src/components/customer/AwaitingPartnerBanner.tsx` — add `AssignedPartnerCard` sub-view rendered when status==='assigned', fetching partner via existing join.
+**Changes (no schema):**
+- `DailyShineOfferCard.tsx`: prominent row "Monthly Route Increase: only +X mins" computed as `route_delta_seconds * 26 / 60` (≈ active days/month).
+- Reorder card hierarchy: deadline → vehicle/area → **+X mins/month** → ₹/day + ₹/month → distance.
+- Add a subtle "Recommended" badge when `score >= 0.75`.
 
-No new notification table needed for v1; banner + realtime is sufficient. Push notification can be added later via existing `push_tokens`.
+---
 
-## 4. End-to-End Verification
+## 3. Assignment Lock Period (customer retention)
 
-Drive Playwright through the full flow against localhost:
-1. Customer login → select vehicle → buy Daily Shine → mock Razorpay success
-2. Verify `subscription_assignment_queue` row created (`status=awaiting`)
-3. Verify `subscription_offers` row created with enriched fields populated
-4. Login as partner → see offer card with all 7 info rows
-5. Click Accept → verify:
-   - `subscription_assignment_queue.status='assigned'`
-   - `assignments` row exists/extended for today
-   - `services` rows generated for remaining days
-   - `earnings` updated
-6. Switch to customer view → banner shows "Partner Assigned" card with name/rating/dates
-7. Switch to admin → `admin.manual-assignment` shows the assignment
+Once a partner accepts, customer stays with them for a minimum window.
 
-Capture screenshots at each step. Report any breakage and fix before declaring done.
+**Schema (migration):**
+- Add to `subscription_assignment_queue`:
+  - `locked_partner_id uuid`
+  - `lock_until timestamptz`
+- Add to `platform_settings`: `assignment_lock_days` (default 15).
+- On offer accept trigger: set `locked_partner_id = partner_id`, `lock_until = now() + lock_days`.
 
-## Files Touched
+**Enforcement:**
+- New RPC `can_reassign_subscription(queue_id, actor_role)`:
+  - Returns true if `actor_role = 'admin'`, partner cancels/removed, or `now() > lock_until`.
+- `admin.manual-assignment.tsx` and partner-cancel server fn check this RPC; partner cancels are always allowed but trigger a `assignment_cancelled` reliability hit.
 
-- `src/components/partner/DailyShineOfferCard.tsx` — richer card UI
-- `src/components/customer/AwaitingPartnerBanner.tsx` — assigned-partner success view
-- `src/lib/subscription-assignment.functions.ts` — move ranking + enrichment to TS, persist score
-- `src/lib/route-optimize.ts` — add `estimateInsertionCostSeconds` helper
-- Migration — add 6 columns to `subscription_offers`
+**UI:**
+- Customer `AwaitingPartnerBanner` (assigned state): "Your partner is locked in until {date}".
+- Admin assignment detail: "Locked with {partner} until {date} — override?" button.
 
-## Out of Scope (defer)
+---
 
-- Push notifications to customer device
-- Partner offer history UI
-- Admin score-breakdown visualization (data persisted, UI later)
+## 4. Admin Daily Shine Marketplace Dashboard
+
+New route `src/routes/admin.marketplace.tsx` (linked from `admin.tsx` nav).
+
+**Tabs / status columns** (all driven by existing `subscription_assignment_queue` + `subscription_offers`):
+- Awaiting Assignment (`queue.status = 'queued'`, no live offer)
+- Offered (live `offers.status = 'pending'`)
+- Accepted (`offers.status = 'accepted'`, recent)
+- Timed Out (`offers.status = 'timed_out'`)
+- Broadcasted (queue radius at max step)
+- Assigned (`queue.status = 'assigned'`)
+
+**Each row shows:** customer, vehicle, area, deadline, current radius, attempts, last offered partner, score, age. Click → existing `admin.partner-assignment.$id.tsx`.
+
+Realtime: subscribe to both tables and invalidate the list.
+
+---
+
+## Technical Notes
+
+- All score/lock logic in Postgres so it stays consistent across cron, RPC, and UI paths.
+- Realtime: enable publication on `partner_reliability_events` and `subscription_offers` (offers already enabled — verify).
+- No new analytics events; no removed components.
+- Out of scope: gamified reliability tiers, partner-side lock-period UI beyond a small badge, customer-initiated reassignment.
+
+---
+
+## Files
+
+**New:** `supabase/migrations/<ts>_reliability_and_lock.sql`, `src/routes/admin.marketplace.tsx`, `src/components/partner/ReliabilityCard.tsx`, `src/components/admin/MarketplaceTable.tsx`.
+
+**Edited:** `DailyShineOfferCard.tsx`, `AwaitingPartnerBanner.tsx`, `admin.partners.tsx`, `admin.reliability.tsx`, `admin.manual-assignment.tsx`, `admin.partner-assignment.$id.tsx`, `app.profile.tsx`, `admin.tsx` (nav), `subscription-assignment.functions.ts` (lock check + reliability hooks on cancel).
