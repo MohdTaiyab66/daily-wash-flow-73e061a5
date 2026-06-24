@@ -27,8 +27,14 @@ const LABELS: Record<string, string> = {
   referral_customer_reward: "Customer referral reward (₹)",
   route_visibility_until: "Route visibility time",
   auto_notify_partners_on_new_customer: "Auto-notify partners when new customers added",
+  auto_assign_enabled: "Daily Shine auto-assignment",
+  auto_assign_timeout_sec: "Offer timeout (seconds)",
+  auto_assign_radius_steps: "Radius expansion (km, comma-separated)",
+  auto_assign_max_per_partner: "Max cars per partner",
+  auto_assign_min_per_partner: "Min cars per partner",
 };
-const BOOL_KEYS = new Set(["auto_notify_partners_on_new_customer"]);
+const BOOL_KEYS = new Set(["auto_notify_partners_on_new_customer", "auto_assign_enabled"]);
+const TEXT_KEYS = new Set(["auto_assign_radius_steps"]);
 
 function SettingsPage() {
   const listFn = useServerFn(listSettings);
@@ -75,13 +81,15 @@ function SettingsPage() {
                 <option value="true">ON</option>
                 <option value="false">OFF</option>
               </select>
+            ) : TEXT_KEYS.has(s.key) ? (
+              <Input className="w-40" value={values[s.key] ?? ""} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))} />
             ) : (
               <Input type="number" className="w-32" value={values[s.key] ?? ""} onChange={(e) => setValues((p) => ({ ...p, [s.key]: e.target.value }))} />
             )}
             <Button
               size="sm"
               disabled={mut.isPending || String(s.value) === values[s.key]}
-              onClick={() => mut.mutate({ key: s.key, value: s.key === "route_visibility_until" || BOOL_KEYS.has(s.key) ? values[s.key] : Number(values[s.key]) })}
+              onClick={() => mut.mutate({ key: s.key, value: s.key === "route_visibility_until" || BOOL_KEYS.has(s.key) || TEXT_KEYS.has(s.key) ? values[s.key] : Number(values[s.key]) })}
             >
               Save
             </Button>
