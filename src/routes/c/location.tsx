@@ -31,7 +31,7 @@ function LocationPermission() {
         localStorage.setItem("uw_customer_area", a.name);
         localStorage.setItem("uw_customer_full_address", `Near ${a.name}, Lucknow`);
         toast.success(`Detected: ${a.name}`);
-        navigate({ to: "/c/home" });
+        navigate({ to: "/c/services" });
       },
       () => {
         setLocating(false);
