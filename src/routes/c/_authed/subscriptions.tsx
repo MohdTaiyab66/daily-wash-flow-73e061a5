@@ -185,18 +185,15 @@ function MyPlanPage() {
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs" disabled={isDemo}>
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs">
                   <Pause className="h-3.5 w-3.5" /> Pause
                 </Button>
-                {(expiringSoon || isDemo) && (
-                  <Button asChild={isDemo} size="sm" className="h-8 gap-1 rounded-full text-xs">
-                    {isDemo ? (
-                      <Link to="/c/home"><RefreshCw className="h-3.5 w-3.5" /> Subscribe</Link>
-                    ) : (
-                      <><RefreshCw className="h-3.5 w-3.5" /> Renew</>
-                    )}
+                {expiringSoon && (
+                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
+                    <RefreshCw className="h-3.5 w-3.5" /> Renew
                   </Button>
                 )}
+
               </div>
             </div>
           </div>
