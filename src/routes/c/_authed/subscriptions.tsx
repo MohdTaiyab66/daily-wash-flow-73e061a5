@@ -151,12 +151,6 @@ function MyPlanPage() {
 
       {activeSub && (
         <>
-          {isDemo && (
-            <div className="mt-5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-[11px] text-primary">
-              <span className="font-semibold">Demo preview · </span>
-              Subscribe to Daily Shine to start tracking your real services here.
-            </div>
-          )}
           {/* Active plan hero */}
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
             <div className="flex items-start justify-between gap-3">
