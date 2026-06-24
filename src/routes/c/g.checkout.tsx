@@ -29,11 +29,13 @@ function GuestCheckout() {
 
   useEffect(() => {
     setArea(localStorage.getItem("uw_customer_area") ?? "");
+    track("booking_started", { slug: cart.serviceSlug, category: cart.vehicleCategory });
     (async () => {
       const { data } = await supabase.auth.getSession();
       setSignedIn(!!data.session?.user?.email?.endsWith("@customer.urbanwash.app"));
       setChecking(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const serviceQ = useQuery({
