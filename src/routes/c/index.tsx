@@ -19,6 +19,7 @@ function CustomerSplash() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    track("visit_splash");
     let cancelled = false;
     const t = window.setTimeout(async () => {
       if (cancelled) return;
