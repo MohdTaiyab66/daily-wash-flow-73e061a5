@@ -65,6 +65,8 @@ function CustomerWelcome() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (data.session) {
+      await migrateGuestVehicle();
+      track("otp_completed", { mode: "signin" });
       goAfterAuth();
       return;
     }
@@ -92,11 +94,14 @@ function CustomerWelcome() {
         phone,
       }, { onConflict: "user_id" });
     }
+    await migrateGuestVehicle();
+    track("otp_completed", { mode: "signup" });
     setLoading(false);
     goAfterAuth();
   };
 
   const skipLogin = () => {
+    track("skip_login");
     const area = localStorage.getItem("uw_customer_area");
     navigate({ to: area ? "/c/services" : "/c/location" });
   };
