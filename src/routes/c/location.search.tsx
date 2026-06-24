@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ export const Route = createFileRoute("/c/location/search")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
-      const { redirect } = await import("@tanstack/react-router");
       throw redirect({ to: "/c/auth" });
     }
   },
