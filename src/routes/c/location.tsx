@@ -1,13 +1,20 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Navigation } from "lucide-react";
 import { nearestServiceArea } from "@/lib/areas";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/c/location")({
   ssr: false,
   head: () => ({ meta: [{ title: "Your location — Urban Wash" }] }),
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
+      throw redirect({ to: "/c/auth" });
+    }
+  },
   component: LocationPermission,
 });
 
@@ -31,7 +38,7 @@ function LocationPermission() {
         localStorage.setItem("uw_customer_area", a.name);
         localStorage.setItem("uw_customer_full_address", `Near ${a.name}, Lucknow`);
         toast.success(`Detected: ${a.name}`);
-        navigate({ to: "/c/services" });
+        navigate({ to: "/c/home" });
       },
       () => {
         setLocating(false);
