@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import hero from "@/assets/hero-car-wash.jpg";
+import { readGuestCart, writeGuestCart } from "@/lib/guest-cart";
+import { track } from "@/lib/funnel";
 
 export const Route = createFileRoute("/c/welcome")({
   ssr: false,
@@ -22,6 +24,27 @@ type Step = "phone" | "otp" | "name";
 
 const customerEmail = (phone: string) => `${phone}@customer.urbanwash.app`;
 const customerPassword = (phone: string) => `UWC@${phone}#2026`;
+
+async function migrateGuestVehicle() {
+  const v = readGuestCart().vehicle;
+  if (!v?.registration) return; // registration is required; user will add later
+  const { data: u } = await supabase.auth.getUser();
+  if (!u?.user) return;
+  try {
+    await (supabase as any).from("customer_vehicles").insert({
+      user_id: u.user.id,
+      make: v.make,
+      model: v.model,
+      category: v.category,
+      color: v.color ?? null,
+      registration_number: v.registration,
+      is_default: true,
+    });
+    writeGuestCart({ vehicle: undefined });
+  } catch {
+    // ignore — keep guest vehicle so the user can finish on the vehicles page
+  }
+}
 
 function CustomerWelcome() {
   const navigate = useNavigate();
@@ -63,6 +86,8 @@ function CustomerWelcome() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (data.session) {
+      await migrateGuestVehicle();
+      track("otp_completed", { mode: "signin" });
       goAfterAuth();
       return;
     }
@@ -90,11 +115,14 @@ function CustomerWelcome() {
         phone,
       }, { onConflict: "user_id" });
     }
+    await migrateGuestVehicle();
+    track("otp_completed", { mode: "signup" });
     setLoading(false);
     goAfterAuth();
   };
 
   const skipLogin = () => {
+    track("skip_login");
     const area = localStorage.getItem("uw_customer_area");
     navigate({ to: area ? "/c/services" : "/c/location" });
   };

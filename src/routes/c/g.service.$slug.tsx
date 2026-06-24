@@ -21,9 +21,12 @@ type Service = {
 function GuestServiceDetail() {
   const { slug } = useParams({ from: "/c/g/service/$slug" });
   const navigate = useNavigate();
-  const [category, setCategory] = useState<"hatchback" | "sedan_suv">(
-    () => (readGuestCart().vehicleCategory ?? "hatchback"),
-  );
+  const [category, setCategory] = useState<"hatchback" | "sedan_suv">(() => {
+    const c = readGuestCart();
+    if (c.vehicleCategory) return c.vehicleCategory;
+    if (c.vehicle?.category === "sedan_suv") return "sedan_suv";
+    return "hatchback";
+  });
   const [authChecking, setAuthChecking] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
 

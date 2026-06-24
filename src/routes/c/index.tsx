@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/funnel";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/c/")({
@@ -18,6 +19,7 @@ function CustomerSplash() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    track("visit_splash");
     let cancelled = false;
     const t = window.setTimeout(async () => {
       if (cancelled) return;

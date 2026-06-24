@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { readGuestCart } from "@/lib/guest-cart";
 
 export const Route = createFileRoute("/c/services")({
   ssr: false,
@@ -51,9 +52,11 @@ const PLAN_INCLUDED = ["daily-shine-exterior", "daily-shine-interior", "daily-sh
 function PublicHome() {
   const navigate = useNavigate();
   const [area, setArea] = useState("");
+  const [guestVehicle, setGuestVehicle] = useState<ReturnType<typeof readGuestCart>["vehicle"]>();
 
   useEffect(() => {
     setArea(localStorage.getItem("uw_customer_area") ?? "");
+    setGuestVehicle(readGuestCart().vehicle);
   }, []);
 
   const servicesQ = useQuery({
@@ -94,22 +97,30 @@ function PublicHome() {
           </button>
 
           <button
-            onClick={goLogin}
+            onClick={() => navigate({ to: "/c/g/vehicles" })}
             className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground"
           >
-            <Plus className="h-3.5 w-3.5" /> Add vehicle
+            <Plus className="h-3.5 w-3.5" /> {guestVehicle ? "My vehicle" : "Add vehicle"}
           </button>
         </div>
 
-        {/* Add vehicle hero */}
+        {/* Vehicle hero */}
         <button
-          onClick={goLogin}
+          onClick={() => navigate({ to: "/c/g/vehicles" })}
           className="mt-4 flex w-full items-center justify-between rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5 text-left"
         >
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Add your car</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight">Get started in 30 seconds</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Login to add your vehicle and see pricing.</p>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {guestVehicle ? "Your vehicle" : "Add your car"}
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight truncate">
+              {guestVehicle ? `${guestVehicle.make} ${guestVehicle.model}` : "Get started in 30 seconds"}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {guestVehicle
+                ? `${guestVehicle.bodyLabel ?? (guestVehicle.category === "sedan_suv" ? "Sedan / SUV" : "Hatchback")} • tap to switch`
+                : "Search make & model — no login needed."}
+            </p>
           </div>
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground">
             <Plus className="h-5 w-5" />
