@@ -46,7 +46,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     const response = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+        Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -110,7 +110,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
     if (bookingError) throw new Error(bookingError.message);
     if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
 
-    const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
+    const authHeader = `Basic ${btoa(`${keyId}:${keySecret}`)}`;
     const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${data.razorpayPaymentId}`, {
       headers: { Authorization: authHeader },
     });
