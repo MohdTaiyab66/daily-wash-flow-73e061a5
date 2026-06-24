@@ -16,6 +16,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CIndexRouteImport } from './routes/c/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CWelcomeRouteImport } from './routes/c/welcome'
+import { Route as CLocationRouteImport } from './routes/c/location'
 import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
@@ -37,6 +39,7 @@ import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
 import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
@@ -94,6 +97,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const CWelcomeRoute = CWelcomeRouteImport.update({
+  id: '/c/welcome',
+  path: '/c/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CLocationRoute = CLocationRouteImport.update({
+  id: '/c/location',
+  path: '/c/location',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CAuthRoute = CAuthRouteImport.update({
   id: '/c/auth',
@@ -199,6 +212,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const CLocationSearchRoute = CLocationSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => CLocationRoute,
 } as any)
 const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
   id: '/vehicles',
@@ -348,6 +366,8 @@ export interface FileRoutesByFullPath {
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
+  '/c/location': typeof CLocationRouteWithChildren
+  '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
@@ -369,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
+  '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -398,6 +419,8 @@ export interface FileRoutesByTo {
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
+  '/c/location': typeof CLocationRouteWithChildren
+  '/c/welcome': typeof CWelcomeRoute
   '/admin': typeof AdminIndexRoute
   '/app/area': typeof AuthenticatedAppAreaRoute
   '/app/assignments': typeof AuthenticatedAppAssignmentsRoute
@@ -418,6 +441,7 @@ export interface FileRoutesByTo {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
+  '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -451,6 +475,8 @@ export interface FileRoutesById {
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
+  '/c/location': typeof CLocationRouteWithChildren
+  '/c/welcome': typeof CWelcomeRoute
   '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
   '/_authenticated/app/area': typeof AuthenticatedAppAreaRoute
@@ -472,6 +498,7 @@ export interface FileRoutesById {
   '/c/_authed/referrals': typeof CAuthedReferralsRoute
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
+  '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -505,6 +532,8 @@ export interface FileRouteTypes {
     | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
+    | '/c/location'
+    | '/c/welcome'
     | '/admin/'
     | '/c/'
     | '/app/area'
@@ -526,6 +555,7 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
+    | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
     | '/c/bookings/$id'
@@ -555,6 +585,8 @@ export interface FileRouteTypes {
     | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
+    | '/c/location'
+    | '/c/welcome'
     | '/admin'
     | '/app/area'
     | '/app/assignments'
@@ -575,6 +607,7 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
+    | '/c/location/search'
     | '/app'
     | '/app/service/$id'
     | '/c/bookings/$id'
@@ -607,6 +640,8 @@ export interface FileRouteTypes {
     | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
+    | '/c/location'
+    | '/c/welcome'
     | '/admin/'
     | '/c/'
     | '/_authenticated/app/area'
@@ -628,6 +663,7 @@ export interface FileRouteTypes {
     | '/c/_authed/referrals'
     | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
+    | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
     | '/c/_authed/bookings/$id'
@@ -643,6 +679,8 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   CAuthedRouteRoute: typeof CAuthedRouteRouteWithChildren
   CAuthRoute: typeof CAuthRoute
+  CLocationRoute: typeof CLocationRouteWithChildren
+  CWelcomeRoute: typeof CWelcomeRoute
   CIndexRoute: typeof CIndexRoute
 }
 
@@ -696,6 +734,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/c/welcome': {
+      id: '/c/welcome'
+      path: '/c/welcome'
+      fullPath: '/c/welcome'
+      preLoaderRoute: typeof CWelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/location': {
+      id: '/c/location'
+      path: '/c/location'
+      fullPath: '/c/location'
+      preLoaderRoute: typeof CLocationRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/c/auth': {
       id: '/c/auth'
@@ -843,6 +895,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/location/search': {
+      id: '/c/location/search'
+      path: '/search'
+      fullPath: '/c/location/search'
+      preLoaderRoute: typeof CLocationSearchRouteImport
+      parentRoute: typeof CLocationRoute
     }
     '/c/_authed/vehicles': {
       id: '/c/_authed/vehicles'
@@ -1150,6 +1209,18 @@ const CAuthedRouteRouteWithChildren = CAuthedRouteRoute._addFileChildren(
   CAuthedRouteRouteChildren,
 )
 
+interface CLocationRouteChildren {
+  CLocationSearchRoute: typeof CLocationSearchRoute
+}
+
+const CLocationRouteChildren: CLocationRouteChildren = {
+  CLocationSearchRoute: CLocationSearchRoute,
+}
+
+const CLocationRouteWithChildren = CLocationRoute._addFileChildren(
+  CLocationRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1158,18 +1229,10 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   CAuthedRouteRoute: CAuthedRouteRouteWithChildren,
   CAuthRoute: CAuthRoute,
+  CLocationRoute: CLocationRouteWithChildren,
+  CWelcomeRoute: CWelcomeRoute,
   CIndexRoute: CIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
