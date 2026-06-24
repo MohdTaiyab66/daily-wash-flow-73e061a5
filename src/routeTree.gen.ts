@@ -34,6 +34,7 @@ import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
+import { Route as AdminCustomerAnalyticsRouteImport } from './routes/admin.customer-analytics'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
@@ -185,6 +186,11 @@ const AdminCustomersRoute = AdminCustomersRouteImport.update({
 const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
   id: '/customer-map',
   path: '/customer-map',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCustomerAnalyticsRoute = AdminCustomerAnalyticsRouteImport.update({
+  id: '/customer-analytics',
+  path: '/customer-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/c': typeof CIndexRoute
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -506,6 +515,7 @@ export interface FileRouteTypes {
     | '/c'
     | '/app'
     | '/admin/attendance'
+    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -558,6 +568,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/c'
     | '/admin/attendance'
+    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -612,6 +623,7 @@ export interface FileRouteTypes {
     | '/c/_authed'
     | '/_authenticated/app'
     | '/admin/attendance'
+    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -846,6 +858,13 @@ declare module '@tanstack/react-router' {
       path: '/customer-map'
       fullPath: '/admin/customer-map'
       preLoaderRoute: typeof AdminCustomerMapRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customer-analytics': {
+      id: '/admin/customer-analytics'
+      path: '/customer-analytics'
+      fullPath: '/admin/customer-analytics'
+      preLoaderRoute: typeof AdminCustomerAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/attendance': {
@@ -1105,6 +1124,7 @@ const AdminCustomersRouteWithChildren = AdminCustomersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
+  AdminCustomerAnalyticsRoute: typeof AdminCustomerAnalyticsRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminFraudRoute: typeof AdminFraudRoute
@@ -1128,6 +1148,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
+  AdminCustomerAnalyticsRoute: AdminCustomerAnalyticsRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminFraudRoute: AdminFraudRoute,
