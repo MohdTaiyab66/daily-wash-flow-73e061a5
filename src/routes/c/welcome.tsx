@@ -25,6 +25,27 @@ type Step = "phone" | "otp" | "name";
 const customerEmail = (phone: string) => `${phone}@customer.urbanwash.app`;
 const customerPassword = (phone: string) => `UWC@${phone}#2026`;
 
+async function migrateGuestVehicle() {
+  const v = readGuestCart().vehicle;
+  if (!v?.registration) return; // registration is required; user will add later
+  const { data: u } = await supabase.auth.getUser();
+  if (!u?.user) return;
+  try {
+    await (supabase as any).from("customer_vehicles").insert({
+      user_id: u.user.id,
+      make: v.make,
+      model: v.model,
+      category: v.category,
+      color: v.color ?? null,
+      registration_number: v.registration,
+      is_default: true,
+    });
+    writeGuestCart({ vehicle: undefined });
+  } catch {
+    // ignore — keep guest vehicle so the user can finish on the vehicles page
+  }
+}
+
 function CustomerWelcome() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
