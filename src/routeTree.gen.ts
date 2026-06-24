@@ -47,6 +47,7 @@ import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referra
 import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
 import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
 import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
+import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
@@ -255,6 +256,12 @@ const CAuthedBookingsRoute = CAuthedBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const ApiPublicRazorpayWebhookRoute =
+  ApiPublicRazorpayWebhookRouteImport.update({
+    id: '/api/public/razorpay-webhook',
+    path: '/api/public/razorpay-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
   id: '/service/$id',
   path: '/service/$id',
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/profile': typeof CAuthedProfileRoute
@@ -451,6 +459,7 @@ export interface FileRoutesByTo {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/profile': typeof CAuthedProfileRoute
@@ -510,6 +519,7 @@ export interface FileRoutesById {
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/_authed/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/_authed/home': typeof CAuthedHomeRoute
   '/c/_authed/profile': typeof CAuthedProfileRoute
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
     | '/c/profile'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
     | '/c/profile'
@@ -681,6 +693,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/razorpay-webhook'
     | '/c/_authed/bookings'
     | '/c/_authed/home'
     | '/c/_authed/profile'
@@ -706,6 +719,7 @@ export interface RootRouteChildren {
   CAuthRoute: typeof CAuthRoute
   CLocationRoute: typeof CLocationRouteWithChildren
   CIndexRoute: typeof CIndexRoute
+  ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
 }
 
@@ -976,6 +990,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/bookings'
       preLoaderRoute: typeof CAuthedBookingsRouteImport
       parentRoute: typeof CAuthedRouteRoute
+    }
+    '/api/public/razorpay-webhook': {
+      id: '/api/public/razorpay-webhook'
+      path: '/api/public/razorpay-webhook'
+      fullPath: '/api/public/razorpay-webhook'
+      preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/service/$id': {
       id: '/admin/service/$id'
@@ -1274,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   CAuthRoute: CAuthRoute,
   CLocationRoute: CLocationRouteWithChildren,
   CIndexRoute: CIndexRoute,
+  ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
 }
 export const routeTree = rootRouteImport
