@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import hero from "@/assets/hero-car-wash.jpg";
+import { readGuestCart, writeGuestCart } from "@/lib/guest-cart";
+import { track } from "@/lib/funnel";
 
 export const Route = createFileRoute("/c/welcome")({
   ssr: false,
