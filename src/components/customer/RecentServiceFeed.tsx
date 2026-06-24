@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Camera, CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
@@ -38,11 +38,11 @@ type RecentService = {
   has_complaint: boolean;
 };
 
-export function RecentServiceFeed({ userId, demo }: { userId: string | null; demo?: boolean }) {
+export function RecentServiceFeed({ userId }: { userId: string | null }) {
   const qc = useQueryClient();
   const recentQ = useQuery({
     queryKey: ["my-recent-services", userId],
-    enabled: !!userId && !demo,
+    enabled: !!userId,
     refetchInterval: 30000,
     queryFn: async (): Promise<RecentService[]> => {
       const { data, error } = await (supabase as any).rpc("list_my_recent_services", { p_days: 2 });
@@ -51,9 +51,9 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
     },
   });
 
-  // Realtime: refresh when a service or photo changes for me
+  // Realtime: refresh when a service or photo changes
   useEffect(() => {
-    if (!userId || demo) return;
+    if (!userId) return;
     const ch = supabase
       .channel("customer-service-feed")
       .on("postgres_changes", { event: "*", schema: "public", table: "services" }, () => {
@@ -64,7 +64,7 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [userId, demo, qc]);
+  }, [userId, qc]);
 
   // Listen for completion → toast notification
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
@@ -81,78 +81,9 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
     }
   }, [recentQ.data, seenIds]);
 
-  const demoList: RecentService[] = useMemo(() => {
-    const completed = new Date(Date.now() - 35 * 60 * 1000).toISOString();
-    const earlier = new Date(Date.now() - 26 * 3600 * 1000).toISOString();
-    const yesterday = new Date(Date.now() - 20 * 3600 * 1000).toISOString();
-    return [
-      {
-        service_id: "demo-svc",
-        booking_id: "demo-bk",
-        scheduled_date: new Date().toISOString().slice(0, 10),
-        completed_at: completed,
-        status: "completed",
-        service_name: "Daily Shine — Exterior",
-        service_slug: "daily-shine",
-        partner_id: null,
-        partner_name: "Rahul (Demo Partner)",
-        vehicle_label: "Hyundai Creta",
-        photos: [],
-        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
-        dirty_report: null,
-        complaint_window_ends_at: new Date(Date.parse(completed) + 2 * 3600 * 1000).toISOString(),
-        can_complain: true,
-        has_complaint: false,
-      },
-      {
-        service_id: "demo-dirty",
-        booking_id: "demo-bk-2",
-        scheduled_date: yesterday.slice(0, 10),
-        completed_at: yesterday,
-        status: "completed",
-        service_name: "Daily Shine — Dusting",
-        service_slug: "daily-shine-dusting",
-        partner_id: null,
-        partner_name: "Aman (Demo Partner)",
-        vehicle_label: "Hyundai Creta",
-        photos: [],
-        unavailable_reason: null, unavailable_notes: null, unavailable_photo: null,
-        dirty_report: {
-          reason: "Heavy mud / dust",
-          notes: "Car returned from a long drive — extra dirt on rims. Wiped clean.",
-          photo_front: null, photo_rear: null, photo_left: null, photo_right: null,
-          created_at: yesterday,
-        },
-        complaint_window_ends_at: new Date(Date.parse(yesterday) + 2 * 3600 * 1000).toISOString(),
-        can_complain: false,
-        has_complaint: false,
-      },
-      {
-        service_id: "demo-unavail",
-        booking_id: "demo-bk-3",
-        scheduled_date: earlier.slice(0, 10),
-        completed_at: earlier,
-        status: "unavailable",
-        service_name: "Daily Shine — Exterior",
-        service_slug: "daily-shine",
-        partner_id: null,
-        partner_name: "Rahul (Demo Partner)",
-        vehicle_label: "Hyundai Creta",
-        photos: [],
-        unavailable_reason: "car_not_parked",
-        unavailable_notes: "Car was not at the usual parking spot.",
-        unavailable_photo: null,
-        dirty_report: null,
-        complaint_window_ends_at: earlier,
-        can_complain: false,
-        has_complaint: false,
-      },
-    ];
-  }, []);
+  const list = recentQ.data ?? [];
 
-  const list = demo ? demoList : (recentQ.data ?? []);
-
-  if (!demo && recentQ.isLoading) {
+  if (recentQ.isLoading) {
     return <div className="mt-5 h-24 animate-pulse rounded-2xl bg-muted" />;
   }
   if (list.length === 0) return null;
@@ -164,20 +95,20 @@ export function RecentServiceFeed({ userId, demo }: { userId: string | null; dem
         <span className="text-[10px] text-muted-foreground">Visible for 2 days</span>
       </div>
       <div className="mt-2 space-y-3">
-        {list.map((s) => <ServiceCard key={s.service_id} service={s} demo={demo} onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-recent-services", userId] })} />)}
+        {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-recent-services", userId] })} />)}
       </div>
     </div>
   );
 }
 
-function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; demo?: boolean; onSubmitted: () => void }) {
+function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmitted: () => void }) {
   const completed = new Date(service.completed_at);
   const windowEnd = new Date(service.complaint_window_ends_at);
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t); }, []);
   const msLeft = windowEnd.getTime() - now;
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
-  const canComplain = !demo ? service.can_complain && msLeft > 0 && !service.has_complaint : true;
+  const canComplain = service.can_complain && msLeft > 0 && !service.has_complaint;
 
   const isUnavailable = service.status === "unavailable";
   const hasDirty = !!service.dirty_report;
@@ -207,7 +138,6 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
             <p className="truncate text-sm font-semibold">
               {isUnavailable ? `Skipped · ${service.service_name ?? "Service"}` : service.service_name ?? "Service complete"}
             </p>
-            {demo && <Badge variant="outline" className="h-5 text-[9px]">DEMO</Badge>}
             {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -231,7 +161,7 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
         </div>
       </div>
 
-      {!isUnavailable && <PhotoStrip photos={service.photos} demo={demo} />}
+      {!isUnavailable && <PhotoStrip photos={service.photos} />}
       {isUnavailable && service.unavailable_photo && (
         <div className="bg-muted/40 px-4 py-2">
           <SignedPhoto path={service.unavailable_photo} stage="proof" />
@@ -252,7 +182,7 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
           )}
         </div>
         {!isUnavailable && (
-          <ComplaintButton service={service} canComplain={canComplain} demo={demo} onSubmitted={onSubmitted} />
+          <ComplaintButton service={service} canComplain={canComplain} onSubmitted={onSubmitted} />
         )}
       </div>
     </Card>
@@ -260,18 +190,7 @@ function ServiceCard({ service, demo, onSubmitted }: { service: RecentService; d
 }
 
 
-function PhotoStrip({ photos, demo }: { photos: Photo[]; demo?: boolean }) {
-  if (demo) {
-    return (
-      <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-        {["Front", "Side", "Rear", "Interior"].map((l) => (
-          <div key={l} className="grid aspect-square place-items-center rounded-md bg-gradient-to-br from-primary/15 to-accent text-[10px] text-muted-foreground">
-            <Camera className="h-4 w-4 text-primary/70" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+function PhotoStrip({ photos }: { photos: Photo[] }) {
   if (!photos.length) return null;
   return (
     <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
@@ -298,14 +217,13 @@ function SignedPhoto({ path, stage }: { path: string; stage: string }) {
   );
 }
 
-function ComplaintButton({ service, canComplain, demo, onSubmitted }: { service: RecentService; canComplain: boolean; demo?: boolean; onSubmitted: () => void }) {
+function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<string>("quality");
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (demo) { toast.success("Demo complaint noted (not saved)"); setOpen(false); return; }
     setSaving(true);
     try {
       const { error } = await (supabase as any).rpc("submit_service_complaint", {
