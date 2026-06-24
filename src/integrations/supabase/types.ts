@@ -497,42 +497,6 @@ export type Database = {
         }
         Relationships: []
       }
-      customer_notifications: {
-        Row: {
-          body: string | null
-          created_at: string
-          id: string
-          link: string | null
-          metadata: Json
-          read_at: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          link?: string | null
-          metadata?: Json
-          read_at?: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          link?: string | null
-          metadata?: Json
-          read_at?: string | null
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       customer_profiles: {
         Row: {
           created_at: string
@@ -1193,132 +1157,6 @@ export type Database = {
             columns: ["referred_by"]
             isOneToOne: false
             referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      payment_transactions: {
-        Row: {
-          amount: number | null
-          booking_id: string | null
-          created_at: string
-          event_type: string
-          id: string
-          payment_id: string | null
-          provider: string
-          provider_order_id: string | null
-          provider_payment_id: string | null
-          raw_payload: Json
-          signature: string | null
-          status: string
-          user_id: string
-        }
-        Insert: {
-          amount?: number | null
-          booking_id?: string | null
-          created_at?: string
-          event_type: string
-          id?: string
-          payment_id?: string | null
-          provider?: string
-          provider_order_id?: string | null
-          provider_payment_id?: string | null
-          raw_payload?: Json
-          signature?: string | null
-          status?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number | null
-          booking_id?: string | null
-          created_at?: string
-          event_type?: string
-          id?: string
-          payment_id?: string | null
-          provider?: string
-          provider_order_id?: string | null
-          provider_payment_id?: string | null
-          raw_payload?: Json
-          signature?: string | null
-          status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_transactions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_transactions_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      payments: {
-        Row: {
-          amount: number
-          booking_id: string | null
-          created_at: string
-          currency: string
-          id: string
-          metadata: Json
-          provider: string
-          provider_order_id: string | null
-          provider_payment_id: string | null
-          status: string
-          subscription_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          id?: string
-          metadata?: Json
-          provider?: string
-          provider_order_id?: string | null
-          provider_payment_id?: string | null
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          id?: string
-          metadata?: Json
-          provider?: string
-          provider_order_id?: string | null
-          provider_payment_id?: string | null
-          status?: string
-          subscription_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -2031,78 +1869,6 @@ export type Database = {
           },
         ]
       }
-      subscriptions: {
-        Row: {
-          amount: number
-          assigned_at: string | null
-          assigned_partner_id: string | null
-          booking_id: string
-          created_at: string
-          currency: string
-          customer_id: string
-          id: string
-          plan_slug: string
-          renewal_date: string
-          service_start_date: string | null
-          start_date: string
-          status: string
-          updated_at: string
-          user_id: string
-          vehicle_id: string | null
-        }
-        Insert: {
-          amount?: number
-          assigned_at?: string | null
-          assigned_partner_id?: string | null
-          booking_id: string
-          created_at?: string
-          currency?: string
-          customer_id: string
-          id?: string
-          plan_slug?: string
-          renewal_date: string
-          service_start_date?: string | null
-          start_date?: string
-          status?: string
-          updated_at?: string
-          user_id: string
-          vehicle_id?: string | null
-        }
-        Update: {
-          amount?: number
-          assigned_at?: string | null
-          assigned_partner_id?: string | null
-          booking_id?: string
-          created_at?: string
-          currency?: string
-          customer_id?: string
-          id?: string
-          plan_slug?: string
-          renewal_date?: string
-          service_start_date?: string | null
-          start_date?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-          vehicle_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_assigned_partner_id_fkey"
-            columns: ["assigned_partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       training_modules: {
         Row: {
           category: string
@@ -2219,56 +1985,6 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      unavailability_reports: {
-        Row: {
-          created_at: string
-          credited_amount: number
-          customer_id: string
-          id: string
-          lat: number | null
-          lng: number | null
-          notes: string | null
-          partner_id: string
-          photo_path: string | null
-          reason: string
-          service_id: string
-        }
-        Insert: {
-          created_at?: string
-          credited_amount?: number
-          customer_id: string
-          id?: string
-          lat?: number | null
-          lng?: number | null
-          notes?: string | null
-          partner_id: string
-          photo_path?: string | null
-          reason: string
-          service_id: string
-        }
-        Update: {
-          created_at?: string
-          credited_amount?: number
-          customer_id?: string
-          id?: string
-          lat?: number | null
-          lng?: number | null
-          notes?: string | null
-          partner_id?: string
-          photo_path?: string | null
-          reason?: string
-          service_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "unavailability_reports_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -2453,16 +2169,6 @@ export type Database = {
         Args: { p_cars: number; p_duration: number }
         Returns: string
       }
-      activate_paid_booking: {
-        Args: {
-          p_booking_id: string
-          p_provider_order_id?: string
-          p_provider_payment_id?: string
-          p_raw_payload?: Json
-          p_signature?: string
-        }
-        Returns: Json
-      }
       admin_cancel_assignment: {
         Args: { p_assignment_id: string; p_note?: string }
         Returns: undefined
@@ -2614,10 +2320,6 @@ export type Database = {
       enqueue_subscription_booking: {
         Args: { p_booking_id: string }
         Returns: string
-      }
-      ensure_ops_customer_for_booking: {
-        Args: { p_booking_id: string }
-        Returns: Json
       }
       ensure_staff_login_role: {
         Args: {

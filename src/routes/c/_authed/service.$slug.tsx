@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Minus } from "lucide-react";
@@ -10,13 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payments.functions";
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -52,8 +44,6 @@ function ServiceDetail() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
-  const createOrder = useServerFn(createRazorpayOrder);
-  const verifyPayment = useServerFn(verifyRazorpayPayment);
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
@@ -228,40 +218,6 @@ function ServiceDetail() {
 
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
-
-      if (service.service_type === "subscription") {
-        toast.message("Opening Razorpay checkout…");
-        const order = await createOrder({ data: { booking_id: String(bookingId) } });
-        if ((order as any)?.alreadyPaid) {
-          await navigate({ to: "/c/subscriptions" });
-          return;
-        }
-
-        await loadRazorpayScript();
-        await openRazorpayCheckout({
-          order: order as any,
-          prefill: {
-            name: currentUser.user.user_metadata?.full_name ?? "",
-            email: currentUser.user.email ?? "",
-            contact: currentUser.user.user_metadata?.phone ?? "",
-          },
-          onSuccess: async (response) => {
-            await verifyPayment({
-              data: {
-                booking_id: String(bookingId),
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-            });
-            toast.success("Payment complete · assigning partner");
-            qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-            qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-            await navigate({ to: "/c/subscriptions" });
-          },
-        });
-        return;
-      }
 
       toast.success("Booking confirmed!");
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
@@ -471,14 +427,11 @@ function ServiceDetail() {
           <div>
             <div className="text-xs text-muted-foreground">Total</div>
             <div className="text-xl font-semibold">₹{total}</div>
-            <div className="text-[10px] text-muted-foreground">
-              {service.service_type === "subscription" ? "Pay securely with Razorpay" : "Pay after service · receipt created after confirm"}
-            </div>
+            <div className="text-[10px] text-muted-foreground">Pay after service · receipt created after confirm</div>
             {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
           </div>
           <Button type="button" onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {service.service_type === "subscription" ? "Pay with Razorpay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -486,61 +439,6 @@ function ServiceDetail() {
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
   );
-}
-
-function loadRazorpayScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (typeof window === "undefined") return reject(new Error("Checkout is not available here"));
-    if (window.Razorpay) return resolve();
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Could not load Razorpay checkout")), { once: true });
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Could not load Razorpay checkout"));
-    document.body.appendChild(script);
-  });
-}
-
-function openRazorpayCheckout({
-  order,
-  prefill,
-  onSuccess,
-}: {
-  order: { keyId: string; orderId: string; amount: number; currency: string; name: string; description: string };
-  prefill: { name: string; email: string; contact: string };
-  onSuccess: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => Promise<void>;
-}) {
-  return new Promise<void>((resolve, reject) => {
-    if (!window.Razorpay) return reject(new Error("Razorpay checkout did not load"));
-    const checkout = new window.Razorpay({
-      key: order.keyId,
-      amount: order.amount,
-      currency: order.currency,
-      name: order.name,
-      description: order.description,
-      order_id: order.orderId,
-      prefill,
-      theme: { color: "#2563eb" },
-      handler: async (response: any) => {
-        try {
-          await onSuccess(response);
-          resolve();
-        } catch (error: any) {
-          reject(error);
-        }
-      },
-      modal: {
-        ondismiss: () => reject(new Error("Payment cancelled. Your booking is saved as pending payment.")),
-      },
-    });
-    checkout.open();
-  });
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {

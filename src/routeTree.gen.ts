@@ -63,7 +63,6 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
-import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
@@ -342,12 +341,6 @@ const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CAuthedBookingsRoute,
 } as any)
-const ApiPublicWebhooksRazorpayRoute =
-  ApiPublicWebhooksRazorpayRouteImport.update({
-    id: '/api/public/webhooks/razorpay',
-    path: '/api/public/webhooks/razorpay',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicCronAssignmentTickRoute =
   ApiPublicCronAssignmentTickRouteImport.update({
     id: '/api/public/cron/assignment-tick',
@@ -414,7 +407,6 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
-  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -469,7 +461,6 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
-  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -529,7 +520,6 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
-  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
@@ -589,7 +579,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/service/$id'
     | '/api/public/cron/assignment-tick'
-    | '/api/public/webhooks/razorpay'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -644,7 +633,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/service/$id'
     | '/api/public/cron/assignment-tick'
-    | '/api/public/webhooks/razorpay'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -703,7 +691,6 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
     | '/api/public/cron/assignment-tick'
-    | '/api/public/webhooks/razorpay'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
@@ -720,7 +707,6 @@ export interface RootRouteChildren {
   CLocationRoute: typeof CLocationRouteWithChildren
   CIndexRoute: typeof CIndexRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
-  ApiPublicWebhooksRazorpayRoute: typeof ApiPublicWebhooksRazorpayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1103,13 +1089,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsIdRouteImport
       parentRoute: typeof CAuthedBookingsRoute
     }
-    '/api/public/webhooks/razorpay': {
-      id: '/api/public/webhooks/razorpay'
-      path: '/api/public/webhooks/razorpay'
-      fullPath: '/api/public/webhooks/razorpay'
-      preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/cron/assignment-tick': {
       id: '/api/public/cron/assignment-tick'
       path: '/api/public/cron/assignment-tick'
@@ -1296,18 +1275,7 @@ const rootRouteChildren: RootRouteChildren = {
   CLocationRoute: CLocationRouteWithChildren,
   CIndexRoute: CIndexRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
-  ApiPublicWebhooksRazorpayRoute: ApiPublicWebhooksRazorpayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
