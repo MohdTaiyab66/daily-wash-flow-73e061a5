@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, BarChart3, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
@@ -24,9 +24,10 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-analytics" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-analytics" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
+    { to: "/admin/marketplace", label: "Daily Shine Marketplace", icon: Sparkles },
     { to: "/admin/trial-readiness", label: "Trial Readiness", icon: ClipboardList },
     { to: "/admin/manual-assignment", label: "Manual Assign", icon: UserCheck },
     { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },

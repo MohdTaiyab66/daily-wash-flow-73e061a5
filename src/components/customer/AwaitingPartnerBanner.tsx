@@ -17,13 +17,14 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("subscription_assignment_queue")
-        .select("id, status, assigned_partner_id, created_at, updated_at, booking_id")
+        .select("id, status, assigned_partner_id, lock_until, created_at, updated_at, booking_id")
         .eq("customer_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       return data as {
         id: string; status: string; assigned_partner_id: string | null;
+        lock_until: string | null;
         created_at: string; updated_at: string; booking_id: string;
       } | null;
     },
@@ -102,6 +103,11 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
                 <PlayCircle className="h-3 w-3" /> Starts · <span className="text-foreground">{startOn}</span>
               </div>
             </div>
+            {queue.lock_until && new Date(queue.lock_until) > new Date() && (
+              <p className="mt-2 text-[11px] text-success">
+                Your partner is locked in until {new Date(queue.lock_until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} for consistency.
+              </p>
+            )}
           </div>
         </div>
       </div>
