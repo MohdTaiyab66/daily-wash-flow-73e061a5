@@ -67,30 +67,12 @@ function MyPlanPage() {
 
   const all = bookingsQ.data ?? [];
   const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
-  const realSub = subs.find(
+  const activeSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
 
-  // Demo subscription shown when the customer has no active plan yet,
-  // so they get a feel for how Daily Shine tracking will look.
-  const isDemo = !realSub;
-  const demoStart = new Date(Date.now() - 12 * 86400000);
-  const activeSub: (Booking & { _demo?: boolean }) | undefined = realSub ?? {
-    id: "demo",
-    scheduled_date: demoStart.toISOString().slice(0, 10),
-    status: "active",
-    payment_status: "cash_on_service",
-    total_amount: 1499,
-    base_amount: 1499,
-    addon_amount: 0,
-    service_id: "demo",
-    service_catalog: { name: "Daily Shine — Exterior + 4× Interior", service_type: "subscription", slug: "daily-shine" },
-    _demo: true,
-  };
-
   // Plan period: Daily Shine = 24 working days (no service on Mondays).
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  // 24 working days ≈ 28 calendar days (one Monday skipped per week).
   const totalDays = 24;
   const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
@@ -112,10 +94,11 @@ function MyPlanPage() {
       new Date(b.scheduled_date) >= monthStart &&
       b.status === "completed",
   );
-  const interiorCount = isDemo ? 2 : interiorReal.length;
-  const exteriorCount = isDemo ? 12 : exteriorReal.length;
-  const interiorLast = isDemo ? new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) : interiorReal[0]?.scheduled_date;
-  const exteriorLast = isDemo ? new Date(Date.now() - 86400000).toISOString().slice(0, 10) : exteriorReal[0]?.scheduled_date;
+  const interiorCount = interiorReal.length;
+  const exteriorCount = exteriorReal.length;
+  const interiorLast = interiorReal[0]?.scheduled_date;
+  const exteriorLast = exteriorReal[0]?.scheduled_date;
+
 
   const addonsQ = useQuery({
     queryKey: ["customer-addons", subs.map((s) => s.id).join(",")],
