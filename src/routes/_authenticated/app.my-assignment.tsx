@@ -35,7 +35,8 @@ function MyAssignmentPage() {
   if (data === null) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5">
-        <Card className="flex flex-col items-center gap-3 p-8 text-center">
+        <DailyShineOfferCard partnerId={partnerId} />
+        <Card className="mt-3 flex flex-col items-center gap-3 p-8 text-center">
           <Briefcase className="h-6 w-6 text-muted-foreground" />
           <p className="font-medium">No active assignment</p>
           <p className="text-sm text-muted-foreground">Build one from the marketplace.</p>
