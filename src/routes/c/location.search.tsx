@@ -10,6 +10,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/c/location/search")({
   ssr: false,
   head: () => ({ meta: [{ title: "Search location — Urban Wash" }] }),
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
+      const { redirect } = await import("@tanstack/react-router");
+      throw redirect({ to: "/c/auth" });
+    }
+  },
   component: LocationSearch,
 });
 
