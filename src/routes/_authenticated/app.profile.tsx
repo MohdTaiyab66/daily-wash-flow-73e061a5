@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard";
+import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
   component: ProfilePage,
@@ -94,6 +95,10 @@ function ProfilePage() {
           <Lock className="h-3.5 w-3.5" />
           <span>{t("area_locked_until")} {new Date(partner.area_locked_until!).toLocaleDateString("en-IN")}</span>
         </Card>
+      )}
+
+      {partner?.id && (
+        <ReliabilityCard partnerId={partner.id} score={Number((partner as any)?.reliability_score ?? 100)} />
       )}
 
       <CapacitySettingsCard partnerId={partner?.id ?? null} />
