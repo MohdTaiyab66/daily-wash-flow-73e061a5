@@ -33,6 +33,7 @@ import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
+import { Route as AdminFunnelRouteImport } from './routes/admin.funnel'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
@@ -186,6 +187,11 @@ const AdminLiveRoute = AdminLiveRouteImport.update({
 const AdminImportRoute = AdminImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFunnelRoute = AdminFunnelRouteImport.update({
+  id: '/funnel',
+  path: '/funnel',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFraudRoute = AdminFraudRouteImport.update({
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
+  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -440,6 +447,7 @@ export interface FileRoutesByTo {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
+  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
+  '/admin/funnel': typeof AdminFunnelRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
@@ -563,6 +572,7 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
+    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -621,6 +631,7 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
+    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -681,6 +692,7 @@ export interface FileRouteTypes {
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
+    | '/admin/funnel'
     | '/admin/import'
     | '/admin/live'
     | '/admin/manual-assignment'
@@ -916,6 +928,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/admin/import'
       preLoaderRoute: typeof AdminImportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/funnel': {
+      id: '/admin/funnel'
+      path: '/funnel'
+      fullPath: '/admin/funnel'
+      preLoaderRoute: typeof AdminFunnelRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/fraud': {
@@ -1227,6 +1246,7 @@ interface AdminRouteChildren {
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminFraudRoute: typeof AdminFraudRoute
+  AdminFunnelRoute: typeof AdminFunnelRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
@@ -1250,6 +1270,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminFraudRoute: AdminFraudRoute,
+  AdminFunnelRoute: AdminFunnelRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
