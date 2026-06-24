@@ -12,6 +12,9 @@ import hero from "@/assets/hero-car-wash.jpg";
 export const Route = createFileRoute("/c/welcome")({
   ssr: false,
   head: () => ({ meta: [{ title: "Welcome — Urban Wash" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+  }),
   component: CustomerWelcome,
 });
 
