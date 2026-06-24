@@ -34,10 +34,10 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     enabled: !!queue?.assigned_partner_id,
     queryFn: async () => {
       const { data } = await supabase.from("partners")
-        .select("full_name, rating, photo_url")
+        .select("full_name, rating, profile_photo_url")
         .eq("id", queue!.assigned_partner_id!)
         .maybeSingle();
-      return data as { full_name: string; rating: number | null; photo_url: string | null } | null;
+      return data as { full_name: string; rating: number | null; profile_photo_url: string | null } | null;
     },
   });
 
@@ -80,8 +80,8 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">Your Urban Wash Partner has been assigned</p>
             <div className="mt-2 flex items-center gap-3">
-              {partner.photo_url ? (
-                <img src={partner.photo_url} alt={partner.full_name} className="h-10 w-10 rounded-full object-cover" />
+              {partner.profile_photo_url ? (
+                <img src={partner.profile_photo_url} alt={partner.full_name} className="h-10 w-10 rounded-full object-cover" />
               ) : (
                 <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center text-sm font-semibold text-success">
                   {partner.full_name?.[0] ?? "P"}
