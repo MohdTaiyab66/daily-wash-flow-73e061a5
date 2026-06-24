@@ -74,6 +74,7 @@ function PublicHome() {
   const oneTime = services.filter((s) => s.service_type !== "subscription");
 
   const goLogin = () => navigate({ to: "/c/welcome" });
+  const openService = (slug: string) => navigate({ to: "/c/g/service/$slug", params: { slug } });
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -123,7 +124,7 @@ function PublicHome() {
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Best value</span>
             </div>
             <button
-              onClick={goLogin}
+              onClick={() => openService(subscription.slug)}
               className="relative block w-full overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
@@ -165,7 +166,7 @@ function PublicHome() {
                 return (
                   <button
                     key={s.id}
-                    onClick={goLogin}
+                    onClick={() => openService(s.slug)}
                     className="group flex w-full items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
                   >
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent text-primary">
