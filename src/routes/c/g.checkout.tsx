@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Car, Calendar, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { readGuestCart, writeGuestCart, setPendingRedirect } from "@/lib/guest-cart";
+import { track } from "@/lib/funnel";
 
 export const Route = createFileRoute("/c/g/checkout")({
   ssr: false,
