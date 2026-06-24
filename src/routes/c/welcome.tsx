@@ -25,6 +25,12 @@ const customerPassword = (phone: string) => `UWC@${phone}#2026`;
 
 function CustomerWelcome() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goAfterAuth = () => {
+    if (redirect) { navigate({ to: redirect as any }); return; }
+    const area = localStorage.getItem("uw_customer_area");
+    navigate({ to: area ? "/c/home" : "/c/location" });
+  };
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
