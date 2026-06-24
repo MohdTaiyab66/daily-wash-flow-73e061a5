@@ -372,7 +372,12 @@ export const updateSetting = createServerFn({ method: "POST" }).middleware([requ
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let v: any = data.value;
     if (typeof v === "string") {
-      if (v === "true") v = true;
+      const trimmed = v.trim();
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        try { v = JSON.parse(trimmed); } catch { /* keep as string */ }
+      } else if (trimmed.includes(",") && trimmed.split(",").every((p) => !isNaN(Number(p.trim())))) {
+        v = trimmed.split(",").map((p) => Number(p.trim()));
+      } else if (v === "true") v = true;
       else if (v === "false") v = false;
       else if (v !== "" && !isNaN(Number(v))) v = Number(v);
     }
