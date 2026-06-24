@@ -36,38 +36,39 @@ function CustomerAnalytics() {
       const todayIso = startOfTodayIso();
       const monthIso = startOfMonthIso();
       const recentIso = thirtyDaysAgoIso();
+      const today = todayIso.slice(0, 10);
 
       const [
         custCount,
-        subsActive,
+        activeSubs,
         bookingsTodayQ,
         bookingsRecent,
         revenueTodayQ,
         revenueMonthQ,
       ] = await Promise.all([
         supabase.from("customer_profiles").select("*", { count: "exact", head: true }),
-        supabase.from("bookings").select("user_id, service_type", { count: "exact" })
-          .eq("service_type", "subscription").in("status", ["active", "in_progress", "scheduled"] as any),
+        supabase.from("customers").select("subscription_plan", { count: "exact" })
+          .eq("is_active", true).gte("subscription_end", today),
         supabase.from("bookings").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
         supabase.from("bookings").select("user_id").gte("created_at", recentIso),
-        supabase.from("bookings").select("amount").gte("created_at", todayIso).eq("payment_status" as any, "paid"),
-        supabase.from("bookings").select("amount").gte("created_at", monthIso).eq("payment_status" as any, "paid"),
+        supabase.from("bookings").select("total_amount").gte("created_at", todayIso).eq("payment_status", "paid"),
+        supabase.from("bookings").select("total_amount").gte("created_at", monthIso).eq("payment_status", "paid"),
       ]);
 
       const activeCustomers = new Set(((bookingsRecent.data ?? []) as Array<{ user_id: string }>).map(b => b.user_id)).size;
-      const dailyShineCustomers = new Set(
-        ((subsActive.data ?? []) as Array<{ user_id: string }>).map(b => b.user_id),
-      ).size;
-      const sum = (rows: any[] | null) => (rows ?? []).reduce((a, r) => a + (Number(r.amount) || 0), 0);
+      const dailyShineCustomers = ((activeSubs.data ?? []) as Array<{ subscription_plan: string }>)
+        .filter(r => String(r.subscription_plan).toLowerCase().includes("daily")).length;
+      const sum = (rows: Array<{ total_amount: number }> | null) =>
+        (rows ?? []).reduce((a, r) => a + (Number(r.total_amount) || 0), 0);
 
       return {
         totalCustomers: custCount.count ?? 0,
         activeCustomers,
-        activeSubscriptions: subsActive.count ?? 0,
+        activeSubscriptions: activeSubs.count ?? 0,
         dailyShineCustomers,
         bookingsToday: bookingsTodayQ.count ?? 0,
-        revenueToday: sum(revenueTodayQ.data as any[]),
-        revenueThisMonth: sum(revenueMonthQ.data as any[]),
+        revenueToday: sum(revenueTodayQ.data as Array<{ total_amount: number }> | null),
+        revenueThisMonth: sum(revenueMonthQ.data as Array<{ total_amount: number }> | null),
       };
     },
   });
