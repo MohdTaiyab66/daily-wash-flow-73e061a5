@@ -978,6 +978,7 @@ export type Database = {
         Row: {
           aadhaar_number: string | null
           aadhaar_verified: boolean
+          accepting_new: boolean
           area_change_count: number
           area_locked_until: string | null
           attendance_pct: number
@@ -999,6 +1000,7 @@ export type Database = {
           joined_on: string
           level: string
           lifetime_earnings: number
+          max_daily_cars: number
           notify_when_customers_added: boolean
           pan_number: string | null
           pan_verified: boolean
@@ -1019,6 +1021,7 @@ export type Database = {
         Insert: {
           aadhaar_number?: string | null
           aadhaar_verified?: boolean
+          accepting_new?: boolean
           area_change_count?: number
           area_locked_until?: string | null
           attendance_pct?: number
@@ -1040,6 +1043,7 @@ export type Database = {
           joined_on?: string
           level?: string
           lifetime_earnings?: number
+          max_daily_cars?: number
           notify_when_customers_added?: boolean
           pan_number?: string | null
           pan_verified?: boolean
@@ -1060,6 +1064,7 @@ export type Database = {
         Update: {
           aadhaar_number?: string | null
           aadhaar_verified?: boolean
+          accepting_new?: boolean
           area_change_count?: number
           area_locked_until?: string | null
           attendance_pct?: number
@@ -1081,6 +1086,7 @@ export type Database = {
           joined_on?: string
           level?: string
           lifetime_earnings?: number
+          max_daily_cars?: number
           notify_when_customers_added?: boolean
           pan_number?: string | null
           pan_verified?: boolean
@@ -1562,6 +1568,88 @@ export type Database = {
           },
         ]
       }
+      subscription_assignment_queue: {
+        Row: {
+          area: string | null
+          assigned_partner_id: string | null
+          attempts_log: Json
+          booking_id: string
+          created_at: string
+          current_offer_partner_id: string | null
+          customer_id: string
+          id: string
+          lat: number | null
+          lng: number | null
+          offer_expires_at: string | null
+          radius_km: number
+          service_required_before: string | null
+          status: string
+          tried_partner_ids: string[]
+          updated_at: string
+          vehicle_category: string | null
+        }
+        Insert: {
+          area?: string | null
+          assigned_partner_id?: string | null
+          attempts_log?: Json
+          booking_id: string
+          created_at?: string
+          current_offer_partner_id?: string | null
+          customer_id: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          offer_expires_at?: string | null
+          radius_km?: number
+          service_required_before?: string | null
+          status?: string
+          tried_partner_ids?: string[]
+          updated_at?: string
+          vehicle_category?: string | null
+        }
+        Update: {
+          area?: string | null
+          assigned_partner_id?: string | null
+          attempts_log?: Json
+          booking_id?: string
+          created_at?: string
+          current_offer_partner_id?: string | null
+          customer_id?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          offer_expires_at?: string | null
+          radius_km?: number
+          service_required_before?: string | null
+          status?: string
+          tried_partner_ids?: string[]
+          updated_at?: string
+          vehicle_category?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_assignment_queue_assigned_partner_id_fkey"
+            columns: ["assigned_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_assignment_queue_current_offer_partner_id_fkey"
+            columns: ["current_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_extensions: {
         Row: {
           created_at: string
@@ -1599,6 +1687,63 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_offers: {
+        Row: {
+          created_at: string
+          distance_m: number | null
+          expires_at: string | null
+          id: string
+          offered_at: string
+          partner_id: string
+          projected_extra_earnings: number | null
+          queue_id: string
+          responded_at: string | null
+          response: string
+          scope: string
+        }
+        Insert: {
+          created_at?: string
+          distance_m?: number | null
+          expires_at?: string | null
+          id?: string
+          offered_at?: string
+          partner_id: string
+          projected_extra_earnings?: number | null
+          queue_id: string
+          responded_at?: string | null
+          response?: string
+          scope?: string
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number | null
+          expires_at?: string | null
+          id?: string
+          offered_at?: string
+          partner_id?: string
+          projected_extra_earnings?: number | null
+          queue_id?: string
+          responded_at?: string | null
+          response?: string
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_offers_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_assignment_queue"
             referencedColumns: ["id"]
           },
         ]
@@ -2097,6 +2242,10 @@ export type Database = {
         }
         Returns: string
       }
+      enqueue_subscription_booking: {
+        Args: { p_booking_id: string }
+        Returns: string
+      }
       ensure_staff_login_role: {
         Args: {
           p_full_name?: string
@@ -2190,7 +2339,12 @@ export type Database = {
         Args: { p_assignment_id: string; p_delta: number }
         Returns: Json
       }
+      offer_next_for_queue: { Args: { p_queue_id: string }; Returns: string }
       partner_reliability: { Args: { p_partner_id: string }; Returns: Json }
+      pick_next_partner_for_queue: {
+        Args: { p_queue_id: string; p_radius_km?: number; p_scope?: string }
+        Returns: string
+      }
       preview_assignment: {
         Args: { p_cars: number; p_duration: number }
         Returns: {
@@ -2206,6 +2360,10 @@ export type Database = {
           total_earnings: number
           working_days: number
         }[]
+      }
+      respond_subscription_offer: {
+        Args: { p_accept: boolean; p_offer_id: string }
+        Returns: Json
       }
       schedule_plan_services_recurring: {
         Args: {
@@ -2253,6 +2411,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sweep_subscription_offers: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "supervisor" | "partner" | "customer"
