@@ -112,7 +112,7 @@ function MarketplacePage() {
                   return (
                     <Link
                       key={q.id}
-                      to="/admin/partner-assignment/$id"
+                      to="/admin/marketplace/$id"
                       params={{ id: q.id }}
                       className="block rounded-lg border border-border p-3 text-xs hover:bg-muted/40"
                     >
