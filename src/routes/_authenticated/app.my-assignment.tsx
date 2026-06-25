@@ -9,7 +9,6 @@ import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigati
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { toast } from "sonner";
-import { DailyShineOfferCard } from "@/components/partner/DailyShineOfferCard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
