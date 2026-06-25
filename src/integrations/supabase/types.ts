@@ -1075,6 +1075,7 @@ export type Database = {
           home_lng: number | null
           id: string
           joined_on: string
+          last_seen: string | null
           level: string
           lifetime_earnings: number
           max_daily_cars: number
@@ -1120,6 +1121,7 @@ export type Database = {
           home_lng?: number | null
           id: string
           joined_on?: string
+          last_seen?: string | null
           level?: string
           lifetime_earnings?: number
           max_daily_cars?: number
@@ -1165,6 +1167,7 @@ export type Database = {
           home_lng?: number | null
           id?: string
           joined_on?: string
+          last_seen?: string | null
           level?: string
           lifetime_earnings?: number
           max_daily_cars?: number

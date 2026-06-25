@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { useI18n } from "@/lib/i18n";
+import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -14,10 +15,17 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <TopBar />
+      <HeartbeatRunner />
       <Outlet />
       <BottomNav />
     </div>
   );
+}
+
+function HeartbeatRunner() {
+  const { data: partner } = usePartner();
+  usePartnerHeartbeat(partner?.id);
+  return null;
 }
 
 function TopBar() {

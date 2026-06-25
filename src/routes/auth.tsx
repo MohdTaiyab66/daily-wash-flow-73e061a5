@@ -42,12 +42,12 @@ function AuthPage() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        await supabase.auth.signOut({ scope: "local" });
-        return;
-      }
-      const email = data.user?.email || "";
+      // Only auto-forward if there is a valid session. Do NOT sign out on
+      // transient getUser errors — refresh-token races would punt the user
+      // out of an otherwise valid session.
+      const { data: sess } = await supabase.auth.getSession();
+      const email = sess.session?.user.email || "";
+      if (!email) return;
       if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: nextRoute as any });
       else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: nextRoute as any });
     })();

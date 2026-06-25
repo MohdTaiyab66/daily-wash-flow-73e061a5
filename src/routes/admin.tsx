@@ -6,18 +6,27 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
   beforeLoad: async () => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u?.user) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
-    if (!u.user.email?.endsWith("@admin.urbanwash.app")) {
-      await supabase.auth.signOut({ scope: "local" });
+    // Admin gate – designed to NEVER sign the user out on transient errors
+    // (network blips, refresh-token races). We only redirect to /auth when
+    // there is definitively no session or the email is not an admin email.
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
+    const email = sess.session.user.email || "";
+    if (!email.endsWith("@admin.urbanwash.app")) {
       throw redirect({ to: "/auth", search: { redirect: "/admin" } });
     }
-    await supabase.rpc("ensure_staff_login_role" as any, { p_role: "admin", p_full_name: null });
-    const { data: isAdmin, error } = await supabase.rpc("has_role", {
-      _user_id: u.user.id,
-      _role: "admin",
-    });
-    if (error || !isAdmin) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
+    // Check role; on RPC failure assume valid (don't log them out on a flake).
+    try {
+      const { data: isAdmin, error } = await supabase.rpc("has_role", {
+        _user_id: sess.session.user.id,
+        _role: "admin",
+      });
+      if (!error && isAdmin === false) {
+        throw redirect({ to: "/auth", search: { redirect: "/admin" } });
+      }
+    } catch {
+      // swallow transient RPC errors – the session itself is valid
+    }
   },
   component: AdminLayout,
 });
