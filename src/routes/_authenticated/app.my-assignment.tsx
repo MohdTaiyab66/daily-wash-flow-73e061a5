@@ -9,8 +9,6 @@ import { Briefcase, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Navigati
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app/my-assignment")({
   component: MyAssignmentPage,
@@ -20,8 +18,6 @@ function MyAssignmentPage() {
   const fn = useServerFn(getMyAssignment);
   const cancelFn = useServerFn(cancelMyAssignment);
   const qc = useQueryClient();
-  const [partnerId, setPartnerId] = useState<string | null>(null);
-  useEffect(() => { supabase.auth.getUser().then(({ data }) => setPartnerId(data.user?.id ?? null)); }, []);
   useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"]]);
   const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
   const cancelMut = useMutation({
