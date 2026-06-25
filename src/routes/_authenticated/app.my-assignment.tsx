@@ -51,7 +51,7 @@ function MyAssignmentPage() {
       <h1 className="text-2xl font-semibold tracking-tight">My assignment</h1>
       <p className="mt-1 text-sm text-muted-foreground">{a.area} · Day {data.day_progress} of {a.duration_days}</p>
 
-      <DailyShineOfferCard partnerId={partnerId} />
+      
 
       <Card className="mt-5 border-0 bg-foreground p-5 text-background">
         <div className="flex items-start justify-between">
