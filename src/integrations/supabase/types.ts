@@ -2470,6 +2470,10 @@ export type Database = {
         Args: { p_assignment_id: string; p_note?: string }
         Returns: undefined
       }
+      admin_cancel_queue: {
+        Args: { p_queue_id: string; p_reason?: string }
+        Returns: Json
+      }
       admin_create_manual_assignment: {
         Args: {
           p_customer_ids: string[]
@@ -2480,6 +2484,10 @@ export type Database = {
       }
       admin_extend_customer: {
         Args: { p_customer_id: string; p_days: number; p_reason: string }
+        Returns: Json
+      }
+      admin_force_assign_queue: {
+        Args: { p_partner_id: string; p_queue_id: string }
         Returns: Json
       }
       admin_list_unassigned_customers: {
@@ -2505,6 +2513,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_retry_queue: { Args: { p_queue_id: string }; Returns: Json }
       admin_revenue_customers: {
         Args: never
         Returns: {
