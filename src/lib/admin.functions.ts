@@ -846,3 +846,93 @@ export const adminRemoveCustomerFromAssignment = createServerFn({ method: "POST"
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============== Marketplace queue (Daily Shine) ==============
+
+export const getMarketplaceQueueDetail = createServerFn({ method: "GET" }).middleware([requireAdmin])
+  .inputValidator((d: { queue_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sb: any = supabaseAdmin;
+
+    const { data: queue, error: qErr } = await sb
+      .from("subscription_assignment_queue")
+      .select("*")
+      .eq("id", data.queue_id)
+      .single();
+    if (qErr) throw new Error(qErr.message);
+
+    const [{ data: customer }, { data: booking }, { data: offers }, { data: assignedPartner }] = await Promise.all([
+      sb.from("customers").select("id, full_name, phone, area, registration_number, address").eq("id", queue.customer_id).maybeSingle(),
+      queue.booking_id
+        ? sb.from("bookings").select("id, scheduled_date, preferred_before_time, total_amount, status, plan_type, vehicle_id, created_at").eq("id", queue.booking_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      sb.from("subscription_offers")
+        .select("id, partner_id, scope, offered_at, expires_at, response, responded_at, distance_m, route_delta_seconds, extra_per_day_paise, extra_per_month_paise, score, score_breakdown")
+        .eq("queue_id", data.queue_id)
+        .order("offered_at", { ascending: false }),
+      queue.assigned_partner_id
+        ? sb.from("partners").select("id, full_name, partner_code, phone, rating_avg, home_area").eq("id", queue.assigned_partner_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const partnerIds = Array.from(new Set((offers ?? []).map((o: any) => o.partner_id))).filter(Boolean);
+    const { data: partnersInfo } = partnerIds.length
+      ? await sb.from("partners").select("id, full_name, partner_code, phone, rating_avg, home_area, is_online").in("id", partnerIds)
+      : { data: [] as any[] };
+    const partnerMap = new Map((partnersInfo ?? []).map((p: any) => [p.id, p]));
+
+    // Suggested partners for manual force-assign: online, same area, exclude tried
+    const tried = new Set<string>(queue.tried_partner_ids ?? []);
+    const { data: candidates } = await sb
+      .from("partners")
+      .select("id, full_name, partner_code, phone, rating_avg, home_area, is_online, last_seen")
+      .eq("status", "active")
+      .order("is_online", { ascending: false })
+      .order("rating_avg", { ascending: false })
+      .limit(50);
+    const suggested = (candidates ?? []).map((p: any) => ({
+      ...p,
+      same_area: queue.area && p.home_area === queue.area,
+      previously_offered: tried.has(p.id),
+    }));
+
+    return {
+      queue,
+      customer,
+      booking,
+      assignedPartner,
+      offers: (offers ?? []).map((o: any) => ({ ...o, partner: partnerMap.get(o.partner_id) ?? null })),
+      suggested,
+    };
+  });
+
+export const adminCancelQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { queue_id: string; reason?: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as { supabase: any };
+    const { error } = await supabase.rpc("admin_cancel_queue", { p_queue_id: data.queue_id, p_reason: data.reason ?? null });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminRetryQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { queue_id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as { supabase: any };
+    const { data: res, error } = await supabase.rpc("admin_retry_queue", { p_queue_id: data.queue_id });
+    if (error) throw new Error(error.message);
+    return res;
+  });
+
+export const adminForceAssignQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { queue_id: string; partner_id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as { supabase: any };
+    const { data: res, error } = await supabase.rpc("admin_force_assign_queue", {
+      p_queue_id: data.queue_id, p_partner_id: data.partner_id,
+    });
+    if (error) throw new Error(error.message);
+    return res;
+  });
+

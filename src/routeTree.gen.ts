@@ -51,6 +51,7 @@ import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
+import { Route as AdminMarketplaceIdRouteImport } from './routes/admin.marketplace.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
@@ -279,6 +280,11 @@ const AdminPartnerAssignmentIdRoute =
     path: '/partner-assignment/$id',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminMarketplaceIdRoute = AdminMarketplaceIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminMarketplaceRoute,
+} as any)
 const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -382,7 +388,7 @@ export interface FileRoutesByFullPath {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
-  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -409,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -439,7 +446,7 @@ export interface FileRoutesByTo {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
-  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -499,7 +507,7 @@ export interface FileRoutesById {
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
-  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
+  '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/app/rewards'
     | '/app/training'
     | '/admin/customers/$id'
+    | '/admin/marketplace/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/api/public/razorpay-webhook'
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/app/rewards'
     | '/app/training'
     | '/admin/customers/$id'
+    | '/admin/marketplace/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/api/public/razorpay-webhook'
@@ -703,6 +714,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
     | '/admin/customers/$id'
+    | '/admin/marketplace/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
     | '/api/public/razorpay-webhook'
@@ -1031,6 +1043,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPartnerAssignmentIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/marketplace/$id': {
+      id: '/admin/marketplace/$id'
+      path: '/$id'
+      fullPath: '/admin/marketplace/$id'
+      preLoaderRoute: typeof AdminMarketplaceIdRouteImport
+      parentRoute: typeof AdminMarketplaceRoute
+    }
     '/admin/customers/$id': {
       id: '/admin/customers/$id'
       path: '/$id'
@@ -1202,6 +1221,17 @@ const AdminCustomersRouteWithChildren = AdminCustomersRoute._addFileChildren(
   AdminCustomersRouteChildren,
 )
 
+interface AdminMarketplaceRouteChildren {
+  AdminMarketplaceIdRoute: typeof AdminMarketplaceIdRoute
+}
+
+const AdminMarketplaceRouteChildren: AdminMarketplaceRouteChildren = {
+  AdminMarketplaceIdRoute: AdminMarketplaceIdRoute,
+}
+
+const AdminMarketplaceRouteWithChildren =
+  AdminMarketplaceRoute._addFileChildren(AdminMarketplaceRouteChildren)
+
 interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCustomerAnalyticsRoute: typeof AdminCustomerAnalyticsRoute
@@ -1211,7 +1241,7 @@ interface AdminRouteChildren {
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
-  AdminMarketplaceRoute: typeof AdminMarketplaceRoute
+  AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
@@ -1237,7 +1267,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
-  AdminMarketplaceRoute: AdminMarketplaceRoute,
+  AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,

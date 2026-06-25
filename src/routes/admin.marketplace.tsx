@@ -28,12 +28,14 @@ type QueueRow = {
 };
 
 const TABS: Array<{ key: string; label: string; match: (q: QueueRow, hasLiveOffer: boolean) => boolean }> = [
-  { key: "awaiting", label: "Awaiting", match: (q, live) => q.status === "queued" && !live },
-  { key: "offered", label: "Offered", match: (q, live) => q.status === "queued" && live },
-  { key: "broadcasted", label: "Broadcasted", match: (q) => q.status === "queued" && (q.radius_km ?? 0) >= 15 },
+  { key: "awaiting", label: "Awaiting", match: (q, live) => (q.status === "queued" || q.status === "awaiting") && !live },
+  { key: "offered", label: "Offered", match: (q, live) => (q.status === "queued" || q.status === "awaiting" || q.status === "offered") && live },
+  { key: "broadcasted", label: "Broadcasted", match: (q) => (q.status === "queued" || q.status === "awaiting" || q.status === "offered") && (q.radius_km ?? 0) >= 15 },
   { key: "assigned", label: "Assigned", match: (q) => q.status === "assigned" },
   { key: "failed", label: "Failed / Timed out", match: (q) => q.status === "failed" || q.status === "timed_out" },
+  { key: "cancelled", label: "Cancelled", match: (q) => q.status === "cancelled" },
 ];
+
 
 function MarketplacePage() {
   const qc = useQueryClient();
@@ -110,7 +112,7 @@ function MarketplacePage() {
                   return (
                     <Link
                       key={q.id}
-                      to="/admin/partner-assignment/$id"
+                      to="/admin/marketplace/$id"
                       params={{ id: q.id }}
                       className="block rounded-lg border border-border p-3 text-xs hover:bg-muted/40"
                     >
