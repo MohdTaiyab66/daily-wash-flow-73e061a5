@@ -38,12 +38,37 @@ type AddonRow = {
 };
 
 function MyPlanPage() {
+  const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
+
+  // Realtime: instantly reflect payment captures, subscription creation,
+  // assignment events, completions, and customer-status changes.
+  useEffect(() => {
+    if (!userId) return;
+    const refresh = () => {
+      qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+      qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+      qc.invalidateQueries({ queryKey: ["sub-queue", userId] });
+    };
+    const ch = supabase
+      .channel(`cust-live-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "assignments", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscription_extensions", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "dirty_vehicle_reports", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "unavailability_reports", filter: `customer_id=eq.${userId}` }, refresh)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [userId, qc]);
+
 
   const openSchedule = (kind: "any" | "interior" | "exterior" | "dusting" = "any") => {
     setScheduleKind(kind);
