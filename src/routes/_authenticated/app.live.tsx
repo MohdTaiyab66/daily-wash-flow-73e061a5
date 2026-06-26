@@ -216,9 +216,10 @@ function RoutePage() {
                       {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start</>}
                     </Link>
                   </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           );
         })}
       </div>
