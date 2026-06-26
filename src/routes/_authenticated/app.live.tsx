@@ -167,29 +167,45 @@ function RoutePage() {
           const currCluster = (s as any).cluster_id ?? c?.area;
           const showClusterHeader = idx === 0 || prevCluster !== currCluster;
           return (
-            <Card key={s.id} className="overflow-hidden p-0">
-              <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
-                    {idx + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate font-medium">{c?.full_name}</p>
-                      {priority && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Priority</Badge>}
+            <div key={s.id}>
+              {showClusterHeader && (
+                <p className="mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {currCluster ?? "Cluster"}
+                </p>
+              )}
+              <Card className="overflow-hidden p-0">
+                <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
+                      {idx + 1}
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
-                    </p>
-                    <p className="mt-0.5 text-xs font-medium text-foreground">
-                      <Clock className="mr-1 inline h-3 w-3" />Required before {formatTime12(cutoffTime)}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-medium">{c?.full_name}</p>
+                        <div className="flex items-center gap-1">
+                          {isEmergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Emergency</Badge>}
+                          {isLocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
+                          {isExact ? (
+                            <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Exact time</Badge>
+                          ) : cutoffTime ? (
+                            <Badge variant="outline" className="text-[10px]">Prefers {formatTime12(cutoffTime)}</Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
+                      </p>
+                      {isExact && (
+                        <p className="mt-0.5 text-xs font-medium text-foreground">
+                          <Clock className="mr-1 inline h-3 w-3" />Exact slot · {formatTime12(c?.exact_time ?? cutoffTime)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   <Button asChild size="sm" variant="outline" className="col-span-1">
                     <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
