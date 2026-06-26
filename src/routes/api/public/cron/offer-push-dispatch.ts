@@ -1,0 +1,109 @@
+/**
+ * Scans for newly-created subscription_offers that have not yet been pushed
+ * and sends FCM notifications. Designed to be called every 15-30 seconds by
+ * pg_cron via http extension, or by any external scheduler.
+ *
+ * Guarded by CRON_SECRET when the env var is set.
+ */
+import { createFileRoute } from "@tanstack/react-router";
+
+async function dispatchPending() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { sendOfferPush } = await import("@/lib/push/send.server");
+
+  // Pending = an offer with no push_sent stage logged yet, response still pending,
+  // and not yet expired.
+  const { data: offers, error } = await (supabaseAdmin as any).rpc("list_pending_push_offers");
+  // If the RPC isn't installed yet, fall back to a direct query.
+  let rows: Array<{ offer_id: string; queue_id: string; partner_id: string; area: string | null; vehicle_category: string | null; expires_at: string }>;
+  if (error || !offers) {
+    const { data: fallback, error: fbErr } = await (supabaseAdmin as any)
+      .from("subscription_offers")
+      .select("id, queue_id, partner_id, expires_at, response, subscription_assignment_queue!inner(area,vehicle_category)")
+      .eq("response", "pending")
+      .gt("expires_at", new Date().toISOString())
+      .order("offered_at", { ascending: false })
+      .limit(50);
+    if (fbErr) throw fbErr;
+    rows = (fallback ?? []).map((o: any) => ({
+      offer_id: o.id,
+      queue_id: o.queue_id,
+      partner_id: o.partner_id,
+      area: o.subscription_assignment_queue?.area ?? null,
+      vehicle_category: o.subscription_assignment_queue?.vehicle_category ?? null,
+      expires_at: o.expires_at,
+    }));
+  } else {
+    rows = offers;
+  }
+
+  let dispatched = 0;
+  for (const r of rows) {
+    // Skip if we already logged push_sent for this offer
+    const { count } = await (supabaseAdmin as any)
+      .from("offer_delivery_events")
+      .select("id", { count: "exact", head: true })
+      .eq("offer_id", r.offer_id)
+      .eq("stage", "push_sent");
+    if ((count ?? 0) > 0) continue;
+
+    const title = "New Daily Shine offer";
+    const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
+    const data = {
+      type: "offer",
+      offer_id: r.offer_id,
+      queue_id: r.queue_id,
+      partner_id: r.partner_id,
+    };
+
+    try {
+      const result = await sendOfferPush({
+        userId: r.partner_id,
+        title,
+        body,
+        data,
+        channelId: "offers",
+      });
+      await (supabaseAdmin as any).from("offer_delivery_events").insert({
+        offer_id: r.offer_id,
+        queue_id: r.queue_id,
+        partner_id: r.partner_id,
+        stage: result.sent > 0 ? "push_sent" : "push_failed",
+        meta: { sent: result.sent, failed: result.failed, sample: result.results.slice(0, 3) },
+      });
+      if (result.sent > 0) dispatched++;
+    } catch (e: any) {
+      await (supabaseAdmin as any).from("offer_delivery_events").insert({
+        offer_id: r.offer_id,
+        queue_id: r.queue_id,
+        partner_id: r.partner_id,
+        stage: "push_failed",
+        meta: { error: e?.message ?? String(e) },
+      });
+    }
+  }
+  return dispatched;
+}
+
+async function handle(request: Request) {
+  const expected = process.env.CRON_SECRET;
+  if (expected) {
+    const got = request.headers.get("x-cron-secret");
+    if (got !== expected) return new Response("Unauthorized", { status: 401 });
+  }
+  try {
+    const dispatched = await dispatchPending();
+    return Response.json({ ok: true, dispatched });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), { status: 500 });
+  }
+}
+
+export const Route = createFileRoute("/api/public/cron/offer-push-dispatch")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => handle(request),
+      GET: async ({ request }) => handle(request),
+    },
+  },
+});
