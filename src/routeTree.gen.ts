@@ -49,8 +49,10 @@ import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
 import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
 import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
+import { Route as ApiPublicFcmDeliveryReceiptRouteImport } from './routes/api/public/fcm-delivery-receipt'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
 import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
+import { Route as AdminOfferDeliveryIdRouteImport } from './routes/admin.offer-delivery.$id'
 import { Route as AdminMarketplaceIdRouteImport } from './routes/admin.marketplace.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
@@ -66,6 +68,7 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
+import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
@@ -269,6 +272,12 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicFcmDeliveryReceiptRoute =
+  ApiPublicFcmDeliveryReceiptRouteImport.update({
+    id: '/api/public/fcm-delivery-receipt',
+    path: '/api/public/fcm-delivery-receipt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
   id: '/service/$id',
   path: '/service/$id',
@@ -280,6 +289,11 @@ const AdminPartnerAssignmentIdRoute =
     path: '/partner-assignment/$id',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminOfferDeliveryIdRoute = AdminOfferDeliveryIdRouteImport.update({
+  id: '/offer-delivery/$id',
+  path: '/offer-delivery/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMarketplaceIdRoute = AdminMarketplaceIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -360,6 +374,12 @@ const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CAuthedBookingsRoute,
 } as any)
+const ApiPublicCronOfferPushDispatchRoute =
+  ApiPublicCronOfferPushDispatchRouteImport.update({
+    id: '/api/public/cron/offer-push-dispatch',
+    path: '/api/public/cron/offer-push-dispatch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronAssignmentTickRoute =
   ApiPublicCronAssignmentTickRouteImport.update({
     id: '/api/public/cron/assignment-tick',
@@ -416,8 +436,10 @@ export interface FileRoutesByFullPath {
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
+  '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
@@ -429,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -473,8 +496,10 @@ export interface FileRoutesByTo {
   '/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
+  '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
@@ -486,6 +511,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -535,8 +561,10 @@ export interface FileRoutesById {
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
+  '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
   '/admin/partner-assignment/$id': typeof AdminPartnerAssignmentIdRoute
   '/admin/service/$id': typeof AdminServiceIdRoute
+  '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/_authed/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/_authed/home': typeof CAuthedHomeRoute
@@ -548,6 +576,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
@@ -597,8 +626,10 @@ export interface FileRouteTypes {
     | '/app/training'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
+    | '/admin/offer-delivery/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
@@ -610,6 +641,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/service/$id'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -654,8 +686,10 @@ export interface FileRouteTypes {
     | '/app/training'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
+    | '/admin/offer-delivery/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
@@ -667,6 +701,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/service/$id'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -715,8 +750,10 @@ export interface FileRouteTypes {
     | '/_authenticated/app/training'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
+    | '/admin/offer-delivery/$id'
     | '/admin/partner-assignment/$id'
     | '/admin/service/$id'
+    | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
     | '/c/_authed/bookings'
     | '/c/_authed/home'
@@ -728,6 +765,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/offer-push-dispatch'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
@@ -743,8 +781,10 @@ export interface RootRouteChildren {
   CAuthRoute: typeof CAuthRoute
   CLocationRoute: typeof CLocationRouteWithChildren
   CIndexRoute: typeof CIndexRoute
+  ApiPublicFcmDeliveryReceiptRoute: typeof ApiPublicFcmDeliveryReceiptRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
+  ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1029,6 +1069,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/fcm-delivery-receipt': {
+      id: '/api/public/fcm-delivery-receipt'
+      path: '/api/public/fcm-delivery-receipt'
+      fullPath: '/api/public/fcm-delivery-receipt'
+      preLoaderRoute: typeof ApiPublicFcmDeliveryReceiptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/service/$id': {
       id: '/admin/service/$id'
       path: '/service/$id'
@@ -1041,6 +1088,13 @@ declare module '@tanstack/react-router' {
       path: '/partner-assignment/$id'
       fullPath: '/admin/partner-assignment/$id'
       preLoaderRoute: typeof AdminPartnerAssignmentIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offer-delivery/$id': {
+      id: '/admin/offer-delivery/$id'
+      path: '/offer-delivery/$id'
+      fullPath: '/admin/offer-delivery/$id'
+      preLoaderRoute: typeof AdminOfferDeliveryIdRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketplace/$id': {
@@ -1148,6 +1202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsIdRouteImport
       parentRoute: typeof CAuthedBookingsRoute
     }
+    '/api/public/cron/offer-push-dispatch': {
+      id: '/api/public/cron/offer-push-dispatch'
+      path: '/api/public/cron/offer-push-dispatch'
+      fullPath: '/api/public/cron/offer-push-dispatch'
+      preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/assignment-tick': {
       id: '/api/public/cron/assignment-tick'
       path: '/api/public/cron/assignment-tick'
@@ -1254,6 +1315,7 @@ interface AdminRouteChildren {
   AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminOfferDeliveryIdRoute: typeof AdminOfferDeliveryIdRoute
   AdminPartnerAssignmentIdRoute: typeof AdminPartnerAssignmentIdRoute
   AdminServiceIdRoute: typeof AdminServiceIdRoute
 }
@@ -1280,6 +1342,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTrialReadinessRoute: AdminTrialReadinessRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminOfferDeliveryIdRoute: AdminOfferDeliveryIdRoute,
   AdminPartnerAssignmentIdRoute: AdminPartnerAssignmentIdRoute,
   AdminServiceIdRoute: AdminServiceIdRoute,
 }
@@ -1346,8 +1409,10 @@ const rootRouteChildren: RootRouteChildren = {
   CAuthRoute: CAuthRoute,
   CLocationRoute: CLocationRouteWithChildren,
   CIndexRoute: CIndexRoute,
+  ApiPublicFcmDeliveryReceiptRoute: ApiPublicFcmDeliveryReceiptRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
+  ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
