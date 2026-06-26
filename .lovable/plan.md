@@ -1,90 +1,79 @@
-# Daily Shine Route Optimizer Redesign
+# Route Manager — Operations Control Center
 
-## Goal
-Shift from deadline-bucket routing to **cluster-first, distance-optimal** routing. Treat "Before X AM" as soft preferences (penalty, not gate). Only `exact_time_service` is a hard constraint. Add an Admin Route Manager with drag-and-drop, locks, emergency insertion, partner reassignment, and realtime partner sync.
+Transform `/admin/route-manager` from a simple drag-list into the morning operations cockpit. Build in 4 phases so each phase is shippable.
 
----
+## Phase 1 — Data foundation (DB + RPCs)
 
-## 1. Data model changes (migration)
+**New tables**
+- `route_change_log` — audit trail. Columns: `id, partner_id, service_id, date, actor_id, actor_name, action` (`move|lock|unlock|emergency|reassign|remove|recalculate|manual_save|optimize_all`), `reason, old_value jsonb, new_value jsonb, created_at`.
+- `route_snapshots` — keeps "original optimized", "current", and every accepted recalculation per partner/day for history + diff. Columns: `id, partner_id, date, kind` (`original|recalc|manual`), `sequence jsonb` (ordered service ids + computed metrics), `metrics jsonb`, `created_by, created_at`.
 
-**`customers`**
-- `time_window_type text default 'soft'` — `'soft' | 'exact'`
-- `exact_time time` — only used when type = `exact`
+**Columns added**
+- `services`: `unavailable_at timestamptz`, `delay_reason text` (already has status/locked/emergency/manual_sequence/cluster_id from earlier turns).
+- `partners`: ensure `photo_url, current_lat, current_lng, last_seen, status` exist (most already do — additive only if missing).
 
-**`services`**
-- `locked_position boolean default false` — admin lock for the day
-- `manual_sequence_no int` — admin-set override; takes precedence over optimizer
-- `is_emergency boolean default false`
-- `cluster_id text` — assigned by optimizer (e.g. area+geohash5)
-- `reassigned_from uuid references partners(id)` — audit when admin moves between partners
+**New / updated RPCs (SECURITY DEFINER, admin-gated via `has_role`)**
+- `admin_route_dashboard(_partner_id, _date)` → returns dashboard JSON: counts, ETAs, efficiency score, cluster count, backtracking count, fuel estimate, distance, driving/cleaning time.
+- `admin_route_timeline(_partner_id, _date)` → ordered stops with `eta, leg_distance_km, leg_minutes, service_minutes, cluster_id`.
+- `admin_optimize_all(_date)` → fleet-wide rebalance: pulls every partner's pending stops, regroups by geohash cluster, reassigns clusters to nearest under-capacity partner, returns per-partner before/after metrics. Writes a `route_snapshots` row per partner with `kind='recalc'` pending acceptance.
+- `admin_accept_recalc(_snapshot_id)` / `admin_reject_recalc(_snapshot_id)`.
+- `admin_remove_service(_service_id, _reason)`.
+- `admin_log_route_action(...)` helper called by every mutating RPC.
+- Existing `admin_reorder_services`, `admin_lock_service`, `admin_reassign_service`, `admin_force_recalculate` keep working but now also write to `route_change_log` and produce a `route_snapshots` diff.
 
-**`platform_settings`** (new keys, JSON)
-- `route_optimizer_weights` — `{ route_impact, distance, travel_time, preferred_time, continuity, reliability, vip, complaint }` default `{40,20,10,8,7,6,5,4}`
-- `route_soft_window_penalty_per_min` — default `0.5`
-- `route_cluster_radius_km` — default `0.8`
+**Realtime**
+- Add `services`, `partners`, `route_change_log`, `route_snapshots` to `supabase_realtime` publication (skip ones already added).
 
-No new tables; reuse `services` + realtime publication (already on).
+## Phase 2 — UI shell
 
-## 2. Optimizer rewrite (`src/lib/route-optimize.ts`)
+Rewrite `src/routes/admin.route-manager.tsx` into a tabbed cockpit. Top bar keeps Date + Partner + "Optimize All Routes" button.
 
-Replace deadline-bucket + nearest-neighbor with **cluster-first scored insertion**:
+**Top dashboard strip** (above tabs)
+Partner photo, name, online/offline pill, current location chip, assigned/completed/pending/unavailable counts, dirty-report count, estimated distance, driving time, cleaning time, finish ETA, efficiency score, cluster count, backtracking count, fuel estimate (₹). Data from `admin_route_dashboard`.
 
-1. **Cluster** pending stops by geohash-5 (~0.6 km cell) or DBSCAN with `route_cluster_radius_km`.
-2. **Order clusters** by distance from current cursor (start = partner GPS or first hard-time stop).
-3. Within a cluster, order by nearest-neighbor; never leave a cluster with stops remaining unless a hard-time stop elsewhere is about to be missed.
-4. **Hard constraints**: `time_window_type='exact'` stops are pinned — schedule backward from `exact_time` minus 10 min/stop ETA and insert their cluster at the matching time slot.
-5. **Soft preferences**: compute predicted arrival; if later than preferred window, add `penalty_per_min * minutes_late` to the stop's score. Does not block ordering.
-6. **Scoring** per candidate next stop:
-   `score = w.route_impact*Δkm_saved + w.distance*-km + w.travel_time*-min + w.preferred_time*-late_penalty + w.continuity*same_cluster + w.reliability*partner_priority + w.vip*vip_flag + w.complaint*complaint_flag`
-7. **Locked/manual** stops bypass scoring and slot at their fixed index.
-8. **Emergency** stops insert at the nearest feasible point after `now()`.
+**Tabs**
+1. **Map** — Google Maps via existing browser key. Partner pin, optimized polyline, all customers with colour rules (Blue=next, Orange=pending, Green=completed, Red=delayed, Grey=unavailable, Purple=emergency). Cluster polygons (convex hull per cluster_id). Marker click → side sheet with customer details + actions (Navigate, Call, Move, Lock, Emergency).
+2. **Timeline** — vertical timeline from "Leave Base" through every stop with ETAs and drive legs.
+3. **Clusters** — collapsible cluster cards with counts + remaining time.
+4. **Stops** — the existing drag-and-drop list, upgraded with full customer card (vehicle photo, registration, exact-time badge, distance from previous, ETA, complaint/VIP/reliability/parking badges, all action buttons).
+5. **History** — original vs current vs all recalcs, with diff view + activity log feed from `route_change_log`.
 
-Export:
-- `optimizeRoute(stops, from, opts)` — full ordering
-- `pickNextStop(stops, from, opts)` — recomputed after every completion (live route already invalidates on service status change)
+**Force Recalculate dialog**
+Modal showing Previous vs New: distance, drive time, fuel, efficiency delta. Accept → calls `admin_accept_recalc`; Reject → discards snapshot.
 
-## 3. Live route page
+**Optimize All Routes dialog**
+Per-partner before/after table with total fleet savings. Accept-all or per-partner accept.
 
-`src/routes/_authenticated/app.live.tsx`:
-- Call `optimizeRoute` with new options; show cluster headers (`Aliganj • 4 cars`) instead of priority chips.
-- Replace "Priority" badge with `Exact time` (hard) / `Prefers before 9 AM` (soft).
-- Already re-fetches on realtime — pickNext re-runs on each completion automatically.
+## Phase 3 — Realtime + permissions
 
-## 4. Admin Route Manager (new route)
+- `useEffect` channel subscribed to the four tables; invalidates dashboard/timeline/stops queries on any change. 10s fallback `refetchInterval` for partner location.
+- Gate every mutating button behind `has_role('admin')` or new `has_role('ops_manager')` (add `ops_manager` to the `app_role` enum). Read-only admins see view but disabled buttons with tooltip "Requires Operations Manager".
+- Sidebar nav already lists Route Manager — keep it; add an "Ops" badge.
 
-`src/routes/admin.route-manager.tsx`:
-- Partner picker + date picker (default today).
-- Drag-and-drop list using `@dnd-kit/core` + `@dnd-kit/sortable` (lightweight, already-common).
-- Per-row actions: **Lock**, **Unlock**, **Mark Emergency**, **Move to partner…** (dialog), **Remove from day**.
-- Toolbar: **Re-optimize**, **Insert emergency job** (search customers/vehicles).
-- Saves to `services` (`manual_sequence_no`, `locked_position`, `is_emergency`, `partner_id`).
-- Writes to `assignment_changes` for audit.
+## Phase 4 — Polish
 
-RPCs (admin-only via `requireAdmin`):
-- `admin_reorder_services(partner_id, date, ordered_ids[])`
-- `admin_lock_service(service_id, locked bool)`
-- `admin_reassign_service(service_id, new_partner_id)`
-- `admin_insert_emergency(partner_id, vehicle_id, position)`
-- `admin_force_recalculate(partner_id, date)` — clears `manual_sequence_no` for unlocked stops and bumps `updated_at` to trigger partner realtime refresh.
+- Mobile layout: tabs collapse to a bottom sheet, top dashboard becomes a horizontal scroll of stat chips.
+- "Move Assignment" sheet shows target partner capacity, distance delta, ETA delta before confirming.
+- Activity log component reused on `admin.marketplace.$id.tsx`.
 
-## 5. Realtime sync
+## Out of scope (separate request if needed)
 
-`services` is already in `supabase_realtime`. Confirm via migration (idempotent `ADD TABLE` guarded). Partner's `app.live.tsx` already uses `useRealtimeInvalidation(["services", ...])` — new admin edits propagate automatically.
-
-## 6. Settings UI
-
-`src/routes/admin.settings.tsx`: add a "Route optimizer" card to edit weights, penalty, cluster radius (writes `platform_settings`).
-
----
+- Replacing the optimizer math itself — keep `src/lib/route-optimize.ts` as-is; surface its output.
+- Push notifications to partners on route change — partner app already subscribes to `services` realtime; the existing `usePartnerHeartbeat` + offer push pipeline covers wake-ups.
+- Fuel price configuration UI (use a constant `₹6/km` in `platform_settings.fuel_cost_per_km`, default seeded).
 
 ## Technical notes
 
-- Geohash via small inline helper (no dep) — 5-char precision ≈ 0.6 km cell.
-- `@dnd-kit/core` + `@dnd-kit/sortable` install required.
-- Backwards compatible: existing rows default `time_window_type='soft'`, so old "Before X AM" data behaves as soft preference without backfill.
-- `pick_scored_partner_for_queue` (marketplace) is unrelated and untouched.
+- All metrics computed server-side in `admin_route_dashboard` using PostGIS-free haversine (already in `route-optimize.ts` pattern) so the client just renders numbers.
+- Cluster polygons computed client-side from cluster_id groupings using a simple convex hull util (no new deps).
+- Google Maps loaded with the existing `VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY`, `loading=async`, global `initRouteMap` callback. Use `google.maps.Marker` (not AdvancedMarkerElement).
+- New RPCs are additive; existing partner app code keeps working unchanged.
+- One migration for tables + columns + enum + RPCs + grants + RLS + realtime publication, in that order.
 
-## Out of scope
-- Multi-day planning, traffic prediction, partner shift breaks — keep current heuristics.
+## Deliverables checklist
 
-Approve to implement.
+- [ ] Migration: tables, enum, RPCs, grants, RLS, realtime
+- [ ] `src/routes/admin.route-manager.tsx` rewritten with tabs + dashboard
+- [ ] `src/components/admin/route/*` — `DashboardStrip`, `RouteMap`, `RouteTimeline`, `ClusterPanel`, `StopList` (current row component lifted out), `RecalcDiffDialog`, `OptimizeAllDialog`, `ActivityLog`, `CustomerSheet`
+- [ ] `src/lib/route-metrics.ts` — shared client helpers (convex hull, formatters)
+- [ ] `ops_manager` role gating in `admin-middleware.ts` + UI button gates

@@ -1161,6 +1161,8 @@ export type Database = {
           cars_selected: number
           city: string
           created_at: string
+          current_lat: number | null
+          current_lng: number | null
           email: string | null
           first_assignment_completed: boolean
           full_name: string | null
@@ -1207,6 +1209,8 @@ export type Database = {
           cars_selected?: number
           city?: string
           created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
           email?: string | null
           first_assignment_completed?: boolean
           full_name?: string | null
@@ -1253,6 +1257,8 @@ export type Database = {
           cars_selected?: number
           city?: string
           created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
           email?: string | null
           first_assignment_completed?: boolean
           full_name?: string | null
@@ -1557,6 +1563,84 @@ export type Database = {
         }
         Relationships: []
       }
+      route_change_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          date: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          partner_id: string | null
+          reason: string | null
+          service_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          partner_id?: string | null
+          reason?: string | null
+          service_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          partner_id?: string | null
+          reason?: string | null
+          service_id?: string | null
+        }
+        Relationships: []
+      }
+      route_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          kind: string
+          metrics: Json
+          partner_id: string
+          sequence: Json
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          kind: string
+          metrics?: Json
+          partner_id: string
+          sequence: Json
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          kind?: string
+          metrics?: Json
+          partner_id?: string
+          sequence?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       service_addons: {
         Row: {
           active: boolean
@@ -1773,6 +1857,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_id: string
+          delay_reason: string | null
           fraud_review: boolean
           gps_distance_m: number | null
           gps_flag: string | null
@@ -1790,6 +1875,7 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["service_status"]
           time_slot: string
+          unavailable_at: string | null
           unavailable_lat: number | null
           unavailable_lng: number | null
           unavailable_notes: string | null
@@ -1808,6 +1894,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id: string
+          delay_reason?: string | null
           fraud_review?: boolean
           gps_distance_m?: number | null
           gps_flag?: string | null
@@ -1825,6 +1912,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          unavailable_at?: string | null
           unavailable_lat?: number | null
           unavailable_lng?: number | null
           unavailable_notes?: string | null
@@ -1843,6 +1931,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_id?: string
+          delay_reason?: string | null
           fraud_review?: boolean
           gps_distance_m?: number | null
           gps_flag?: string | null
@@ -1860,6 +1949,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          unavailable_at?: string | null
           unavailable_lat?: number | null
           unavailable_lng?: number | null
           unavailable_notes?: string | null
@@ -2594,6 +2684,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_accept_recalc: {
+        Args: { _snapshot_id: string }
+        Returns: undefined
+      }
       admin_cancel_assignment: {
         Args: { p_assignment_id: string; p_note?: string }
         Returns: undefined
@@ -2640,6 +2734,18 @@ export type Database = {
         Args: { p_locked: boolean; p_service_id: string }
         Returns: undefined
       }
+      admin_log_route_action: {
+        Args: {
+          _action: string
+          _date: string
+          _new: Json
+          _old: Json
+          _partner_id: string
+          _reason: string
+          _service_id: string
+        }
+        Returns: string
+      }
       admin_mark_monthly_wash: {
         Args: {
           p_customer_id: string
@@ -2649,8 +2755,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_optimize_all: { Args: { _date: string }; Returns: Json }
       admin_reassign_service: {
         Args: { p_new_partner_id: string; p_service_id: string }
+        Returns: undefined
+      }
+      admin_reject_recalc: {
+        Args: { _snapshot_id: string }
+        Returns: undefined
+      }
+      admin_remove_service: {
+        Args: { _reason: string; _service_id: string }
         Returns: undefined
       }
       admin_reorder_services: {
@@ -2682,6 +2797,14 @@ export type Database = {
           pending_revenue: number
           total_customers: number
         }[]
+      }
+      admin_route_dashboard: {
+        Args: { _date: string; _partner_id: string }
+        Returns: Json
+      }
+      admin_route_timeline: {
+        Args: { _date: string; _partner_id: string }
+        Returns: Json
       }
       admin_set_customer_payment: {
         Args: { p_id: string; p_status: string }
@@ -2964,7 +3087,7 @@ export type Database = {
       sweep_subscription_offers: { Args: never; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "supervisor" | "partner" | "customer"
+      app_role: "admin" | "supervisor" | "partner" | "customer" | "ops_manager"
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
       complaint_status: "open" | "investigating" | "resolved" | "dismissed"
       partner_status:
@@ -3127,7 +3250,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "supervisor", "partner", "customer"],
+      app_role: ["admin", "supervisor", "partner", "customer", "ops_manager"],
       availability_status: ["online", "offline", "leave", "emergency_leave"],
       complaint_status: ["open", "investigating", "resolved", "dismissed"],
       partner_status: [
