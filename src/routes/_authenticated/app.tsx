@@ -7,6 +7,7 @@ import logo from "@/assets/logo.jpeg";
 import { useI18n } from "@/lib/i18n";
 import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 import { OfferPopup } from "@/components/partner/OfferPopup";
+import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -26,6 +27,7 @@ function AppLayout() {
 function PartnerRuntime() {
   const { data: partner } = usePartner();
   usePartnerHeartbeat(partner?.id);
+  useFcmRegistration(partner?.id ?? null, "partner");
   return <OfferPopup partnerId={partner?.id ?? null} />;
 }
 
