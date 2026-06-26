@@ -33,7 +33,7 @@ function RoutePage() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,customers(full_name,area,address_line,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude,vip_priority),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,customers(full_name,area,address_line,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
@@ -104,7 +104,7 @@ function RoutePage() {
         manualSequence: (s as any).manual_sequence_no ?? null,
         isEmergency: (s as any).is_emergency ?? false,
         clusterId: (s as any).cluster_id ?? null,
-        isVip: !!c?.vip_priority,
+        isVip: false,
       };
     }),
     pos,
