@@ -2964,7 +2964,7 @@ export type Database = {
       sweep_subscription_offers: { Args: never; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "supervisor" | "partner" | "customer"
+      app_role: "admin" | "supervisor" | "partner" | "customer" | "ops_manager"
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
       complaint_status: "open" | "investigating" | "resolved" | "dismissed"
       partner_status:
@@ -3127,7 +3127,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "supervisor", "partner", "customer"],
+      app_role: ["admin", "supervisor", "partner", "customer", "ops_manager"],
       availability_status: ["online", "offline", "leave", "emergency_leave"],
       complaint_status: ["open", "investigating", "resolved", "dismissed"],
       partner_status: [
