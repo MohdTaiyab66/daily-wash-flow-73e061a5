@@ -33,7 +33,7 @@ function RoutePage() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,customers(full_name,area,address_line,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,customers(full_name,area,address_line,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
@@ -98,6 +98,13 @@ function RoutePage() {
         lat: c?.latitude != null ? Number(c.latitude) : null,
         lng: c?.longitude != null ? Number(c.longitude) : null,
         deadline: c?.service_required_before ?? c?.preferred_time ?? null,
+        timeWindowType: (c?.time_window_type ?? "soft") as "soft" | "exact",
+        exactTime: c?.exact_time ?? null,
+        locked: (s as any).locked_position ?? false,
+        manualSequence: (s as any).manual_sequence_no ?? null,
+        isEmergency: (s as any).is_emergency ?? false,
+        clusterId: (s as any).cluster_id ?? null,
+        isVip: false,
       };
     }),
     pos,
@@ -152,31 +159,53 @@ function RoutePage() {
             ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
-          const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
+          const isExact = (c?.time_window_type ?? "soft") === "exact";
+          const isEmergency = !!(s as any).is_emergency;
+          const isLocked = !!(s as any).locked_position;
+          const priority = isExact || isEmergency;
+          const prevCluster = idx > 0 ? (pending[idx - 1] as any).cluster_id ?? (pending[idx - 1].customers as any)?.area : null;
+          const currCluster = (s as any).cluster_id ?? c?.area;
+          const showClusterHeader = idx === 0 || prevCluster !== currCluster;
           return (
-            <Card key={s.id} className="overflow-hidden p-0">
-              <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
-                    {idx + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate font-medium">{c?.full_name}</p>
-                      {priority && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Priority</Badge>}
+            <div key={s.id}>
+              {showClusterHeader && (
+                <p className="mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {currCluster ?? "Cluster"}
+                </p>
+              )}
+              <Card className="overflow-hidden p-0">
+                <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
+                      {idx + 1}
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
-                    </p>
-                    <p className="mt-0.5 text-xs font-medium text-foreground">
-                      <Clock className="mr-1 inline h-3 w-3" />Required before {formatTime12(cutoffTime)}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-medium">{c?.full_name}</p>
+                        <div className="flex items-center gap-1">
+                          {isEmergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Emergency</Badge>}
+                          {isLocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
+                          {isExact ? (
+                            <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Exact time</Badge>
+                          ) : cutoffTime ? (
+                            <Badge variant="outline" className="text-[10px]">Prefers {formatTime12(cutoffTime)}</Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
+                      </p>
+                      {isExact && (
+                        <p className="mt-0.5 text-xs font-medium text-foreground">
+                          <Clock className="mr-1 inline h-3 w-3" />Exact slot · {formatTime12(c?.exact_time ?? cutoffTime)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   <Button asChild size="sm" variant="outline" className="col-span-1">
                     <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
@@ -187,9 +216,10 @@ function RoutePage() {
                       {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start</>}
                     </Link>
                   </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           );
         })}
       </div>

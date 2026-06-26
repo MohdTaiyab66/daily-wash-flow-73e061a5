@@ -22,6 +22,7 @@ import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
 import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
@@ -134,6 +135,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
+  id: '/route-manager',
+  path: '/route-manager',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRevenueRoute = AdminRevenueRouteImport.update({
@@ -416,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -477,6 +484,7 @@ export interface FileRoutesByTo {
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/trial-readiness': typeof AdminTrialReadinessRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
+    | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
+    | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -730,6 +741,7 @@ export interface FileRouteTypes {
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
+    | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/trial-readiness'
@@ -878,6 +890,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/admin/services'
       preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/route-manager': {
+      id: '/admin/route-manager'
+      path: '/route-manager'
+      fullPath: '/admin/route-manager'
+      preLoaderRoute: typeof AdminRouteManagerRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/revenue': {
@@ -1310,6 +1329,7 @@ interface AdminRouteChildren {
   AdminReliabilityRoute: typeof AdminReliabilityRoute
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
+  AdminRouteManagerRoute: typeof AdminRouteManagerRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
@@ -1337,6 +1357,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReliabilityRoute: AdminReliabilityRoute,
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminRevenueRoute: AdminRevenueRoute,
+  AdminRouteManagerRoute: AdminRouteManagerRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminTrialReadinessRoute: AdminTrialReadinessRoute,
@@ -1417,13 +1438,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

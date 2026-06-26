@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-analytics" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/offer-history" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/route-manager" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-analytics" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/offer-history" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
     { to: "/admin/marketplace", label: "Daily Shine Marketplace", icon: Sparkles },
@@ -54,6 +54,7 @@ function AdminLayout() {
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/import", label: "Import Customer", icon: UserPlus },
     { to: "/admin/services", label: "Services", icon: ClipboardList },
+    { to: "/admin/route-manager", label: "Route Manager", icon: Map },
     { to: "/admin/photos", label: "Photos", icon: Camera },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
     { to: "/admin/settings", label: "Settings", icon: Settings },
