@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alerts: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          meta: Json
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          meta?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
       area_change_history: {
         Row: {
           changed_at: string
@@ -870,6 +906,58 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_delivery_events: {
+        Row: {
+          created_at: string
+          id: string
+          meta: Json
+          offer_id: string | null
+          partner_id: string | null
+          queue_id: string | null
+          stage: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          queue_id?: string | null
+          stage: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          queue_id?: string | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_delivery_events_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_delivery_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_delivery_events_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_assignment_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parking_reports: {
         Row: {
           created_at: string
@@ -1405,22 +1493,34 @@ export type Database = {
       }
       push_tokens: {
         Row: {
+          app: string
           created_at: string
+          device_id: string | null
           id: string
+          invalid_at: string | null
+          last_seen: string
           platform: string
           token: string
           user_id: string
         }
         Insert: {
+          app?: string
           created_at?: string
+          device_id?: string | null
           id?: string
+          invalid_at?: string | null
+          last_seen?: string
           platform?: string
           token: string
           user_id: string
         }
         Update: {
+          app?: string
           created_at?: string
+          device_id?: string | null
           id?: string
+          invalid_at?: string | null
+          last_seen?: string
           platform?: string
           token?: string
           user_id?: string
