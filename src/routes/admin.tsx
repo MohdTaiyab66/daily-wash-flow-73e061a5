@@ -54,6 +54,7 @@ function AdminLayout() {
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/import", label: "Import Customer", icon: UserPlus },
     { to: "/admin/services", label: "Services", icon: ClipboardList },
+    { to: "/admin/route-manager", label: "Route Manager", icon: Map },
     { to: "/admin/photos", label: "Photos", icon: Camera },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
     { to: "/admin/settings", label: "Settings", icon: Settings },
