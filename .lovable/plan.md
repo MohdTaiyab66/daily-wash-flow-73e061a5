@@ -1,140 +1,90 @@
-# Native Mobile + FCM Delivery Layer
+# Daily Shine Route Optimizer Redesign
 
-Convert the existing TanStack Start web app into a production-ready Capacitor Android app (iOS scaffolded for later), and replace the browser push layer with native Firebase Cloud Messaging. Existing routes, RPCs, marketplace logic, admin UI, and customer/partner flows stay untouched — only the **delivery layer** is swapped, plus a small set of additive DB columns, an `offer_delivery_events` state machine, and tighter partner-selection criteria.
-
-Before I start, two things you must know up front so there are no surprises later:
-
-1. **Capacitor wraps the built web app.** The TanStack app keeps running as-is inside a native WebView. There is no rewrite, no React Native, no second codebase. The Android/iOS projects are added alongside `src/`, and `bun run build` produces the web bundle that Capacitor copies into the native shell.
-2. **The Lovable sandbox cannot build, sign, or run an actual `.apk`/`.aab`.** I can author every file (Capacitor config, `android/` project, Firebase plugin wiring, service worker, FCM send code, DB migrations, admin dashboards) and verify it typechecks. Producing the installable APK requires Android Studio + JDK + Gradle on your machine (or an EAS/Codemagic CI). Phase 7 is the exact step-by-step guide for that.
-
-If both are OK, here is the plan.
+## Goal
+Shift from deadline-bucket routing to **cluster-first, distance-optimal** routing. Treat "Before X AM" as soft preferences (penalty, not gate). Only `exact_time_service` is a hard constraint. Add an Admin Route Manager with drag-and-drop, locks, emergency insertion, partner reassignment, and realtime partner sync.
 
 ---
 
-## Phase 1 — Capacitor shell (Android now, iOS scaffolded)
+## 1. Data model changes (migration)
 
-- Add deps: `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`, `@capacitor/ios`, `@capacitor/app`, `@capacitor/push-notifications`, `@capacitor/haptics`, `@capacitor/preferences`, `@capacitor-firebase/messaging`.
-- Create `capacitor.config.ts` with appId `app.urbanwash.partner` / `app.urbanwash.customer` (single binary toggled by build flavor — final decision in Phase 1: one app or two; default = **two binaries, one codebase, env flag picks the start route**).
-- `npx cap add android` + `npx cap add ios` → commits `android/` and `ios/` folders.
-- Web build stays the same; add `bun run cap:sync` script.
-- Add `Capacitor.isNativePlatform()` guard in `src/lib/platform.ts` so existing code branches between web/native without rewrites.
+**`customers`**
+- `time_window_type text default 'soft'` — `'soft' | 'exact'`
+- `exact_time time` — only used when type = `exact`
 
-## Phase 2 — Native FCM integration
+**`services`**
+- `locked_position boolean default false` — admin lock for the day
+- `manual_sequence_no int` — admin-set override; takes precedence over optimizer
+- `is_emergency boolean default false`
+- `cluster_id text` — assigned by optimizer (e.g. area+geohash5)
+- `reassigned_from uuid references partners(id)` — audit when admin moves between partners
 
-- Add `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) as placeholders — you paste real values later.
-- New module `src/lib/push/fcm.ts`:
-  - Request permission on first authed mount.
-  - Register native token via `@capacitor-firebase/messaging`.
-  - Persist to existing `push_tokens` table (add columns: `platform`, `device_id`, `app`, `last_seen`, `invalid_at`).
-  - Listen for `tokenReceived` (refresh) and re-upsert.
-  - Handle foreground / background / cold-start payload routing.
-- Notification channels: `offers` (max importance, sound, vibration, bypass DND), `assignments`, `general`.
-- Server side: new `src/lib/push/send.server.ts` using FCM HTTP v1 + a Firebase **service account JSON** (the credential you paste). Includes retry with backoff and invalid-token cleanup (`UNREGISTERED` / `INVALID_ARGUMENT` → mark `invalid_at`).
-- Deep link payload: `{ type: "offer", offer_id, queue_id }` → routes to `/app/offer/$id` which auto-opens the existing `OfferPopup`.
+**`platform_settings`** (new keys, JSON)
+- `route_optimizer_weights` — `{ route_impact, distance, travel_time, preferred_time, continuity, reliability, vip, complaint }` default `{40,20,10,8,7,6,5,4}`
+- `route_soft_window_penalty_per_min` — default `0.5`
+- `route_cluster_radius_km` — default `0.8`
 
-## Phase 3 — Partner offer delivery (3 states)
+No new tables; reuse `services` + realtime publication (already on).
 
-- **App in foreground**: existing realtime listener triggers `OfferPopup` (already built). No native notification.
-- **App backgrounded**: FCM displays high-priority heads-up notification with Accept/Decline actions. Tapping opens app at offer route.
-- **App terminated**: data-only FCM wakes the app; on cold start `src/lib/push/cold-start.ts` reads the pending intent and immediately mounts `OfferPopup`.
-- 90s timer + vibration + sound continue to work inside the popup regardless of entry path.
+## 2. Optimizer rewrite (`src/lib/route-optimize.ts`)
 
-## Phase 4 — Offer delivery state machine
+Replace deadline-bucket + nearest-neighbor with **cluster-first scored insertion**:
 
-New table `offer_delivery_events`:
+1. **Cluster** pending stops by geohash-5 (~0.6 km cell) or DBSCAN with `route_cluster_radius_km`.
+2. **Order clusters** by distance from current cursor (start = partner GPS or first hard-time stop).
+3. Within a cluster, order by nearest-neighbor; never leave a cluster with stops remaining unless a hard-time stop elsewhere is about to be missed.
+4. **Hard constraints**: `time_window_type='exact'` stops are pinned — schedule backward from `exact_time` minus 10 min/stop ETA and insert their cluster at the matching time slot.
+5. **Soft preferences**: compute predicted arrival; if later than preferred window, add `penalty_per_min * minutes_late` to the stop's score. Does not block ordering.
+6. **Scoring** per candidate next stop:
+   `score = w.route_impact*Δkm_saved + w.distance*-km + w.travel_time*-min + w.preferred_time*-late_penalty + w.continuity*same_cluster + w.reliability*partner_priority + w.vip*vip_flag + w.complaint*complaint_flag`
+7. **Locked/manual** stops bypass scoring and slot at their fixed index.
+8. **Emergency** stops insert at the nearest feasible point after `now()`.
 
-```text
-id | offer_id | queue_id | partner_id | stage | meta jsonb | created_at
-stages: created, queued, selected, push_sent, push_delivered, opened,
-        popup_displayed, accepted, declined, timed_out, reassigned, completed
-```
+Export:
+- `optimizeRoute(stops, from, opts)` — full ordering
+- `pickNextStop(stops, from, opts)` — recomputed after every completion (live route already invalidates on service status change)
 
-- DB trigger inserts `created` on `subscription_offers` insert.
-- `send.server.ts` writes `push_sent` + FCM message_id, and `push_delivered` on FCM receipt callback.
-- Client writes `opened` (notification tap), `popup_displayed` (mount), `accepted`/`declined` (button).
-- Sweeper writes `timed_out` / `reassigned`.
-- Admin page `/admin/offer-delivery/$offer_id` shows full timeline.
+## 3. Live route page
 
-## Phase 5 — Partner selection hardening
+`src/routes/_authenticated/app.live.tsx`:
+- Call `optimizeRoute` with new options; show cluster headers (`Aliganj • 4 cars`) instead of priority chips.
+- Replace "Priority" badge with `Exact time` (hard) / `Prefers before 9 AM` (soft).
+- Already re-fetches on realtime — pickNext re-runs on each completion automatically.
 
-Update `pick_scored_partner_for_queue` to require:
+## 4. Admin Route Manager (new route)
 
-```sql
-status = 'active'
-AND accepting_new = true
-AND availability = 'online'
-AND last_seen > now() - interval '3 minutes'
-AND EXISTS (SELECT 1 FROM push_tokens
-            WHERE partner_id = partners.id AND invalid_at IS NULL)
-```
+`src/routes/admin.route-manager.tsx`:
+- Partner picker + date picker (default today).
+- Drag-and-drop list using `@dnd-kit/core` + `@dnd-kit/sortable` (lightweight, already-common).
+- Per-row actions: **Lock**, **Unlock**, **Mark Emergency**, **Move to partner…** (dialog), **Remove from day**.
+- Toolbar: **Re-optimize**, **Insert emergency job** (search customers/vehicles).
+- Saves to `services` (`manual_sequence_no`, `locked_position`, `is_emergency`, `partner_id`).
+- Writes to `assignment_changes` for audit.
 
-- If no candidates → existing radius expansion runs.
-- If still none after max radius → insert `admin_alerts` row + customer status → `searching_extended`.
+RPCs (admin-only via `requireAdmin`):
+- `admin_reorder_services(partner_id, date, ordered_ids[])`
+- `admin_lock_service(service_id, locked bool)`
+- `admin_reassign_service(service_id, new_partner_id)`
+- `admin_insert_emergency(partner_id, vehicle_id, position)`
+- `admin_force_recalculate(partner_id, date)` — clears `manual_sequence_no` for unlocked stops and bumps `updated_at` to trigger partner realtime refresh.
 
-## Phase 6 — Marketplace monitoring dashboard
+## 5. Realtime sync
 
-Extend `/admin/marketplace` with realtime tiles:
-- Online partners / with valid token / without token
-- Pending customers, pending offers, accepted today, timed-out today
-- Push send failures (last 1h), push opened rate
-- Link to `/admin/offer-history` (already exists) + new `/admin/offer-delivery/$id`
+`services` is already in `supabase_realtime`. Confirm via migration (idempotent `ADD TABLE` guarded). Partner's `app.live.tsx` already uses `useRealtimeInvalidation(["services", ...])` — new admin edits propagate automatically.
 
-## Phase 7 — Documentation (delivered as `docs/MOBILE.md`)
+## 6. Settings UI
 
-Step-by-step:
-1. Create Firebase project + Android app + iOS app
-2. Download `google-services.json` / `GoogleService-Info.plist` → exact file paths
-3. Generate service account JSON → which 3 fields to paste into Lovable secrets (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
-4. APK build: `bun run build && npx cap sync android && cd android && ./gradlew assembleRelease`
-5. AAB build (Play Store): `./gradlew bundleRelease`
-6. iOS build: open `ios/App/App.xcworkspace` in Xcode, archive
-7. Testing push: send via Firebase console → device, then via your own admin "Test push" button
-8. Publishing updates: web-only changes → `cap copy` + redeploy backend; native changes → rebuild APK/AAB
+`src/routes/admin.settings.tsx`: add a "Route optimizer" card to edit weights, penalty, cluster radius (writes `platform_settings`).
 
 ---
 
-## Technical details
+## Technical notes
 
-**DB migrations (one file):**
-- `push_tokens`: add `platform text`, `device_id text`, `app text`, `last_seen timestamptz`, `invalid_at timestamptz`, unique `(partner_id, device_id)`.
-- `offer_delivery_events`: new table + grants + RLS (admin read, service_role write) + trigger on `subscription_offers`.
-- `admin_alerts`: new table for "no eligible partner".
-- `pick_scored_partner_for_queue`: replace with hardened version.
+- Geohash via small inline helper (no dep) — 5-char precision ≈ 0.6 km cell.
+- `@dnd-kit/core` + `@dnd-kit/sortable` install required.
+- Backwards compatible: existing rows default `time_window_type='soft'`, so old "Before X AM" data behaves as soft preference without backfill.
+- `pick_scored_partner_for_queue` (marketplace) is unrelated and untouched.
 
-**Secrets to request via `add_secret` after plan approval:**
-`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`.
+## Out of scope
+- Multi-day planning, traffic prediction, partner shift breaks — keep current heuristics.
 
-**Files added (no rewrites of existing logic):**
-- `capacitor.config.ts`
-- `src/lib/platform.ts`
-- `src/lib/push/{fcm.ts,cold-start.ts,deep-link.ts}`
-- `src/lib/push/send.server.ts`
-- `src/lib/push/send.functions.ts` (admin trigger + queue send)
-- `src/routes/api/public/fcm-delivery-receipt.ts`
-- `src/routes/admin.offer-delivery.$id.tsx`
-- `docs/MOBILE.md`
-- `android/` + `ios/` (generated by `cap add`)
-
-**Files touched (additive only):**
-- `src/routes/_authenticated/app.tsx` — mount `useFcmRegistration()` hook
-- `src/routes/c/_authed/route.tsx` — mount `useFcmRegistration()` hook
-- `src/routes/admin.marketplace.tsx` — add monitoring tiles
-- DB function `offer_next_for_queue` — call `push.send` after creating offer
-- DB function `pick_scored_partner_for_queue` — tightened criteria
-
-**Out of scope (intentionally):**
-- Building/signing actual APK in this sandbox
-- iOS App Store submission (scaffolded, not submitted)
-- Replacing existing OfferPopup, AwaitingPartnerBanner, admin UI, or marketplace RPCs
-
----
-
-## Execution order (5 turns)
-
-1. DB migration (push_tokens + offer_delivery_events + admin_alerts + tightened picker)
-2. Capacitor install + config + `cap add android` + platform helper
-3. FCM client (`fcm.ts`, cold-start, deep-link, hook mounted in both authed shells)
-4. FCM server (`send.server.ts`, send.functions, delivery-receipt route, wire into `offer_next_for_queue`)
-5. Admin monitoring tiles + offer-delivery detail page + `docs/MOBILE.md` + request 3 Firebase secrets
-
-Approve and I'll start with turn 1 (DB migration).
+Approve to implement.
