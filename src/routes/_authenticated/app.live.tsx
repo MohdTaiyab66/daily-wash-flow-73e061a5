@@ -98,6 +98,13 @@ function RoutePage() {
         lat: c?.latitude != null ? Number(c.latitude) : null,
         lng: c?.longitude != null ? Number(c.longitude) : null,
         deadline: c?.service_required_before ?? c?.preferred_time ?? null,
+        timeWindowType: (c?.time_window_type ?? "soft") as "soft" | "exact",
+        exactTime: c?.exact_time ?? null,
+        locked: (s as any).locked_position ?? false,
+        manualSequence: (s as any).manual_sequence_no ?? null,
+        isEmergency: (s as any).is_emergency ?? false,
+        clusterId: (s as any).cluster_id ?? null,
+        isVip: !!c?.vip_priority,
       };
     }),
     pos,
