@@ -704,6 +704,7 @@ export type Database = {
           city: string
           created_at: string
           email: string | null
+          exact_time: string | null
           exterior_wash_done_date: string | null
           exterior_wash_partner_id: string | null
           full_name: string
@@ -722,6 +723,7 @@ export type Database = {
           subscription_end: string
           subscription_plan: Database["public"]["Enums"]["subscription_plan"]
           subscription_start: string
+          time_window_type: string
           updated_at: string
         }
         Insert: {
@@ -730,6 +732,7 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          exact_time?: string | null
           exterior_wash_done_date?: string | null
           exterior_wash_partner_id?: string | null
           full_name: string
@@ -748,6 +751,7 @@ export type Database = {
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
+          time_window_type?: string
           updated_at?: string
         }
         Update: {
@@ -756,6 +760,7 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string | null
+          exact_time?: string | null
           exterior_wash_done_date?: string | null
           exterior_wash_partner_id?: string | null
           full_name?: string
@@ -774,6 +779,7 @@ export type Database = {
           subscription_end?: string
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           subscription_start?: string
+          time_window_type?: string
           updated_at?: string
         }
         Relationships: []
@@ -1761,6 +1767,7 @@ export type Database = {
       services: {
         Row: {
           assignment_id: string | null
+          cluster_id: string | null
           complete_lat: number | null
           complete_lng: number | null
           completed_at: string | null
@@ -1770,8 +1777,12 @@ export type Database = {
           gps_distance_m: number | null
           gps_flag: string | null
           id: string
+          is_emergency: boolean
+          locked_position: boolean
+          manual_sequence_no: number | null
           partner_id: string | null
           rate_per_car: number
+          reassigned_from: string | null
           scheduled_date: string
           sequence_no: number | null
           start_lat: number | null
@@ -1791,6 +1802,7 @@ export type Database = {
         }
         Insert: {
           assignment_id?: string | null
+          cluster_id?: string | null
           complete_lat?: number | null
           complete_lng?: number | null
           completed_at?: string | null
@@ -1800,8 +1812,12 @@ export type Database = {
           gps_distance_m?: number | null
           gps_flag?: string | null
           id?: string
+          is_emergency?: boolean
+          locked_position?: boolean
+          manual_sequence_no?: number | null
           partner_id?: string | null
           rate_per_car?: number
+          reassigned_from?: string | null
           scheduled_date?: string
           sequence_no?: number | null
           start_lat?: number | null
@@ -1821,6 +1837,7 @@ export type Database = {
         }
         Update: {
           assignment_id?: string | null
+          cluster_id?: string | null
           complete_lat?: number | null
           complete_lng?: number | null
           completed_at?: string | null
@@ -1830,8 +1847,12 @@ export type Database = {
           gps_distance_m?: number | null
           gps_flag?: string | null
           id?: string
+          is_emergency?: boolean
+          locked_position?: boolean
+          manual_sequence_no?: number | null
           partner_id?: string | null
           rate_per_car?: number
+          reassigned_from?: string | null
           scheduled_date?: string
           sequence_no?: number | null
           start_lat?: number | null
@@ -1867,6 +1888,13 @@ export type Database = {
           {
             foreignKeyName: "services_partner_id_fkey"
             columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_reassigned_from_fkey"
+            columns: ["reassigned_from"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
@@ -2590,6 +2618,10 @@ export type Database = {
         Args: { p_partner_id: string; p_queue_id: string }
         Returns: Json
       }
+      admin_force_recalculate: {
+        Args: { p_date: string; p_partner_id: string }
+        Returns: undefined
+      }
       admin_list_unassigned_customers: {
         Args: { p_area?: string }
         Returns: {
@@ -2604,6 +2636,10 @@ export type Database = {
           vehicle_model: string
         }[]
       }
+      admin_lock_service: {
+        Args: { p_locked: boolean; p_service_id: string }
+        Returns: undefined
+      }
       admin_mark_monthly_wash: {
         Args: {
           p_customer_id: string
@@ -2611,6 +2647,14 @@ export type Database = {
           p_kind: string
           p_partner_id: string
         }
+        Returns: undefined
+      }
+      admin_reassign_service: {
+        Args: { p_new_partner_id: string; p_service_id: string }
+        Returns: undefined
+      }
+      admin_reorder_services: {
+        Args: { p_date: string; p_ordered_ids: string[]; p_partner_id: string }
         Returns: undefined
       }
       admin_retry_queue: { Args: { p_queue_id: string }; Returns: Json }
