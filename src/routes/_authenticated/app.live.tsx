@@ -159,7 +159,13 @@ function RoutePage() {
             ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
-          const priority = idx === 0 || /^(0?[6-8]):/.test(String(cutoffTime ?? ""));
+          const isExact = (c?.time_window_type ?? "soft") === "exact";
+          const isEmergency = !!(s as any).is_emergency;
+          const isLocked = !!(s as any).locked_position;
+          const priority = isExact || isEmergency;
+          const prevCluster = idx > 0 ? (pending[idx - 1] as any).cluster_id ?? (pending[idx - 1].customers as any)?.area : null;
+          const currCluster = (s as any).cluster_id ?? c?.area;
+          const showClusterHeader = idx === 0 || prevCluster !== currCluster;
           return (
             <Card key={s.id} className="overflow-hidden p-0">
               <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
