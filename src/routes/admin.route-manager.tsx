@@ -111,8 +111,9 @@ function fmt(n: number | null | undefined, d = 1) {
 
 function RouteManagerPage() {
   const qc = useQueryClient();
-  const [date, setDate] = useState(todayIso());
-  const [partnerId, setPartnerId] = useState<string>("");
+  const search = Route.useSearch();
+  const [date, setDate] = useState(search.date || todayIso());
+  const [partnerId, setPartnerId] = useState<string>(search.partner || "");
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
   const [role, setRole] = useState<"admin" | "ops_manager" | "viewer">("viewer");
   const [addOpen, setAddOpen] = useState(false);
