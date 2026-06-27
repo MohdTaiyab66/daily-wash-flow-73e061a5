@@ -1897,11 +1897,15 @@ export type Database = {
           created_at: string
           customer_id: string
           delay_reason: string | null
+          distance_km: number | null
+          eta_at: string | null
           fraud_review: boolean
           gps_distance_m: number | null
           gps_flag: string | null
           id: string
           is_emergency: boolean
+          last_sequence_change_at: string | null
+          last_sequence_change_by: string | null
           locked_position: boolean
           manual_sequence_no: number | null
           partner_id: string | null
@@ -1917,6 +1921,7 @@ export type Database = {
           started_at: string | null
           status: Database["public"]["Enums"]["service_status"]
           time_slot: string
+          travel_min: number | null
           unavailable_at: string | null
           unavailable_lat: number | null
           unavailable_lng: number | null
@@ -1937,11 +1942,15 @@ export type Database = {
           created_at?: string
           customer_id: string
           delay_reason?: string | null
+          distance_km?: number | null
+          eta_at?: string | null
           fraud_review?: boolean
           gps_distance_m?: number | null
           gps_flag?: string | null
           id?: string
           is_emergency?: boolean
+          last_sequence_change_at?: string | null
+          last_sequence_change_by?: string | null
           locked_position?: boolean
           manual_sequence_no?: number | null
           partner_id?: string | null
@@ -1957,6 +1966,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          travel_min?: number | null
           unavailable_at?: string | null
           unavailable_lat?: number | null
           unavailable_lng?: number | null
@@ -1977,11 +1987,15 @@ export type Database = {
           created_at?: string
           customer_id?: string
           delay_reason?: string | null
+          distance_km?: number | null
+          eta_at?: string | null
           fraud_review?: boolean
           gps_distance_m?: number | null
           gps_flag?: string | null
           id?: string
           is_emergency?: boolean
+          last_sequence_change_at?: string | null
+          last_sequence_change_by?: string | null
           locked_position?: boolean
           manual_sequence_no?: number | null
           partner_id?: string | null
@@ -1997,6 +2011,7 @@ export type Database = {
           started_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           time_slot?: string
+          travel_min?: number | null
           unavailable_at?: string | null
           unavailable_lat?: number | null
           unavailable_lng?: number | null
@@ -2859,7 +2874,12 @@ export type Database = {
         Returns: Json
       }
       admin_route_draft_save: {
-        Args: { p_date: string; p_partner_id: string; p_reason?: string }
+        Args: {
+          p_date: string
+          p_items: Json
+          p_partner_id: string
+          p_reason?: string
+        }
         Returns: Json
       }
       admin_route_draft_set: {
@@ -2871,6 +2891,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_route_history: {
+        Args: { p_date: string; p_partner_id: string }
+        Returns: {
+          actor: string
+          created_at: string
+          kind: string
+          metrics: Json
+          reason: string
+          snapshot_id: string
+          status: string
+          version: number
+        }[]
+      }
       admin_route_reassign: {
         Args: {
           p_position?: number
@@ -2879,6 +2912,10 @@ export type Database = {
           p_to_partner: string
         }
         Returns: undefined
+      }
+      admin_route_remove_stop: {
+        Args: { p_mode: string; p_reason?: string; p_service_id: string }
+        Returns: Json
       }
       admin_route_restore_snapshot: {
         Args: { p_reason?: string; p_snapshot_id: string }
@@ -2897,10 +2934,12 @@ export type Database = {
           current_partner_name: string
           customer_id: string
           full_name: string
+          has_active_subscription: boolean
           phone: string
           preferred_time: string
           service_id: string
           status: string
+          vehicle_model: string
           vehicle_reg: string
         }[]
       }

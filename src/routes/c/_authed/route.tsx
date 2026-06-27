@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
+import { useCustomerRouteSync } from "@/hooks/use-route-sync";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
@@ -29,6 +30,7 @@ function CustomerAuthedLayout() {
     };
   }, []);
   useFcmRegistration(userId, "customer");
+  useCustomerRouteSync(userId);
   return (
     <CustomerShell>
       <Outlet />

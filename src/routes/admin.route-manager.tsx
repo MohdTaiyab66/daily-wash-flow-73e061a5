@@ -439,25 +439,70 @@ function RouteManagerPage() {
   }
 
   // ---- save / discard ----
+  // Compute per-stop ETA / distance / travel-min from the manual order so the
+  // partner & customer apps see real numbers immediately after Save.
+  function buildSavePayload(rows: ServiceRow[]) {
+    const SERVICE_MIN = 12;     // average wash duration
+    const AVG_KMH = 22;         // city avg
+    const startMin = 6 * 60 + 30; // 06:30
+    const baseDay = new Date(date + "T00:00:00");
+    let prevLat = partner?.home_lat != null ? Number(partner.home_lat) : null;
+    let prevLng = partner?.home_lng != null ? Number(partner.home_lng) : null;
+    let cursor = startMin;
+    return rows.map((s, i) => {
+      const lat = s.customers?.latitude != null ? Number(s.customers.latitude) : null;
+      const lng = s.customers?.longitude != null ? Number(s.customers.longitude) : null;
+      let distKm = 0;
+      if (prevLat != null && prevLng != null && lat != null && lng != null) {
+        const R = 6371, toRad = (d: number) => (d * Math.PI) / 180;
+        const dLat = toRad(lat - prevLat), dLng = toRad(lng - prevLng);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(prevLat)) * Math.cos(toRad(lat)) * Math.sin(dLng / 2) ** 2;
+        distKm = 2 * R * Math.asin(Math.sqrt(a));
+      }
+      const travelMin = Math.max(1, Math.round((distKm / AVG_KMH) * 60));
+      cursor += travelMin;
+      const eta = new Date(baseDay.getTime() + cursor * 60_000);
+      cursor += SERVICE_MIN;
+      if (lat != null && lng != null) { prevLat = lat; prevLng = lng; }
+      return {
+        service_id: s.id,
+        sequence: i + 1,
+        locked: !!s.locked_position,
+        priority: normalisePriority(s.priority ?? null),
+        is_emergency: !!s.is_emergency,
+        cluster_id: s.cluster_id,
+        partner_id: s.partner_id ?? partnerId,
+        eta_at: eta.toISOString(),
+        travel_min: travelMin,
+        distance_km: Math.round(distKm * 100) / 100,
+      };
+    });
+  }
+
   async function persistDraft(reason?: string) {
     if (!order || !ensureCanEdit()) return;
     setSaving(true);
     try {
-      const payload = payloadFromOrder(order);
-      // set + save in one go
-      const { error: setErr } = await supabase.rpc("admin_route_draft_set" as any, {
-        p_partner_id: partnerId, p_date: date, p_payload: payload as any, p_reason: reason ?? null,
+      const items = buildSavePayload(order);
+      const { data, error } = await supabase.rpc("admin_route_draft_save" as any, {
+        p_partner_id: partnerId,
+        p_date: date,
+        p_items: items as any,
+        p_reason: reason ?? null,
       });
-      if (setErr) throw setErr;
-      const { error: saveErr } = await supabase.rpc("admin_route_draft_save" as any, {
-        p_partner_id: partnerId, p_date: date, p_reason: reason ?? null,
-      });
-      if (saveErr) throw saveErr;
-      toast.success("Route saved — partner app will update");
+      if (error) throw error;
+      const summary = (data ?? {}) as any;
+      toast.success(
+        `Route saved · ${summary.changed ?? 0} change(s)` +
+        (summary.eta_notifications ? ` · ${summary.eta_notifications} customer(s) notified` : "")
+      );
       qc.invalidateQueries({ queryKey: ["rm-services"] });
       qc.invalidateQueries({ queryKey: ["rm-draft"] });
       qc.invalidateQueries({ queryKey: ["rm-logs"] });
+      qc.invalidateQueries({ queryKey: ["rm-snapshots"] });
       qc.invalidateQueries({ queryKey: ["rm-partners-full"] });
+      qc.invalidateQueries({ queryKey: ["rm-timeline"] });
+      qc.invalidateQueries({ queryKey: ["rm-dash"] });
       refetchSnaps();
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to save");
