@@ -38,6 +38,9 @@ import { AddCustomerSheet } from "@/components/admin/route/AddCustomerSheet";
 import { SaveBar } from "@/components/admin/route/SaveBar";
 import { ManualModeBanner } from "@/components/admin/route/ManualModeBanner";
 import { PrioritySelect, PriorityBadge } from "@/components/admin/route/PrioritySelect";
+import { RemoveStopDialog, type RemoveMode } from "@/components/admin/route/RemoveStopDialog";
+import { PositionPickerDialog, type PositionChoice } from "@/components/admin/route/PositionPickerDialog";
+import { SavePreviewDialog, type Conflict, type DiffEntry, type PreviewSummary } from "@/components/admin/route/SavePreviewDialog";
 import {
   newHistory, pushHistory, undoHistory, redoHistory, payloadFromOrder,
   diffPayloads, normalisePriority, PRIORITY_LABEL, type HistoryStack, type Priority,
