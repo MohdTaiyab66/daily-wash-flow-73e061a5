@@ -2732,6 +2732,18 @@ export type Database = {
       }
     }
     Functions: {
+      _booking_for_service: {
+        Args: { p_service_id: string }
+        Returns: {
+          preferred_before_time: string
+          scheduled_date: string
+          user_id: string
+        }[]
+      }
+      _customer_window_cutoff: {
+        Args: { p_date: string; p_text: string }
+        Returns: string
+      }
       _resolve_user_id_for_customer: {
         Args: { p_customer_id: string }
         Returns: string
