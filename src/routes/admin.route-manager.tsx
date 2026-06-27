@@ -38,6 +38,9 @@ import { AddCustomerSheet } from "@/components/admin/route/AddCustomerSheet";
 import { SaveBar } from "@/components/admin/route/SaveBar";
 import { ManualModeBanner } from "@/components/admin/route/ManualModeBanner";
 import { PrioritySelect, PriorityBadge } from "@/components/admin/route/PrioritySelect";
+import { RemoveStopDialog, type RemoveMode } from "@/components/admin/route/RemoveStopDialog";
+import { PositionPickerDialog, type PositionChoice } from "@/components/admin/route/PositionPickerDialog";
+import { SavePreviewDialog, type Conflict, type DiffEntry, type PreviewSummary } from "@/components/admin/route/SavePreviewDialog";
 import {
   newHistory, pushHistory, undoHistory, redoHistory, payloadFromOrder,
   diffPayloads, normalisePriority, PRIORITY_LABEL, type HistoryStack, type Priority,
@@ -111,6 +114,12 @@ function RouteManagerPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<ServiceRow | null>(null);
+  const [transferTarget, setTransferTarget] = useState<ServiceRow | null>(null);
+  const [positionPicker, setPositionPicker] = useState<{ refRow: ServiceRow | null } | null>(null);
+  const [savePreview, setSavePreview] = useState<{
+    conflicts: Conflict[]; diff: DiffEntry[]; summary: PreviewSummary;
+  } | null>(null);
 
   // role check
   useEffect(() => {
@@ -342,11 +351,8 @@ function RouteManagerPage() {
     });
   };
 
-  const insertNear = (s: ServiceRow, where: "above" | "below") => {
-    // Stash a flag to know where the next added customer goes
-    const i = order!.findIndex((x) => x.id === s.id);
-    pendingInsertRef.current = where === "above" ? i : i + 1;
-    setAddOpen(true);
+  const insertNear = (s: ServiceRow, _where: "above" | "below") => {
+    setPositionPicker({ refRow: s });
   };
 
   const pendingInsertRef = useRef<number | null>(null);
@@ -360,8 +366,12 @@ function RouteManagerPage() {
   const setPriorityDraft = (s: ServiceRow, p: Priority) =>
     mutateDraft((rows) => rows.map((r) => r.id === s.id ? { ...r, priority: p } : r));
 
-  const removeFromDraft = (s: ServiceRow) =>
-    mutateDraft((rows) => rows.filter((r) => r.id !== s.id));
+  // Row "Remove" now opens the 3-choice dialog
+  const requestRemove = (s: ServiceRow) => setRemoveTarget(s);
+
+  // Internal: drop from draft only (used by today_only)
+  const dropFromDraftLocal = (id: string) =>
+    mutateDraft((rows) => rows.filter((r) => r.id !== id));
 
   // ---- bulk ----
   const allChecked = !!order && order.length > 0 && selected.size === order.length;
@@ -477,6 +487,75 @@ function RouteManagerPage() {
         distance_km: Math.round(distKm * 100) / 100,
       };
     });
+  }
+
+  // Build the pre-save preview: conflicts + per-stop diff vs the baseline.
+  function computePreview(rows: ServiceRow[]) {
+    const items = buildSavePayload(rows);
+    const baseline = baselineRef.current ?? [];
+    const baselineIds = new Set(baseline.map((b) => b.id));
+    const newIds = new Set(rows.map((r) => r.id));
+    const baselineSeqById = new Map<string, number>();
+    baseline.forEach((b, i) => baselineSeqById.set(b.id, i + 1));
+
+    // Try to read previous saved ETA from current services list to compute shift.
+    const prevEtaById = new Map<string, string | null>();
+    (services ?? []).forEach((s: any) => prevEtaById.set(s.id, s.eta_at ?? null));
+
+    const conflicts: Conflict[] = [];
+    const diff: DiffEntry[] = [];
+    let totalDistanceKm = 0, totalDriveMin = 0, notified = 0;
+
+    rows.forEach((r, i) => {
+      const item = items[i];
+      const name = r.customers?.full_name ?? "—";
+      totalDistanceKm += item.distance_km ?? 0;
+      totalDriveMin += item.travel_min ?? 0;
+
+      // Conflicts
+      if (r.customers?.latitude == null || r.customers?.longitude == null) {
+        conflicts.push({ level: "error", service_id: r.id, name, message: "Missing coordinates — cannot route to this stop" });
+      }
+      const etaMs = new Date(item.eta_at).getTime();
+      if (r.customers?.time_window_type === "exact" && r.customers?.exact_time) {
+        const [h, m] = r.customers.exact_time.split(":").map(Number);
+        const target = new Date(date + "T00:00:00").getTime() + ((h ?? 0) * 60 + (m ?? 0)) * 60_000;
+        if (etaMs > target + 15 * 60_000) {
+          conflicts.push({ level: "error", service_id: r.id, name, message: `Exact ${r.customers.exact_time} window missed — ETA ${new Date(etaMs).toTimeString().slice(0, 5)}` });
+        } else if (Math.abs(etaMs - target) > 5 * 60_000) {
+          conflicts.push({ level: "warning", service_id: r.id, name, message: `Exact window ±${Math.round((etaMs - target) / 60_000)}m off target` });
+        }
+      } else {
+        const cutoff = r.customers?.service_required_before ?? r.customers?.preferred_time ?? null;
+        if (cutoff) {
+          const [h, m] = String(cutoff).split(":").map(Number);
+          if (!Number.isNaN(h)) {
+            const cut = new Date(date + "T00:00:00").getTime() + ((h ?? 0) * 60 + (m ?? 0)) * 60_000;
+            if (etaMs > cut) conflicts.push({ level: "warning", service_id: r.id, name, message: `ETA ${new Date(etaMs).toTimeString().slice(0, 5)} is after deadline ${cutoff}` });
+          }
+        }
+      }
+
+      // Sequence diff (changed position, added, or ETA shift)
+      const from = baselineSeqById.get(r.id) ?? null;
+      const prevEta = prevEtaById.get(r.id) ?? null;
+      const shift = prevEta ? Math.round((etaMs - new Date(prevEta).getTime()) / 60_000) : 0;
+      const moved = from != null && from !== i + 1;
+      if (!baselineIds.has(r.id) || moved || Math.abs(shift) >= 1) {
+        diff.push({ service_id: r.id, name, from, to: i + 1, eta_at: item.eta_at, eta_shift_min: shift });
+        if (Math.abs(shift) >= 15) notified += 1;
+      }
+    });
+
+    const added = rows.filter((r) => !baselineIds.has(r.id)).length;
+    const removed = baseline.filter((b) => !newIds.has(b.id)).length;
+    const moved = diff.filter((d) => d.from != null && d.from !== d.to).length;
+
+    const summary: PreviewSummary = {
+      total: rows.length, added, removed, moved, notified,
+      totalDistanceKm, totalDriveMin,
+    };
+    return { items, conflicts, diff, summary };
   }
 
   async function persistDraft(reason?: string) {
@@ -661,7 +740,7 @@ function RouteManagerPage() {
             </div>
             <Button
               size="sm"
-              onClick={() => { pendingInsertRef.current = null; setAddOpen(true); }}
+              onClick={() => { pendingInsertRef.current = null; setPositionPicker({ refRow: null }); }}
               disabled={!partnerId || !canEdit}
             >
               <Plus className="mr-1 h-4 w-4" /> Add customer
@@ -728,7 +807,7 @@ function RouteManagerPage() {
                       onEmergency={() => toggleEmergencyDraft(s)}
                       onPriority={(p) => setPriorityDraft(s, p)}
                       onReassign={(p) => reassignToOtherPartner(s, p)}
-                      onRemove={() => removeFromDraft(s)}
+                      onRemove={() => requestRemove(s)}
                       onOpen={() => setSelectedStop(s.id)}
                       onUp={() => move(s, -1)}
                       onDown={() => move(s, 1)}
@@ -867,7 +946,12 @@ function RouteManagerPage() {
         onUndo={() => setDraft((d) => d ? undoHistory(d) : d)}
         onRedo={() => setDraft((d) => d ? redoHistory(d) : d)}
         onDiscard={discardDraft}
-        onSave={() => persistDraft()}
+        onSave={() => {
+          if (!order) return;
+          if (!ensureCanEdit()) return;
+          const preview = computePreview(order);
+          setSavePreview({ conflicts: preview.conflicts, diff: preview.diff, summary: preview.summary });
+        }}
         saving={saving}
       />
 
@@ -881,6 +965,100 @@ function RouteManagerPage() {
         onAdd={handleAddCustomer}
         onReassign={handleReassignFromOther}
       />
+
+      {/* Position picker (for Add customer + Insert above/below) */}
+      <PositionPickerDialog
+        open={!!positionPicker}
+        onOpenChange={(o) => { if (!o) setPositionPicker(null); }}
+        total={order?.length ?? 0}
+        refRow={positionPicker?.refRow ? {
+          id: positionPicker.refRow.id,
+          name: positionPicker.refRow.customers?.full_name ?? "stop",
+        } : null}
+        onPick={(p: PositionChoice) => {
+          const rows = order ?? [];
+          let idx: number;
+          if (p.kind === "beginning") idx = 0;
+          else if (p.kind === "end") idx = rows.length;
+          else if (p.kind === "specific") idx = p.index;
+          else {
+            const refIdx = rows.findIndex((r) => r.id === p.ref);
+            idx = p.kind === "above" ? Math.max(0, refIdx) : refIdx + 1;
+          }
+          pendingInsertRef.current = idx;
+          setPositionPicker(null);
+          setAddOpen(true);
+        }}
+      />
+
+      {/* Remove stop dialog (today / transfer / cancel) */}
+      <RemoveStopDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => { if (!o) setRemoveTarget(null); }}
+        customerName={removeTarget?.customers?.full_name ?? "this customer"}
+        hasOtherPartners={(partners ?? []).some((p) => p.id !== partnerId)}
+        onConfirm={async (mode: RemoveMode, reason) => {
+          const s = removeTarget; if (!s) return;
+          if (mode === "today_only") {
+            const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
+              p_service_id: s.id, p_mode: "today_only", p_reason: reason || null,
+            });
+            if (error) { toast.error(error.message); return; }
+            dropFromDraftLocal(s.id);
+            toast.success("Removed from today's route");
+            qc.invalidateQueries({ queryKey: ["rm-services"] });
+          } else if (mode === "cancel") {
+            const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
+              p_service_id: s.id, p_mode: "cancel", p_reason: reason || null,
+            });
+            if (error) { toast.error(error.message); return; }
+            dropFromDraftLocal(s.id);
+            toast.success("Service cancelled — customer notified");
+            qc.invalidateQueries({ queryKey: ["rm-services"] });
+          } else {
+            setTransferTarget(s);
+          }
+        }}
+      />
+
+      {/* Transfer-to dialog (simple list of other partners) */}
+      <Dialog open={!!transferTarget} onOpenChange={(o) => !o && setTransferTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Transfer to partner</DialogTitle></DialogHeader>
+          <div className="max-h-72 space-y-1 overflow-auto">
+            {(partners ?? []).filter((p) => p.id !== partnerId).map((p) => (
+              <button key={p.id}
+                className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent"
+                onClick={async () => {
+                  const s = transferTarget; if (!s) return;
+                  await reassignToOtherPartner(s, p.id);
+                  setTransferTarget(null);
+                }}>
+                <span>{p.full_name ?? p.id.slice(0, 8)}</span>
+                <span className="text-xs text-muted-foreground">{p.home_area ?? ""}</span>
+              </button>
+            ))}
+            {!(partners ?? []).filter((p) => p.id !== partnerId).length && (
+              <p className="px-2 py-4 text-center text-xs text-muted-foreground">No other partners today.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save preview / conflicts dialog */}
+      <SavePreviewDialog
+        open={!!savePreview}
+        onOpenChange={(o) => { if (!o && !saving) setSavePreview(null); }}
+        conflicts={savePreview?.conflicts ?? []}
+        diff={savePreview?.diff ?? []}
+        summary={savePreview?.summary ?? { total: 0, added: 0, removed: 0, moved: 0, notified: 0, totalDistanceKm: 0, totalDriveMin: 0 }}
+        saving={saving}
+        onConfirm={async (reason) => {
+          await persistDraft(reason || undefined);
+          setSavePreview(null);
+        }}
+      />
+
 
       {/* Customer detail dialog */}
       <Dialog open={!!selectedRow} onOpenChange={(o) => !o && setSelectedStop(null)}>
@@ -930,7 +1108,7 @@ function RouteManagerPage() {
                   <Button size="sm" variant="outline" onClick={() => toggleEmergencyDraft(selectedRow)} disabled={!canEdit}>
                     <Zap className="mr-1 h-4 w-4" />{selectedRow.is_emergency ? "Clear emergency" : "Emergency"}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => removeFromDraft(selectedRow)} disabled={!canEdit}>
+                  <Button size="sm" variant="destructive" onClick={() => requestRemove(selectedRow)} disabled={!canEdit}>
                     <Trash2 className="mr-1 h-4 w-4" />Remove
                   </Button>
                 </div>
