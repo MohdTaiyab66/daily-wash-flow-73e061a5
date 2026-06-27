@@ -31,7 +31,7 @@ function CustomerAuthedLayout() {
     };
   }, []);
   useFcmRegistration(userId, "customer");
-  useCustomerRouteSync(userId);
+  // No live ETA / route sync for customers by design.
   return (
     <CustomerShell>
       <Outlet />
