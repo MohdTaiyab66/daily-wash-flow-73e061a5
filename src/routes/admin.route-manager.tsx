@@ -946,7 +946,12 @@ function RouteManagerPage() {
         onUndo={() => setDraft((d) => d ? undoHistory(d) : d)}
         onRedo={() => setDraft((d) => d ? redoHistory(d) : d)}
         onDiscard={discardDraft}
-        onSave={() => persistDraft()}
+        onSave={() => {
+          if (!order) return;
+          if (!ensureCanEdit()) return;
+          const preview = computePreview(order);
+          setSavePreview({ conflicts: preview.conflicts, diff: preview.diff, summary: preview.summary });
+        }}
         saving={saving}
       />
 
@@ -960,6 +965,101 @@ function RouteManagerPage() {
         onAdd={handleAddCustomer}
         onReassign={handleReassignFromOther}
       />
+
+      {/* Position picker (for Add customer + Insert above/below) */}
+      <PositionPickerDialog
+        open={!!positionPicker}
+        onOpenChange={(o) => { if (!o) setPositionPicker(null); }}
+        total={order?.length ?? 0}
+        refRow={positionPicker?.refRow ? {
+          id: positionPicker.refRow.id,
+          name: positionPicker.refRow.customers?.full_name ?? "stop",
+        } : null}
+        onPick={(p: PositionChoice) => {
+          const rows = order ?? [];
+          let idx: number;
+          if (p.kind === "beginning") idx = 0;
+          else if (p.kind === "end") idx = rows.length;
+          else if (p.kind === "specific") idx = p.index;
+          else {
+            const refIdx = rows.findIndex((r) => r.id === p.ref);
+            idx = p.kind === "above" ? Math.max(0, refIdx) : refIdx + 1;
+          }
+          pendingInsertRef.current = idx;
+          setPositionPicker(null);
+          setAddOpen(true);
+        }}
+      />
+
+      {/* Remove stop dialog (today / transfer / cancel) */}
+      <RemoveStopDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => { if (!o) setRemoveTarget(null); }}
+        customerName={removeTarget?.customers?.full_name ?? "this customer"}
+        hasOtherPartners={(partners ?? []).some((p) => p.id !== partnerId)}
+        onConfirm={async (mode: RemoveMode, reason) => {
+          const s = removeTarget; if (!s) return;
+          if (mode === "today_only") {
+            const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
+              p_service_id: s.id, p_mode: "today_only", p_reason: reason || null,
+            });
+            if (error) return toast.error(error.message);
+            dropFromDraftLocal(s.id);
+            toast.success("Removed from today's route");
+            qc.invalidateQueries({ queryKey: ["rm-services"] });
+          } else if (mode === "cancel") {
+            const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
+              p_service_id: s.id, p_mode: "cancel", p_reason: reason || null,
+            });
+            if (error) return toast.error(error.message);
+            dropFromDraftLocal(s.id);
+            toast.success("Service cancelled — customer notified");
+            qc.invalidateQueries({ queryKey: ["rm-services"] });
+          } else {
+            // transfer: pop transfer chooser
+            setTransferTarget(s);
+          }
+        }}
+      />
+
+      {/* Transfer-to dialog (simple list of other partners) */}
+      <Dialog open={!!transferTarget} onOpenChange={(o) => !o && setTransferTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Transfer to partner</DialogTitle></DialogHeader>
+          <div className="max-h-72 space-y-1 overflow-auto">
+            {(partners ?? []).filter((p) => p.id !== partnerId).map((p) => (
+              <button key={p.id}
+                className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent"
+                onClick={async () => {
+                  const s = transferTarget; if (!s) return;
+                  await reassignToOtherPartner(s, p.id);
+                  setTransferTarget(null);
+                }}>
+                <span>{p.full_name ?? p.id.slice(0, 8)}</span>
+                <span className="text-xs text-muted-foreground">{p.home_area ?? ""}</span>
+              </button>
+            ))}
+            {!(partners ?? []).filter((p) => p.id !== partnerId).length && (
+              <p className="px-2 py-4 text-center text-xs text-muted-foreground">No other partners today.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save preview / conflicts dialog */}
+      <SavePreviewDialog
+        open={!!savePreview}
+        onOpenChange={(o) => { if (!o && !saving) setSavePreview(null); }}
+        conflicts={savePreview?.conflicts ?? []}
+        diff={savePreview?.diff ?? []}
+        summary={savePreview?.summary ?? { total: 0, added: 0, removed: 0, moved: 0, notified: 0, totalDistanceKm: 0, totalDriveMin: 0 }}
+        saving={saving}
+        onConfirm={async (reason) => {
+          await persistDraft(reason || undefined);
+          setSavePreview(null);
+        }}
+      />
+
 
       {/* Customer detail dialog */}
       <Dialog open={!!selectedRow} onOpenChange={(o) => !o && setSelectedStop(null)}>
