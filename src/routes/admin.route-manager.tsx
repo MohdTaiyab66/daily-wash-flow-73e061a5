@@ -47,6 +47,10 @@ import {
 } from "@/lib/route-draft";
 
 export const Route = createFileRoute("/admin/route-manager")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    partner: typeof s.partner === "string" ? s.partner : undefined,
+    date: typeof s.date === "string" ? s.date : undefined,
+  }),
   component: RouteManagerPage,
 });
 
@@ -107,8 +111,9 @@ function fmt(n: number | null | undefined, d = 1) {
 
 function RouteManagerPage() {
   const qc = useQueryClient();
-  const [date, setDate] = useState(todayIso());
-  const [partnerId, setPartnerId] = useState<string>("");
+  const search = Route.useSearch();
+  const [date, setDate] = useState(search.date || todayIso());
+  const [partnerId, setPartnerId] = useState<string>(search.partner || "");
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
   const [role, setRole] = useState<"admin" | "ops_manager" | "viewer">("viewer");
   const [addOpen, setAddOpen] = useState(false);
@@ -153,6 +158,7 @@ function RouteManagerPage() {
   useEffect(() => {
     if (!partnerId && partners && partners.length) setPartnerId(partners[0].id);
   }, [partners, partnerId]);
+
 
   const partner = partners?.find((p) => p.id === partnerId) ?? null;
 
