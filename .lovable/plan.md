@@ -1,86 +1,88 @@
-# Route Manager – Manual Operations Mode (Trial)
+# Route Manager — Production Operations Dispatch
 
-Transform `/admin/route-manager` into a full manual cockpit. The AI optimizer keeps running in the background but Operations can override any partner's route at any time. Nothing syncs to the partner app until the admin clicks **Save Route**.
+The UI exists. This plan wires every action to the database, partner app, customer app, and maps in realtime, then validates end-to-end. Delivered in 4 passes so you can review between each.
 
-## 1. Database (one migration)
+## Pass 1 — Data foundation (DB + RPCs)
 
-New / changed fields:
+Migration adds what's missing for safe edits, conflict checks, version history, and audit:
 
-- `partners`: `manual_mode_enabled boolean default false`, `manual_mode_since timestamptz`, `manual_mode_by uuid`.
-- `services`: `priority text` enum-checked (`normal|emergency|vip|complaint|corporate|repeat|high`), `priority_set_by uuid`, `priority_set_at timestamptz`. (`is_emergency`, `locked_position`, `manual_sequence_no` already exist.)
-- `platform_settings`: rows `trial_operations_mode` (bool), `customer_eta_shift_threshold_min` (int, default 15).
+- `services`: add `eta_at timestamptz`, `travel_min int`, `distance_km numeric`, `last_sequence_change_at timestamptz`, `last_sequence_change_by uuid`.
+- `route_change_log`: ensure `old_eta`, `new_eta`, `old_position`, `new_position`, `reason` columns.
+- `route_snapshots`: ensure `version int`, `reason text`, `metrics jsonb` (distance/eta/stops), `created_by`.
+- `customer_notifications`: reuse existing — emit "ETA updated" rows.
+- New RPCs (`SECURITY DEFINER`, gated by `has_role(admin)` OR `has_role(ops_manager)`):
+  - `admin_route_draft_validate(p_partner, p_date)` → returns conflicts: duplicates, missing coords, locked-but-moved, out-of-area, impossible ETA, partner mismatch.
+  - `admin_route_draft_preview(...)` → returns `{before:{distance,eta,stops}, after:{...}, diffs:[{customer,old_pos,new_pos,old_eta,new_eta}]}`.
+  - `admin_route_draft_save(..., p_reason)` → wraps: create snapshot v(N+1), apply sequence + ETA + cluster + priority + locks, write `route_change_log` per moved row, write `customer_notifications` where ETA shift ≥ threshold, return summary.
+  - `admin_route_remove_stop(p_service_id, p_mode)` where mode ∈ `today_only|cancel|transfer`.
+  - `admin_route_bulk(p_action, p_service_ids, p_payload)` for bulk move/priority/lock/unlock/delete/emergency/reassign.
+  - `admin_route_history(p_partner, p_date)` → list of snapshot versions w/ metrics & editor.
+  - `admin_route_search_customers` — extend filter: active Daily Shine for date, includes vehicle model + society + subscription.
+  - Reliability: `admin_route_reassign` already exists — extend to recompute both routes' sequences and ETAs in same txn and write notifications.
 
-New tables:
+Realtime publication: ensure `services`, `route_drafts`, `route_snapshots`, `route_change_log`, `customer_notifications`, `partner_notifications` in `supabase_realtime`.
 
-- `route_drafts` — per (partner_id, service_date) working copy of stop order before Save. Columns: `partner_id`, `service_date`, `payload jsonb` (array of `{service_id, sequence, locked, priority, manual_inserted_from_partner}`), `updated_by`, `updated_at`. Unique `(partner_id, service_date)`.
-- Reuse existing `route_change_log` for the audit trail; add `action` values `insert|reorder|move_up|move_down|lock|unlock|priority|reassign|bulk|save|restore|resume_ai`.
-- Reuse existing `route_snapshots` for "Morning Route" / "Auto Route" / "Saved" versions; add `kind` values `morning|auto|manual_saved|preview`.
+## Pass 2 — Save pipeline + realtime fan-out
 
-New RPCs (`SECURITY DEFINER`, admin/ops_manager only):
+Frontend wiring in `admin.route-manager.tsx`:
 
-- `admin_route_draft_get(partner_id, date)` → returns draft if present, else current live order.
-- `admin_route_draft_set(partner_id, date, payload, reason)` → upsert draft + log entry. Does NOT touch `services`.
-- `admin_route_draft_save(partner_id, date, reason)` → write payload → `services.manual_sequence_no`, `locked_position`, `priority`; snapshot kind `manual_saved`; clear draft; set `manual_mode_enabled=true`; broadcast realtime.
-- `admin_route_draft_discard(partner_id, date)`.
-- `admin_route_search_customers(query, date)` → searches active Daily Shine customers by name/phone/vehicle/society/area/subscription id; flags `currently_assigned_to`.
-- `admin_route_insert_customer(partner_id, date, service_id|customer_id, position, reason)` — works on the draft.
-- `admin_route_reassign(service_id, to_partner_id, position, reason)` — moves service across partners (draft on both sides).
-- `admin_route_resume_ai(partner_id)` — unset manual mode, trigger optimizer.
-- `admin_route_restore_snapshot(snapshot_id, reason)`.
+- `Save Manual Route` calls `admin_route_draft_validate` → if issues, open Conflicts dialog (block save).
+- Then `admin_route_draft_preview` → open `RoutePreviewDialog` with before/after metrics + per-customer ETA diffs + confirm.
+- On confirm → `admin_route_draft_save({reason})`. Snapshot written first.
+- Insert row into `partner_notifications` (`type='route_updated'`) for affected partners; pg trigger on `services` UPDATE already broadcasts via Realtime.
+- Customer side: rows in `customer_notifications` for affected ETAs.
 
-Realtime: add `route_drafts`, `partners` (already), `services` (already) to `supabase_realtime` if missing.
+Partner app: add a small `usePartnerRouteSync()` hook subscribing to `services` rows where `partner_id = me` for today; on change invalidate route query and show toast "Route updated by Operations". Auto-refresh map, sequence, ETA, navigation.
 
-## 2. Frontend (`src/routes/admin.route-manager.tsx` + new components)
+Customer app: extend `AwaitingPartnerBanner` / "My Plan" to subscribe to `customer_notifications` for current user; show "Estimated arrival updated → new ETA. Reason: Operations optimized today's route."
 
-iPhone-Clock-inspired editing UX:
+## Pass 3 — Editor UX completion
 
-- **Top-right "+" button** in Stops tab → `AddCustomerSheet` with debounced search, type filter chips (Unassigned / On this route / Other partner), shows priority badge + current partner; insert → appends to draft at end or chosen position.
-- **Drag handles (☰)** on every row using `@dnd-kit/sortable` (already installed).
-- **Row controls**: ⬆ ⬇, kebab menu with `Insert Above`, `Insert Below`, `Lock`, `Set Priority`, `Move to Partner`, `Remove`.
-- **Multi-select**: checkbox per row + sticky `BulkActionBar` (Move, Delete, Reassign, Lock/Unlock, Priority, Time Window).
-- **Sticky Save Bar**: only renders when draft differs from live → "Unsaved Changes" + Cancel / Preview Route / Save Route.
-- **Manual Mode banner** at top: "Manual Mode Enabled" with `Resume AI`, `Optimize Remaining Stops`, `Optimize Entire Route`.
-- **Undo / Redo**: client-side stack of draft payloads (also `Restore Auto Route`, `Restore Morning Route` from snapshots).
-- **Recalc on every change**: reuse `admin_route_dashboard` against the draft payload via a new `admin_route_dashboard_preview(payload)` variant so ETA/distance/efficiency update live without saving.
-- **History drawer**: lists `route_change_log` rows; each restorable snapshot has "Restore".
+- Add Customer (+): fix `admin_route_search_customers` to honor date + Daily Shine + vehicle/model/society/subscription filters; insertion offers position picker (Above/Below/End/Beginning/Specific #).
+- Cross-partner transfer: dialog with preview (impact on both routes) → `admin_route_reassign` w/ position arg.
+- Remove customer: dialog with 3 modes wired to `admin_route_remove_stop`.
+- Bulk action bar: hook to `admin_route_bulk`.
+- Priority change: writes to draft immediately; "Emergency" auto-promotes to nearest valid position client-side and re-runs draft preview on demand.
+- Lock: client respects + DB honors during all `optimizeRoute`/`admin_optimize_all` (filter locked rows from reorder set).
+- Undo/Redo: already in `route-draft.ts` — wire to draft snapshots so each save bumps history baseline. Add "Restore Morning Route", "Restore Auto-Optimized", "Restore Yesterday" buttons calling `admin_route_restore_snapshot` with version selector.
+- Route History tab: list versions from `admin_route_history`, rollback button per version.
+- Permissions: gate Save / mutate buttons by `role === admin || ops_manager`; dispatchers get read+search only.
 
-New component files:
+## Pass 4 — Validation
 
-- `src/components/admin/route/AddCustomerSheet.tsx`
-- `src/components/admin/route/StopRow.tsx` (drag handle, up/down, menu, multi-select, priority chip)
-- `src/components/admin/route/BulkActionBar.tsx`
-- `src/components/admin/route/SaveBar.tsx`
-- `src/components/admin/route/ManualModeBanner.tsx`
-- `src/components/admin/route/HistoryDrawer.tsx`
-- `src/lib/route-draft.ts` — pure helpers (apply ops, compute diff, undo/redo stack).
+Run the user's scenario as an automated check via `psql` + Playwright headless:
 
-## 3. Partner & customer side effects (on Save only)
+1. Load Partner A's real route for today.
+2. Drag stop #12 → #4 (DB sequence updates in draft).
+3. Add a real Daily Shine customer at stop #8.
+4. Transfer one stop to Partner B.
+5. Save with reason.
 
-- Partner live view (`app.live.tsx`) already subscribes to `services` realtime → shows a one-time banner "Route Updated by Operations" with changed stops highlighted (added: `changed_at` field stamped on save, pulse for 60s).
-- Customer ETA: server-side trigger after save compares previous vs new ETA; if shift > `customer_eta_shift_threshold_min`, insert `customer_notifications` row "Your wash time has shifted to …".
+Verify, asserting each:
 
-## 4. Trial Mode
+- `services` rows updated (sequence + ETA).
+- New `route_snapshots` row (version N+1).
+- `route_change_log` entries for every move.
+- `partner_notifications` rows for A and B.
+- `customer_notifications` rows for customers whose ETA shifted ≥ threshold.
+- Partner app live preview shows new sequence without manual refresh (Playwright).
+- Customer app shows ETA update banner.
+- Map markers + polyline reflect new order.
 
-- `platform_settings.trial_operations_mode = true` by default.
-- When on: AI optimizer skips partners with `manual_mode_enabled=true` (already; we wire it through `pick_scored_partner_for_queue` and morning recompute job).
-- Toggle in `/admin/settings`.
+Report PASS / FAIL per item with the exact missing link if any.
 
-## 5. Permissions
+## Technical notes
 
-All new RPCs require `has_role(auth.uid(), 'admin')` OR `has_role(auth.uid(), 'ops_manager')`.
+- Snapshot is created **inside** `admin_route_draft_save` before mutating, guaranteeing rollback safety.
+- ETA threshold from `platform_settings.customer_eta_shift_threshold_min` (already seeded).
+- All RPCs `SECURITY DEFINER`, role check first, `SET search_path = public`.
+- Heavy compute (ETA / travel_min) uses the existing `route-optimize.ts` cluster engine called from the RPC via a small SQL wrapper that receives precomputed values from the client `preview` step (avoids putting Haversine in PL/pgSQL).
+- No new tables — reuses `route_snapshots`, `route_change_log`, `customer_notifications`, `partner_notifications`.
 
-## 6. Out of scope (next pass if requested)
+## Out of scope (will not change)
 
-- Time-window editor UI (the bulk action exposes the field but the dedicated picker can land later).
-- Mobile-tablet polish beyond responsive Tailwind defaults.
+- Visual redesign of cards/tabs (UI is approved).
+- FCM payload format (already shipped).
+- Route optimizer scoring weights (already tuned).
 
----
-
-### Implementation order
-
-1. Migration (tables, columns, RPCs, settings rows).
-2. `route-draft.ts` helpers + `useDraft` hook with undo/redo.
-3. `AddCustomerSheet`, `StopRow`, `BulkActionBar`, `SaveBar`, `ManualModeBanner`, `HistoryDrawer`.
-4. Wire into `admin.route-manager.tsx` Stops tab.
-5. Hook partner banner + customer ETA notification trigger.
-6. Settings toggle for Trial Mode.
+Approve and I'll start Pass 1 (migration + RPCs). Each pass ends with a brief "ready for next pass" message.
