@@ -2858,10 +2858,6 @@ export type Database = {
         Args: { p_date: string; p_partner_id: string }
         Returns: Json
       }
-      admin_route_draft_save: {
-        Args: { p_date: string; p_partner_id: string; p_reason?: string }
-        Returns: Json
-      }
       admin_route_draft_set: {
         Args: {
           p_date: string
@@ -2887,22 +2883,6 @@ export type Database = {
       admin_route_resume_ai: {
         Args: { p_partner_id: string }
         Returns: undefined
-      }
-      admin_route_search_customers: {
-        Args: { p_date: string; p_query: string }
-        Returns: {
-          address_line: string
-          area: string
-          current_partner_id: string
-          current_partner_name: string
-          customer_id: string
-          full_name: string
-          phone: string
-          preferred_time: string
-          service_id: string
-          status: string
-          vehicle_reg: string
-        }[]
       }
       admin_route_timeline: {
         Args: { _date: string; _partner_id: string }
