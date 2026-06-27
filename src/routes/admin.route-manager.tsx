@@ -1,19 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  SortableContext,
-  arrayMove,
-  useSortable,
-  verticalListSortingStrategy,
+  SortableContext, arrayMove, useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,21 +14,34 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   GripVertical, Lock, LockOpen, Zap, RefreshCw, ArrowRightLeft,
   Loader2, Phone, Navigation, History as HistoryIcon, ListChecks,
   Map as MapIcon, LayoutGrid, Sparkles, Trash2, ChevronUp, ChevronDown,
-  Circle, Activity,
+  Circle, Activity, Plus, MoreVertical, ArrowUpToLine, ArrowDownToLine,
 } from "lucide-react";
 import { optimizeRoute } from "@/lib/route-optimize";
 import { RouteMapPanel, type MapStop } from "@/components/admin/route/RouteMapPanel";
+import { AddCustomerSheet } from "@/components/admin/route/AddCustomerSheet";
+import { SaveBar } from "@/components/admin/route/SaveBar";
+import { ManualModeBanner } from "@/components/admin/route/ManualModeBanner";
+import { PrioritySelect, PriorityBadge } from "@/components/admin/route/PrioritySelect";
+import {
+  newHistory, pushHistory, undoHistory, redoHistory, payloadFromOrder,
+  diffPayloads, normalisePriority, PRIORITY_LABEL, type HistoryStack, type Priority,
+} from "@/lib/route-draft";
 
 export const Route = createFileRoute("/admin/route-manager")({
   component: RouteManagerPage,
@@ -50,6 +56,7 @@ type ServiceRow = {
   manual_sequence_no: number | null;
   locked_position: boolean | null;
   is_emergency: boolean | null;
+  priority: string | null;
   cluster_id: string | null;
   customers: {
     id?: string;
@@ -83,7 +90,12 @@ type Partner = {
   rating: number | null;
   reliability_score: number | null;
   home_area: string | null;
+  manual_mode_enabled: boolean | null;
+  manual_mode_since: string | null;
 };
+
+const SERVICE_SELECT =
+  "id,partner_id,scheduled_date,status,sequence_no,manual_sequence_no,locked_position,is_emergency,priority,cluster_id,customers(full_name,phone,area,address_line,latitude,longitude,service_required_before,preferred_time,time_window_type,exact_time),vehicles(make,model,registration_number)";
 
 function todayIso() { return new Date().toISOString().slice(0, 10); }
 function fmt(n: number | null | undefined, d = 1) {
@@ -94,9 +106,11 @@ function RouteManagerPage() {
   const qc = useQueryClient();
   const [date, setDate] = useState(todayIso());
   const [partnerId, setPartnerId] = useState<string>("");
-  const [order, setOrder] = useState<ServiceRow[] | null>(null);
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
   const [role, setRole] = useState<"admin" | "ops_manager" | "viewer">("viewer");
+  const [addOpen, setAddOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
 
   // role check
   useEffect(() => {
@@ -111,7 +125,7 @@ function RouteManagerPage() {
   }, []);
   const canEdit = role === "admin" || role === "ops_manager";
 
-  // partner list (anyone with services that day)
+  // partners with services today
   const { data: partners } = useQuery({
     queryKey: ["rm-partners-full", date],
     queryFn: async () => {
@@ -121,7 +135,7 @@ function RouteManagerPage() {
       if (!ids.length) return [] as Partner[];
       const { data } = await supabase
         .from("partners")
-        .select("id, full_name, phone, profile_photo_url, status, last_seen, current_lat, current_lng, home_lat, home_lng, rating, reliability_score, home_area")
+        .select("id, full_name, phone, profile_photo_url, status, last_seen, current_lat, current_lng, home_lat, home_lng, rating, reliability_score, home_area, manual_mode_enabled, manual_mode_since")
         .in("id", ids);
       return (data ?? []) as Partner[];
     },
@@ -133,25 +147,72 @@ function RouteManagerPage() {
 
   const partner = partners?.find((p) => p.id === partnerId) ?? null;
 
+  // server services
   const { data: services, isFetching } = useQuery({
     queryKey: ["rm-services", date, partnerId],
     enabled: !!partnerId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("services")
-        .select(
-          "id,partner_id,scheduled_date,status,sequence_no,manual_sequence_no,locked_position,is_emergency,cluster_id,customers(full_name,phone,area,address_line,latitude,longitude,service_required_before,preferred_time,time_window_type,exact_time),vehicles(make,model,registration_number)",
-        )
-        .eq("scheduled_date", date)
-        .eq("partner_id", partnerId)
-        .order("status", { ascending: true })
-        .order("sequence_no", { ascending: true });
+        .from("services").select(SERVICE_SELECT)
+        .eq("scheduled_date", date).eq("partner_id", partnerId)
+        .order("status", { ascending: true }).order("sequence_no", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as ServiceRow[];
     },
   });
 
-  useEffect(() => setOrder(services ? [...services.filter((s) => s.status !== "completed")] : null), [services]);
+  // server draft (may be null)
+  const { data: serverDraft } = useQuery({
+    queryKey: ["rm-draft", date, partnerId],
+    enabled: !!partnerId,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("admin_route_draft_get" as any, {
+        p_partner_id: partnerId, p_date: date,
+      });
+      return (data ?? null) as any;
+    },
+  });
+
+  // ----- Draft state (manual editing buffer with undo/redo) ------------------
+  const [draft, setDraft] = useState<HistoryStack<ServiceRow[]> | null>(null);
+  const baselineRef = useRef<ServiceRow[] | null>(null);
+  const lookupRef = useRef<Map<string, ServiceRow>>(new Map());
+
+  // Initialise / hydrate draft when services or serverDraft change.
+  useEffect(() => {
+    if (!services) return;
+    const map = new Map<string, ServiceRow>();
+    services.forEach((s) => map.set(s.id, s));
+    lookupRef.current = map;
+
+    const pending = services.filter((s) => s.status !== "completed");
+    let initial = pending;
+
+    if (serverDraft && Array.isArray(serverDraft.payload) && serverDraft.payload.length) {
+      // Re-hydrate stored draft using known service rows; drop any unknown IDs.
+      const seen = new Set<string>();
+      const rebuilt: ServiceRow[] = [];
+      for (const item of serverDraft.payload as any[]) {
+        const sid = item.service_id;
+        const row = map.get(sid);
+        if (!row || seen.has(sid)) continue;
+        seen.add(sid);
+        rebuilt.push({
+          ...row,
+          locked_position: !!item.locked,
+          is_emergency: !!item.is_emergency,
+          priority: normalisePriority(item.priority ?? row.priority ?? null),
+        });
+      }
+      // Append any pending rows missing from the draft (e.g. newly assigned after).
+      for (const s of pending) if (!seen.has(s.id)) rebuilt.push(s);
+      initial = rebuilt;
+    }
+
+    baselineRef.current = pending;
+    setDraft(newHistory(initial));
+    setSelected(new Set());
+  }, [services, serverDraft]);
 
   // realtime
   useEffect(() => {
@@ -169,8 +230,7 @@ function RouteManagerPage() {
   // dashboard metrics
   const { data: dash } = useQuery({
     queryKey: ["rm-dash", partnerId, date],
-    enabled: !!partnerId,
-    refetchInterval: 15000,
+    enabled: !!partnerId, refetchInterval: 15000,
     queryFn: async () => {
       const { data } = await supabase.rpc("admin_route_dashboard" as any, {
         _partner_id: partnerId, _date: date,
@@ -181,8 +241,7 @@ function RouteManagerPage() {
 
   const { data: timeline } = useQuery({
     queryKey: ["rm-timeline", partnerId, date],
-    enabled: !!partnerId,
-    refetchInterval: 15000,
+    enabled: !!partnerId, refetchInterval: 15000,
     queryFn: async () => {
       const { data } = await supabase.rpc("admin_route_timeline" as any, {
         _partner_id: partnerId, _date: date,
@@ -215,10 +274,18 @@ function RouteManagerPage() {
     },
   });
 
-  // optimizer preview
+  const order = draft?.present ?? null;
+
+  // dirty when draft differs from baseline
+  const dirty = useMemo(() => {
+    if (!order || !baselineRef.current) return false;
+    return diffPayloads(payloadFromOrder(order), payloadFromOrder(baselineRef.current));
+  }, [order]);
+
+  // optimizer suggestion (read-only hint)
   const optimizerPreview = useMemo(() => {
-    if (!services) return [] as string[];
-    const stops = services.filter((s) => s.status !== "completed").map((s) => ({
+    if (!order) return [] as string[];
+    const stops = order.map((s) => ({
       id: s.id,
       lat: s.customers?.latitude != null ? Number(s.customers.latitude) : null,
       lng: s.customers?.longitude != null ? Number(s.customers.longitude) : null,
@@ -231,7 +298,7 @@ function RouteManagerPage() {
       clusterId: s.cluster_id ?? null,
     }));
     return optimizeRoute(stops).map((s) => s.id);
-  }, [services]);
+  }, [order]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -240,88 +307,184 @@ function RouteManagerPage() {
     return true;
   }
 
-  function onDragEnd(e: DragEndEvent) {
-    if (!order || !ensureCanEdit()) return;
+  // mutate draft via a producer function
+  const mutateDraft = useCallback((producer: (rows: ServiceRow[]) => ServiceRow[]) => {
+    if (!ensureCanEdit()) return;
+    setDraft((d) => (d ? pushHistory(d, producer(d.present)) : d));
+  }, [canEdit]);
+
+  // ---- per-row operations on draft ----
+  const onDragEnd = (e: DragEndEvent) => {
+    if (!order) return;
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     const oldIdx = order.findIndex((s) => s.id === active.id);
     const newIdx = order.findIndex((s) => s.id === over.id);
-    setOrder(arrayMove(order, oldIdx, newIdx));
-  }
+    mutateDraft((rows) => arrayMove(rows, oldIdx, newIdx));
+  };
 
-  async function move(s: ServiceRow, dir: -1 | 1) {
-    if (!order || !ensureCanEdit()) return;
+  const move = (s: ServiceRow, dir: -1 | 1) => {
+    if (!order) return;
     const i = order.findIndex((x) => x.id === s.id);
     const j = i + dir;
     if (j < 0 || j >= order.length) return;
-    setOrder(arrayMove(order, i, j));
+    mutateDraft((rows) => arrayMove(rows, i, j));
+  };
+
+  const moveTo = (s: ServiceRow, pos: "top" | "bottom") => {
+    if (!order) return;
+    const i = order.findIndex((x) => x.id === s.id);
+    if (i < 0) return;
+    mutateDraft((rows) => {
+      const copy = [...rows]; const [item] = copy.splice(i, 1);
+      if (pos === "top") copy.unshift(item); else copy.push(item);
+      return copy;
+    });
+  };
+
+  const insertNear = (s: ServiceRow, where: "above" | "below") => {
+    // Stash a flag to know where the next added customer goes
+    const i = order!.findIndex((x) => x.id === s.id);
+    pendingInsertRef.current = where === "above" ? i : i + 1;
+    setAddOpen(true);
+  };
+
+  const pendingInsertRef = useRef<number | null>(null);
+
+  const toggleLockDraft = (s: ServiceRow) =>
+    mutateDraft((rows) => rows.map((r) => r.id === s.id ? { ...r, locked_position: !r.locked_position } : r));
+
+  const toggleEmergencyDraft = (s: ServiceRow) =>
+    mutateDraft((rows) => rows.map((r) => r.id === s.id ? { ...r, is_emergency: !r.is_emergency } : r));
+
+  const setPriorityDraft = (s: ServiceRow, p: Priority) =>
+    mutateDraft((rows) => rows.map((r) => r.id === s.id ? { ...r, priority: p } : r));
+
+  const removeFromDraft = (s: ServiceRow) =>
+    mutateDraft((rows) => rows.filter((r) => r.id !== s.id));
+
+  // ---- bulk ----
+  const allChecked = !!order && order.length > 0 && selected.size === order.length;
+  const toggleAll = () =>
+    setSelected(allChecked ? new Set() : new Set((order ?? []).map((s) => s.id)));
+  const toggleOne = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const bulkApply = (op:
+    | { kind: "lock"; locked: boolean }
+    | { kind: "priority"; value: Priority }
+    | { kind: "delete" }
+    | { kind: "moveTop" | "moveBottom" }
+  ) => {
+    if (!order || !selected.size) return;
+    mutateDraft((rows) => {
+      switch (op.kind) {
+        case "lock":
+          return rows.map((r) => selected.has(r.id) ? { ...r, locked_position: op.locked } : r);
+        case "priority":
+          return rows.map((r) => selected.has(r.id) ? { ...r, priority: op.value } : r);
+        case "delete":
+          return rows.filter((r) => !selected.has(r.id));
+        case "moveTop": {
+          const sel = rows.filter((r) => selected.has(r.id));
+          const rest = rows.filter((r) => !selected.has(r.id));
+          return [...sel, ...rest];
+        }
+        case "moveBottom": {
+          const sel = rows.filter((r) => selected.has(r.id));
+          const rest = rows.filter((r) => !selected.has(r.id));
+          return [...rest, ...sel];
+        }
+      }
+    });
+    setSelected(new Set());
+  };
+
+  // ---- add customer (resolves service row, performs cross-partner reassign first) ----
+  async function fetchServiceRow(serviceId: string): Promise<ServiceRow | null> {
+    const cached = lookupRef.current.get(serviceId);
+    if (cached) return cached;
+    const { data } = await supabase.from("services").select(SERVICE_SELECT).eq("id", serviceId).maybeSingle();
+    if (!data) return null;
+    const row = data as unknown as ServiceRow;
+    lookupRef.current.set(serviceId, row);
+    return row;
   }
 
-  async function saveManualOrder(reason?: string) {
+  async function handleAddCustomer(serviceId: string) {
+    const row = await fetchServiceRow(serviceId);
+    if (!row) { toast.error("Service not found"); return; }
+    const insertAt = pendingInsertRef.current;
+    pendingInsertRef.current = null;
+    // ensure on this partner in draft (even if server still says different)
+    const withPartner: ServiceRow = { ...row, partner_id: partnerId };
+    mutateDraft((rows) => {
+      if (rows.some((r) => r.id === serviceId)) return rows;
+      const copy = [...rows];
+      if (insertAt == null || insertAt > copy.length) copy.push(withPartner);
+      else copy.splice(insertAt, 0, withPartner);
+      return copy;
+    });
+    toast.success(`${row.customers?.full_name ?? "Customer"} added to draft`);
+  }
+
+  async function handleReassignFromOther(serviceId: string, fromPartner: string) {
+    const { error } = await supabase.rpc("admin_route_reassign" as any, {
+      p_service_id: serviceId, p_to_partner: partnerId, p_position: null,
+      p_reason: "Manual move via Route Manager",
+    });
+    if (error) { toast.error(error.message); throw error; }
+    // refresh both partners' lists in background
+    qc.invalidateQueries({ queryKey: ["rm-services"] });
+  }
+
+  // ---- save / discard ----
+  async function persistDraft(reason?: string) {
     if (!order || !ensureCanEdit()) return;
-    const ids = order.map((s) => s.id);
-    const { error } = await supabase.rpc("admin_reorder_services" as any, {
-      _partner_id: partnerId, _date: date, _service_ids: ids,
-    });
-    if (error) return toast.error(error.message);
-    await supabase.rpc("admin_log_route_action" as any, {
-      _partner_id: partnerId, _service_id: null, _date: date,
-      _action: "manual_save", _reason: reason ?? null,
-      _old: null, _new: { sequence: ids },
-    });
-    toast.success("Manual order saved — partner app will update");
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
-    qc.invalidateQueries({ queryKey: ["rm-logs"] });
+    setSaving(true);
+    try {
+      const payload = payloadFromOrder(order);
+      // set + save in one go
+      const { error: setErr } = await supabase.rpc("admin_route_draft_set" as any, {
+        p_partner_id: partnerId, p_date: date, p_payload: payload as any, p_reason: reason ?? null,
+      });
+      if (setErr) throw setErr;
+      const { error: saveErr } = await supabase.rpc("admin_route_draft_save" as any, {
+        p_partner_id: partnerId, p_date: date, p_reason: reason ?? null,
+      });
+      if (saveErr) throw saveErr;
+      toast.success("Route saved — partner app will update");
+      qc.invalidateQueries({ queryKey: ["rm-services"] });
+      qc.invalidateQueries({ queryKey: ["rm-draft"] });
+      qc.invalidateQueries({ queryKey: ["rm-logs"] });
+      qc.invalidateQueries({ queryKey: ["rm-partners-full"] });
+      refetchSnaps();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  async function toggleLock(s: ServiceRow) {
-    if (!ensureCanEdit()) return;
-    const { error } = await supabase.rpc("admin_lock_service" as any, {
-      _service_id: s.id, _locked: !s.locked_position,
+  async function discardDraft() {
+    if (!partnerId) return;
+    const ok = window.confirm("Discard all unsaved changes?");
+    if (!ok) return;
+    await supabase.rpc("admin_route_draft_discard" as any, {
+      p_partner_id: partnerId, p_date: date,
     });
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
+    qc.invalidateQueries({ queryKey: ["rm-draft"] });
+    if (baselineRef.current) setDraft(newHistory(baselineRef.current));
+    setSelected(new Set());
+    toast.message("Changes discarded");
   }
 
-  async function toggleEmergency(s: ServiceRow) {
-    if (!ensureCanEdit()) return;
-    const { error } = await supabase
-      .from("services").update({ is_emergency: !s.is_emergency } as any).eq("id", s.id);
+  async function resumeAi() {
+    if (!ensureCanEdit() || !partnerId) return;
+    const { error } = await supabase.rpc("admin_route_resume_ai" as any, { p_partner_id: partnerId });
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
-  }
-
-  async function reassign(s: ServiceRow, toPartnerId: string) {
-    if (!ensureCanEdit()) return;
-    const { error } = await supabase.rpc("admin_reassign_service" as any, {
-      _service_id: s.id, _new_partner_id: toPartnerId,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Reassigned");
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
-  }
-
-  async function removeStop(s: ServiceRow) {
-    if (!ensureCanEdit()) return;
-    const reason = window.prompt("Reason for marking unavailable?", "Customer unavailable");
-    if (!reason) return;
-    const { error } = await supabase.rpc("admin_remove_service" as any, {
-      _service_id: s.id, _reason: reason,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Stop removed");
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
-  }
-
-  async function forceRecalculate() {
-    if (!ensureCanEdit()) return;
-    const { error } = await supabase.rpc("admin_force_recalculate" as any, {
-      _partner_id: partnerId, _date: date,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Route recalculated");
-    qc.invalidateQueries({ queryKey: ["rm-services"] });
-    refetchSnaps();
+    toast.success("AI optimizer resumed");
+    qc.invalidateQueries({ queryKey: ["rm-partners-full"] });
   }
 
   async function optimizeAll() {
@@ -332,38 +495,33 @@ function RouteManagerPage() {
     refetchSnaps();
   }
 
-  async function acceptSnap(id: string) {
+  async function reassignToOtherPartner(s: ServiceRow, toPartnerId: string) {
     if (!ensureCanEdit()) return;
-    const { error } = await supabase.rpc("admin_accept_recalc" as any, { _snapshot_id: id });
+    const { error } = await supabase.rpc("admin_route_reassign" as any, {
+      p_service_id: s.id, p_to_partner: toPartnerId, p_position: null,
+      p_reason: "Manual reassign via Route Manager",
+    });
     if (error) return toast.error(error.message);
-    toast.success("Applied");
+    toast.success("Reassigned — receiving partner will update");
+    mutateDraft((rows) => rows.filter((r) => r.id !== s.id));
     qc.invalidateQueries({ queryKey: ["rm-services"] });
-    refetchSnaps();
-  }
-  async function rejectSnap(id: string) {
-    if (!ensureCanEdit()) return;
-    const { error } = await supabase.rpc("admin_reject_recalc" as any, { _snapshot_id: id });
-    if (error) return toast.error(error.message);
-    refetchSnaps();
   }
 
-  // grouping
+  // groupings
   const byCluster = useMemo(() => {
     if (!order) return [] as Array<{ cluster: string; rows: ServiceRow[] }>;
     const m = new Map<string, ServiceRow[]>();
     order.forEach((s) => {
       const k = s.cluster_id ?? "ungrouped";
-      const list = m.get(k) ?? [];
-      list.push(s);
-      m.set(k, list);
+      const list = m.get(k) ?? []; list.push(s); m.set(k, list);
     });
     return Array.from(m.entries()).map(([cluster, rows]) => ({ cluster, rows }));
   }, [order]);
 
   const mapStops: MapStop[] = useMemo(() => {
-    if (!services) return [];
+    if (!order) return [];
     let nextSet = false;
-    return services
+    return order
       .filter((s) => s.customers?.latitude != null && s.customers?.longitude != null)
       .map((s, i) => {
         const status: MapStop["status"] = s.is_emergency
@@ -385,9 +543,10 @@ function RouteManagerPage() {
           clusterId: s.cluster_id,
         };
       });
-  }, [services]);
+  }, [order]);
 
-  const selected = services?.find((s) => s.id === selectedStop) ?? null;
+  const selectedRow = order?.find((s) => s.id === selectedStop) ?? null;
+  const draftIds = useMemo(() => new Set((order ?? []).map((s) => s.id)), [order]);
 
   return (
     <div className="space-y-4 p-3 md:p-6">
@@ -396,7 +555,7 @@ function RouteManagerPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Route Manager</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Operations control centre — dashboard, map, timeline & cluster view with live partner sync.
+            Manual operations cockpit — drag, prioritise & reassign stops. Changes stay in draft until you click <b>Save route</b>.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -411,25 +570,30 @@ function RouteManagerPage() {
               <SelectTrigger className="h-9"><SelectValue placeholder="Select partner" /></SelectTrigger>
               <SelectContent>
                 {(partners ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0, 8)}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name ?? p.id.slice(0, 8)}
+                    {p.manual_mode_enabled ? " · manual" : ""}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" size="sm" onClick={forceRecalculate} disabled={!partnerId || !canEdit}>
-            <RefreshCw className="mr-1.5 h-4 w-4" /> Recalculate
-          </Button>
           <Button variant="outline" size="sm" onClick={optimizeAll} disabled={!canEdit}>
             <Sparkles className="mr-1.5 h-4 w-4" /> Optimize all
-          </Button>
-          <Button size="sm" onClick={() => saveManualOrder()} disabled={!order || !canEdit}>
-            Save manual order
           </Button>
         </div>
       </div>
 
-      {/* Partner card + dashboard */}
       <PartnerSummary partner={partner} dash={dash} />
+
+      <ManualModeBanner
+        active={!!partner?.manual_mode_enabled}
+        since={partner?.manual_mode_since}
+        canEdit={canEdit}
+        onResumeAi={resumeAi}
+        onOptimizeRemaining={() => persistDraft("Optimize remaining")}
+        onOptimizeAll={optimizeAll}
+      />
 
       <Tabs defaultValue="stops" className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:w-auto md:grid-cols-6">
@@ -442,14 +606,62 @@ function RouteManagerPage() {
         </TabsList>
 
         {/* STOPS */}
-        <TabsContent value="stops" className="mt-3">
+        <TabsContent value="stops" className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Checkbox checked={allChecked} onCheckedChange={toggleAll} disabled={!order?.length || !canEdit} />
+              <span className="text-muted-foreground">
+                {selected.size ? `${selected.size} selected` : `${order?.length ?? 0} stops`}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => { pendingInsertRef.current = null; setAddOpen(true); }}
+              disabled={!partnerId || !canEdit}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add customer
+            </Button>
+          </div>
+
+          {selected.size > 0 && (
+            <Card className="flex flex-wrap items-center gap-2 border-primary/40 bg-primary/5 p-2 text-sm">
+              <span className="font-medium">{selected.size} selected</span>
+              <Button size="sm" variant="outline" onClick={() => bulkApply({ kind: "moveTop" })}>
+                <ArrowUpToLine className="mr-1 h-3 w-3" /> Move to top
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulkApply({ kind: "moveBottom" })}>
+                <ArrowDownToLine className="mr-1 h-3 w-3" /> Move to bottom
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulkApply({ kind: "lock", locked: true })}>
+                <Lock className="mr-1 h-3 w-3" /> Lock
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => bulkApply({ kind: "lock", locked: false })}>
+                <LockOpen className="mr-1 h-3 w-3" /> Unlock
+              </Button>
+              <Select onValueChange={(v) => bulkApply({ kind: "priority", value: v as Priority })}>
+                <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Set priority…" /></SelectTrigger>
+                <SelectContent>
+                  {(Object.entries(PRIORITY_LABEL) as [Priority, string][]).map(([k, label]) => (
+                    <SelectItem key={k} value={k}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="destructive" onClick={() => bulkApply({ kind: "delete" })}>
+                <Trash2 className="mr-1 h-3 w-3" /> Remove
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+            </Card>
+          )}
+
           {isFetching && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading…
             </div>
           )}
           {order && order.length === 0 && (
-            <Card className="p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
+            <Card className="p-6 text-center text-sm text-muted-foreground">
+              No pending stops. Click <b>+ Add customer</b> to insert one.
+            </Card>
           )}
           {order && order.length > 0 && (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -462,16 +674,23 @@ function RouteManagerPage() {
                       index={idx}
                       total={order.length}
                       suggestedIndex={optimizerPreview.indexOf(s.id)}
-                      partners={(partners ?? []).filter((p) => p.id !== s.partner_id)
+                      partners={(partners ?? []).filter((p) => p.id !== partnerId)
                         .map((p) => ({ id: p.id, name: p.full_name ?? p.id.slice(0, 8) }))}
                       canEdit={canEdit}
-                      onLock={() => toggleLock(s)}
-                      onEmergency={() => toggleEmergency(s)}
-                      onReassign={(p) => reassign(s, p)}
-                      onRemove={() => removeStop(s)}
+                      checked={selected.has(s.id)}
+                      onCheck={() => toggleOne(s.id)}
+                      onLock={() => toggleLockDraft(s)}
+                      onEmergency={() => toggleEmergencyDraft(s)}
+                      onPriority={(p) => setPriorityDraft(s, p)}
+                      onReassign={(p) => reassignToOtherPartner(s, p)}
+                      onRemove={() => removeFromDraft(s)}
                       onOpen={() => setSelectedStop(s.id)}
                       onUp={() => move(s, -1)}
                       onDown={() => move(s, 1)}
+                      onTop={() => moveTo(s, "top")}
+                      onBottom={() => moveTo(s, "bottom")}
+                      onInsertAbove={() => insertNear(s, "above")}
+                      onInsertBelow={() => insertNear(s, "below")}
                     />
                   ))}
                 </div>
@@ -480,7 +699,6 @@ function RouteManagerPage() {
           )}
         </TabsContent>
 
-        {/* MAP */}
         <TabsContent value="map" className="mt-3">
           <RouteMapPanel
             stops={mapStops}
@@ -492,7 +710,6 @@ function RouteManagerPage() {
           />
         </TabsContent>
 
-        {/* TIMELINE */}
         <TabsContent value="timeline" className="mt-3">
           <Card className="divide-y p-0">
             <div className="flex items-center justify-between px-4 py-2 text-sm">
@@ -515,9 +732,13 @@ function RouteManagerPage() {
             ))}
             {!timeline?.length && <p className="px-4 py-6 text-center text-sm text-muted-foreground">No stops.</p>}
           </Card>
+          {dirty && (
+            <p className="mt-2 text-xs text-amber-700">
+              Timeline reflects the <b>saved</b> route. Save your draft to refresh ETAs.
+            </p>
+          )}
         </TabsContent>
 
-        {/* CLUSTERS */}
         <TabsContent value="clusters" className="mt-3">
           <div className="grid gap-3 md:grid-cols-2">
             {byCluster.map(({ cluster, rows }) => {
@@ -548,7 +769,6 @@ function RouteManagerPage() {
           </div>
         </TabsContent>
 
-        {/* HISTORY (snapshots) */}
         <TabsContent value="history" className="mt-3">
           <div className="space-y-2">
             {(snapshots ?? []).map((s: any) => (
@@ -559,12 +779,15 @@ function RouteManagerPage() {
                     {new Date(s.created_at).toLocaleString()} • {(s.sequence ?? []).length} stops
                   </p>
                 </div>
-                {s.status === "pending" && canEdit && (
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => rejectSnap(s.id)}>Reject</Button>
-                    <Button size="sm" onClick={() => acceptSnap(s.id)}>Accept</Button>
-                  </div>
-                )}
+                <Button size="sm" variant="outline" disabled={!canEdit}
+                  onClick={async () => {
+                    const { error } = await supabase.rpc("admin_route_restore_snapshot" as any, { p_snapshot_id: s.id });
+                    if (error) return toast.error(error.message);
+                    toast.success("Snapshot restored to draft");
+                    qc.invalidateQueries({ queryKey: ["rm-draft"] });
+                  }}>
+                  Restore to draft
+                </Button>
               </Card>
             ))}
             {!snapshots?.length && (
@@ -573,7 +796,6 @@ function RouteManagerPage() {
           </div>
         </TabsContent>
 
-        {/* ACTIVITY (logs) */}
         <TabsContent value="activity" className="mt-3">
           <Card className="divide-y p-0">
             {(logs ?? []).map((l: any) => (
@@ -592,48 +814,78 @@ function RouteManagerPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Sticky save bar */}
+      <SaveBar
+        dirty={dirty}
+        canUndo={!!draft?.past.length}
+        canRedo={!!draft?.future.length}
+        onUndo={() => setDraft((d) => d ? undoHistory(d) : d)}
+        onRedo={() => setDraft((d) => d ? redoHistory(d) : d)}
+        onDiscard={discardDraft}
+        onSave={() => persistDraft()}
+        saving={saving}
+      />
+
+      {/* Add customer sheet */}
+      <AddCustomerSheet
+        open={addOpen}
+        onOpenChange={(o) => { setAddOpen(o); if (!o) pendingInsertRef.current = null; }}
+        partnerId={partnerId}
+        date={date}
+        draftIds={draftIds}
+        onAdd={handleAddCustomer}
+        onReassign={handleReassignFromOther}
+      />
+
       {/* Customer detail dialog */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelectedStop(null)}>
+      <Dialog open={!!selectedRow} onOpenChange={(o) => !o && setSelectedStop(null)}>
         <DialogContent className="max-w-md">
-          {selected && (
+          {selectedRow && (
             <>
               <DialogHeader>
-                <DialogTitle>{selected.customers?.full_name ?? "Customer"}</DialogTitle>
+                <DialogTitle>{selectedRow.customers?.full_name ?? "Customer"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">{selected.customers?.area} • {selected.customers?.address_line}</p>
-                </div>
+                <p className="text-muted-foreground">{selectedRow.customers?.area} • {selectedRow.customers?.address_line}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><span className="text-muted-foreground">Vehicle</span><p>{selected.vehicles?.make} {selected.vehicles?.model}</p></div>
-                  <div><span className="text-muted-foreground">Reg</span><p>{selected.vehicles?.registration_number ?? "—"}</p></div>
-                  <div><span className="text-muted-foreground">Preferred</span><p>{selected.customers?.preferred_time ?? "—"}</p></div>
+                  <div><span className="text-muted-foreground">Vehicle</span><p>{selectedRow.vehicles?.make} {selectedRow.vehicles?.model}</p></div>
+                  <div><span className="text-muted-foreground">Reg</span><p>{selectedRow.vehicles?.registration_number ?? "—"}</p></div>
+                  <div><span className="text-muted-foreground">Preferred</span><p>{selectedRow.customers?.preferred_time ?? "—"}</p></div>
                   <div><span className="text-muted-foreground">Window</span>
-                    <p>{selected.customers?.time_window_type === "exact"
-                      ? `Exact ${selected.customers?.exact_time}` : "Soft"}</p></div>
-                  <div><span className="text-muted-foreground">Status</span><p className="capitalize">{selected.status}</p></div>
-                  <div><span className="text-muted-foreground">Cluster</span><p>{selected.cluster_id?.slice(0, 8) ?? "—"}</p></div>
+                    <p>{selectedRow.customers?.time_window_type === "exact"
+                      ? `Exact ${selectedRow.customers?.exact_time}` : "Soft"}</p></div>
+                  <div><span className="text-muted-foreground">Status</span><p className="capitalize">{selectedRow.status}</p></div>
+                  <div><span className="text-muted-foreground">Cluster</span><p>{selectedRow.cluster_id?.slice(0, 8) ?? "—"}</p></div>
+                </div>
+                <div className="pt-1">
+                  <span className="text-xs text-muted-foreground">Priority</span>
+                  <PrioritySelect
+                    value={normalisePriority(selectedRow.priority)}
+                    onChange={(p) => setPriorityDraft(selectedRow, p)}
+                    disabled={!canEdit}
+                    size="md"
+                  />
                 </div>
                 <div className="flex flex-wrap gap-1 pt-2">
-                  {selected.customers?.phone && (
-                    <a href={`tel:${selected.customers.phone}`}>
+                  {selectedRow.customers?.phone && (
+                    <a href={`tel:${selectedRow.customers.phone}`}>
                       <Button size="sm" variant="outline"><Phone className="mr-1 h-4 w-4" />Call</Button>
                     </a>
                   )}
-                  {selected.customers?.latitude && (
+                  {selectedRow.customers?.latitude && (
                     <a target="_blank" rel="noreferrer"
-                       href={`https://www.google.com/maps/dir/?api=1&destination=${selected.customers.latitude},${selected.customers.longitude}`}>
+                       href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRow.customers.latitude},${selectedRow.customers.longitude}`}>
                       <Button size="sm" variant="outline"><Navigation className="mr-1 h-4 w-4" />Navigate</Button>
                     </a>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => toggleLock(selected)} disabled={!canEdit}>
-                    {selected.locked_position ? <LockOpen className="mr-1 h-4 w-4" /> : <Lock className="mr-1 h-4 w-4" />}
-                    {selected.locked_position ? "Unlock" : "Lock"}
+                  <Button size="sm" variant="outline" onClick={() => toggleLockDraft(selectedRow)} disabled={!canEdit}>
+                    {selectedRow.locked_position ? <LockOpen className="mr-1 h-4 w-4" /> : <Lock className="mr-1 h-4 w-4" />}
+                    {selectedRow.locked_position ? "Unlock" : "Lock"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => toggleEmergency(selected)} disabled={!canEdit}>
-                    <Zap className="mr-1 h-4 w-4" />{selected.is_emergency ? "Clear emergency" : "Emergency"}
+                  <Button size="sm" variant="outline" onClick={() => toggleEmergencyDraft(selectedRow)} disabled={!canEdit}>
+                    <Zap className="mr-1 h-4 w-4" />{selectedRow.is_emergency ? "Clear emergency" : "Emergency"}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => removeStop(selected)} disabled={!canEdit}>
+                  <Button size="sm" variant="destructive" onClick={() => removeFromDraft(selectedRow)} disabled={!canEdit}>
                     <Trash2 className="mr-1 h-4 w-4" />Remove
                   </Button>
                 </div>
@@ -704,13 +956,17 @@ function Stat({ label, value, highlight }: { label: string; value: any; highligh
 }
 
 function SortableRow({
-  service: s, index, total, suggestedIndex, partners, canEdit,
-  onLock, onEmergency, onReassign, onRemove, onOpen, onUp, onDown,
+  service: s, index, total, suggestedIndex, partners, canEdit, checked,
+  onCheck, onLock, onEmergency, onPriority, onReassign, onRemove, onOpen,
+  onUp, onDown, onTop, onBottom, onInsertAbove, onInsertBelow,
 }: {
   service: ServiceRow; index: number; total: number; suggestedIndex: number;
-  partners: Array<{ id: string; name: string }>; canEdit: boolean;
-  onLock: () => void; onEmergency: () => void; onReassign: (id: string) => void;
-  onRemove: () => void; onOpen: () => void; onUp: () => void; onDown: () => void;
+  partners: Array<{ id: string; name: string }>; canEdit: boolean; checked: boolean;
+  onCheck: () => void;
+  onLock: () => void; onEmergency: () => void; onPriority: (p: Priority) => void;
+  onReassign: (id: string) => void; onRemove: () => void; onOpen: () => void;
+  onUp: () => void; onDown: () => void; onTop: () => void; onBottom: () => void;
+  onInsertAbove: () => void; onInsertBelow: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
@@ -718,9 +974,11 @@ function SortableRow({
   const isExact = (c?.time_window_type ?? "soft") === "exact";
   const cutoff = c?.service_required_before ?? c?.preferred_time;
   const drift = suggestedIndex >= 0 ? suggestedIndex - index : 0;
+  const priority = normalisePriority(s.priority);
 
   return (
     <Card ref={setNodeRef} style={style} className="flex flex-wrap items-center gap-3 p-3">
+      <Checkbox checked={checked} onCheckedChange={onCheck} disabled={!canEdit} />
       <button {...attributes} {...listeners}
               className="cursor-grab text-muted-foreground" aria-label="Drag">
         <GripVertical className="h-5 w-5" />
@@ -731,6 +989,7 @@ function SortableRow({
       <button onClick={onOpen} className="min-w-0 flex-1 text-left">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate font-medium">{c?.full_name ?? "—"}</p>
+          <PriorityBadge value={priority} />
           {s.locked_position && <Badge variant="outline" className="text-[10px]"><Lock className="mr-1 h-3 w-3" />Locked</Badge>}
           {s.is_emergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive"><Zap className="mr-1 h-3 w-3" />Emergency</Badge>}
           {isExact ? (
@@ -740,7 +999,7 @@ function SortableRow({
           ) : null}
           {drift !== 0 && (
             <Badge variant="outline" className="text-[10px] text-amber-600">
-              Engine suggests {drift > 0 ? `↓${drift}` : `↑${Math.abs(drift)}`}
+              AI suggests {drift > 0 ? `↓${drift}` : `↑${Math.abs(drift)}`}
             </Badge>
           )}
         </div>
@@ -755,20 +1014,37 @@ function SortableRow({
         <Button variant="ghost" size="icon" onClick={onDown} disabled={!canEdit || index === total - 1} title="Move down">
           <ChevronDown className="h-4 w-4" />
         </Button>
+        <PrioritySelect value={priority} onChange={onPriority} disabled={!canEdit} />
         <Button variant="ghost" size="icon" onClick={onLock} disabled={!canEdit} title={s.locked_position ? "Unlock" : "Lock"}>
           {s.locked_position ? <LockOpen className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
         </Button>
         <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1 text-xs">
           <Zap className="h-3 w-3" /><Switch checked={!!s.is_emergency} onCheckedChange={onEmergency} disabled={!canEdit} />
         </div>
-        <Select onValueChange={(v) => v && onReassign(v)} disabled={!canEdit}>
-          <SelectTrigger className="h-8 w-[140px] text-xs">
-            <ArrowRightLeft className="mr-1 h-3 w-3" /> Reassign
-          </SelectTrigger>
-          <SelectContent>
-            {partners.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" disabled={!canEdit} title="More">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={onInsertAbove}>Insert above…</DropdownMenuItem>
+            <DropdownMenuItem onClick={onInsertBelow}>Insert below…</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onTop}>Move to top</DropdownMenuItem>
+            <DropdownMenuItem onClick={onBottom}>Move to bottom</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {partners.length > 0 && partners.slice(0, 8).map((p) => (
+              <DropdownMenuItem key={p.id} onClick={() => onReassign(p.id)}>
+                <ArrowRightLeft className="mr-2 h-3 w-3" /> Move to {p.name}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onRemove} className="text-destructive">
+              <Trash2 className="mr-2 h-3 w-3" /> Remove from route
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {c?.phone && (
           <a href={`tel:${c.phone}`}>
             <Button variant="ghost" size="icon" title="Call"><Phone className="h-4 w-4" /></Button>
@@ -780,9 +1056,6 @@ function SortableRow({
             <Button variant="ghost" size="icon" title="Navigate"><Navigation className="h-4 w-4" /></Button>
           </a>
         )}
-        <Button variant="ghost" size="icon" onClick={onRemove} disabled={!canEdit} title="Remove">
-          <Trash2 className="h-4 w-4" />
-        </Button>
       </div>
     </Card>
   );

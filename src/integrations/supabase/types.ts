@@ -1174,6 +1174,9 @@ export type Database = {
           last_seen: string | null
           level: string
           lifetime_earnings: number
+          manual_mode_by: string | null
+          manual_mode_enabled: boolean
+          manual_mode_since: string | null
           max_daily_cars: number
           notify_when_customers_added: boolean
           pan_number: string | null
@@ -1222,6 +1225,9 @@ export type Database = {
           last_seen?: string | null
           level?: string
           lifetime_earnings?: number
+          manual_mode_by?: string | null
+          manual_mode_enabled?: boolean
+          manual_mode_since?: string | null
           max_daily_cars?: number
           notify_when_customers_added?: boolean
           pan_number?: string | null
@@ -1270,6 +1276,9 @@ export type Database = {
           last_seen?: string | null
           level?: string
           lifetime_earnings?: number
+          manual_mode_by?: string | null
+          manual_mode_enabled?: boolean
+          manual_mode_since?: string | null
           max_daily_cars?: number
           notify_when_customers_added?: boolean
           pan_number?: string | null
@@ -1605,6 +1614,36 @@ export type Database = {
         }
         Relationships: []
       }
+      route_drafts: {
+        Row: {
+          created_at: string
+          id: string
+          partner_id: string
+          payload: Json
+          service_date: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_id: string
+          payload?: Json
+          service_date: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_id?: string
+          payload?: Json
+          service_date?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       route_snapshots: {
         Row: {
           created_at: string
@@ -1866,6 +1905,9 @@ export type Database = {
           locked_position: boolean
           manual_sequence_no: number | null
           partner_id: string | null
+          priority: string
+          priority_set_at: string | null
+          priority_set_by: string | null
           rate_per_car: number
           reassigned_from: string | null
           scheduled_date: string
@@ -1903,6 +1945,9 @@ export type Database = {
           locked_position?: boolean
           manual_sequence_no?: number | null
           partner_id?: string | null
+          priority?: string
+          priority_set_at?: string | null
+          priority_set_by?: string | null
           rate_per_car?: number
           reassigned_from?: string | null
           scheduled_date?: string
@@ -1940,6 +1985,9 @@ export type Database = {
           locked_position?: boolean
           manual_sequence_no?: number | null
           partner_id?: string | null
+          priority?: string
+          priority_set_at?: string | null
+          priority_set_by?: string | null
           rate_per_car?: number
           reassigned_from?: string | null
           scheduled_date?: string
@@ -2802,6 +2850,60 @@ export type Database = {
         Args: { _date: string; _partner_id: string }
         Returns: Json
       }
+      admin_route_draft_discard: {
+        Args: { p_date: string; p_partner_id: string }
+        Returns: undefined
+      }
+      admin_route_draft_get: {
+        Args: { p_date: string; p_partner_id: string }
+        Returns: Json
+      }
+      admin_route_draft_save: {
+        Args: { p_date: string; p_partner_id: string; p_reason?: string }
+        Returns: Json
+      }
+      admin_route_draft_set: {
+        Args: {
+          p_date: string
+          p_partner_id: string
+          p_payload: Json
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      admin_route_reassign: {
+        Args: {
+          p_position?: number
+          p_reason?: string
+          p_service_id: string
+          p_to_partner: string
+        }
+        Returns: undefined
+      }
+      admin_route_restore_snapshot: {
+        Args: { p_reason?: string; p_snapshot_id: string }
+        Returns: undefined
+      }
+      admin_route_resume_ai: {
+        Args: { p_partner_id: string }
+        Returns: undefined
+      }
+      admin_route_search_customers: {
+        Args: { p_date: string; p_query: string }
+        Returns: {
+          address_line: string
+          area: string
+          current_partner_id: string
+          current_partner_name: string
+          customer_id: string
+          full_name: string
+          phone: string
+          preferred_time: string
+          service_id: string
+          status: string
+          vehicle_reg: string
+        }[]
+      }
       admin_route_timeline: {
         Args: { _date: string; _partner_id: string }
         Returns: Json
@@ -2920,6 +3022,7 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      is_admin_or_ops: { Args: { _uid: string }; Returns: boolean }
       list_assignment_offers: {
         Args: never
         Returns: {
