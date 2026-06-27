@@ -114,6 +114,12 @@ function RouteManagerPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<ServiceRow | null>(null);
+  const [transferTarget, setTransferTarget] = useState<ServiceRow | null>(null);
+  const [positionPicker, setPositionPicker] = useState<{ refRow: ServiceRow | null } | null>(null);
+  const [savePreview, setSavePreview] = useState<{
+    conflicts: Conflict[]; diff: DiffEntry[]; summary: PreviewSummary;
+  } | null>(null);
 
   // role check
   useEffect(() => {
