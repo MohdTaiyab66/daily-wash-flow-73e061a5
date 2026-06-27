@@ -489,6 +489,75 @@ function RouteManagerPage() {
     });
   }
 
+  // Build the pre-save preview: conflicts + per-stop diff vs the baseline.
+  function computePreview(rows: ServiceRow[]) {
+    const items = buildSavePayload(rows);
+    const baseline = baselineRef.current ?? [];
+    const baselineIds = new Set(baseline.map((b) => b.id));
+    const newIds = new Set(rows.map((r) => r.id));
+    const baselineSeqById = new Map<string, number>();
+    baseline.forEach((b, i) => baselineSeqById.set(b.id, i + 1));
+
+    // Try to read previous saved ETA from current services list to compute shift.
+    const prevEtaById = new Map<string, string | null>();
+    (services ?? []).forEach((s: any) => prevEtaById.set(s.id, s.eta_at ?? null));
+
+    const conflicts: Conflict[] = [];
+    const diff: DiffEntry[] = [];
+    let totalDistanceKm = 0, totalDriveMin = 0, notified = 0;
+
+    rows.forEach((r, i) => {
+      const item = items[i];
+      const name = r.customers?.full_name ?? "—";
+      totalDistanceKm += item.distance_km ?? 0;
+      totalDriveMin += item.travel_min ?? 0;
+
+      // Conflicts
+      if (r.customers?.latitude == null || r.customers?.longitude == null) {
+        conflicts.push({ level: "error", service_id: r.id, name, message: "Missing coordinates — cannot route to this stop" });
+      }
+      const etaMs = new Date(item.eta_at).getTime();
+      if (r.customers?.time_window_type === "exact" && r.customers?.exact_time) {
+        const [h, m] = r.customers.exact_time.split(":").map(Number);
+        const target = new Date(date + "T00:00:00").getTime() + ((h ?? 0) * 60 + (m ?? 0)) * 60_000;
+        if (etaMs > target + 15 * 60_000) {
+          conflicts.push({ level: "error", service_id: r.id, name, message: `Exact ${r.customers.exact_time} window missed — ETA ${new Date(etaMs).toTimeString().slice(0, 5)}` });
+        } else if (Math.abs(etaMs - target) > 5 * 60_000) {
+          conflicts.push({ level: "warning", service_id: r.id, name, message: `Exact window ±${Math.round((etaMs - target) / 60_000)}m off target` });
+        }
+      } else {
+        const cutoff = r.customers?.service_required_before ?? r.customers?.preferred_time ?? null;
+        if (cutoff) {
+          const [h, m] = String(cutoff).split(":").map(Number);
+          if (!Number.isNaN(h)) {
+            const cut = new Date(date + "T00:00:00").getTime() + ((h ?? 0) * 60 + (m ?? 0)) * 60_000;
+            if (etaMs > cut) conflicts.push({ level: "warning", service_id: r.id, name, message: `ETA ${new Date(etaMs).toTimeString().slice(0, 5)} is after deadline ${cutoff}` });
+          }
+        }
+      }
+
+      // Sequence diff (changed position, added, or ETA shift)
+      const from = baselineSeqById.get(r.id) ?? null;
+      const prevEta = prevEtaById.get(r.id) ?? null;
+      const shift = prevEta ? Math.round((etaMs - new Date(prevEta).getTime()) / 60_000) : 0;
+      const moved = from != null && from !== i + 1;
+      if (!baselineIds.has(r.id) || moved || Math.abs(shift) >= 1) {
+        diff.push({ service_id: r.id, name, from, to: i + 1, eta_at: item.eta_at, eta_shift_min: shift });
+        if (Math.abs(shift) >= 15) notified += 1;
+      }
+    });
+
+    const added = rows.filter((r) => !baselineIds.has(r.id)).length;
+    const removed = baseline.filter((b) => !newIds.has(b.id)).length;
+    const moved = diff.filter((d) => d.from != null && d.from !== d.to).length;
+
+    const summary: PreviewSummary = {
+      total: rows.length, added, removed, moved, notified,
+      totalDistanceKm, totalDriveMin,
+    };
+    return { items, conflicts, diff, summary };
+  }
+
   async function persistDraft(reason?: string) {
     if (!order || !ensureCanEdit()) return;
     setSaving(true);
