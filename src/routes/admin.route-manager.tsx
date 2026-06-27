@@ -159,6 +159,7 @@ function RouteManagerPage() {
     if (!partnerId && partners && partners.length) setPartnerId(partners[0].id);
   }, [partners, partnerId]);
 
+
   const partner = partners?.find((p) => p.id === partnerId) ?? null;
 
   // server services
