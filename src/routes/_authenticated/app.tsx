@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 import { OfferPopup } from "@/components/partner/OfferPopup";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
+import { usePartnerRouteSync } from "@/hooks/use-route-sync";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
