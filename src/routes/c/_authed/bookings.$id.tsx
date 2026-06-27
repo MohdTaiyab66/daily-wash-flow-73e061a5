@@ -30,7 +30,9 @@ const TIMELINE = [
 // because customers do not see live progress; the final step turns on at completion.
 
 function statusIndex(s: string) {
-  const i = TIMELINE.findIndex((t) => t.key === s);
+  // `active` is treated as the assigned step for customer view.
+  const effective = s === "active" ? "paid" : s;
+  const i = TIMELINE.findIndex((t) => t.key === effective);
   return i < 0 ? 0 : i;
 }
 
