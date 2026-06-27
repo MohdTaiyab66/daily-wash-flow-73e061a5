@@ -30,6 +30,7 @@ function CustomerAuthedLayout() {
     };
   }, []);
   useFcmRegistration(userId, "customer");
+  useCustomerRouteSync(userId);
   return (
     <CustomerShell>
       <Outlet />
