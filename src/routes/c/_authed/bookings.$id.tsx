@@ -22,13 +22,17 @@ const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM",
 
 const TIMELINE = [
   { key: "pending_payment", label: "Booking confirmed", desc: "We've received your booking" },
-  { key: "paid", label: "Partner being assigned", desc: "Finding the closest pro" },
-  { key: "active", label: "On the way", desc: "Your partner is heading over" },
+  { key: "paid", label: "Partner assigned", desc: "Your service is scheduled within your selected window" },
   { key: "completed", label: "Service completed", desc: "Hope your car sparkles!" },
 ] as const;
 
+// `active` (service in progress) collapses into the "Partner assigned" step
+// because customers do not see live progress; the final step turns on at completion.
+
 function statusIndex(s: string) {
-  const i = TIMELINE.findIndex((t) => t.key === s);
+  // `active` is treated as the assigned step for customer view.
+  const effective = s === "active" ? "paid" : s;
+  const i = TIMELINE.findIndex((t) => t.key === effective);
   return i < 0 ? 0 : i;
 }
 

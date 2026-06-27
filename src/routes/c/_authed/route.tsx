@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
-import { useCustomerRouteSync } from "@/hooks/use-route-sync";
+// Customer app intentionally does not subscribe to route/ETA updates.
+// Per product policy, customers see a Service Window — not live arrival data.
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
@@ -30,7 +31,7 @@ function CustomerAuthedLayout() {
     };
   }, []);
   useFcmRegistration(userId, "customer");
-  useCustomerRouteSync(userId);
+  // No live ETA / route sync for customers by design.
   return (
     <CustomerShell>
       <Outlet />
