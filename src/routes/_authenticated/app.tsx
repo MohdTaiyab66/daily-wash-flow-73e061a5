@@ -29,6 +29,7 @@ function PartnerRuntime() {
   const { data: partner } = usePartner();
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
+  usePartnerRouteSync(partner?.id ?? null);
   return <OfferPopup partnerId={partner?.id ?? null} />;
 }
 
