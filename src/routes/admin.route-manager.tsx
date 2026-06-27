@@ -738,7 +738,7 @@ function RouteManagerPage() {
                       onEmergency={() => toggleEmergencyDraft(s)}
                       onPriority={(p) => setPriorityDraft(s, p)}
                       onReassign={(p) => reassignToOtherPartner(s, p)}
-                      onRemove={() => removeFromDraft(s)}
+                      onRemove={() => requestRemove(s)}
                       onOpen={() => setSelectedStop(s.id)}
                       onUp={() => move(s, -1)}
                       onDown={() => move(s, 1)}
@@ -940,7 +940,7 @@ function RouteManagerPage() {
                   <Button size="sm" variant="outline" onClick={() => toggleEmergencyDraft(selectedRow)} disabled={!canEdit}>
                     <Zap className="mr-1 h-4 w-4" />{selectedRow.is_emergency ? "Clear emergency" : "Emergency"}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => removeFromDraft(selectedRow)} disabled={!canEdit}>
+                  <Button size="sm" variant="destructive" onClick={() => requestRemove(selectedRow)} disabled={!canEdit}>
                     <Trash2 className="mr-1 h-4 w-4" />Remove
                   </Button>
                 </div>
