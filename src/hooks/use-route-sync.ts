@@ -49,35 +49,8 @@ export function usePartnerRouteSync(partnerId: string | null | undefined) {
   }, [partnerId, qc]);
 }
 
-/**
- * Customer side: when Operations changes the route in a way that shifts ETA
- * beyond the platform threshold, the server inserts a `customer_notifications`
- * row with type='eta_updated'. Refresh the My Plan / Home queries and toast.
- */
-export function useCustomerRouteSync(userId: string | null | undefined) {
-  const qc = useQueryClient();
-  useEffect(() => {
-    if (!userId) return;
-    const ch = supabase
-      .channel(`route-sync-customer:${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "customer_notifications", filter: `user_id=eq.${userId}` },
-        (payload) => {
-          const row = payload.new as any;
-          if (row?.type !== "eta_updated") return;
-          toast.message("Estimated arrival updated", {
-            description: row.body ?? "Operations optimized today's route.",
-          });
-          qc.invalidateQueries({ queryKey: ["customer-home"] });
-          qc.invalidateQueries({ queryKey: ["customer-my-plan"] });
-          qc.invalidateQueries({ queryKey: ["customer-services"] });
-          qc.invalidateQueries({ queryKey: ["customer-notifications-unread"] });
-        }
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [userId, qc]);
-}
+// Customer-side route sync has been removed by product policy.
+// Customers must never see ETA, route position, or partner movement.
+// Operational route changes that respect the customer's service window
+// do NOT generate customer notifications.
+
