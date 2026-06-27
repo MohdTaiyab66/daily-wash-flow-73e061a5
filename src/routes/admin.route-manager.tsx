@@ -740,7 +740,7 @@ function RouteManagerPage() {
             </div>
             <Button
               size="sm"
-              onClick={() => { pendingInsertRef.current = null; setAddOpen(true); }}
+              onClick={() => { pendingInsertRef.current = null; setPositionPicker({ refRow: null }); }}
               disabled={!partnerId || !canEdit}
             >
               <Plus className="mr-1 h-4 w-4" /> Add customer
