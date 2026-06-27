@@ -79,6 +79,11 @@ function PartnersPage() {
                   <td className="px-4 py-3 text-muted-foreground">{p.joined_on}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
+                      <Button asChild size="sm" variant="ghost" title="Today's Route (manual edit)">
+                        <Link to="/admin/route-manager" search={{ partner: p.id }}>
+                          <RouteIcon className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
                       <Button asChild size="sm" variant="ghost" title="View assignment">
                         <Link to="/admin/partner-assignment/$id" params={{ id: p.id }}>
                           <Briefcase className="h-3.5 w-3.5" />
