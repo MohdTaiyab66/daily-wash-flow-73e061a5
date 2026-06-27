@@ -351,11 +351,8 @@ function RouteManagerPage() {
     });
   };
 
-  const insertNear = (s: ServiceRow, where: "above" | "below") => {
-    // Stash a flag to know where the next added customer goes
-    const i = order!.findIndex((x) => x.id === s.id);
-    pendingInsertRef.current = where === "above" ? i : i + 1;
-    setAddOpen(true);
+  const insertNear = (s: ServiceRow, _where: "above" | "below") => {
+    setPositionPicker({ refRow: s });
   };
 
   const pendingInsertRef = useRef<number | null>(null);
@@ -369,8 +366,12 @@ function RouteManagerPage() {
   const setPriorityDraft = (s: ServiceRow, p: Priority) =>
     mutateDraft((rows) => rows.map((r) => r.id === s.id ? { ...r, priority: p } : r));
 
-  const removeFromDraft = (s: ServiceRow) =>
-    mutateDraft((rows) => rows.filter((r) => r.id !== s.id));
+  // Row "Remove" now opens the 3-choice dialog
+  const requestRemove = (s: ServiceRow) => setRemoveTarget(s);
+
+  // Internal: drop from draft only (used by today_only)
+  const dropFromDraftLocal = (id: string) =>
+    mutateDraft((rows) => rows.filter((r) => r.id !== id));
 
   // ---- bulk ----
   const allChecked = !!order && order.length > 0 && selected.size === order.length;
