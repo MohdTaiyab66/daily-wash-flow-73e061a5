@@ -2927,7 +2927,7 @@ export type Database = {
           p_service_id: string
           p_to_partner: string
         }
-        Returns: undefined
+        Returns: Json
       }
       admin_route_remove_stop: {
         Args: { p_mode: string; p_reason?: string; p_service_id: string }
