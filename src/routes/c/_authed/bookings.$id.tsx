@@ -268,21 +268,32 @@ function formatDate(s: string | null) {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  // Per product policy, customers see only 4 high-level states. Internal
+  // ops statuses (pending_payment, paid, queued, offered, etc.) are mapped
+  // to a customer-friendly label.
+  const label =
+    status === "completed" ? "Completed"
+    : status === "cancelled" ? "Cancelled"
+    : status === "refunded" ? "Refunded"
+    : status === "active" || status === "in_progress" ? "In progress"
+    : status === "pending_payment" ? "Awaiting payment"
+    : "Scheduled";
   const map: Record<string, string> = {
-    pending_payment: "bg-amber-500/10 text-amber-700 ring-amber-500/30",
-    paid: "bg-blue-500/10 text-blue-700 ring-blue-500/30",
-    active: "bg-primary/10 text-primary ring-primary/30",
-    completed: "bg-success/10 text-success ring-success/30",
-    cancelled: "bg-destructive/10 text-destructive ring-destructive/30",
-    refunded: "bg-muted text-muted-foreground ring-border",
+    Completed: "bg-success/10 text-success ring-success/30",
+    "In progress": "bg-primary/10 text-primary ring-primary/30",
+    Scheduled: "bg-blue-500/10 text-blue-700 ring-blue-500/30",
+    "Awaiting payment": "bg-amber-500/10 text-amber-700 ring-amber-500/30",
+    Cancelled: "bg-destructive/10 text-destructive ring-destructive/30",
+    Refunded: "bg-muted text-muted-foreground ring-border",
   };
-  const cls = map[status] ?? "bg-muted text-muted-foreground ring-border";
+  const cls = map[label] ?? "bg-muted text-muted-foreground ring-border";
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold capitalize ring-1 ${cls}`}>
-      {status.replaceAll("_", " ")}
+    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ring-1 ${cls}`}>
+      {label}
     </span>
   );
 }
+
 
 function PaymentBadge({ status }: { status: string | null }) {
   const s = status ?? "pending";
