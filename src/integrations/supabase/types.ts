@@ -2732,6 +2732,10 @@ export type Database = {
       }
     }
     Functions: {
+      _resolve_user_id_for_customer: {
+        Args: { p_customer_id: string }
+        Returns: string
+      }
       accept_assignment: { Args: { p_target_cars: number }; Returns: string }
       accept_assignment_v2: {
         Args: { p_cars: number; p_duration: number }
