@@ -47,6 +47,10 @@ import {
 } from "@/lib/route-draft";
 
 export const Route = createFileRoute("/admin/route-manager")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    partner: typeof s.partner === "string" ? s.partner : undefined,
+    date: typeof s.date === "string" ? s.date : undefined,
+  }),
   component: RouteManagerPage,
 });
 
