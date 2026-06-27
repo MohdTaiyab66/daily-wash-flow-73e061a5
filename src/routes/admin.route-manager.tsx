@@ -1003,7 +1003,7 @@ function RouteManagerPage() {
             const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
               p_service_id: s.id, p_mode: "today_only", p_reason: reason || null,
             });
-            if (error) return toast.error(error.message);
+            if (error) { toast.error(error.message); return; }
             dropFromDraftLocal(s.id);
             toast.success("Removed from today's route");
             qc.invalidateQueries({ queryKey: ["rm-services"] });
@@ -1011,12 +1011,11 @@ function RouteManagerPage() {
             const { error } = await supabase.rpc("admin_route_remove_stop" as any, {
               p_service_id: s.id, p_mode: "cancel", p_reason: reason || null,
             });
-            if (error) return toast.error(error.message);
+            if (error) { toast.error(error.message); return; }
             dropFromDraftLocal(s.id);
             toast.success("Service cancelled — customer notified");
             qc.invalidateQueries({ queryKey: ["rm-services"] });
           } else {
-            // transfer: pop transfer chooser
             setTransferTarget(s);
           }
         }}
