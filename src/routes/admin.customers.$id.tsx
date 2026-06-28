@@ -62,7 +62,7 @@ function CustomerProfilePage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{c.full_name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />+91 {c.phone}</span>
+            <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />+91 {String(c.phone ?? "").replace(/^\+?91/, "")}</span>
             <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.area}</span>
             <Badge variant={statusColor as any}>{status}</Badge>
             <Badge variant={paid ? "default" : "destructive"}>{paid ? "Paid" : "Pending payment"}</Badge>
