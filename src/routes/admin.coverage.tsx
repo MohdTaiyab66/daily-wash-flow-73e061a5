@@ -291,7 +291,11 @@ function CoveragePage() {
           <Badge variant="secondary">DS: {stats.ds}</Badge>
           <Badge variant="secondary">Premium: {stats.prem}</Badge>
         </div>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setOpsView("dashboard")}><BarChart3 className="mr-1 h-4 w-4" />Dashboard</Button>
+          <Button size="sm" variant="outline" onClick={() => setOpsView("calendar")}><CalendarDays className="mr-1 h-4 w-4" />Calendar</Button>
+          <Button size="sm" variant="outline" onClick={() => setOpsView("alerts")}><Bell className="mr-1 h-4 w-4" />Alerts</Button>
+          <Button size="sm" variant="outline" onClick={() => setOpsView("history")}><History className="mr-1 h-4 w-4" />History</Button>
           <Button size="sm" onClick={startRadiusDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Radius Zone</Button>
           <Button size="sm" variant="outline" onClick={startPolygonDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Polygon</Button>
         </div>
