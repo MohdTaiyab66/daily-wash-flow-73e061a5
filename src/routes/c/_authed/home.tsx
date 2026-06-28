@@ -392,9 +392,16 @@ function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () 
     try {
       const { data: u } = await supabase.auth.getUser();
       const phone = u.user?.phone ?? null;
-      await supabase.from("area_waitlist").insert({
-        area,
+      let geo: any = {};
+      try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+      await (supabase as any).from("expansion_requests").insert({
+        customer_id: u.user?.id ?? null,
         phone: phone ?? "",
+        area_name: area,
+        pincode: geo.pincode ?? null,
+        lat: geo.lat ?? null,
+        lng: geo.lng ?? null,
+        interested_service: "general",
       });
       toast.success("We'll notify you when we launch in your area!");
     } catch {
@@ -408,8 +415,7 @@ function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () 
         COMING <span className="text-primary">SOON</span>
       </h2>
       <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-        We're currently live in select areas and expanding quickly. Get notified when we are near
-        you!
+        Urban Wash is expanding rapidly. We'll notify you once services become available in your area.
       </p>
       <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
         <BellRing className="mr-2 h-4 w-4" /> Notify me!
