@@ -67,7 +67,7 @@ export function RecentServiceFeed({ userId }: { userId: string | null }) {
   }, [userId, qc]);
 
   // Listen for completion → toast notification
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [, setSeenIds] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!recentQ.data) return;
     setSeenIds((prev) => {
