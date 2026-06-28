@@ -5,7 +5,7 @@ import { getAdminOverview, getAvailableCustomersByArea } from "@/lib/admin.funct
 import { Card } from "@/components/ui/card";
 import {
   Users, UserSquare2, ClipboardList, IndianRupee, CalendarDays, CheckCircle2, MapPin, UserCheck,
-  UserPlus, Sparkles, Map as MapIcon, Camera, RotateCcw, Route as RouteIcon,
+  UserPlus, Sparkles, Map as MapIcon, Camera, RotateCcw, Route as RouteIcon, Activity,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
@@ -14,15 +14,17 @@ export const Route = createFileRoute("/admin/")({
 
 const QUICK_NAV: Array<{ to: any; label: string; icon: any; desc: string }> = [
   { to: "/admin/customers", label: "Customers", icon: UserSquare2, desc: "Browse & manage" },
-  { to: "/admin/partners", label: "Partners", icon: Users, desc: "Active partners" },
   { to: "/admin/import", label: "Import Customer", icon: UserPlus, desc: "Add new customer" },
-  { to: "/admin/marketplace", label: "Marketplace", icon: Sparkles, desc: "Daily Shine offers" },
-  { to: "/admin/customer-map", label: "Customer Map", icon: MapIcon, desc: "Geographic view" },
+  { to: "/admin/partners", label: "Partners", icon: Users, desc: "Active partners" },
+  { to: "/admin/manual-assignment", label: "Manual Assign", icon: UserCheck, desc: "Assign customer to partner" },
+  { to: "/admin/marketplace", label: "Daily Shine Marketplace", icon: Sparkles, desc: "Daily offers" },
   { to: "/admin/route-manager", label: "Route Manager", icon: RouteIcon, desc: "Daily routes" },
+  { to: "/admin/customer-map", label: "Customer Map", icon: MapIcon, desc: "Geographic view" },
   { to: "/admin/services", label: "Services", icon: ClipboardList, desc: "All services" },
   { to: "/admin/photos", label: "Photos", icon: Camera, desc: "Service photos" },
   { to: "/admin/revenue", label: "Revenue", icon: IndianRupee, desc: "Financial summary" },
   { to: "/admin/renewals", label: "Renewals", icon: RotateCcw, desc: "Upcoming renewals" },
+  { to: "/admin/live", label: "Live Ops", icon: Activity, desc: "Today's operations" },
 ];
 
 function Overview() {
