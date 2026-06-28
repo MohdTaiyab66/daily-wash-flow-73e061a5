@@ -112,7 +112,15 @@ function CoveragePage() {
   useEffect(() => {
     const ch = (supabase as any).channel("coverage-zones-rt").on("postgres_changes",
       { event: "*", schema: "public", table: "coverage_zones" },
-      () => qc.invalidateQueries({ queryKey: ["coverage-zones"] })
+      () => {
+        qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+        qc.invalidateQueries({ queryKey: ["zone-dashboard"] });
+        qc.invalidateQueries({ queryKey: ["zone-history"] });
+      }
+    ).on("postgres_changes", { event: "*", schema: "public", table: "coverage_alerts" },
+      () => qc.invalidateQueries({ queryKey: ["zone-alerts"] })
+    ).on("postgres_changes", { event: "*", schema: "public", table: "coverage_zone_calendar" },
+      () => qc.invalidateQueries({ queryKey: ["zone-calendar"] })
     ).subscribe();
     return () => { (supabase as any).removeChannel(ch); };
   }, [qc]);
