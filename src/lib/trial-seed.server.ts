@@ -448,12 +448,14 @@ export async function runTrialSeed(): Promise<SeedReport> {
       const pid = ids["partner1"];
       const sid = serviceIdByCustomer["customer3"];
       if (sid) {
-        const earnExists = await admin.from("earnings").select("id").eq("service_id", sid).maybeSingle();
+        const earnExists = await admin.from("earnings").select("id").eq("partner_id", pid).eq("earned_on", today).maybeSingle();
         if (!earnExists.data?.id) {
-          await admin.from("earnings").insert({
-            partner_id: pid, earned_on: today, amount: 17,
-            source: "service", service_id: sid, description: "Trial completed wash",
+          const { error: earnErr } = await admin.from("earnings").insert({
+            partner_id: pid, earned_on: today, cars_completed: 1,
+            base_amount: 17, incentive_amount: 0, referral_amount: 0,
+            penalty_amount: 0, total_amount: 17,
           });
+          if (earnErr) throw new Error("earnings.insert: " + earnErr.message);
           inc("earnings");
         }
         const wlExists = await admin.from("wallet_ledger").select("id").eq("service_id", sid).maybeSingle();
