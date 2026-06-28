@@ -39,6 +39,7 @@ import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
+import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminAddonQueueRouteImport } from './routes/admin.addon-queue'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
@@ -225,6 +226,11 @@ const AdminCustomersRoute = AdminCustomersRouteImport.update({
 const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
   id: '/customer-map',
   path: '/customer-map',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCoverageRoute = AdminCoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
@@ -440,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/c': typeof CIndexRoute
   '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
@@ -577,6 +585,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
+  '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
@@ -648,6 +657,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin/addon-queue'
     | '/admin/attendance'
+    | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/expansion-requests'
@@ -715,6 +725,7 @@ export interface FileRouteTypes {
     | '/c'
     | '/admin/addon-queue'
     | '/admin/attendance'
+    | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/expansion-requests'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/admin/addon-queue'
     | '/admin/attendance'
+    | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/expansion-requests'
@@ -1074,6 +1086,13 @@ declare module '@tanstack/react-router' {
       path: '/customer-map'
       fullPath: '/admin/customer-map'
       preLoaderRoute: typeof AdminCustomerMapRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/coverage': {
+      id: '/admin/coverage'
+      path: '/coverage'
+      fullPath: '/admin/coverage'
+      preLoaderRoute: typeof AdminCoverageRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/attendance': {
@@ -1415,6 +1434,7 @@ const AdminMarketplaceRouteWithChildren =
 interface AdminRouteChildren {
   AdminAddonQueueRoute: typeof AdminAddonQueueRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
+  AdminCoverageRoute: typeof AdminCoverageRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
@@ -1445,6 +1465,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAddonQueueRoute: AdminAddonQueueRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,
+  AdminCoverageRoute: AdminCoverageRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,

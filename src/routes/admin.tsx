@@ -55,7 +55,8 @@ function AdminLayout() {
     { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
     { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },
-    { to: "/admin/service-areas", label: "Service Areas", icon: Globe },
+    { to: "/admin/coverage", label: "Coverage Manager", icon: Globe },
+    { to: "/admin/service-areas", label: "Service Areas (legacy)", icon: Globe },
     { to: "/admin/expansion-requests", label: "Expansion Requests", icon: BellRing },
     { to: "/admin/settings", label: "Settings", icon: Settings },
   ];
