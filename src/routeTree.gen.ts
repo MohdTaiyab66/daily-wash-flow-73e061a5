@@ -72,6 +72,7 @@ import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookin
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
+import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const TrustRoute = TrustRouteImport.update({
@@ -398,6 +399,12 @@ const ApiPublicAdminTrialSeedRoute = ApiPublicAdminTrialSeedRouteImport.update({
   path: '/api/public/admin/trial-seed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminTrialCleanupRoute =
+  ApiPublicAdminTrialCleanupRouteImport.update({
+    id: '/api/public/admin/trial-cleanup',
+    path: '/api/public/admin/trial-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -463,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -525,6 +533,7 @@ export interface FileRoutesByTo {
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -592,6 +601,7 @@ export interface FileRoutesById {
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -659,6 +669,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
+    | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
@@ -721,6 +732,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
+    | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
@@ -787,6 +799,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
@@ -807,6 +820,7 @@ export interface RootRouteChildren {
   CIndexRoute: typeof CIndexRoute
   ApiPublicFcmDeliveryReceiptRoute: typeof ApiPublicFcmDeliveryReceiptRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
+  ApiPublicAdminTrialCleanupRoute: typeof ApiPublicAdminTrialCleanupRoute
   ApiPublicAdminTrialSeedRoute: typeof ApiPublicAdminTrialSeedRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
@@ -1255,6 +1269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminTrialSeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/trial-cleanup': {
+      id: '/api/public/admin/trial-cleanup'
+      path: '/api/public/admin/trial-cleanup'
+      fullPath: '/api/public/admin/trial-cleanup'
+      preLoaderRoute: typeof ApiPublicAdminTrialCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -1452,6 +1473,7 @@ const rootRouteChildren: RootRouteChildren = {
   CIndexRoute: CIndexRoute,
   ApiPublicFcmDeliveryReceiptRoute: ApiPublicFcmDeliveryReceiptRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
+  ApiPublicAdminTrialCleanupRoute: ApiPublicAdminTrialCleanupRoute,
   ApiPublicAdminTrialSeedRoute: ApiPublicAdminTrialSeedRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
