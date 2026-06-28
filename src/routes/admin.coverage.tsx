@@ -422,11 +422,26 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
           <div>
             <div className="mb-2 text-sm font-semibold">Capacity & Routing (overrides)</div>
             <div className="grid grid-cols-2 gap-3">
-              <NumField label="Max Daily Capacity" v={zone.max_daily_capacity} onChange={(n) => set({ max_daily_capacity: n })} />
+              <NumField label="Max Cars / Partner" v={zone.max_cars_per_partner ?? 30} onChange={(n) => set({ max_cars_per_partner: (n ?? 30) as any })} />
+              <NumField label="Max Daily Capacity (override)" v={zone.max_daily_capacity} onChange={(n) => set({ max_daily_capacity: n })} />
               <NumField label="Max Active Partners" v={zone.max_active_partners} onChange={(n) => set({ max_active_partners: n })} />
+              <NumField label="Max Route Distance (km)" v={zone.max_route_distance_km as any} onChange={(n) => set({ max_route_distance_km: (n ?? 8) as any })} />
+              <NumField label="Max Travel Time (min)" v={zone.max_travel_time_min as any} onChange={(n) => set({ max_travel_time_min: (n ?? 90) as any })} />
               <NumField label="Assignment Radius (m)" v={zone.assignment_radius_m} onChange={(n) => set({ assignment_radius_m: n })} />
               <NumField label="Route Opt Radius (m)" v={zone.route_optimization_radius_m} onChange={(n) => set({ route_optimization_radius_m: n })} />
               <NumField label="Travel Buffer (min)" v={zone.travel_buffer_min} onChange={(n) => set({ travel_buffer_min: n })} />
+              <div>
+                <Label>Start Time</Label>
+                <Input type="time" value={(zone.start_time ?? "07:00").slice(0,5)} onChange={(e) => set({ start_time: e.target.value as any })} />
+              </div>
+              <div>
+                <Label>Finish Time</Label>
+                <Input type="time" value={(zone.finish_time ?? "14:00").slice(0,5)} onChange={(e) => set({ finish_time: e.target.value as any })} />
+              </div>
+              <label className="col-span-2 flex items-center justify-between rounded-md border p-2 text-sm">
+                <span>Expand into neighbouring zones if no partners</span>
+                <Switch checked={zone.neighbour_expand !== false} onCheckedChange={(v) => set({ neighbour_expand: v as any })} />
+              </label>
             </div>
           </div>
         </div>
