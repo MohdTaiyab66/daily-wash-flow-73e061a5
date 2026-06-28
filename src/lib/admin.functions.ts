@@ -626,6 +626,25 @@ export const getCustomerProfile = createServerFn({ method: "GET" }).middleware([
       return { ...v, signed_image_url: s?.signedUrl ?? null };
     }));
 
+    // Today's route position (Route Manager view)
+    const { data: todayRouteRow } = await supabaseAdmin
+      .from("services")
+      .select("id,scheduled_date,time_slot,status,sequence_no,manual_sequence_no,cluster_id,eta_at,locked_position,is_emergency,partners(id,full_name,partner_code,phone)")
+      .eq("customer_id", data.customer_id)
+      .eq("scheduled_date", today)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Marketplace status — latest queue row
+    const { data: marketplaceRow } = await supabaseAdmin
+      .from("subscription_assignment_queue")
+      .select("id,status,radius_km,offer_expires_at,assigned_partner_id,current_offer_partner_id,created_at,updated_at")
+      .eq("customer_id", data.customer_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     return {
       customer: cust.data,
       vehicles,
@@ -643,8 +662,11 @@ export const getCustomerProfile = createServerFn({ method: "GET" }).middleware([
       dirty_reports: dirty.data ?? [],
       parking_reports: parking.data ?? [],
       unavailable_reports: unavailable.data ?? [],
+      today_route: todayRouteRow ?? null,
+      marketplace: marketplaceRow ?? null,
     };
   });
+
 
 export const extendCustomerSubscription = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string; days: number; reason: string }) => d)
