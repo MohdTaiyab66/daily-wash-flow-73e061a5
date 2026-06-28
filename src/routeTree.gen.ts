@@ -21,6 +21,7 @@ import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
 import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
@@ -37,6 +38,7 @@ import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
+import { Route as AdminAddonQueueRouteImport } from './routes/admin.addon-queue'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
@@ -133,6 +135,11 @@ const AdminServicesRoute = AdminServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminServiceLeadsRoute = AdminServiceLeadsRouteImport.update({
+  id: '/service-leads',
+  path: '/service-leads',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
   id: '/route-manager',
   path: '/route-manager',
@@ -211,6 +218,11 @@ const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
 const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAddonQueueRoute = AdminAddonQueueRouteImport.update({
+  id: '/addon-queue',
+  path: '/addon-queue',
   getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -414,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/trust': typeof TrustRoute
   '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
@@ -430,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -477,6 +491,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/trust': typeof TrustRoute
   '/c': typeof CIndexRoute
+  '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
@@ -493,6 +508,7 @@ export interface FileRoutesByTo {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -543,6 +559,7 @@ export interface FileRoutesById {
   '/trust': typeof TrustRoute
   '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/admin/addon-queue': typeof AdminAddonQueueRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
@@ -559,6 +576,7 @@ export interface FileRoutesById {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -610,6 +628,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/c'
     | '/app'
+    | '/admin/addon-queue'
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
@@ -626,6 +645,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/wallet'
@@ -673,6 +693,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/trust'
     | '/c'
+    | '/admin/addon-queue'
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
@@ -689,6 +710,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/wallet'
@@ -738,6 +760,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/c/_authed'
     | '/_authenticated/app'
+    | '/admin/addon-queue'
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
@@ -754,6 +777,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/wallet'
@@ -902,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServicesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/service-leads': {
+      id: '/admin/service-leads'
+      path: '/service-leads'
+      fullPath: '/admin/service-leads'
+      preLoaderRoute: typeof AdminServiceLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/route-manager': {
       id: '/admin/route-manager'
       path: '/route-manager'
@@ -1012,6 +1043,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/admin/attendance'
       preLoaderRoute: typeof AdminAttendanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/addon-queue': {
+      id: '/admin/addon-queue'
+      path: '/addon-queue'
+      fullPath: '/admin/addon-queue'
+      preLoaderRoute: typeof AdminAddonQueueRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_authenticated/app': {
@@ -1337,6 +1375,7 @@ const AdminMarketplaceRouteWithChildren =
   AdminMarketplaceRoute._addFileChildren(AdminMarketplaceRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAddonQueueRoute: typeof AdminAddonQueueRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
@@ -1353,6 +1392,7 @@ interface AdminRouteChildren {
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
   AdminRouteManagerRoute: typeof AdminRouteManagerRoute
+  AdminServiceLeadsRoute: typeof AdminServiceLeadsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminWalletRoute: typeof AdminWalletRoute
@@ -1363,6 +1403,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAddonQueueRoute: AdminAddonQueueRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
@@ -1379,6 +1420,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminRevenueRoute: AdminRevenueRoute,
   AdminRouteManagerRoute: AdminRouteManagerRoute,
+  AdminServiceLeadsRoute: AdminServiceLeadsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminWalletRoute: AdminWalletRoute,
