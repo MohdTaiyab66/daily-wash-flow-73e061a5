@@ -55,7 +55,7 @@ function CustomersPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{c.full_name}</p>
-                    <p className="text-xs text-muted-foreground">+91 {c.phone}</p>
+                    <p className="text-xs text-muted-foreground">+91 {String(c.phone ?? "").replace(/^\+?91/, "")}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <Badge variant={tone as any}>{tag}</Badge>
