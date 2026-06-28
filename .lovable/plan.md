@@ -1,60 +1,73 @@
-# Urban Wash — Final Operational Improvements Plan
+# Area Availability Management
 
-Scope: 9 numbered items from the request. No redesigns; fix and connect operational gaps only.
+Replace static `SERVICE_AREAS` / "Coming Soon" with a DB-driven `service_areas` table managed from Admin → Settings → Service Areas. Drives Daily Shine / Premium availability across Customer + Partner + Admin in real time.
 
-## 1. Current Location (Critical)
-- Replace any cached/area-based fallback in `Use Current Location` with real `navigator.geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })`.
-- Reverse geocode via existing Google Maps connector gateway (server fn `reverseGeocode` already-pattern; add if missing) to extract address, area, city, state, pincode.
-- Store full payload in `customer_addresses` / `partners.last_location`.
-- On denial: show "Enable location" prompt + fallback to manual map pin.
-- Files: `src/routes/c/location.tsx`, `src/routes/c/location.search.tsx`, `src/routes/_authenticated/app.area.tsx`, `src/routes/_authenticated/app.live.tsx`, new `src/lib/geo.functions.ts`.
+## 1. Database
 
-## 2 & 3. Vehicle Search + Complete Database
-- Seed `vehicle_catalog` (currently 4 rows) with ~250 popular India-market models across all listed brands, each with `make`, `model`, `aliases[]`, `body_type` (Hatchback / Compact Sedan / Sedan / SUV / MUV / Luxury), `image_url`, `colors[]`.
-- Migration adds columns `aliases text[]`, `body_type text`, `image_url`, `colors text[]` if missing.
-- Rewrite vehicle search in `vehicles_.add.tsx` to use ILIKE OR on `make`, `model`, `aliases` with prefix + substring scoring; debounced 150ms; shows top 20.
-- Category is derived from `body_type`, never chosen by customer.
+**New table `public.service_areas`**
+- `id`, `name` (unique), `city`, `state`, `pincodes text[]`, `center_lat`, `center_lng`, `radius_km`, `polygon jsonb`
+- `is_active bool`
+- `daily_shine_enabled bool`, `premium_enabled bool`
+- Per-service flags: `washing_enabled`, `interior_enabled`, `exterior_enabled`, `deep_clean_enabled`, `polish_enabled`, `cutter_polish_enabled`, `seat_cleaning_enabled`, `roof_cleaning_enabled`
+- `launch_date`, `notes`
+- Realtime enabled. RLS: anon `SELECT` (needed to compute availability before sign-in), `authenticated` SELECT, admin manage.
 
-## 4. Services & Pricing
-- Wipe & re-seed `service_catalog` with exact pricing matrix from the brief:
-  - Daily Shine sub: 999 / 1199 + add-ons (Interior 149/199, Exterior 149/199, Polish 49, Dusting 25)
-  - One-Time Wash: 399/499 full, 349/449 without polish + Seat 499, Roof 499
-  - Deep Clean: 1099/1399 full, 899/999 interior-only
-  - Additional: Body Polish 49, Dusting 25, Seat 499, Roof 499, Buffing 999, Cutter+Polish 1999
-- Add column `category` flag {subscription, one_time, deep_clean, addon, premium} to drive routing.
-- Pricing auto-switches by `body_type` group (hatchback_compact vs sedan_suv).
+**New table `public.expansion_requests`**
+- `customer_id` (nullable), `phone`, `area_name`, `pincode`, `lat`, `lng`, `interested_service`, `created_at`, `status`
+- Realtime + admin notifications via existing channel pattern. RLS: insert open to anon, select for admin.
 
-## 5. Service Routing Logic
-- Update `bookings` insert trigger / payment success handler: only `service_type='subscription'` (Daily Shine family) creates a `subscription_assignment_queue` row → partner marketplace.
-- All other categories create a `service_leads` row instead (new table).
-- Update `payment.functions.ts` post-payment branch accordingly.
+**RPC `get_area_availability(p_lat, p_lng, p_pincode text)`**
+- Returns the matched area row + computed `{ daily_shine, premium, services{...} }`.
+- Match priority: pincode contains → point in polygon → within radius of center → nearest active area within 5km → null.
 
-## 6. Admin Service Leads Module (New)
-- New table `service_leads` (customer, vehicle, address, service, price, payment_id, scheduled_at, status, assigned_detailer_id, notes, photos[], timestamps) + RLS + GRANTs + Realtime publication.
-- RPCs: `admin_assign_detailer`, `admin_update_lead`, `admin_cancel_lead`, `admin_complete_lead`.
-- New route `src/routes/admin.service-leads.tsx` with table, filters (status/date/service), assign dialog, search, CSV export.
-- Sidebar entry added between Customers and Marketplace.
+**Seed**: All 14 listed areas with the specified Daily Shine / Premium flags. Drop legacy hardcoded coords.
 
-## 7. Daily Shine Add-on Notifications
-- New table `subscription_addon_requests` (subscription_id, customer_id, service_id, preferred_date, preferred_time, status, assigned_detailer_id, completed_at, cancelled_at).
-- When subscriber requests Interior/Exterior/Pressure wash from `c/subscriptions.tsx`, insert here — NOT into partner queue.
-- New route `src/routes/admin.addon-queue.tsx` for management.
-- Admin notification via existing `admin_alerts`.
+## 2. Admin → Settings → Service Areas (`/admin/service-areas`)
 
-## 8. Admin Settings linkage
-- Audit all keys touched by sections 1–7 to ensure they read from `platform_settings` live (no constants). Settings UI already exists from prior pass.
+- Table list with toggles (active, daily shine, premium) inline.
+- Edit dialog: full area form, per-service toggles, pincode chips, radius slider, optional polygon JSON.
+- Bulk action: enable/disable Daily Shine or Premium across selected areas.
+- Add to sidebar nav.
 
-## 9. End-to-End Verification
-- Playwright smoke: Daily Shine → marketplace, One-Time → service lead, Add-on → addon queue. Produce final PASS/PARTIAL/FAIL report.
+## 3. Admin → Expansion Requests (`/admin/expansion-requests`)
 
-## Out of scope
-- No visual redesigns. No removal of existing features. No new auth flows.
+- Grouped by area: count of customers, daily-shine vs premium interest, last 5 requesters.
+- CSV export. Realtime updates.
 
-## Order of execution
-1. Migration: vehicle_catalog columns, service_catalog reseed, service_leads, subscription_addon_requests, routing trigger update, realtime + GRANTs.
-2. Seed vehicle_catalog (~250 rows) via insert tool.
-3. Geo server fn + client hooks.
-4. Vehicle search UI.
-5. Service Leads + Addon Queue UIs + sidebar.
-6. Payment routing branch.
-7. Playwright verification + report to `/mnt/documents/UrbanWash_Final_Ops_Report.md`.
+## 4. Customer App integration
+
+- New hook `useAreaAvailability()` calls `get_area_availability` using stored customer address coords/pincode.
+- `c/home`, `c/services`, `c/service/$slug`, `c/subscriptions`:
+  - Both off → "Coming Soon" screen with **Notify Me** form (writes `expansion_requests`). Profile/vehicles/addresses/history remain usable.
+  - Daily Shine off, Premium on → Daily Shine plan cards become disabled "Coming Soon" badges; premium services bookable.
+  - Premium off, Daily Shine on → Premium service tiles disabled "Coming Soon"; subscription flow intact.
+  - Both on → no banners.
+- `location.search.tsx`: replace `nearestServiceArea` distance check with RPC result. Out-of-area shows Notify Me capturing pincode/GPS.
+- Booking submit path validates with RPC again; blocks payment if disabled.
+
+## 5. Partner & Maps
+
+- Partner area picker reads from `service_areas` (active only).
+- Admin Customer Map / Route Manager overlay: shade enabled areas green, disabled red, expansion-request pins.
+
+## 6. Cleanup
+
+- Keep `src/lib/areas.ts` as thin wrapper that fetches from DB (cached) for legacy callers, but mark deprecated.
+
+## 7. Verification
+
+Playwright sweep:
+1. Toggle Adil Nagar Daily Shine off → customer at that pincode sees Daily Shine "Coming Soon", premium still works.
+2. Toggle both off → "We're Coming Soon" + Notify Me; submit creates expansion request visible in admin.
+3. Toggle Premium off in Gomti Nagar → premium tiles disabled.
+4. Booking attempt on disabled service returns validation error pre-payment.
+5. Marketplace + Service Leads flows unaffected for enabled areas.
+
+Final PASS/PARTIAL/FAIL report saved to `/mnt/documents/UrbanWash_Area_Mgmt_Report.md`.
+
+## Technical notes
+
+- Single migration for tables + RLS + GRANTs + realtime publication + seed RPC.
+- Seed data via `supabase--insert` after migration approval.
+- Reuse existing admin nav pattern in `src/routes/admin.tsx`.
+- Availability hook uses TanStack Query with 60s stale + realtime invalidation on `service_areas` changes.
