@@ -115,7 +115,7 @@ async function getOrCreateAuthUser(
   const { data, error } = await admin.auth.admin.createUser({
     email: u.email,
     phone: u.phone,
-    password: PASSWORD,
+    password: u.password,
     email_confirm: true,
     phone_confirm: true,
     user_metadata: { full_name: u.full_name, trial_tag: TRIAL_TAG },
