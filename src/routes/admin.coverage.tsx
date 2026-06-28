@@ -358,7 +358,7 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, onToggleStatus }: {
+function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, onToggleStatus, onSimulate }: {
   zone: Partial<Zone> | null;
   onClose: () => void;
   onChange: (z: Partial<Zone>) => void;
@@ -366,6 +366,7 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onToggleStatus: (z: Zone) => void;
+  onSimulate: (id: string) => void;
 }) {
   if (!zone) return null;
   const set = (patch: Partial<Zone>) => onChange({ ...zone, ...patch });
