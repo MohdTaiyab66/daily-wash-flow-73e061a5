@@ -434,7 +434,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
           sequence_no: s.seq, status: s.status,
           started_at: startedAt, completed_at: completedAt,
           rate_per_car: 17, priority: s.priority ?? "normal",
-          unavailable_reason: s.status === "unavailable" ? "vehicle_not_found" : null,
+          unavailable_reason: s.status === "unavailable" ? "vehicle_not_available" : null,
           unavailable_notes: s.status === "unavailable" ? "Customer's car not at parking" : null,
           unavailable_at: s.status === "unavailable" ? new Date().toISOString() : null,
         });
@@ -491,7 +491,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         if (!exists.data?.id) {
           await admin.from("unavailability_reports").insert({
             service_id: sid, partner_id: ids["partner2"], customer_id: ids["customer4"],
-            reason: "vehicle_not_found", notes: "Vehicle missing at slot",
+            reason: "vehicle_not_available", notes: "Vehicle missing at slot",
             credited_amount: 17,
           });
           inc("unavailability_reports");
