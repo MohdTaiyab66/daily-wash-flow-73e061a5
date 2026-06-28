@@ -22,6 +22,9 @@ type CatalogRow = {
   model: string;
   category: string;
   image_url: string | null;
+  aliases?: string[] | null;
+  body_type?: string | null;
+  popularity?: number | null;
 };
 
 const CATEGORIES = [
@@ -45,6 +48,28 @@ function highlight(text: string, term: string) {
   );
 }
 
+/** Modern fuzzy search: matches make, model, aliases by prefix + substring, scored. */
+function scoreRow(row: CatalogRow, term: string): number {
+  if (!term) return row.popularity ?? 0;
+  const t = term.toLowerCase();
+  const make = row.make.toLowerCase();
+  const model = row.model.toLowerCase();
+  const full = `${make} ${model}`;
+  const aliases = (row.aliases ?? []).map((a) => a.toLowerCase());
+  let score = 0;
+  if (model.startsWith(t)) score += 1000;
+  if (make.startsWith(t)) score += 800;
+  for (const a of aliases) if (a.startsWith(t)) score += 700;
+  if (model.includes(t)) score += 300;
+  if (make.includes(t)) score += 200;
+  if (full.includes(t)) score += 150;
+  for (const a of aliases) if (a.includes(t)) score += 250;
+  // Token prefix match (any word starts with term)
+  for (const tok of full.split(/\s+/)) if (tok.startsWith(t)) score += 100;
+  if (score > 0) score += (row.popularity ?? 0) / 10;
+  return score;
+}
+
 function AddVehicle() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -64,12 +89,13 @@ function AddVehicle() {
   }, []);
 
   const catalogQ = useQuery({
-    queryKey: ["vehicle-catalog-all"],
+    queryKey: ["vehicle-catalog-all-v2"],
     queryFn: async (): Promise<CatalogRow[]> => {
       const { data, error } = await supabase
         .from("vehicle_catalog")
-        .select("id,make,model,category,image_url")
+        .select("id,make,model,category,image_url,aliases,body_type,popularity")
         .eq("active", true)
+        .order("popularity", { ascending: false })
         .order("make")
         .order("model")
         .limit(2000);
@@ -87,16 +113,17 @@ function AddVehicle() {
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return (catalogQ.data ?? []).filter((r) => {
+    const rows = (catalogQ.data ?? []).filter((r) => {
       if (brand && r.make !== brand) return false;
       if (cat !== "all" && r.category !== cat) return false;
       if (!term) return true;
-      return (
-        r.make.toLowerCase().includes(term) ||
-        r.model.toLowerCase().includes(term) ||
-        `${r.make} ${r.model}`.toLowerCase().includes(term)
-      );
+      return scoreRow(r, term) > 0;
     });
+    if (term) {
+      rows.sort((a, b) => scoreRow(b, term) - scoreRow(a, term));
+      return rows.slice(0, 40);
+    }
+    return rows;
   }, [catalogQ.data, query, brand, cat]);
 
   const grouped = useMemo(() => {
