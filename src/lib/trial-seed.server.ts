@@ -580,7 +580,12 @@ export async function runTrialCleanup() {
       if (error) throw error;
       for (const u of data.users) {
         const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-        const isTrial = meta.trial_tag === TRIAL_TAG || (u.email ?? "").includes(`@${DOMAIN}`);
+        const email = (u.email ?? "").toLowerCase();
+        const isTrial = meta.trial_tag === TRIAL_TAG
+          || email.endsWith("@urbanwash.test")  // legacy trial domain
+          || email.endsWith("@partner.urbanwash.app")
+          || email.endsWith("@admin.urbanwash.app")
+          || email.endsWith("@customer.urbanwash.app");
         if (isTrial) ids.push(u.id);
       }
       if (data.users.length < 200) break;
