@@ -7,8 +7,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /* ------------------------------- Test plan ------------------------------- */
 
 export const TRIAL_TAG = "trial-seed-2026";
-const PASSWORD = "TrialPass!2026";
-const DOMAIN = "urbanwash.test";
+// App auth uses phone-as-email with role-scoped domains and per-role passwords
+// (mirrors src/routes/auth.tsx and src/routes/c/auth.tsx).
+const partnerEmail = (p10: string) => `${p10}@partner.urbanwash.app`;
+const adminEmail   = (p10: string) => `${p10}@admin.urbanwash.app`;
+const customerEmail = (p10: string) => `${p10}@customer.urbanwash.app`;
+const partnerPwd  = (p10: string) => `UWP@${p10}#2026`;
+const customerPwd = (p10: string) => `UWC@${p10}#2026`;
 
 // Lucknow / Gomti Nagar cluster
 const HOME_LAT = 26.852;
@@ -18,20 +23,34 @@ type SeedUser = {
   key: string;
   role: "admin" | "partner" | "customer";
   email: string;
-  phone: string;
+  password: string;
+  phone: string;     // E.164 e.g. +919800000001
+  phone10: string;   // 10-digit, used by the in-app OTP flow
   full_name: string;
 };
 
+function mk(
+  key: string,
+  role: "admin" | "partner" | "customer",
+  p10: string,
+  full_name: string,
+): SeedUser {
+  const phone = `+91${p10}`;
+  const email = role === "admin" ? adminEmail(p10) : role === "partner" ? partnerEmail(p10) : customerEmail(p10);
+  const password = role === "customer" ? customerPwd(p10) : partnerPwd(p10);
+  return { key, role, email, password, phone, phone10: p10, full_name };
+}
+
 const USERS: SeedUser[] = [
-  { key: "admin",     role: "admin",    email: `trial+admin@${DOMAIN}`,    phone: "+919800000001", full_name: "Trial Admin" },
-  { key: "partner1",  role: "partner",  email: `trial+partner1@${DOMAIN}`, phone: "+919800000011", full_name: "Aarav Pratap (Partner)" },
-  { key: "partner2",  role: "partner",  email: `trial+partner2@${DOMAIN}`, phone: "+919800000012", full_name: "Imran Qureshi (Partner)" },
-  { key: "partner3",  role: "partner",  email: `trial+partner3@${DOMAIN}`, phone: "+919800000013", full_name: "Vikram Singh (Partner)" },
-  { key: "customer1", role: "customer", email: `trial+c1@${DOMAIN}`,       phone: "+919800000101", full_name: "Riya Sharma" },
-  { key: "customer2", role: "customer", email: `trial+c2@${DOMAIN}`,       phone: "+919800000102", full_name: "Nikhil Verma" },
-  { key: "customer3", role: "customer", email: `trial+c3@${DOMAIN}`,       phone: "+919800000103", full_name: "Pooja Bhatt" },
-  { key: "customer4", role: "customer", email: `trial+c4@${DOMAIN}`,       phone: "+919800000104", full_name: "Saurabh Mehra" },
-  { key: "customer5", role: "customer", email: `trial+c5@${DOMAIN}`,       phone: "+919800000105", full_name: "Ananya Kapoor" },
+  mk("admin",     "admin",    "9800000001", "Trial Admin"),
+  mk("partner1",  "partner",  "9800000011", "Aarav Pratap"),
+  mk("partner2",  "partner",  "9800000012", "Imran Qureshi"),
+  mk("partner3",  "partner",  "9800000013", "Vikram Singh"),
+  mk("customer1", "customer", "9800000101", "Riya Sharma"),
+  mk("customer2", "customer", "9800000102", "Nikhil Verma"),
+  mk("customer3", "customer", "9800000103", "Pooja Bhatt"),
+  mk("customer4", "customer", "9800000104", "Saurabh Mehra"),
+  mk("customer5", "customer", "9800000105", "Ananya Kapoor"),
 ];
 
 /* ------------------------------- Utilities ------------------------------- */
