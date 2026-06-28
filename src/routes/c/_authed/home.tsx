@@ -242,19 +242,10 @@ function CustomerHome() {
       ) : (
         <>
           {/* Subscription hero */}
-          {subscription && (
-            <section className="mt-7">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Best value
-                </span>
-              </div>
-              <Link
-                to="/c/service/$slug"
-                params={{ slug: subscription.slug }}
-                className="relative block overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
+          {subscription && (() => {
+            const dsAllowed = a.daily_shine;
+            const card = (
+              <div className={`relative block overflow-hidden rounded-3xl border ${dsAllowed ? "border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card" : "border-border bg-muted/30 opacity-70"} p-5 transition-all`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
@@ -262,6 +253,7 @@ function CustomerHome() {
                     </span>
                     <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
                     <p className="mt-1 text-xs text-muted-foreground">{subscription.description}</p>
+                    {!dsAllowed && <p className="mt-2 text-[11px] font-semibold text-amber-700">Daily Shine subscription is not yet available in your area.</p>}
                   </div>
                   <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
                 </div>
@@ -270,13 +262,24 @@ function CustomerHome() {
                     <span className="text-2xl font-bold">₹{priceFor(subscription)}</span>
                     <span className="ml-1 text-xs text-muted-foreground">/month</span>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                    View plan <ChevronRight className="h-3.5 w-3.5" />
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${dsAllowed ? "text-primary" : "text-muted-foreground"}`}>
+                    {dsAllowed ? <>View plan <ChevronRight className="h-3.5 w-3.5" /></> : "Coming soon"}
                   </span>
                 </div>
-              </Link>
-            </section>
-          )}
+              </div>
+            );
+            return (
+              <section className="mt-7">
+                <div className="mb-3 flex items-baseline justify-between">
+                  <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Best value</span>
+                </div>
+                {dsAllowed ? (
+                  <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="block hover:-translate-y-0.5 transition-transform">{card}</Link>
+                ) : card}
+              </section>
+            );
+          })()}
 
           {/* One-time washes */}
           {oneTime.length > 0 && (
