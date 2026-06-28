@@ -301,7 +301,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: ["08:00", "09:00", "10:00", "09:00"][i],
         base_amount: 1499, addon_amount: 0, discount_amount: 0, total_amount: 1499,
-        status: "paid", payment_status: "captured",
+        status: "paid", payment_status: "paid",
         razorpay_order_id: orderId, razorpay_payment_id: `pay_trial_${key}`,
         scheduled_time: ["08:00", "09:00", "10:00", "09:00"][i],
         notes: "Trial subscription booking",
