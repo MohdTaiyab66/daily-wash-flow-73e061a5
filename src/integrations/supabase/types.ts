@@ -488,9 +488,131 @@ export type Database = {
           },
         ]
       }
+      coverage_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          message: string | null
+          payload: Json | null
+          resolved_at: string | null
+          severity: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          message?: string | null
+          payload?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string | null
+          payload?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_alerts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coverage_zone_calendar: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          daily_shine_on: boolean
+          date_from: string | null
+          date_to: string | null
+          id: string
+          premium_on: boolean
+          reason: string | null
+          recurring_dow: number[] | null
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          daily_shine_on?: boolean
+          date_from?: string | null
+          date_to?: string | null
+          id?: string
+          premium_on?: boolean
+          reason?: string | null
+          recurring_dow?: number[] | null
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          daily_shine_on?: boolean
+          date_from?: string | null
+          date_to?: string | null
+          id?: string
+          premium_on?: boolean
+          reason?: string | null
+          recurring_dow?: number[] | null
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_zone_calendar_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coverage_zone_history: {
+        Row: {
+          action: string
+          after: Json | null
+          at: string
+          before: Json | null
+          id: string
+          operator: string | null
+          reason: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          action: string
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          operator?: string | null
+          reason?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          action?: string
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          operator?: string | null
+          reason?: string | null
+          zone_id?: string | null
+        }
+        Relationships: []
+      }
       coverage_zones: {
         Row: {
           assignment_radius_m: number | null
+          backup_partner_ids: string[]
           backup_team_id: string | null
           bbox_max_lat: number | null
           bbox_max_lng: number | null
@@ -507,16 +629,22 @@ export type Database = {
           deep_clean_enabled: boolean
           emergency_enabled: boolean
           exterior_enabled: boolean
+          finish_time: string
           id: string
           int_ext_enabled: boolean
           interior_enabled: boolean
           max_active_partners: number | null
+          max_cars_per_partner: number
           max_customers: number | null
           max_daily_capacity: number | null
+          max_route_distance_km: number
           max_services: number | null
+          max_travel_time_min: number
           name: string
+          neighbour_expand: boolean
           polish_enabled: boolean
           polygon: Json | null
+          preferred_partner_ids: string[]
           premium_enabled: boolean
           primary_team_id: string | null
           priority: number
@@ -524,6 +652,7 @@ export type Database = {
           roof_cleaning_enabled: boolean
           route_optimization_radius_m: number | null
           seat_cleaning_enabled: boolean
+          start_time: string
           status: string
           travel_buffer_min: number | null
           updated_at: string
@@ -532,6 +661,7 @@ export type Database = {
         }
         Insert: {
           assignment_radius_m?: number | null
+          backup_partner_ids?: string[]
           backup_team_id?: string | null
           bbox_max_lat?: number | null
           bbox_max_lng?: number | null
@@ -548,16 +678,22 @@ export type Database = {
           deep_clean_enabled?: boolean
           emergency_enabled?: boolean
           exterior_enabled?: boolean
+          finish_time?: string
           id?: string
           int_ext_enabled?: boolean
           interior_enabled?: boolean
           max_active_partners?: number | null
+          max_cars_per_partner?: number
           max_customers?: number | null
           max_daily_capacity?: number | null
+          max_route_distance_km?: number
           max_services?: number | null
+          max_travel_time_min?: number
           name: string
+          neighbour_expand?: boolean
           polish_enabled?: boolean
           polygon?: Json | null
+          preferred_partner_ids?: string[]
           premium_enabled?: boolean
           primary_team_id?: string | null
           priority?: number
@@ -565,6 +701,7 @@ export type Database = {
           roof_cleaning_enabled?: boolean
           route_optimization_radius_m?: number | null
           seat_cleaning_enabled?: boolean
+          start_time?: string
           status?: string
           travel_buffer_min?: number | null
           updated_at?: string
@@ -573,6 +710,7 @@ export type Database = {
         }
         Update: {
           assignment_radius_m?: number | null
+          backup_partner_ids?: string[]
           backup_team_id?: string | null
           bbox_max_lat?: number | null
           bbox_max_lng?: number | null
@@ -589,16 +727,22 @@ export type Database = {
           deep_clean_enabled?: boolean
           emergency_enabled?: boolean
           exterior_enabled?: boolean
+          finish_time?: string
           id?: string
           int_ext_enabled?: boolean
           interior_enabled?: boolean
           max_active_partners?: number | null
+          max_cars_per_partner?: number
           max_customers?: number | null
           max_daily_capacity?: number | null
+          max_route_distance_km?: number
           max_services?: number | null
+          max_travel_time_min?: number
           name?: string
+          neighbour_expand?: boolean
           polish_enabled?: boolean
           polygon?: Json | null
+          preferred_partner_ids?: string[]
           premium_enabled?: boolean
           primary_team_id?: string | null
           priority?: number
@@ -606,6 +750,7 @@ export type Database = {
           roof_cleaning_enabled?: boolean
           route_optimization_radius_m?: number | null
           seat_cleaning_enabled?: boolean
+          start_time?: string
           status?: string
           travel_buffer_min?: number | null
           updated_at?: string
@@ -3340,6 +3485,7 @@ export type Database = {
         Args: { p_date: string; p_ordered_ids: string[]; p_partner_id: string }
         Returns: undefined
       }
+      admin_resolve_alert: { Args: { p_alert: string }; Returns: undefined }
       admin_retry_queue: { Args: { p_queue_id: string }; Returns: Json }
       admin_revenue_customers: {
         Args: never
@@ -3501,8 +3647,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_zone_calendar_delete: { Args: { p_id: string }; Returns: undefined }
+      admin_zone_calendar_upsert: {
+        Args: {
+          p_dow: number[]
+          p_ds: boolean
+          p_from: string
+          p_id: string
+          p_premium: boolean
+          p_reason: string
+          p_to: string
+          p_zone: string
+        }
+        Returns: string
+      }
       admin_zone_delete: { Args: { p_id: string }; Returns: undefined }
       admin_zone_duplicate: { Args: { p_id: string }; Returns: string }
+      admin_zone_rollback: { Args: { p_history_id: string }; Returns: string }
       admin_zone_set_status: {
         Args: { p_id: string; p_status: string }
         Returns: undefined
@@ -3534,6 +3695,7 @@ export type Database = {
         Returns: string
       }
       cleanup_old_service_photos: { Args: never; Returns: Json }
+      compute_coverage_alerts: { Args: never; Returns: number }
       confirm_customer_booking: {
         Args: {
           p_addons?: Json
@@ -3607,7 +3769,6 @@ export type Database = {
       get_coverage_at: {
         Args: { p_lat: number; p_lng: number }
         Returns: {
-          assignment_radius_m: number
           corporate_fleet: boolean
           cutter_polish: boolean
           daily_shine: boolean
@@ -3617,16 +3778,11 @@ export type Database = {
           int_ext: boolean
           interior: boolean
           matched: boolean
-          max_active_partners: number
-          max_daily_capacity: number
           polish: boolean
           premium: boolean
-          priority: number
           roof_cleaning: boolean
-          route_optimization_radius_m: number
           seat_cleaning: boolean
           status: string
-          travel_buffer_min: number
           washing: boolean
           zone_id: string
           zone_name: string
@@ -3639,6 +3795,45 @@ export type Database = {
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
         Returns: Json
+      }
+      get_zone_capacity: {
+        Args: { p_date?: string; p_zone: string }
+        Returns: {
+          booked: number
+          daily_capacity: number
+          remaining: number
+          used_pct: number
+        }[]
+      }
+      get_zone_dashboard: {
+        Args: never
+        Returns: {
+          active_customers: number
+          active_partners: number
+          available_partners: number
+          avg_rating: number
+          booked: number
+          calendar_ds_on: boolean
+          calendar_premium_on: boolean
+          capacity_used_pct: number
+          complaints_open: number
+          daily_capacity: number
+          daily_shine_enabled: boolean
+          ds_customers: number
+          leads_pending: number
+          marketplace_queue: number
+          premium_customers: number
+          premium_enabled: boolean
+          remaining: number
+          renewals_today: number
+          revenue_month: number
+          revenue_today: number
+          services_completed: number
+          services_today: number
+          status: string
+          zone_id: string
+          zone_name: string
+        }[]
       }
       has_role: {
         Args: {
@@ -3656,6 +3851,10 @@ export type Database = {
         Returns: number
       }
       is_admin_or_ops: { Args: { _uid: string }; Returns: boolean }
+      is_daily_shine_open: {
+        Args: { p_date?: string; p_zone: string }
+        Returns: boolean
+      }
       list_assignment_offers: {
         Args: never
         Returns: {
@@ -3774,6 +3973,19 @@ export type Database = {
           working_days: number
         }[]
       }
+      rank_expansion_requests: {
+        Args: never
+        Returns: {
+          area: string
+          ds_count: number
+          nearest_distance_km: number
+          nearest_zone: string
+          potential_revenue: number
+          premium_count: number
+          requests: number
+          suggested_priority: string
+        }[]
+      }
       respond_subscription_offer: {
         Args: { p_accept: boolean; p_offer_id: string }
         Returns: Json
@@ -3796,6 +4008,16 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      simulate_zone_change: {
+        Args: { p_patch: Json; p_zone: string }
+        Returns: {
+          delta_customers: number
+          delta_houses: number
+          delta_partners: number
+          delta_requests: number
+          est_monthly_revenue: number
+        }[]
+      }
       submit_parking_issue: {
         Args: {
           p_lat: number
@@ -3827,6 +4049,13 @@ export type Database = {
         Returns: Json
       }
       sweep_subscription_offers: { Args: never; Returns: number }
+      zone_calendar_mask: {
+        Args: { p_date: string; p_zone: string }
+        Returns: {
+          daily_shine_on: boolean
+          premium_on: boolean
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "supervisor" | "partner" | "customer" | "ops_manager"
