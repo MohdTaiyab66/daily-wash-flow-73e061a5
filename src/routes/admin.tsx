@@ -70,7 +70,7 @@ function AdminLayout() {
             </Link>
             <p className="mt-1 text-xs text-muted-foreground">Admin Console</p>
           </div>
-          <nav className="flex-1 space-y-1 px-3">
+          <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto px-3 pb-4">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
