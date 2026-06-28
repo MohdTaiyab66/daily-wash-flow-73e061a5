@@ -453,7 +453,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
           const { error: earnErr } = await admin.from("earnings").insert({
             partner_id: pid, earned_on: today, cars_completed: 1,
             base_amount: 17, incentive_amount: 0, referral_amount: 0,
-            penalty_amount: 0, total_amount: 17,
+            penalty_amount: 0,
           });
           if (earnErr) throw new Error("earnings.insert: " + earnErr.message);
           inc("earnings");
