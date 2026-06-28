@@ -117,9 +117,42 @@ function CustomerProfilePage() {
         </div>
       </Section>
 
+      <Section title="Today's route">
+        {data.today_route ? (
+          <Card className="p-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">Seq #{(data.today_route as any).manual_sequence_no ?? (data.today_route as any).sequence_no ?? "—"}</Badge>
+              <Badge variant="outline">{(data.today_route as any).time_slot ?? "—"}</Badge>
+              <Badge>{(data.today_route as any).status}</Badge>
+              {(data.today_route as any).cluster_id && <Badge variant="secondary">Cluster {(data.today_route as any).cluster_id}</Badge>}
+              {(data.today_route as any).locked_position && <Badge variant="secondary">Locked</Badge>}
+              {(data.today_route as any).is_emergency && <Badge variant="destructive">Emergency</Badge>}
+              {(data.today_route as any).eta_at && <span className="text-xs text-muted-foreground">ETA {new Date((data.today_route as any).eta_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
+              {(data.today_route as any).partners && <span className="text-xs text-muted-foreground">· {(data.today_route as any).partners.full_name}</span>}
+            </div>
+          </Card>
+        ) : (
+          <p className="text-sm text-muted-foreground">No route assignment for today.</p>
+        )}
+      </Section>
+
+      {data.marketplace && (
+        <Section title="Marketplace status">
+          <Card className="p-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={(data.marketplace as any).status === "assigned" ? "default" : "secondary"}>{(data.marketplace as any).status}</Badge>
+              <span className="text-xs text-muted-foreground">Radius {(data.marketplace as any).radius_km} km</span>
+              {(data.marketplace as any).offer_expires_at && <span className="text-xs text-muted-foreground">Offer expires {new Date((data.marketplace as any).offer_expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
+              <span className="ml-auto text-xs text-muted-foreground">Updated {new Date((data.marketplace as any).updated_at).toLocaleString()}</span>
+            </div>
+          </Card>
+        </Section>
+      )}
+
       <Section title="Monthly wash tracker">
         <MonthlyWashTracker customer={c} />
       </Section>
+
 
 
 
