@@ -58,8 +58,10 @@ function LocationSearch() {
 
   const submitWaitlist = async () => {
     if (!/^\d{10}$/.test(notifyPhone)) { toast.error("Enter a valid 10-digit phone"); return; }
-    const { error } = await (supabase as any).from("area_waitlist").insert({
-      phone: notifyPhone, area: q.trim() || outOfArea || "Unknown",
+    const { error } = await (supabase as any).from("expansion_requests").insert({
+      phone: notifyPhone,
+      area_name: q.trim() || outOfArea || "Unknown",
+      interested_service: "general",
     });
     if (error) { toast.error(error.message); return; }
     setNotified(true);
