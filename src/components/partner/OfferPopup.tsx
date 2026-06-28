@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { VehicleImage } from "@/components/VehicleImage";
 import {
   Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route, ParkingCircle, User as UserIcon,
@@ -23,47 +24,18 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const { data: offer } = useQuery({
     queryKey: ["ds-offer-popup", partnerId],
     enabled: !!partnerId,
+    refetchInterval: 15000,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("subscription_offers")
-        .select(`
-          id, queue_id, expires_at, offered_at,
-          distance_m, distance_from_route_m, route_delta_seconds,
-          extra_per_day_paise, extra_per_month_paise,
-          score, scope,
-          subscription_assignment_queue!inner(
-            area, vehicle_category, service_required_before, customer_id,
-            bookings!inner(
-              vehicle_id, address_id, notes,
-              customer_vehicles(make, model, category, color, image_path, parking_notes, registration_number),
-              customer_addresses(label, address_line, area, parking_notes)
-            )
-          )
-        `)
-        .eq("partner_id", partnerId)
-        .eq("response", "pending")
-        .order("offered_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!data) return null;
-      // Fetch customer name separately (no FK in select chain)
-      const cid = (data as any).subscription_assignment_queue?.customer_id;
-      let customerName: string | null = null;
-      if (cid) {
-        const { data: prof } = await supabase
-          .from("customer_profiles")
-          .select("full_name")
-          .eq("user_id", cid)
-          .maybeSingle();
-        customerName = prof?.full_name ?? null;
-        if (!customerName) {
-          const { data: c } = await supabase.from("customers").select("full_name").eq("id", cid).maybeSingle();
-          customerName = c?.full_name ?? null;
-        }
-      }
-      return { ...(data as any), _customer_name: customerName };
+      // Partner role cannot read bookings/customer_vehicles/customer_addresses via RLS,
+      // so use a SECURITY DEFINER RPC that bundles the joined payload.
+      const { data, error } = await (supabase as any).rpc("get_pending_offer_for_partner", {
+        p_partner_id: partnerId,
+      });
+      if (error) throw error;
+      return (data as any) ?? null;
     },
   });
+
 
   // Realtime: invalidate immediately on insert/update
   useEffect(() => {
@@ -184,6 +156,10 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        <VisuallyHidden>
+          <DialogTitle>New Daily Shine Offer</DialogTitle>
+          <DialogDescription>Review the offer details and accept or decline before the countdown ends.</DialogDescription>
+        </VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-border bg-primary px-5 pb-3 pt-5 text-primary-foreground">
           <div className="flex items-center gap-2">
