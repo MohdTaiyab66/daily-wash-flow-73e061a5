@@ -278,7 +278,7 @@ function ServiceLeadsPage() {
                 <Label>Detailer</Label>
                 <Select onValueChange={(v) => {
                   const d = (detailersQ.data ?? []).find((x: any) => x.id === v);
-                  if (d) assignMut.mutate({ leadId: editLead.id, detailerId: d.id, detailerName: d.full_name });
+                  if (d) assignMut.mutate({ leadId: editLead.id, detailerId: d.id, detailerName: d.full_name ?? "Detailer" });
                 }}>
                   <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick a detailer" /></SelectTrigger>
                   <SelectContent>
