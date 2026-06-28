@@ -22,6 +22,7 @@ import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
+import { Route as AdminServiceAreasRouteImport } from './routes/admin.service-areas'
 import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
@@ -138,6 +139,11 @@ const AdminServicesRoute = AdminServicesRouteImport.update({
 const AdminServiceLeadsRoute = AdminServiceLeadsRouteImport.update({
   id: '/service-leads',
   path: '/service-leads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminServiceAreasRoute = AdminServiceAreasRouteImport.update({
+  id: '/service-areas',
+  path: '/service-areas',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -645,6 +654,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -777,6 +788,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -931,6 +943,13 @@ declare module '@tanstack/react-router' {
       path: '/service-leads'
       fullPath: '/admin/service-leads'
       preLoaderRoute: typeof AdminServiceLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/service-areas': {
+      id: '/admin/service-areas'
+      path: '/service-areas'
+      fullPath: '/admin/service-areas'
+      preLoaderRoute: typeof AdminServiceAreasRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/route-manager': {
@@ -1392,6 +1411,7 @@ interface AdminRouteChildren {
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
   AdminRouteManagerRoute: typeof AdminRouteManagerRoute
+  AdminServiceAreasRoute: typeof AdminServiceAreasRoute
   AdminServiceLeadsRoute: typeof AdminServiceLeadsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -1420,6 +1440,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminRevenueRoute: AdminRevenueRoute,
   AdminRouteManagerRoute: AdminRouteManagerRoute,
+  AdminServiceAreasRoute: AdminServiceAreasRoute,
   AdminServiceLeadsRoute: AdminServiceLeadsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
