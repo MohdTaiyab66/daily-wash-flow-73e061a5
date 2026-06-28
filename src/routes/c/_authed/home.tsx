@@ -297,21 +297,15 @@ function CustomerHome() {
                   ))}
                 {oneTime.map((s) => {
                   const Icon = SERVICE_ICON[s.slug] ?? Droplets;
-                  return (
-                    <Link
-                      key={s.id}
-                      to="/c/service/$slug"
-                      params={{ slug: s.slug }}
-                      className="group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
-                    >
+                  const allowed = isServiceAllowed(s.slug, a);
+                  const inner = (
+                    <>
                       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent text-primary">
                         <Icon className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold">{s.name}</h4>
-                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
-                          {s.description}
-                        </p>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.description}</p>
                         <div className="mt-1.5 flex items-center gap-3">
                           <span className="text-sm font-bold text-foreground">₹{priceFor(s)}</span>
                           {s.duration_minutes ? (
@@ -319,10 +313,17 @@ function CustomerHome() {
                               <Clock className="h-3 w-3" /> {s.duration_minutes} min
                             </span>
                           ) : null}
+                          {!allowed && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Coming soon</span>}
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </Link>
+                    </>
+                  );
+                  const cls = `group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all ${allowed ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm" : "opacity-60 pointer-events-none"}`;
+                  return allowed ? (
+                    <Link key={s.id} to="/c/service/$slug" params={{ slug: s.slug }} className={cls}>{inner}</Link>
+                  ) : (
+                    <div key={s.id} className={cls}>{inner}</div>
                   );
                 })}
               </div>
