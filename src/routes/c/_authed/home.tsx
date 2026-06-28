@@ -18,7 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { SERVICE_AREA_NAMES } from "@/lib/areas";
+import { useAreaAvailability, isServiceAllowed } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
@@ -137,7 +137,10 @@ function CustomerHome() {
   const subscription = services.find((s) => s.service_type === "subscription");
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
-  const showCatalog = !area || SERVICE_AREA_NAMES.includes(area);
+  const availability = useAreaAvailability();
+  const a = availability.data;
+  const bothOff = !a.daily_shine && !a.premium;
+  const showCatalog = !area || !bothOff;
 
   return (
     <div className="px-5 pt-6">
@@ -239,19 +242,10 @@ function CustomerHome() {
       ) : (
         <>
           {/* Subscription hero */}
-          {subscription && (
-            <section className="mt-7">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Best value
-                </span>
-              </div>
-              <Link
-                to="/c/service/$slug"
-                params={{ slug: subscription.slug }}
-                className="relative block overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
+          {subscription && (() => {
+            const dsAllowed = a.daily_shine;
+            const card = (
+              <div className={`relative block overflow-hidden rounded-3xl border ${dsAllowed ? "border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card" : "border-border bg-muted/30 opacity-70"} p-5 transition-all`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
@@ -259,6 +253,7 @@ function CustomerHome() {
                     </span>
                     <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
                     <p className="mt-1 text-xs text-muted-foreground">{subscription.description}</p>
+                    {!dsAllowed && <p className="mt-2 text-[11px] font-semibold text-amber-700">Daily Shine subscription is not yet available in your area.</p>}
                   </div>
                   <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
                 </div>
@@ -267,13 +262,24 @@ function CustomerHome() {
                     <span className="text-2xl font-bold">₹{priceFor(subscription)}</span>
                     <span className="ml-1 text-xs text-muted-foreground">/month</span>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                    View plan <ChevronRight className="h-3.5 w-3.5" />
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${dsAllowed ? "text-primary" : "text-muted-foreground"}`}>
+                    {dsAllowed ? <>View plan <ChevronRight className="h-3.5 w-3.5" /></> : "Coming soon"}
                   </span>
                 </div>
-              </Link>
-            </section>
-          )}
+              </div>
+            );
+            return (
+              <section className="mt-7">
+                <div className="mb-3 flex items-baseline justify-between">
+                  <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Best value</span>
+                </div>
+                {dsAllowed ? (
+                  <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="block hover:-translate-y-0.5 transition-transform">{card}</Link>
+                ) : card}
+              </section>
+            );
+          })()}
 
           {/* One-time washes */}
           {oneTime.length > 0 && (
@@ -291,21 +297,15 @@ function CustomerHome() {
                   ))}
                 {oneTime.map((s) => {
                   const Icon = SERVICE_ICON[s.slug] ?? Droplets;
-                  return (
-                    <Link
-                      key={s.id}
-                      to="/c/service/$slug"
-                      params={{ slug: s.slug }}
-                      className="group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
-                    >
+                  const allowed = isServiceAllowed(s.slug, a);
+                  const inner = (
+                    <>
                       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent text-primary">
                         <Icon className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold">{s.name}</h4>
-                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
-                          {s.description}
-                        </p>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.description}</p>
                         <div className="mt-1.5 flex items-center gap-3">
                           <span className="text-sm font-bold text-foreground">₹{priceFor(s)}</span>
                           {s.duration_minutes ? (
@@ -313,10 +313,17 @@ function CustomerHome() {
                               <Clock className="h-3 w-3" /> {s.duration_minutes} min
                             </span>
                           ) : null}
+                          {!allowed && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Coming soon</span>}
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </Link>
+                    </>
+                  );
+                  const cls = `group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all ${allowed ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm" : "opacity-60 pointer-events-none"}`;
+                  return allowed ? (
+                    <Link key={s.id} to="/c/service/$slug" params={{ slug: s.slug }} className={cls}>{inner}</Link>
+                  ) : (
+                    <div key={s.id} className={cls}>{inner}</div>
                   );
                 })}
               </div>
@@ -385,9 +392,16 @@ function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () 
     try {
       const { data: u } = await supabase.auth.getUser();
       const phone = u.user?.phone ?? null;
-      await supabase.from("area_waitlist").insert({
-        area,
+      let geo: any = {};
+      try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+      await (supabase as any).from("expansion_requests").insert({
+        customer_id: u.user?.id ?? null,
         phone: phone ?? "",
+        area_name: area,
+        pincode: geo.pincode ?? null,
+        lat: geo.lat ?? null,
+        lng: geo.lng ?? null,
+        interested_service: "general",
       });
       toast.success("We'll notify you when we launch in your area!");
     } catch {
@@ -401,8 +415,7 @@ function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () 
         COMING <span className="text-primary">SOON</span>
       </h2>
       <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-        We're currently live in select areas and expanding quickly. Get notified when we are near
-        you!
+        Urban Wash is expanding rapidly. We'll notify you once services become available in your area.
       </p>
       <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
         <BellRing className="mr-2 h-4 w-4" /> Notify me!

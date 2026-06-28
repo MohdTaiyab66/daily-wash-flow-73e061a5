@@ -885,6 +885,56 @@ export type Database = {
           },
         ]
       }
+      expansion_requests: {
+        Row: {
+          area_name: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          interested_service: string | null
+          lat: number | null
+          lng: number | null
+          notes: string | null
+          phone: string | null
+          pincode: string | null
+          status: string
+        }
+        Insert: {
+          area_name?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          interested_service?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          status?: string
+        }
+        Update: {
+          area_name?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          interested_service?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          phone?: string | null
+          pincode?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expansion_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       multi_vehicle_discounts: {
         Row: {
           active: boolean
@@ -1769,6 +1819,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_areas: {
+        Row: {
+          center_lat: number | null
+          center_lng: number | null
+          city: string
+          created_at: string
+          cutter_polish_enabled: boolean
+          daily_shine_enabled: boolean
+          deep_clean_enabled: boolean
+          exterior_enabled: boolean
+          id: string
+          interior_enabled: boolean
+          is_active: boolean
+          launch_date: string | null
+          name: string
+          notes: string | null
+          pincodes: string[]
+          polish_enabled: boolean
+          polygon: Json | null
+          premium_enabled: boolean
+          radius_km: number
+          roof_cleaning_enabled: boolean
+          seat_cleaning_enabled: boolean
+          state: string
+          updated_at: string
+          washing_enabled: boolean
+        }
+        Insert: {
+          center_lat?: number | null
+          center_lng?: number | null
+          city?: string
+          created_at?: string
+          cutter_polish_enabled?: boolean
+          daily_shine_enabled?: boolean
+          deep_clean_enabled?: boolean
+          exterior_enabled?: boolean
+          id?: string
+          interior_enabled?: boolean
+          is_active?: boolean
+          launch_date?: string | null
+          name: string
+          notes?: string | null
+          pincodes?: string[]
+          polish_enabled?: boolean
+          polygon?: Json | null
+          premium_enabled?: boolean
+          radius_km?: number
+          roof_cleaning_enabled?: boolean
+          seat_cleaning_enabled?: boolean
+          state?: string
+          updated_at?: string
+          washing_enabled?: boolean
+        }
+        Update: {
+          center_lat?: number | null
+          center_lng?: number | null
+          city?: string
+          created_at?: string
+          cutter_polish_enabled?: boolean
+          daily_shine_enabled?: boolean
+          deep_clean_enabled?: boolean
+          exterior_enabled?: boolean
+          id?: string
+          interior_enabled?: boolean
+          is_active?: boolean
+          launch_date?: string | null
+          name?: string
+          notes?: string | null
+          pincodes?: string[]
+          polish_enabled?: boolean
+          polygon?: Json | null
+          premium_enabled?: boolean
+          radius_km?: number
+          roof_cleaning_enabled?: boolean
+          seat_cleaning_enabled?: boolean
+          state?: string
+          updated_at?: string
+          washing_enabled?: boolean
+        }
+        Relationships: []
       }
       service_catalog: {
         Row: {
@@ -3307,6 +3438,26 @@ export type Database = {
           p_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      get_area_availability: {
+        Args: { p_lat?: number; p_lng?: number; p_pincode?: string }
+        Returns: {
+          area_id: string
+          area_name: string
+          cutter_polish: boolean
+          daily_shine: boolean
+          deep_clean: boolean
+          distance_km: number
+          exterior: boolean
+          interior: boolean
+          is_active: boolean
+          matched: boolean
+          polish: boolean
+          premium: boolean
+          roof_cleaning: boolean
+          seat_cleaning: boolean
+          washing: boolean
+        }[]
       }
       get_assigned_partner_public: {
         Args: { p_partner_id: string }

@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, Sparkles, Bell } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, Sparkles, Bell, Globe, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/route-manager" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/offer-history" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings" | "/admin/service-leads" | "/admin/addon-queue"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: any; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/import", label: "Import Customer", icon: UserPlus },
@@ -55,6 +55,8 @@ function AdminLayout() {
     { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
     { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },
+    { to: "/admin/service-areas", label: "Service Areas", icon: Globe },
+    { to: "/admin/expansion-requests", label: "Expansion Requests", icon: BellRing },
     { to: "/admin/settings", label: "Settings", icon: Settings },
   ];
   return (

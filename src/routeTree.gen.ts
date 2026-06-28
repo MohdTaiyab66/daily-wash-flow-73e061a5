@@ -22,6 +22,7 @@ import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
+import { Route as AdminServiceAreasRouteImport } from './routes/admin.service-areas'
 import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
@@ -35,6 +36,7 @@ import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
+import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
@@ -140,6 +142,11 @@ const AdminServiceLeadsRoute = AdminServiceLeadsRouteImport.update({
   path: '/service-leads',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminServiceAreasRoute = AdminServiceAreasRouteImport.update({
+  id: '/service-areas',
+  path: '/service-areas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
   id: '/route-manager',
   path: '/route-manager',
@@ -203,6 +210,11 @@ const AdminImportRoute = AdminImportRouteImport.update({
 const AdminFraudRoute = AdminFraudRouteImport.update({
   id: '/fraud',
   path: '/fraud',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
+  id: '/expansion-requests',
+  path: '/expansion-requests',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
@@ -430,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -443,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -495,6 +509,7 @@ export interface FileRoutesByTo {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -508,6 +523,7 @@ export interface FileRoutesByTo {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -563,6 +579,7 @@ export interface FileRoutesById {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -576,6 +593,7 @@ export interface FileRoutesById {
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/route-manager': typeof AdminRouteManagerRoute
+  '/admin/service-areas': typeof AdminServiceAreasRoute
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -632,6 +650,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -645,6 +664,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -697,6 +717,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -710,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -764,6 +786,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -777,6 +800,7 @@ export interface FileRouteTypes {
     | '/admin/renewals'
     | '/admin/revenue'
     | '/admin/route-manager'
+    | '/admin/service-areas'
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
@@ -933,6 +957,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServiceLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/service-areas': {
+      id: '/admin/service-areas'
+      path: '/service-areas'
+      fullPath: '/admin/service-areas'
+      preLoaderRoute: typeof AdminServiceAreasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/route-manager': {
       id: '/admin/route-manager'
       path: '/route-manager'
@@ -1022,6 +1053,13 @@ declare module '@tanstack/react-router' {
       path: '/fraud'
       fullPath: '/admin/fraud'
       preLoaderRoute: typeof AdminFraudRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/expansion-requests': {
+      id: '/admin/expansion-requests'
+      path: '/expansion-requests'
+      fullPath: '/admin/expansion-requests'
+      preLoaderRoute: typeof AdminExpansionRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/customers': {
@@ -1379,6 +1417,7 @@ interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
+  AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
@@ -1392,6 +1431,7 @@ interface AdminRouteChildren {
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
   AdminRouteManagerRoute: typeof AdminRouteManagerRoute
+  AdminServiceAreasRoute: typeof AdminServiceAreasRoute
   AdminServiceLeadsRoute: typeof AdminServiceLeadsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -1407,6 +1447,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
+  AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
@@ -1420,6 +1461,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminRevenueRoute: AdminRevenueRoute,
   AdminRouteManagerRoute: AdminRouteManagerRoute,
+  AdminServiceAreasRoute: AdminServiceAreasRoute,
   AdminServiceLeadsRoute: AdminServiceLeadsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -1503,13 +1545,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
