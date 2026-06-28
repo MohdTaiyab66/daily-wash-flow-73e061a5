@@ -67,19 +67,27 @@ export function RecentServiceFeed({ userId }: { userId: string | null }) {
   }, [userId, qc]);
 
   // Listen for completion → toast notification
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [, setSeenIds] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!recentQ.data) return;
-    const fresh = recentQ.data.filter((s) => !seenIds.has(s.service_id) && Date.parse(s.completed_at) > Date.now() - 60_000);
-    if (fresh.length > 0) {
-      fresh.forEach((s) => toast.success(`${s.service_name ?? "Wash"} completed by ${s.partner_name ?? "your partner"}`, {
-        description: `Tap My Plan to see photos. Report any issue within 2 hours.`,
-      }));
-      setSeenIds(new Set([...seenIds, ...fresh.map((s) => s.service_id)]));
-    } else if (seenIds.size === 0) {
-      setSeenIds(new Set(recentQ.data.map((s) => s.service_id)));
-    }
-  }, [recentQ.data, seenIds]);
+    setSeenIds((prev) => {
+      const fresh = recentQ.data!.filter(
+        (s) => !prev.has(s.service_id) && Date.parse(s.completed_at) > Date.now() - 60_000,
+      );
+      if (fresh.length > 0) {
+        fresh.forEach((s) =>
+          toast.success(`${s.service_name ?? "Wash"} completed by ${s.partner_name ?? "your partner"}`, {
+            description: `Tap My Plan to see photos. Report any issue within 2 hours.`,
+          }),
+        );
+        return new Set([...prev, ...fresh.map((s) => s.service_id)]);
+      }
+      if (prev.size === 0 && recentQ.data!.length > 0) {
+        return new Set(recentQ.data!.map((s) => s.service_id));
+      }
+      return prev;
+    });
+  }, [recentQ.data]);
 
   const list = recentQ.data ?? [];
 

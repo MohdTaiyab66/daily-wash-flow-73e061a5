@@ -28,16 +28,17 @@ function NotificationsPage() {
   // Subscribe to realtime new rows
   useEffect(() => {
     let channel: any;
+    let cancelled = false;
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
+      if (!u.user || cancelled) return;
       channel = supabase
-        .channel("partner-notifications-rt")
+        .channel(`partner-notifications-rt-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
           () => qc.invalidateQueries({ queryKey: ["partner-notifications"] }))
         .subscribe();
     })();
-    return () => { if (channel) supabase.removeChannel(channel); };
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
   }, [qc]);
 
   const markAll = useMutation({
