@@ -70,45 +70,60 @@ function CustomerPinMap({ rows }: { rows: any[] }) {
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const [error, setError] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       if (!window.google?.maps) {
         const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
         if (!key) throw new Error("missing key");
         await new Promise<void>((resolve) => {
-          window.__initLovableMap = () => resolve();
+          (window as any).__initLovableMap = () => resolve();
+          const existing = document.querySelector<HTMLScriptElement>('script[data-lovable-maps]');
+          if (existing) { existing.addEventListener("load", () => resolve()); return; }
           const s = document.createElement("script");
-          s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap`;
-          s.async = true;
+          s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap&libraries=geometry,marker`;
+          s.async = true; s.dataset.lovableMaps = "1";
           document.head.appendChild(s);
         });
       }
-      if (!ref.current || mapRef.current) return;
+      if (window.google?.maps?.importLibrary) {
+        await window.google.maps.importLibrary("maps");
+        await window.google.maps.importLibrary("marker");
+      }
+      if (cancelled || !ref.current || mapRef.current) return;
       mapRef.current = new window.google.maps.Map(ref.current, { center: { lat: 26.8467, lng: 80.9462 }, zoom: 12, mapTypeControl: false, streetViewControl: false });
+      setReady(true);
     };
     load().catch(() => setError(true));
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || !window.google?.maps) return;
+    if (!ready || !mapRef.current || !window.google?.maps?.Marker) return;
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     const bounds = new window.google.maps.LatLngBounds();
+    let any = false;
     rows.forEach((c) => {
-      const pos = { lat: Number(c.latitude), lng: Number(c.longitude) };
+      const lat = Number(c.latitude), lng = Number(c.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const pos = { lat, lng };
       const marker = new window.google.maps.Marker({ position: pos, map: mapRef.current, title: c.full_name, icon: markerIcon(c.bucket) });
       const vehicle = c.vehicles?.[0];
       const info = new window.google.maps.InfoWindow({ content: `<div style="font:14px system-ui;min-width:220px"><b>${c.full_name}</b><br/>+91 ${c.phone ?? "—"}<br/>${c.area ?? "—"}<br/>${vehicle ? `${vehicle.make ?? ""} ${vehicle.model ?? ""} · ${vehicle.registration_number ?? ""}` : "No vehicle"}<br/>Plan: ${c.subscription_plan ?? "—"}<br/>Renewal: ${c.subscription_end ?? "—"}<br/>Partner: ${c.assigned_partner?.full_name ?? "Unassigned"}</div>` });
       marker.addListener("click", () => info.open({ anchor: marker, map: mapRef.current }));
       markersRef.current.push(marker);
       bounds.extend(pos);
+      any = true;
     });
-    if (rows.length) mapRef.current.fitBounds(bounds, 48);
-  }, [rows]);
+    if (any) mapRef.current.fitBounds(bounds, 48);
+  }, [rows, ready]);
 
   return <Card className="overflow-hidden p-0"><div ref={ref} className="h-[520px] w-full bg-muted" />{error && <p className="p-4 text-sm text-muted-foreground">Map unavailable.</p>}</Card>;
 }
+
 
 function markerIcon(bucket: string) {
   const color = bucket === "active" ? "#16a34a" : bucket === "renewal_due" ? "#f59e0b" : "#dc2626";
