@@ -166,8 +166,8 @@ async function ensureCatalogs(admin: SupabaseClient) {
 
 type SeedReport = {
   ok: boolean;
-  password: string;
-  accounts: Array<{ key: string; email: string; phone: string; role: string; user_id: string; existed: boolean }>;
+  passwords: { partner: string; admin: string; customer: string };
+  accounts: Array<{ key: string; email: string; password: string; phone: string; phone10: string; role: string; user_id: string; existed: boolean }>;
   rows: Record<string, number>;
   workflows: Array<{ step: string; status: "PASS" | "FAIL" | "SKIP"; detail?: string }>;
   errors: string[];
@@ -175,7 +175,7 @@ type SeedReport = {
 
 export async function runTrialSeed(): Promise<SeedReport> {
   const admin = await getAdmin();
-  const report: SeedReport = { ok: true, password: PASSWORD, accounts: [], rows: {}, workflows: [], errors: [] };
+  const report: SeedReport = { ok: true, passwords: { partner: "UWP@<phone10>#2026", admin: "UWP@<phone10>#2026", customer: "UWC@<phone10>#2026" }, accounts: [], rows: {}, workflows: [], errors: [] };
   const inc = (k: string, n = 1) => { report.rows[k] = (report.rows[k] ?? 0) + n; };
   const wf = (step: string, status: "PASS" | "FAIL" | "SKIP", detail?: string) => report.workflows.push({ step, status, detail });
 
