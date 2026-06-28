@@ -41,7 +41,7 @@ function loadGoogleMaps(): Promise<void> {
 
 type Zone = {
   id: string; name: string; city: string | null; color: string; priority: number;
-  zone_type: "radius" | "polygon"; status: "active" | "paused";
+  zone_type: "radius" | "polygon"; status: "active" | "paused" | "coming_soon";
   center_lat: number | null; center_lng: number | null; radius_m: number | null;
   polygon: number[][] | null;
   daily_shine_enabled: boolean; premium_enabled: boolean;
@@ -52,6 +52,9 @@ type Zone = {
   max_daily_capacity: number | null; max_active_partners: number | null;
   assignment_radius_m: number | null; route_optimization_radius_m: number | null;
   travel_buffer_min: number | null;
+  max_cars_per_partner: number; max_route_distance_km: number; max_travel_time_min: number;
+  start_time: string; finish_time: string;
+  preferred_partner_ids: string[]; backup_partner_ids: string[]; neighbour_expand: boolean;
 };
 
 const SERVICE_FLAGS: Array<{ key: keyof Zone; label: string }> = [
