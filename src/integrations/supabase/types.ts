@@ -488,6 +488,132 @@ export type Database = {
           },
         ]
       }
+      coverage_zones: {
+        Row: {
+          assignment_radius_m: number | null
+          backup_team_id: string | null
+          bbox_max_lat: number | null
+          bbox_max_lng: number | null
+          bbox_min_lat: number | null
+          bbox_min_lng: number | null
+          center_lat: number | null
+          center_lng: number | null
+          city: string | null
+          color: string
+          corporate_fleet_enabled: boolean
+          created_at: string
+          cutter_polish_enabled: boolean
+          daily_shine_enabled: boolean
+          deep_clean_enabled: boolean
+          emergency_enabled: boolean
+          exterior_enabled: boolean
+          id: string
+          int_ext_enabled: boolean
+          interior_enabled: boolean
+          max_active_partners: number | null
+          max_customers: number | null
+          max_daily_capacity: number | null
+          max_services: number | null
+          name: string
+          polish_enabled: boolean
+          polygon: Json | null
+          premium_enabled: boolean
+          primary_team_id: string | null
+          priority: number
+          radius_m: number | null
+          roof_cleaning_enabled: boolean
+          route_optimization_radius_m: number | null
+          seat_cleaning_enabled: boolean
+          status: string
+          travel_buffer_min: number | null
+          updated_at: string
+          washing_enabled: boolean
+          zone_type: string
+        }
+        Insert: {
+          assignment_radius_m?: number | null
+          backup_team_id?: string | null
+          bbox_max_lat?: number | null
+          bbox_max_lng?: number | null
+          bbox_min_lat?: number | null
+          bbox_min_lng?: number | null
+          center_lat?: number | null
+          center_lng?: number | null
+          city?: string | null
+          color?: string
+          corporate_fleet_enabled?: boolean
+          created_at?: string
+          cutter_polish_enabled?: boolean
+          daily_shine_enabled?: boolean
+          deep_clean_enabled?: boolean
+          emergency_enabled?: boolean
+          exterior_enabled?: boolean
+          id?: string
+          int_ext_enabled?: boolean
+          interior_enabled?: boolean
+          max_active_partners?: number | null
+          max_customers?: number | null
+          max_daily_capacity?: number | null
+          max_services?: number | null
+          name: string
+          polish_enabled?: boolean
+          polygon?: Json | null
+          premium_enabled?: boolean
+          primary_team_id?: string | null
+          priority?: number
+          radius_m?: number | null
+          roof_cleaning_enabled?: boolean
+          route_optimization_radius_m?: number | null
+          seat_cleaning_enabled?: boolean
+          status?: string
+          travel_buffer_min?: number | null
+          updated_at?: string
+          washing_enabled?: boolean
+          zone_type: string
+        }
+        Update: {
+          assignment_radius_m?: number | null
+          backup_team_id?: string | null
+          bbox_max_lat?: number | null
+          bbox_max_lng?: number | null
+          bbox_min_lat?: number | null
+          bbox_min_lng?: number | null
+          center_lat?: number | null
+          center_lng?: number | null
+          city?: string | null
+          color?: string
+          corporate_fleet_enabled?: boolean
+          created_at?: string
+          cutter_polish_enabled?: boolean
+          daily_shine_enabled?: boolean
+          deep_clean_enabled?: boolean
+          emergency_enabled?: boolean
+          exterior_enabled?: boolean
+          id?: string
+          int_ext_enabled?: boolean
+          interior_enabled?: boolean
+          max_active_partners?: number | null
+          max_customers?: number | null
+          max_daily_capacity?: number | null
+          max_services?: number | null
+          name?: string
+          polish_enabled?: boolean
+          polygon?: Json | null
+          premium_enabled?: boolean
+          primary_team_id?: string | null
+          priority?: number
+          radius_m?: number | null
+          roof_cleaning_enabled?: boolean
+          route_optimization_radius_m?: number | null
+          seat_cleaning_enabled?: boolean
+          status?: string
+          travel_buffer_min?: number | null
+          updated_at?: string
+          washing_enabled?: boolean
+          zone_type?: string
+        }
+        Relationships: []
+      }
       customer_addresses: {
         Row: {
           address_line: string
@@ -3375,6 +3501,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_zone_delete: { Args: { p_id: string }; Returns: undefined }
+      admin_zone_duplicate: { Args: { p_id: string }; Returns: string }
+      admin_zone_set_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_zone_upsert: { Args: { payload: Json }; Returns: string }
       available_customers_by_area: {
         Args: never
         Returns: {
@@ -3471,6 +3604,34 @@ export type Database = {
           rating: number
         }[]
       }
+      get_coverage_at: {
+        Args: { p_lat: number; p_lng: number }
+        Returns: {
+          assignment_radius_m: number
+          corporate_fleet: boolean
+          cutter_polish: boolean
+          daily_shine: boolean
+          deep_clean: boolean
+          emergency: boolean
+          exterior: boolean
+          int_ext: boolean
+          interior: boolean
+          matched: boolean
+          max_active_partners: number
+          max_daily_capacity: number
+          polish: boolean
+          premium: boolean
+          priority: number
+          roof_cleaning: boolean
+          route_optimization_radius_m: number
+          seat_cleaning: boolean
+          status: string
+          travel_buffer_min: number
+          washing: boolean
+          zone_id: string
+          zone_name: string
+        }[]
+      }
       get_my_service_photo_url: {
         Args: { p_expires?: number; p_storage_path: string }
         Returns: string
@@ -3487,6 +3648,10 @@ export type Database = {
         Returns: boolean
       }
       haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      haversine_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
@@ -3588,6 +3753,10 @@ export type Database = {
           score: number
           score_breakdown: Json
         }[]
+      }
+      point_in_polygon: {
+        Args: { p_lat: number; p_lng: number; p_poly: Json }
+        Returns: boolean
       }
       preview_assignment: {
         Args: { p_cars: number; p_duration: number }
