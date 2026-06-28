@@ -88,8 +88,6 @@ export function RecentServiceFeed({ userId }: { userId: string | null }) {
       return prev;
     });
   }, [recentQ.data]);
-    }
-  }, [recentQ.data, seenIds]);
 
   const list = recentQ.data ?? [];
 
