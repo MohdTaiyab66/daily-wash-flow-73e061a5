@@ -1776,6 +1776,7 @@ export type Database = {
           addons: Json
           banner_url: string | null
           benefits: string[] | null
+          category: string
           created_at: string
           description: string | null
           duration_minutes: number | null
@@ -1796,6 +1797,7 @@ export type Database = {
           addons?: Json
           banner_url?: string | null
           benefits?: string[] | null
+          category?: string
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
@@ -1816,6 +1818,7 @@ export type Database = {
           addons?: Json
           banner_url?: string | null
           benefits?: string[] | null
+          category?: string
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
@@ -1832,6 +1835,120 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      service_leads: {
+        Row: {
+          address_id: string | null
+          address_text: string | null
+          assigned_at: string | null
+          assigned_detailer_id: string | null
+          assigned_detailer_name: string | null
+          booking_id: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          payment_id: string | null
+          payment_status: string | null
+          photos: string[]
+          price: number
+          scheduled_date: string | null
+          scheduled_time: string | null
+          service_category: string
+          service_id: string | null
+          service_name: string | null
+          service_slug: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          vehicle_id: string | null
+          vehicle_label: string | null
+        }
+        Insert: {
+          address_id?: string | null
+          address_text?: string | null
+          assigned_at?: string | null
+          assigned_detailer_id?: string | null
+          assigned_detailer_name?: string | null
+          booking_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+          photos?: string[]
+          price?: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_category?: string
+          service_id?: string | null
+          service_name?: string | null
+          service_slug?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          vehicle_id?: string | null
+          vehicle_label?: string | null
+        }
+        Update: {
+          address_id?: string | null
+          address_text?: string | null
+          assigned_at?: string | null
+          assigned_detailer_id?: string | null
+          assigned_detailer_name?: string | null
+          booking_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+          photos?: string[]
+          price?: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_category?: string
+          service_id?: string | null
+          service_name?: string | null
+          service_slug?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string | null
+          vehicle_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_leads_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_leads_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_photos: {
         Row: {
@@ -2057,6 +2174,96 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_addon_requests: {
+        Row: {
+          assigned_detailer_id: string | null
+          assigned_detailer_name: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          preferred_date: string | null
+          preferred_time: string | null
+          scheduled_at: string | null
+          service_id: string | null
+          service_name: string | null
+          service_slug: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+          vehicle_id: string | null
+          vehicle_label: string | null
+        }
+        Insert: {
+          assigned_detailer_id?: string | null
+          assigned_detailer_name?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          scheduled_at?: string | null
+          service_id?: string | null
+          service_name?: string | null
+          service_slug?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+          vehicle_id?: string | null
+          vehicle_label?: string | null
+        }
+        Update: {
+          assigned_detailer_id?: string | null
+          assigned_detailer_name?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          scheduled_at?: string | null
+          service_id?: string | null
+          service_name?: string | null
+          service_slug?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string | null
+          vehicle_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_addon_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_addon_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -2581,32 +2788,44 @@ export type Database = {
       vehicle_catalog: {
         Row: {
           active: boolean
+          aliases: string[]
+          body_type: string | null
           category: string
+          colors: string[]
           created_at: string
           id: string
           image_url: string | null
           make: string
           model: string
+          popularity: number
           updated_at: string
         }
         Insert: {
           active?: boolean
+          aliases?: string[]
+          body_type?: string | null
           category: string
+          colors?: string[]
           created_at?: string
           id?: string
           image_url?: string | null
           make: string
           model: string
+          popularity?: number
           updated_at?: string
         }
         Update: {
           active?: boolean
+          aliases?: string[]
+          body_type?: string | null
           category?: string
+          colors?: string[]
           created_at?: string
           id?: string
           image_url?: string | null
           make?: string
           model?: string
+          popularity?: number
           updated_at?: string
         }
         Relationships: []
@@ -2767,14 +2986,27 @@ export type Database = {
         Args: { _snapshot_id: string }
         Returns: undefined
       }
+      admin_assign_lead: {
+        Args: {
+          p_detailer_id: string
+          p_detailer_name: string
+          p_lead_id: string
+        }
+        Returns: undefined
+      }
       admin_cancel_assignment: {
         Args: { p_assignment_id: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_cancel_lead: {
+        Args: { p_lead_id: string; p_reason: string }
         Returns: undefined
       }
       admin_cancel_queue: {
         Args: { p_queue_id: string; p_reason?: string }
         Returns: Json
       }
+      admin_complete_lead: { Args: { p_lead_id: string }; Returns: undefined }
       admin_create_manual_assignment: {
         Args: {
           p_customer_ids: string[]
@@ -2988,6 +3220,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_update_lead: {
+        Args: { p_lead_id: string; p_patch: Json }
+        Returns: undefined
+      }
       admin_update_partner: {
         Args: {
           p_aadhaar_number?: string
@@ -3044,6 +3280,16 @@ export type Database = {
           p_scheduled_time: string
           p_service_id: string
           p_vehicle_id: string
+        }
+        Returns: string
+      }
+      create_addon_request: {
+        Args: {
+          p_notes: string
+          p_preferred_date: string
+          p_preferred_time: string
+          p_service_id: string
+          p_subscription_id: string
         }
         Returns: string
       }
@@ -3228,6 +3474,8 @@ export type Database = {
         Args: { p_area: string; p_lat: number; p_lng: number }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       submit_parking_issue: {
         Args: {
           p_lat: number
