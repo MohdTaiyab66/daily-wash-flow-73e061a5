@@ -88,6 +88,8 @@ function CoveragePage() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Zone> | null>(null);
+  const [opsView, setOpsView] = useState<null | "dashboard" | "calendar" | "alerts" | "history">(null);
+  const [simZoneId, setSimZoneId] = useState<string | null>(null);
 
   const zonesQ = useQuery({
     queryKey: ["coverage-zones"],
