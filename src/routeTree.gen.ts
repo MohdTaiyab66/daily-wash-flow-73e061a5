@@ -19,7 +19,6 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CLocationRouteImport } from './routes/c/location'
 import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
-import { Route as AdminTrialReadinessRouteImport } from './routes/admin.trial-readiness'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
@@ -37,7 +36,6 @@ import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
-import { Route as AdminCustomerAnalyticsRouteImport } from './routes/admin.customer-analytics'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
@@ -125,11 +123,6 @@ const AdminWalletRoute = AdminWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminTrialReadinessRoute = AdminTrialReadinessRouteImport.update({
-  id: '/trial-readiness',
-  path: '/trial-readiness',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -213,11 +206,6 @@ const AdminCustomersRoute = AdminCustomersRouteImport.update({
 const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
   id: '/customer-map',
   path: '/customer-map',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCustomerAnalyticsRoute = AdminCustomerAnalyticsRouteImport.update({
-  id: '/customer-analytics',
-  path: '/customer-analytics',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
@@ -427,7 +415,6 @@ export interface FileRoutesByFullPath {
   '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
-  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -445,7 +432,6 @@ export interface FileRoutesByFullPath {
   '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -492,7 +478,6 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/c': typeof CIndexRoute
   '/admin/attendance': typeof AdminAttendanceRoute
-  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -510,7 +495,6 @@ export interface FileRoutesByTo {
   '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -560,7 +544,6 @@ export interface FileRoutesById {
   '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/attendance': typeof AdminAttendanceRoute
-  '/admin/customer-analytics': typeof AdminCustomerAnalyticsRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/fraud': typeof AdminFraudRoute
@@ -578,7 +561,6 @@ export interface FileRoutesById {
   '/admin/route-manager': typeof AdminRouteManagerRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trial-readiness': typeof AdminTrialReadinessRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -629,7 +611,6 @@ export interface FileRouteTypes {
     | '/c'
     | '/app'
     | '/admin/attendance'
-    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -647,7 +628,6 @@ export interface FileRouteTypes {
     | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
-    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -694,7 +674,6 @@ export interface FileRouteTypes {
     | '/trust'
     | '/c'
     | '/admin/attendance'
-    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -712,7 +691,6 @@ export interface FileRouteTypes {
     | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
-    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -761,7 +739,6 @@ export interface FileRouteTypes {
     | '/c/_authed'
     | '/_authenticated/app'
     | '/admin/attendance'
-    | '/admin/customer-analytics'
     | '/admin/customer-map'
     | '/admin/customers'
     | '/admin/fraud'
@@ -779,7 +756,6 @@ export interface FileRouteTypes {
     | '/admin/route-manager'
     | '/admin/services'
     | '/admin/settings'
-    | '/admin/trial-readiness'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -912,13 +888,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWalletRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/trial-readiness': {
-      id: '/admin/trial-readiness'
-      path: '/trial-readiness'
-      fullPath: '/admin/trial-readiness'
-      preLoaderRoute: typeof AdminTrialReadinessRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -1036,13 +1005,6 @@ declare module '@tanstack/react-router' {
       path: '/customer-map'
       fullPath: '/admin/customer-map'
       preLoaderRoute: typeof AdminCustomerMapRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/customer-analytics': {
-      id: '/admin/customer-analytics'
-      path: '/customer-analytics'
-      fullPath: '/admin/customer-analytics'
-      preLoaderRoute: typeof AdminCustomerAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/attendance': {
@@ -1376,7 +1338,6 @@ const AdminMarketplaceRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
-  AdminCustomerAnalyticsRoute: typeof AdminCustomerAnalyticsRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminFraudRoute: typeof AdminFraudRoute
@@ -1394,7 +1355,6 @@ interface AdminRouteChildren {
   AdminRouteManagerRoute: typeof AdminRouteManagerRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminTrialReadinessRoute: typeof AdminTrialReadinessRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminOfferDeliveryIdRoute: typeof AdminOfferDeliveryIdRoute
@@ -1404,7 +1364,6 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
-  AdminCustomerAnalyticsRoute: AdminCustomerAnalyticsRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminFraudRoute: AdminFraudRoute,
@@ -1422,7 +1381,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRouteManagerRoute: AdminRouteManagerRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminTrialReadinessRoute: AdminTrialReadinessRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminOfferDeliveryIdRoute: AdminOfferDeliveryIdRoute,
