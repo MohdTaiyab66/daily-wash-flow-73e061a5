@@ -74,7 +74,7 @@ export function RouteMapPanel({
           zoom: 12,
           disableDefaultUI: true,
           zoomControl: true,
-          gestureHandling: "greedy",
+          gestureHandling: "cooperative",
         });
         setReady(true);
       })
