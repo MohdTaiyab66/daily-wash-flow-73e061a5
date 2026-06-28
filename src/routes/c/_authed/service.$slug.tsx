@@ -195,20 +195,19 @@ function ServiceDetail() {
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
-    // Area availability validation (server-side via RPC)
+    // Coverage Zone validation (GPS-based)
     try {
       let geo: any = {};
       try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
-      const { data: avRows } = await (supabase as any).rpc("get_area_availability", {
-        p_lat: geo.lat ?? null, p_lng: geo.lng ?? null, p_pincode: geo.pincode ?? null,
-      });
-      const av = Array.isArray(avRows) ? avRows[0] : avRows;
-      const { isServiceAllowed } = await import("@/lib/area-availability");
-      if (!av || !isServiceAllowed(service.slug, av)) {
-        fail("This service is not yet available in your area.");
-        return;
+      if (geo.lat != null && geo.lng != null) {
+        const { fetchAreaAvailability, isServiceAllowed } = await import("@/lib/area-availability");
+        const av = await fetchAreaAvailability({ lat: geo.lat, lng: geo.lng });
+        if (!av.matched || !isServiceAllowed(service.slug, av)) {
+          fail("This service isn't available in your area yet.");
+          return;
+        }
       }
-    } catch { /* if RPC fails, allow booking — fail-open */ }
+    } catch { /* fail-open */ }
     setSubmitting(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
