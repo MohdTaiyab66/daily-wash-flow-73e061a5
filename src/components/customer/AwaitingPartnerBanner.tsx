@@ -70,12 +70,11 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     queryKey: ["sub-queue-partner", queue?.assigned_partner_id],
     enabled: !!queue?.assigned_partner_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("partners")
-        .select("full_name, rating, profile_photo_url, created_at")
-        .eq("id", queue!.assigned_partner_id!)
-        .maybeSingle();
-      return data as
+      const { data } = await (supabase as any).rpc("get_assigned_partner_public", {
+        p_partner_id: queue!.assigned_partner_id!,
+      });
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row ?? null) as
         | { full_name: string; rating: number | null; profile_photo_url: string | null; created_at: string | null }
         | null;
     },

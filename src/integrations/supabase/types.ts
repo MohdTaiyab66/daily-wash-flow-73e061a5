@@ -3062,6 +3062,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_assigned_partner_public: {
+        Args: { p_partner_id: string }
+        Returns: {
+          created_at: string
+          full_name: string
+          home_area: string
+          id: string
+          partner_code: string
+          profile_photo_url: string
+          rating: number
+        }[]
+      }
       get_my_service_photo_url: {
         Args: { p_expires?: number; p_storage_path: string }
         Returns: string
