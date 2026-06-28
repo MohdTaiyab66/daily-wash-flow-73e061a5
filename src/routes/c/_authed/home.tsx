@@ -18,7 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { SERVICE_AREA_NAMES } from "@/lib/areas";
+import { useAreaAvailability, isServiceAllowed } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
