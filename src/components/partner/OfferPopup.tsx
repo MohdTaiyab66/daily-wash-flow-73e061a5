@@ -156,6 +156,10 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        <VisuallyHidden>
+          <DialogTitle>New Daily Shine Offer</DialogTitle>
+          <DialogDescription>Review the offer details and accept or decline before the countdown ends.</DialogDescription>
+        </VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-border bg-primary px-5 pb-3 pt-5 text-primary-foreground">
           <div className="flex items-center gap-2">
