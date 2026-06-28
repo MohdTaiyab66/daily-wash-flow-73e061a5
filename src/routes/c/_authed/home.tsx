@@ -137,7 +137,10 @@ function CustomerHome() {
   const subscription = services.find((s) => s.service_type === "subscription");
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
-  const showCatalog = !area || SERVICE_AREA_NAMES.includes(area);
+  const availability = useAreaAvailability();
+  const a = availability.data;
+  const bothOff = !a.daily_shine && !a.premium;
+  const showCatalog = !area || !bothOff;
 
   return (
     <div className="px-5 pt-6">
