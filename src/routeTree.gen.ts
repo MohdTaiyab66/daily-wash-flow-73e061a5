@@ -36,6 +36,7 @@ import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
+import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
@@ -209,6 +210,11 @@ const AdminImportRoute = AdminImportRouteImport.update({
 const AdminFraudRoute = AdminFraudRouteImport.update({
   id: '/fraud',
   path: '/fraud',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
+  id: '/expansion-requests',
+  path: '/expansion-requests',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
@@ -436,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -502,6 +509,7 @@ export interface FileRoutesByTo {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -571,6 +579,7 @@ export interface FileRoutesById {
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
   '/admin/live': typeof AdminLiveRoute
@@ -641,6 +650,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -707,6 +717,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -775,6 +786,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
     | '/admin/live'
@@ -1041,6 +1053,13 @@ declare module '@tanstack/react-router' {
       path: '/fraud'
       fullPath: '/admin/fraud'
       preLoaderRoute: typeof AdminFraudRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/expansion-requests': {
+      id: '/admin/expansion-requests'
+      path: '/expansion-requests'
+      fullPath: '/admin/expansion-requests'
+      preLoaderRoute: typeof AdminExpansionRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/customers': {
@@ -1398,6 +1417,7 @@ interface AdminRouteChildren {
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
+  AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
   AdminLiveRoute: typeof AdminLiveRoute
@@ -1427,6 +1447,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
+  AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
   AdminLiveRoute: AdminLiveRoute,
