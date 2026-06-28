@@ -33,29 +33,25 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/route-manager" | "/admin/trial-readiness" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-analytics" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/offer-history" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
+  const nav: Array<{ to: "/admin" | "/admin/live" | "/admin/route-manager" | "/admin/fraud" | "/admin/reliability" | "/admin/attendance" | "/admin/renewals" | "/admin/revenue" | "/admin/customer-map" | "/admin/wallet" | "/admin/partners" | "/admin/customers" | "/admin/import" | "/admin/manual-assignment" | "/admin/marketplace" | "/admin/offer-history" | "/admin/services" | "/admin/payouts" | "/admin/photos" | "/admin/settings"; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-    { to: "/admin/live", label: "Live Ops", icon: Activity },
-    { to: "/admin/marketplace", label: "Daily Shine Marketplace", icon: Sparkles },
-    { to: "/admin/offer-history", label: "Offer History", icon: ClipboardList },
-    { to: "/admin/trial-readiness", label: "Trial Readiness", icon: ClipboardList },
-    { to: "/admin/manual-assignment", label: "Manual Assign", icon: UserCheck },
-    { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },
-    { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },
-    { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
-    { to: "/admin/renewals", label: "Renewals", icon: RotateCcw },
-    { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
-    { to: "/admin/customer-analytics", label: "Customer Analytics", icon: BarChart3 },
-
-
-    { to: "/admin/customer-map", label: "Customer Map", icon: Map },
-    { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
-    { to: "/admin/partners", label: "Partners", icon: Users },
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/import", label: "Import Customer", icon: UserPlus },
-    { to: "/admin/services", label: "Services", icon: ClipboardList },
+    { to: "/admin/customer-map", label: "Customer Map", icon: Map },
+    { to: "/admin/partners", label: "Partners", icon: Users },
+    { to: "/admin/manual-assignment", label: "Manual Assign", icon: UserCheck },
+    { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
+    { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },
+    { to: "/admin/marketplace", label: "Marketplace", icon: Sparkles },
+    { to: "/admin/offer-history", label: "Offer History", icon: ClipboardList },
     { to: "/admin/route-manager", label: "Route Manager", icon: Map },
+    { to: "/admin/services", label: "Services", icon: ClipboardList },
     { to: "/admin/photos", label: "Photos", icon: Camera },
+    { to: "/admin/live", label: "Live Ops", icon: Activity },
+    { to: "/admin/fraud", label: "Fraud Review", icon: ShieldAlert },
+    { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
+    { to: "/admin/renewals", label: "Renewals", icon: RotateCcw },
+    { to: "/admin/wallet", label: "Wallet & Changes", icon: Wallet },
     { to: "/admin/payouts", label: "Payouts", icon: Wallet },
     { to: "/admin/settings", label: "Settings", icon: Settings },
   ];
