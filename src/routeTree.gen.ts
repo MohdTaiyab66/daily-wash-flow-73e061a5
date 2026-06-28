@@ -71,6 +71,7 @@ import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/servi
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
+import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 
 const TrustRoute = TrustRouteImport.update({
@@ -392,6 +393,11 @@ const ApiPublicCronAssignmentTickRoute =
     path: '/api/public/cron/assignment-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAdminTrialSeedRoute = ApiPublicAdminTrialSeedRouteImport.update({
+  id: '/api/public/admin/trial-seed',
+  path: '/api/public/admin/trial-seed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppServiceIdRoute =
   AuthenticatedAppServiceIdRouteImport.update({
     id: '/service/$id',
@@ -457,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -518,6 +525,7 @@ export interface FileRoutesByTo {
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -584,6 +592,7 @@ export interface FileRoutesById {
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
+  '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -650,6 +659,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
+    | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
@@ -711,6 +721,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
+    | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
@@ -776,6 +787,7 @@ export interface FileRouteTypes {
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
+    | '/api/public/admin/trial-seed'
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/_authed/bookings/$id'
@@ -795,6 +807,7 @@ export interface RootRouteChildren {
   CIndexRoute: typeof CIndexRoute
   ApiPublicFcmDeliveryReceiptRoute: typeof ApiPublicFcmDeliveryReceiptRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
+  ApiPublicAdminTrialSeedRoute: typeof ApiPublicAdminTrialSeedRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
 }
@@ -1235,6 +1248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronAssignmentTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/trial-seed': {
+      id: '/api/public/admin/trial-seed'
+      path: '/api/public/admin/trial-seed'
+      fullPath: '/api/public/admin/trial-seed'
+      preLoaderRoute: typeof ApiPublicAdminTrialSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/service/$id': {
       id: '/_authenticated/app/service/$id'
       path: '/service/$id'
@@ -1432,6 +1452,7 @@ const rootRouteChildren: RootRouteChildren = {
   CIndexRoute: CIndexRoute,
   ApiPublicFcmDeliveryReceiptRoute: ApiPublicFcmDeliveryReceiptRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
+  ApiPublicAdminTrialSeedRoute: ApiPublicAdminTrialSeedRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
 }
