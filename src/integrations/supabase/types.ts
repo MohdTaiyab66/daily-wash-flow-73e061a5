@@ -3078,6 +3078,10 @@ export type Database = {
         Args: { p_expires?: number; p_storage_path: string }
         Returns: string
       }
+      get_pending_offer_for_partner: {
+        Args: { p_partner_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
