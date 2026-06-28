@@ -341,7 +341,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: "11:00",
         base_amount: 399, addon_amount: 0, discount_amount: 0, total_amount: 399,
-        status: "paid", payment_status: "captured",
+        status: "paid", payment_status: "paid",
         razorpay_order_id: orderId, razorpay_payment_id: "pay_trial_onetime_c5",
         scheduled_time: "11:00", notes: "Trial one-time wash",
       });
