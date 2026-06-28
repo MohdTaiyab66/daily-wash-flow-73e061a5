@@ -188,7 +188,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
     for (const u of USERS) {
       const { id, existed } = await getOrCreateAuthUser(admin, u);
       ids[u.key] = id;
-      report.accounts.push({ key: u.key, email: u.email, phone: u.phone, role: u.role, user_id: id, existed });
+      report.accounts.push({ key: u.key, email: u.email, password: u.password, phone: u.phone, phone10: u.phone10, role: u.role, user_id: id, existed });
       if (!existed) inc("auth.users");
       await admin.from("user_roles").upsert(
         { user_id: id, role: u.role },
