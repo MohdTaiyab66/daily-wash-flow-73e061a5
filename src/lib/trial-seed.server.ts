@@ -7,8 +7,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /* ------------------------------- Test plan ------------------------------- */
 
 export const TRIAL_TAG = "trial-seed-2026";
-const PASSWORD = "TrialPass!2026";
-const DOMAIN = "urbanwash.test";
+// App auth uses phone-as-email with role-scoped domains and per-role passwords
+// (mirrors src/routes/auth.tsx and src/routes/c/auth.tsx).
+const partnerEmail = (p10: string) => `${p10}@partner.urbanwash.app`;
+const adminEmail   = (p10: string) => `${p10}@admin.urbanwash.app`;
+const customerEmail = (p10: string) => `${p10}@customer.urbanwash.app`;
+const partnerPwd  = (p10: string) => `UWP@${p10}#2026`;
+const customerPwd = (p10: string) => `UWC@${p10}#2026`;
 
 // Lucknow / Gomti Nagar cluster
 const HOME_LAT = 26.852;
@@ -18,20 +23,34 @@ type SeedUser = {
   key: string;
   role: "admin" | "partner" | "customer";
   email: string;
-  phone: string;
+  password: string;
+  phone: string;     // E.164 e.g. +919800000001
+  phone10: string;   // 10-digit, used by the in-app OTP flow
   full_name: string;
 };
 
+function mk(
+  key: string,
+  role: "admin" | "partner" | "customer",
+  p10: string,
+  full_name: string,
+): SeedUser {
+  const phone = `+91${p10}`;
+  const email = role === "admin" ? adminEmail(p10) : role === "partner" ? partnerEmail(p10) : customerEmail(p10);
+  const password = role === "customer" ? customerPwd(p10) : partnerPwd(p10);
+  return { key, role, email, password, phone, phone10: p10, full_name };
+}
+
 const USERS: SeedUser[] = [
-  { key: "admin",     role: "admin",    email: `trial+admin@${DOMAIN}`,    phone: "+919800000001", full_name: "Trial Admin" },
-  { key: "partner1",  role: "partner",  email: `trial+partner1@${DOMAIN}`, phone: "+919800000011", full_name: "Aarav Pratap (Partner)" },
-  { key: "partner2",  role: "partner",  email: `trial+partner2@${DOMAIN}`, phone: "+919800000012", full_name: "Imran Qureshi (Partner)" },
-  { key: "partner3",  role: "partner",  email: `trial+partner3@${DOMAIN}`, phone: "+919800000013", full_name: "Vikram Singh (Partner)" },
-  { key: "customer1", role: "customer", email: `trial+c1@${DOMAIN}`,       phone: "+919800000101", full_name: "Riya Sharma" },
-  { key: "customer2", role: "customer", email: `trial+c2@${DOMAIN}`,       phone: "+919800000102", full_name: "Nikhil Verma" },
-  { key: "customer3", role: "customer", email: `trial+c3@${DOMAIN}`,       phone: "+919800000103", full_name: "Pooja Bhatt" },
-  { key: "customer4", role: "customer", email: `trial+c4@${DOMAIN}`,       phone: "+919800000104", full_name: "Saurabh Mehra" },
-  { key: "customer5", role: "customer", email: `trial+c5@${DOMAIN}`,       phone: "+919800000105", full_name: "Ananya Kapoor" },
+  mk("admin",     "admin",    "9800000001", "Trial Admin"),
+  mk("partner1",  "partner",  "9800000011", "Aarav Pratap"),
+  mk("partner2",  "partner",  "9800000012", "Imran Qureshi"),
+  mk("partner3",  "partner",  "9800000013", "Vikram Singh"),
+  mk("customer1", "customer", "9800000101", "Riya Sharma"),
+  mk("customer2", "customer", "9800000102", "Nikhil Verma"),
+  mk("customer3", "customer", "9800000103", "Pooja Bhatt"),
+  mk("customer4", "customer", "9800000104", "Saurabh Mehra"),
+  mk("customer5", "customer", "9800000105", "Ananya Kapoor"),
 ];
 
 /* ------------------------------- Utilities ------------------------------- */
@@ -96,7 +115,7 @@ async function getOrCreateAuthUser(
   const { data, error } = await admin.auth.admin.createUser({
     email: u.email,
     phone: u.phone,
-    password: PASSWORD,
+    password: u.password,
     email_confirm: true,
     phone_confirm: true,
     user_metadata: { full_name: u.full_name, trial_tag: TRIAL_TAG },
@@ -147,8 +166,8 @@ async function ensureCatalogs(admin: SupabaseClient) {
 
 type SeedReport = {
   ok: boolean;
-  password: string;
-  accounts: Array<{ key: string; email: string; phone: string; role: string; user_id: string; existed: boolean }>;
+  passwords: { partner: string; admin: string; customer: string };
+  accounts: Array<{ key: string; email: string; password: string; phone: string; phone10: string; role: string; user_id: string; existed: boolean }>;
   rows: Record<string, number>;
   workflows: Array<{ step: string; status: "PASS" | "FAIL" | "SKIP"; detail?: string }>;
   errors: string[];
@@ -156,7 +175,7 @@ type SeedReport = {
 
 export async function runTrialSeed(): Promise<SeedReport> {
   const admin = await getAdmin();
-  const report: SeedReport = { ok: true, password: PASSWORD, accounts: [], rows: {}, workflows: [], errors: [] };
+  const report: SeedReport = { ok: true, passwords: { partner: "UWP@<phone10>#2026", admin: "UWP@<phone10>#2026", customer: "UWC@<phone10>#2026" }, accounts: [], rows: {}, workflows: [], errors: [] };
   const inc = (k: string, n = 1) => { report.rows[k] = (report.rows[k] ?? 0) + n; };
   const wf = (step: string, status: "PASS" | "FAIL" | "SKIP", detail?: string) => report.workflows.push({ step, status, detail });
 
@@ -169,7 +188,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
     for (const u of USERS) {
       const { id, existed } = await getOrCreateAuthUser(admin, u);
       ids[u.key] = id;
-      report.accounts.push({ key: u.key, email: u.email, phone: u.phone, role: u.role, user_id: id, existed });
+      report.accounts.push({ key: u.key, email: u.email, password: u.password, phone: u.phone, phone10: u.phone10, role: u.role, user_id: id, existed });
       if (!existed) inc("auth.users");
       await admin.from("user_roles").upsert(
         { user_id: id, role: u.role },
@@ -301,7 +320,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: ["08:00", "09:00", "10:00", "09:00"][i],
         base_amount: 1499, addon_amount: 0, discount_amount: 0, total_amount: 1499,
-        status: "paid", payment_status: "captured",
+        status: "paid", payment_status: "paid",
         razorpay_order_id: orderId, razorpay_payment_id: `pay_trial_${key}`,
         scheduled_time: ["08:00", "09:00", "10:00", "09:00"][i],
         notes: "Trial subscription booking",
@@ -341,7 +360,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: "11:00",
         base_amount: 399, addon_amount: 0, discount_amount: 0, total_amount: 399,
-        status: "paid", payment_status: "captured",
+        status: "paid", payment_status: "paid",
         razorpay_order_id: orderId, razorpay_payment_id: "pay_trial_onetime_c5",
         scheduled_time: "11:00", notes: "Trial one-time wash",
       });
@@ -434,7 +453,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
           sequence_no: s.seq, status: s.status,
           started_at: startedAt, completed_at: completedAt,
           rate_per_car: 17, priority: s.priority ?? "normal",
-          unavailable_reason: s.status === "unavailable" ? "vehicle_not_found" : null,
+          unavailable_reason: s.status === "unavailable" ? "vehicle_not_available" : null,
           unavailable_notes: s.status === "unavailable" ? "Customer's car not at parking" : null,
           unavailable_at: s.status === "unavailable" ? new Date().toISOString() : null,
         });
@@ -448,12 +467,14 @@ export async function runTrialSeed(): Promise<SeedReport> {
       const pid = ids["partner1"];
       const sid = serviceIdByCustomer["customer3"];
       if (sid) {
-        const earnExists = await admin.from("earnings").select("id").eq("service_id", sid).maybeSingle();
+        const earnExists = await admin.from("earnings").select("id").eq("partner_id", pid).eq("earned_on", today).maybeSingle();
         if (!earnExists.data?.id) {
-          await admin.from("earnings").insert({
-            partner_id: pid, earned_on: today, amount: 17,
-            source: "service", service_id: sid, description: "Trial completed wash",
+          const { error: earnErr } = await admin.from("earnings").insert({
+            partner_id: pid, earned_on: today, cars_completed: 1,
+            base_amount: 17, incentive_amount: 0, referral_amount: 0,
+            penalty_amount: 0,
           });
+          if (earnErr) throw new Error("earnings.insert: " + earnErr.message);
           inc("earnings");
         }
         const wlExists = await admin.from("wallet_ledger").select("id").eq("service_id", sid).maybeSingle();
@@ -491,7 +512,7 @@ export async function runTrialSeed(): Promise<SeedReport> {
         if (!exists.data?.id) {
           await admin.from("unavailability_reports").insert({
             service_id: sid, partner_id: ids["partner2"], customer_id: ids["customer4"],
-            reason: "vehicle_not_found", notes: "Vehicle missing at slot",
+            reason: "vehicle_not_available", notes: "Vehicle missing at slot",
             credited_amount: 17,
           });
           inc("unavailability_reports");
@@ -559,7 +580,12 @@ export async function runTrialCleanup() {
       if (error) throw error;
       for (const u of data.users) {
         const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-        const isTrial = meta.trial_tag === TRIAL_TAG || (u.email ?? "").includes(`@${DOMAIN}`);
+        const email = (u.email ?? "").toLowerCase();
+        const isTrial = meta.trial_tag === TRIAL_TAG
+          || email.endsWith("@urbanwash.test")  // legacy trial domain
+          || email.endsWith("@partner.urbanwash.app")
+          || email.endsWith("@admin.urbanwash.app")
+          || email.endsWith("@customer.urbanwash.app");
         if (isTrial) ids.push(u.id);
       }
       if (data.users.length < 200) break;
@@ -627,7 +653,7 @@ export async function runTrialVerify() {
   };
 
   await check("1. Customer accounts (>=5)", async () => {
-    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+919800001%");
+    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+91980000010%");
     return { count: r.count, error: r.error };
   });
   await check("2. Partner accounts (>=3)", async () => {
@@ -635,7 +661,7 @@ export async function runTrialVerify() {
     return { count: r.count, error: r.error };
   });
   await check("3. Paid bookings", async () => {
-    const r = await admin.from("bookings").select("*", { count: "exact", head: true }).like("razorpay_order_id", "order_trial_%").eq("payment_status", "captured");
+    const r = await admin.from("bookings").select("*", { count: "exact", head: true }).like("razorpay_order_id", "order_trial_%").eq("payment_status", "paid");
     return { count: r.count, error: r.error };
   });
   await check("4. Subscriptions active", async () => {
