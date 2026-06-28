@@ -1,88 +1,54 @@
-# Route Manager — Production Operations Dispatch
 
-The UI exists. This plan wires every action to the database, partner app, customer app, and maps in realtime, then validates end-to-end. Delivered in 4 passes so you can review between each.
+# Urban Wash – Final Business Acceptance Test & Production Readiness
 
-## Pass 1 — Data foundation (DB + RPCs)
+This is a stabilization + one focused new feature (Partner Operations Settings) + verification pass. No redesigns, no refactors.
 
-Migration adds what's missing for safe edits, conflict checks, version history, and audit:
+## Scope decisions (please confirm)
 
-- `services`: add `eta_at timestamptz`, `travel_min int`, `distance_km numeric`, `last_sequence_change_at timestamptz`, `last_sequence_change_by uuid`.
-- `route_change_log`: ensure `old_eta`, `new_eta`, `old_position`, `new_position`, `reason` columns.
-- `route_snapshots`: ensure `version int`, `reason text`, `metrics jsonb` (distance/eta/stops), `created_by`.
-- `customer_notifications`: reuse existing — emit "ETA updated" rows.
-- New RPCs (`SECURITY DEFINER`, gated by `has_role(admin)` OR `has_role(ops_manager)`):
-  - `admin_route_draft_validate(p_partner, p_date)` → returns conflicts: duplicates, missing coords, locked-but-moved, out-of-area, impossible ETA, partner mismatch.
-  - `admin_route_draft_preview(...)` → returns `{before:{distance,eta,stops}, after:{...}, diffs:[{customer,old_pos,new_pos,old_eta,new_eta}]}`.
-  - `admin_route_draft_save(..., p_reason)` → wraps: create snapshot v(N+1), apply sequence + ETA + cluster + priority + locks, write `route_change_log` per moved row, write `customer_notifications` where ETA shift ≥ threshold, return summary.
-  - `admin_route_remove_stop(p_service_id, p_mode)` where mode ∈ `today_only|cancel|transfer`.
-  - `admin_route_bulk(p_action, p_service_ids, p_payload)` for bulk move/priority/lock/unlock/delete/emergency/reassign.
-  - `admin_route_history(p_partner, p_date)` → list of snapshot versions w/ metrics & editor.
-  - `admin_route_search_customers` — extend filter: active Daily Shine for date, includes vehicle model + society + subscription.
-  - Reliability: `admin_route_reassign` already exists — extend to recompute both routes' sequences and ETAs in same txn and write notifications.
+The request is very large. To keep this honest (no fake PASS marks) I'll execute in this order. Tell me if you want to drop or reorder anything.
 
-Realtime publication: ensure `services`, `route_drafts`, `route_snapshots`, `route_change_log`, `customer_notifications`, `partner_notifications` in `supabase_realtime`.
+### Part A — Partner Operations Settings (the only new build)
 
-## Pass 2 — Save pipeline + realtime fan-out
+A new admin route **/admin/settings** is reorganized into tabbed sections, all backed by the existing `platform_settings` table (key/value JSON). No new tables, no new RPCs beyond what already exists (`listSettings`, `updateSetting`).
 
-Frontend wiring in `admin.route-manager.tsx`:
+Tabs and keys (every key editable from Admin; Partner App reads via existing settings query — no client code changes needed beyond exposing keys it already consumes):
 
-- `Save Manual Route` calls `admin_route_draft_validate` → if issues, open Conflicts dialog (block save).
-- Then `admin_route_draft_preview` → open `RoutePreviewDialog` with before/after metrics + per-customer ETA diffs + confirm.
-- On confirm → `admin_route_draft_save({reason})`. Snapshot written first.
-- Insert row into `partner_notifications` (`type='route_updated'`) for affected partners; pg trigger on `services` UPDATE already broadcasts via Realtime.
-- Customer side: rows in `customer_notifications` for affected ETAs.
+1. **Assignment** — min/max cars, min/max days, trial_mode, manual_assignment_enabled, auto_assign_enabled, allow_partner_cancel, allow_partner_rebuild, assignment_lock_days, radius_steps, search_radius_km, radius_increment_km, max_radius_km, marketplace_timeout_sec, offer_timeout_sec, retry_attempts, broadcast_interval_sec
+2. **Earnings** — rate_per_car, deep_clean_rate, onetime_rate, interior_rate, exterior_rate, addon_rate, dirty_reward, unavailable_compensation, complaint_deduction, cancel_penalty, reliability_bonus, monthly_bonus, attendance_bonus, corporate_bonus, vip_bonus
+3. **Service Visibility** — route_visibility_until (existing) extended with 6/7/8/9 AM + custom_time
+4. **Route Optimization** — cluster_first, distance_weight, time_weight, soft_window_weight, hard_window_weight, emergency_weight, locked_weight, corporate_weight, vip_weight, complaint_weight, max_deviation_m, max_travel_km, max_travel_min, default_speed_kmh, avg_service_min
+5. **Attendance** — attendance_radius_m, late_tolerance_min, checkin_distance_m, checkout_distance_m, gps_verification, selfie_required, background_tracking
+6. **Partner Capacity** — default_cars_per_day, max_working_hours, max_travel_km, max_subscriptions, max_onetime, auto_capacity_calc
+7. **Marketplace** — offer_timeout, offer_priority_mode, offer_retry, offer_broadcast, weight_reliability, weight_distance, weight_capacity, weight_urgency, weight_route_impact
+8. **Notifications** — notify_offer, notify_assignment, notify_completion, notify_wallet, notify_attendance, notify_reminder, sound_enabled, vibration_enabled, autopopup_enabled
+9. **Maps** — map_provider, navigation_mode, traffic_layer, satellite_layer, cluster_view, heat_map, partner_location_interval_sec, customer_refresh_sec, route_refresh_sec
 
-Partner app: add a small `usePartnerRouteSync()` hook subscribing to `services` rows where `partner_id = me` for today; on change invalidate route query and show toast "Route updated by Operations". Auto-refresh map, sequence, ETA, navigation.
+Implementation:
+- One migration to seed default values for all new keys (idempotent `ON CONFLICT DO NOTHING`).
+- Refactor `src/routes/admin.settings.tsx` to use Tabs + grouped cards. Keep existing `listSettings`/`updateSetting` server fns.
+- Where the Partner App already reads a setting (e.g. `route_visibility_until`, `rate_per_car`, `auto_assign_*`), no further wiring needed. Where the Partner App currently hard-codes a value, I will add a one-line read from settings only if the file is already in context — otherwise the key exists in settings and an explicit "wired in next pass" note is included in the final report. **This is the honest tradeoff** — wiring every key into the Partner App is days of work and was not part of the original brief.
 
-Customer app: extend `AwaitingPartnerBanner` / "My Plan" to subscribe to `customer_notifications` for current user; show "Estimated arrival updated → new ETA. Reason: Operations optimized today's route."
+### Part B — Business Acceptance Test (live Playwright)
 
-## Pass 3 — Editor UX completion
+Single end-to-end run on seeded accounts (admin/partner/customer). I'll record screenshots at each milestone and report PASS/FAIL per stage. Where a step needs a real device (push notifications, GPS-based attendance, camera photo capture) it's marked **Requires Physical Device** — these cannot be honestly PASSed from a headless browser.
 
-- Add Customer (+): fix `admin_route_search_customers` to honor date + Daily Shine + vehicle/model/society/subscription filters; insertion offers position picker (Above/Below/End/Beginning/Specific #).
-- Cross-partner transfer: dialog with preview (impact on both routes) → `admin_route_reassign` w/ position arg.
-- Remove customer: dialog with 3 modes wired to `admin_route_remove_stop`.
-- Bulk action bar: hook to `admin_route_bulk`.
-- Priority change: writes to draft immediately; "Emergency" auto-promotes to nearest valid position client-side and re-runs draft preview on demand.
-- Lock: client respects + DB honors during all `optimizeRoute`/`admin_optimize_all` (filter locked rows from reorder set).
-- Undo/Redo: already in `route-draft.ts` — wire to draft snapshots so each save bumps history baseline. Add "Restore Morning Route", "Restore Auto-Optimized", "Restore Yesterday" buttons calling `admin_route_restore_snapshot` with version selector.
-- Route History tab: list versions from `admin_route_history`, rollback button per version.
-- Permissions: gate Save / mutate buttons by `role === admin || ops_manager`; dispatchers get read+search only.
+### Part C — Production Cleanup
 
-## Pass 4 — Validation
+Conservative: delete only files/RPCs/imports that grep proves are unreferenced. No "looks unused" deletions. Console errors triaged from the BAT run, not pre-emptively.
 
-Run the user's scenario as an automated check via `psql` + Playwright headless:
+### Part D — Management Report
 
-1. Load Partner A's real route for today.
-2. Drag stop #12 → #4 (DB sequence updates in draft).
-3. Add a real Daily Shine customer at stop #8.
-4. Transfer one stop to Partner B.
-5. Save with reason.
+Single document at the end of the turn. Format exactly as requested (PASS / Requires Physical Device / FAIL per module, one recommendation at the bottom).
 
-Verify, asserting each:
+## What I will NOT do (and why)
 
-- `services` rows updated (sequence + ETA).
-- New `route_snapshots` row (version N+1).
-- `route_change_log` entries for every move.
-- `partner_notifications` rows for A and B.
-- `customer_notifications` rows for customers whose ETA shifted ≥ threshold.
-- Partner app live preview shows new sequence without manual refresh (Playwright).
-- Customer app shows ETA update banner.
-- Map markers + polyline reflect new order.
+- **Will not** redesign Partner App UI to surface every new setting — out of scope ("Do NOT redesign the UI").
+- **Will not** mark push notifications, GPS attendance radius, camera-based before/after photos, or background tracking as PASS — these are device-dependent. They get **Requires Physical Device**.
+- **Will not** mass-delete "possibly unused" code. Only proven-dead.
+- **Will not** invent new RPCs for settings — existing ones handle it.
 
-Report PASS / FAIL per item with the exact missing link if any.
+## Estimated output
 
-## Technical notes
+~1 migration, ~1 rewritten admin.settings.tsx, Playwright BAT script + screenshots, a handful of cleanup deletions, final report.
 
-- Snapshot is created **inside** `admin_route_draft_save` before mutating, guaranteeing rollback safety.
-- ETA threshold from `platform_settings.customer_eta_shift_threshold_min` (already seeded).
-- All RPCs `SECURITY DEFINER`, role check first, `SET search_path = public`.
-- Heavy compute (ETA / travel_min) uses the existing `route-optimize.ts` cluster engine called from the RPC via a small SQL wrapper that receives precomputed values from the client `preview` step (avoids putting Haversine in PL/pgSQL).
-- No new tables — reuses `route_snapshots`, `route_change_log`, `customer_notifications`, `partner_notifications`.
-
-## Out of scope (will not change)
-
-- Visual redesign of cards/tabs (UI is approved).
-- FCM payload format (already shipped).
-- Route optimizer scoring weights (already tuned).
-
-Approve and I'll start Pass 1 (migration + RPCs). Each pass ends with a brief "ready for next pass" message.
+**Confirm and I'll execute, or tell me what to cut.**
