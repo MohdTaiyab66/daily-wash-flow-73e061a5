@@ -37,23 +37,53 @@ const USERS: SeedUser[] = [
 /* ------------------------------- Utilities ------------------------------- */
 
 function jitter(base: number, delta: number, seed: number): number {
-  // Deterministic jitter -delta..+delta around base.
   const r = Math.sin(seed * 9301 + 49297) * 233280;
   const frac = r - Math.floor(r);
   return base + (frac * 2 - 1) * delta;
 }
 
 async function getAdmin() {
-  // Loaded lazily so this module is safe to import in route files.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin as SupabaseClient;
+}
+
+/** Idempotent insert: returns existing row id if `match` finds one, else inserts. */
+async function ensureRow(
+  admin: SupabaseClient,
+  table: string,
+  match: Record<string, unknown>,
+  insertPayload: Record<string, unknown>,
+): Promise<{ id: string; existed: boolean }> {
+  let q = admin.from(table).select("id");
+  for (const [k, v] of Object.entries(match)) q = q.eq(k, v as never);
+  const existing = await q.maybeSingle();
+  if (existing.data?.id) return { id: existing.data.id as string, existed: true };
+  const ins = await admin.from(table).insert(insertPayload).select("id").single();
+  if (ins.error) throw new Error(`${table}.insert: ${ins.error.message}`);
+  return { id: ins.data.id as string, existed: false };
+}
+
+async function upsertById(
+  admin: SupabaseClient,
+  table: string,
+  id: string,
+  payload: Record<string, unknown>,
+): Promise<{ existed: boolean }> {
+  const existing = await admin.from(table).select("id").eq("id", id).maybeSingle();
+  if (existing.data?.id) {
+    const upd = await admin.from(table).update(payload).eq("id", id);
+    if (upd.error) throw new Error(`${table}.update: ${upd.error.message}`);
+    return { existed: true };
+  }
+  const ins = await admin.from(table).insert({ id, ...payload });
+  if (ins.error) throw new Error(`${table}.insert: ${ins.error.message}`);
+  return { existed: false };
 }
 
 async function getOrCreateAuthUser(
   admin: SupabaseClient,
   u: SeedUser,
 ): Promise<{ id: string; existed: boolean }> {
-  // Look up by email via Auth Admin listUsers (paged).
   let page = 1;
   for (;;) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
@@ -78,7 +108,6 @@ async function getOrCreateAuthUser(
 /* ----------------------------- Catalog seeding --------------------------- */
 
 async function ensureCatalogs(admin: SupabaseClient) {
-  // vehicle_catalog: at least 4 entries (hatchback_compact_sedan x2, sedan_suv x2)
   const vehicles = [
     { make: "Maruti Suzuki", model: "Swift",   category: "hatchback_compact_sedan" },
     { make: "Hyundai",       model: "i20",     category: "hatchback_compact_sedan" },
@@ -88,27 +117,29 @@ async function ensureCatalogs(admin: SupabaseClient) {
   for (const v of vehicles) {
     await admin.from("vehicle_catalog").upsert(
       { ...v, active: true },
-      { onConflict: "make,model", ignoreDuplicates: true } as any,
+      { onConflict: "make,model" } as never,
     );
   }
-
-  // service_catalog (slugs used by app code)
   const services = [
     { slug: "daily-shine-exterior", name: "Daily Shine — Exterior",
       service_type: "subscription", price_hatchback: 999, price_sedan_suv: 1199,
-      includes_hatchback: ["Exterior wash", "Tyre dressing"], includes_sedan_suv: ["Exterior wash", "Tyre dressing"], sort_order: 1, active: true, addons: [] as any },
+      includes_hatchback: ["Exterior wash", "Tyre dressing"], includes_sedan_suv: ["Exterior wash", "Tyre dressing"],
+      sort_order: 1, active: true, addons: [] },
     { slug: "daily-shine-interior", name: "Daily Shine — Interior",
       service_type: "subscription", price_hatchback: 1499, price_sedan_suv: 1799,
-      includes_hatchback: ["Interior vacuum", "Dashboard polish"], includes_sedan_suv: ["Interior vacuum", "Dashboard polish"], sort_order: 2, active: true, addons: [] as any },
+      includes_hatchback: ["Interior vacuum", "Dashboard polish"], includes_sedan_suv: ["Interior vacuum", "Dashboard polish"],
+      sort_order: 2, active: true, addons: [] },
     { slug: "daily-shine-dusting", name: "Daily Shine — Dusting",
       service_type: "subscription", price_hatchback: 599, price_sedan_suv: 699,
-      includes_hatchback: ["Dust removal"], includes_sedan_suv: ["Dust removal"], sort_order: 3, active: true, addons: [] as any },
+      includes_hatchback: ["Dust removal"], includes_sedan_suv: ["Dust removal"],
+      sort_order: 3, active: true, addons: [] },
     { slug: "one-time-wash", name: "One-Time Premium Wash",
       service_type: "one_time", price_hatchback: 399, price_sedan_suv: 499,
-      includes_hatchback: ["Premium wash"], includes_sedan_suv: ["Premium wash"], sort_order: 10, active: true, addons: [] as any },
+      includes_hatchback: ["Premium wash"], includes_sedan_suv: ["Premium wash"],
+      sort_order: 10, active: true, addons: [] },
   ];
   for (const s of services) {
-    await admin.from("service_catalog").upsert(s, { onConflict: "slug", ignoreDuplicates: false } as any);
+    await admin.from("service_catalog").upsert(s, { onConflict: "slug" } as never);
   }
 }
 
@@ -140,17 +171,14 @@ export async function runTrialSeed(): Promise<SeedReport> {
       ids[u.key] = id;
       report.accounts.push({ key: u.key, email: u.email, phone: u.phone, role: u.role, user_id: id, existed });
       if (!existed) inc("auth.users");
-
-      // user_roles (idempotent)
       await admin.from("user_roles").upsert(
         { user_id: id, role: u.role },
-        { onConflict: "user_id,role", ignoreDuplicates: true } as any,
+        { onConflict: "user_id,role" } as never,
       );
-      // Default authenticated users also get 'customer' role? Code uses partner / customer / admin distinctly. No extra.
     }
     wf("auth.users+roles", "PASS", `${report.accounts.length} accounts (existed: ${report.accounts.filter(a => a.existed).length})`);
 
-    // 2) Partners (operational rows) + dummy push tokens
+    // 2) Partners + push tokens
     const partnerKeys = ["partner1", "partner2", "partner3"] as const;
     for (let i = 0; i < partnerKeys.length; i++) {
       const key = partnerKeys[i];
@@ -160,8 +188,8 @@ export async function runTrialSeed(): Promise<SeedReport> {
       const lng = jitter(HOME_LNG, 0.01, i + 1);
       const code = `TRIAL${i + 1}`;
       const refCode = `TR-${id.slice(0, 6).toUpperCase()}`;
-      await admin.from("partners").upsert({
-        id, partner_code: code, full_name: u.full_name, phone: u.phone, email: u.email,
+      await upsertById(admin, "partners", id, {
+        partner_code: code, full_name: u.full_name, phone: u.phone, email: u.email,
         city: "Lucknow", status: "active", availability: "online",
         cars_selected: [12, 18, 8][i], rate_per_car: 17,
         rating: [4.8, 4.6, 4.2][i], total_cars_completed: [120, 60, 15][i],
@@ -175,24 +203,23 @@ export async function runTrialSeed(): Promise<SeedReport> {
         reliability_score: [95, 80, 60][i], reliability_events_count: 0,
         last_seen: new Date().toISOString(),
         current_lat: lat, current_lng: lng,
-      } as any, { onConflict: "id" } as any);
+      });
       inc("partners");
 
-      // push_tokens (dummy, optional for marketplace eligibility)
       await admin.from("push_tokens").upsert({
         user_id: id, token: `TRIAL-FCM-${key}-${id.slice(0, 8)}`,
         platform: "android", app: "partner", device_id: `trial-${key}`,
         last_seen: new Date().toISOString(),
-      } as any, { onConflict: "token", ignoreDuplicates: true } as any);
+      }, { onConflict: "token" } as never);
       inc("push_tokens");
     }
     wf("partners.upsert", "PASS");
 
-    // 3) Customers (operational) + customer_profiles + addresses + vehicles
+    // 3) Customers + profiles + addresses + vehicles
     const vehicleCatalog = (await admin.from("vehicle_catalog").select("id,make,model,category")).data ?? [];
     const customerKeys = ["customer1", "customer2", "customer3", "customer4", "customer5"] as const;
-    const customerVehicleIds: Record<string, string> = {}; // customer_key -> customer_vehicles.id
-    const opsVehicleIds: Record<string, string> = {};      // customer_key -> vehicles.id
+    const customerVehicleIds: Record<string, string> = {};
+    const opsVehicleIds: Record<string, string> = {};
 
     for (let i = 0; i < customerKeys.length; i++) {
       const key = customerKeys[i];
@@ -201,190 +228,175 @@ export async function runTrialSeed(): Promise<SeedReport> {
       const lat = jitter(HOME_LAT, 0.015, i + 10);
       const lng = jitter(HOME_LNG, 0.015, i + 10);
       const vc = vehicleCatalog[i % vehicleCatalog.length] ?? vehicleCatalog[0];
-      const reg = `UP32 TRL ${1000 + i}`;
+      const reg = `UP32TRL${1000 + i}`;
       const preferredBefore = ["08:00", "09:00", "10:00", "09:00", "11:00"][i];
 
-      // customer_profiles
-      await admin.from("customer_profiles").upsert({
+      // customer_profiles — match by user_id
+      await ensureRow(admin, "customer_profiles", { user_id: id }, {
         user_id: id, full_name: u.full_name, email: u.email, phone: u.phone,
         preferred_area: "Gomti Nagar", marketing_opt_in: true,
-      } as any, { onConflict: "user_id" } as any);
+      });
       inc("customer_profiles");
 
-      // customer_addresses
-      const addrIns = await admin.from("customer_addresses").upsert({
+      // customer_addresses — match by (user_id, label)
+      await ensureRow(admin, "customer_addresses", { user_id: id, label: "Home" }, {
         user_id: id, label: "Home",
         address_line: `Flat ${100 + i}, Vipul Khand ${i + 1}`,
         area: "Gomti Nagar", pincode: "226010",
         latitude: lat, longitude: lng, is_default: true,
-      } as any, { onConflict: "user_id,label" } as any).select("id").maybeSingle();
+      });
       inc("customer_addresses");
-      const addressId = addrIns.data?.id
-        ?? (await admin.from("customer_addresses").select("id").eq("user_id", id).eq("label", "Home").maybeSingle()).data?.id;
 
-      // customer_vehicles
-      const cvIns = await admin.from("customer_vehicles").upsert({
+      // customer_vehicles — match by (user_id, registration_number)
+      const cv = await ensureRow(admin, "customer_vehicles", { user_id: id, registration_number: reg }, {
         user_id: id, make: vc?.make ?? "Maruti Suzuki", model: vc?.model ?? "Swift",
         category: vc?.category ?? "hatchback_compact_sedan",
         color: ["White", "Silver", "Red", "Blue", "Black"][i],
         registration_number: reg, parking_notes: "Stilt parking, slot 12", is_default: true,
-      } as any, { onConflict: "user_id,registration_number" } as any).select("id").maybeSingle();
+      });
+      customerVehicleIds[key] = cv.id;
       inc("customer_vehicles");
-      const cvId = cvIns.data?.id
-        ?? (await admin.from("customer_vehicles").select("id").eq("user_id", id).eq("registration_number", reg).maybeSingle()).data?.id;
-      if (cvId) customerVehicleIds[key] = cvId;
 
-      // customers (operational; id = auth uid)
-      await admin.from("customers").upsert({
-        id, full_name: u.full_name, phone: u.phone, email: u.email,
+      // customers — operational; id = auth uid
+      await upsertById(admin, "customers", id, {
+        full_name: u.full_name, phone: u.phone, email: u.email,
         address_line: `Flat ${100 + i}, Vipul Khand ${i + 1}`, area: "Gomti Nagar",
         city: "Lucknow", pincode: "226010", latitude: lat, longitude: lng,
         subscription_plan: "daily_shine_monthly",
-        is_active: true, preferred_time: `${preferredBefore} - ${preferredBefore.replace(/^(\d+):/, (_m, h) => String(+h + 1).padStart(2, "0") + ":")}`,
+        is_active: true,
+        preferred_time: `${preferredBefore} - ${String(parseInt(preferredBefore) + 1).padStart(2, "0")}:00`,
         service_required_before: preferredBefore,
         payment_status: i === 4 ? "pending" : "paid",
         paid_at: i === 4 ? null : new Date().toISOString(),
         time_window_type: i === 3 ? "exact" : "soft",
         exact_time: i === 3 ? "09:30" : null,
-      } as any, { onConflict: "id" } as any);
+      });
       inc("customers");
 
-      // vehicles (operational; FK customer_id -> customers.id)
-      const vIns = await admin.from("vehicles").upsert({
+      // vehicles (operational) — match by (customer_id, registration_number)
+      const v = await ensureRow(admin, "vehicles", { customer_id: id, registration_number: reg }, {
         customer_id: id, make: vc?.make ?? "Maruti Suzuki", model: vc?.model ?? "Swift",
         registration_number: reg, color: ["White", "Silver", "Red", "Blue", "Black"][i],
         parking_notes: "Stilt parking, slot 12", package_amount: 1499,
-      } as any, { onConflict: "customer_id,registration_number" } as any).select("id").maybeSingle();
+      });
+      opsVehicleIds[key] = v.id;
       inc("vehicles");
-      const opsVid = vIns.data?.id
-        ?? (await admin.from("vehicles").select("id").eq("customer_id", id).eq("registration_number", reg).maybeSingle()).data?.id;
-      if (opsVid) opsVehicleIds[key] = opsVid;
-
-      // Suppress addressId unused warning
-      void addressId;
     }
-    wf("customers.upsert", "PASS");
+    wf("customers+vehicles", "PASS");
 
-    // 4) Subscriptions for customers 1..4 (paid, daily_shine_monthly)
-    const dailyShine = (await admin.from("service_catalog").select("id,slug,service_type,price_hatchback,price_sedan_suv").eq("slug", "daily-shine-interior").maybeSingle()).data;
-    const oneTime    = (await admin.from("service_catalog").select("id,slug,service_type,price_hatchback,price_sedan_suv").eq("slug", "one-time-wash").maybeSingle()).data;
-    if (!dailyShine || !oneTime) throw new Error("service_catalog rows missing after upsert");
+    // 4) Subscriptions for c1..c4 (paid)
+    const dailyShine = (await admin.from("service_catalog").select("id,slug,service_type").eq("slug", "daily-shine-interior").maybeSingle()).data;
+    const oneTime    = (await admin.from("service_catalog").select("id,slug,service_type").eq("slug", "one-time-wash").maybeSingle()).data;
+    if (!dailyShine || !oneTime) throw new Error("service_catalog rows missing");
 
+    const bookingIdByCustomer: Record<string, string> = {};
     const subscribedKeys = ["customer1", "customer2", "customer3", "customer4"] as const;
     for (let i = 0; i < subscribedKeys.length; i++) {
       const key = subscribedKeys[i];
       const uid = ids[key];
       const vId = customerVehicleIds[key];
-      // bookings (subscription, paid)
-      const bk = await admin.from("bookings").upsert({
+      const orderId = `order_trial_${key}`;
+      const bk = await ensureRow(admin, "bookings", { razorpay_order_id: orderId }, {
         user_id: uid, service_id: dailyShine.id, vehicle_id: vId,
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: ["08:00", "09:00", "10:00", "09:00"][i],
         base_amount: 1499, addon_amount: 0, discount_amount: 0, total_amount: 1499,
         status: "paid", payment_status: "captured",
-        razorpay_order_id: `order_trial_${key}`, razorpay_payment_id: `pay_trial_${key}`,
+        razorpay_order_id: orderId, razorpay_payment_id: `pay_trial_${key}`,
         scheduled_time: ["08:00", "09:00", "10:00", "09:00"][i],
         notes: "Trial subscription booking",
-      } as any, { onConflict: "razorpay_order_id" } as any).select("id").maybeSingle();
-      const bookingId = bk.data?.id
-        ?? (await admin.from("bookings").select("id").eq("razorpay_order_id", `order_trial_${key}`).maybeSingle()).data?.id;
-      if (!bookingId) throw new Error(`booking insert failed for ${key}`);
+      });
+      bookingIdByCustomer[key] = bk.id;
       inc("bookings.subscription");
 
-      // subscriptions
+      // subscriptions (unique on booking_id)
       await admin.from("subscriptions").upsert({
-        booking_id: bookingId, user_id: uid, customer_id: uid, vehicle_id: vId,
+        booking_id: bk.id, user_id: uid, customer_id: uid, vehicle_id: vId,
         plan_slug: "daily-shine-interior", status: "active",
         start_date: new Date().toISOString().slice(0, 10),
         renewal_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
         service_start_date: new Date().toISOString().slice(0, 10),
         amount: 1499, currency: "INR",
-      } as any, { onConflict: "booking_id" } as any);
+      }, { onConflict: "booking_id" } as never);
       inc("subscriptions");
 
-      // payments row (captured)
-      await admin.from("payments").upsert({
-        booking_id: bookingId, user_id: uid, provider: "razorpay",
-        provider_order_id: `order_trial_${key}`, provider_payment_id: `pay_trial_${key}`,
+      // payments — ensure by booking_id
+      await ensureRow(admin, "payments", { booking_id: bk.id, provider: "razorpay" }, {
+        booking_id: bk.id, user_id: uid, provider: "razorpay",
+        provider_order_id: orderId, provider_payment_id: `pay_trial_${key}`,
         amount: 1499, currency: "INR", status: "captured",
         metadata: { trial: true },
-      } as any, { onConflict: "booking_id,provider" } as any);
+      });
       inc("payments");
     }
     wf("bookings+subscriptions.paid", "PASS");
 
-    // 5) One-time wash booking for customer5 (paid, not yet serviced)
+    // 5) One-time wash for customer5 (paid)
     {
       const uid = ids["customer5"];
       const vId = customerVehicleIds["customer5"];
-      await admin.from("bookings").upsert({
+      const orderId = "order_trial_onetime_c5";
+      await ensureRow(admin, "bookings", { razorpay_order_id: orderId }, {
         user_id: uid, service_id: oneTime.id, vehicle_id: vId,
         scheduled_date: new Date().toISOString().slice(0, 10),
         preferred_before_time: "11:00",
         base_amount: 399, addon_amount: 0, discount_amount: 0, total_amount: 399,
         status: "paid", payment_status: "captured",
-        razorpay_order_id: "order_trial_onetime_c5",
-        razorpay_payment_id: "pay_trial_onetime_c5",
+        razorpay_order_id: orderId, razorpay_payment_id: "pay_trial_onetime_c5",
         scheduled_time: "11:00", notes: "Trial one-time wash",
-      } as any, { onConflict: "razorpay_order_id" } as any);
+      });
       inc("bookings.one_time");
     }
     wf("booking.one_time", "PASS");
 
-    // 6) Subscription assignment queue + offer + accept → assign partner1 to customer1
+    // 6) Queue + offer (accepted) — partner1 ↔ customer1
     {
       const customerId = ids["customer1"];
       const partnerId  = ids["partner1"];
-      const bk = (await admin.from("bookings").select("id").eq("razorpay_order_id", "order_trial_customer1").maybeSingle()).data;
-      if (bk) {
-        const queueIns = await admin.from("subscription_assignment_queue").upsert({
-          booking_id: bk.id, customer_id: customerId,
+      const bkId = bookingIdByCustomer["customer1"];
+      if (bkId) {
+        await admin.from("subscription_assignment_queue").upsert({
+          booking_id: bkId, customer_id: customerId,
           area: "Gomti Nagar", lat: HOME_LAT, lng: HOME_LNG,
           service_required_before: "08:00", vehicle_category: "sedan_suv",
           status: "assigned", assigned_partner_id: partnerId, radius_km: 2,
           tried_partner_ids: [], attempts_log: [],
-        } as any, { onConflict: "booking_id" } as any).select("id").maybeSingle();
-        const queueId = queueIns.data?.id
-          ?? (await admin.from("subscription_assignment_queue").select("id").eq("booking_id", bk.id).maybeSingle()).data?.id;
+        }, { onConflict: "booking_id" } as never);
         inc("subscription_assignment_queue");
 
+        const queueId = (await admin.from("subscription_assignment_queue").select("id").eq("booking_id", bkId).maybeSingle()).data?.id;
         if (queueId) {
-          await admin.from("subscription_offers").upsert({
+          await ensureRow(admin, "subscription_offers", { queue_id: queueId, partner_id: partnerId }, {
             queue_id: queueId, partner_id: partnerId, scope: "exact",
             offered_at: new Date(Date.now() - 60_000).toISOString(),
             expires_at: new Date(Date.now() + 600_000).toISOString(),
             response: "accepted", responded_at: new Date().toISOString(),
-            distance_m: 850, score: 0.94,
-            score_breakdown: { trial: true },
-          } as any, { onConflict: "queue_id,partner_id" } as any);
+            distance_m: 850, score: 0.94, score_breakdown: { trial: true },
+          });
           inc("subscription_offers");
         }
-
-        // Update subscription with assigned_partner_id
         await admin.from("subscriptions").update({
           assigned_partner_id: partnerId, assigned_at: new Date().toISOString(),
-        }).eq("booking_id", bk.id);
+        }).eq("booking_id", bkId);
       }
     }
     wf("queue→offer→accept (c1↔p1)", "PASS");
 
-    // Same for customer2 / partner2 — exact-time customer
+    // Assign partner2 ↔ customer2 (also assign for route)
     {
-      const customerId = ids["customer2"];
-      const partnerId  = ids["partner2"];
-      const bk = (await admin.from("bookings").select("id").eq("razorpay_order_id", "order_trial_customer2").maybeSingle()).data;
-      if (bk) {
+      const bkId = bookingIdByCustomer["customer2"];
+      if (bkId) {
         await admin.from("subscriptions").update({
-          assigned_partner_id: partnerId, assigned_at: new Date().toISOString(),
-        }).eq("booking_id", bk.id);
+          assigned_partner_id: ids["partner2"], assigned_at: new Date().toISOString(),
+        }).eq("booking_id", bkId);
       }
     }
 
-    // 7) Assignments (today's route) for partner1 + partner2
+    // 7) Assignments today — partner1 & partner2
     const today = new Date().toISOString().slice(0, 10);
     for (const pkey of ["partner1", "partner2"]) {
       const pid = ids[pkey];
-      const asg = await admin.from("assignments").upsert({
+      await ensureRow(admin, "assignments", { partner_id: pid, scheduled_date: today }, {
         partner_id: pid, area: "Gomti Nagar", target_cars: 5, fulfilled_cars: 0,
         status: "active", rate_per_car: 17,
         estimated_earnings: 85, estimated_hours: 4, estimated_distance_km: 8,
@@ -392,22 +404,19 @@ export async function runTrialSeed(): Promise<SeedReport> {
         duration_days: 1, start_date: today, end_date: today,
         working_days: 1, expected_start_time: "07:00",
         total_earnings: 0,
-      } as any, { onConflict: "partner_id,scheduled_date" } as any).select("id").maybeSingle();
-      void asg; // assignmentId not strictly needed below
+      });
       inc("assignments");
     }
     wf("assignments.today", "PASS");
 
-    // 8) Services (today's stops) — partner1: 2 stops (c1 pending, c3 completed),
-    //    partner2: 1 stop (c2 in_progress), c4 unavailable
-    type StopSpec = { partner: string; customer: string; seq: number; status: "pending" | "in_progress" | "completed" | "unavailable"; priority?: string; };
+    // 8) Services (today's stops)
+    type StopSpec = { partner: string; customer: string; seq: number; status: "pending" | "in_progress" | "completed" | "unavailable"; priority?: string };
     const stops: StopSpec[] = [
       { partner: "partner1", customer: "customer1", seq: 1, status: "pending" },
       { partner: "partner1", customer: "customer3", seq: 2, status: "completed" },
       { partner: "partner2", customer: "customer2", seq: 1, status: "in_progress", priority: "vip" },
       { partner: "partner2", customer: "customer4", seq: 2, status: "unavailable" },
     ];
-
     const serviceIdByCustomer: Record<string, string> = {};
     for (const s of stops) {
       const pid = ids[s.partner];
@@ -417,91 +426,117 @@ export async function runTrialSeed(): Promise<SeedReport> {
         ? new Date(Date.now() - 30 * 60_000).toISOString() : null;
       const completedAt = s.status === "completed"
         ? new Date(Date.now() - 5 * 60_000).toISOString() : null;
-      const ins = await admin.from("services").upsert({
-        partner_id: pid, customer_id: cid, vehicle_id: vid,
-        scheduled_date: today, time_slot: "07:00 - 11:00",
-        sequence_no: s.seq, status: s.status,
-        started_at: startedAt, completed_at: completedAt,
-        rate_per_car: 17, priority: s.priority ?? "normal",
-        unavailable_reason: s.status === "unavailable" ? "vehicle_not_found" as any : null,
-        unavailable_notes: s.status === "unavailable" ? "Customer's car not at parking" : null,
-        unavailable_at: s.status === "unavailable" ? new Date().toISOString() : null,
-      } as any, { onConflict: "partner_id,customer_id,scheduled_date" } as any).select("id").maybeSingle();
-      const sid = ins.data?.id
-        ?? (await admin.from("services").select("id").eq("partner_id", pid).eq("customer_id", cid).eq("scheduled_date", today).maybeSingle()).data?.id;
-      if (sid) serviceIdByCustomer[s.customer] = sid;
+      const row = await ensureRow(admin, "services",
+        { partner_id: pid, customer_id: cid, scheduled_date: today },
+        {
+          partner_id: pid, customer_id: cid, vehicle_id: vid,
+          scheduled_date: today, time_slot: "07:00 - 11:00",
+          sequence_no: s.seq, status: s.status,
+          started_at: startedAt, completed_at: completedAt,
+          rate_per_car: 17, priority: s.priority ?? "normal",
+          unavailable_reason: s.status === "unavailable" ? "vehicle_not_found" : null,
+          unavailable_notes: s.status === "unavailable" ? "Customer's car not at parking" : null,
+          unavailable_at: s.status === "unavailable" ? new Date().toISOString() : null,
+        });
+      serviceIdByCustomer[s.customer] = row.id;
       inc(`services.${s.status}`);
     }
-    wf("services.today", "PASS", `${stops.length} stops created`);
+    wf("services.today", "PASS", `${stops.length} stops`);
 
-    // 9) Earnings + wallet for completed service (partner1 ↔ customer3)
+    // 9) Earnings + wallet for completed (c3)
     {
       const pid = ids["partner1"];
       const sid = serviceIdByCustomer["customer3"];
       if (sid) {
-        await admin.from("earnings").insert({
-          partner_id: pid, earned_on: today, amount: 17,
-          source: "service", service_id: sid, description: "Trial completed wash",
-        } as any);
-        inc("earnings");
-        await admin.from("wallet_ledger").insert({
-          partner_id: pid, entry_type: "credit", amount: 17, balance_after: 17,
-          service_id: sid, description: "Trial wash credit",
-        } as any);
-        inc("wallet_ledger");
+        const earnExists = await admin.from("earnings").select("id").eq("service_id", sid).maybeSingle();
+        if (!earnExists.data?.id) {
+          await admin.from("earnings").insert({
+            partner_id: pid, earned_on: today, amount: 17,
+            source: "service", service_id: sid, description: "Trial completed wash",
+          });
+          inc("earnings");
+        }
+        const wlExists = await admin.from("wallet_ledger").select("id").eq("service_id", sid).maybeSingle();
+        if (!wlExists.data?.id) {
+          await admin.from("wallet_ledger").insert({
+            partner_id: pid, entry_type: "credit", amount: 17, balance_after: 17,
+            service_id: sid, description: "Trial wash credit",
+          });
+          inc("wallet_ledger");
+        }
       }
     }
     wf("earnings+wallet (completed)", "PASS");
 
-    // 10) Dirty vehicle report (customer3 → partner1)
+    // 10) Dirty vehicle report (c3 → p1)
     {
       const sid = serviceIdByCustomer["customer3"];
       if (sid) {
-        await admin.from("dirty_vehicle_reports").insert({
-          service_id: sid, partner_id: ids["partner1"],
-          reason: "extra_dirty", notes: "Heavy mud on rims — needed extra time",
-        } as any);
-        inc("dirty_vehicle_reports");
+        const exists = await admin.from("dirty_vehicle_reports").select("id").eq("service_id", sid).maybeSingle();
+        if (!exists.data?.id) {
+          await admin.from("dirty_vehicle_reports").insert({
+            service_id: sid, partner_id: ids["partner1"],
+            reason: "extra_dirty", notes: "Heavy mud on rims — needed extra time",
+          });
+          inc("dirty_vehicle_reports");
+        }
       }
     }
 
-    // 11) Unavailability report (customer4 → partner2)
+    // 11) Unavailability report (c4 → p2)
     {
       const sid = serviceIdByCustomer["customer4"];
       if (sid) {
-        await admin.from("unavailability_reports").insert({
-          service_id: sid, partner_id: ids["partner2"], customer_id: ids["customer4"],
-          reason: "vehicle_not_found", notes: "Vehicle missing at slot",
-          credited_amount: 17,
-        } as any);
-        inc("unavailability_reports");
+        const exists = await admin.from("unavailability_reports").select("id").eq("service_id", sid).maybeSingle();
+        if (!exists.data?.id) {
+          await admin.from("unavailability_reports").insert({
+            service_id: sid, partner_id: ids["partner2"], customer_id: ids["customer4"],
+            reason: "vehicle_not_found", notes: "Vehicle missing at slot",
+            credited_amount: 17,
+          });
+          inc("unavailability_reports");
+        }
       }
     }
     wf("reliability reports", "PASS");
 
-    // 12) Notifications (customer + partner)
-    await admin.from("customer_notifications").insert([
+    // 12) Notifications (idempotent — match by user_id+title)
+    const cNotifs = [
       { user_id: ids["customer3"], type: "service_completed",
         title: "Today's wash is done", body: "Your car has been washed. View summary.",
         link: "/c/subscriptions" },
       { user_id: ids["customer1"], type: "service_scheduled",
         title: "Wash scheduled for today", body: "Partner Aarav will reach before 08:00 AM.",
         link: "/c/subscriptions" },
-    ] as any);
-    inc("customer_notifications", 2);
-
-    await admin.from("partner_notifications").insert([
+    ];
+    for (const n of cNotifs) {
+      const ex = await admin.from("customer_notifications").select("id")
+        .eq("user_id", n.user_id).eq("title", n.title).maybeSingle();
+      if (!ex.data?.id) {
+        await admin.from("customer_notifications").insert(n);
+        inc("customer_notifications");
+      }
+    }
+    const pNotifs = [
       { partner_id: ids["partner1"], type: "route_published",
         title: "Today's route is ready", body: "2 stops in Gomti Nagar.", link: "/app/live" },
       { partner_id: ids["partner2"], type: "new_assignment",
         title: "New VIP customer", body: "Nikhil Verma added to your route.", link: "/app/live" },
-    ] as any);
-    inc("partner_notifications", 2);
+    ];
+    for (const n of pNotifs) {
+      const ex = await admin.from("partner_notifications").select("id")
+        .eq("partner_id", n.partner_id).eq("title", n.title).maybeSingle();
+      if (!ex.data?.id) {
+        await admin.from("partner_notifications").insert(n);
+        inc("partner_notifications");
+      }
+    }
     wf("notifications", "PASS");
 
   } catch (e: any) {
     report.ok = false;
     report.errors.push(String(e?.message ?? e));
+    report.workflows.push({ step: "FATAL", status: "FAIL", detail: String(e?.message ?? e) });
   }
 
   return report;
@@ -517,7 +552,6 @@ export async function runTrialCleanup() {
   const inc = (k: string, n = 1) => { report.deleted[k] = (report.deleted[k] ?? 0) + n; };
 
   try {
-    // Collect user ids
     const ids: string[] = [];
     let page = 1;
     for (;;) {
@@ -531,41 +565,40 @@ export async function runTrialCleanup() {
       if (data.users.length < 200) break;
       page += 1;
     }
-
     if (ids.length === 0) return report;
 
-    // Delete dependent rows first (FK chain).
-    // Use IN() filters — these rows are linked to test user ids in various ways.
-    const eq = (ids as string[]);
+    const del = async (table: string, col: string, key = table) => {
+      const r = await admin.from(table).delete({ count: "exact" } as never).in(col, ids);
+      if (r.error) report.errors.push(`${table}: ${r.error.message}`);
+      else inc(key, r.count ?? 0);
+    };
 
-    // Service-graph rows
-    await admin.from("partner_notifications").delete().in("partner_id", eq).then(r => inc("partner_notifications", r.count ?? 0));
-    await admin.from("customer_notifications").delete().in("user_id", eq).then(r => inc("customer_notifications", r.count ?? 0));
-    await admin.from("offer_delivery_events").delete().in("partner_id", eq).then(r => inc("offer_delivery_events", r.count ?? 0));
-    await admin.from("subscription_offers").delete().in("partner_id", eq).then(r => inc("subscription_offers", r.count ?? 0));
-    await admin.from("subscription_assignment_queue").delete().in("customer_id", eq).then(r => inc("subscription_assignment_queue", r.count ?? 0));
-    await admin.from("wallet_ledger").delete().in("partner_id", eq).then(r => inc("wallet_ledger", r.count ?? 0));
-    await admin.from("earnings").delete().in("partner_id", eq).then(r => inc("earnings", r.count ?? 0));
-    await admin.from("dirty_vehicle_reports").delete().in("partner_id", eq).then(r => inc("dirty_vehicle_reports", r.count ?? 0));
-    await admin.from("unavailability_reports").delete().in("partner_id", eq).then(r => inc("unavailability_reports", r.count ?? 0));
-    await admin.from("service_photos").delete().in("partner_id", eq).then(r => inc("service_photos", r.count ?? 0));
-    await admin.from("services").delete().in("partner_id", eq).then(r => inc("services.byPartner", r.count ?? 0));
-    await admin.from("services").delete().in("customer_id", eq).then(r => inc("services.byCustomer", r.count ?? 0));
-    await admin.from("assignments").delete().in("partner_id", eq).then(r => inc("assignments", r.count ?? 0));
-    await admin.from("vehicles").delete().in("customer_id", eq).then(r => inc("vehicles", r.count ?? 0));
-    await admin.from("subscriptions").delete().in("user_id", eq).then(r => inc("subscriptions", r.count ?? 0));
-    await admin.from("payment_transactions").delete().in("user_id", eq).then(r => inc("payment_transactions", r.count ?? 0));
-    await admin.from("payments").delete().in("user_id", eq).then(r => inc("payments", r.count ?? 0));
-    await admin.from("bookings").delete().in("user_id", eq).then(r => inc("bookings", r.count ?? 0));
-    await admin.from("customer_vehicles").delete().in("user_id", eq).then(r => inc("customer_vehicles", r.count ?? 0));
-    await admin.from("customer_addresses").delete().in("user_id", eq).then(r => inc("customer_addresses", r.count ?? 0));
-    await admin.from("customer_profiles").delete().in("user_id", eq).then(r => inc("customer_profiles", r.count ?? 0));
-    await admin.from("customers").delete().in("id", eq).then(r => inc("customers", r.count ?? 0));
-    await admin.from("push_tokens").delete().in("user_id", eq).then(r => inc("push_tokens", r.count ?? 0));
-    await admin.from("partners").delete().in("id", eq).then(r => inc("partners", r.count ?? 0));
-    await admin.from("user_roles").delete().in("user_id", eq).then(r => inc("user_roles", r.count ?? 0));
+    await del("partner_notifications", "partner_id");
+    await del("customer_notifications", "user_id");
+    await del("offer_delivery_events", "partner_id");
+    await del("subscription_offers", "partner_id");
+    await del("subscription_assignment_queue", "customer_id");
+    await del("wallet_ledger", "partner_id");
+    await del("earnings", "partner_id");
+    await del("dirty_vehicle_reports", "partner_id");
+    await del("unavailability_reports", "partner_id");
+    await del("service_photos", "partner_id");
+    await del("services", "partner_id", "services.byPartner");
+    await del("services", "customer_id", "services.byCustomer");
+    await del("assignments", "partner_id");
+    await del("vehicles", "customer_id");
+    await del("subscriptions", "user_id");
+    await del("payment_transactions", "user_id");
+    await del("payments", "user_id");
+    await del("bookings", "user_id");
+    await del("customer_vehicles", "user_id");
+    await del("customer_addresses", "user_id");
+    await del("customer_profiles", "user_id");
+    await del("customers", "id");
+    await del("push_tokens", "user_id");
+    await del("partners", "id");
+    await del("user_roles", "user_id");
 
-    // Finally, delete auth users
     for (const uid of ids) {
       const { error } = await admin.auth.admin.deleteUser(uid);
       if (error) report.errors.push(`deleteUser(${uid}): ${error.message}`);
@@ -575,7 +608,6 @@ export async function runTrialCleanup() {
     report.ok = false;
     report.errors.push(String(e?.message ?? e));
   }
-
   return report;
 }
 
@@ -594,57 +626,57 @@ export async function runTrialVerify() {
     }
   };
 
-  await check("Customer accounts exist (>=5)", async () => {
-    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+91980000010%");
+  await check("1. Customer accounts (>=5)", async () => {
+    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+919800001%");
     return { count: r.count, error: r.error };
   });
-  await check("Partner accounts exist (>=3)", async () => {
+  await check("2. Partner accounts (>=3)", async () => {
     const r = await admin.from("partners").select("*", { count: "exact", head: true }).ilike("partner_code", "TRIAL%");
     return { count: r.count, error: r.error };
   });
-  await check("Paid bookings present", async () => {
+  await check("3. Paid bookings", async () => {
     const r = await admin.from("bookings").select("*", { count: "exact", head: true }).like("razorpay_order_id", "order_trial_%").eq("payment_status", "captured");
     return { count: r.count, error: r.error };
   });
-  await check("Subscriptions active", async () => {
-    const r = await admin.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active");
+  await check("4. Subscriptions active", async () => {
+    const r = await admin.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active").eq("plan_slug", "daily-shine-interior");
     return { count: r.count, error: r.error };
   });
-  await check("Subscription queue row", async () => {
+  await check("5. Subscription queue row", async () => {
     const r = await admin.from("subscription_assignment_queue").select("*", { count: "exact", head: true }).eq("area", "Gomti Nagar");
     return { count: r.count, error: r.error };
   });
-  await check("Offer accepted", async () => {
+  await check("6. Offer accepted", async () => {
     const r = await admin.from("subscription_offers").select("*", { count: "exact", head: true }).eq("response", "accepted");
     return { count: r.count, error: r.error };
   });
-  await check("Assignment for today exists", async () => {
+  await check("7. Assignment for today", async () => {
     const today = new Date().toISOString().slice(0, 10);
     const r = await admin.from("assignments").select("*", { count: "exact", head: true }).eq("scheduled_date", today);
     return { count: r.count, error: r.error };
   });
-  await check("Route stops (services today)", async () => {
+  await check("8. Route stops (services today)", async () => {
     const today = new Date().toISOString().slice(0, 10);
     const r = await admin.from("services").select("*", { count: "exact", head: true }).eq("scheduled_date", today);
     return { count: r.count, error: r.error };
   });
-  await check("Completed service present", async () => {
+  await check("9. Completed service", async () => {
     const r = await admin.from("services").select("*", { count: "exact", head: true }).eq("status", "completed");
     return { count: r.count, error: r.error };
   });
-  await check("Earnings credited", async () => {
+  await check("10. Earnings credited", async () => {
     const r = await admin.from("earnings").select("*", { count: "exact", head: true });
     return { count: r.count, error: r.error };
   });
-  await check("Customer feed notification", async () => {
+  await check("11. Customer feed notification (completed)", async () => {
     const r = await admin.from("customer_notifications").select("*", { count: "exact", head: true }).eq("type", "service_completed");
     return { count: r.count, error: r.error };
   });
-  await check("Dirty vehicle report", async () => {
+  await check("12. Dirty vehicle report", async () => {
     const r = await admin.from("dirty_vehicle_reports").select("*", { count: "exact", head: true });
     return { count: r.count, error: r.error };
   });
-  await check("Unavailability report", async () => {
+  await check("13. Unavailability report", async () => {
     const r = await admin.from("unavailability_reports").select("*", { count: "exact", head: true });
     return { count: r.count, error: r.error };
   });
