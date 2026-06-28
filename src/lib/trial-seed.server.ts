@@ -627,7 +627,7 @@ export async function runTrialVerify() {
   };
 
   await check("1. Customer accounts (>=5)", async () => {
-    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+919800001%");
+    const r = await admin.from("customers").select("*", { count: "exact", head: true }).ilike("phone", "+91980000010%");
     return { count: r.count, error: r.error };
   });
   await check("2. Partner accounts (>=3)", async () => {
@@ -635,7 +635,7 @@ export async function runTrialVerify() {
     return { count: r.count, error: r.error };
   });
   await check("3. Paid bookings", async () => {
-    const r = await admin.from("bookings").select("*", { count: "exact", head: true }).like("razorpay_order_id", "order_trial_%").eq("payment_status", "captured");
+    const r = await admin.from("bookings").select("*", { count: "exact", head: true }).like("razorpay_order_id", "order_trial_%").eq("payment_status", "paid");
     return { count: r.count, error: r.error };
   });
   await check("4. Subscriptions active", async () => {
