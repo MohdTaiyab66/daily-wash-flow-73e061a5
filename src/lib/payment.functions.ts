@@ -28,12 +28,31 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from("bookings")
-      .select("id,user_id,total_amount,payment_status,razorpay_order_id,service_catalog:service_id(service_type,name)")
+      .select("id,user_id,vehicle_id,total_amount,payment_status,razorpay_order_id,service_catalog:service_id(service_type,category,name)")
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
     if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
     if (booking.payment_status === "paid") throw new Error("Booking is already paid");
+
+    // P0-DUP-01: Block Razorpay order creation if the vehicle already has an
+    // open Daily Shine subscription. RPC has the same check; this guard also
+    // catches retried payment attempts for pre-existing pending bookings.
+    const svc = booking.service_catalog as any;
+    const isSubscription = svc?.service_type === "subscription" || svc?.category === "subscription";
+    if (isSubscription && (booking as any).vehicle_id) {
+      const { data: openSub } = await supabaseAdmin
+        .from("subscriptions")
+        .select("id")
+        .eq("vehicle_id", (booking as any).vehicle_id)
+        .in("status", ["active", "awaiting_partner_assignment", "assigned"])
+        .neq("booking_id", data.bookingId)
+        .limit(1)
+        .maybeSingle();
+      if (openSub) {
+        throw new Error("This vehicle already has an active Daily Shine subscription.");
+      }
+    }
 
     const amountPaise = Math.round(Number(booking.total_amount ?? 0) * 100);
     if (!Number.isFinite(amountPaise) || amountPaise <= 0) throw new Error("Invalid booking amount");
