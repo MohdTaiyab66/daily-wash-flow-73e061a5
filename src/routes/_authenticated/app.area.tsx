@@ -119,12 +119,13 @@ function AreaPage() {
       p_area_name: outOfCoverage.area,
       p_latitude: outOfCoverage.lat,
       p_longitude: outOfCoverage.lng,
-      p_vehicle: requestForm.vehicle || null,
-      p_experience_years: requestForm.experience ? Number(requestForm.experience) : null,
-      p_preferred_cars_per_day: requestForm.cars ? Number(requestForm.cars) : null,
-      p_expected_joining_date: null,
-      p_notes: requestForm.notes || null,
+      p_vehicle: requestForm.vehicle || undefined,
+      p_experience_years: requestForm.experience ? Number(requestForm.experience) : undefined,
+      p_preferred_cars_per_day: requestForm.cars ? Number(requestForm.cars) : undefined,
+      p_expected_joining_date: undefined,
+      p_notes: requestForm.notes || undefined,
     });
+
     setSubmittingRequest(false);
     if (error) { toast.error(error.message); return; }
     setRequestSubmitted(true);
