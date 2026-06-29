@@ -522,20 +522,34 @@ function ServiceDetail() {
 
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 py-3">
-          <div>
-            <div className="text-xs text-muted-foreground">Total</div>
-            <div className="text-xl font-semibold">₹{total}</div>
-            <div className="text-[10px] text-muted-foreground">
-              {service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+        <div className="mx-auto max-w-md px-5 py-3">
+          {service?.service_type === "subscription" && vehicleSubQ.data ? (
+            <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
+              This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
             </div>
-            {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
+          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-xl font-semibold">₹{total}</div>
+              <div className="text-[10px] text-muted-foreground">
+                {service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+              </div>
+              {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
+            </div>
+            <Button
+              type="button"
+              onClick={confirm}
+              disabled={submitting || (service?.service_type === "subscription" && !!vehicleSubQ.data)}
+              size="lg"
+              className="rounded-full px-6"
+            >
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
           </div>
-          <Button type="button" onClick={confirm} disabled={submitting} size="lg" className="rounded-full px-6">
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
         </div>
       </div>
+
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
