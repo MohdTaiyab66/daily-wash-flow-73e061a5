@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, redirect } from "@tanstack/react-router";
-import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, Sparkles, Bell, Globe, BellRing } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare2, ClipboardList, Wallet, ArrowLeft, Settings, Camera, UserPlus, Activity, ShieldAlert, TrendingUp, CalendarCheck, RotateCcw, Map, UserCheck, IndianRupee, Sparkles, Bell, Globe, BellRing, LifeBuoy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
@@ -46,6 +46,7 @@ function AdminLayout() {
     { to: "/admin/addon-queue", label: "Add-on Queue", icon: Bell },
     { to: "/admin/offer-history", label: "Offer History", icon: ClipboardList },
     { to: "/admin/route-manager", label: "Route Manager", icon: Map },
+    { to: "/admin/dar", label: "Recovery (DAR)", icon: LifeBuoy },
     { to: "/admin/customer-map", label: "Customer Map", icon: Map },
     { to: "/admin/services", label: "Services", icon: ClipboardList },
     { to: "/admin/photos", label: "Photos", icon: Camera },
