@@ -1055,6 +1055,128 @@ export type Database = {
         }
         Relationships: []
       }
+      dar_events: {
+        Row: {
+          affected_count: number
+          affected_service_ids: string[]
+          created_at: string
+          id: string
+          notes: string | null
+          partner_id: string
+          reason: string
+          recovered_count: number
+          resolved_at: string | null
+          scheduled_date: string
+          status: string
+          triggered_at: string
+        }
+        Insert: {
+          affected_count?: number
+          affected_service_ids?: string[]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          reason: string
+          recovered_count?: number
+          resolved_at?: string | null
+          scheduled_date?: string
+          status?: string
+          triggered_at?: string
+        }
+        Update: {
+          affected_count?: number
+          affected_service_ids?: string[]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          reason?: string
+          recovered_count?: number
+          resolved_at?: string | null
+          scheduled_date?: string
+          status?: string
+          triggered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dar_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dar_offers: {
+        Row: {
+          accepted_service_ids: string[]
+          created_at: string
+          event_id: string
+          expires_at: string
+          extra_distance_km: number
+          extra_monthly_earnings: number
+          extra_time_min: number
+          id: string
+          partner_id: string
+          responded_at: string | null
+          score: number
+          sent_at: string
+          service_count: number
+          service_ids: string[]
+          status: string
+        }
+        Insert: {
+          accepted_service_ids?: string[]
+          created_at?: string
+          event_id: string
+          expires_at?: string
+          extra_distance_km?: number
+          extra_monthly_earnings?: number
+          extra_time_min?: number
+          id?: string
+          partner_id: string
+          responded_at?: string | null
+          score?: number
+          sent_at?: string
+          service_count?: number
+          service_ids?: string[]
+          status?: string
+        }
+        Update: {
+          accepted_service_ids?: string[]
+          created_at?: string
+          event_id?: string
+          expires_at?: string
+          extra_distance_km?: number
+          extra_monthly_earnings?: number
+          extra_time_min?: number
+          id?: string
+          partner_id?: string
+          responded_at?: string | null
+          score?: number
+          sent_at?: string
+          service_count?: number
+          service_ids?: string[]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dar_offers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "dar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dar_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dirty_vehicle_reports: {
         Row: {
           created_at: string
@@ -2481,12 +2603,14 @@ export type Database = {
           last_sequence_change_by: string | null
           locked_position: boolean
           manual_sequence_no: number | null
+          original_partner_id: string | null
           partner_id: string | null
           priority: string
           priority_set_at: string | null
           priority_set_by: string | null
           rate_per_car: number
           reassigned_from: string | null
+          recovery_event_id: string | null
           scheduled_date: string
           sequence_no: number | null
           start_lat: number | null
@@ -2526,12 +2650,14 @@ export type Database = {
           last_sequence_change_by?: string | null
           locked_position?: boolean
           manual_sequence_no?: number | null
+          original_partner_id?: string | null
           partner_id?: string | null
           priority?: string
           priority_set_at?: string | null
           priority_set_by?: string | null
           rate_per_car?: number
           reassigned_from?: string | null
+          recovery_event_id?: string | null
           scheduled_date?: string
           sequence_no?: number | null
           start_lat?: number | null
@@ -2571,12 +2697,14 @@ export type Database = {
           last_sequence_change_by?: string | null
           locked_position?: boolean
           manual_sequence_no?: number | null
+          original_partner_id?: string | null
           partner_id?: string | null
           priority?: string
           priority_set_at?: string | null
           priority_set_by?: string | null
           rate_per_car?: number
           reassigned_from?: string | null
+          recovery_event_id?: string | null
           scheduled_date?: string
           sequence_no?: number | null
           start_lat?: number | null
@@ -2609,6 +2737,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_original_partner_id_fkey"
+            columns: ["original_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
@@ -3419,9 +3554,21 @@ export type Database = {
         Args: { p_date: string; p_text: string }
         Returns: string
       }
+      _haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       _resolve_user_id_for_customer: {
         Args: { p_customer_id: string }
         Returns: string
+      }
+      _setting_bool: {
+        Args: { _default: boolean; _key: string }
+        Returns: boolean
+      }
+      _setting_num: {
+        Args: { _default: number; _key: string }
+        Returns: number
       }
       accept_assignment: { Args: { p_target_cars: number }; Returns: string }
       accept_assignment_v2: {
@@ -3773,6 +3920,18 @@ export type Database = {
         }
         Returns: string
       }
+      dar_accept_offer: {
+        Args: { p_offer_id: string; p_service_ids?: string[] }
+        Returns: Json
+      }
+      dar_dashboard_metrics: { Args: never; Returns: Json }
+      dar_expire_offers: { Args: never; Returns: number }
+      dar_find_candidates: { Args: { p_event_id: string }; Returns: number }
+      dar_ignore_offer: { Args: { p_offer_id: string }; Returns: undefined }
+      dar_trigger_recovery: {
+        Args: { p_partner_id: string; p_reason: string }
+        Returns: string
+      }
       enqueue_subscription_booking: {
         Args: { p_booking_id: string }
         Returns: string
@@ -3846,6 +4005,7 @@ export type Database = {
         Args: { p_expires?: number; p_storage_path: string }
         Returns: string
       }
+      get_partner_ui_prefs: { Args: never; Returns: Json }
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
         Returns: Json
@@ -4061,6 +4221,18 @@ export type Database = {
           p_weekday: number
         }
         Returns: string[]
+      }
+      send_partner_notification: {
+        Args: {
+          p_body?: string
+          p_category: string
+          p_link?: string
+          p_metadata?: Json
+          p_partner_id: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
       }
       set_partner_area: {
         Args: { p_area: string; p_lat: number; p_lng: number }
