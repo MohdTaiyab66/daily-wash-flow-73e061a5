@@ -15,6 +15,7 @@ import { useState } from "react";
 import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
+import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { optimizeRoute } from "@/lib/route-optimize";
 import { useEffect } from "react";
