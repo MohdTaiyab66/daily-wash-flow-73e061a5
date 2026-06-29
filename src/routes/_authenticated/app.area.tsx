@@ -193,6 +193,76 @@ function AreaPage() {
         Use my current location
       </Button>
 
+      {(existingRequest || requestSubmitted) && !outOfCoverage && (
+        <Card className="mt-4 border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30" data-testid="expansion-pending">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 h-4 w-4 text-amber-600" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold">Expansion request pending</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                We've recorded your interest in {existingRequest?.area_name || outOfCoverage}. We'll notify you when it opens.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {outOfCoverage && (
+        <Card className="mt-4 border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30" data-testid="coming-soon-panel">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 h-5 w-5 text-amber-600" />
+            <div className="flex-1">
+              <p className="font-semibold">Coming soon to {outOfCoverage.area}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your location isn't in our active coverage yet. Register your interest — we expand to areas with the most partner demand first.
+              </p>
+              {!showRequestForm ? (
+                <Button size="sm" className="mt-3" onClick={() => setShowRequestForm(true)} data-testid="open-expansion-form">
+                  Request my area
+                </Button>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <Label htmlFor="exp-vehicle" className="text-xs">Your vehicle</Label>
+                    <Input id="exp-vehicle" placeholder="e.g. Bike / Scooter"
+                      value={requestForm.vehicle}
+                      onChange={(e) => setRequestForm((f) => ({ ...f, vehicle: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="exp-exp" className="text-xs">Experience (yrs)</Label>
+                      <Input id="exp-exp" type="number" inputMode="numeric" min={0}
+                        value={requestForm.experience}
+                        onChange={(e) => setRequestForm((f) => ({ ...f, experience: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label htmlFor="exp-cars" className="text-xs">Cars/day target</Label>
+                      <Input id="exp-cars" type="number" inputMode="numeric" min={1} max={40}
+                        value={requestForm.cars}
+                        onChange={(e) => setRequestForm((f) => ({ ...f, cars: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="exp-notes" className="text-xs">Anything else (optional)</Label>
+                    <Textarea id="exp-notes" rows={2}
+                      value={requestForm.notes}
+                      onChange={(e) => setRequestForm((f) => ({ ...f, notes: e.target.value }))} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={submitRequest} disabled={submittingRequest} data-testid="submit-expansion">
+                      {submittingRequest && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Submit request
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowRequestForm(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
+
       <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Or pick manually</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         {AREAS.map((a) => {
