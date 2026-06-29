@@ -4,8 +4,10 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { reverseGeocode } from "@/lib/geo.functions";
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/app/area")({
 });
 
 import { SERVICE_AREAS as AREAS, nearestServiceArea as nearestArea } from "@/lib/areas";
+
 
 
 function AreaPage() {
