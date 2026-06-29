@@ -114,7 +114,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "checkout_distance_m", label: "Check-out distance (m)" },
       { key: "gps_verification", label: "GPS verification", kind: "bool" },
       { key: "selfie_required", label: "Selfie required", kind: "bool" },
-      { key: "background_tracking", label: "Background tracking", kind: "bool" },
+      // background_tracking hidden until native build supports it
     ],
   },
   {
