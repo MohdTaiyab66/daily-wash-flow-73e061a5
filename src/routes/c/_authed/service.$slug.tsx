@@ -107,6 +107,23 @@ function ServiceDetail() {
     },
   });
 
+  // P0-DUP-01: detect an existing open Daily Shine subscription for the selected vehicle.
+  const vehicleSubQ = useQuery({
+    queryKey: ["vehicle-open-subscription", vehicleId],
+    enabled: !!vehicleId,
+    queryFn: async (): Promise<{ id: string; status: string } | null> => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("id,status")
+        .eq("vehicle_id", vehicleId)
+        .in("status", ["active", "awaiting_partner_assignment", "assigned"])
+        .limit(1)
+        .maybeSingle();
+      return data ?? null;
+    },
+  });
+
+
 
   useEffect(() => {
     if (vehiclesQ.data?.length) {
