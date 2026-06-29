@@ -131,6 +131,8 @@ function RoutePage() {
         {routeVisible ? "Optimised by distance and required time." : `Route hidden after ${formatTime12(cutoff)}.`}
       </p>
 
+      <div className="mt-4"><DarOfferCard /></div>
+
       <div className="mt-5">
         <LiveMap stops={stops} showCustomers={routeVisible && pending.length > 0} />
         <Card className="mt-3 grid grid-cols-3 border-t border-border text-center p-0">
