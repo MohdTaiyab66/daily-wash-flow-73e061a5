@@ -171,8 +171,10 @@ function AssignmentsPage() {
   const availableInArea = preview ? Number((preview as any).available_customers ?? 0) : 0;
   const acceptableCars = preview ? Math.min(cars, availableInArea) : 0;
   const workingDays = preview?.working_days ?? 0;
-  const dailyEarn = acceptableCars * rate;
-  const totalEarn = dailyEarn * workingDays;
+  // Use server-computed earnings from preview_assignment RPC (single source of truth).
+  // Fall back to client multiplication only when the preview hasn't loaded.
+  const dailyEarn = preview ? Number((preview as any).daily_earnings ?? 0) : acceptableCars * rate;
+  const totalEarn = preview ? Number((preview as any).total_earnings ?? 0) : dailyEarn * workingDays;
   const radius = preview ? Number(preview.estimated_radius_km) : 0;
   const hours = preview ? Number(preview.estimated_hours) : 0;
   const startTime = preview?.expected_start_time ?? "07:00";
