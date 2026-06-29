@@ -4017,6 +4017,8 @@ export type Database = {
           available_customers: number
           cars: number
           daily_earnings: number
+          daily_shine_demand: number
+          daily_shine_open: boolean
           duration_days: number
           estimated_hours: number
           estimated_radius_km: number
@@ -4025,6 +4027,10 @@ export type Database = {
           message: string
           total_earnings: number
           working_days: number
+          zone_capacity_remaining: number
+          zone_id: string
+          zone_name: string
+          zone_used_pct: number
         }[]
       }
       rank_expansion_requests: {
