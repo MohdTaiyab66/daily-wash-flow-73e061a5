@@ -169,7 +169,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "traffic_layer", label: "Traffic layer", kind: "bool" },
       { key: "satellite_layer", label: "Satellite layer", kind: "bool" },
       { key: "cluster_view", label: "Cluster view", kind: "bool" },
-      { key: "heat_map", label: "Heat map", kind: "bool" },
+      // heat_map hidden — pending Coverage Manager heat layer
       { key: "partner_location_interval_sec", label: "Partner location interval (sec)" },
       { key: "customer_refresh_sec", label: "Customer refresh interval (sec)" },
       { key: "route_refresh_sec", label: "Route refresh interval (sec)" },
