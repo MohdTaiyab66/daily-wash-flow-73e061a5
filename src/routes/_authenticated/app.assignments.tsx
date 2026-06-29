@@ -259,7 +259,7 @@ function AssignmentsPage() {
           <div>
             <p className="text-[10px] uppercase tracking-wider text-background/60">{t("total_earnings")}</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight">₹{totalEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn}/{t("daily").toLowerCase()} · {workingDays} {t("days")}{partialAvailable ? ` · capped at ${availableInArea} cars` : ""}</p>
+            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn.toLocaleString("en-IN")}/{t("daily").toLowerCase()} · {workingDays} {t("days")}{partialAvailable ? ` · capped at ${availableInArea} cars` : ""}</p>
           </div>
           {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
         </div>
@@ -269,6 +269,45 @@ function AssignmentsPage() {
           <Mini icon={<Sun className="h-3 w-3" />} label={t("starts")} value={formatTime12(startTime)} />
         </div>
       </Card>
+
+      {/* Live zone insights — all computed server-side, no client math */}
+      {preview && (
+        <Card data-testid="zone-insights" className="mt-3 p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zone insights</p>
+            {(preview as any).zone_name && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{(preview as any).zone_name}</span>
+            )}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Customers available</p>
+              <p className="mt-1 text-xl font-semibold" data-testid="zi-available">{availableInArea}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Daily Shine demand</p>
+              <p className="mt-1 text-xl font-semibold" data-testid="zi-demand">{Number((preview as any).daily_shine_demand ?? 0)}</p>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Zone capacity left</p>
+              <p className="mt-1 text-xl font-semibold" data-testid="zi-capacity">
+                {(preview as any).zone_id ? Number((preview as any).zone_capacity_remaining ?? 0) : "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Zone utilization</p>
+              <p className="mt-1 text-xl font-semibold" data-testid="zi-util">
+                {(preview as any).zone_id ? `${Number((preview as any).zone_used_pct ?? 0)}%` : "—"}
+              </p>
+            </div>
+          </div>
+          {(preview as any).zone_id && !(preview as any).daily_shine_open && (
+            <p className="mt-3 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              Daily Shine isn't open in this zone yet. <Link to="/app/area" className="underline">Manage area</Link>
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* No / partial customers flow */}
       {preview && !fullyAvailable && (
