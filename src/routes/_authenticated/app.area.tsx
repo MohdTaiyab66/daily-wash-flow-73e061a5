@@ -87,14 +87,16 @@ function AreaPage() {
         }
         // Authoritative serviceability check via coverage zones (GIS)
         const { data: cov } = await supabase.rpc("get_coverage_at", { p_lat: lat, p_lng: lng });
-        const zones = Array.isArray(cov) ? cov : [];
-        if (zones.length === 0) {
+        const rows = Array.isArray(cov) ? cov : (cov ? [cov] : []);
+        const matched = rows.some((r: any) => r?.matched === true && r?.zone_id);
+        if (!matched) {
           setSelected(null);
           setOutOfCoverage({ area: realArea || "your location", lat, lng });
           toast.message("Not yet serviceable", { description: `${realArea || "Your location"} is outside our coverage zones.` });
           setLocating(false);
           return;
         }
+
         // Inside coverage — match catalog entry if available
         const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
         if (exact) {
