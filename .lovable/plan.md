@@ -1,139 +1,141 @@
+# Phase 1 — Partner Module Stabilization (Pre-DAR)
 
-# Urban Wash – Partner Stability & Marketplace Fix
-
-Strict order. Nothing new is wired into UI until each prerequisite passes its own check. No error suppression — every fix lands at the real layer (RLS, RPC, geolocation, settings resolver).
-
----
-
-## Phase 1 — Partner Login Bug ("Not allowed to change the status")
-
-**Root-cause investigation (read-only first):**
-1. `rg` every call fired after OTP verify: `updatePartnerStatus`, `useToggleOnline`, `usePartnerHeartbeat`, attendance auto check-in, `last_seen` writers, push token registration, FCM hooks.
-2. Inspect every trigger on `partners` (`tg_*`, `trg_*`) and any RLS policy on `partners`, `attendance`, `push_tokens` that raises `Not allowed to change status`.
-3. Query `pg_proc` / triggers for the literal error string to pinpoint the source.
-
-**Fix:**
-- Correct the offending RLS / trigger so partners may legitimately update their own `availability`, `last_seen`, attendance row, and push token on login.
-- If a trigger guards transitions (e.g. suspended→online), allow the no-op / first-login transition explicitly.
-- Sequence post-login effects in one orchestrator (`useEffect` in partner shell) so failures surface as one toast, not a cascade.
-
-**Verify:** Playwright login as partner `9696...`, confirm no toast, `partners.availability='online'`, `attendance` row inserted, `last_seen` fresh, no console errors.
+**Rule for this phase:** Every item ends with a Playwright-driven execution + screenshot, not a code read. DAR work is forbidden until the final PASS/FAIL report is delivered.
 
 ---
 
-## Phase 2 — Real GPS (Partner + Customer)
+## Step 0 — Baseline audit (no code changes)
 
-**Root cause:** Hardcoded Khurram Nagar fallback or cached `uw_customer_geo` / partner location reused without re-prompting.
+Before touching anything, capture the current truth so the report is grounded:
 
-**Fix:**
-- Central `getFreshLocation()` util: `navigator.geolocation.getCurrentPosition({ enableHighAccuracy:true, maximumAge:0, timeout:15000 })` with explicit permission handling; on Capacitor, use `@capacitor/geolocation` when `platform.isNative`.
-- Always reverse-geocode through Google Maps gateway server fn (`src/lib/geo.functions.ts`) — never trust localStorage on refresh; cache only for session, not across loads.
-- Remove every hardcoded Khurram Nagar / Lucknow fallback. If permission denied → show explicit "Enable Location" CTA, never silently substitute coords.
-- Partner: write `partners.last_lat/last_lng/last_address` on heartbeat tick.
-- Admin live map already reads `partners.last_lat/lng` → will match automatically.
+1. Dump current `platform_settings` rows (all 9 categories + route_visibility_until + DAR seeds).
+2. Dump `partner_expansion_requests` schema + row count.
+3. Dump `coverage_zones` columns actually used by assignment builder.
+4. Log into 1 admin + 1 partner + 1 customer account via Playwright and screenshot home of each. This is the "before" baseline.
 
-**Verify:** Customer + partner both show real lat/lng + resolved area; admin live map dot matches.
+Output: `/tmp/phase1/00_baseline/` with SQL dumps + 3 screenshots.
 
 ---
 
-## Phase 3 — Assignment Builder reactivity
+## Step 1 — Assignment Builder (fully dynamic)
 
-**Root cause:** Builder reads static derived values; no recompute when inputs change; coverage zone capacity not fed in.
+**Goal:** Every input change recomputes every output from live DB + `platform_settings`. Zero hardcoded numbers.
 
-**Fix:**
-- New server fn `computeAssignmentEstimate({ cars_per_day, duration_days, radius_m, area_zone_id, availability_window })` returning `{ expected_earnings, working_hours, route_distance_km, customer_count, capacity_remaining }` using `coverage_zones` settings + `platform_settings` rates.
-- `useQuery` keyed on every input → realtime updates while sliders move (debounced 250ms).
-- Replace hardcoded constants in `app.my-assignment.tsx` / `assignments` builder.
+Backend:
+- Create one RPC `get_assignment_builder_preview(partner_id, cars_per_day, duration_min, area_or_zone_id, working_hours, availability_days)` returning:
+  - expected_monthly_earnings, expected_daily_earnings
+  - est_route_distance_km, est_working_hours, est_service_time_min
+  - expected_customer_count, capacity_remaining
+  - available_customers_in_area, daily_shine_demand, current_zone_utilization
+- All constants pulled from `platform_settings` (price per wash, avg travel speed, cluster radius, capacity ceilings).
+- Use existing `coverage_zones` capacity + active `subscriptions`/`services` counts for utilization.
 
----
+Frontend:
+- Refactor Assignment Builder screen to call the RPC via `useQuery` with a debounced key on every input.
+- Remove every literal number; replace with RPC fields.
+- Loading skeleton on recompute; error toast on failure.
 
-## Phase 4 — Coming Soon + Partner Expansion Requests
-
-**Schema:** new table `partner_expansion_requests(id, partner_id nullable, name, phone, area, lat, lng, vehicle, experience_years, preferred_cars_per_day, expected_join_date, notes, status, created_at)` with grants + RLS.
-
-**Partner UI:**
-- When coverage check → `daily_shine=false`, hide builder, render "Coming Soon" card + registration form (still calculate hypothetical earnings/customers from neighboring zone averages for motivation).
-
-**Admin:**
-- Coverage Manager → "Expansion Intelligence" tab gains *Waiting Partners* count + revenue/priority score (already has waiting customers; join in the new table).
-- Realtime channel on `partner_expansion_requests` → admin notification toast + `admin_alerts` row.
-
----
-
-## Phase 5 — Today's Route Visibility Setting (genuine fix)
-
-**Root cause to confirm:** UI reads `platform_settings.route_visibility_window` but a stale local fallback or `services.scheduled_start_time` hides past stops after 10 AM regardless.
-
-**Fix:**
-- Single resolver `getRouteVisibility()` reading `platform_settings` ('ALL_DAY' | 'HH:MM') with no client default override.
-- `app.live.tsx` filters strictly on resolver; remove any `scheduled_start_time < now() - 2h` hide condition.
-- Admin Settings writes propagate via realtime invalidation.
-
-**Verify:** Set ALL_DAY → route visible at any hour; set 10:00 → hidden before 10:00, visible after.
+Verify (execute):
+- Playwright: log in as partner → open Assignment Builder → change cars/day from 5→10 → screenshot before/after → assert at least 4 numbers changed.
+- Change area → screenshot → assert "available customers" + "zone utilization" differ.
+- Change working hours → screenshot → assert "est working hours" + "monthly earnings" differ.
 
 ---
 
-## Phase 6 — Dynamic Assignment Recovery (new core feature)
+## Step 2 — Coming Soon Partner Flow
 
-**Trigger events that "release" customers from partner A:**
-- assignment cancel, partner offline >X min, rejected/absent unavailability report, emergency_leave flag.
+Backend already has `partner_expansion_requests`. Add:
+- RPC `get_coming_soon_preview(area_or_lat_lng)` → expected_monthly_earnings, est_customers, est_joining_time (from `coverage_zones.expected_launch_date` or platform_settings default).
+- RPC `submit_partner_expansion_request(name, phone, area, vehicle, cars_per_day_pref)` → inserts row + raises realtime on `admin_alerts`.
 
-**Schema additions:**
-- `services.released_at`, `services.released_reason`, `services.recovery_offer_id`.
-- New table `recovery_offers(id, service_ids[], from_partner_id, to_partner_id, distance_delta_m, earnings_delta_paise, expires_at, status)`.
+Frontend:
+- In partner onboarding/Assignment Builder, when `is_daily_shine_open(zone)` is false, render the Coming Soon card with the 4 metrics + Notify Me form.
+- Form posts to RPC; success toast; row visible in admin.
 
-**Server logic (RPC + cron tick):**
-1. `release_partner_customers(partner_id, reason)` — marks affected today's `services` released, unsets `partner_id`/`assignment_id`.
-2. `find_recovery_candidates(service_ids[])` — for each released cluster, query partners within zone where `remaining_capacity = max_cars - assigned_today_count >= cluster_size`, sorted by added distance via `route-optimize`.
-3. Push `recovery_offer` row → realtime → partner B sees offer card (in existing Daily Shine offer surface; not new UI surface, reused component pattern).
+Admin:
+- Coverage Manager already has Expansion Planning tab. Surface `partner_expansion_requests` alongside customer `expansion_requests`: counts of waiting partners, waiting customers, est MRR (partner cars/day × price × 30), priority score.
+- Add realtime channel for `admin_alerts` of type `partner_expansion`.
 
-**Partner action:** Accept All / Accept Selected / Ignore → `accept_recovery_offer` reassigns services and triggers `route-optimize` full recompute (not append) respecting locks/exact-time/clusters.
-
-**Customer:** No new event types; existing whitelist (`service_started` etc.) already blocks reassignment leaks.
-
----
-
-## Phase 7 — Route re-optimization on accept
-
-Reuse `src/lib/route-optimize.ts` cluster-first greedy; on accept, re-run full optimize with new merged stop list. Honour: `locked_position`, `manual_sequence_no`, `is_emergency`, `time_window_type='exact'`.
+Verify (execute):
+- Playwright: partner picks unserved area → Coming Soon card visible with non-empty numbers → submits form → admin tab refreshes and shows new row.
 
 ---
 
-## Phase 8 — Admin Controls (Settings → Partner Operations → Dynamic Assignment Recovery)
+## Step 3 — Exact Location (web + Capacitor parity)
 
-Add tab fed by `platform_settings` keys `dar.enabled`, `dar.min_remaining_capacity`, `dar.max_extra_cars`, `dar.search_radius_m`, `dar.max_travel_increase_min`, `dar.min_earnings_paise`, `dar.auto_suggest`, `dar.auto_optimize`, `dar.partner_timeout_sec`, `dar.retry_count`, `dar.preferred_partner_ids`, `dar.emergency_mode`. All editable via existing settings table.
+Findings to verify, not re-build:
+- Force `maximumAge: 0`, `enableHighAccuracy: true` everywhere (partner home, customer home, location search, area page).
+- Reverse-geocode via existing `reverseGeocode` server fn; cache key includes rounded coords, TTL 60s.
+- Resolve zone via `get_coverage_at(lat, lng)` — never "nearest locality".
 
----
-
-## Phase 9 — Live Admin Dashboard (Recovery KPIs)
-
-New RPC `admin_recovery_dashboard()` returning the 8 metrics. Surface as a card row inside existing Route Manager — no new top-level UI page. Realtime: subscribe to `recovery_offers` + `services.released_at`.
-
----
-
-## Phase 10 — End-to-End Verification
-
-Playwright script (`/tmp/browser/uw-stability/`) runs the full matrix:
-
-| Check | Method |
-|---|---|
-| Partner login no error | OTP flow |
-| Status / heartbeat / attendance rows | SQL after login |
-| GPS fresh + matches admin map | navigator mock + SQL |
-| Assignment builder reactive | slider change → estimate change |
-| Today's route visibility | toggle setting → reload |
-| Coming Soon registration | submit → row exists |
-| Recovery release → candidate offer | RPC trigger + offer row |
-| Accept offer → re-optimized route | sequence_no recomputed |
-| Admin dashboard KPIs live | realtime row |
-
-Report PASS/FAIL per row honestly. No green-check without executed evidence.
+Verify (execute on Web only; Capacitor noted as out-of-scope for sandbox but code-path is shared):
+- Playwright: pre-seed a specific lat/lng via `navigator.geolocation` mock → load partner home, customer home, admin live map → screenshot all 3 → assert reverse-geocoded address string + zone name match across all 3.
+- Mark Capacitor row as "Code path shared with Web — Web PASS implies Capacitor PASS pending device QA."
 
 ---
 
-## Technical Notes
+## Step 4 — Today's Route Visibility
 
-- All new tables: GRANTs (`authenticated`, `service_role`, `anon` only for public-coming-soon read where needed) before RLS.
-- `recovery_offers` realtime added to `supabase_realtime` publication.
-- No new client routes — extend existing screens.
-- All settings live in `platform_settings`; never hardcoded.
+- Iterate the admin setting `route_visibility_until` through {06:00, 07:00, 08:00, 09:00, 10:00, all_day}.
+- For each value: Playwright sets `platform_settings` via admin RPC → partner home reload → screenshot route panel → assert visible/hidden matches spec at simulated current time.
+- Test the persistence vectors: hard reload, navigate away+back, simulated background→foreground (page visibility event).
+
+Output: matrix of 6 settings × 3 vectors = 18 screenshots + pass table.
+
+---
+
+## Step 5 — Partner Operations Settings runtime effect
+
+For each of the 9 tabs, define ONE observable runtime behavior and execute it:
+
+| Tab | Setting toggled | Observable |
+|---|---|---|
+| Assignment | `assignment.max_radius_km` | Marketplace offer filtered by radius |
+| Earnings | `earnings.bonus_threshold` | Partner wallet shows updated bonus tier |
+| Attendance | `attendance.late_penalty_min` | Late check-in deducts wallet |
+| Marketplace | `marketplace.offer_ttl_sec` | Offer popup countdown matches |
+| Notifications | `notifications.push_enabled` | Partner skips push insert |
+| Maps | `maps.default_zoom` | Partner map opens at zoom |
+| Capacity | `capacity.daily_ceiling` | Builder caps cars/day at value |
+| Route Optimization | `optimization.cluster_radius_m` | Route Manager regroups clusters |
+| Service Visibility | `service.show_addons_to_partner` | Partner today's route hides/shows addons |
+
+Any tab whose backing setting is unused → either wire it or delete the row + UI control (no placeholders allowed).
+
+Verify (execute) each row with Playwright admin-change → partner-reload → screenshot diff.
+
+---
+
+## Step 6 — End-to-end partner workflow run
+
+Single Playwright script that runs the full happy path against a seeded partner + seeded booking:
+Login → Heartbeat ping in network log → Toggle availability → Confirm location → Open Assignment Builder → Receive marketplace offer → Accept → Today's Route shows stop → Start Service → Upload before photo → Upload after photo → Complete → Wallet balance increments → Reliability +1 → Attendance row inserted → Profile reflects updates → Rewards tier check → Realtime: trigger admin change, partner UI updates without reload.
+
+17 checkpoints, each with screenshot + network/DB assertion.
+
+---
+
+## Step 7 — Final PASS/FAIL report
+
+`/mnt/documents/UrbanWash_Phase1_Stabilization_Report.md` with one row per item above:
+- Status: PASS / FAIL
+- Evidence: screenshot path + SQL row id + network request id
+- If FAIL: blocker description + fix needed
+
+Only after every row is PASS do I post the closing line `Phase 1 complete — ready to begin DAR`. If anything is FAIL, I stop and surface it; no DAR work begins.
+
+---
+
+## Out of scope (explicit)
+
+- Dynamic Assignment Recovery (release → match → offer → accept → re-optimize pipeline).
+- Any new feature not listed in points 1–6 above.
+- Capacitor on-device testing (sandbox has no iOS/Android runtime; shared code path noted).
+
+## Technical notes
+
+- All new SQL goes through `supabase--migration` (one migration per step, GRANTs included).
+- Realtime additions use existing `supabase_realtime` publication.
+- Playwright scripts live in `/tmp/browser/phase1/step_N/` with screenshots under `screenshots/`.
+- Auth uses injected `LOVABLE_BROWSER_SUPABASE_SESSION_JSON` flow; if status is `signed_out`, I stop and ask the user to sign in once in the preview.
+- Estimated duration: ~6 migrations, ~9 Playwright scripts, ~80 screenshots, 1 final report.
