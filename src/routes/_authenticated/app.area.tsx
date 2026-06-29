@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/app/area")({
   component: AreaPage,
 });
 
-import { SERVICE_AREAS as AREAS, nearestServiceArea as nearestArea } from "@/lib/areas";
+import { SERVICE_AREAS as AREAS } from "@/lib/areas";
 
 
 
@@ -97,15 +97,15 @@ function AreaPage() {
           return;
         }
 
-        // Inside coverage — match catalog entry if available
-        const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
-        if (exact) {
-          setSelected(exact.name);
-          toast.success(`Detected: ${exact.name}`);
+        // Inside coverage — use the reverse-geocoded area name verbatim.
+        // No snap-to-nearest-catalog fallback: the stored area must match the device GPS.
+        const areaName = realArea || "";
+        if (areaName) {
+          setSelected(areaName);
+          toast.success(`Detected: ${areaName}`);
         } else {
-          const a = nearestArea(lat, lng);
-          setSelected(a.name);
-          toast.success(`Serviceable area: ${a.name}`);
+          setSelected(null);
+          toast.message("Location detected", { description: "Could not name your area — pick one below to save." });
         }
         setLocating(false);
       },
@@ -144,10 +144,16 @@ function AreaPage() {
       toast.error(`Area locked until ${new Date(partner!.area_locked_until!).toLocaleDateString("en-IN")}`);
       return;
     }
-    const area = AREAS.find((a) => a.name === pick)!;
-    const coords = selected === pick && detectedCoords ? detectedCoords : { lat: area.lat, lng: area.lng };
+    // Prefer the real device GPS when available; only fall back to catalog centroid
+    // when the partner manually picked an area without using "Use my current location".
+    const catalog = AREAS.find((a) => a.name === pick);
+    const coords = detectedCoords ?? (catalog ? { lat: catalog.lat, lng: catalog.lng } : null);
+    if (!coords) {
+      toast.error("Tap 'Use my current location' first so we can save your real GPS position.");
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.rpc("set_partner_area", { p_area: area.name, p_lat: coords.lat, p_lng: coords.lng });
+    const { error } = await supabase.rpc("set_partner_area", { p_area: pick, p_lat: coords.lat, p_lng: coords.lng });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Work area saved");
