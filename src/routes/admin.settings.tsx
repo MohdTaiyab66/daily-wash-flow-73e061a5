@@ -127,7 +127,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "partner_max_travel_km", label: "Max travel distance (km)" },
       { key: "max_subscriptions", label: "Max subscriptions" },
       { key: "max_onetime", label: "Max one-time bookings" },
-      { key: "auto_capacity_calc", label: "Auto capacity calculation", kind: "bool" },
+      // auto_capacity_calc hidden — depends on historical analytics not yet implemented
     ],
   },
   {
