@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronRight, MapPin, Navigation, Search, Loader2, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SERVICE_AREAS, nearestServiceArea } from "@/lib/areas";
+import { SERVICE_AREAS } from "@/lib/areas";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/c/location/search")({
