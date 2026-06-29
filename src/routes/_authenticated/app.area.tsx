@@ -70,41 +70,69 @@ function AreaPage() {
   const useCurrentLocation = () => {
     if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
     setLocating(true);
+    setOutOfCoverage(null);
+    setShowRequestForm(false);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setDetectedCoords({ lat, lng });
-        // Use real reverse geocoding — never snap to a static name.
+        let realArea = "";
         try {
           const r = await reverse({ data: { lat, lng } });
-          const realArea = (r.area || r.city || "").trim();
+          realArea = (r.area || r.city || "").trim();
           setDetectedAddress(r.formatted_address);
-          // Match against catalog only when the geocoded name is one of our serviced areas.
-          const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
-          if (exact) {
-            setSelected(exact.name);
-            toast.success(`Detected: ${exact.name}`);
-          } else {
-            // Don't lie. Let the partner pick manually if their real area isn't in the catalog.
-            setSelected(null);
-            toast.message(`Detected: ${realArea || "your location"}`, {
-              description: "Your area isn't in our catalog yet — pick the closest serviceable area below.",
-            });
-          }
         } catch {
-          // Fall back to nearest only if reverse geocoding fails.
+          // proceed with coverage check even without geocoded name
+        }
+        // Authoritative serviceability check via coverage zones (GIS)
+        const { data: cov } = await supabase.rpc("get_coverage_at", { p_lat: lat, p_lng: lng });
+        const zones = Array.isArray(cov) ? cov : [];
+        if (zones.length === 0) {
+          setSelected(null);
+          setOutOfCoverage({ area: realArea || "your location", lat, lng });
+          toast.message("Not yet serviceable", { description: `${realArea || "Your location"} is outside our coverage zones.` });
+          setLocating(false);
+          return;
+        }
+        // Inside coverage — match catalog entry if available
+        const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
+        if (exact) {
+          setSelected(exact.name);
+          toast.success(`Detected: ${exact.name}`);
+        } else {
           const a = nearestArea(lat, lng);
           setSelected(a.name);
-          toast.message(`Approximate area: ${a.name}`, { description: "Reverse geocoding unavailable." });
-        } finally {
-          setLocating(false);
+          toast.success(`Serviceable area: ${a.name}`);
         }
+        setLocating(false);
       },
       () => { setLocating(false); toast.error("Could not detect location — pick manually"); },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
+
+  const submitRequest = async () => {
+    if (!outOfCoverage) return;
+    setSubmittingRequest(true);
+    const { error } = await supabase.rpc("submit_partner_expansion_request", {
+      p_area_name: outOfCoverage.area,
+      p_latitude: outOfCoverage.lat,
+      p_longitude: outOfCoverage.lng,
+      p_vehicle: requestForm.vehicle || null,
+      p_experience_years: requestForm.experience ? Number(requestForm.experience) : null,
+      p_preferred_cars_per_day: requestForm.cars ? Number(requestForm.cars) : null,
+      p_expected_joining_date: null,
+      p_notes: requestForm.notes || null,
+    });
+    setSubmittingRequest(false);
+    if (error) { toast.error(error.message); return; }
+    setRequestSubmitted(true);
+    setShowRequestForm(false);
+    qc.invalidateQueries({ queryKey: ["my-expansion-request"] });
+    toast.success("Request submitted — we'll notify you when your area opens up");
+  };
+
 
 
   const save = async () => {
