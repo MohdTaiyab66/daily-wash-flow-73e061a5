@@ -122,6 +122,18 @@ function AreaPage() {
         </Card>
       )}
 
+      {detectedAddress && (
+        <p className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Detected: </span>{detectedAddress}
+          {detectedCoords && (
+            <span className="ml-1 opacity-70">
+              ({detectedCoords.lat.toFixed(5)}, {detectedCoords.lng.toFixed(5)})
+            </span>
+          )}
+        </p>
+      )}
+
+
       <Button variant="outline" className="mt-4 w-full" onClick={useCurrentLocation} disabled={locating}>
         {locating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Crosshair className="mr-2 h-4 w-4" />}
         Use my current location
