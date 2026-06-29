@@ -28,6 +28,11 @@ function AreaPage() {
   const [detectedAddress, setDetectedAddress] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [outOfCoverage, setOutOfCoverage] = useState<{ area: string; lat: number; lng: number } | null>(null);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestForm, setRequestForm] = useState({ vehicle: "", experience: "", cars: "", notes: "" });
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
   const reverse = useServerFn(reverseGeocode);
 
   const { data: partner } = useQuery({
@@ -40,6 +45,23 @@ function AreaPage() {
       return data;
     },
   });
+
+  const { data: existingRequest } = useQuery({
+    queryKey: ["my-expansion-request"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const { data } = await supabase
+        .from("partner_expansion_requests")
+        .select("id,area_name,status,created_at")
+        .eq("partner_user_id", u.user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
 
   const locked = !!partner?.area_locked_until && new Date(partner.area_locked_until) > new Date();
   const current = partner?.home_area;
