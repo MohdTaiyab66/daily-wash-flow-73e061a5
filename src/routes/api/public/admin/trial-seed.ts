@@ -12,14 +12,17 @@ export const Route = createFileRoute("/api/public/admin/trial-seed")({
         const got = request.headers.get("x-trial-secret");
         let authorized = !!(expected && got && got === expected);
 
-        if (!authorized) {
+        // Bootstrap path: only allowed outside of production AND when secret is unset.
+        // In production, the secret header is the only accepted credential.
+        if (!authorized && process.env.NODE_ENV !== "production" && !expected) {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { count } = await supabaseAdmin
             .from("user_roles")
             .select("*", { count: "exact", head: true })
             .eq("role", "admin");
-          if ((count ?? 0) === 0) authorized = true; // bootstrap
+          if ((count ?? 0) === 0) authorized = true; // bootstrap (dev only)
         }
+
 
         if (!authorized) {
           return new Response(
