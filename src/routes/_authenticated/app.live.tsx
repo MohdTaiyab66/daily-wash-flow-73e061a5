@@ -15,6 +15,7 @@ import { useState } from "react";
 import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
+import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { optimizeRoute } from "@/lib/route-optimize";
 import { useEffect } from "react";
@@ -129,6 +130,8 @@ function RoutePage() {
       <p className="mt-1 text-sm text-muted-foreground">
         {routeVisible ? "Optimised by distance and required time." : `Route hidden after ${formatTime12(cutoff)}.`}
       </p>
+
+      <div className="mt-4"><DarOfferCard /></div>
 
       <div className="mt-5">
         <LiveMap stops={stops} showCustomers={routeVisible && pending.length > 0} />

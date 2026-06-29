@@ -114,7 +114,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "checkout_distance_m", label: "Check-out distance (m)" },
       { key: "gps_verification", label: "GPS verification", kind: "bool" },
       { key: "selfie_required", label: "Selfie required", kind: "bool" },
-      { key: "background_tracking", label: "Background tracking", kind: "bool" },
+      // background_tracking hidden until native build supports it
     ],
   },
   {
@@ -127,7 +127,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "partner_max_travel_km", label: "Max travel distance (km)" },
       { key: "max_subscriptions", label: "Max subscriptions" },
       { key: "max_onetime", label: "Max one-time bookings" },
-      { key: "auto_capacity_calc", label: "Auto capacity calculation", kind: "bool" },
+      // auto_capacity_calc hidden — depends on historical analytics not yet implemented
     ],
   },
   {
@@ -169,7 +169,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "traffic_layer", label: "Traffic layer", kind: "bool" },
       { key: "satellite_layer", label: "Satellite layer", kind: "bool" },
       { key: "cluster_view", label: "Cluster view", kind: "bool" },
-      { key: "heat_map", label: "Heat map", kind: "bool" },
+      // heat_map hidden — pending Coverage Manager heat layer
       { key: "partner_location_interval_sec", label: "Partner location interval (sec)" },
       { key: "customer_refresh_sec", label: "Customer refresh interval (sec)" },
       { key: "route_refresh_sec", label: "Route refresh interval (sec)" },

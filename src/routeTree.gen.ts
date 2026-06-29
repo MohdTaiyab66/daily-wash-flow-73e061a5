@@ -37,6 +37,7 @@ import { Route as AdminLiveRouteImport } from './routes/admin.live'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
+import { Route as AdminDarRouteImport } from './routes/admin.dar'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
@@ -216,6 +217,11 @@ const AdminFraudRoute = AdminFraudRouteImport.update({
 const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
   id: '/expansion-requests',
   path: '/expansion-requests',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDarRoute = AdminDarRouteImport.update({
+  id: '/dar',
+  path: '/dar',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
@@ -517,6 +524,7 @@ export interface FileRoutesByTo {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
@@ -588,6 +596,7 @@ export interface FileRoutesById {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
@@ -660,6 +669,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
@@ -728,6 +738,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
@@ -798,6 +809,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
@@ -1072,6 +1084,13 @@ declare module '@tanstack/react-router' {
       path: '/expansion-requests'
       fullPath: '/admin/expansion-requests'
       preLoaderRoute: typeof AdminExpansionRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dar': {
+      id: '/admin/dar'
+      path: '/dar'
+      fullPath: '/admin/dar'
+      preLoaderRoute: typeof AdminDarRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/customers': {
@@ -1437,6 +1456,7 @@ interface AdminRouteChildren {
   AdminCoverageRoute: typeof AdminCoverageRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
+  AdminDarRoute: typeof AdminDarRoute
   AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
@@ -1468,6 +1488,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCoverageRoute: AdminCoverageRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
+  AdminDarRoute: AdminDarRoute,
   AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
@@ -1566,13 +1587,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
