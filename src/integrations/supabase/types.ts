@@ -4089,6 +4089,19 @@ export type Database = {
         }
         Returns: Json
       }
+      submit_partner_expansion_request: {
+        Args: {
+          p_area_name: string
+          p_expected_joining_date?: string
+          p_experience_years?: number
+          p_latitude: number
+          p_longitude: number
+          p_notes?: string
+          p_preferred_cars_per_day?: number
+          p_vehicle?: string
+        }
+        Returns: string
+      }
       submit_service_complaint: {
         Args: {
           p_complaint_type: string

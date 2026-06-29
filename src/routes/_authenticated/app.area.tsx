@@ -4,8 +4,10 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { reverseGeocode } from "@/lib/geo.functions";
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/app/area")({
 import { SERVICE_AREAS as AREAS, nearestServiceArea as nearestArea } from "@/lib/areas";
 
 
+
 function AreaPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -25,6 +28,11 @@ function AreaPage() {
   const [detectedAddress, setDetectedAddress] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [outOfCoverage, setOutOfCoverage] = useState<{ area: string; lat: number; lng: number } | null>(null);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestForm, setRequestForm] = useState({ vehicle: "", experience: "", cars: "", notes: "" });
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
   const reverse = useServerFn(reverseGeocode);
 
   const { data: partner } = useQuery({
@@ -38,6 +46,23 @@ function AreaPage() {
     },
   });
 
+  const { data: existingRequest } = useQuery({
+    queryKey: ["my-expansion-request"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const { data } = await supabase
+        .from("partner_expansion_requests")
+        .select("id,area_name,status,created_at")
+        .eq("partner_user_id", u.user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+
   const locked = !!partner?.area_locked_until && new Date(partner.area_locked_until) > new Date();
   const current = partner?.home_area;
   const pick = selected ?? current;
@@ -45,41 +70,72 @@ function AreaPage() {
   const useCurrentLocation = () => {
     if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
     setLocating(true);
+    setOutOfCoverage(null);
+    setShowRequestForm(false);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setDetectedCoords({ lat, lng });
-        // Use real reverse geocoding — never snap to a static name.
+        let realArea = "";
         try {
           const r = await reverse({ data: { lat, lng } });
-          const realArea = (r.area || r.city || "").trim();
+          realArea = (r.area || r.city || "").trim();
           setDetectedAddress(r.formatted_address);
-          // Match against catalog only when the geocoded name is one of our serviced areas.
-          const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
-          if (exact) {
-            setSelected(exact.name);
-            toast.success(`Detected: ${exact.name}`);
-          } else {
-            // Don't lie. Let the partner pick manually if their real area isn't in the catalog.
-            setSelected(null);
-            toast.message(`Detected: ${realArea || "your location"}`, {
-              description: "Your area isn't in our catalog yet — pick the closest serviceable area below.",
-            });
-          }
         } catch {
-          // Fall back to nearest only if reverse geocoding fails.
+          // proceed with coverage check even without geocoded name
+        }
+        // Authoritative serviceability check via coverage zones (GIS)
+        const { data: cov } = await supabase.rpc("get_coverage_at", { p_lat: lat, p_lng: lng });
+        const rows = Array.isArray(cov) ? cov : (cov ? [cov] : []);
+        const matched = rows.some((r: any) => r?.matched === true && r?.zone_id);
+        if (!matched) {
+          setSelected(null);
+          setOutOfCoverage({ area: realArea || "your location", lat, lng });
+          toast.message("Not yet serviceable", { description: `${realArea || "Your location"} is outside our coverage zones.` });
+          setLocating(false);
+          return;
+        }
+
+        // Inside coverage — match catalog entry if available
+        const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
+        if (exact) {
+          setSelected(exact.name);
+          toast.success(`Detected: ${exact.name}`);
+        } else {
           const a = nearestArea(lat, lng);
           setSelected(a.name);
-          toast.message(`Approximate area: ${a.name}`, { description: "Reverse geocoding unavailable." });
-        } finally {
-          setLocating(false);
+          toast.success(`Serviceable area: ${a.name}`);
         }
+        setLocating(false);
       },
       () => { setLocating(false); toast.error("Could not detect location — pick manually"); },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
+
+  const submitRequest = async () => {
+    if (!outOfCoverage) return;
+    setSubmittingRequest(true);
+    const { error } = await supabase.rpc("submit_partner_expansion_request", {
+      p_area_name: outOfCoverage.area,
+      p_latitude: outOfCoverage.lat,
+      p_longitude: outOfCoverage.lng,
+      p_vehicle: requestForm.vehicle || undefined,
+      p_experience_years: requestForm.experience ? Number(requestForm.experience) : undefined,
+      p_preferred_cars_per_day: requestForm.cars ? Number(requestForm.cars) : undefined,
+      p_expected_joining_date: undefined,
+      p_notes: requestForm.notes || undefined,
+    });
+
+    setSubmittingRequest(false);
+    if (error) { toast.error(error.message); return; }
+    setRequestSubmitted(true);
+    setShowRequestForm(false);
+    qc.invalidateQueries({ queryKey: ["my-expansion-request"] });
+    toast.success("Request submitted — we'll notify you when your area opens up");
+  };
+
 
 
   const save = async () => {
@@ -138,6 +194,76 @@ function AreaPage() {
         {locating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Crosshair className="mr-2 h-4 w-4" />}
         Use my current location
       </Button>
+
+      {(existingRequest || requestSubmitted) && !outOfCoverage && (
+        <Card className="mt-4 border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30" data-testid="expansion-pending">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 h-4 w-4 text-amber-600" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold">Expansion request pending</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                We've recorded your interest in {existingRequest?.area_name || outOfCoverage}. We'll notify you when it opens.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {outOfCoverage && (
+        <Card className="mt-4 border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30" data-testid="coming-soon-panel">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 h-5 w-5 text-amber-600" />
+            <div className="flex-1">
+              <p className="font-semibold">Coming soon to {outOfCoverage.area}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your location isn't in our active coverage yet. Register your interest — we expand to areas with the most partner demand first.
+              </p>
+              {!showRequestForm ? (
+                <Button size="sm" className="mt-3" onClick={() => setShowRequestForm(true)} data-testid="open-expansion-form">
+                  Request my area
+                </Button>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <Label htmlFor="exp-vehicle" className="text-xs">Your vehicle</Label>
+                    <Input id="exp-vehicle" placeholder="e.g. Bike / Scooter"
+                      value={requestForm.vehicle}
+                      onChange={(e) => setRequestForm((f) => ({ ...f, vehicle: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="exp-exp" className="text-xs">Experience (yrs)</Label>
+                      <Input id="exp-exp" type="number" inputMode="numeric" min={0}
+                        value={requestForm.experience}
+                        onChange={(e) => setRequestForm((f) => ({ ...f, experience: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label htmlFor="exp-cars" className="text-xs">Cars/day target</Label>
+                      <Input id="exp-cars" type="number" inputMode="numeric" min={1} max={40}
+                        value={requestForm.cars}
+                        onChange={(e) => setRequestForm((f) => ({ ...f, cars: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="exp-notes" className="text-xs">Anything else (optional)</Label>
+                    <Textarea id="exp-notes" rows={2}
+                      value={requestForm.notes}
+                      onChange={(e) => setRequestForm((f) => ({ ...f, notes: e.target.value }))} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={submitRequest} disabled={submittingRequest} data-testid="submit-expansion">
+                      {submittingRequest && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Submit request
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowRequestForm(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
 
       <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Or pick manually</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
