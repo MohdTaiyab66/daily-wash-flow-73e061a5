@@ -522,8 +522,71 @@ function ScheduleWashDialog({
       toast.error("Daily Shine does not run on Mondays. Pick another weekday.");
       return;
     }
+
+    // P0-02: Plan-included services (Interior/Exterior/Dusting) must go to the
+    // admin Add-on Queue, NOT confirm_customer_booking. They are entitlements,
+    // not new premium bookings, and must never trigger payment.
+    const isPlanService =
+      kind !== "any" ||
+      ["daily-shine-interior", "daily-shine-exterior", "daily-shine-dusting"].includes(service.slug);
+
     setSaving(true);
     try {
+      if (isPlanService) {
+        // Find an active subscription for this customer.
+        const { data: subRow, error: subErr } = await (supabase as any)
+          .from("subscriptions")
+          .select("id, status, vehicle_id")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (subErr) throw subErr;
+        if (!subRow) {
+          toast.error("No active Daily Shine subscription found. Subscribe to schedule included washes.");
+          setSaving(false);
+          return;
+        }
+        if (recurring) {
+          // Create one addon request per occurrence (skip Mondays).
+          const ids: string[] = [];
+          let cursor = new Date(date);
+          while (cursor.getDay() !== weekday) cursor.setDate(cursor.getDate() + 1);
+          for (let i = 0; i < occurrences; i++) {
+            if (cursor.getDay() !== 1) {
+              const { data: reqId, error } = await (supabase as any).rpc("create_addon_request", {
+                p_subscription_id: subRow.id,
+                p_service_id: service.id,
+                p_preferred_date: cursor.toISOString().slice(0, 10),
+                p_preferred_time: slot,
+                p_notes: "Recurring plan request from My Plan",
+              });
+              if (error) throw error;
+              if (reqId) ids.push(reqId);
+            }
+            cursor.setDate(cursor.getDate() + 7);
+          }
+          toast.success(`Sent ${ids.length} requests to admin · you'll be notified when scheduled`);
+        } else {
+          const { error } = await (supabase as any).rpc("create_addon_request", {
+            p_subscription_id: subRow.id,
+            p_service_id: service.id,
+            p_preferred_date: date,
+            p_preferred_time: slot,
+            p_notes: "Scheduled from My Plan",
+          });
+          if (error) throw error;
+          toast.success(`Request sent for ${date} · ${slot} · admin will confirm shortly`);
+        }
+        qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+        qc.invalidateQueries({ queryKey: ["customer-addons"] });
+        onOpenChange(false);
+        return;
+      }
+
+      // Non-plan (one-time / premium) path — unchanged.
       if (recurring) {
         const { data: ids, error } = await (supabase as any).rpc("schedule_plan_services_recurring", {
           p_service_id: service.id,
