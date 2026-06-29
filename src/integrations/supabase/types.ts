@@ -1330,6 +1330,60 @@ export type Database = {
           },
         ]
       }
+      partner_expansion_requests: {
+        Row: {
+          area_name: string
+          created_at: string
+          expected_joining_date: string | null
+          experience_years: number | null
+          full_name: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          partner_user_id: string | null
+          phone: string
+          preferred_cars_per_day: number | null
+          status: string
+          updated_at: string
+          vehicle: string | null
+        }
+        Insert: {
+          area_name: string
+          created_at?: string
+          expected_joining_date?: string | null
+          experience_years?: number | null
+          full_name: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          partner_user_id?: string | null
+          phone: string
+          preferred_cars_per_day?: number | null
+          status?: string
+          updated_at?: string
+          vehicle?: string | null
+        }
+        Update: {
+          area_name?: string
+          created_at?: string
+          expected_joining_date?: string | null
+          experience_years?: number | null
+          full_name?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          partner_user_id?: string | null
+          phone?: string
+          preferred_cars_per_day?: number | null
+          status?: string
+          updated_at?: string
+          vehicle?: string | null
+        }
+        Relationships: []
+      }
       partner_notifications: {
         Row: {
           body: string | null

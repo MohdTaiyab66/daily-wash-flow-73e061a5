@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronRight, MapPin, Navigation, Search, Loader2, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SERVICE_AREAS, nearestServiceArea } from "@/lib/areas";
+import { SERVICE_AREAS } from "@/lib/areas";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/c/location/search")({
@@ -46,15 +46,21 @@ function LocationSearch() {
     navigator.geolocation.getCurrentPosition(
       (p) => {
         setLocating(false);
-        const a = nearestServiceArea(p.coords.latitude, p.coords.longitude);
-        const dx = Math.hypot(a.lat - p.coords.latitude, a.lng - p.coords.longitude);
-        if (dx > 0.15) { setOutOfArea("your area"); return; }
-        choose(a.name);
+        // Send the user to the dedicated detect screen which uses real reverse geocoding.
+        // We pass coords via sessionStorage so the next screen can reuse them without re-prompting.
+        try {
+          sessionStorage.setItem(
+            "uw_pending_geo",
+            JSON.stringify({ lat: p.coords.latitude, lng: p.coords.longitude, t: Date.now() }),
+          );
+        } catch { /* ignore */ }
+        navigate({ to: "/c/location" });
       },
       () => { setLocating(false); toast.error("Couldn't read your location"); },
-      { enableHighAccuracy: true, timeout: 8000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
+
 
   const submitWaitlist = async () => {
     if (!/^\d{10}$/.test(notifyPhone)) { toast.error("Enter a valid 10-digit phone"); return; }
