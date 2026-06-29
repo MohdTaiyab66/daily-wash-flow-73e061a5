@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { reverseGeocode } from "@/lib/geo.functions";
 
 export const Route = createFileRoute("/_authenticated/app/area")({
   component: AreaPage,
@@ -20,8 +22,10 @@ function AreaPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [detectedCoords, setDetectedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [detectedAddress, setDetectedAddress] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
+  const reverse = useServerFn(reverseGeocode);
 
   const { data: partner } = useQuery({
     queryKey: ["me-partner-area"],
@@ -42,17 +46,41 @@ function AreaPage() {
     if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const a = nearestArea(pos.coords.latitude, pos.coords.longitude);
-        setSelected(a.name);
-        setDetectedCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-        toast.success(`Detected: ${a.name}`);
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setDetectedCoords({ lat, lng });
+        // Use real reverse geocoding — never snap to a static name.
+        try {
+          const r = await reverse({ data: { lat, lng } });
+          const realArea = (r.area || r.city || "").trim();
+          setDetectedAddress(r.formatted_address);
+          // Match against catalog only when the geocoded name is one of our serviced areas.
+          const exact = AREAS.find((a) => a.name.toLowerCase() === realArea.toLowerCase());
+          if (exact) {
+            setSelected(exact.name);
+            toast.success(`Detected: ${exact.name}`);
+          } else {
+            // Don't lie. Let the partner pick manually if their real area isn't in the catalog.
+            setSelected(null);
+            toast.message(`Detected: ${realArea || "your location"}`, {
+              description: "Your area isn't in our catalog yet — pick the closest serviceable area below.",
+            });
+          }
+        } catch {
+          // Fall back to nearest only if reverse geocoding fails.
+          const a = nearestArea(lat, lng);
+          setSelected(a.name);
+          toast.message(`Approximate area: ${a.name}`, { description: "Reverse geocoding unavailable." });
+        } finally {
+          setLocating(false);
+        }
       },
       () => { setLocating(false); toast.error("Could not detect location — pick manually"); },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
+
 
   const save = async () => {
     if (!pick) return;
