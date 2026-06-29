@@ -58,7 +58,7 @@ export function DarOfferCard() {
   if (!offer) return null;
 
   const accept = async () => {
-    const { error } = await supabase.rpc("dar_accept_offer", { p_offer_id: offer.id, p_service_ids: null });
+    const { error } = await supabase.rpc("dar_accept_offer", { p_offer_id: offer.id, p_service_ids: offer.service_ids });
     if (error) { toast.error(error.message); return; }
     toast.success(`Accepted ${offer.service_count} extra customers`);
     qc.invalidateQueries({ queryKey: ["dar-active-offer", partnerId] });
