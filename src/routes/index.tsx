@@ -64,7 +64,7 @@ function Index() {
         </div>
 
         <div className="mt-16 grid grid-cols-2 gap-6 text-sm text-muted-foreground md:grid-cols-4">
-          <Stat k="140+" v="Customers seeded" />
+          <Stat k="140+" v="Active customers" />
           <Stat k="₹17" v="Per-car payout" />
           <Stat k="15/20/25" v="Assignment sizes" />
           <Stat k="8-photo" v="Before + after proof" />
