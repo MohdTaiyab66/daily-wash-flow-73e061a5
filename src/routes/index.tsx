@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Car, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 import logo from "@/assets/logo.jpeg";
+import { isNative, appVariant } from "@/lib/platform";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,6 +17,15 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  // Native APK shells skip the role-picker landing and open directly into
+  // the variant's app (Customer APK → /c, Partner APK → /auth → /app).
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isNative()) return;
+    const v = appVariant();
+    navigate({ to: v === "customer" ? "/c" : "/auth", replace: true });
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
