@@ -3,21 +3,25 @@ import type { CapacitorConfig } from "@capacitor/cli";
 /**
  * Capacitor config for Urban Wash.
  *
- * Two binaries share this codebase. Switch the appId/appName at build time
- * with the env var URBANWASH_APP=partner|customer when you run `cap sync`.
- * Default = partner (the higher-volume install).
+ * Two binaries share this codebase. Switch the variant at build time with:
+ *   URBANWASH_APP=customer npx cap sync android   → Customer APK
+ *   URBANWASH_APP=partner  npx cap sync android   → Partner APK   (default)
+ *
+ * The variant flag controls: appId, appName, splash background color, and
+ * the runtime app shell (see src/lib/platform.ts → appVariant()).
+ *
+ * Same backend, same database, same realtime — only the package id/branding
+ * and the routes the user lands on change.
  */
 const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
 const isCustomer = variant === "customer";
 
 const config: CapacitorConfig = {
-  appId: isCustomer ? "app.urbanwash.customer" : "app.urbanwash.partner",
+  appId: isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner",
   appName: isCustomer ? "Urban Wash" : "Urban Wash Partner",
-  webDir: ".output/public", // TanStack Start static output; overridden if you use a different build target
+  webDir: ".output/public", // TanStack Start (nitro) static output
   bundledWebRuntime: false,
   server: {
-    // Production: load assets from the bundle. For staging/dev push testing
-    // you can point this at your deployed URL via env: CAP_SERVER_URL=https://...
     androidScheme: "https",
     url: process.env.CAP_SERVER_URL || undefined,
     cleartext: false,
@@ -29,6 +33,15 @@ const config: CapacitorConfig = {
     contentInset: "always",
   },
   plugins: {
+    SplashScreen: {
+      launchShowDuration: 1500,
+      backgroundColor: isCustomer ? "#FF6B1A" : "#0F172A",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },
