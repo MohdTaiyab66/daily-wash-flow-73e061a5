@@ -50,9 +50,19 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
       if (openSub) {
+        await supabaseAdmin.from("subscription_block_log").insert({
+          user_id: context.userId,
+          vehicle_id: (booking as any).vehicle_id,
+          service_id: (booking as any).service_id ?? null,
+          existing_subscription_id: (openSub as any).id,
+          source: "razorpay_order",
+          reason: "duplicate_active_subscription",
+          meta: { booking_id: data.bookingId },
+        });
         throw new Error("This vehicle already has an active Daily Shine subscription.");
       }
     }
+
 
     const amountPaise = Math.round(Number(booking.total_amount ?? 0) * 100);
     if (!Number.isFinite(amountPaise) || amountPaise <= 0) throw new Error("Invalid booking amount");
