@@ -65,15 +65,52 @@ function BookingDetail() {
   });
 
   const b = q.data;
+
+  // Completion details — service row + partner name + photos. Photos visible to
+  // customer for 48h after completion; admins always see them in admin panel.
+  const completion = useQuery({
+    queryKey: ["customer-booking-completion", id, b?.ops_service_id, b?.partner_id, b?.status],
+    enabled: !!b && b.status === "completed" && !!b.ops_service_id,
+    queryFn: async () => {
+      const opsId = b!.ops_service_id as string;
+      const [{ data: svc }, { data: partner }, { data: photos }] = await Promise.all([
+        (supabase as any).from("services").select("completed_at,partner_id").eq("id", opsId).maybeSingle(),
+        b!.partner_id
+          ? (supabase as any).from("partners").select("full_name").eq("id", b!.partner_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        (supabase as any).from("service_photos").select("stage,angle,storage_path,captured_at").eq("service_id", opsId),
+      ]);
+      const photoUrls: { stage: string; angle: string; url: string; captured_at: string }[] = [];
+      for (const p of (photos ?? []) as any[]) {
+        const { data: signed } = await (supabase as any).storage
+          .from("service-photos")
+          .createSignedUrl(p.storage_path, 60 * 60);
+        if (signed?.signedUrl) {
+          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at });
+        }
+      }
+      return {
+        completed_at: svc?.completed_at ?? null,
+        partner_name: partner?.full_name ?? null,
+        photos: photoUrls,
+      };
+    },
+  });
+
   if (q.isLoading) return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
   if (!b) return <div className="px-5 pt-10 text-center text-sm text-muted-foreground">Booking not found.</div>;
 
   const isCancelled = b.status === "cancelled";
   const isCompleted = b.status === "completed";
   const canModify = !isCancelled && !isCompleted && b.status !== "active";
-  const completedAt = b.updated_at && isCompleted ? new Date(b.updated_at) : null;
-  const canComplain = completedAt && (Date.now() - completedAt.getTime()) < 2 * 60 * 60 * 1000;
+  const completedAt = completion.data?.completed_at
+    ? new Date(completion.data.completed_at)
+    : (b.updated_at && isCompleted ? new Date(b.updated_at) : null);
+  const hoursSinceCompletion = completedAt ? (Date.now() - completedAt.getTime()) / (60 * 60 * 1000) : null;
+  const canComplain = hoursSinceCompletion !== null && hoursSinceCompletion < 2;
+  const photosVisible = hoursSinceCompletion !== null && hoursSinceCompletion < 48;
   const activeIdx = isCancelled ? -1 : statusIndex(b.status);
+
 
   return (
     <div className="pb-10">
@@ -227,6 +264,64 @@ function BookingDetail() {
           )}
         </div>
 
+        {/* Completion details (visible only after service is completed) */}
+        {isCompleted && (
+          <div className="mt-4 rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Service completed</h3>
+              {completedAt && (
+                <span className="text-xs text-muted-foreground">
+                  {completedAt.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+            {completion.data?.partner_name && (
+              <p className="mt-1 text-xs text-muted-foreground">By {completion.data.partner_name}</p>
+            )}
+            {photosVisible ? (
+              <div className="mt-3">
+                {completion.data && completion.data.photos.length > 0 ? (
+                  <>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Before</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
+                        <a key={`b-${i}`} href={p.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-muted">
+                          <img src={p.url} alt="Before" className="h-full w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                    <p className="mt-3 mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">After</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {["front","rear","left","right"].map((ang) => {
+                        const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
+                        return (
+                          <div key={ang} className="aspect-square overflow-hidden rounded-lg bg-muted">
+                            {p ? (
+                              <a href={p.url} target="_blank" rel="noreferrer">
+                                <img src={p.url} alt={ang} className="h-full w-full object-cover" />
+                              </a>
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] uppercase text-muted-foreground">{ang}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : completion.isLoading ? (
+                  <div className="h-20 animate-pulse rounded-lg bg-muted" />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No photos uploaded.</p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Photos are available for 48 hours after completion. Contact support if you need them again.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-4 flex gap-2">
           <Button variant="outline" className="flex-1 rounded-xl">
@@ -238,6 +333,7 @@ function BookingDetail() {
             </Button>
           )}
         </div>
+
       </div>
 
       <RescheduleDialog
