@@ -109,22 +109,27 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
+      const missingAfter = AFTER_ANGLES.filter((a) => !afterDone.has(a));
       if (!beforeDone) throw new Error("Take the Before photo first");
-      if (!allAfter) throw new Error("Capture all 4 After photos");
+      if (missingAfter.length) throw new Error(`Missing After photos: ${missingAfter.join(", ")}`);
       const pos = await getPosition();
       const completedAt = new Date().toISOString();
-      const { error } = await supabase
-        .from("services")
-        .update({
-          status: "completed",
-          completed_at: completedAt,
-          complete_lat: pos?.lat ?? null,
-          complete_lng: pos?.lng ?? null,
-        })
-        .eq("id", id);
-      if (error) throw error;
+      const { data, error } = await (supabase as any).rpc("partner_complete_service", {
+        p_service_id: id,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
+        p_notes: null,
+      });
+      if (error) {
+        // Surface DB-side missing-photo / GPS errors clearly
+        const code = (error as any).code ?? "";
+        const msg = (error as any).message ?? "Could not complete service";
+        if (code === "P04PHOTO") throw new Error("Some required photos are missing. Please re-check Before + 4 After angles.");
+        if (code === "P04GPS") throw new Error(msg);
+        throw new Error(msg);
+      }
 
-      // store analytics
+      // Service analytics (best-effort, ignore failures)
       if (service?.started_at) {
         const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
         const { data: u } = await supabase.auth.getUser();
@@ -135,11 +140,13 @@ function ServiceDetail() {
           total_seconds: total,
           cleaning_seconds: total,
           travel_seconds: 0,
-        }, { onConflict: "service_id" });
+        }, { onConflict: "service_id" }).then(() => null, () => null);
       }
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Service complete · ₹17 earned");
+    onSuccess: (data: any) => {
+      if (data?.already) toast.message("Service was already completed");
+      else toast.success(`Service complete · ₹${data?.amount ?? 17} earned`);
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -147,6 +154,7 @@ function ServiceDetail() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const goNext = () => {
     if (nextServiceId) navigate({ to: "/app/service/$id", params: { id: nextServiceId } });
