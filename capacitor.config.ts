@@ -19,7 +19,7 @@ const isCustomer = variant === "customer";
 const config: CapacitorConfig = {
   appId: isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner",
   appName: isCustomer ? "Urban Wash" : "Urban Wash Partner",
-  webDir: "dist",
+  webDir: ".output/public", // TanStack Start (nitro) static output
   bundledWebRuntime: false,
   server: {
     androidScheme: "https",
