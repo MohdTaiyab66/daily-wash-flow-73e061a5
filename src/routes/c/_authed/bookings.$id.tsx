@@ -65,15 +65,52 @@ function BookingDetail() {
   });
 
   const b = q.data;
+
+  // Completion details — service row + partner name + photos. Photos visible to
+  // customer for 48h after completion; admins always see them in admin panel.
+  const completion = useQuery({
+    queryKey: ["customer-booking-completion", id, b?.ops_service_id, b?.partner_id, b?.status],
+    enabled: !!b && b.status === "completed" && !!b.ops_service_id,
+    queryFn: async () => {
+      const opsId = b!.ops_service_id as string;
+      const [{ data: svc }, { data: partner }, { data: photos }] = await Promise.all([
+        (supabase as any).from("services").select("completed_at,partner_id").eq("id", opsId).maybeSingle(),
+        b!.partner_id
+          ? (supabase as any).from("partners").select("full_name").eq("id", b!.partner_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        (supabase as any).from("service_photos").select("stage,angle,storage_path,captured_at").eq("service_id", opsId),
+      ]);
+      const photoUrls: { stage: string; angle: string; url: string; captured_at: string }[] = [];
+      for (const p of (photos ?? []) as any[]) {
+        const { data: signed } = await (supabase as any).storage
+          .from("service-photos")
+          .createSignedUrl(p.storage_path, 60 * 60);
+        if (signed?.signedUrl) {
+          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at });
+        }
+      }
+      return {
+        completed_at: svc?.completed_at ?? null,
+        partner_name: partner?.full_name ?? null,
+        photos: photoUrls,
+      };
+    },
+  });
+
   if (q.isLoading) return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
   if (!b) return <div className="px-5 pt-10 text-center text-sm text-muted-foreground">Booking not found.</div>;
 
   const isCancelled = b.status === "cancelled";
   const isCompleted = b.status === "completed";
   const canModify = !isCancelled && !isCompleted && b.status !== "active";
-  const completedAt = b.updated_at && isCompleted ? new Date(b.updated_at) : null;
-  const canComplain = completedAt && (Date.now() - completedAt.getTime()) < 2 * 60 * 60 * 1000;
+  const completedAt = completion.data?.completed_at
+    ? new Date(completion.data.completed_at)
+    : (b.updated_at && isCompleted ? new Date(b.updated_at) : null);
+  const hoursSinceCompletion = completedAt ? (Date.now() - completedAt.getTime()) / (60 * 60 * 1000) : null;
+  const canComplain = hoursSinceCompletion !== null && hoursSinceCompletion < 2;
+  const photosVisible = hoursSinceCompletion !== null && hoursSinceCompletion < 48;
   const activeIdx = isCancelled ? -1 : statusIndex(b.status);
+
 
   return (
     <div className="pb-10">
