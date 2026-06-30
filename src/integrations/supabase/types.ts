@@ -2985,6 +2985,42 @@ export type Database = {
           },
         ]
       }
+      subscription_block_log: {
+        Row: {
+          created_at: string
+          existing_subscription_id: string | null
+          id: string
+          meta: Json
+          reason: string
+          service_id: string | null
+          source: string
+          user_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          existing_subscription_id?: string | null
+          id?: string
+          meta?: Json
+          reason?: string
+          service_id?: string | null
+          source: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          existing_subscription_id?: string | null
+          id?: string
+          meta?: Json
+          reason?: string
+          service_id?: string | null
+          source?: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       subscription_extensions: {
         Row: {
           created_at: string
@@ -4263,6 +4299,13 @@ export type Database = {
           premium_count: number
           requests: number
           suggested_priority: string
+        }[]
+      }
+      reconcile_duplicate_subscriptions: {
+        Args: never
+        Returns: {
+          open_count: number
+          vehicle_id: string
         }[]
       }
       respond_subscription_offer: {
