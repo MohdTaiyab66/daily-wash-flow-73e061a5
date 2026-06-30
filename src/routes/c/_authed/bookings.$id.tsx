@@ -264,6 +264,64 @@ function BookingDetail() {
           )}
         </div>
 
+        {/* Completion details (visible only after service is completed) */}
+        {isCompleted && (
+          <div className="mt-4 rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Service completed</h3>
+              {completedAt && (
+                <span className="text-xs text-muted-foreground">
+                  {completedAt.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+            {completion.data?.partner_name && (
+              <p className="mt-1 text-xs text-muted-foreground">By {completion.data.partner_name}</p>
+            )}
+            {photosVisible ? (
+              <div className="mt-3">
+                {completion.data && completion.data.photos.length > 0 ? (
+                  <>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Before</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
+                        <a key={`b-${i}`} href={p.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-muted">
+                          <img src={p.url} alt="Before" className="h-full w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                    <p className="mt-3 mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">After</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {["front","rear","left","right"].map((ang) => {
+                        const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
+                        return (
+                          <div key={ang} className="aspect-square overflow-hidden rounded-lg bg-muted">
+                            {p ? (
+                              <a href={p.url} target="_blank" rel="noreferrer">
+                                <img src={p.url} alt={ang} className="h-full w-full object-cover" />
+                              </a>
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] uppercase text-muted-foreground">{ang}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : completion.isLoading ? (
+                  <div className="h-20 animate-pulse rounded-lg bg-muted" />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No photos uploaded.</p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Photos are available for 48 hours after completion. Contact support if you need them again.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-4 flex gap-2">
           <Button variant="outline" className="flex-1 rounded-xl">
@@ -275,6 +333,7 @@ function BookingDetail() {
             </Button>
           )}
         </div>
+
       </div>
 
       <RescheduleDialog
