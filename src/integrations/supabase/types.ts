@@ -3721,6 +3721,10 @@ export type Database = {
         Args: { p_partner_id: string; p_queue_id: string }
         Returns: Json
       }
+      admin_force_complete_service: {
+        Args: { p_reason: string; p_service_id: string }
+        Returns: Json
+      }
       admin_force_recalculate: {
         Args: { p_date: string; p_partner_id: string }
         Returns: undefined
@@ -4246,6 +4250,16 @@ export type Database = {
         Returns: Json
       }
       offer_next_for_queue: { Args: { p_queue_id: string }; Returns: string }
+      partner_complete_service: {
+        Args: {
+          p_force_override?: boolean
+          p_lat?: number
+          p_lng?: number
+          p_notes?: string
+          p_service_id: string
+        }
+        Returns: Json
+      }
       partner_reliability: { Args: { p_partner_id: string }; Returns: Json }
       pick_next_partner_for_queue: {
         Args: { p_queue_id: string; p_radius_km?: number; p_scope?: string }
