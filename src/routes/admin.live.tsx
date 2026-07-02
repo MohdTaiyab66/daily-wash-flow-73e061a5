@@ -166,3 +166,15 @@ function Row({ left, right, meta, flag }: { left: string; right: string; meta?: 
     </div>
   );
 }
+
+function MiniStat({ icon: Icon, label, value, tone }: { icon: typeof Activity; label: string; value: number; tone?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card/50 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <Icon className={`h-3.5 w-3.5 ${tone ?? "text-muted-foreground"}`} />
+      </div>
+      <p className={`mt-1.5 text-xl font-semibold tracking-tight ${tone ?? ""}`}>{value}</p>
+    </div>
+  );
+}
