@@ -3658,6 +3658,7 @@ export type Database = {
           active_customers: number | null
           as_of: string | null
           customers_waiting_reassignment: number | null
+          duplicate_gps: number | null
           fixed_automatically: number | null
           gps_centroid: number | null
           gps_exact: number | null

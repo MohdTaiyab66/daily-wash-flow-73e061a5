@@ -10,8 +10,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle, Clock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
@@ -42,6 +42,13 @@ function ServiceDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [serviceNotes, setServiceNotes] = useState("");
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const { data: service } = useQuery({
     queryKey: ["service", id],
@@ -58,20 +65,22 @@ function ServiceDetail() {
       const today = new Date().toISOString().slice(0, 10);
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase.from("services")
-        .select("id,customers(latitude,longitude,service_required_before,preferred_time)")
+        .select("id,destination_lat,destination_lng,customers(latitude,longitude,service_required_before,preferred_time)")
         .eq("partner_id", u.user!.id)
         .eq("scheduled_date", today)
         .in("status", ["pending", "in_progress"])
         .neq("id", id);
       const { pickNextStop } = await import("@/lib/route-optimize");
       const c = (service as any)?.customers;
-      const from = c?.latitude != null && c?.longitude != null
-        ? { lat: Number(c.latitude), lng: Number(c.longitude) }
+      const currentLat = (service as any)?.destination_lat ?? c?.latitude;
+      const currentLng = (service as any)?.destination_lng ?? c?.longitude;
+      const from = currentLat != null && currentLng != null
+        ? { lat: Number(currentLat), lng: Number(currentLng) }
         : null;
       const candidates = (data ?? []).map((s: any) => ({
         id: s.id,
-        lat: s.customers?.latitude != null ? Number(s.customers.latitude) : null,
-        lng: s.customers?.longitude != null ? Number(s.customers.longitude) : null,
+        lat: s.destination_lat != null ? Number(s.destination_lat) : s.customers?.latitude != null ? Number(s.customers.latitude) : null,
+        lng: s.destination_lng != null ? Number(s.destination_lng) : s.customers?.longitude != null ? Number(s.customers.longitude) : null,
         deadline: s.customers?.service_required_before ?? s.customers?.preferred_time ?? null,
       }));
       return pickNextStop(candidates, from)?.id ?? null;
@@ -119,7 +128,7 @@ function ServiceDetail() {
         p_service_id: id,
         p_lat: pos?.lat ?? null,
         p_lng: pos?.lng ?? null,
-        p_notes: null,
+        p_notes: serviceNotes.trim() || null,
       });
       if (error) {
         // Surface DB-side missing-photo / GPS errors clearly
@@ -164,11 +173,16 @@ function ServiceDetail() {
 
   const c = service?.customers as any;
   const v = service?.vehicles as any;
+  const destLat = (service as any)?.destination_lat;
+  const destLng = (service as any)?.destination_lng;
+  const destinationSource = (service as any)?.destination_source ?? "customer";
+  const elapsedSeconds = service?.started_at
+    ? Math.max(0, Math.floor((nowTick - Date.parse(service.started_at)) / 1000))
+    : 0;
+  const elapsedLabel = `${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 
-  const exactNav = googleMapsDirectionsUrl(c?.latitude, c?.longitude);
-  const navUrl = exactNav
-    ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
-  const gpsExact = Boolean(exactNav);
+  const navUrl = googleMapsDirectionsUrl(destLat, destLng);
+  const gpsExact = Boolean(navUrl);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
@@ -182,9 +196,11 @@ function ServiceDetail() {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-semibold">{c?.full_name}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{c?.phone}</p>
               <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
               <p className="mt-0.5 text-xs font-medium">Package: {v?.package_amount ? `₹${v.package_amount}` : "—"}</p>
+              <p className="mt-0.5 text-xs font-medium">Service: Exterior Daily Shine</p>
             </div>
             <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
           </div>
@@ -192,15 +208,16 @@ function ServiceDetail() {
             <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
             <p className={`flex items-center gap-1.5 ${gpsExact ? "" : "text-amber-600"}`}>
               <Navigation className="h-3.5 w-3.5" />
-              {gpsExact ? `GPS: ${gpsLabel(c?.latitude, c?.longitude)}` : "⚠️ Exact GPS unavailable — using address search"}
+              {gpsExact ? `GPS: ${gpsLabel(destLat, destLng)} · ${destinationSource}` : "⚠️ Location unavailable — exact GPS required"}
             </p>
             <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
+            <p className="text-xs text-muted-foreground">Scheduled: {service?.scheduled_date ?? "Today"} · {service?.time_slot ?? "Morning route"}</p>
           </div>
           {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button asChild variant="outline" size="sm">
-              <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a>
+            <Button asChild={!!navUrl} variant="outline" size="sm" disabled={!navUrl}>
+              {navUrl ? <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a> : <span><Navigation className="mr-1.5 h-4 w-4" /> No GPS</span>}
             </Button>
             <MaskedCallButton serviceId={id} />
           </div>
@@ -240,6 +257,19 @@ function ServiceDetail() {
             <DirtyVehicleDialog serviceId={id} onDone={goNext} />
             <ParkingIssueDialog serviceId={id} />
           </div>
+
+          <Card className="mt-5 p-4">
+            <div className="flex items-center justify-between text-sm font-semibold">
+              <span className="inline-flex items-center gap-2"><Clock className="h-4 w-4" /> Service timer</span>
+              <span className="tabular-nums">{elapsedLabel}</span>
+            </div>
+            <Textarea
+              placeholder="Add service notes for admin/customer record…"
+              value={serviceNotes}
+              onChange={(e) => setServiceNotes(e.target.value)}
+              className="mt-3"
+            />
+          </Card>
 
 
           {service.status === "in_progress" && (

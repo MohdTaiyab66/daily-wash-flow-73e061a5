@@ -35,7 +35,7 @@ function RoutePage() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,customers(full_name,area,address_line,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
@@ -76,6 +76,7 @@ function RoutePage() {
   });
   const ratePerCar = rateSetting ?? 17;
   const expectedEarnings = total * ratePerCar;
+  const remainingEarnings = remaining * ratePerCar;
 
   // Route visibility window
   const now = new Date();
@@ -105,13 +106,19 @@ function RoutePage() {
   const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   // Optimise: bucket by deadline, nearest-neighbor by distance within bucket.
+  const routeSource = (s: any) => ({
+    lat: s.destination_lat != null ? Number(s.destination_lat) : (s.customers as any)?.latitude != null ? Number((s.customers as any).latitude) : null,
+    lng: s.destination_lng != null ? Number(s.destination_lng) : (s.customers as any)?.longitude != null ? Number((s.customers as any).longitude) : null,
+  });
+
   const pending = optimizeRoute(
     pendingRaw.map((s) => {
       const c = s.customers as any;
+      const gps = routeSource(s);
       return {
         ...s,
-        lat: c?.latitude != null ? Number(c.latitude) : null,
-        lng: c?.longitude != null ? Number(c.longitude) : null,
+        lat: gps.lat,
+        lng: gps.lng,
         deadline: c?.service_required_before ?? c?.preferred_time ?? null,
         timeWindowType: (c?.time_window_type ?? "soft") as "soft" | "exact",
         exactTime: c?.exact_time ?? null,
@@ -135,8 +142,21 @@ function RoutePage() {
         lat: Number(s.lat),
         lng: Number(s.lng),
         label: c?.full_name ?? "Customer",
+        eta: (s as any).eta_at ?? null,
+        distanceKm: (s as any).distance_km ?? null,
       };
     });
+
+  const currentStop = pending[0] ?? null;
+  const nextStop = pending[1] ?? null;
+  const distanceRemaining = (pending ?? []).reduce((sum: number, s: any) => sum + Number(s.distance_km || 0), 0);
+  const estimatedFinish = (() => {
+    const lastEta = pending.map((s: any) => s.eta_at).filter(Boolean).at(-1);
+    if (lastEta) return new Date(lastEta).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    if (!pending.length) return "Done";
+    const mins = pending.length * 12 + Math.round(distanceRemaining * 3);
+    return new Date(Date.now() + mins * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  })();
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
@@ -148,7 +168,7 @@ function RoutePage() {
       <div className="mt-4"><DarOfferCard /></div>
 
       <div className="mt-5">
-        <LiveMap stops={stops} showCustomers={routeVisible && pending.length > 0} />
+        <LiveMap stops={stops} showCustomers={pending.length > 0} />
         <Card className="mt-3 p-3">
           <div className="flex items-baseline justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's route</p>
@@ -158,6 +178,14 @@ function RoutePage() {
             <KPI label="Completed" value={String(completedCount)} />
             <KPI label="Remaining" value={String(remaining)} />
             <KPI label="Est. earnings" value={`₹${expectedEarnings.toLocaleString("en-IN")}`} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-center">
+            <KPI label="Current stop" value={currentStop ? `#1` : "—"} />
+            <KPI label="Next stop" value={nextStop ? `#2` : "—"} />
+            <KPI label="Distance left" value={distanceRemaining ? `${distanceRemaining.toFixed(1)} km` : "—"} />
+            <KPI label="Est. finish" value={estimatedFinish} />
+            <KPI label="Expected left" value={`₹${remainingEarnings.toLocaleString("en-IN")}`} />
+            <KPI label="Done/Total" value={`${done}/${total}`} />
           </div>
         </Card>
       </div>
@@ -178,7 +206,8 @@ function RoutePage() {
         {routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
-          const navUrl = googleMapsDirectionsUrl(c?.latitude, c?.longitude);
+          const gps = routeSource(s);
+          const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
           const isExact = (c?.time_window_type ?? "soft") === "exact";
           const isEmergency = !!(s as any).is_emergency;
@@ -221,7 +250,7 @@ function RoutePage() {
                         <MapPin className="mr-1 inline h-3 w-3" />
                         {navUrl ? `${c?.address_line ? `${c.address_line}, ` : ""}${c?.area ?? ""}` : "Location unavailable"}
                       </p>
-                      <p className="mt-0.5 text-[11px] font-medium text-foreground">GPS: {gpsLabel(c?.latitude, c?.longitude)}</p>
+                      <p className="mt-0.5 text-[11px] font-medium text-foreground">GPS: {gpsLabel(gps.lat, gps.lng)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {cutoffTime ? formatTime12(cutoffTime) : "Flexible"} · Exterior Daily Shine · ~10 min
