@@ -11,6 +11,7 @@ import { MapPin, Lock, Crosshair, Loader2, CheckCircle2, ArrowLeft, Clock } from
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { reverseGeocode } from "@/lib/geo.functions";
+import { getCurrentGps } from "@/lib/native";
 
 export const Route = createFileRoute("/_authenticated/app/area")({
   component: AreaPage,
@@ -67,15 +68,18 @@ function AreaPage() {
   const current = partner?.home_area;
   const pick = selected ?? current;
 
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
+  const useCurrentLocation = async () => {
     setLocating(true);
     setOutOfCoverage(null);
     setShowRequestForm(false);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+    const pos = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    if (!pos) {
+      setLocating(false);
+      toast.error("Could not detect location — pick manually");
+      return;
+    }
+    const lat = pos.lat;
+    const lng = pos.lng;
         setDetectedCoords({ lat, lng });
         let realArea = "";
         try {
@@ -108,10 +112,6 @@ function AreaPage() {
           toast.message("Location detected", { description: "Could not name your area — pick one below to save." });
         }
         setLocating(false);
-      },
-      () => { setLocating(false); toast.error("Could not detect location — pick manually"); },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
   };
 
   const submitRequest = async () => {

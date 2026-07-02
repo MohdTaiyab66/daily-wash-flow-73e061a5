@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2, MapPin } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { computeRoute } from "@/lib/maps.functions";
+import { watchCurrentGps } from "@/lib/native";
 
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371;
@@ -85,13 +86,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
 
   // Partner location (watch)
   useEffect(() => {
-    if (!navigator.geolocation) return;
-    const id = navigator.geolocation.watchPosition(
-      (p) => setPartnerPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 15000 }
-    );
-    return () => navigator.geolocation.clearWatch(id);
+    let cleanup: (() => void) | null = null;
+    let cancelled = false;
+    void watchCurrentGps((p) => setPartnerPos({ lat: p.lat, lng: p.lng })).then((fn) => {
+      if (cancelled) fn();
+      else cleanup = fn;
+    });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, []);
 
   // Render partner marker

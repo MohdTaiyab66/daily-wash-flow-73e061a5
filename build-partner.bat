@@ -100,25 +100,33 @@ copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 echo   Syncing Capacitor...
 call npx cap sync android || goto :fail
 
-REM -- 6. Next steps ------------------------------------------------------
+echo   Patching Android permissions and Maps intents...
+call node scripts\patch-android-manifest.mjs || goto :fail
+
+REM -- 6. Build APK -------------------------------------------------------
 echo.
-echo [6/6] Opening Android Studio...
-call npx cap open android
+echo [6/6] Building Android debug APK...
+pushd android || goto :fail
+call gradlew.bat assembleDebug || (popd & goto :fail)
+popd
+
+if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
+  echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
+  goto :fail
+)
+copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-partner.apk" >nul || goto :fail
 
 echo.
 echo ============================================================
-echo  Web build + sync complete for %VARIANT% (%APP_ID%)
+echo  APK build complete for %VARIANT% (%APP_ID%)
 echo ============================================================
 echo.
-echo  NEXT STEPS in Android Studio:
-echo    1. Close any previously-open Android Studio window for the
-echo       Customer variant first (the android\ folder is shared).
-echo    2. Wait for Gradle sync to finish (bottom status bar).
-echo    3. Menu: Build ^> Build App Bundle(s) / APK(s) ^> Build APK(s)
-echo       (For Play Store: Build ^> Generate Signed Bundle / APK)
-echo    4. When done, click "locate" in the toast to open:
-echo       android\app\build\outputs\apk\debug\app-debug.apk
-echo    5. Rename to urbanwash-partner.apk and install on device.
+echo  APK ready:
+echo    urbanwash-partner.apk
+echo    android\app\build\outputs\apk\debug\app-debug.apk
+echo.
+echo  Install on device:
+echo    adb install -r urbanwash-partner.apk
 echo.
 endlocal
 exit /b 0

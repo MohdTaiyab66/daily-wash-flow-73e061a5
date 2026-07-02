@@ -1,4 +1,5 @@
 import { SERVICE_AREAS } from "@/lib/areas";
+import { openDirections } from "@/lib/native";
 
 export const GPS_INVALID_MESSAGE =
   "We couldn't determine your exact location. Please enable GPS or move to an open area before saving.";
@@ -27,6 +28,12 @@ export function validateExactGps(latitude: unknown, longitude: unknown): ExactGp
 export function googleMapsDirectionsUrl(latitude: unknown, longitude: unknown) {
   const gps = validateExactGps(latitude, longitude);
   return gps ? `https://www.google.com/maps/dir/?api=1&destination=${gps.latitude},${gps.longitude}` : null;
+}
+
+export async function openGoogleMapsDirections(latitude: unknown, longitude: unknown) {
+  const gps = validateExactGps(latitude, longitude);
+  if (!gps) return false;
+  return openDirections(gps.latitude, gps.longitude);
 }
 
 export function gpsLabel(latitude: unknown, longitude: unknown) {

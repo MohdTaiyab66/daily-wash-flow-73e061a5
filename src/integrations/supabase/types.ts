@@ -1485,6 +1485,57 @@ export type Database = {
           },
         ]
       }
+      partner_apk_workflow_events: {
+        Row: {
+          accuracy: number | null
+          actor_id: string
+          app_variant: string
+          assignment_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          is_native: boolean
+          lat: number | null
+          lng: number | null
+          payload: Json
+          platform: string
+          service_id: string | null
+          status: string
+        }
+        Insert: {
+          accuracy?: number | null
+          actor_id: string
+          app_variant?: string
+          assignment_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          is_native?: boolean
+          lat?: number | null
+          lng?: number | null
+          payload?: Json
+          platform?: string
+          service_id?: string | null
+          status?: string
+        }
+        Update: {
+          accuracy?: number | null
+          actor_id?: string
+          app_variant?: string
+          assignment_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_native?: boolean
+          lat?: number | null
+          lng?: number | null
+          payload?: Json
+          platform?: string
+          service_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       partner_expansion_requests: {
         Row: {
           area_name: string
@@ -4316,6 +4367,22 @@ export type Database = {
           total_amount: number
           vehicle_label: string
         }[]
+      }
+      log_partner_apk_workflow_event: {
+        Args: {
+          p_accuracy?: number
+          p_app_variant?: string
+          p_assignment_id?: string
+          p_event_type: string
+          p_is_native?: boolean
+          p_lat?: number
+          p_lng?: number
+          p_payload?: Json
+          p_platform?: string
+          p_service_id?: string
+          p_status?: string
+        }
+        Returns: string
       }
       log_reliability_event: {
         Args: {

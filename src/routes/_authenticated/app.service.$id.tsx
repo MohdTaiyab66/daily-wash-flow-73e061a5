@@ -17,8 +17,10 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
-import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
+import { googleMapsDirectionsUrl, gpsLabel, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { captureFromCamera } from "@/lib/camera";
+import { getCurrentGps } from "@/lib/native";
+import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -111,6 +113,13 @@ function ServiceDetail() {
     mutationFn: async () => {
       const t0 = Date.now();
       const pos = await getPosition();
+      await logApkEvidence({
+        eventType: "service_start_attempt",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        payload: { previous_status: service?.status ?? null },
+      });
       console.log(`[SVC ${id}] START @ ${new Date(t0).toISOString()} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"}`);
       const { error } = await supabase
         .from("services")
@@ -121,8 +130,19 @@ function ServiceDetail() {
           start_lng: pos?.lng ?? null,
         })
         .eq("id", id);
-      if (error) throw error;
+      if (error) {
+        await logApkEvidence({ eventType: "service_start_result", serviceId: id, assignmentId: (service as any)?.assignment_id ?? null, gps: pos, status: "error", payload: evidenceError(error) });
+        throw error;
+      }
       console.log(`[SVC ${id}] START ok · Δ${Date.now()-t0}ms`);
+      await logApkEvidence({
+        eventType: "service_start_result",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        status: "success",
+        payload: { elapsed_ms: Date.now() - t0, next_status: "in_progress" },
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["service", id] }),
   });
@@ -140,6 +160,13 @@ function ServiceDetail() {
       if (missingAfter.length) throw new Error(`Missing After photos: ${missingAfter.join(", ")}`);
       const pos = await getPosition();
       const completedAt = new Date().toISOString();
+      await logApkEvidence({
+        eventType: "service_complete_attempt",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        payload: { before_done: beforeDone, after_done_count: afterDone.size, missing_after: missingAfter },
+      });
       console.log(`[SVC ${id}] COMPLETE request @ ${completedAt} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · photos=${(photos ?? []).length}/5 (before=${beforeDone ? "yes" : "no"}, after=${afterDone.size}/4)`);
       const { data, error } = await (supabase as any).rpc("partner_complete_service", {
         p_service_id: id,
@@ -149,6 +176,7 @@ function ServiceDetail() {
       });
       if (error) {
         console.error(`[SVC ${id}] COMPLETE fail · code=${(error as any).code} · ${(error as any).message}`);
+        await logApkEvidence({ eventType: "service_complete_result", serviceId: id, assignmentId: (service as any)?.assignment_id ?? null, gps: pos, status: "error", payload: evidenceError(error) });
         const code = (error as any).code ?? "";
         const msg = (error as any).message ?? "Could not complete service";
         if (code === "P04PHOTO") throw new Error("Some required photos are missing. Please re-check Before + 4 After angles.");
@@ -156,6 +184,14 @@ function ServiceDetail() {
         throw new Error(msg);
       }
       console.log(`[SVC ${id}] COMPLETE ok · Δ${Date.now()-t0}ms · payload=`, data);
+      await logApkEvidence({
+        eventType: "service_complete_result",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        status: "success",
+        payload: { elapsed_ms: Date.now() - t0, rpc: data },
+      });
 
       // Service analytics (best-effort, ignore failures)
       if (service?.started_at) {
@@ -187,6 +223,16 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      window.setTimeout(() => {
+        void logApkEvidence({
+          eventType: "route_auto_advance_after_completion",
+          serviceId: id,
+          assignmentId: (service as any)?.assignment_id ?? null,
+          status: "success",
+          payload: { next_service_id: nextServiceId ?? null, rpc: data },
+        });
+        void goNext();
+      }, 900);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -264,8 +310,29 @@ function ServiceDetail() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button asChild={!!navUrl} variant="outline" size="sm" disabled={!navUrl}>
-              {navUrl ? <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a> : <span><Navigation className="mr-1.5 h-4 w-4" /> No GPS</span>}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!navUrl}
+              onClick={async () => {
+                await logApkEvidence({
+                  eventType: "navigation_open_attempt",
+                  serviceId: id,
+                  assignmentId: (service as any)?.assignment_id ?? null,
+                  status: navUrl ? "info" : "blocked",
+                  payload: { destination_lat: destLat, destination_lng: destLng, destination_source: destinationSource },
+                });
+                const opened = await openGoogleMapsDirections(destLat, destLng);
+                await logApkEvidence({
+                  eventType: "navigation_open_result",
+                  serviceId: id,
+                  assignmentId: (service as any)?.assignment_id ?? null,
+                  status: opened ? "success" : "error",
+                  payload: { opened, destination_lat: destLat, destination_lng: destLng },
+                });
+              }}
+            >
+              <Navigation className="mr-1.5 h-4 w-4" /> {navUrl ? "Navigate" : "No GPS"}
             </Button>
             <MaskedCallButton serviceId={id} />
           </div>
@@ -277,7 +344,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={goNext} />
+          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />
         </div>
       )}
 
@@ -301,8 +368,8 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} onDone={goNext} />}
-            <DirtyVehicleDialog serviceId={id} onDone={goNext} />
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
+            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
           </div>
 
           <Card className="mt-5 p-4">
@@ -409,7 +476,7 @@ function PhotoSlot({
 }
 
 
-function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: () => void }) {
+function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -428,15 +495,35 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS) return;
+    await logApkEvidence({
+      eventType: "unavailable_camera_attempt",
+      serviceId,
+      assignmentId,
+      payload: { photo_index: photos.length + 1, max_photos: MAX_PHOTOS },
+    });
     const file = await captureFromCamera();
-    if (!file) return;
+    if (!file) {
+      await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
+      return;
+    }
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
       const path = `${u.user!.id}/${serviceId}/unavailable-${photos.length + 1}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
+        toast.error(error.message);
+        return;
+      }
       setPhotos((p) => [...p, path]);
+      await logApkEvidence({
+        eventType: "unavailable_photo_upload_result",
+        serviceId,
+        assignmentId,
+        status: "success",
+        payload: { photo_index: photos.length + 1, path, size: file.size, type: file.type },
+      });
     } finally {
       setUploading(false);
     }
@@ -450,6 +537,13 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
     const pos = await getPosition();
+    await logApkEvidence({
+      eventType: "unavailable_submit_attempt",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      payload: { reason, photo_count: photos.length, has_notes: Boolean(notes.trim()) },
+    });
     const { data, error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
@@ -459,8 +553,20 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
       p_lng: pos?.lng ?? 0,
     } as any);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      toast.error(error.message);
+      return;
+    }
     console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
+    await logApkEvidence({
+      eventType: "unavailable_submit_result",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      status: "success",
+      payload: { rpc: data },
+    });
     toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -539,7 +645,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 }
 
 
-function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?: () => void }) {
+function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -551,8 +657,19 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     const { data: u } = await supabase.auth.getUser();
     const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
     const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
+      toast.error(error.message);
+      return;
+    }
     setPhotos((p) => ({ ...p, [angle]: path }));
+    await logApkEvidence({
+      eventType: "dirty_photo_upload_result",
+      serviceId,
+      assignmentId,
+      status: "success",
+      payload: { angle, path, size: file.size, type: file.type },
+    });
   };
 
   const submit = async () => {
@@ -560,24 +677,16 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
     setSaving(true);
-    const { data: u } = await supabase.auth.getUser();
     const pos = await getPosition();
-    const { data: svc, error: svcError } = await supabase
-      .from("services")
-      .select("customer_id")
-      .eq("id", serviceId)
-      .maybeSingle();
-    if (svcError || !svc?.customer_id) {
-      setSaving(false);
-      return toast.error(svcError?.message || "Could not load customer for this service");
-    }
-    const { error: e1 } = await supabase.from("dirty_vehicle_reports").insert({
-      service_id: serviceId, partner_id: u.user!.id, customer_id: svc.customer_id, reason, notes: notes || null,
-      photo_front: photos.front, photo_rear: photos.rear, photo_left: photos.left, photo_right: photos.right,
-      lat: pos?.lat ?? null, lng: pos?.lng ?? null, captured_at: new Date().toISOString(), recommendation: "premium_or_included_wash",
+    await logApkEvidence({
+      eventType: "dirty_submit_attempt",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      payload: { reason, photo_count: Object.keys(photos).length, has_notes: Boolean(notes.trim()) },
     });
-    if (e1) { setSaving(false); return toast.error(e1.message); }
-    // Mark service as unavailable + credit ₹12 (vehicle too dirty to clean)
+    // Server-side RPC atomically creates the dirty report, customer/admin notifications,
+    // wallet entry, and route progression. This avoids APK partial-success states.
     const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: "dirty_vehicle",
@@ -587,8 +696,19 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
       p_lng: pos?.lng ?? 0,
     } as any);
     setSaving(false);
-    if (e2) return toast.error(e2.message);
+    if (e2) {
+      await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(e2) });
+      return toast.error(e2.message);
+    }
     console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
+    await logApkEvidence({
+      eventType: "dirty_submit_result",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      status: "success",
+      payload: { rpc: data },
+    });
     toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -650,12 +770,5 @@ function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; 
 
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
-  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 1500, maximumAge: 300000 },
-    );
-  });
+  return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 }
