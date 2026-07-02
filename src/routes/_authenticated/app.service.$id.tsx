@@ -598,75 +598,7 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
   );
 }
 
-function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const qc = useQueryClient();
 
-  const upload = async (file: File) => {
-    setUploading(true);
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/parking-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { toast.error(error.message); return; }
-      setPhoto(path);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const submit = async () => {
-    if (!reason) return toast.error("Pick a reason");
-    if (!photo) return toast.error("Upload a proof photo");
-    setSaving(true);
-    const pos = await getPosition();
-    const { error } = await supabase.rpc("submit_parking_issue", {
-      p_service_id: serviceId,
-      p_reason: reason,
-      p_notes: notes || "",
-      p_photo: photo,
-      p_lat: pos?.lat ?? 0,
-      p_lng: pos?.lng ?? 0,
-    } as any);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Parking issue reported");
-    qc.invalidateQueries({ queryKey: ["service", serviceId] });
-    qc.invalidateQueries({ queryKey: ["route-today"] });
-    setOpen(false);
-    onDone?.();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm"><ParkingCircle className="mr-1.5 h-4 w-4" />Parking</Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Parking issue</DialogTitle></DialogHeader>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
-          {PARKING_REASONS.map((r) => (
-            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
-              <RadioGroupItem value={r} />{r}
-            </Label>
-          ))}
-        </RadioGroup>
-        <ReportPhoto angle={uploading ? "Uploading…" : "Proof"} done={!!photo} onPicked={upload} />
-        <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
-        <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 
 function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
