@@ -100,7 +100,9 @@ function ServiceDetail() {
 
   const start = useMutation({
     mutationFn: async () => {
+      const t0 = Date.now();
       const pos = await getPosition();
+      console.log(`[SVC ${id}] START @ ${new Date(t0).toISOString()} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"}`);
       const { error } = await supabase
         .from("services")
         .update({
@@ -111,6 +113,7 @@ function ServiceDetail() {
         })
         .eq("id", id);
       if (error) throw error;
+      console.log(`[SVC ${id}] START ok · Δ${Date.now()-t0}ms`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["service", id] }),
   });
@@ -122,11 +125,13 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
+      const t0 = Date.now();
       const missingAfter = AFTER_ANGLES.filter((a) => !afterDone.has(a));
       if (!beforeDone) throw new Error("Take the Before photo first");
       if (missingAfter.length) throw new Error(`Missing After photos: ${missingAfter.join(", ")}`);
       const pos = await getPosition();
       const completedAt = new Date().toISOString();
+      console.log(`[SVC ${id}] COMPLETE request @ ${completedAt} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · photos=${(photos ?? []).length}/5 (before=${beforeDone ? "yes" : "no"}, after=${afterDone.size}/4)`);
       const { data, error } = await (supabase as any).rpc("partner_complete_service", {
         p_service_id: id,
         p_lat: pos?.lat ?? null,
@@ -134,13 +139,14 @@ function ServiceDetail() {
         p_notes: serviceNotes.trim() || null,
       });
       if (error) {
-        // Surface DB-side missing-photo / GPS errors clearly
+        console.error(`[SVC ${id}] COMPLETE fail · code=${(error as any).code} · ${(error as any).message}`);
         const code = (error as any).code ?? "";
         const msg = (error as any).message ?? "Could not complete service";
         if (code === "P04PHOTO") throw new Error("Some required photos are missing. Please re-check Before + 4 After angles.");
         if (code === "P04GPS") throw new Error(msg);
         throw new Error(msg);
       }
+      console.log(`[SVC ${id}] COMPLETE ok · Δ${Date.now()-t0}ms · payload=`, data);
 
       // Service analytics (best-effort, ignore failures)
       if (service?.started_at) {
@@ -158,12 +164,20 @@ function ServiceDetail() {
       return data;
     },
     onSuccess: (data: any) => {
-      if (data?.already) toast.message("Service was already completed");
-      else toast.success(`Service complete · ₹${data?.amount ?? 17} earned`);
+      if (data?.already) {
+        toast.message("Service was already completed");
+      } else {
+        const bal = data?.wallet_balance != null ? ` · wallet ₹${Number(data.wallet_balance).toFixed(0)}` : "";
+        toast.success(`Complete · ₹${data?.amount ?? 17} earned${bal}`, {
+          description: `Customer ${data?.customer_notified ? "✓" : "✗"} · Admin ${data?.admin_notified ? "✓" : "✗"} · ${data?.photo_count ?? 0} photos · GPS ${data?.gps_flag ?? "n/a"}${data?.distance_m != null ? ` (${data.distance_m}m)` : ""}`,
+          duration: 6000,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
