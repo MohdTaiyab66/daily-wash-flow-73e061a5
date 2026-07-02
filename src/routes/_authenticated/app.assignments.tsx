@@ -270,9 +270,7 @@ function AssignmentsPage() {
   // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
   const monthlyWorkingDays = Math.round((workingDayCount / 7) * 30);
   const monthlyCars = monthlyWorkingDays * cars;
-  const monthlyEarn = monthlyCars * rate;
-  const monthlyFuel = Math.round(monthlyCars * fuelPerCar);
-  const monthlyNet = monthlyEarn - monthlyFuel;
+  const monthlyEarn = monthlyCars * rate; // gross, no deductions
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
