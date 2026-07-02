@@ -19,7 +19,8 @@ import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { googleMapsDirectionsUrl, gpsLabel, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { captureFromCamera } from "@/lib/camera";
-import { getCurrentGps } from "@/lib/native";
+import { getCurrentGps, type GpsPoint } from "@/lib/native";
+import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -112,6 +113,13 @@ function ServiceDetail() {
     mutationFn: async () => {
       const t0 = Date.now();
       const pos = await getPosition();
+      await logApkEvidence({
+        eventType: "service_start_attempt",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        payload: { previous_status: service?.status ?? null },
+      });
       console.log(`[SVC ${id}] START @ ${new Date(t0).toISOString()} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"}`);
       const { error } = await supabase
         .from("services")
@@ -122,8 +130,19 @@ function ServiceDetail() {
           start_lng: pos?.lng ?? null,
         })
         .eq("id", id);
-      if (error) throw error;
+      if (error) {
+        await logApkEvidence({ eventType: "service_start_result", serviceId: id, assignmentId: (service as any)?.assignment_id ?? null, gps: pos, status: "error", payload: evidenceError(error) });
+        throw error;
+      }
       console.log(`[SVC ${id}] START ok · Δ${Date.now()-t0}ms`);
+      await logApkEvidence({
+        eventType: "service_start_result",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        status: "success",
+        payload: { elapsed_ms: Date.now() - t0, next_status: "in_progress" },
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["service", id] }),
   });
@@ -141,6 +160,13 @@ function ServiceDetail() {
       if (missingAfter.length) throw new Error(`Missing After photos: ${missingAfter.join(", ")}`);
       const pos = await getPosition();
       const completedAt = new Date().toISOString();
+      await logApkEvidence({
+        eventType: "service_complete_attempt",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        payload: { before_done: beforeDone, after_done_count: afterDone.size, missing_after: missingAfter },
+      });
       console.log(`[SVC ${id}] COMPLETE request @ ${completedAt} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · photos=${(photos ?? []).length}/5 (before=${beforeDone ? "yes" : "no"}, after=${afterDone.size}/4)`);
       const { data, error } = await (supabase as any).rpc("partner_complete_service", {
         p_service_id: id,
@@ -150,6 +176,7 @@ function ServiceDetail() {
       });
       if (error) {
         console.error(`[SVC ${id}] COMPLETE fail · code=${(error as any).code} · ${(error as any).message}`);
+        await logApkEvidence({ eventType: "service_complete_result", serviceId: id, assignmentId: (service as any)?.assignment_id ?? null, gps: pos, status: "error", payload: evidenceError(error) });
         const code = (error as any).code ?? "";
         const msg = (error as any).message ?? "Could not complete service";
         if (code === "P04PHOTO") throw new Error("Some required photos are missing. Please re-check Before + 4 After angles.");
@@ -157,6 +184,14 @@ function ServiceDetail() {
         throw new Error(msg);
       }
       console.log(`[SVC ${id}] COMPLETE ok · Δ${Date.now()-t0}ms · payload=`, data);
+      await logApkEvidence({
+        eventType: "service_complete_result",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        gps: pos,
+        status: "success",
+        payload: { elapsed_ms: Date.now() - t0, rpc: data },
+      });
 
       // Service analytics (best-effort, ignore failures)
       if (service?.started_at) {
@@ -188,7 +223,16 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-      window.setTimeout(() => { void goNext(); }, 900);
+      window.setTimeout(() => {
+        void logApkEvidence({
+          eventType: "route_auto_advance_after_completion",
+          serviceId: id,
+          assignmentId: (service as any)?.assignment_id ?? null,
+          status: "success",
+          payload: { next_service_id: nextServiceId ?? null, rpc: data },
+        });
+        void goNext();
+      }, 900);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -266,7 +310,28 @@ function ServiceDetail() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" disabled={!navUrl} onClick={() => void openGoogleMapsDirections(destLat, destLng)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!navUrl}
+              onClick={async () => {
+                await logApkEvidence({
+                  eventType: "navigation_open_attempt",
+                  serviceId: id,
+                  assignmentId: (service as any)?.assignment_id ?? null,
+                  status: navUrl ? "info" : "blocked",
+                  payload: { destination_lat: destLat, destination_lng: destLng, destination_source: destinationSource },
+                });
+                const opened = await openGoogleMapsDirections(destLat, destLng);
+                await logApkEvidence({
+                  eventType: "navigation_open_result",
+                  serviceId: id,
+                  assignmentId: (service as any)?.assignment_id ?? null,
+                  status: opened ? "success" : "error",
+                  payload: { opened, destination_lat: destLat, destination_lng: destLng },
+                });
+              }}
+            >
               <Navigation className="mr-1.5 h-4 w-4" /> {navUrl ? "Navigate" : "No GPS"}
             </Button>
             <MaskedCallButton serviceId={id} />
@@ -279,7 +344,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} onDone={goNext} />
+          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />
         </div>
       )}
 
@@ -303,8 +368,8 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} onDone={goNext} />}
-            <DirtyVehicleDialog serviceId={id} onDone={goNext} />
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
+            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
           </div>
 
           <Card className="mt-5 p-4">
