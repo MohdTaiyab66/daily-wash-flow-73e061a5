@@ -3427,6 +3427,7 @@ export type Database = {
           notes: string | null
           partner_id: string
           photo_path: string | null
+          photos: string[]
           reason: string
           service_id: string
         }
@@ -3440,6 +3441,7 @@ export type Database = {
           notes?: string | null
           partner_id: string
           photo_path?: string | null
+          photos?: string[]
           reason: string
           service_id: string
         }
@@ -3453,6 +3455,7 @@ export type Database = {
           notes?: string | null
           partner_id?: string
           photo_path?: string | null
+          photos?: string[]
           reason?: string
           service_id?: string
         }
@@ -4467,7 +4470,7 @@ export type Database = {
           p_lat: number
           p_lng: number
           p_notes: string
-          p_photo: string
+          p_photos: string[]
           p_reason: string
           p_service_id: string
         }
@@ -4519,6 +4522,10 @@ export type Database = {
         | "access_not_available"
         | "customer_not_responding"
         | "dirty_vehicle"
+        | "vehicle_taken_out"
+        | "keys_not_available"
+        | "security_guard_denied"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4686,6 +4693,10 @@ export const Constants = {
         "access_not_available",
         "customer_not_responding",
         "dirty_vehicle",
+        "vehicle_taken_out",
+        "keys_not_available",
+        "security_guard_denied",
+        "other",
       ],
     },
   },
