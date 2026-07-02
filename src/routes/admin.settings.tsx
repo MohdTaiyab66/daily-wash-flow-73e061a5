@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/settings")({
   component: SettingsPage,
 });
 
-type FieldKind = "number" | "bool" | "text" | "select" | "csv";
+type FieldKind = "number" | "bool" | "text" | "select" | "csv" | "json";
 type Field = { key: string; label: string; help?: string; kind?: FieldKind; options?: string[] };
 
 const TIME_OPTS = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","all_day"];
