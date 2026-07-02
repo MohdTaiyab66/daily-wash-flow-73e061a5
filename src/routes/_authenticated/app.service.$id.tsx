@@ -10,7 +10,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle, Clock } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -26,15 +26,24 @@ type Angle = (typeof AFTER_ANGLES)[number];
 
 const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
-  { value: "parking_locked", label: "Locked vehicle / parking" },
-  { value: "access_not_available", label: "No access" },
+  { value: "customer_not_responding", label: "Customer not responding" },
+  { value: "vehicle_taken_out", label: "Vehicle taken out" },
+  { value: "keys_not_available", label: "Keys not available" },
   { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "customer_not_responding", label: "Customer unreachable" },
+  { value: "security_guard_denied", label: "Security guard denied entry" },
+  { value: "other", label: "Other (remarks required)" },
 ] as const;
 
-const DIRTY_REASONS = ["Heavy Dust", "Mud", "Bird Droppings", "Tree Sap", "Interior Extremely Dirty", "Other"];
+const DIRTY_REASONS = [
+  "Heavy Mud",
+  "Heavy Dust",
+  "Bird Droppings",
+  "Tree Sap",
+  "Cement",
+  "Interior Extremely Dirty",
+  "Other",
+];
 const COMPENSATION = 12;
-const PARKING_REASONS = ["Vehicle Locked", "Vehicle Blocked", "Parking Not Accessible", "Wrong Parking", "Customer Unavailable"];
 
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
