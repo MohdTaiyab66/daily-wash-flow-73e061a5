@@ -292,7 +292,7 @@ function AssignmentsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Pick your hours — we do the math.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Choose how many hours you'd like to work each day. We'll automatically calculate your customers, route and earnings.</p>
         </div>
         <Link to="/app/area" className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
           <MapPin className="h-3 w-3" />{partner.home_area}
