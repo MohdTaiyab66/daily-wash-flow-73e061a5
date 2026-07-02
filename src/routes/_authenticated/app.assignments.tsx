@@ -74,6 +74,7 @@ function AssignmentsPage() {
         "min_cars_required", "max_cars_allowed", "rate_per_car",
         "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
         "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
+        "avg_bike_mileage_kmpl", "fuel_price_per_litre", "fuel_calc_enabled",
       ]);
       const m: Record<string, any> = {};
       (data ?? []).forEach((s: any) => (m[s.key] = s.value));
@@ -87,6 +88,9 @@ function AssignmentsPage() {
         carsPerHour: Number(m.cars_per_hour ?? 6),
         minutesPerCar: Number(m.minutes_per_car ?? 10),
         fuelPerCar: Number(m.fuel_cost_per_car ?? 1.4),
+        avgMileage: Number(m.avg_bike_mileage_kmpl ?? 40),
+        fuelPrice: Number(m.fuel_price_per_litre ?? 105),
+        fuelEnabled: m.fuel_calc_enabled !== false,
         startRules: rules,
         weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
       };
