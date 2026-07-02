@@ -19,7 +19,7 @@ import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { googleMapsDirectionsUrl, gpsLabel, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { captureFromCamera } from "@/lib/camera";
-import { getCurrentGps, type GpsPoint } from "@/lib/native";
+import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
 
@@ -476,7 +476,7 @@ function PhotoSlot({
 }
 
 
-function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: () => void }) {
+function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -495,15 +495,35 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS) return;
+    await logApkEvidence({
+      eventType: "unavailable_camera_attempt",
+      serviceId,
+      assignmentId,
+      payload: { photo_index: photos.length + 1, max_photos: MAX_PHOTOS },
+    });
     const file = await captureFromCamera();
-    if (!file) return;
+    if (!file) {
+      await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
+      return;
+    }
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
       const path = `${u.user!.id}/${serviceId}/unavailable-${photos.length + 1}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
+        toast.error(error.message);
+        return;
+      }
       setPhotos((p) => [...p, path]);
+      await logApkEvidence({
+        eventType: "unavailable_photo_upload_result",
+        serviceId,
+        assignmentId,
+        status: "success",
+        payload: { photo_index: photos.length + 1, path, size: file.size, type: file.type },
+      });
     } finally {
       setUploading(false);
     }
@@ -517,6 +537,13 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
     const pos = await getPosition();
+    await logApkEvidence({
+      eventType: "unavailable_submit_attempt",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      payload: { reason, photo_count: photos.length, has_notes: Boolean(notes.trim()) },
+    });
     const { data, error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
@@ -526,8 +553,20 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
       p_lng: pos?.lng ?? 0,
     } as any);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      toast.error(error.message);
+      return;
+    }
     console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
+    await logApkEvidence({
+      eventType: "unavailable_submit_result",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      status: "success",
+      payload: { rpc: data },
+    });
     toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -606,7 +645,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 }
 
 
-function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?: () => void }) {
+function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -618,8 +657,19 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     const { data: u } = await supabase.auth.getUser();
     const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
     const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
+      toast.error(error.message);
+      return;
+    }
     setPhotos((p) => ({ ...p, [angle]: path }));
+    await logApkEvidence({
+      eventType: "dirty_photo_upload_result",
+      serviceId,
+      assignmentId,
+      status: "success",
+      payload: { angle, path, size: file.size, type: file.type },
+    });
   };
 
   const submit = async () => {
@@ -628,6 +678,13 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
     setSaving(true);
     const pos = await getPosition();
+    await logApkEvidence({
+      eventType: "dirty_submit_attempt",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      payload: { reason, photo_count: Object.keys(photos).length, has_notes: Boolean(notes.trim()) },
+    });
     // Server-side RPC atomically creates the dirty report, customer/admin notifications,
     // wallet entry, and route progression. This avoids APK partial-success states.
     const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
@@ -639,8 +696,19 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
       p_lng: pos?.lng ?? 0,
     } as any);
     setSaving(false);
-    if (e2) return toast.error(e2.message);
+    if (e2) {
+      await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(e2) });
+      return toast.error(e2.message);
+    }
     console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
+    await logApkEvidence({
+      eventType: "dirty_submit_result",
+      serviceId,
+      assignmentId,
+      gps: pos,
+      status: "success",
+      payload: { rpc: data },
+    });
     toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
