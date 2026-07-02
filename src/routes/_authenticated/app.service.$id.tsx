@@ -190,6 +190,10 @@ function ServiceDetail() {
           </div>
           <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
+            <p className={`flex items-center gap-1.5 ${gpsExact ? "" : "text-amber-600"}`}>
+              <Navigation className="h-3.5 w-3.5" />
+              {gpsExact ? `GPS: ${gpsLabel(c?.latitude, c?.longitude)}` : "⚠️ Exact GPS unavailable — using address search"}
+            </p>
             <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
           </div>
           {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
