@@ -4023,6 +4023,7 @@ export type Database = {
         Args: { p_offer_id: string; p_service_ids?: string[] }
         Returns: Json
       }
+      dar_check_start_timeouts: { Args: never; Returns: number }
       dar_dashboard_metrics: { Args: never; Returns: Json }
       dar_expire_offers: { Args: never; Returns: number }
       dar_find_candidates: { Args: { p_event_id: string }; Returns: number }
