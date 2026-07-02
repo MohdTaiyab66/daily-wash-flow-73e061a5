@@ -22,7 +22,10 @@ export const computeRoute = createServerFn({ method: "POST" })
       })),
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_AWARE",
-      optimizeWaypointOrder: true,
+      // Route Manager already owns the optimized/manual sequence. Do not let
+      // Google reorder stops here, otherwise Partner Today's Route can differ
+      // from the route Admin approved.
+      optimizeWaypointOrder: false,
     };
 
     const res = await fetch(`${GATEWAY_URL}/routes/directions/v2:computeRoutes`, {
