@@ -17,6 +17,7 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
+import { googleMapsDirectionsUrl, gpsLabel } from "@/lib/gps";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
@@ -164,9 +165,10 @@ function ServiceDetail() {
   const c = service?.customers as any;
   const v = service?.vehicles as any;
 
-  const navUrl = c?.latitude
-    ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
+  const exactNav = googleMapsDirectionsUrl(c?.latitude, c?.longitude);
+  const navUrl = exactNav
+    ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
+  const gpsExact = Boolean(exactNav);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
@@ -188,6 +190,10 @@ function ServiceDetail() {
           </div>
           <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
+            <p className={`flex items-center gap-1.5 ${gpsExact ? "" : "text-amber-600"}`}>
+              <Navigation className="h-3.5 w-3.5" />
+              {gpsExact ? `GPS: ${gpsLabel(c?.latitude, c?.longitude)}` : "⚠️ Exact GPS unavailable — using address search"}
+            </p>
             <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
           </div>
           {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
