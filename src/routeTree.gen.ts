@@ -74,6 +74,7 @@ import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehic
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
+import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/public/admin/trial-verify'
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
@@ -413,6 +414,12 @@ const ApiPublicCronOfferPushDispatchRoute =
     path: '/api/public/cron/offer-push-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronDarTimeoutsRoute =
+  ApiPublicCronDarTimeoutsRouteImport.update({
+    id: '/api/public/cron/dar-timeouts',
+    path: '/api/public/cron/dar-timeouts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronAssignmentTickRoute =
   ApiPublicCronAssignmentTickRouteImport.update({
     id: '/api/public/cron/assignment-tick',
@@ -509,6 +516,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
@@ -577,6 +585,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
@@ -650,6 +659,7 @@ export interface FileRoutesById {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
@@ -723,6 +733,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
     | '/c/service/$slug'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/bookings/$id'
     | '/c/service/$slug'
@@ -863,6 +875,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
@@ -885,6 +898,7 @@ export interface RootRouteChildren {
   ApiPublicAdminTrialSeedRoute: typeof ApiPublicAdminTrialSeedRoute
   ApiPublicAdminTrialVerifyRoute: typeof ApiPublicAdminTrialVerifyRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
+  ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
 }
 
@@ -1345,6 +1359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/dar-timeouts': {
+      id: '/api/public/cron/dar-timeouts'
+      path: '/api/public/cron/dar-timeouts'
+      fullPath: '/api/public/cron/dar-timeouts'
+      preLoaderRoute: typeof ApiPublicCronDarTimeoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/assignment-tick': {
       id: '/api/public/cron/assignment-tick'
       path: '/api/public/cron/assignment-tick'
@@ -1582,6 +1603,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminTrialSeedRoute: ApiPublicAdminTrialSeedRoute,
   ApiPublicAdminTrialVerifyRoute: ApiPublicAdminTrialVerifyRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
+  ApiPublicCronDarTimeoutsRoute: ApiPublicCronDarTimeoutsRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
 }
 export const routeTree = rootRouteImport
