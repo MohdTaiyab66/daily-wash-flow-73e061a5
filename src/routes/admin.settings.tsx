@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/settings")({
   component: SettingsPage,
 });
 
-type FieldKind = "number" | "bool" | "text" | "select" | "csv";
+type FieldKind = "number" | "bool" | "text" | "select" | "csv" | "json";
 type Field = { key: string; label: string; help?: string; kind?: FieldKind; options?: string[] };
 
 const TIME_OPTS = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","all_day"];
@@ -24,6 +24,13 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     title: "Assignment",
     description: "Controls how partner assignments are built and dispatched.",
     fields: [
+      { key: "min_hours_per_day", label: "Minimum working hours per day" },
+      { key: "max_hours_per_day", label: "Maximum working hours per day" },
+      { key: "cars_per_hour", label: "Cars per hour (throughput)" },
+      { key: "minutes_per_car", label: "Minutes per car" },
+      { key: "fuel_cost_per_car", label: "Fuel cost per car (INR)" },
+      { key: "weekly_off_day", label: "Weekly off day (e.g. monday)" },
+      { key: "start_time_rules", label: "Start-time rules (JSON list)", kind: "json" },
       { key: "min_cars_required", label: "Minimum cars required" },
       { key: "max_cars_allowed", label: "Maximum cars allowed" },
       { key: "min_assignment_days", label: "Minimum assignment days" },
@@ -224,6 +231,9 @@ function SettingsPage() {
     if (kind === "bool") v = str === "true";
     else if (kind === "number") v = Number(str);
     else if (kind === "csv") v = str.split(",").map((p) => Number(p.trim())).filter((n) => !isNaN(n));
+    else if (kind === "json") {
+      try { v = JSON.parse(str); } catch { toast.error("Invalid JSON"); return; }
+    }
     mut.mutate({ key: f.key, value: v });
   };
 
@@ -271,6 +281,8 @@ function SettingsPage() {
           </select>
         ) : kind === "csv" ? (
           <Input className="w-48" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
+        ) : kind === "json" ? (
+          <textarea className="w-64 min-h-[80px] rounded-md border border-input bg-background p-2 text-xs font-mono" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
         ) : kind === "text" ? (
           <Input className="w-48" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
         ) : (
