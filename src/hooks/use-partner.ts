@@ -67,7 +67,11 @@ export function usePartnerHeartbeat(partnerId: string | null | undefined) {
     const ping = async () => {
       if (cancelled || (typeof document !== "undefined" && document.hidden)) return;
       const pos = await readPosition();
-      const patch: Record<string, unknown> = { last_seen: new Date().toISOString() };
+      const patch = { last_seen: new Date().toISOString() } as {
+        last_seen: string;
+        current_lat?: number;
+        current_lng?: number;
+      };
       if (pos) {
         patch.current_lat = pos.lat;
         patch.current_lng = pos.lng;
