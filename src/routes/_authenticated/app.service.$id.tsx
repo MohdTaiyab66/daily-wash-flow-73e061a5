@@ -10,7 +10,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle, Clock } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -26,15 +26,24 @@ type Angle = (typeof AFTER_ANGLES)[number];
 
 const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
-  { value: "parking_locked", label: "Locked vehicle / parking" },
-  { value: "access_not_available", label: "No access" },
+  { value: "customer_not_responding", label: "Customer not responding" },
+  { value: "vehicle_taken_out", label: "Vehicle taken out" },
+  { value: "keys_not_available", label: "Keys not available" },
   { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "customer_not_responding", label: "Customer unreachable" },
+  { value: "security_guard_denied", label: "Security guard denied entry" },
+  { value: "other", label: "Other (remarks required)" },
 ] as const;
 
-const DIRTY_REASONS = ["Heavy Dust", "Mud", "Bird Droppings", "Tree Sap", "Interior Extremely Dirty", "Other"];
+const DIRTY_REASONS = [
+  "Heavy Mud",
+  "Heavy Dust",
+  "Bird Droppings",
+  "Tree Sap",
+  "Cement",
+  "Interior Extremely Dirty",
+  "Other",
+];
 const COMPENSATION = 12;
-const PARKING_REASONS = ["Vehicle Locked", "Vehicle Blocked", "Parking Not Accessible", "Wrong Parking", "Customer Unavailable"];
 
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
@@ -278,7 +287,6 @@ function ServiceDetail() {
           <div className="mt-5 grid grid-cols-2 gap-3">
             {service.status === "in_progress" && <UnavailableDialog serviceId={id} onDone={goNext} />}
             <DirtyVehicleDialog serviceId={id} onDone={goNext} />
-            <ParkingIssueDialog serviceId={id} />
           </div>
 
           <Card className="mt-5 p-4">
@@ -389,37 +397,48 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
 
+  const MIN_PHOTOS = 2;
+  const MAX_PHOTOS = 4;
+  const needsRemarks = reason === "other";
+  const canSubmit =
+    !!reason &&
+    photos.length >= MIN_PHOTOS &&
+    (!needsRemarks || notes.trim().length > 0);
+
   const capturePhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) return;
     const file = await captureFromCamera();
     if (!file) return;
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
+      const path = `${u.user!.id}/${serviceId}/unavailable-${photos.length + 1}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
       if (error) { toast.error(error.message); return; }
-      setPhoto(path);
+      setPhotos((p) => [...p, path]);
     } finally {
       setUploading(false);
     }
   };
 
+  const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
 
   const submit = async () => {
-    if (!reason) { toast.error("Pick a reason"); return; }
-    if (!photo) { toast.error("Live photo is required"); return; }
+    if (!reason) return toast.error("Pick a reason");
+    if (photos.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
+    if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
     const pos = await getPosition();
     const { data, error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
       p_notes: notes || "",
-      p_photo: photo,
+      p_photos: photos,
       p_lat: pos?.lat ?? 0,
       p_lng: pos?.lng ?? 0,
     } as any);
@@ -429,6 +448,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
     qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     setOpen(false);
     onDone();
   };
@@ -442,6 +462,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground">Pick a reason and capture at least {MIN_PHOTOS} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
@@ -452,24 +473,47 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
         </RadioGroup>
 
         <div className="mt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live evidence photo (required)</p>
-          <button
-            onClick={capturePhoto}
-            disabled={uploading}
-            className={`flex aspect-[3/1] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs ${
-              photo ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
-            }`}
-          >
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : photo ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-            {photo ? "Photo captured" : "Tap to capture (camera only)"}
-          </button>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Live evidence photos ({photos.length}/{MIN_PHOTOS} required)
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {photos.map((_, i) => (
+              <div key={i} className="relative flex aspect-square items-center justify-center rounded-xl border-2 border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]">
+                <Check className="h-5 w-5" />
+                <span className="ml-1 text-xs">Photo {i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground"
+                  aria-label={`Remove photo ${i + 1}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={capturePhoto}
+                disabled={uploading}
+                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                {photos.length === 0 ? "Capture" : "Add another"}
+              </button>
+            )}
+          </div>
         </div>
 
-
-        <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
+        <Textarea
+          placeholder={needsRemarks ? "Remarks (required for Other)…" : "Optional notes for support…"}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="mt-3"
+        />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹12
+          <Button onClick={submit} disabled={saving || uploading || !canSubmit}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -510,7 +554,7 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
       p_service_id: serviceId,
       p_reason: "dirty_vehicle",
       p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
-      p_photo: photos.front,
+      p_photos: [photos.front, photos.rear, photos.left, photos.right],
       p_lat: pos?.lat ?? 0,
       p_lng: pos?.lng ?? 0,
     } as any);
@@ -554,75 +598,7 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
   );
 }
 
-function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const qc = useQueryClient();
 
-  const upload = async (file: File) => {
-    setUploading(true);
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/parking-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { toast.error(error.message); return; }
-      setPhoto(path);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const submit = async () => {
-    if (!reason) return toast.error("Pick a reason");
-    if (!photo) return toast.error("Upload a proof photo");
-    setSaving(true);
-    const pos = await getPosition();
-    const { error } = await supabase.rpc("submit_parking_issue", {
-      p_service_id: serviceId,
-      p_reason: reason,
-      p_notes: notes || "",
-      p_photo: photo,
-      p_lat: pos?.lat ?? 0,
-      p_lng: pos?.lng ?? 0,
-    } as any);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Parking issue reported");
-    qc.invalidateQueries({ queryKey: ["service", serviceId] });
-    qc.invalidateQueries({ queryKey: ["route-today"] });
-    setOpen(false);
-    onDone?.();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm"><ParkingCircle className="mr-1.5 h-4 w-4" />Parking</Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Parking issue</DialogTitle></DialogHeader>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
-          {PARKING_REASONS.map((r) => (
-            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
-              <RadioGroupItem value={r} />{r}
-            </Label>
-          ))}
-        </RadioGroup>
-        <ReportPhoto angle={uploading ? "Uploading…" : "Proof"} done={!!photo} onPicked={upload} />
-        <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
-        <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 
 function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
