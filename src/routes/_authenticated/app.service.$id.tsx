@@ -17,7 +17,7 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
-import { googleMapsDirectionsUrl, gpsLabel } from "@/lib/gps";
+import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
@@ -72,17 +72,17 @@ function ServiceDetail() {
         .neq("id", id);
       const { pickNextStop } = await import("@/lib/route-optimize");
       const c = (service as any)?.customers;
-      const currentLat = (service as any)?.destination_lat ?? c?.latitude;
-      const currentLng = (service as any)?.destination_lng ?? c?.longitude;
-      const from = currentLat != null && currentLng != null
-        ? { lat: Number(currentLat), lng: Number(currentLng) }
-        : null;
-      const candidates = (data ?? []).map((s: any) => ({
-        id: s.id,
-        lat: s.destination_lat != null ? Number(s.destination_lat) : s.customers?.latitude != null ? Number(s.customers.latitude) : null,
-        lng: s.destination_lng != null ? Number(s.destination_lng) : s.customers?.longitude != null ? Number(s.customers.longitude) : null,
-        deadline: s.customers?.service_required_before ?? s.customers?.preferred_time ?? null,
-      }));
+      const currentGps = validateExactGps((service as any)?.destination_lat, (service as any)?.destination_lng);
+      const from = currentGps ? { lat: currentGps.latitude, lng: currentGps.longitude } : null;
+      const candidates = (data ?? []).map((s: any) => {
+        const gps = validateExactGps(s.destination_lat, s.destination_lng);
+        return {
+          id: s.id,
+          lat: gps?.latitude ?? null,
+          lng: gps?.longitude ?? null,
+          deadline: s.customers?.service_required_before ?? s.customers?.preferred_time ?? null,
+        };
+      });
       return pickNextStop(candidates, from)?.id ?? null;
     },
   });
@@ -173,9 +173,10 @@ function ServiceDetail() {
 
   const c = service?.customers as any;
   const v = service?.vehicles as any;
-  const destLat = (service as any)?.destination_lat;
-  const destLng = (service as any)?.destination_lng;
-  const destinationSource = (service as any)?.destination_source ?? "customer";
+  const exactDestination = validateExactGps((service as any)?.destination_lat, (service as any)?.destination_lng);
+  const destLat = exactDestination?.latitude ?? null;
+  const destLng = exactDestination?.longitude ?? null;
+  const destinationSource = exactDestination ? ((service as any)?.destination_source ?? "customer") : "missing";
   const elapsedSeconds = service?.started_at
     ? Math.max(0, Math.floor((nowTick - Date.parse(service.started_at)) / 1000))
     : 0;
