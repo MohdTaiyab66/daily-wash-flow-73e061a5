@@ -19,6 +19,7 @@ import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { optimizeRoute } from "@/lib/route-optimize";
 import { useEffect } from "react";
+import { googleMapsDirectionsUrl, gpsLabel } from "@/lib/gps";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -177,9 +178,7 @@ function RoutePage() {
         {routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
-          const navUrl = c?.latitude
-            ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
-            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
+          const navUrl = googleMapsDirectionsUrl(c?.latitude, c?.longitude);
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
           const isExact = (c?.time_window_type ?? "soft") === "exact";
           const isEmergency = !!(s as any).is_emergency;
@@ -220,8 +219,9 @@ function RoutePage() {
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         <MapPin className="mr-1 inline h-3 w-3" />
-                        {c?.address_line ? `${c.address_line}, ` : ""}{c?.area ?? "Location unavailable"}
+                        {navUrl ? `${c?.address_line ? `${c.address_line}, ` : ""}${c?.area ?? ""}` : "Location unavailable"}
                       </p>
+                      <p className="mt-0.5 text-[11px] font-medium text-foreground">GPS: {gpsLabel(c?.latitude, c?.longitude)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {cutoffTime ? formatTime12(cutoffTime) : "Flexible"} · Exterior Daily Shine · ~10 min
@@ -234,8 +234,8 @@ function RoutePage() {
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  <Button asChild size="sm" variant="outline" className="col-span-1" disabled={!c?.latitude}>
-                    <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
+                  <Button asChild={!!navUrl} size="sm" variant="outline" className="col-span-1" disabled={!navUrl}>
+                    {navUrl ? <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a> : <span aria-label="Location unavailable"><Navigation className="h-4 w-4" /></span>}
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
                   <Button asChild size="sm" className="col-span-2">
