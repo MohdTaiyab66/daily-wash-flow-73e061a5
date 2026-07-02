@@ -102,6 +102,8 @@ function AssignmentsPage() {
   const carsPerHour = settings?.carsPerHour ?? 6;
   const rate = settings?.rate ?? 17;
   const fuelPerCar = settings?.fuelPerCar ?? 1.4;
+  const avgMileage = settings?.avgMileage ?? 40;
+  const fuelEnabled = settings?.fuelEnabled ?? true;
   const startRules = settings?.startRules ?? DEFAULT_START_RULES;
   const maxCars = settings?.maxCars ?? 30;
   const minCars = settings?.minCars ?? 1;
