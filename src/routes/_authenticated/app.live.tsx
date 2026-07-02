@@ -148,10 +148,16 @@ function RoutePage() {
 
       <div className="mt-5">
         <LiveMap stops={stops} showCustomers={routeVisible && pending.length > 0} />
-        <Card className="mt-3 grid grid-cols-3 border-t border-border text-center p-0">
-          <KPI label="Assigned" value={String(total)} />
-          <KPI label="Done" value={String(done)} />
-          <KPI label="Left" value={String(remaining)} />
+        <Card className="mt-3 p-3">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's route</p>
+            <p className="text-lg font-semibold tabular-nums">{total} cars</p>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            <KPI label="Completed" value={String(completedCount)} />
+            <KPI label="Remaining" value={String(remaining)} />
+            <KPI label="Est. earnings" value={`₹${expectedEarnings.toLocaleString("en-IN")}`} />
+          </div>
         </Card>
       </div>
 
