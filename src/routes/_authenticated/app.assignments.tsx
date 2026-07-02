@@ -361,19 +361,19 @@ function AssignmentsPage() {
               <CheckCircle2 className="h-4 w-4 text-success" />
               <p><span className="font-semibold">Available today</span> · {cars} cars ready in {partner.home_area}</p>
             </div>
-          ) : (
+          ) : partialAvailable ? (
             <div>
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Route is growing</p>
+                  <p className="text-sm font-semibold">Your Route is Growing 🚀</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of {cars} cars available in {partner.home_area} right now.
+                    {availableInArea} of your target {cars} Daily Shine customers are available today.
                   </p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                <MiniStat label="Current" value={`${availableInArea}`} />
+                <MiniStat label="Today" value={`${availableInArea}`} />
                 <MiniStat label="Target" value={`${cars}`} />
                 <MiniStat label="Today ₹" value={`₹${acceptableEarn.toLocaleString("en-IN")}`} />
               </div>
@@ -384,8 +384,18 @@ function AssignmentsPage() {
                 <Progress value={growthPct} className="mt-1.5 h-2" />
               </div>
               <p className="mt-3 rounded-lg bg-background/50 p-3 text-xs text-muted-foreground">
-                We're actively adding Daily Shine customers in your area. As new customers join, your assignment will grow until it reaches {cars} cars — keep your schedule active.
+                We'll automatically add more customers as your area grows — keep your schedule active.
               </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2">
+              <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
+              <div>
+                <p className="text-sm font-semibold">Today's Route</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  No Daily Shine customers are available in {partner.home_area} yet. We'll automatically add customers as your area grows.
+                </p>
+              </div>
             </div>
           )}
         </Card>
