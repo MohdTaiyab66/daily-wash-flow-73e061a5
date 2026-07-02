@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
+// Checkbox no longer used after Working Days removal.
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
@@ -105,36 +105,26 @@ function AssignmentsPage() {
   const avgMileage = settings?.avgMileage ?? 40;
   const fuelEnabled = settings?.fuelEnabled ?? true;
   const startRules = settings?.startRules ?? DEFAULT_START_RULES;
-  const maxCars = settings?.maxCars ?? 30;
+  // Derive the max cars ceiling from the admin hour ceiling × cars-per-hour so
+  // "6 Hours" always yields exactly 6 × carsPerHour cars (default 36) instead of
+  // being clamped to a stale max_cars_allowed value.
+  const maxCarsCeiling = Math.max(Number(settings?.maxCars ?? 0), maxHours * carsPerHour);
   const minCars = settings?.minCars ?? 1;
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
   const [hours, setHours] = useState(4);
   const [duration, setDuration] = useState(15);
-  const [workingDays, setWorkingDays] = useState<Set<number>>(
-    new Set([0, 2, 3, 4, 5, 6]), // Sunday + Tue–Sat by default, Monday off
-  );
 
   // Keep hours within admin bounds when settings change
   useEffect(() => {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
 
-  // Ensure the off day is never selected
-  useEffect(() => {
-    setWorkingDays((prev) => {
-      if (!prev.has(offDayKey)) return prev;
-      const next = new Set(prev);
-      next.delete(offDayKey);
-      return next;
-    });
-  }, [offDayKey]);
-
   const cars = useMemo(() => {
     const raw = Math.round(hours * carsPerHour);
-    return Math.max(minCars, Math.min(maxCars, raw));
-  }, [hours, carsPerHour, minCars, maxCars]);
+    return Math.max(minCars, Math.min(maxCarsCeiling, raw));
+  }, [hours, carsPerHour, minCars, maxCarsCeiling]);
 
   const { data: partner, isLoading: loadingPartner } = useQuery({
     queryKey: ["me-partner-builder"],
@@ -264,9 +254,9 @@ function AssignmentsPage() {
 
   const acceptableEarn = acceptableCars * rate;
 
-  const workingDayCount = workingDays.size;
-  // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
-  const monthlyWorkingDays = Math.round((workingDayCount / 7) * 30);
+  // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
+  // fixed weekly off). Over a 30-day window that averages ~26 working days.
+  const monthlyWorkingDays = Math.round((6 / 7) * 30);
   const monthlyCars = monthlyWorkingDays * cars;
   const monthlyEarn = monthlyCars * rate; // gross, no deductions
 
@@ -274,16 +264,6 @@ function AssignmentsPage() {
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
   const noneAvailable = preview && availableInArea === 0;
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
-
-  const toggleDay = (k: number) => {
-    if (k === offDayKey) return;
-    setWorkingDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
-      return next;
-    });
-  };
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
@@ -399,43 +379,7 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Working days */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Working days</p>
-          <span className="text-xs text-muted-foreground">{workingDayCount} day{workingDayCount === 1 ? "" : "s"}/week</span>
-        </div>
-        <div className="mt-3 grid grid-cols-7 gap-1.5">
-          {DAYS.map((d) => {
-            const isOff = d.key === offDayKey;
-            const checked = workingDays.has(d.key);
-            return (
-              <button
-                key={d.key}
-                type="button"
-                onClick={() => toggleDay(d.key)}
-                disabled={isOff}
-                aria-disabled={isOff}
-                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-[11px] font-medium transition ${
-                  isOff
-                    ? "cursor-not-allowed border-dashed border-muted bg-muted/30 text-muted-foreground/60"
-                    : checked
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
-                }`}
-              >
-                <span>{d.label}</span>
-                {isOff
-                  ? <span className="text-[8px] uppercase tracking-wider leading-tight">Weekly Off</span>
-                  : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-3 rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
-          {offDayFull} is Urban Wash's weekly off. Assignments are not scheduled on {offDayFull}s.
-        </p>
-      </Card>
+      {/* Working days card removed — Urban Wash schedules 6 days/week with Monday as a fixed weekly off. */}
 
       {/* Monthly forecast */}
       <Card className="mt-3 p-5">

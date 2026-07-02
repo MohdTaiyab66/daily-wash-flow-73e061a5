@@ -59,9 +59,22 @@ function RoutePage() {
   });
 
   const total = services?.length ?? 0;
-  const done = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
+  const doneList = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable");
+  const completedCount = (services ?? []).filter((s) => s.status === "completed").length;
+  const done = doneList.length;
   const remaining = total - done;
   const isEndOfDay = total > 0 && remaining === 0;
+
+  // Rate for expected earnings — reuse same platform setting as builder.
+  const { data: rateSetting } = useQuery({
+    queryKey: ["route-rate-per-car"],
+    queryFn: async () => {
+      const { data } = await supabase.from("platform_settings").select("value").eq("key", "rate_per_car").maybeSingle();
+      return Number(data?.value ?? 17);
+    },
+  });
+  const ratePerCar = rateSetting ?? 17;
+  const expectedEarnings = total * ratePerCar;
 
   // Route visibility window
   const now = new Date();
@@ -135,10 +148,16 @@ function RoutePage() {
 
       <div className="mt-5">
         <LiveMap stops={stops} showCustomers={routeVisible && pending.length > 0} />
-        <Card className="mt-3 grid grid-cols-3 border-t border-border text-center p-0">
-          <KPI label="Assigned" value={String(total)} />
-          <KPI label="Done" value={String(done)} />
-          <KPI label="Left" value={String(remaining)} />
+        <Card className="mt-3 p-3">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's route</p>
+            <p className="text-lg font-semibold tabular-nums">{total} cars</p>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            <KPI label="Completed" value={String(completedCount)} />
+            <KPI label="Remaining" value={String(remaining)} />
+            <KPI label="Est. earnings" value={`₹${expectedEarnings.toLocaleString("en-IN")}`} />
+          </div>
         </Card>
       </div>
 
@@ -185,7 +204,7 @@ function RoutePage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-medium">{c?.full_name}</p>
+                        <p className="truncate font-medium">#{idx + 1} · {c?.full_name ?? "Customer"}</p>
                         <div className="flex items-center gap-1">
                           {isEmergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Emergency</Badge>}
                           {isLocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
@@ -200,7 +219,12 @@ function RoutePage() {
                         <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
+                        <MapPin className="mr-1 inline h-3 w-3" />
+                        {c?.address_line ? `${c.address_line}, ` : ""}{c?.area ?? "Location unavailable"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        <Clock className="mr-1 inline h-3 w-3" />
+                        {cutoffTime ? formatTime12(cutoffTime) : "Flexible"} · Exterior Daily Shine · ~10 min
                       </p>
                       {isExact && (
                         <p className="mt-0.5 text-xs font-medium text-foreground">
@@ -210,13 +234,13 @@ function RoutePage() {
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  <Button asChild size="sm" variant="outline" className="col-span-1">
+                  <Button asChild size="sm" variant="outline" className="col-span-1" disabled={!c?.latitude}>
                     <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
                   <Button asChild size="sm" className="col-span-2">
                     <Link to="/app/service/$id" params={{ id: s.id }}>
-                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start</>}
+                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start Service</>}
                     </Link>
                   </Button>
                   </div>
