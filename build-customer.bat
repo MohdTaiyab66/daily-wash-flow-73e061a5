@@ -103,23 +103,30 @@ call npx cap sync android || goto :fail
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
 
-REM -- 6. Next steps ------------------------------------------------------
+REM -- 6. Build APK -------------------------------------------------------
 echo.
-echo [6/6] Opening Android Studio...
-call npx cap open android
+echo [6/6] Building Android debug APK...
+pushd android || goto :fail
+call gradlew.bat assembleDebug || (popd & goto :fail)
+popd
+
+if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
+  echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
+  goto :fail
+)
+copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-customer.apk" >nul || goto :fail
 
 echo.
 echo ============================================================
-echo  Web build + sync complete for %VARIANT% (%APP_ID%)
+echo  APK build complete for %VARIANT% (%APP_ID%)
 echo ============================================================
 echo.
-echo  NEXT STEPS in Android Studio:
-echo    1. Wait for Gradle sync to finish (bottom status bar).
-echo    2. Menu: Build ^> Build App Bundle(s) / APK(s) ^> Build APK(s)
-echo       (For Play Store: Build ^> Generate Signed Bundle / APK)
-echo    3. When done, click "locate" in the toast to open:
-echo       android\app\build\outputs\apk\debug\app-debug.apk
-echo    4. Rename to urbanwash-customer.apk and install on device.
+echo  APK ready:
+echo    urbanwash-customer.apk
+echo    android\app\build\outputs\apk\debug\app-debug.apk
+echo.
+echo  Install on device:
+echo    adb install -r urbanwash-customer.apk
 echo.
 endlocal
 exit /b 0
