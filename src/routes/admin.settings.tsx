@@ -24,6 +24,13 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     title: "Assignment",
     description: "Controls how partner assignments are built and dispatched.",
     fields: [
+      { key: "min_hours_per_day", label: "Minimum working hours per day" },
+      { key: "max_hours_per_day", label: "Maximum working hours per day" },
+      { key: "cars_per_hour", label: "Cars per hour (throughput)" },
+      { key: "minutes_per_car", label: "Minutes per car" },
+      { key: "fuel_cost_per_car", label: "Fuel cost per car (INR)" },
+      { key: "weekly_off_day", label: "Weekly off day (e.g. monday)" },
+      { key: "start_time_rules", label: "Start-time rules (JSON list)", kind: "json" },
       { key: "min_cars_required", label: "Minimum cars required" },
       { key: "max_cars_allowed", label: "Maximum cars allowed" },
       { key: "min_assignment_days", label: "Minimum assignment days" },
