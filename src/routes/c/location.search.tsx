@@ -34,10 +34,14 @@ function LocationSearch() {
   }, [q]);
 
   const choose = (name: string) => {
+    // We must never book a service without exact GPS coordinates — otherwise the
+    // partner ends up navigating to the area centroid instead of the customer's
+    // home. Remember the picked area for the UI, then send the user through the
+    // GPS capture screen where reverse-geocoding + address save happens.
     localStorage.setItem("uw_customer_area", name);
     localStorage.setItem("uw_customer_full_address", `${name}, Lucknow`);
-    toast.success(`Location set: ${name}`);
-    navigate({ to: "/c/services" });
+    toast.success(`Location set: ${name}. Please share GPS for accurate pickup.`);
+    navigate({ to: "/c/location" });
   };
 
   const useGPS = () => {
