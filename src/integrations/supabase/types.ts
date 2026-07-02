@@ -327,7 +327,10 @@ export type Database = {
           claimed_at: string | null
           created_at: string
           discount_amount: number
+          gps_source: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           notes: string | null
           ops_service_id: string | null
           partner_id: string | null
@@ -351,7 +354,10 @@ export type Database = {
           claimed_at?: string | null
           created_at?: string
           discount_amount?: number
+          gps_source?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           ops_service_id?: string | null
           partner_id?: string | null
@@ -375,7 +381,10 @@ export type Database = {
           claimed_at?: string | null
           created_at?: string
           discount_amount?: number
+          gps_source?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           ops_service_id?: string | null
           partner_id?: string | null
@@ -2642,6 +2651,9 @@ export type Database = {
           created_at: string
           customer_id: string
           delay_reason: string | null
+          destination_lat: number | null
+          destination_lng: number | null
+          destination_source: string | null
           distance_km: number | null
           eta_at: string | null
           fraud_review: boolean
@@ -2689,6 +2701,9 @@ export type Database = {
           created_at?: string
           customer_id: string
           delay_reason?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
+          destination_source?: string | null
           distance_km?: number | null
           eta_at?: string | null
           fraud_review?: boolean
@@ -2736,6 +2751,9 @@ export type Database = {
           created_at?: string
           customer_id?: string
           delay_reason?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
+          destination_source?: string | null
           distance_km?: number | null
           eta_at?: string | null
           fraud_review?: boolean
@@ -3640,12 +3658,17 @@ export type Database = {
           active_customers: number | null
           as_of: string | null
           customers_waiting_reassignment: number | null
+          fixed_automatically: number | null
           gps_centroid: number | null
           gps_exact: number | null
+          gps_invalid: number | null
+          gps_issues_today: number | null
           gps_missing: number | null
+          manual_corrections: number | null
           partners_offline: number | null
           partners_online: number | null
           partners_stale_heartbeat: number | null
+          pending: number | null
         }
         Relationships: []
       }
@@ -4207,6 +4230,7 @@ export type Database = {
         Args: { p_date?: string; p_zone: string }
         Returns: boolean
       }
+      is_exact_gps: { Args: { _lat: number; _lng: number }; Returns: boolean }
       list_assignment_offers: {
         Args: never
         Returns: {
