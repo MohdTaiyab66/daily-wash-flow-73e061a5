@@ -4,9 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, MapPin, Timer, IndianRupee, CheckCircle2, Calendar, Sun, BellRing, Crosshair, AlertTriangle, Inbox, UserRound } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import {
+  Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
+  AlertTriangle, Inbox, UserRound, Clock, Fuel, TrendingUp, CalendarDays,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
@@ -16,33 +21,114 @@ export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
 });
 
+type StartRule = { max_cars: number; start_time: string };
+
+const DEFAULT_START_RULES: StartRule[] = [
+  { max_cars: 15, start_time: "07:00" },
+  { max_cars: 20, start_time: "06:30" },
+  { max_cars: 25, start_time: "06:00" },
+  { max_cars: 30, start_time: "05:30" },
+  { max_cars: 36, start_time: "05:00" },
+];
+
+const DAYS = [
+  { key: 1, label: "Mon", full: "Monday" },
+  { key: 2, label: "Tue", full: "Tuesday" },
+  { key: 3, label: "Wed", full: "Wednesday" },
+  { key: 4, label: "Thu", full: "Thursday" },
+  { key: 5, label: "Fri", full: "Friday" },
+  { key: 6, label: "Sat", full: "Saturday" },
+  { key: 0, label: "Sun", full: "Sunday" },
+];
+
+const DAY_NAME_TO_KEY: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
+
+function computeStartTime(cars: number, rules: StartRule[]): string {
+  const sorted = [...rules].sort((a, b) => a.max_cars - b.max_cars);
+  for (const r of sorted) if (cars <= r.max_cars) return r.start_time;
+  return sorted[sorted.length - 1]?.start_time ?? "07:00";
+}
+
+function addHours(hhmm: string, hours: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = h * 60 + m + Math.round(hours * 60);
+  const nh = Math.floor(total / 60) % 24;
+  const nm = total % 60;
+  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
+}
+
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { t } = useI18n();
 
-  const [cars, setCars] = useState(20);
-  const [duration, setDuration] = useState(15);
-  useRealtimeInvalidation(["platform_settings", "customers"], [["assignment-settings"], ["preview", cars, duration], ["me-partner-builder"]]);
+  useRealtimeInvalidation(["platform_settings", "customers"],
+    [["assignment-settings-v2"], ["me-partner-builder"]]);
 
   const { data: settings } = useQuery({
-    queryKey: ["assignment-settings"],
+    queryKey: ["assignment-settings-v2"],
     queryFn: async () => {
-      const { data } = await supabase.from("platform_settings").select("key,value").in("key", ["min_cars_required", "max_cars_allowed", "rate_per_car"]);
-      const m: Record<string, number> = {};
-      (data ?? []).forEach((s: any) => (m[s.key] = Number(s.value)));
-      return { minCars: Math.max(1, m.min_cars_required ?? 1), maxCars: m.max_cars_allowed ?? 30, rate: m.rate_per_car ?? 17 };
+      const { data } = await supabase.from("platform_settings").select("key,value").in("key", [
+        "min_cars_required", "max_cars_allowed", "rate_per_car",
+        "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
+        "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
+      ]);
+      const m: Record<string, any> = {};
+      (data ?? []).forEach((s: any) => (m[s.key] = s.value));
+      const rules: StartRule[] = Array.isArray(m.start_time_rules) ? m.start_time_rules : DEFAULT_START_RULES;
+      return {
+        minCars: Math.max(1, Number(m.min_cars_required ?? 1)),
+        maxCars: Number(m.max_cars_allowed ?? 30),
+        rate: Number(m.rate_per_car ?? 17),
+        minHours: Number(m.min_hours_per_day ?? 2),
+        maxHours: Number(m.max_hours_per_day ?? 6),
+        carsPerHour: Number(m.cars_per_hour ?? 6),
+        minutesPerCar: Number(m.minutes_per_car ?? 10),
+        fuelPerCar: Number(m.fuel_cost_per_car ?? 1.4),
+        startRules: rules,
+        weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
+      };
     },
   });
 
-  const minCars = settings?.minCars ?? 1;
-  const maxCars = settings?.maxCars ?? 30;
+  const minHours = settings?.minHours ?? 2;
+  const maxHours = settings?.maxHours ?? 6;
+  const carsPerHour = settings?.carsPerHour ?? 6;
   const rate = settings?.rate ?? 17;
+  const fuelPerCar = settings?.fuelPerCar ?? 1.4;
+  const startRules = settings?.startRules ?? DEFAULT_START_RULES;
+  const maxCars = settings?.maxCars ?? 30;
+  const minCars = settings?.minCars ?? 1;
+  const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
+  const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(15);
+  const [workingDays, setWorkingDays] = useState<Set<number>>(
+    new Set([0, 2, 3, 4, 5, 6]), // Sunday + Tue–Sat by default, Monday off
+  );
+
+  // Keep hours within admin bounds when settings change
   useEffect(() => {
-    if (cars < minCars) setCars(minCars);
-    if (cars > maxCars) setCars(maxCars);
-  }, [cars, minCars, maxCars]);
+    setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
+  }, [minHours, maxHours]);
+
+  // Ensure the off day is never selected
+  useEffect(() => {
+    setWorkingDays((prev) => {
+      if (!prev.has(offDayKey)) return prev;
+      const next = new Set(prev);
+      next.delete(offDayKey);
+      return next;
+    });
+  }, [offDayKey]);
+
+  const cars = useMemo(() => {
+    const raw = Math.round(hours * carsPerHour);
+    return Math.max(minCars, Math.min(maxCars, raw));
+  }, [hours, carsPerHour, minCars, maxCars]);
 
   const { data: partner, isLoading: loadingPartner } = useQuery({
     queryKey: ["me-partner-builder"],
@@ -61,13 +147,8 @@ function AssignmentsPage() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("assignments")
-        .select("id")
-        .eq("partner_id", u.user.id)
-        .eq("status", "active")
-        .gte("end_date", today)
-        .maybeSingle();
+      const { data } = await supabase.from("assignments").select("id")
+        .eq("partner_id", u.user.id).eq("status", "active").gte("end_date", today).maybeSingle();
       return data;
     },
   });
@@ -83,7 +164,6 @@ function AssignmentsPage() {
     refetchInterval: 30000,
   });
 
-  // Accepted assignments live on the My Assignment page — redirect.
   useEffect(() => {
     if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
   }, [active?.id, navigate]);
@@ -146,13 +226,11 @@ function AssignmentsPage() {
     return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
   }
 
-  // STEP 1 — Partner must pick an area first
   if (!hasArea) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5 pb-32">
         <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
-
         <Card className="mt-5 p-6 text-center">
           <MapPin className="mx-auto h-10 w-10 text-primary" />
           <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
@@ -169,50 +247,93 @@ function AssignmentsPage() {
 
   const previewMessage = preview ? String((preview as any).message ?? "") : "";
   const availableInArea = preview ? Number((preview as any).available_customers ?? 0) : 0;
-  const acceptableCars = preview ? Math.min(cars, availableInArea) : 0;
-  const workingDays = preview?.working_days ?? 0;
-  // Use server-computed earnings from preview_assignment RPC (single source of truth).
-  // Fall back to client multiplication only when the preview hasn't loaded.
-  const dailyEarn = preview ? Number((preview as any).daily_earnings ?? 0) : acceptableCars * rate;
-  const totalEarn = preview ? Number((preview as any).total_earnings ?? 0) : dailyEarn * workingDays;
-  const radius = preview ? Number(preview.estimated_radius_km) : 0;
-  const hours = preview ? Number(preview.estimated_hours) : 0;
-  const startTime = preview?.expected_start_time ?? "07:00";
+  const acceptableCars = Math.min(cars, availableInArea);
+
+  const startTime = computeStartTime(cars, startRules);
+  const finishTime = addHours(startTime, hours);
+
+  const dailyEarn = cars * rate;
+  const dailyFuel = Math.round(cars * fuelPerCar);
+  const dailyNet = dailyEarn - dailyFuel;
+
+  const acceptableEarn = acceptableCars * rate;
+  const acceptableFuel = Math.round(acceptableCars * fuelPerCar);
+  const acceptableNet = acceptableEarn - acceptableFuel;
+
+  const workingDayCount = workingDays.size;
+  // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
+  const monthlyWorkingDays = Math.round((workingDayCount / 7) * 30);
+  const monthlyCars = monthlyWorkingDays * cars;
+  const monthlyEarn = monthlyCars * rate;
+  const monthlyFuel = Math.round(monthlyCars * fuelPerCar);
+  const monthlyNet = monthlyEarn - monthlyFuel;
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
   const noneAvailable = preview && availableInArea === 0;
+  const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
+
+  const toggleDay = (k: number) => {
+    if (k === offDayKey) return;
+    setWorkingDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("builder_sub")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Pick your hours — we do the math.</p>
         </div>
         <Link to="/app/area" className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
           <MapPin className="h-3 w-3" />{partner.home_area}
         </Link>
       </div>
 
-      {/* Cars slider */}
+      {/* Hours slider */}
       <Card className="mt-5 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("cars_per_day")}</p>
-          <p className="text-3xl font-semibold tracking-tight">{cars}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Hours per day</p>
+          <p className="text-3xl font-semibold tracking-tight">{hours}<span className="ml-1 text-base text-muted-foreground">Hours</span></p>
         </div>
-        <Slider value={[cars]} min={minCars} max={maxCars} step={1} onValueChange={(v) => setCars(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minCars}</span><span>{maxCars}</span></div>
+        <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+          <span>{minHours} Hours</span><span>{maxHours} Hours</span>
+        </div>
       </Card>
 
       {/* Duration slider */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("duration")}</p>
-          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">{t("days")}</span></p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Assignment duration</p>
+          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
         </div>
         <Slider value={[duration]} min={7} max={30} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
+      </Card>
+
+      {/* Today's plan */}
+      <Card className="mt-4 border-0 bg-foreground p-5 text-background">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-wider text-background/60">Today's plan</p>
+          {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          <Stat icon={<Clock className="h-3 w-3" />} label="Working hours" value={`${hours} Hours`} />
+          <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Cars" value={String(cars)} />
+          <Stat icon={<Sun className="h-3 w-3" />} label="Start" value={formatTime12(startTime)} />
+          <Stat icon={<Clock className="h-3 w-3" />} label="Finish" value={formatTime12(finishTime)} />
+        </div>
+        <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
+          <Row label="Estimated earnings" value={`₹${dailyEarn.toLocaleString("en-IN")}`} />
+          <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
+          <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
+        </div>
       </Card>
 
       {previewError && (
@@ -221,6 +342,96 @@ function AssignmentsPage() {
         </Card>
       )}
 
+      {/* Capacity awareness */}
+      {preview && (
+        <Card className={`mt-3 p-5 ${fullyAvailable ? "border-success/40 bg-success/5" : noneAvailable ? "border-destructive/40 bg-destructive/5" : "border-warning/40 bg-warning/5"}`}>
+          {fullyAvailable ? (
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <p><span className="font-semibold">Available today</span> · {cars} cars ready in {partner.home_area}</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-start gap-2">
+                <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Route is growing</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {availableInArea} of {cars} cars available in {partner.home_area} right now.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <MiniStat label="Current" value={`${availableInArea}`} />
+                <MiniStat label="Target" value={`${cars}`} />
+                <MiniStat label="Today ₹" value={`₹${acceptableEarn.toLocaleString("en-IN")}`} />
+              </div>
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>Route growth</span><span>{availableInArea} / {cars} · {growthPct}%</span>
+                </div>
+                <Progress value={growthPct} className="mt-1.5 h-2" />
+              </div>
+              <p className="mt-3 rounded-lg bg-background/50 p-3 text-xs text-muted-foreground">
+                We're actively adding Daily Shine customers in your area. As new customers join, your assignment will grow until it reaches {cars} cars — keep your schedule active.
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Working days */}
+      <Card className="mt-3 p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Working days</p>
+          <span className="text-xs text-muted-foreground">{workingDayCount} day{workingDayCount === 1 ? "" : "s"}/week</span>
+        </div>
+        <div className="mt-3 grid grid-cols-7 gap-1.5">
+          {DAYS.map((d) => {
+            const isOff = d.key === offDayKey;
+            const checked = workingDays.has(d.key);
+            return (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => toggleDay(d.key)}
+                disabled={isOff}
+                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-[11px] font-medium transition ${
+                  isOff
+                    ? "cursor-not-allowed border-dashed border-border bg-muted/40 text-muted-foreground/50"
+                    : checked
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                <span>{d.label}</span>
+                {isOff ? <span className="text-[9px]">Off</span> : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
+          {offDayFull} is Urban Wash's weekly off. Assignments are not scheduled on {offDayFull}s.
+        </p>
+      </Card>
+
+      {/* Monthly forecast */}
+      <Card className="mt-3 p-5">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly forecast</p>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-y-2 text-sm">
+          <span className="text-muted-foreground">Working days</span><span className="text-right font-medium">{monthlyWorkingDays}</span>
+          <span className="text-muted-foreground">Cars per day</span><span className="text-right font-medium">{cars}</span>
+          <span className="text-muted-foreground">Monthly cars</span><span className="text-right font-medium">{monthlyCars}</span>
+          <span className="text-muted-foreground">Estimated earnings</span><span className="text-right font-medium">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+          <span className="text-muted-foreground flex items-center gap-1"><Fuel className="h-3 w-3" />Estimated fuel</span><span className="text-right font-medium">₹{monthlyFuel.toLocaleString("en-IN")}</span>
+          <span className="text-foreground font-semibold">Estimated net</span><span className="text-right text-lg font-semibold">₹{monthlyNet.toLocaleString("en-IN")}</span>
+        </div>
+      </Card>
+
+      {/* Booking requests */}
       <Card className="mt-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -253,93 +464,23 @@ function AssignmentsPage() {
         </div>
       </Card>
 
-      {/* Live calculation */}
-      <Card className="mt-4 border-0 bg-foreground p-5 text-background">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-background/60">{t("total_earnings")}</p>
-            <p className="mt-1 text-4xl font-semibold tracking-tight">₹{totalEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-xs text-background/60">₹{dailyEarn.toLocaleString("en-IN")}/{t("daily").toLowerCase()} · {workingDays} {t("days")}{partialAvailable ? ` · capped at ${availableInArea} cars` : ""}</p>
-          </div>
-          {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-background/10 pt-4 text-xs">
-          <Mini icon={<Timer className="h-3 w-3" />} label={t("time")} value={`${hours}h`} />
-          <Mini icon={<MapPin className="h-3 w-3" />} label={t("radius")} value={`${radius} km`} />
-          <Mini icon={<Sun className="h-3 w-3" />} label={t("starts")} value={formatTime12(startTime)} />
-        </div>
-      </Card>
-
-      {/* Live zone insights — all computed server-side, no client math */}
-      {preview && (
-        <Card data-testid="zone-insights" className="mt-3 p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zone insights</p>
-            {(preview as any).zone_name && (
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{(preview as any).zone_name}</span>
-            )}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Customers available</p>
-              <p className="mt-1 text-xl font-semibold" data-testid="zi-available">{availableInArea}</p>
-            </div>
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Daily Shine demand</p>
-              <p className="mt-1 text-xl font-semibold" data-testid="zi-demand">{Number((preview as any).daily_shine_demand ?? 0)}</p>
-            </div>
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Zone capacity left</p>
-              <p className="mt-1 text-xl font-semibold" data-testid="zi-capacity">
-                {(preview as any).zone_id ? Number((preview as any).zone_capacity_remaining ?? 0) : "—"}
-              </p>
-            </div>
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Zone utilization</p>
-              <p className="mt-1 text-xl font-semibold" data-testid="zi-util">
-                {(preview as any).zone_id ? `${Number((preview as any).zone_used_pct ?? 0)}%` : "—"}
-              </p>
-            </div>
-          </div>
-          {(preview as any).zone_id && !(preview as any).daily_shine_open && (
-            <p className="mt-3 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-              Daily Shine isn't open in this zone yet. <Link to="/app/area" className="underline">Manage area</Link>
-            </p>
-          )}
-        </Card>
-      )}
-
-      {/* No / partial customers flow */}
-      {preview && !fullyAvailable && (
-        <Card className={`mt-3 p-4 ${noneAvailable ? "border-destructive/40 bg-destructive/10" : "border-warning/40 bg-warning/10"}`}>
+      {/* Partial / none flows */}
+      {preview && partialAvailable && (
+        <Card className="mt-3 border-warning/40 bg-warning/10 p-4">
           <div className="flex items-start gap-2">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <div className="flex-1">
               <p className="text-sm font-semibold">
-                {noneAvailable
-                  ? `No customers currently available in ${partner.home_area}.`
-                  : `Only ${availableInArea} customer${availableInArea === 1 ? "" : "s"} currently available in ${partner.home_area}.`}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {noneAvailable
-                  ? "Pick another area or wait — we can ping you the moment a customer is added."
-                  : `You can accept these ${availableInArea} cars now, change area, or wait for more customers.`}
+                Only {availableInArea} customer{availableInArea === 1 ? "" : "s"} available today.
               </p>
               <div className="mt-3 grid gap-2">
-                {partialAvailable && (
-                  <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
-                    {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                    Accept {availableInArea} car{availableInArea === 1 ? "" : "s"} · ₹{(availableInArea * rate * workingDays).toLocaleString("en-IN")}
-                  </Button>
-                )}
+                <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
+                  {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                  Accept {availableInArea} car{availableInArea === 1 ? "" : "s"} · net ₹{acceptableNet.toLocaleString("en-IN")}/day
+                </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
                 </Button>
-                {noneAvailable && (
-                  <Button asChild size="sm" variant="outline">
-                    <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
-                  </Button>
-                )}
                 <Button size="sm" variant="ghost"
                   disabled={toggleNotify.isPending || partner.notify_when_customers_added}
                   onClick={() => toggleNotify.mutate(true)}>
@@ -354,20 +495,31 @@ function AssignmentsPage() {
         </Card>
       )}
 
+      {preview && noneAvailable && (
+        <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">No customers currently available in {partner.home_area}.</p>
+              <div className="mt-3 grid gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
+                </Button>
+                <Button size="sm" variant="ghost"
+                  disabled={toggleNotify.isPending || partner.notify_when_customers_added}
+                  onClick={() => toggleNotify.mutate(true)}>
+                  <BellRing className="mr-2 h-4 w-4" />
+                  {partner.notify_when_customers_added ? "We'll ping you" : "Notify me"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {previewMessage && fullyAvailable && (
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
-
-      {/* Rules */}
-      <Card className="mt-4 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("assignment_rules")}</p>
-        <ul className="mt-3 space-y-2 text-xs">
-          <Rule>Same customers for the full {duration} days · consistent quality</Rule>
-          <Rule>Mondays are off — auto-excluded from working days</Rule>
-          <Rule>Flat rate ₹{rate} per completed car · no tiered pricing</Rule>
-          <Rule>Cancelling mid-assignment: ₹250 + that day's earnings deducted</Rule>
-        </ul>
-      </Card>
 
       <Card className="mt-3 flex items-start gap-3 border-dashed p-4 text-xs">
         <IndianRupee className="mt-0.5 h-4 w-4 text-primary" />
@@ -393,7 +545,7 @@ function AssignmentsPage() {
                 ? "No customers available — see options above"
                 : partialAvailable
                   ? `Only ${availableInArea} available — see options above`
-                  : `${t("accept")} · ${cars} × ${duration} ${t("days")} · ₹${totalEarn.toLocaleString("en-IN")}`}
+                  : `Accept · ${hours}h · ${cars} cars · net ₹${dailyNet.toLocaleString("en-IN")}/day`}
           </Button>
         </div>
       </div>
@@ -401,20 +553,29 @@ function AssignmentsPage() {
   );
 }
 
-function Mini({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div>
-      <div className="flex items-center gap-1 text-background/60">{icon}<span>{label}</span></div>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-background/60">{icon}<span>{label}</span></div>
+      <p className="mt-1 text-xl font-semibold">{value}</p>
     </div>
   );
 }
 
-function Rule({ children }: { children: React.ReactNode }) {
+function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
   return (
-    <li className="flex items-start gap-2">
-      <Calendar className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-      <span className="text-muted-foreground">{children}</span>
-    </li>
+    <div className="flex items-center justify-between">
+      <span className={`text-background/${muted ? "50" : "70"} text-sm`}>{label}</span>
+      <span className={`tabular-nums ${bold ? "text-lg font-semibold" : "text-sm"}`}>{value}</span>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-background/80 p-2">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
+    </div>
   );
 }
