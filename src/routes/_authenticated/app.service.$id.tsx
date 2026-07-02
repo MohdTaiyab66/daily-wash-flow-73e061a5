@@ -554,7 +554,7 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
       p_service_id: serviceId,
       p_reason: "dirty_vehicle",
       p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
-      p_photo: photos.front,
+      p_photos: [photos.front, photos.rear, photos.left, photos.right],
       p_lat: pos?.lat ?? 0,
       p_lng: pos?.lng ?? 0,
     } as any);
