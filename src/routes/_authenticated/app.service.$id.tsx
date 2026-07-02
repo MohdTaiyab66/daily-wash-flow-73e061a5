@@ -17,8 +17,9 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
-import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
+import { googleMapsDirectionsUrl, gpsLabel, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { captureFromCamera } from "@/lib/camera";
+import { getCurrentGps } from "@/lib/native";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -264,8 +265,8 @@ function ServiceDetail() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button asChild={!!navUrl} variant="outline" size="sm" disabled={!navUrl}>
-              {navUrl ? <a href={navUrl} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Navigate</a> : <span><Navigation className="mr-1.5 h-4 w-4" /> No GPS</span>}
+            <Button variant="outline" size="sm" disabled={!navUrl} onClick={() => void openGoogleMapsDirections(destLat, destLng)}>
+              <Navigation className="mr-1.5 h-4 w-4" /> {navUrl ? "Navigate" : "No GPS"}
             </Button>
             <MaskedCallButton serviceId={id} />
           </div>
@@ -650,12 +651,5 @@ function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; 
 
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
-  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 1500, maximumAge: 300000 },
-    );
-  });
+  return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 }

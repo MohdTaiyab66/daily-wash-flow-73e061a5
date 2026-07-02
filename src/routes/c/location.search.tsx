@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronRight, MapPin, Navigation, Search, Loader2, BellRing 
 import { Button } from "@/components/ui/button";
 import { SERVICE_AREAS } from "@/lib/areas";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentGps } from "@/lib/native";
 
 export const Route = createFileRoute("/c/location/search")({
   ssr: false,
@@ -44,25 +45,15 @@ function LocationSearch() {
     navigate({ to: "/c/location" });
   };
 
-  const useGPS = () => {
-    if (!("geolocation" in navigator)) { toast.error("Geolocation not available"); return; }
+  const useGPS = async () => {
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setLocating(false);
-        // Send the user to the dedicated detect screen which uses real reverse geocoding.
-        // We pass coords via sessionStorage so the next screen can reuse them without re-prompting.
-        try {
-          sessionStorage.setItem(
-            "uw_pending_geo",
-            JSON.stringify({ lat: p.coords.latitude, lng: p.coords.longitude, t: Date.now() }),
-          );
-        } catch { /* ignore */ }
-        navigate({ to: "/c/location" });
-      },
-      () => { setLocating(false); toast.error("Couldn't read your location"); },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
+    const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    setLocating(false);
+    if (!p) { toast.error("Couldn't read your location"); return; }
+    try {
+      sessionStorage.setItem("uw_pending_geo", JSON.stringify({ lat: p.lat, lng: p.lng, t: Date.now() }));
+    } catch { /* ignore */ }
+    navigate({ to: "/c/location" });
   };
 
 

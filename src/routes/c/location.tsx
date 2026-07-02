@@ -6,6 +6,7 @@ import { Loader2, Navigation, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { reverseGeocode } from "@/lib/geo.functions";
+import { getCurrentGps } from "@/lib/native";
 
 export const Route = createFileRoute("/c/location")({
   ssr: false,
@@ -77,18 +78,19 @@ function LocationPermission() {
     }
   };
 
-  const useGPS = () => {
-    if (!("geolocation" in navigator)) {
-      toast.error("Geolocation not available on this device");
-      return;
-    }
+  const useGPS = async () => {
     setLocating(true);
     setDenied(false);
-    navigator.geolocation.getCurrentPosition(
-      async (p) => {
+    const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    if (!p) {
+      setLocating(false);
+      setDenied(true);
+      toast.error("Couldn't read your location. Enable location permission and try again.");
+      return;
+    }
         try {
           const loc = await reverse({
-            data: { lat: p.coords.latitude, lng: p.coords.longitude },
+            data: { lat: p.lat, lng: p.lng },
           });
           await persist(loc);
           toast.success(`Detected: ${loc.area || loc.city || "your location"}`);
@@ -98,18 +100,6 @@ function LocationPermission() {
         } finally {
           setLocating(false);
         }
-      },
-      (err) => {
-        setLocating(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setDenied(true);
-          toast.error("Location permission denied. Enable it in your browser settings.");
-        } else {
-          toast.error("Couldn't read your location. Try entering it manually.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
   };
 
   return (

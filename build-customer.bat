@@ -100,6 +100,9 @@ copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 echo   Syncing Capacitor...
 call npx cap sync android || goto :fail
 
+echo   Patching Android permissions and Maps intents...
+call node scripts\patch-android-manifest.mjs || goto :fail
+
 REM -- 6. Next steps ------------------------------------------------------
 echo.
 echo [6/6] Opening Android Studio...

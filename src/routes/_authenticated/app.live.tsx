@@ -17,7 +17,7 @@ import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
-import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
+import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -239,7 +239,9 @@ function RoutePage() {
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   <Button asChild={!!navUrl} size="sm" variant="outline" className="col-span-1" disabled={!navUrl}>
-                    {navUrl ? <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a> : <span aria-label="Location unavailable"><Navigation className="h-4 w-4" /></span>}
+                    <button type="button" onClick={() => void openGoogleMapsDirections(gps.lat, gps.lng)} aria-label={navUrl ? "Navigate" : "Location unavailable"}>
+                      <Navigation className="h-4 w-4" />
+                    </button>
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
                   <Button asChild size="sm" className="col-span-2">

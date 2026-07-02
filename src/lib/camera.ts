@@ -14,21 +14,26 @@ export async function captureFromCamera(): Promise<File | null> {
   if (isNative()) {
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+      let permissions = await Camera.checkPermissions();
+      if (permissions.camera !== "granted") {
+        permissions = await Camera.requestPermissions({ permissions: ["camera"] });
+      }
+      if (permissions.camera !== "granted") return null;
       const photo = await Camera.getPhoto({
-        quality: 78,
+        quality: 72,
         allowEditing: false,
-        resultType: CameraResultType.Base64,
+        resultType: CameraResultType.Uri,
         source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
       });
-      if (!photo.base64String) return null;
-      const bytes = Uint8Array.from(atob(photo.base64String), (c) => c.charCodeAt(0));
+      if (!photo.webPath) return null;
       const type = photo.format ? `image/${photo.format}` : "image/jpeg";
-      return new File([bytes], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type });
+      const blob = await fetch(photo.webPath).then((r) => r.blob());
+      return new File([blob], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type: blob.type || type });
     } catch (err) {
-      console.warn("[camera] native capture failed, falling back to web input", err);
-      // fall through to web fallback
+      console.warn("[camera] native capture failed", err);
+      return null;
     }
   }
 
