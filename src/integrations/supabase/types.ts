@@ -21,6 +21,7 @@ export type Database = {
           id: string
           kind: string
           meta: Json
+          pushed_at: string | null
           resolved_at: string | null
           resolved_by: string | null
           severity: string
@@ -32,6 +33,7 @@ export type Database = {
           id?: string
           kind: string
           meta?: Json
+          pushed_at?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           kind?: string
           meta?: Json
+          pushed_at?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string
@@ -811,6 +814,7 @@ export type Database = {
           id: string
           link: string | null
           metadata: Json
+          pushed_at: string | null
           read_at: string | null
           title: string
           type: string
@@ -822,6 +826,7 @@ export type Database = {
           id?: string
           link?: string | null
           metadata?: Json
+          pushed_at?: string | null
           read_at?: string | null
           title: string
           type: string
@@ -833,6 +838,7 @@ export type Database = {
           id?: string
           link?: string | null
           metadata?: Json
+          pushed_at?: string | null
           read_at?: string | null
           title?: string
           type?: string
@@ -1517,6 +1523,7 @@ export type Database = {
           link: string | null
           metadata: Json
           partner_id: string
+          pushed_at: string | null
           read_at: string | null
           title: string
           type: string
@@ -1528,6 +1535,7 @@ export type Database = {
           link?: string | null
           metadata?: Json
           partner_id: string
+          pushed_at?: string | null
           read_at?: string | null
           title: string
           type: string
@@ -1539,6 +1547,7 @@ export type Database = {
           link?: string | null
           metadata?: Json
           partner_id?: string
+          pushed_at?: string | null
           read_at?: string | null
           title?: string
           type?: string
@@ -4065,6 +4074,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_admin_user_ids: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_area_availability: {
         Args: { p_lat?: number; p_lng?: number; p_pincode?: string }
         Returns: {
@@ -4167,6 +4182,7 @@ export type Database = {
           zone_name: string
         }[]
       }
+      gps_audit_report: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4183,6 +4199,10 @@ export type Database = {
         Returns: number
       }
       is_admin_or_ops: { Args: { _uid: string }; Returns: boolean }
+      is_centroid_coord: {
+        Args: { _lat: number; _lng: number }
+        Returns: boolean
+      }
       is_daily_shine_open: {
         Args: { p_date?: string; p_zone: string }
         Returns: boolean
