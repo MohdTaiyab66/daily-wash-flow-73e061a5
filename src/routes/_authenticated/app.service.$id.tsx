@@ -436,10 +436,9 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 
         <div className="mt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live evidence photo (required)</p>
-          <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
           <button
-            onClick={() => inputRef.current?.click()}
+            onClick={capturePhoto}
+            disabled={uploading}
             className={`flex aspect-[3/1] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs ${
               photo ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
             }`}
@@ -448,6 +447,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
             {photo ? "Photo captured" : "Tap to capture (camera only)"}
           </button>
         </div>
+
 
         <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
