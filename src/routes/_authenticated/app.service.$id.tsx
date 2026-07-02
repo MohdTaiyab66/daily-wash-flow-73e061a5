@@ -609,14 +609,22 @@ function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?:
 
 
 function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
-  const ref = useRef<HTMLInputElement>(null);
+  const trigger = async () => {
+    const f = await captureFromCamera();
+    if (f) onPicked(f);
+  };
   return (
     <button
-      onClick={() => ref.current?.click()}
+      onClick={trigger}
       className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
         done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
       }`}
     >
+      {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
+    </button>
+  );
+}
+
       <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && onPicked(e.target.files[0])} />
       {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
     </button>
