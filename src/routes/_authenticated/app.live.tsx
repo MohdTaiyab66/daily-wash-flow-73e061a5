@@ -18,6 +18,8 @@ import { VehicleImage } from "@/components/VehicleImage";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
+import { logApkEvidence } from "@/lib/apkEvidence";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -36,7 +38,7 @@ function RoutePage() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("services")
-        .select("id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+        .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
@@ -100,8 +102,7 @@ function RoutePage() {
   const routeSource = (s: any) => {
     const snap = validateExactGps(s.destination_lat, s.destination_lng);
     if (snap) return { lat: snap.latitude, lng: snap.longitude, exact: true };
-    const customer = validateExactGps((s.customers as any)?.latitude, (s.customers as any)?.longitude);
-    return customer ? { lat: customer.latitude, lng: customer.longitude, exact: true } : { lat: null, lng: null, exact: false };
+    return { lat: null, lng: null, exact: false };
   };
 
   const pending = [...pendingRaw]
@@ -141,6 +142,24 @@ function RoutePage() {
     const mins = pending.length * 12 + Math.round(distanceRemaining * 3);
     return new Date(Date.now() + mins * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   })();
+
+  useEffect(() => {
+    if (!services) return;
+    void logApkEvidence({
+      eventType: "route_loaded",
+      status: "success",
+      payload: {
+        total,
+        pending: pending.length,
+        completed: completedCount,
+        unavailable: unavailable.length,
+        dirty: dirty.length,
+        route_visible: routeVisible,
+        first_service_id: currentStop?.id ?? null,
+        first_destination: currentStop ? { lat: (currentStop as any).lat, lng: (currentStop as any).lng } : null,
+      },
+    });
+  }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeVisible, currentStop?.id]);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
@@ -247,7 +266,28 @@ function RoutePage() {
                     variant="outline"
                     className="col-span-1"
                     disabled={!navUrl}
-                    onClick={() => void openGoogleMapsDirections(gps.lat, gps.lng)}
+                    onClick={async () => {
+                      await logApkEvidence({
+                        eventType: "navigation_open_attempt",
+                        serviceId: s.id,
+                        assignmentId: (s as any).assignment_id ?? null,
+                        status: navUrl ? "info" : "blocked",
+                        payload: {
+                          destination_lat: gps.lat,
+                          destination_lng: gps.lng,
+                          destination_source: (s as any).destination_source ?? null,
+                          customer_name: c?.full_name ?? null,
+                        },
+                      });
+                      const opened = await openGoogleMapsDirections(gps.lat, gps.lng);
+                      await logApkEvidence({
+                        eventType: "navigation_open_result",
+                        serviceId: s.id,
+                        assignmentId: (s as any).assignment_id ?? null,
+                        status: opened ? "success" : "error",
+                        payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
+                      });
+                    }}
                     aria-label={navUrl ? "Navigate" : "Location unavailable"}
                   >
                     <Navigation className="h-4 w-4" />
