@@ -192,8 +192,26 @@ function ServiceDetail() {
   });
 
 
-  const goNext = () => {
-    if (nextServiceId) navigate({ to: "/app/service/$id", params: { id: nextServiceId } });
+  const goNext = async () => {
+    if (nextServiceId) {
+      navigate({ to: "/app/service/$id", params: { id: nextServiceId } });
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: u } = await supabase.auth.getUser();
+    const { data } = await supabase
+      .from("services")
+      .select("id,sequence_no,manual_sequence_no,eta_at,time_slot")
+      .eq("partner_id", u.user!.id)
+      .eq("scheduled_date", today)
+      .in("status", ["pending", "in_progress"])
+      .neq("id", id)
+      .order("manual_sequence_no", { ascending: true, nullsFirst: false })
+      .order("sequence_no", { ascending: true, nullsFirst: false })
+      .order("eta_at", { ascending: true, nullsFirst: false })
+      .limit(1);
+    const fallbackNext = data?.[0]?.id ?? null;
+    if (fallbackNext) navigate({ to: "/app/service/$id", params: { id: fallbackNext } });
     else navigate({ to: "/app/live" });
   };
 
@@ -244,8 +262,6 @@ function ServiceDetail() {
               {gpsExact ? `GPS: ${gpsLabel(destLat, destLng)} · ${destinationSource}` : "⚠️ Location unavailable — exact GPS required"}
             </p>
           </div>
-
-          {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button asChild={!!navUrl} variant="outline" size="sm" disabled={!navUrl}>
@@ -444,6 +460,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
+    console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
     toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -540,13 +557,24 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
+    if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     const pos = await getPosition();
+    const { data: svc, error: svcError } = await supabase
+      .from("services")
+      .select("customer_id")
+      .eq("id", serviceId)
+      .maybeSingle();
+    if (svcError || !svc?.customer_id) {
+      setSaving(false);
+      return toast.error(svcError?.message || "Could not load customer for this service");
+    }
     const { error: e1 } = await supabase.from("dirty_vehicle_reports").insert({
-      service_id: serviceId, partner_id: u.user!.id, reason, notes: notes || null,
+      service_id: serviceId, partner_id: u.user!.id, customer_id: svc.customer_id, reason, notes: notes || null,
       photo_front: photos.front, photo_rear: photos.rear, photo_left: photos.left, photo_right: photos.right,
+      lat: pos?.lat ?? null, lng: pos?.lng ?? null, captured_at: new Date().toISOString(), recommendation: "premium_or_included_wash",
     });
     if (e1) { setSaving(false); return toast.error(e1.message); }
     // Mark service as unavailable + credit ₹12 (vehicle too dirty to clean)
@@ -560,12 +588,13 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     } as any);
     setSaving(false);
     if (e2) return toast.error(e2.message);
+    console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
     toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
     qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     setOpen(false);
-    onDone?.();
+    void onDone?.();
   };
 
   return (

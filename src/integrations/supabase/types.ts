@@ -1197,8 +1197,12 @@ export type Database = {
       }
       dirty_vehicle_reports: {
         Row: {
+          captured_at: string
           created_at: string
+          customer_id: string | null
           id: string
+          lat: number | null
+          lng: number | null
           notes: string | null
           partner_id: string
           photo_front: string | null
@@ -1206,11 +1210,16 @@ export type Database = {
           photo_rear: string | null
           photo_right: string | null
           reason: string
+          recommendation: string
           service_id: string
         }
         Insert: {
+          captured_at?: string
           created_at?: string
+          customer_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           notes?: string | null
           partner_id: string
           photo_front?: string | null
@@ -1218,11 +1227,16 @@ export type Database = {
           photo_rear?: string | null
           photo_right?: string | null
           reason: string
+          recommendation?: string
           service_id: string
         }
         Update: {
+          captured_at?: string
           created_at?: string
+          customer_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           notes?: string | null
           partner_id?: string
           photo_front?: string | null
@@ -1230,6 +1244,7 @@ export type Database = {
           photo_rear?: string | null
           photo_right?: string | null
           reason?: string
+          recommendation?: string
           service_id?: string
         }
         Relationships: [

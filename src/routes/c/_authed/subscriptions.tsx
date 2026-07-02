@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2 } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,21 +50,30 @@ function MyPlanPage() {
   // assignment events, completions, and customer-status changes.
   useEffect(() => {
     if (!userId) return;
-    const refresh = () => {
+    const refresh = (payload?: any) => {
+      window.dispatchEvent(new CustomEvent("uwRealtimeEvidence", {
+        detail: {
+          at: new Date().toISOString(),
+          table: payload?.table ?? payload?.schema ?? "unknown",
+          eventType: payload?.eventType ?? "refresh",
+          new: payload?.new ?? null,
+        },
+      }));
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["sub-queue", userId] });
+      qc.invalidateQueries({ queryKey: ["customer-latest-service-notice", userId] });
     };
     const ch = supabase
       .channel(`cust-live-${userId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `customer_id=eq.${userId}` }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `user_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "assignments", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscription_extensions", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "dirty_vehicle_reports", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "unavailability_reports", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "customer_notifications", filter: `user_id=eq.${userId}` }, refresh)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [userId, qc]);
@@ -140,6 +149,25 @@ function MyPlanPage() {
     },
   });
 
+  const latestNoticeQ = useQuery({
+    queryKey: ["customer-latest-service-notice", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("customer_notifications")
+        .select("id,type,title,body,link,metadata,created_at,read_at")
+        .eq("user_id", userId)
+        .in("type", ["service_unavailable", "dirty_vehicle"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as null | {
+        id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null;
+      };
+    },
+  });
+
   const recent = all.slice(0, 8);
   const completedCount = all.filter((b) => b.status === "completed").length;
   const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
@@ -155,6 +183,8 @@ function MyPlanPage() {
       </div>
 
       <AwaitingPartnerBanner userId={userId} />
+
+      <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
 
       {bookingsQ.isLoading && (
         <div className="mt-6 space-y-3">
@@ -374,6 +404,35 @@ function MyPlanPage() {
       )}
 
       <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} kind={scheduleKind} />
+    </div>
+  );
+}
+
+function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
+  if (!notice) return null;
+  const isDirty = notice.type === "dirty_vehicle";
+  return (
+    <div className={`mt-5 rounded-3xl border p-4 ${isDirty ? "border-orange-500/30 bg-orange-500/10" : "border-amber-500/30 bg-amber-500/10"}`}>
+      <div className="flex items-start gap-3">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isDirty ? "bg-orange-500/15 text-orange-700" : "bg-amber-500/15 text-amber-700"}`}>
+          {isDirty ? <ShieldAlert className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{notice.title}</p>
+          {notice.body && <p className="mt-1 text-xs text-muted-foreground">{notice.body}</p>}
+          <p className="mt-1 text-[10px] text-muted-foreground">Received {new Date(notice.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</p>
+          {isDirty ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button asChild size="sm" className="h-8 rounded-full text-xs">
+                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }}>Book Premium Wash</Link>
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={onScheduleIncluded}>Schedule Included Wash</Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" className="mt-3 h-8 rounded-full text-xs">Acknowledged</Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

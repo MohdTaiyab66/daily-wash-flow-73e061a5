@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getAdminServiceDetail } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, MapPin, Timer } from "lucide-react";
+import { ArrowLeft, Clock, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/admin/service/$id")({
   component: ServiceDetailAdmin,
@@ -92,19 +92,6 @@ function ServiceDetailAdmin() {
                   );
                 })}
               </div>
-            </Card>
-          ))}
-        </>
-      )}
-
-      {data.parking.length > 0 && (
-        <>
-          <h2 className="mt-8 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Parking reports</h2>
-          {data.parking.map((r: any) => (
-            <Card key={r.id} className="mt-2 p-5">
-              <p className="text-sm font-medium">{r.reason}</p>
-              {r.notes && <p className="mt-1 text-xs text-muted-foreground">{r.notes}</p>}
-              {r.photo_url && <img src={r.photo_url} alt="parking" className="mt-3 max-w-sm rounded-md" />}
             </Card>
           ))}
         </>

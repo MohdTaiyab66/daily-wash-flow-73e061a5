@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin-middleware";
 export const getLiveOps = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = new Date().toISOString().slice(0, 10);
-  const [counts, recentCompleted, recentUnavail, recentDirty, recentParking] = await Promise.all([
+  const [counts, recentCompleted, recentUnavail, recentDirty] = await Promise.all([
     supabaseAdmin.from("v_live_ops_today").select("*").maybeSingle(),
     supabaseAdmin
       .from("services")
@@ -26,22 +26,15 @@ export const getLiveOps = createServerFn({ method: "GET" }).middleware([requireA
       .gte("created_at", `${today}T00:00:00`)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabaseAdmin
-      .from("parking_reports")
-      .select("id,reason,notes,created_at,services(customers(full_name,area),partners(full_name,partner_code))")
-      .gte("created_at", `${today}T00:00:00`)
-      .order("created_at", { ascending: false })
-      .limit(20),
   ]);
   return {
     counts: counts.data ?? {
       assigned_today: 0, completed_today: 0, pending_today: 0, unavailable_today: 0,
-      dirty_today: 0, parking_today: 0, fraud_flags_week: 0,
+      dirty_today: 0, fraud_flags_week: 0,
     },
     completed: recentCompleted.data ?? [],
     unavailable: recentUnavail.data ?? [],
     dirty: recentDirty.data ?? [],
-    parking: recentParking.data ?? [],
   };
 });
 

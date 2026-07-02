@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { VehicleImage } from "@/components/VehicleImage";
 import {
-  Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route, ParkingCircle, User as UserIcon,
+  Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route, User as UserIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ import { toast } from "sonner";
  * Mounted globally inside the partner app shell.
  */
 export function OfferPopup({ partnerId }: { partnerId: string | null }) {
+  const { pathname } = useLocation();
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -115,7 +117,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     onError: (e: any) => toast.error(e?.message ?? "Could not respond"),
   });
 
-  if (!offer) return null;
+  if (!offer || pathname.startsWith("/app/service/")) return null;
 
   const expiresAt = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
   const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
@@ -136,7 +138,6 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const regLabel = vehicle.registration_number || null;
   const areaLabel = address.area || queue.area || "Nearby area";
   const addressLine = address.address_line || null;
-  const parkingNote = address.parking_notes || vehicle.parking_notes || booking.notes || null;
   const deadlineLabel = queue.service_required_before
     ? `Before ${queue.service_required_before}`
     : "Before 8:00 AM";
@@ -221,12 +222,6 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
               <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-sm font-medium">{deadlineLabel}</p>
             </div>
-            {parkingNote && (
-              <div className="flex items-start gap-3">
-                <ParkingCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{parkingNote}</p>
-              </div>
-            )}
           </div>
 
           {/* Route impact */}

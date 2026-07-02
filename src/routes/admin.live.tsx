@@ -5,7 +5,7 @@ import { getLiveOps } from "@/lib/ops.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, AlertTriangle, Car, CheckCircle2, Clock, MapPin, ParkingCircle, ShieldAlert, XCircle, Satellite, Wifi, WifiOff, UserCheck } from "lucide-react";
+import { Activity, AlertTriangle, Car, CheckCircle2, Clock, MapPin, ShieldAlert, XCircle, Satellite, Wifi, WifiOff, UserCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin/live")({
   component: LiveOpsPage,
@@ -46,7 +46,6 @@ function LiveOpsPage() {
     { label: "Pending", value: c?.pending_today ?? 0, icon: Clock, tone: "text-amber-600" },
     { label: "Unavailable", value: c?.unavailable_today ?? 0, icon: XCircle, tone: "text-destructive" },
     { label: "Dirty reports", value: c?.dirty_today ?? 0, icon: AlertTriangle, tone: "text-amber-600" },
-    { label: "Parking issues", value: c?.parking_today ?? 0, icon: ParkingCircle, tone: "text-amber-600" },
     { label: "GPS flags (7d)", value: c?.fraud_flags_week ?? 0, icon: ShieldAlert, tone: "text-destructive" },
   ];
 
@@ -118,15 +117,6 @@ function LiveOpsPage() {
         </Section>
         <Section title="Dirty vehicle reports" empty="No dirty reports today.">
           {data?.dirty.map((r: any) => (
-            <Row key={r.id}
-              left={r.services?.customers?.full_name ?? "—"}
-              right={r.services?.partners?.full_name ?? "—"}
-              meta={r.reason}
-            />
-          ))}
-        </Section>
-        <Section title="Parking issues" empty="No parking reports today.">
-          {data?.parking.map((r: any) => (
             <Row key={r.id}
               left={r.services?.customers?.full_name ?? "—"}
               right={r.services?.partners?.full_name ?? "—"}
