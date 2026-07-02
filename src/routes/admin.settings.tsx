@@ -114,6 +114,15 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     ],
   },
   {
+    id: "service_verification",
+    title: "Service Verification",
+    description: "Controls how partner service completion is verified. Turn GPS Verification OFF for trial mode — partners can then start and complete services from any location. Photos, wallet, notifications and all other checks continue to work.",
+    fields: [
+      { key: "gps_verification", label: "Enable GPS Verification", help: "ON: partner must be within the allowed radius of the customer to complete. OFF: skip GPS distance check entirely.", kind: "bool" },
+      { key: "complete_gps_radius_m", label: "Allowed radius when ON (m)" },
+    ],
+  },
+  {
     id: "attendance",
     title: "Attendance",
     description: "Check-in / check-out rules.",
@@ -122,9 +131,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "late_tolerance_min", label: "Late tolerance (min)" },
       { key: "checkin_distance_m", label: "Check-in distance (m)" },
       { key: "checkout_distance_m", label: "Check-out distance (m)" },
-      { key: "gps_verification", label: "GPS verification", kind: "bool" },
       { key: "selfie_required", label: "Selfie required", kind: "bool" },
-      // background_tracking hidden until native build supports it
     ],
   },
   {
