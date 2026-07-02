@@ -121,20 +121,10 @@ function AssignmentsPage() {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
 
-  // Ensure the off day is never selected
-  useEffect(() => {
-    setWorkingDays((prev) => {
-      if (!prev.has(offDayKey)) return prev;
-      const next = new Set(prev);
-      next.delete(offDayKey);
-      return next;
-    });
-  }, [offDayKey]);
-
   const cars = useMemo(() => {
     const raw = Math.round(hours * carsPerHour);
-    return Math.max(minCars, Math.min(maxCars, raw));
-  }, [hours, carsPerHour, minCars, maxCars]);
+    return Math.max(minCars, Math.min(maxCarsCeiling, raw));
+  }, [hours, carsPerHour, minCars, maxCarsCeiling]);
 
   const { data: partner, isLoading: loadingPartner } = useQuery({
     queryKey: ["me-partner-builder"],
