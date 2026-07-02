@@ -335,8 +335,15 @@ function AssignmentsPage() {
         </div>
         <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
           <Row label="Estimated earnings" value={`₹${dailyEarn.toLocaleString("en-IN")}`} />
-          <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
-          <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
+          {fuelEnabled && (
+            <>
+              <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
+              <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
+              <p className="pt-1 text-[10px] italic text-background/50">
+                *Fuel estimate based on {avgMileage} km/L average bike mileage.
+              </p>
+            </>
+          )}
         </div>
       </Card>
 
