@@ -231,6 +231,9 @@ function SettingsPage() {
     if (kind === "bool") v = str === "true";
     else if (kind === "number") v = Number(str);
     else if (kind === "csv") v = str.split(",").map((p) => Number(p.trim())).filter((n) => !isNaN(n));
+    else if (kind === "json") {
+      try { v = JSON.parse(str); } catch { toast.error("Invalid JSON"); return; }
+    }
     mut.mutate({ key: f.key, value: v });
   };
 
