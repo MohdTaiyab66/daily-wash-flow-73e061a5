@@ -254,9 +254,9 @@ function AssignmentsPage() {
 
   const acceptableEarn = acceptableCars * rate;
 
-  const workingDayCount = workingDays.size;
-  // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
-  const monthlyWorkingDays = Math.round((workingDayCount / 7) * 30);
+  // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
+  // fixed weekly off). Over a 30-day window that averages ~26 working days.
+  const monthlyWorkingDays = Math.round((6 / 7) * 30);
   const monthlyCars = monthlyWorkingDays * cars;
   const monthlyEarn = monthlyCars * rate; // gross, no deductions
 
@@ -264,16 +264,6 @@ function AssignmentsPage() {
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
   const noneAvailable = preview && availableInArea === 0;
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
-
-  const toggleDay = (k: number) => {
-    if (k === offDayKey) return;
-    setWorkingDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
-      return next;
-    });
-  };
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
