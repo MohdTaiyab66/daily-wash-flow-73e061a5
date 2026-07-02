@@ -1,0 +1,1 @@
+ALTER VIEW public.admin_gps_health SET (security_invoker = true);

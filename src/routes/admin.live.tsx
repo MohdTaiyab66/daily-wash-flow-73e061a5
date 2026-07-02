@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getLiveOps } from "@/lib/ops.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, AlertTriangle, Car, CheckCircle2, Clock, MapPin, ParkingCircle, ShieldAlert, XCircle } from "lucide-react";
+import { Activity, AlertTriangle, Car, CheckCircle2, Clock, MapPin, ParkingCircle, ShieldAlert, XCircle, Satellite, Wifi, WifiOff, UserCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin/live")({
   component: LiveOpsPage,
@@ -16,6 +17,26 @@ function LiveOpsPage() {
     queryKey: ["admin-live-ops"],
     queryFn: () => fn(),
     refetchInterval: 15000,
+  });
+
+  const { data: gps } = useQuery({
+    queryKey: ["admin-gps-health"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("admin_gps_health").select("*").maybeSingle();
+      if (error) throw error;
+      return data as {
+        active_customers: number;
+        gps_exact: number;
+        gps_centroid: number;
+        gps_missing: number;
+        partners_online: number;
+        partners_offline: number;
+        partners_stale_heartbeat: number;
+        customers_waiting_reassignment: number;
+        as_of: string;
+      } | null;
+    },
+    refetchInterval: 30000,
   });
 
   const c = data?.counts;
@@ -51,6 +72,29 @@ function LiveOpsPage() {
           );
         })}
       </div>
+
+      <Card className="mt-6 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Satellite className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">GPS &amp; DAR Health</h2>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {gps?.as_of ? `Updated ${new Date(gps.as_of).toLocaleTimeString()}` : "Loading…"}
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MiniStat icon={UserCheck} label="Active customers" value={gps?.active_customers ?? 0} />
+          <MiniStat icon={MapPin} label="Exact GPS" value={gps?.gps_exact ?? 0} tone="text-emerald-600" />
+          <MiniStat icon={MapPin} label="Centroid GPS" value={gps?.gps_centroid ?? 0} tone="text-amber-600" />
+          <MiniStat icon={MapPin} label="Missing GPS" value={gps?.gps_missing ?? 0} tone="text-destructive" />
+          <MiniStat icon={Wifi} label="Partners online" value={gps?.partners_online ?? 0} tone="text-emerald-600" />
+          <MiniStat icon={WifiOff} label="Partners offline" value={gps?.partners_offline ?? 0} />
+          <MiniStat icon={Activity} label="Stale heartbeat (>5m)" value={gps?.partners_stale_heartbeat ?? 0} tone="text-amber-600" />
+          <MiniStat icon={AlertTriangle} label="Awaiting reassignment" value={gps?.customers_waiting_reassignment ?? 0} tone="text-destructive" />
+        </div>
+      </Card>
+
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Section title="Recent completions" empty="No completed services yet today.">
@@ -119,6 +163,18 @@ function Row({ left, right, meta, flag }: { left: string; right: string; meta?: 
         <p className="text-xs text-muted-foreground">{right}</p>
         {flag && <Badge variant="outline" className="mt-1 border-destructive/40 text-[10px] text-destructive"><MapPin className="mr-1 h-3 w-3" />{flag}</Badge>}
       </div>
+    </div>
+  );
+}
+
+function MiniStat({ icon: Icon, label, value, tone }: { icon: typeof Activity; label: string; value: number; tone?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card/50 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <Icon className={`h-3.5 w-3.5 ${tone ?? "text-muted-foreground"}`} />
+      </div>
+      <p className={`mt-1.5 text-xl font-semibold tracking-tight ${tone ?? ""}`}>{value}</p>
     </div>
   );
 }

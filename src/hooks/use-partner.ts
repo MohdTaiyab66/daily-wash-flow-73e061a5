@@ -45,20 +45,41 @@ export function useToggleOnline() {
 }
 
 /**
- * Partner heartbeat — pings `partners.last_seen` every 60s while the app is open.
- * This is informational only. It NEVER changes `availability`, so partners stay
- * online until they manually toggle off. Stops when the tab is hidden to save battery.
+ * Partner heartbeat — pings `partners.last_seen` (and current GPS when available)
+ * every 45s while the app is open. Silent partners are auto-marked offline by the
+ * `dar_check_offline_partners` cron sweep, which then hands their route to DAR.
  */
 export function usePartnerHeartbeat(partnerId: string | null | undefined) {
   useEffect(() => {
     if (!partnerId) return;
     let cancelled = false;
+
+    const readPosition = () =>
+      new Promise<{ lat: number; lng: number } | null>((resolve) => {
+        if (typeof navigator === "undefined" || !navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+          (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 },
+        );
+      });
+
     const ping = async () => {
-      if (cancelled || document.hidden) return;
-      await supabase.from("partners").update({ last_seen: new Date().toISOString() }).eq("id", partnerId);
+      if (cancelled || (typeof document !== "undefined" && document.hidden)) return;
+      const pos = await readPosition();
+      const patch = { last_seen: new Date().toISOString() } as {
+        last_seen: string;
+        current_lat?: number;
+        current_lng?: number;
+      };
+      if (pos) {
+        patch.current_lat = pos.lat;
+        patch.current_lng = pos.lng;
+      }
+      await supabase.from("partners").update(patch).eq("id", partnerId);
     };
     void ping();
-    const id = window.setInterval(ping, 60_000);
+    const id = window.setInterval(ping, 45_000);
     const onVis = () => { if (!document.hidden) void ping(); };
     document.addEventListener("visibilitychange", onVis);
     return () => {
