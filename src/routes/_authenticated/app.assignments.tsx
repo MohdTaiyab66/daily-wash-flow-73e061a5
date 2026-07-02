@@ -444,11 +444,10 @@ function AssignmentsPage() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-y-2 text-sm">
           <span className="text-muted-foreground">Working days</span><span className="text-right font-medium">{monthlyWorkingDays}</span>
+          <span className="text-muted-foreground">Hours per day</span><span className="text-right font-medium">{hours} Hours</span>
           <span className="text-muted-foreground">Cars per day</span><span className="text-right font-medium">{cars}</span>
           <span className="text-muted-foreground">Monthly cars</span><span className="text-right font-medium">{monthlyCars}</span>
-          <span className="text-muted-foreground">Estimated earnings</span><span className="text-right font-medium">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-          <span className="text-muted-foreground flex items-center gap-1"><Fuel className="h-3 w-3" />Estimated fuel</span><span className="text-right font-medium">₹{monthlyFuel.toLocaleString("en-IN")}</span>
-          <span className="text-foreground font-semibold">Estimated net</span><span className="text-right text-lg font-semibold">₹{monthlyNet.toLocaleString("en-IN")}</span>
+          <span className="text-foreground font-semibold">Estimated earnings</span><span className="text-right text-lg font-semibold">₹{monthlyEarn.toLocaleString("en-IN")}</span>
         </div>
       </Card>
 
