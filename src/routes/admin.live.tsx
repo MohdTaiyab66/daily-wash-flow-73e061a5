@@ -19,6 +19,26 @@ function LiveOpsPage() {
     refetchInterval: 15000,
   });
 
+  const { data: gps } = useQuery({
+    queryKey: ["admin-gps-health"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("admin_gps_health").select("*").maybeSingle();
+      if (error) throw error;
+      return data as {
+        active_customers: number;
+        gps_exact: number;
+        gps_centroid: number;
+        gps_missing: number;
+        partners_online: number;
+        partners_offline: number;
+        partners_stale_heartbeat: number;
+        customers_waiting_reassignment: number;
+        as_of: string;
+      } | null;
+    },
+    refetchInterval: 30000,
+  });
+
   const c = data?.counts;
   const tiles = [
     { label: "Assigned today", value: c?.assigned_today ?? 0, icon: Car, tone: "" },
