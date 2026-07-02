@@ -11,13 +11,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, ParkingCircle, Clock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
-import { formatTime12 } from "@/lib/format";
+import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
+import { captureFromCamera } from "@/lib/camera";
+
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
@@ -30,9 +32,10 @@ const UNAVAILABLE_REASONS = [
   { value: "customer_not_responding", label: "Customer unreachable" },
 ] as const;
 
-const DIRTY_REASONS = ["Heavy Mud", "Construction Dust", "Bird Droppings", "Needs Foam Wash", "Needs Pressure Wash", "Other"];
+const DIRTY_REASONS = ["Heavy Dust", "Mud", "Bird Droppings", "Tree Sap", "Interior Extremely Dirty", "Other"];
 const COMPENSATION = 12;
-const PARKING_REASONS = ["No Access", "Wall Side Blocked", "Narrow Parking", "Vehicle Too Close", "Other"];
+const PARKING_REASONS = ["Vehicle Locked", "Vehicle Blocked", "Parking Not Accessible", "Wrong Parking", "Customer Unavailable"];
+
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
   component: () => <OfflineGuard label="service verification"><ServiceDetail /></OfflineGuard>,
@@ -192,18 +195,24 @@ function ServiceDetail() {
       </button>
 
       <Card className="mt-4 overflow-hidden p-0">
-        <VehicleImage path={v?.front_image_path} className="h-40 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
         <div className="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold">{c?.full_name}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{c?.phone}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
-              <p className="mt-0.5 text-xs font-medium">Package: {v?.package_amount ? `₹${v.package_amount}` : "—"}</p>
-              <p className="mt-0.5 text-xs font-medium">Service: Exterior Daily Shine</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number} · {v?.color ?? "—"}</p>
+              <div className="mt-3 space-y-0.5">
+                <p className="text-sm font-medium">{c?.full_name}</p>
+                <p className="text-xs text-muted-foreground">📞 {maskPhone(c?.phone)}</p>
+              </div>
             </div>
-            <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
+            <Badge variant="outline" className="capitalize shrink-0">{service?.status?.replace("_", " ")}</Badge>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-[11px]">
+            <div><p className="text-muted-foreground">Area</p><p className="font-medium text-foreground">{c?.area ?? "—"}</p></div>
+            <div><p className="text-muted-foreground">Scheduled</p><p className="font-medium text-foreground">Before {formatTime12(c?.service_required_before ?? c?.preferred_time) || "—"}</p></div>
+            <div><p className="text-muted-foreground">Package</p><p className="font-medium text-foreground">Daily Shine</p></div>
+            <div><p className="text-muted-foreground">Today's service</p><p className="font-medium text-foreground">Exterior Cleaning</p></div>
           </div>
           <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
@@ -211,9 +220,8 @@ function ServiceDetail() {
               <Navigation className="h-3.5 w-3.5" />
               {gpsExact ? `GPS: ${gpsLabel(destLat, destLng)} · ${destinationSource}` : "⚠️ Location unavailable — exact GPS required"}
             </p>
-            <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
-            <p className="text-xs text-muted-foreground">Scheduled: {service?.scheduled_date ?? "Today"} · {service?.time_slot ?? "Morning route"}</p>
           </div>
+
           {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -308,59 +316,57 @@ function ServiceDetail() {
 function PhotoSlot({
   serviceId, stage, angle, done, onUploaded, label, wide,
 }: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean }) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handle = async (file: File) => {
+  const openCamera = async () => {
+    const file = await captureFromCamera();
+    if (!file) return;
     setUploading(true);
-    const { data: u } = await supabase.auth.getUser();
-    const pos = await getPosition();
-    const path = `${u.user!.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage
-      .from("service-photos")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { toast.error(error.message); setUploading(false); return; }
-    const { error: e2 } = await supabase
-      .from("service_photos")
-      .upsert(
-        {
-          service_id: serviceId,
-          partner_id: u.user!.id,
-          stage: stage as any,
-          angle: angle as any,
-          storage_path: path,
-          lat: pos?.lat ?? null,
-          lng: pos?.lng ?? null,
-        },
-        { onConflict: "service_id,stage,angle" },
-      );
-    setUploading(false);
-    if (e2) { toast.error(e2.message); return; }
-    onUploaded();
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const pos = await getPosition();
+      const path = `${u.user!.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from("service-photos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { toast.error(error.message); return; }
+      const { error: e2 } = await supabase
+        .from("service_photos")
+        .upsert(
+          {
+            service_id: serviceId,
+            partner_id: u.user!.id,
+            stage: stage as any,
+            angle: angle as any,
+            storage_path: path,
+            lat: pos?.lat ?? null,
+            lng: pos?.lng ?? null,
+          },
+          { onConflict: "service_id,stage,angle" },
+        );
+      if (e2) { toast.error(e2.message); return; }
+      onUploaded();
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <button
-      onClick={() => inputRef.current?.click()}
+      onClick={openCamera}
+      disabled={uploading}
       className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
         done
           ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
           : "border-border text-muted-foreground hover:border-primary hover:text-primary"
       }`}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && handle(e.target.files[0])}
-      />
       {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
       {label}
     </button>
   );
 }
+
 
 function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
@@ -369,18 +375,23 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
-  const handlePhoto = async (file: File) => {
+  const capturePhoto = async () => {
+    const file = await captureFromCamera();
+    if (!file) return;
     setUploading(true);
-    const { data: u } = await supabase.auth.getUser();
-    const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    setUploading(false);
-    if (error) { toast.error(error.message); return; }
-    setPhoto(path);
+      if (error) { toast.error(error.message); return; }
+      setPhoto(path);
+    } finally {
+      setUploading(false);
+    }
   };
+
 
   const submit = async () => {
     if (!reason) { toast.error("Pick a reason"); return; }
@@ -425,10 +436,9 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
 
         <div className="mt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live evidence photo (required)</p>
-          <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
           <button
-            onClick={() => inputRef.current?.click()}
+            onClick={capturePhoto}
+            disabled={uploading}
             className={`flex aspect-[3/1] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs ${
               photo ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
             }`}
@@ -437,6 +447,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
             {photo ? "Photo captured" : "Tap to capture (camera only)"}
           </button>
         </div>
+
 
         <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
@@ -598,19 +609,23 @@ function ParkingIssueDialog({ serviceId, onDone }: { serviceId: string; onDone?:
 
 
 function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
-  const ref = useRef<HTMLInputElement>(null);
+  const trigger = async () => {
+    const f = await captureFromCamera();
+    if (f) onPicked(f);
+  };
   return (
     <button
-      onClick={() => ref.current?.click()}
+      onClick={trigger}
       className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
         done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
       }`}
     >
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && onPicked(e.target.files[0])} />
       {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
     </button>
   );
 }
+
+
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;
