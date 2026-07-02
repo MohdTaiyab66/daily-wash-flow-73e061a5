@@ -17,7 +17,6 @@ import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
-import { optimizeRoute } from "@/lib/route-optimize";
 import { useEffect } from "react";
 import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
 
@@ -88,17 +87,6 @@ function RoutePage() {
     const nowMins = now.getHours() * 60 + now.getMinutes();
     routeVisible = nowMins < cutoffMins;
   }
-
-  // Current GPS for nearest-neighbor seeding. Optional — falls back to first stop.
-  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => {},
-      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 },
-    );
-  }, []);
 
   const pendingRaw = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
