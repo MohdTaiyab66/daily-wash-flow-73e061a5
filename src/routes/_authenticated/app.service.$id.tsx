@@ -164,9 +164,10 @@ function ServiceDetail() {
   const c = service?.customers as any;
   const v = service?.vehicles as any;
 
-  const navUrl = c?.latitude
-    ? `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
+  const exactNav = googleMapsDirectionsUrl(c?.latitude, c?.longitude);
+  const navUrl = exactNav
+    ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c?.address_line ?? ""} ${c?.area ?? ""} Lucknow`)}`;
+  const gpsExact = Boolean(exactNav);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
