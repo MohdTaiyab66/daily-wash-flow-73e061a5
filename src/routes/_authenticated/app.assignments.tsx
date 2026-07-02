@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, Fuel, TrendingUp, CalendarDays,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
@@ -74,6 +74,7 @@ function AssignmentsPage() {
         "min_cars_required", "max_cars_allowed", "rate_per_car",
         "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
         "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
+        "avg_bike_mileage_kmpl", "fuel_price_per_litre", "fuel_calc_enabled",
       ]);
       const m: Record<string, any> = {};
       (data ?? []).forEach((s: any) => (m[s.key] = s.value));
@@ -87,6 +88,9 @@ function AssignmentsPage() {
         carsPerHour: Number(m.cars_per_hour ?? 6),
         minutesPerCar: Number(m.minutes_per_car ?? 10),
         fuelPerCar: Number(m.fuel_cost_per_car ?? 1.4),
+        avgMileage: Number(m.avg_bike_mileage_kmpl ?? 40),
+        fuelPrice: Number(m.fuel_price_per_litre ?? 105),
+        fuelEnabled: m.fuel_calc_enabled !== false,
         startRules: rules,
         weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
       };
@@ -98,6 +102,8 @@ function AssignmentsPage() {
   const carsPerHour = settings?.carsPerHour ?? 6;
   const rate = settings?.rate ?? 17;
   const fuelPerCar = settings?.fuelPerCar ?? 1.4;
+  const avgMileage = settings?.avgMileage ?? 40;
+  const fuelEnabled = settings?.fuelEnabled ?? true;
   const startRules = settings?.startRules ?? DEFAULT_START_RULES;
   const maxCars = settings?.maxCars ?? 30;
   const minCars = settings?.minCars ?? 1;
@@ -257,16 +263,12 @@ function AssignmentsPage() {
   const dailyNet = dailyEarn - dailyFuel;
 
   const acceptableEarn = acceptableCars * rate;
-  const acceptableFuel = Math.round(acceptableCars * fuelPerCar);
-  const acceptableNet = acceptableEarn - acceptableFuel;
 
   const workingDayCount = workingDays.size;
   // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
   const monthlyWorkingDays = Math.round((workingDayCount / 7) * 30);
   const monthlyCars = monthlyWorkingDays * cars;
-  const monthlyEarn = monthlyCars * rate;
-  const monthlyFuel = Math.round(monthlyCars * fuelPerCar);
-  const monthlyNet = monthlyEarn - monthlyFuel;
+  const monthlyEarn = monthlyCars * rate; // gross, no deductions
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
@@ -288,7 +290,7 @@ function AssignmentsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Pick your hours — we do the math.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Choose how many hours you'd like to work each day. We'll automatically calculate your customers, route and earnings.</p>
         </div>
         <Link to="/app/area" className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
           <MapPin className="h-3 w-3" />{partner.home_area}
@@ -331,8 +333,15 @@ function AssignmentsPage() {
         </div>
         <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
           <Row label="Estimated earnings" value={`₹${dailyEarn.toLocaleString("en-IN")}`} />
-          <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
-          <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
+          {fuelEnabled && (
+            <>
+              <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
+              <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
+              <p className="pt-1 text-[10px] italic text-background/50">
+                *Fuel estimate based on {avgMileage} km/L average bike mileage.
+              </p>
+            </>
+          )}
         </div>
       </Card>
 
@@ -350,19 +359,19 @@ function AssignmentsPage() {
               <CheckCircle2 className="h-4 w-4 text-success" />
               <p><span className="font-semibold">Available today</span> · {cars} cars ready in {partner.home_area}</p>
             </div>
-          ) : (
+          ) : partialAvailable ? (
             <div>
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Route is growing</p>
+                  <p className="text-sm font-semibold">Your Route is Growing 🚀</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of {cars} cars available in {partner.home_area} right now.
+                    {availableInArea} of your target {cars} Daily Shine customers are available today.
                   </p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                <MiniStat label="Current" value={`${availableInArea}`} />
+                <MiniStat label="Today" value={`${availableInArea}`} />
                 <MiniStat label="Target" value={`${cars}`} />
                 <MiniStat label="Today ₹" value={`₹${acceptableEarn.toLocaleString("en-IN")}`} />
               </div>
@@ -373,8 +382,18 @@ function AssignmentsPage() {
                 <Progress value={growthPct} className="mt-1.5 h-2" />
               </div>
               <p className="mt-3 rounded-lg bg-background/50 p-3 text-xs text-muted-foreground">
-                We're actively adding Daily Shine customers in your area. As new customers join, your assignment will grow until it reaches {cars} cars — keep your schedule active.
+                We'll automatically add more customers as your area grows — keep your schedule active.
               </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2">
+              <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
+              <div>
+                <p className="text-sm font-semibold">Today's Route</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  No Daily Shine customers are available in {partner.home_area} yet. We'll automatically add customers as your area grows.
+                </p>
+              </div>
             </div>
           )}
         </Card>
@@ -396,16 +415,19 @@ function AssignmentsPage() {
                 type="button"
                 onClick={() => toggleDay(d.key)}
                 disabled={isOff}
+                aria-disabled={isOff}
                 className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-[11px] font-medium transition ${
                   isOff
-                    ? "cursor-not-allowed border-dashed border-border bg-muted/40 text-muted-foreground/50"
+                    ? "cursor-not-allowed border-dashed border-muted bg-muted/30 text-muted-foreground/60"
                     : checked
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-background text-muted-foreground hover:border-primary/50"
                 }`}
               >
                 <span>{d.label}</span>
-                {isOff ? <span className="text-[9px]">Off</span> : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
+                {isOff
+                  ? <span className="text-[8px] uppercase tracking-wider leading-tight">Weekly Off</span>
+                  : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
               </button>
             );
           })}
@@ -423,11 +445,10 @@ function AssignmentsPage() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-y-2 text-sm">
           <span className="text-muted-foreground">Working days</span><span className="text-right font-medium">{monthlyWorkingDays}</span>
+          <span className="text-muted-foreground">Hours per day</span><span className="text-right font-medium">{hours} Hours</span>
           <span className="text-muted-foreground">Cars per day</span><span className="text-right font-medium">{cars}</span>
           <span className="text-muted-foreground">Monthly cars</span><span className="text-right font-medium">{monthlyCars}</span>
-          <span className="text-muted-foreground">Estimated earnings</span><span className="text-right font-medium">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-          <span className="text-muted-foreground flex items-center gap-1"><Fuel className="h-3 w-3" />Estimated fuel</span><span className="text-right font-medium">₹{monthlyFuel.toLocaleString("en-IN")}</span>
-          <span className="text-foreground font-semibold">Estimated net</span><span className="text-right text-lg font-semibold">₹{monthlyNet.toLocaleString("en-IN")}</span>
+          <span className="text-foreground font-semibold">Estimated earnings</span><span className="text-right text-lg font-semibold">₹{monthlyEarn.toLocaleString("en-IN")}</span>
         </div>
       </Card>
 
@@ -468,15 +489,19 @@ function AssignmentsPage() {
       {preview && partialAvailable && (
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <div className="flex-1">
-              <p className="text-sm font-semibold">
-                Only {availableInArea} customer{availableInArea === 1 ? "" : "s"} available today.
+              <p className="text-sm font-semibold">Today's Route</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {availableInArea} Daily Shine customer{availableInArea === 1 ? " is" : "s are"} available. We'll automatically add more customers as your area grows.
               </p>
               <div className="mt-3 grid gap-2">
                 <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
                   {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  Accept {availableInArea} car{availableInArea === 1 ? "" : "s"} · net ₹{acceptableNet.toLocaleString("en-IN")}/day
+                  <span className="flex flex-col items-center leading-tight">
+                    <span>Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"}</span>
+                    <span className="text-[10px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} Today</span>
+                  </span>
                 </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
@@ -534,18 +559,23 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4">
           <Button
             size="lg"
-            className="w-full"
+            className="h-auto w-full py-3"
             disabled={accept.isPending || !fullyAvailable}
             onClick={() => accept.mutate(cars)}
           >
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {isFetching && !preview
-              ? "Checking customers…"
-              : noneAvailable
-                ? "No customers available — see options above"
-                : partialAvailable
-                  ? `Only ${availableInArea} available — see options above`
-                  : `Accept · ${hours}h · ${cars} cars · net ₹${dailyNet.toLocaleString("en-IN")}/day`}
+            {isFetching && !preview ? (
+              "Checking customers…"
+            ) : noneAvailable ? (
+              "No customers available — see options above"
+            ) : partialAvailable ? (
+              `Only ${availableInArea} available — see options above`
+            ) : (
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-sm font-semibold">Accept Current Route</span>
+                <span className="text-[11px] font-normal opacity-90">{cars} Customers · ₹{dailyEarn.toLocaleString("en-IN")} Estimated Earnings</span>
+              </span>
+            )}
           </Button>
         </div>
       </div>
