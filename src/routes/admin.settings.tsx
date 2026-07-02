@@ -281,6 +281,8 @@ function SettingsPage() {
           </select>
         ) : kind === "csv" ? (
           <Input className="w-48" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
+        ) : kind === "json" ? (
+          <textarea className="w-64 min-h-[80px] rounded-md border border-input bg-background p-2 text-xs font-mono" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
         ) : kind === "text" ? (
           <Input className="w-48" value={current} onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))} />
         ) : (
