@@ -28,3 +28,15 @@ export function requiredBefore(slot?: string | null): string {
   const parts = slot.split(/\s*-\s*/);
   return formatTime12(parts[parts.length - 1]);
 }
+
+/** Mask an Indian phone number as "98XXXXXX45" — first 2 and last 2 visible. */
+export function maskPhone(raw?: string | null): string {
+  if (!raw) return "";
+  const digits = String(raw).replace(/\D/g, "");
+  if (digits.length < 6) return raw;
+  const first = digits.slice(0, 2);
+  const last = digits.slice(-2);
+  const middle = "X".repeat(Math.max(0, digits.length - 4));
+  return `${first}${middle}${last}`;
+}
+
