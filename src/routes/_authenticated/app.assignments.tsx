@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, Fuel, TrendingUp, CalendarDays,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
