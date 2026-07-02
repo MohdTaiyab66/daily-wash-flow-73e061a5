@@ -73,6 +73,7 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
+import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
 import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
@@ -409,6 +410,12 @@ const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CAuthedBookingsRoute,
 } as any)
+const ApiPublicHooksNotificationPushRoute =
+  ApiPublicHooksNotificationPushRouteImport.update({
+    id: '/api/public/hooks/notification-push',
+    path: '/api/public/hooks/notification-push',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronOfferPushDispatchRoute =
   ApiPublicCronOfferPushDispatchRouteImport.update({
     id: '/api/public/cron/offer-push-dispatch',
@@ -526,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
+  '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -596,6 +604,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
+  '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -671,6 +680,7 @@ export interface FileRoutesById {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
+  '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
@@ -746,6 +756,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
+    | '/api/public/hooks/notification-push'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -816,6 +827,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
+    | '/api/public/hooks/notification-push'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -890,6 +902,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/offer-push-dispatch'
+    | '/api/public/hooks/notification-push'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
@@ -914,6 +927,7 @@ export interface RootRouteChildren {
   ApiPublicCronDarOfflinePartnersRoute: typeof ApiPublicCronDarOfflinePartnersRoute
   ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
+  ApiPublicHooksNotificationPushRoute: typeof ApiPublicHooksNotificationPushRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1366,6 +1380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsIdRouteImport
       parentRoute: typeof CAuthedBookingsRoute
     }
+    '/api/public/hooks/notification-push': {
+      id: '/api/public/hooks/notification-push'
+      path: '/api/public/hooks/notification-push'
+      fullPath: '/api/public/hooks/notification-push'
+      preLoaderRoute: typeof ApiPublicHooksNotificationPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/offer-push-dispatch': {
       id: '/api/public/cron/offer-push-dispatch'
       path: '/api/public/cron/offer-push-dispatch'
@@ -1627,6 +1648,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronDarOfflinePartnersRoute: ApiPublicCronDarOfflinePartnersRoute,
   ApiPublicCronDarTimeoutsRoute: ApiPublicCronDarTimeoutsRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
+  ApiPublicHooksNotificationPushRoute: ApiPublicHooksNotificationPushRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
