@@ -15,9 +15,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
-import { formatTime12 } from "@/lib/format";
+import { formatTime12, maskPhone } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
+import { captureFromCamera } from "@/lib/camera";
+
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
