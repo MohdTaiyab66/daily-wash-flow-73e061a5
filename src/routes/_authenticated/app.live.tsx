@@ -19,7 +19,7 @@ import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { optimizeRoute } from "@/lib/route-optimize";
 import { useEffect } from "react";
-import { googleMapsDirectionsUrl, gpsLabel } from "@/lib/gps";
+import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -105,32 +105,26 @@ function RoutePage() {
   const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
   const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
-  // Optimise: bucket by deadline, nearest-neighbor by distance within bucket.
-  const routeSource = (s: any) => ({
-    lat: s.destination_lat != null ? Number(s.destination_lat) : (s.customers as any)?.latitude != null ? Number((s.customers as any).latitude) : null,
-    lng: s.destination_lng != null ? Number(s.destination_lng) : (s.customers as any)?.longitude != null ? Number((s.customers as any).longitude) : null,
-  });
+  // Source of truth: the saved Route Manager order on services.sequence_no/manual_sequence_no.
+  // Never re-optimise in the partner app because that can diverge from the approved route.
+  const routeSource = (s: any) => {
+    const snap = validateExactGps(s.destination_lat, s.destination_lng);
+    if (snap) return { lat: snap.latitude, lng: snap.longitude, exact: true };
+    const customer = validateExactGps((s.customers as any)?.latitude, (s.customers as any)?.longitude);
+    return customer ? { lat: customer.latitude, lng: customer.longitude, exact: true } : { lat: null, lng: null, exact: false };
+  };
 
-  const pending = optimizeRoute(
-    pendingRaw.map((s) => {
-      const c = s.customers as any;
+  const pending = [...pendingRaw]
+    .sort((a: any, b: any) => {
+      const sa = Number(a.manual_sequence_no ?? a.sequence_no ?? 9999);
+      const sb = Number(b.manual_sequence_no ?? b.sequence_no ?? 9999);
+      if (sa !== sb) return sa - sb;
+      return String(a.eta_at ?? a.time_slot ?? a.id).localeCompare(String(b.eta_at ?? b.time_slot ?? b.id));
+    })
+    .map((s: any, idx: number) => {
       const gps = routeSource(s);
-      return {
-        ...s,
-        lat: gps.lat,
-        lng: gps.lng,
-        deadline: c?.service_required_before ?? c?.preferred_time ?? null,
-        timeWindowType: (c?.time_window_type ?? "soft") as "soft" | "exact",
-        exactTime: c?.exact_time ?? null,
-        locked: (s as any).locked_position ?? false,
-        manualSequence: (s as any).manual_sequence_no ?? null,
-        isEmergency: (s as any).is_emergency ?? false,
-        clusterId: (s as any).cluster_id ?? null,
-        isVip: false,
-      };
-    }),
-    pos,
-  );
+      return { ...s, lat: gps.lat, lng: gps.lng, routeIndex: idx + 1 };
+    });
 
   const stops = pending
     .filter((s) => s.lat != null && s.lng != null)
@@ -206,7 +200,7 @@ function RoutePage() {
         {routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
-          const gps = routeSource(s);
+          const gps = { lat: (s as any).lat, lng: (s as any).lng };
           const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
           const isExact = (c?.time_window_type ?? "soft") === "exact";
