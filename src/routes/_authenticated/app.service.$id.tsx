@@ -287,7 +287,6 @@ function ServiceDetail() {
           <div className="mt-5 grid grid-cols-2 gap-3">
             {service.status === "in_progress" && <UnavailableDialog serviceId={id} onDone={goNext} />}
             <DirtyVehicleDialog serviceId={id} onDone={goNext} />
-            <ParkingIssueDialog serviceId={id} />
           </div>
 
           <Card className="mt-5 p-4">
