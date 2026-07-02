@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -24,7 +25,7 @@ type Service = {
   duration_minutes: number | null;
 };
 type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; is_default?: boolean | null };
-type Address = { id: string; label: string; address_line: string; area: string; pincode: string | null };
+type Address = { id: string; label: string; address_line: string; area: string; pincode: string | null; latitude?: number | null; longitude?: number | null };
 type Addon = { id: string; name: string; description: string | null; price_hatchback: number; price_sedan_suv: number; applies_to_slugs: string[] };
 
 const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
@@ -235,8 +236,11 @@ function ServiceDetail() {
         const savedArea = localStorage.getItem("uw_customer_area")?.trim();
         const savedAddress = localStorage.getItem("uw_customer_full_address")?.trim();
         const savedPincode = localStorage.getItem("uw_customer_pincode")?.trim();
+        let savedGeo: any = {};
+        try { savedGeo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+        const exact = validateExactGps(savedGeo.lat, savedGeo.lng);
 
-        if (savedArea && savedAddress) {
+        if (savedArea && savedAddress && exact) {
           const { data: createdAddress, error: addressError } = await (supabase as any)
             .from("customer_addresses")
             .insert({
@@ -244,7 +248,9 @@ function ServiceDetail() {
               label: "Home",
               address_line: savedAddress,
               area: savedArea,
-              pincode: savedPincode || null,
+              pincode: savedPincode || savedGeo.pincode || null,
+              latitude: exact.latitude,
+              longitude: exact.longitude,
               is_default: true,
             })
             .select("id")
@@ -255,8 +261,14 @@ function ServiceDetail() {
           qc.invalidateQueries({ queryKey: ["customer-addresses"] });
         } else {
           setAddrOpen(true);
-          throw new Error("Add your service address to confirm this booking.");
+          throw new Error("Exact GPS is required before booking. Please use current location and save GPS again.");
         }
+      }
+
+      const selectedAddress = addressesQ.data?.find((a) => a.id === bookingAddressId);
+      if (selectedAddress && !validateExactGps((selectedAddress as any).latitude, (selectedAddress as any).longitude)) {
+        setAddrOpen(true);
+        throw new Error("Exact GPS is required before booking. Please update this address using current location.");
       }
 
       const selectedAddons = Object.entries(addonQty)
@@ -584,12 +596,17 @@ function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpe
 
   const save = async () => {
     if (line.trim().length < 4) { toast.error("Enter a valid address"); return; }
+    let savedGeo: any = {};
+    try { savedGeo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+    const exact = validateExactGps(savedGeo.lat, savedGeo.lng);
+    if (!exact) { toast.error(GPS_INVALID_MESSAGE); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSaving(false); return; }
     const { data, error } = await (supabase as any).from("customer_addresses").insert({
       user_id: u.user.id, label, address_line: line.trim(), area: area.trim(),
-      pincode: pincode || null, parking_notes: notes || null,
+      pincode: pincode || savedGeo.pincode || null, parking_notes: notes || null,
+      latitude: exact.latitude, longitude: exact.longitude, is_default: true,
     }).select("id").single();
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -618,6 +635,9 @@ function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpe
             <div><Label>Pincode</Label><Input value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} /></div>
           </div>
           <div><Label>Parking notes (optional)</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Exact GPS is mandatory for Daily Shine navigation. Use the location screen so your partner never gets an area centroid.
+          </p>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

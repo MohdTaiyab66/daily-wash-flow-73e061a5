@@ -45,6 +45,7 @@ import {
   newHistory, pushHistory, undoHistory, redoHistory, payloadFromOrder,
   diffPayloads, normalisePriority, PRIORITY_LABEL, type HistoryStack, type Priority,
 } from "@/lib/route-draft";
+import { googleMapsDirectionsUrl } from "@/lib/gps";
 
 export const Route = createFileRoute("/admin/route-manager")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -61,6 +62,12 @@ type ServiceRow = {
   status: string;
   sequence_no: number | null;
   manual_sequence_no: number | null;
+  eta_at?: string | null;
+  travel_min?: number | null;
+  distance_km?: number | null;
+  destination_lat: number | null;
+  destination_lng: number | null;
+  destination_source?: string | null;
   locked_position: boolean | null;
   is_emergency: boolean | null;
   priority: string | null;
@@ -102,7 +109,14 @@ type Partner = {
 };
 
 const SERVICE_SELECT =
-  "id,partner_id,scheduled_date,status,sequence_no,manual_sequence_no,locked_position,is_emergency,priority,cluster_id,customers(full_name,phone,area,address_line,latitude,longitude,service_required_before,preferred_time,time_window_type,exact_time),vehicles(make,model,registration_number)";
+  "id,partner_id,scheduled_date,status,sequence_no,manual_sequence_no,locked_position,is_emergency,priority,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,phone,area,address_line,latitude,longitude,service_required_before,preferred_time,time_window_type,exact_time),vehicles(make,model,registration_number)";
+
+function stopGps(s: ServiceRow) {
+  return {
+    lat: s.destination_lat != null ? Number(s.destination_lat) : s.customers?.latitude != null ? Number(s.customers.latitude) : null,
+    lng: s.destination_lng != null ? Number(s.destination_lng) : s.customers?.longitude != null ? Number(s.customers.longitude) : null,
+  };
+}
 
 function todayIso() { return new Date().toISOString().slice(0, 10); }
 function fmt(n: number | null | undefined, d = 1) {
@@ -302,8 +316,8 @@ function RouteManagerPage() {
     if (!order) return [] as string[];
     const stops = order.map((s) => ({
       id: s.id,
-      lat: s.customers?.latitude != null ? Number(s.customers.latitude) : null,
-      lng: s.customers?.longitude != null ? Number(s.customers.longitude) : null,
+      lat: stopGps(s).lat,
+      lng: stopGps(s).lng,
       deadline: s.customers?.service_required_before ?? s.customers?.preferred_time ?? null,
       timeWindowType: ((s.customers?.time_window_type ?? "soft") as "soft" | "exact"),
       exactTime: s.customers?.exact_time ?? null,
@@ -466,8 +480,7 @@ function RouteManagerPage() {
     let prevLng = partner?.home_lng != null ? Number(partner.home_lng) : null;
     let cursor = startMin;
     return rows.map((s, i) => {
-      const lat = s.customers?.latitude != null ? Number(s.customers.latitude) : null;
-      const lng = s.customers?.longitude != null ? Number(s.customers.longitude) : null;
+      const { lat, lng } = stopGps(s);
       let distKm = 0;
       if (prevLat != null && prevLng != null && lat != null && lng != null) {
         const R = 6371, toRad = (d: number) => (d * Math.PI) / 180;
@@ -519,7 +532,8 @@ function RouteManagerPage() {
       totalDriveMin += item.travel_min ?? 0;
 
       // Conflicts
-      if (r.customers?.latitude == null || r.customers?.longitude == null) {
+      const gps = stopGps(r);
+      if (gps.lat == null || gps.lng == null) {
         conflicts.push({ level: "error", service_id: r.id, name, message: "Missing coordinates — cannot route to this stop" });
       }
       const etaMs = new Date(item.eta_at).getTime();
@@ -652,8 +666,9 @@ function RouteManagerPage() {
     if (!order) return [];
     let nextSet = false;
     return order
-      .filter((s) => s.customers?.latitude != null && s.customers?.longitude != null)
+      .filter((s) => stopGps(s).lat != null && stopGps(s).lng != null)
       .map((s, i) => {
+        const gps = stopGps(s);
         const status: MapStop["status"] = s.is_emergency
           ? "emergency"
           : s.status === "completed"
@@ -665,8 +680,8 @@ function RouteManagerPage() {
           : "pending";
         return {
           id: s.id,
-          lat: Number(s.customers!.latitude),
-          lng: Number(s.customers!.longitude),
+          lat: Number(gps.lat),
+          lng: Number(gps.lng),
           label: s.customers?.full_name ?? "—",
           sequence: i + 1,
           status,
@@ -1101,9 +1116,9 @@ function RouteManagerPage() {
                       <Button size="sm" variant="outline"><Phone className="mr-1 h-4 w-4" />Call</Button>
                     </a>
                   )}
-                  {selectedRow.customers?.latitude && (
+                  {googleMapsDirectionsUrl(stopGps(selectedRow).lat, stopGps(selectedRow).lng) && (
                     <a target="_blank" rel="noreferrer"
-                       href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRow.customers.latitude},${selectedRow.customers.longitude}`}>
+                       href={googleMapsDirectionsUrl(stopGps(selectedRow).lat, stopGps(selectedRow).lng)!}>
                       <Button size="sm" variant="outline"><Navigation className="mr-1 h-4 w-4" />Navigate</Button>
                     </a>
                   )}
@@ -1200,6 +1215,8 @@ function SortableRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
   const c = s.customers; const v = s.vehicles;
+  const rowGps = stopGps(s);
+  const rowNavUrl = googleMapsDirectionsUrl(rowGps.lat, rowGps.lng);
   const isExact = (c?.time_window_type ?? "soft") === "exact";
   const cutoff = c?.service_required_before ?? c?.preferred_time;
   const drift = suggestedIndex >= 0 ? suggestedIndex - index : 0;
@@ -1279,9 +1296,9 @@ function SortableRow({
             <Button variant="ghost" size="icon" title="Call"><Phone className="h-4 w-4" /></Button>
           </a>
         )}
-        {c?.latitude && (
+        {rowNavUrl && (
           <a target="_blank" rel="noreferrer"
-             href={`https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`}>
+             href={rowNavUrl}>
             <Button variant="ghost" size="icon" title="Navigate"><Navigation className="h-4 w-4" /></Button>
           </a>
         )}
