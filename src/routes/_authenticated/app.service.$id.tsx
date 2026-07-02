@@ -397,37 +397,48 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
 
+  const MIN_PHOTOS = 2;
+  const MAX_PHOTOS = 4;
+  const needsRemarks = reason === "other";
+  const canSubmit =
+    !!reason &&
+    photos.length >= MIN_PHOTOS &&
+    (!needsRemarks || notes.trim().length > 0);
+
   const capturePhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) return;
     const file = await captureFromCamera();
     if (!file) return;
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
+      const path = `${u.user!.id}/${serviceId}/unavailable-${photos.length + 1}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
       if (error) { toast.error(error.message); return; }
-      setPhoto(path);
+      setPhotos((p) => [...p, path]);
     } finally {
       setUploading(false);
     }
   };
 
+  const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
 
   const submit = async () => {
-    if (!reason) { toast.error("Pick a reason"); return; }
-    if (!photo) { toast.error("Live photo is required"); return; }
+    if (!reason) return toast.error("Pick a reason");
+    if (photos.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
+    if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
     const pos = await getPosition();
     const { data, error } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: reason,
       p_notes: notes || "",
-      p_photo: photo,
+      p_photos: photos,
       p_lat: pos?.lat ?? 0,
       p_lng: pos?.lng ?? 0,
     } as any);
@@ -437,6 +448,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
     qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     setOpen(false);
     onDone();
   };
@@ -450,6 +462,7 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground">Pick a reason and capture at least {MIN_PHOTOS} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
@@ -460,24 +473,47 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
         </RadioGroup>
 
         <div className="mt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live evidence photo (required)</p>
-          <button
-            onClick={capturePhoto}
-            disabled={uploading}
-            className={`flex aspect-[3/1] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs ${
-              photo ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
-            }`}
-          >
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : photo ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-            {photo ? "Photo captured" : "Tap to capture (camera only)"}
-          </button>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Live evidence photos ({photos.length}/{MIN_PHOTOS} required)
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {photos.map((_, i) => (
+              <div key={i} className="relative flex aspect-square items-center justify-center rounded-xl border-2 border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]">
+                <Check className="h-5 w-5" />
+                <span className="ml-1 text-xs">Photo {i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground"
+                  aria-label={`Remove photo ${i + 1}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={capturePhoto}
+                disabled={uploading}
+                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                {photos.length === 0 ? "Capture" : "Add another"}
+              </button>
+            )}
+          </div>
         </div>
 
-
-        <Textarea placeholder="Optional notes for support…" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
+        <Textarea
+          placeholder={needsRemarks ? "Remarks (required for Other)…" : "Optional notes for support…"}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="mt-3"
+        />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploading || !photo || !reason}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹12
+          <Button onClick={submit} disabled={saving || uploading || !canSubmit}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
           </Button>
         </DialogFooter>
       </DialogContent>
