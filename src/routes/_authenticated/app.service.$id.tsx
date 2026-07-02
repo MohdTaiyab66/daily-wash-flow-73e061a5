@@ -316,59 +316,57 @@ function ServiceDetail() {
 function PhotoSlot({
   serviceId, stage, angle, done, onUploaded, label, wide,
 }: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean }) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handle = async (file: File) => {
+  const openCamera = async () => {
+    const file = await captureFromCamera();
+    if (!file) return;
     setUploading(true);
-    const { data: u } = await supabase.auth.getUser();
-    const pos = await getPosition();
-    const path = `${u.user!.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage
-      .from("service-photos")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { toast.error(error.message); setUploading(false); return; }
-    const { error: e2 } = await supabase
-      .from("service_photos")
-      .upsert(
-        {
-          service_id: serviceId,
-          partner_id: u.user!.id,
-          stage: stage as any,
-          angle: angle as any,
-          storage_path: path,
-          lat: pos?.lat ?? null,
-          lng: pos?.lng ?? null,
-        },
-        { onConflict: "service_id,stage,angle" },
-      );
-    setUploading(false);
-    if (e2) { toast.error(e2.message); return; }
-    onUploaded();
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const pos = await getPosition();
+      const path = `${u.user!.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from("service-photos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { toast.error(error.message); return; }
+      const { error: e2 } = await supabase
+        .from("service_photos")
+        .upsert(
+          {
+            service_id: serviceId,
+            partner_id: u.user!.id,
+            stage: stage as any,
+            angle: angle as any,
+            storage_path: path,
+            lat: pos?.lat ?? null,
+            lng: pos?.lng ?? null,
+          },
+          { onConflict: "service_id,stage,angle" },
+        );
+      if (e2) { toast.error(e2.message); return; }
+      onUploaded();
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <button
-      onClick={() => inputRef.current?.click()}
+      onClick={openCamera}
+      disabled={uploading}
       className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
         done
           ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
           : "border-border text-muted-foreground hover:border-primary hover:text-primary"
       }`}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && handle(e.target.files[0])}
-      />
       {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
       {label}
     </button>
   );
 }
+
 
 function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
