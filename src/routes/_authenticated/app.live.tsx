@@ -238,10 +238,16 @@ function RoutePage() {
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  <Button asChild={!!navUrl} size="sm" variant="outline" className="col-span-1" disabled={!navUrl}>
-                    <button type="button" onClick={() => void openGoogleMapsDirections(gps.lat, gps.lng)} aria-label={navUrl ? "Navigate" : "Location unavailable"}>
-                      <Navigation className="h-4 w-4" />
-                    </button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="col-span-1"
+                    disabled={!navUrl}
+                    onClick={() => void openGoogleMapsDirections(gps.lat, gps.lng)}
+                    aria-label={navUrl ? "Navigate" : "Location unavailable"}
+                  >
+                    <Navigation className="h-4 w-4" />
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
                   <Button asChild size="sm" className="col-span-2">

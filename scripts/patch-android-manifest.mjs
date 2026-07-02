@@ -18,7 +18,7 @@ const permissions = [
 
 for (const name of permissions) {
   if (!xml.includes(`android:name=\"${name}\"`)) {
-    xml = xml.replace("<manifest", `<manifest\n    <uses-permission android:name=\"${name}\" />`);
+    xml = xml.replace(/(<manifest\b[^>]*>)/, `$1\n    <uses-permission android:name=\"${name}\" />`);
   }
 }
 
