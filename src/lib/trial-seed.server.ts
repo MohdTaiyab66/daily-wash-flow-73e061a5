@@ -374,9 +374,10 @@ export async function runTrialSeed(): Promise<SeedReport> {
       const partnerId  = ids["partner1"];
       const bkId = bookingIdByCustomer["customer1"];
       if (bkId) {
+        const exactCustomer = (await admin.from("customers").select("latitude,longitude,area").eq("id", customerId).maybeSingle()).data;
         await admin.from("subscription_assignment_queue").upsert({
           booking_id: bkId, customer_id: customerId,
-          area: "Gomti Nagar", lat: HOME_LAT, lng: HOME_LNG,
+          area: exactCustomer?.area ?? "Gomti Nagar", lat: exactCustomer?.latitude, lng: exactCustomer?.longitude,
           service_required_before: "08:00", vehicle_category: "sedan_suv",
           status: "assigned", assigned_partner_id: partnerId, radius_km: 2,
           tried_partner_ids: [], attempts_log: [],
