@@ -59,9 +59,22 @@ function RoutePage() {
   });
 
   const total = services?.length ?? 0;
-  const done = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
+  const doneList = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable");
+  const completedCount = (services ?? []).filter((s) => s.status === "completed").length;
+  const done = doneList.length;
   const remaining = total - done;
   const isEndOfDay = total > 0 && remaining === 0;
+
+  // Rate for expected earnings — reuse same platform setting as builder.
+  const { data: rateSetting } = useQuery({
+    queryKey: ["route-rate-per-car"],
+    queryFn: async () => {
+      const { data } = await supabase.from("platform_settings").select("value").eq("key", "rate_per_car").maybeSingle();
+      return Number(data?.value ?? 17);
+    },
+  });
+  const ratePerCar = rateSetting ?? 17;
+  const expectedEarnings = total * ratePerCar;
 
   // Route visibility window
   const now = new Date();
