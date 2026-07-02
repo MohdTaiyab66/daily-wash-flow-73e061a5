@@ -561,18 +561,23 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4">
           <Button
             size="lg"
-            className="w-full"
+            className="h-auto w-full py-3"
             disabled={accept.isPending || !fullyAvailable}
             onClick={() => accept.mutate(cars)}
           >
             {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {isFetching && !preview
-              ? "Checking customers…"
-              : noneAvailable
-                ? "No customers available — see options above"
-                : partialAvailable
-                  ? `Only ${availableInArea} available — see options above`
-                  : `Accept · ${hours}h · ${cars} cars · net ₹${dailyNet.toLocaleString("en-IN")}/day`}
+            {isFetching && !preview ? (
+              "Checking customers…"
+            ) : noneAvailable ? (
+              "No customers available — see options above"
+            ) : partialAvailable ? (
+              `Only ${availableInArea} available — see options above`
+            ) : (
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-sm font-semibold">Accept Current Route</span>
+                <span className="text-[11px] font-normal opacity-90">{cars} Customers · ₹{dailyEarn.toLocaleString("en-IN")} Estimated Earnings</span>
+              </span>
+            )}
           </Button>
         </div>
       </div>
