@@ -30,9 +30,10 @@ const UNAVAILABLE_REASONS = [
   { value: "customer_not_responding", label: "Customer unreachable" },
 ] as const;
 
-const DIRTY_REASONS = ["Heavy Mud", "Construction Dust", "Bird Droppings", "Needs Foam Wash", "Needs Pressure Wash", "Other"];
+const DIRTY_REASONS = ["Heavy Dust", "Mud", "Bird Droppings", "Tree Sap", "Interior Extremely Dirty", "Other"];
 const COMPENSATION = 12;
-const PARKING_REASONS = ["No Access", "Wall Side Blocked", "Narrow Parking", "Vehicle Too Close", "Other"];
+const PARKING_REASONS = ["Vehicle Locked", "Vehicle Blocked", "Parking Not Accessible", "Wrong Parking", "Customer Unavailable"];
+
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
   component: () => <OfflineGuard label="service verification"><ServiceDetail /></OfflineGuard>,
