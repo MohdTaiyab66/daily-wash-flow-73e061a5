@@ -379,43 +379,7 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Working days */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Working days</p>
-          <span className="text-xs text-muted-foreground">{workingDayCount} day{workingDayCount === 1 ? "" : "s"}/week</span>
-        </div>
-        <div className="mt-3 grid grid-cols-7 gap-1.5">
-          {DAYS.map((d) => {
-            const isOff = d.key === offDayKey;
-            const checked = workingDays.has(d.key);
-            return (
-              <button
-                key={d.key}
-                type="button"
-                onClick={() => toggleDay(d.key)}
-                disabled={isOff}
-                aria-disabled={isOff}
-                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-[11px] font-medium transition ${
-                  isOff
-                    ? "cursor-not-allowed border-dashed border-muted bg-muted/30 text-muted-foreground/60"
-                    : checked
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
-                }`}
-              >
-                <span>{d.label}</span>
-                {isOff
-                  ? <span className="text-[8px] uppercase tracking-wider leading-tight">Weekly Off</span>
-                  : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-3 rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
-          {offDayFull} is Urban Wash's weekly off. Assignments are not scheduled on {offDayFull}s.
-        </p>
-      </Card>
+      {/* Working days card removed — Urban Wash schedules 6 days/week with Monday as a fixed weekly off. */}
 
       {/* Monthly forecast */}
       <Card className="mt-3 p-5">
