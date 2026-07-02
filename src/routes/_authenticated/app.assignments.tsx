@@ -263,8 +263,6 @@ function AssignmentsPage() {
   const dailyNet = dailyEarn - dailyFuel;
 
   const acceptableEarn = acceptableCars * rate;
-  const acceptableFuel = Math.round(acceptableCars * fuelPerCar);
-  const acceptableNet = acceptableEarn - acceptableFuel;
 
   const workingDayCount = workingDays.size;
   // Monthly forecast: approx working days in a 30-day window based on the weekly pattern.
