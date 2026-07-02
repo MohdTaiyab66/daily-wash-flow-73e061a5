@@ -4,6 +4,15 @@ import { Loader2, MapPin } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { computeRoute } from "@/lib/maps.functions";
 
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
 type Stop = {
   id: string;
   sequence_no: number | null;
@@ -51,7 +60,10 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
   const compute = useServerFn(computeRoute);
 
   // Stable key derived from stop ids — prevents map effect re-running when underlying refs change
-  const stopsKey = useMemo(() => stops.map((s) => s.id).join(","), [stops]);
+  const stopsKey = useMemo(
+    () => stops.map((s) => `${s.id}:${s.sequence_no ?? ""}:${s.lat.toFixed(6)},${s.lng.toFixed(6)}`).join("|"),
+    [stops]
+  );
   const stableStops = useMemo(() => stops, [stopsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize map
@@ -142,7 +154,23 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       fittedRef.current = stopsKey;
     }
 
-    // Compute optimized route
+    // Always draw the approved Route Manager stop order immediately. This keeps
+    // numbered customer routes visible even before partner GPS or the road-route
+    // API returns. Missing GPS stops are not passed into this component.
+    const fallbackPath = [partnerPos, ...stableStops.map((s) => ({ lat: s.lat, lng: s.lng }))].filter(Boolean) as Array<{ lat: number; lng: number }>;
+    if (fallbackPath.length >= 2) {
+      const fallbackKm = fallbackPath.slice(1).reduce((sum, point, i) => sum + haversineKm(fallbackPath[i], point), 0);
+      setStats({ km: Math.round(fallbackKm * 10) / 10, mins: Math.round((fallbackKm / 22) * 60) });
+      polylineRef.current = new g.maps.Polyline({
+        path: fallbackPath,
+        map: mapRef.current,
+        strokeColor: "#64748b",
+        strokeWeight: 3,
+        strokeOpacity: 0.75,
+      });
+    }
+
+    // Upgrade to the server-computed road route in the same approved sequence.
     if (partnerPos && stableStops.length >= 1) {
       const destination = stableStops[stableStops.length - 1];
       const waypoints = stableStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
@@ -156,6 +184,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
         .then((r) => {
           setStats({ km: Math.round((r.distanceMeters / 1000) * 10) / 10, mins: Math.round(r.durationSeconds / 60) });
           if (r.polyline) {
+            if (polylineRef.current) polylineRef.current.setMap(null);
             const path = g.maps.geometry.encoding.decodePath(r.polyline);
             polylineRef.current = new g.maps.Polyline({
               path,
