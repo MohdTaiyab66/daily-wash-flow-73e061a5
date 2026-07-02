@@ -73,6 +73,29 @@ function LiveOpsPage() {
         })}
       </div>
 
+      <Card className="mt-6 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Satellite className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">GPS &amp; DAR Health</h2>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {gps?.as_of ? `Updated ${new Date(gps.as_of).toLocaleTimeString()}` : "Loading…"}
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MiniStat icon={UserCheck} label="Active customers" value={gps?.active_customers ?? 0} />
+          <MiniStat icon={MapPin} label="Exact GPS" value={gps?.gps_exact ?? 0} tone="text-emerald-600" />
+          <MiniStat icon={MapPin} label="Centroid GPS" value={gps?.gps_centroid ?? 0} tone="text-amber-600" />
+          <MiniStat icon={MapPin} label="Missing GPS" value={gps?.gps_missing ?? 0} tone="text-destructive" />
+          <MiniStat icon={Wifi} label="Partners online" value={gps?.partners_online ?? 0} tone="text-emerald-600" />
+          <MiniStat icon={WifiOff} label="Partners offline" value={gps?.partners_offline ?? 0} />
+          <MiniStat icon={Activity} label="Stale heartbeat (>5m)" value={gps?.partners_stale_heartbeat ?? 0} tone="text-amber-600" />
+          <MiniStat icon={AlertTriangle} label="Awaiting reassignment" value={gps?.customers_waiting_reassignment ?? 0} tone="text-destructive" />
+        </div>
+      </Card>
+
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Section title="Recent completions" empty="No completed services yet today.">
           {data?.completed.map((s: any) => (
