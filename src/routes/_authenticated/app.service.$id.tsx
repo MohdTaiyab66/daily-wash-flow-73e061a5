@@ -17,6 +17,7 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
+import { googleMapsDirectionsUrl, gpsLabel } from "@/lib/gps";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
