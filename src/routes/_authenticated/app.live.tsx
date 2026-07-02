@@ -204,7 +204,7 @@ function RoutePage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-medium">{c?.full_name}</p>
+                        <p className="truncate font-medium">#{idx + 1} · {c?.full_name ?? "Customer"}</p>
                         <div className="flex items-center gap-1">
                           {isEmergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Emergency</Badge>}
                           {isLocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
@@ -219,7 +219,12 @@ function RoutePage() {
                         <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        <MapPin className="mr-1 inline h-3 w-3" />{c?.area}
+                        <MapPin className="mr-1 inline h-3 w-3" />
+                        {c?.address_line ? `${c.address_line}, ` : ""}{c?.area ?? "Location unavailable"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        <Clock className="mr-1 inline h-3 w-3" />
+                        {cutoffTime ? formatTime12(cutoffTime) : "Flexible"} · Exterior Daily Shine · ~10 min
                       </p>
                       {isExact && (
                         <p className="mt-0.5 text-xs font-medium text-foreground">
@@ -229,13 +234,13 @@ function RoutePage() {
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  <Button asChild size="sm" variant="outline" className="col-span-1">
+                  <Button asChild size="sm" variant="outline" className="col-span-1" disabled={!c?.latitude}>
                     <a href={navUrl} target="_blank" rel="noreferrer" aria-label="Navigate"><Navigation className="h-4 w-4" /></a>
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
                   <Button asChild size="sm" className="col-span-2">
                     <Link to="/app/service/$id" params={{ id: s.id }}>
-                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start</>}
+                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start Service</>}
                     </Link>
                   </Button>
                   </div>
