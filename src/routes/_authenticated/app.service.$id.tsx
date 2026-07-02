@@ -195,18 +195,24 @@ function ServiceDetail() {
       </button>
 
       <Card className="mt-4 overflow-hidden p-0">
-        <VehicleImage path={v?.front_image_path} className="h-40 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
         <div className="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold">{c?.full_name}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{c?.phone}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{v?.make} {v?.model} · {v?.color}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
-              <p className="mt-0.5 text-xs font-medium">Package: {v?.package_amount ? `₹${v.package_amount}` : "—"}</p>
-              <p className="mt-0.5 text-xs font-medium">Service: Exterior Daily Shine</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number} · {v?.color ?? "—"}</p>
+              <div className="mt-3 space-y-0.5">
+                <p className="text-sm font-medium">{c?.full_name}</p>
+                <p className="text-xs text-muted-foreground">📞 {maskPhone(c?.phone)}</p>
+              </div>
             </div>
-            <Badge variant="outline" className="capitalize">{service?.status?.replace("_", " ")}</Badge>
+            <Badge variant="outline" className="capitalize shrink-0">{service?.status?.replace("_", " ")}</Badge>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-[11px]">
+            <div><p className="text-muted-foreground">Area</p><p className="font-medium text-foreground">{c?.area ?? "—"}</p></div>
+            <div><p className="text-muted-foreground">Scheduled</p><p className="font-medium text-foreground">Before {formatTime12(c?.service_required_before ?? c?.preferred_time) || "—"}</p></div>
+            <div><p className="text-muted-foreground">Package</p><p className="font-medium text-foreground">Daily Shine</p></div>
+            <div><p className="text-muted-foreground">Today's service</p><p className="font-medium text-foreground">Exterior Cleaning</p></div>
           </div>
           <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
@@ -214,9 +220,8 @@ function ServiceDetail() {
               <Navigation className="h-3.5 w-3.5" />
               {gpsExact ? `GPS: ${gpsLabel(destLat, destLng)} · ${destinationSource}` : "⚠️ Location unavailable — exact GPS required"}
             </p>
-            <p className="text-xs font-medium text-foreground">Required before {formatTime12(c?.service_required_before ?? c?.preferred_time)}</p>
-            <p className="text-xs text-muted-foreground">Scheduled: {service?.scheduled_date ?? "Today"} · {service?.time_slot ?? "Morning route"}</p>
           </div>
+
           {v?.parking_notes && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">🅿️ {v.parking_notes}</p>}
 
           <div className="mt-4 grid grid-cols-2 gap-2">
