@@ -625,11 +625,7 @@ function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; 
   );
 }
 
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && onPicked(e.target.files[0])} />
-      {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
-    </button>
-  );
-}
+
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;
