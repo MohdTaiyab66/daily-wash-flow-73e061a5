@@ -235,3 +235,29 @@ BEGIN
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.partner_complete_service(uuid, numeric, numeric, text, boolean) TO authenticated, service_role;
+
+-- Compatibility/read-model for tooling that expects route_stops. The source of
+-- truth remains services.sequence_no + services.destination_lat/lng so there is
+-- no duplicated coordinate cache to drift.
+CREATE OR REPLACE VIEW public.route_stops AS
+SELECT
+  s.id AS id,
+  s.partner_id,
+  s.scheduled_date AS service_date,
+  s.id AS service_id,
+  s.assignment_id,
+  s.sequence_no,
+  s.manual_sequence_no,
+  s.eta_at,
+  s.travel_min,
+  s.distance_km,
+  s.destination_lat AS lat,
+  s.destination_lng AS lng,
+  s.destination_source,
+  s.status,
+  s.customer_id,
+  s.vehicle_id,
+  s.updated_at
+FROM public.services s
+WHERE s.partner_id IS NOT NULL;
+GRANT SELECT ON public.route_stops TO authenticated, service_role;
