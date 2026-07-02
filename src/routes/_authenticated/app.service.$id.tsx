@@ -333,8 +333,10 @@ function PhotoSlot({
   const [uploading, setUploading] = useState(false);
 
   const openCamera = async () => {
+    const t0 = Date.now();
+    console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
     const file = await captureFromCamera();
-    if (!file) return;
+    if (!file) { console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`); return; }
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -343,7 +345,7 @@ function PhotoSlot({
       const { error } = await supabase.storage
         .from("service-photos")
         .upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { toast.error(error.message); return; }
+      if (error) { console.error(`[SVC ${serviceId}] PHOTO storage fail · ${stage}/${angle} · ${error.message}`); toast.error(error.message); return; }
       const { error: e2 } = await supabase
         .from("service_photos")
         .upsert(
@@ -358,7 +360,8 @@ function PhotoSlot({
           },
           { onConflict: "service_id,stage,angle" },
         );
-      if (e2) { toast.error(e2.message); return; }
+      if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
+      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-t0}ms`);
       onUploaded();
     } finally {
       setUploading(false);
