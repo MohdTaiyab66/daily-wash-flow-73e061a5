@@ -417,16 +417,19 @@ function AssignmentsPage() {
                 type="button"
                 onClick={() => toggleDay(d.key)}
                 disabled={isOff}
+                aria-disabled={isOff}
                 className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-[11px] font-medium transition ${
                   isOff
-                    ? "cursor-not-allowed border-dashed border-border bg-muted/40 text-muted-foreground/50"
+                    ? "cursor-not-allowed border-dashed border-muted bg-muted/30 text-muted-foreground/60"
                     : checked
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-background text-muted-foreground hover:border-primary/50"
                 }`}
               >
                 <span>{d.label}</span>
-                {isOff ? <span className="text-[9px]">Off</span> : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
+                {isOff
+                  ? <span className="text-[8px] uppercase tracking-wider leading-tight">Weekly Off</span>
+                  : <Checkbox checked={checked} className="pointer-events-none h-3 w-3" />}
               </button>
             );
           })}
