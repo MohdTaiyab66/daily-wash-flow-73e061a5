@@ -188,6 +188,7 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      window.setTimeout(() => { void goNext(); }, 900);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -561,24 +562,9 @@ function DirtyVehicleDialog({ serviceId, onDone }: { serviceId: string; onDone?:
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
     setSaving(true);
-    const { data: u } = await supabase.auth.getUser();
     const pos = await getPosition();
-    const { data: svc, error: svcError } = await supabase
-      .from("services")
-      .select("customer_id")
-      .eq("id", serviceId)
-      .maybeSingle();
-    if (svcError || !svc?.customer_id) {
-      setSaving(false);
-      return toast.error(svcError?.message || "Could not load customer for this service");
-    }
-    const { error: e1 } = await supabase.from("dirty_vehicle_reports").insert({
-      service_id: serviceId, partner_id: u.user!.id, customer_id: svc.customer_id, reason, notes: notes || null,
-      photo_front: photos.front, photo_rear: photos.rear, photo_left: photos.left, photo_right: photos.right,
-      lat: pos?.lat ?? null, lng: pos?.lng ?? null, captured_at: new Date().toISOString(), recommendation: "premium_or_included_wash",
-    });
-    if (e1) { setSaving(false); return toast.error(e1.message); }
-    // Mark service as unavailable + credit ₹12 (vehicle too dirty to clean)
+    // Server-side RPC atomically creates the dirty report, customer/admin notifications,
+    // wallet entry, and route progression. This avoids APK partial-success states.
     const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
       p_service_id: serviceId,
       p_reason: "dirty_vehicle",
