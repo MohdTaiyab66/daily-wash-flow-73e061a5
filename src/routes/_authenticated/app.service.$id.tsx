@@ -375,18 +375,23 @@ function UnavailableDialog({ serviceId, onDone }: { serviceId: string; onDone: (
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
-  const handlePhoto = async (file: File) => {
+  const capturePhoto = async () => {
+    const file = await captureFromCamera();
+    if (!file) return;
     setUploading(true);
-    const { data: u } = await supabase.auth.getUser();
-    const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const path = `${u.user!.id}/${serviceId}/unavailable-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    setUploading(false);
-    if (error) { toast.error(error.message); return; }
-    setPhoto(path);
+      if (error) { toast.error(error.message); return; }
+      setPhoto(path);
+    } finally {
+      setUploading(false);
+    }
   };
+
 
   const submit = async () => {
     if (!reason) { toast.error("Pick a reason"); return; }
