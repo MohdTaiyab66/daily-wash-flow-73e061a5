@@ -17,7 +17,6 @@ import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { VehicleImage } from "@/components/VehicleImage";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
-import { useEffect } from "react";
 import { googleMapsDirectionsUrl, gpsLabel, validateExactGps } from "@/lib/gps";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
@@ -120,7 +119,7 @@ function RoutePage() {
       const c = s.customers as any;
       return {
         id: s.id,
-        sequence_no: i + 1,
+        sequence_no: (s as any).routeIndex ?? i + 1,
         lat: Number(s.lat),
         lng: Number(s.lng),
         label: c?.full_name ?? "Customer",
@@ -144,7 +143,7 @@ function RoutePage() {
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {routeVisible ? "Optimised by distance and required time." : `Route hidden after ${formatTime12(cutoff)}.`}
+        {routeVisible ? "Saved Route Manager sequence with exact customer GPS." : `Route hidden after ${formatTime12(cutoff)}.`}
       </p>
 
       <div className="mt-4"><DarOfferCard /></div>
