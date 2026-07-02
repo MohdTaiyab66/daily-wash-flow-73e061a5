@@ -229,18 +229,12 @@ function RoutePage() {
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         <MapPin className="mr-1 inline h-3 w-3" />
-                        {navUrl ? `${c?.address_line ? `${c.address_line}, ` : ""}${c?.area ?? ""}` : "Location unavailable"}
+                        {c?.area ?? "Location unavailable"}
                       </p>
-                      <p className="mt-0.5 text-[11px] font-medium text-foreground">GPS: {gpsLabel(gps.lat, gps.lng)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         <Clock className="mr-1 inline h-3 w-3" />
-                        {cutoffTime ? formatTime12(cutoffTime) : "Flexible"} · Exterior Daily Shine · ~10 min
+                        {isExact ? `Exact · ${formatTime12(c?.exact_time ?? cutoffTime)}` : cutoffTime ? `Before ${formatTime12(cutoffTime)}` : "Flexible"}
                       </p>
-                      {isExact && (
-                        <p className="mt-0.5 text-xs font-medium text-foreground">
-                          <Clock className="mr-1 inline h-3 w-3" />Exact slot · {formatTime12(c?.exact_time ?? cutoffTime)}
-                        </p>
-                      )}
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-4 gap-2">
