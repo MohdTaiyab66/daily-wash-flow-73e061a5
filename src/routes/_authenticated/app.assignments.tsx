@@ -491,15 +491,19 @@ function AssignmentsPage() {
       {preview && partialAvailable && (
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <div className="flex-1">
-              <p className="text-sm font-semibold">
-                Only {availableInArea} customer{availableInArea === 1 ? "" : "s"} available today.
+              <p className="text-sm font-semibold">Today's Route</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {availableInArea} Daily Shine customer{availableInArea === 1 ? " is" : "s are"} available. We'll automatically add more customers as your area grows.
               </p>
               <div className="mt-3 grid gap-2">
                 <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
                   {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  Accept {availableInArea} car{availableInArea === 1 ? "" : "s"} · net ₹{acceptableNet.toLocaleString("en-IN")}/day
+                  <span className="flex flex-col items-center leading-tight">
+                    <span>Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"}</span>
+                    <span className="text-[10px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} Today</span>
+                  </span>
                 </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
