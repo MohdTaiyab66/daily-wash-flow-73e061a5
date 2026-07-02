@@ -45,6 +45,7 @@ import {
   newHistory, pushHistory, undoHistory, redoHistory, payloadFromOrder,
   diffPayloads, normalisePriority, PRIORITY_LABEL, type HistoryStack, type Priority,
 } from "@/lib/route-draft";
+import { googleMapsDirectionsUrl } from "@/lib/gps";
 
 export const Route = createFileRoute("/admin/route-manager")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -1115,9 +1116,9 @@ function RouteManagerPage() {
                       <Button size="sm" variant="outline"><Phone className="mr-1 h-4 w-4" />Call</Button>
                     </a>
                   )}
-                  {selectedRow.customers?.latitude && (
+                  {googleMapsDirectionsUrl(stopGps(selectedRow).lat, stopGps(selectedRow).lng) && (
                     <a target="_blank" rel="noreferrer"
-                       href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRow.customers.latitude},${selectedRow.customers.longitude}`}>
+                       href={googleMapsDirectionsUrl(stopGps(selectedRow).lat, stopGps(selectedRow).lng)!}>
                       <Button size="sm" variant="outline"><Navigation className="mr-1 h-4 w-4" />Navigate</Button>
                     </a>
                   )}
@@ -1214,6 +1215,8 @@ function SortableRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
   const c = s.customers; const v = s.vehicles;
+  const rowGps = stopGps(s);
+  const rowNavUrl = googleMapsDirectionsUrl(rowGps.lat, rowGps.lng);
   const isExact = (c?.time_window_type ?? "soft") === "exact";
   const cutoff = c?.service_required_before ?? c?.preferred_time;
   const drift = suggestedIndex >= 0 ? suggestedIndex - index : 0;
@@ -1293,9 +1296,9 @@ function SortableRow({
             <Button variant="ghost" size="icon" title="Call"><Phone className="h-4 w-4" /></Button>
           </a>
         )}
-        {c?.latitude && (
+        {rowNavUrl && (
           <a target="_blank" rel="noreferrer"
-             href={`https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`}>
+             href={rowNavUrl}>
             <Button variant="ghost" size="icon" title="Navigate"><Navigation className="h-4 w-4" /></Button>
           </a>
         )}
