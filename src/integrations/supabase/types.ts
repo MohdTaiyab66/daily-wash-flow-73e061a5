@@ -979,6 +979,7 @@ export type Database = {
           exterior_wash_done_date: string | null
           exterior_wash_partner_id: string | null
           full_name: string
+          gps_source: string | null
           id: string
           interior_wash_done_date: string | null
           interior_wash_partner_id: string | null
@@ -1007,6 +1008,7 @@ export type Database = {
           exterior_wash_done_date?: string | null
           exterior_wash_partner_id?: string | null
           full_name: string
+          gps_source?: string | null
           id?: string
           interior_wash_done_date?: string | null
           interior_wash_partner_id?: string | null
@@ -1035,6 +1037,7 @@ export type Database = {
           exterior_wash_done_date?: string | null
           exterior_wash_partner_id?: string | null
           full_name?: string
+          gps_source?: string | null
           id?: string
           interior_wash_done_date?: string | null
           interior_wash_partner_id?: string | null
@@ -3623,6 +3626,20 @@ export type Database = {
       }
     }
     Views: {
+      admin_gps_health: {
+        Row: {
+          active_customers: number | null
+          as_of: string | null
+          customers_waiting_reassignment: number | null
+          gps_centroid: number | null
+          gps_exact: number | null
+          gps_missing: number | null
+          partners_offline: number | null
+          partners_online: number | null
+          partners_stale_heartbeat: number | null
+        }
+        Relationships: []
+      }
       v_live_ops_today: {
         Row: {
           assigned_today: number | null
@@ -4023,6 +4040,7 @@ export type Database = {
         Args: { p_offer_id: string; p_service_ids?: string[] }
         Returns: Json
       }
+      dar_check_offline_partners: { Args: never; Returns: number }
       dar_check_start_timeouts: { Args: never; Returns: number }
       dar_dashboard_metrics: { Args: never; Returns: Json }
       dar_expire_offers: { Args: never; Returns: number }
