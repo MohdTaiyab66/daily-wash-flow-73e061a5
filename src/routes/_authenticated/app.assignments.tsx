@@ -105,16 +105,16 @@ function AssignmentsPage() {
   const avgMileage = settings?.avgMileage ?? 40;
   const fuelEnabled = settings?.fuelEnabled ?? true;
   const startRules = settings?.startRules ?? DEFAULT_START_RULES;
-  const maxCars = settings?.maxCars ?? 30;
+  // Derive the max cars ceiling from the admin hour ceiling × cars-per-hour so
+  // "6 Hours" always yields exactly 6 × carsPerHour cars (default 36) instead of
+  // being clamped to a stale max_cars_allowed value.
+  const maxCarsCeiling = Math.max(Number(settings?.maxCars ?? 0), maxHours * carsPerHour);
   const minCars = settings?.minCars ?? 1;
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
   const [hours, setHours] = useState(4);
   const [duration, setDuration] = useState(15);
-  const [workingDays, setWorkingDays] = useState<Set<number>>(
-    new Set([0, 2, 3, 4, 5, 6]), // Sunday + Tue–Sat by default, Monday off
-  );
 
   // Keep hours within admin bounds when settings change
   useEffect(() => {
