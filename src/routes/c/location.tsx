@@ -64,13 +64,16 @@ function LocationPermission() {
         longitude: loc.lng,
         is_default: true,
       };
-      if (existing?.id) {
-        await supabase.from("customer_addresses").update(payload).eq("id", existing.id);
-      } else {
-        await supabase.from("customer_addresses").insert(payload);
+      const res = existing?.id
+        ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+        : await supabase.from("customer_addresses").insert(payload);
+      if (res.error) throw res.error;
+    } catch (e: any) {
+      const msg = e?.message ?? "";
+      if (msg.toLowerCase().includes("exact") || msg.toLowerCase().includes("gps")) {
+        throw new Error("We couldn't determine your exact location. Please enable GPS or move to an open area.");
       }
-    } catch {
-      /* ignore — local copy is enough to proceed */
+      /* other errors: local copy is enough to proceed */
     }
   };
 
