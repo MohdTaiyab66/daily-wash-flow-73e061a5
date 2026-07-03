@@ -55,6 +55,7 @@ type UnavailableDraft = {
   notes: string;
   photos: Record<string, string>;
   open: boolean;
+  pendingSlotId?: string | null;
 };
 
 type DirtyDraft = {
@@ -62,6 +63,7 @@ type DirtyDraft = {
   notes: string;
   photos: Record<string, string>;
   open: boolean;
+  pendingSlotId?: string | null;
 };
 
 const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
