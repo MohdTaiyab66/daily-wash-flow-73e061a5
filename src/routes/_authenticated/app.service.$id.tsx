@@ -473,10 +473,17 @@ function PhotoSlot({
   const [capturing, setCapturing] = useState(false);
   const slot = slotId ?? `${stage}_${angle}`;
   const busy = capturing || uploading;
+  const tag =
+    workflow === "unavailable_vehicle"
+      ? "[SVC][UNAVAILABLE]"
+      : workflow === "dirty_vehicle"
+        ? "[SVC][DIRTY]"
+        : "[SVC][PHOTO]";
+  const errTag = `${tag}[ERROR]`;
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] PhotoSlot mounted · workflow=${workflow} · stage=${stage} · angle=${angle} · slot=${slot}`);
-  }, [serviceId, workflow, stage, angle, slot]);
+    console.log(`${tag} PhotoSlot mounted · svc=${serviceId} · slot=${slot} · stage=${stage} · angle=${angle}`);
+  }, [tag, serviceId, stage, angle, slot]);
 
   const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
