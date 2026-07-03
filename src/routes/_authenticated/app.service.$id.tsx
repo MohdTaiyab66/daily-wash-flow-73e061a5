@@ -674,118 +674,80 @@ function PhotoSlot({
 
 
 function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
-  const initialDraft = readReportDraft<UnavailableDraft>(serviceId, "unavailable", { reason: "", notes: "", photos: [], open: false });
-  const [open, setOpen] = useState(initialDraft.open || initialDraft.photos.length > 0);
+  const initialDraft = readReportDraft<UnavailableDraft>(serviceId, "unavailable", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
+  const initialPhotos = normalizePhotoRecord(initialDraft.photos, UNAVAILABLE_SLOTS);
+  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
   const [reason, setReason] = useState<string>(initialDraft.reason);
   const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<string[]>(initialDraft.photos);
-  const [capturing, setCapturing] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
+  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-  const nextSlot = `unavailable_${photos.length + 1}`;
+  const reasonRef = useRef(reason);
+  const notesRef = useRef(notes);
+  const photosRef = useRef(photos);
+  const pendingSlotIdRef = useRef(pendingSlotId);
 
   const MIN_PHOTOS = 2;
-  const MAX_PHOTOS = 4;
   const needsRemarks = reason === "other";
+  const capturedCount = UNAVAILABLE_SLOTS.filter((slot) => Boolean(photos[slot])).length;
   const canSubmit =
     !!reason &&
-    photos.length >= MIN_PHOTOS &&
+    capturedCount >= MIN_PHOTOS &&
     (!needsRemarks || notes.trim().length > 0);
 
   useEffect(() => {
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open });
-  }, [serviceId, reason, notes, photos, open]);
+    reasonRef.current = reason;
+    notesRef.current = notes;
+    photosRef.current = photos;
+    pendingSlotIdRef.current = pendingSlotId;
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open, pendingSlotId });
+  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
 
   useEffect(() => {
     const pending = readPendingCapture();
     if (pending?.serviceId === serviceId && pending.workflow === "unavailable_vehicle") setOpen(true);
   }, [serviceId]);
 
-  const capturePhoto = async () => {
-    if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
-    const photoIndex = photos.length + 1;
-    const slot = `unavailable_${photoIndex}`;
-    const capturePromise = captureFromCamera({
-      serviceId,
-      assignmentId,
-      workflow: "unavailable_vehicle",
-      stage: "report",
-      angle: String(photoIndex),
-      slot,
-    });
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
+  const beforeUnavailableCapture = (slot: string) => {
+    setPendingSlotId(slot);
     setOpen(true);
-    setCapturing(true);
-    const file = await capturePromise.finally(() => setCapturing(false));
-    void logApkEvidence({
-      eventType: "unavailable_camera_attempt",
-      serviceId,
-      assignmentId,
-      payload: { photo_index: photoIndex, max_photos: MAX_PHOTOS, slot },
+    writeReportDraft(serviceId, "unavailable", {
+      reason: reasonRef.current,
+      notes: notesRef.current,
+      photos: photosRef.current,
+      open: true,
+      pendingSlotId: slot,
     });
-    if (!file) {
-      await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
-      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-      return;
-    }
-    setUploading(true);
-    try {
-      const { data: u, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!u.user) throw new Error("Please sign in again");
-      const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file });
-      const next = [...photos, path];
-      setPhotos(next);
-      writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
-      await logApkEvidence({
-        eventType: "unavailable_photo_upload_result",
-        serviceId,
-        assignmentId,
-        status: "success",
-        payload: { photo_index: photoIndex, path, size: file.size, type: file.type },
-      });
-    } catch (err) {
-      await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
-      toast.error((err as any)?.message ?? "Could not save photo");
-    } finally {
-      setUploading(false);
-    }
   };
 
-  useEffect(() => {
-    if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
-    let cancelled = false;
-    void (async () => {
-      const restored = await consumeRestoredCameraCapture({ slot: nextSlot });
-      if (cancelled || !restored) return;
-      setOpen(true);
-      setUploading(true);
-      const photoIndex = photos.length + 1;
-      try {
-        const { data: u, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!u.user) throw new Error("Please sign in again");
-        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file: restored });
-        const next = [...photos, path];
-        setPhotos(next);
-        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
-        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "success", payload: { photo_index: photoIndex, path, restored: true, size: restored.size, type: restored.type } });
-      } catch (err) {
-        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
-        toast.error((err as any)?.message ?? "Could not save photo");
-      } finally {
-        setUploading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [nextSlot, photos.length, capturing, uploading, saving, serviceId, assignmentId, reason, notes]);
+  const storeUnavailablePhoto = (slot: string, path?: string) => {
+    if (!path) return;
+    setPendingSlotId(null);
+    setPhotos((previous) => {
+      const next = { ...previous, [slot]: path };
+      writeReportDraft(serviceId, "unavailable", {
+        reason: reasonRef.current,
+        notes: notesRef.current,
+        photos: next,
+        open: true,
+        pendingSlotId: null,
+      });
+      return next;
+    });
+  };
 
-  const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
+  const removePhoto = (slot: string) => setPhotos((previous) => {
+    const next = { ...previous };
+    delete next[slot];
+    writeReportDraft(serviceId, "unavailable", { reason: reasonRef.current, notes: notesRef.current, photos: next, open: true, pendingSlotId: pendingSlotIdRef.current });
+    return next;
+  });
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
-    if (photos.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
+    const photoList = UNAVAILABLE_SLOTS.map((slot) => photos[slot]).filter(Boolean);
+    if (photoList.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
@@ -796,13 +758,13 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         serviceId,
         assignmentId,
         gps: pos,
-        payload: { reason, photo_count: photos.length, has_notes: Boolean(notes.trim()) },
+        payload: { reason, photo_count: photoList.length, has_notes: Boolean(notes.trim()) },
       });
       const { data, error } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: reason,
         p_notes: notes || "",
-        p_photos: photos,
+        p_photos: photoList,
         p_lat: pos?.lat ?? null,
         p_lng: pos?.lng ?? null,
       } as any);
@@ -826,7 +788,8 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
       setReason("");
       setNotes("");
-      setPhotos([]);
+      setPhotos({});
+      setPendingSlotId(null);
       setOpen(false);
       onDone();
     } catch (error: any) {
@@ -841,7 +804,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value && (capturing || uploading || saving)) return;
+        if (!value && saving) return;
         setOpen(value);
       }}
     >
@@ -864,34 +827,37 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
         <div className="mt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Live evidence photos ({photos.length}/{MIN_PHOTOS} required)
+            Live evidence photos ({capturedCount}/{MIN_PHOTOS} required)
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {photos.map((_, i) => (
-              <div key={i} className="relative flex aspect-square items-center justify-center rounded-xl border-2 border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]">
-                <Check className="h-5 w-5" />
-                <span className="ml-1 text-xs">Photo {i + 1}</span>
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground"
-                  aria-label={`Remove photo ${i + 1}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
+            {UNAVAILABLE_SLOTS.map((slot, index) => (
+              <div key={slot} className="relative">
+                <PhotoSlot
+                  serviceId={serviceId}
+                  assignmentId={assignmentId}
+                  workflow="unavailable_vehicle"
+                  stage="report"
+                  angle={slot}
+                  slotId={slot}
+                  done={Boolean(photos[slot])}
+                  onBeforeCapture={beforeUnavailableCapture}
+                  onUploaded={(path) => storeUnavailablePhoto(slot, path)}
+                  uploadPrefix={`unavailable-${slot}`}
+                  label={`Photo ${index + 1}`}
+                  disabled={saving}
+                />
+                {photos[slot] && (
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(slot)}
+                    className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground"
+                    aria-label={`Remove photo ${index + 1}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             ))}
-            {photos.length < MAX_PHOTOS && (
-              <button
-                type="button"
-                onClick={capturePhoto}
-                disabled={capturing || uploading || saving}
-                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary"
-              >
-                {capturing || uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                {photos.length === 0 ? "Capture" : "Add another"}
-              </button>
-            )}
           </div>
         </div>
 
@@ -902,7 +868,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
           className="mt-3"
         />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || capturing || uploading || !canSubmit}>
+          <Button onClick={submit} disabled={saving || !canSubmit}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
           </Button>
         </DialogFooter>
