@@ -48,11 +48,12 @@ const DIRTY_REASONS = [
   "Other",
 ];
 const COMPENSATION = 12;
+const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
 
 type UnavailableDraft = {
   reason: string;
   notes: string;
-  photos: string[];
+  photos: Record<string, string>;
   open: boolean;
 };
 
@@ -119,6 +120,20 @@ function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draf
 function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
   if (typeof window === "undefined") return;
   removeDraftStorage(reportDraftKey(serviceId, kind));
+}
+
+function normalizePhotoRecord(value: unknown, slots: readonly string[]) {
+  if (Array.isArray(value)) {
+    return value.reduce<Record<string, string>>((acc, path, index) => {
+      if (typeof path === "string" && slots[index]) acc[slots[index]] = path;
+      return acc;
+    }, {});
+  }
+  if (!value || typeof value !== "object") return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>((acc, [slot, path]) => {
+    if (typeof path === "string" && slots.includes(slot)) acc[slot] = path;
+    return acc;
+  }, {});
 }
 
 
