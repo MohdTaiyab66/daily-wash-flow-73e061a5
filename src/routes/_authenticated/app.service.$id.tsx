@@ -47,6 +47,61 @@ const DIRTY_REASONS = [
 ];
 const COMPENSATION = 12;
 
+type UnavailableDraft = {
+  reason: string;
+  notes: string;
+  photos: string[];
+  open: boolean;
+};
+
+type DirtyDraft = {
+  reason: string;
+  notes: string;
+  photos: Record<string, string>;
+  open: boolean;
+};
+
+const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
+
+function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
+  return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
+}
+
+function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.sessionStorage.getItem(reportDraftKey(serviceId, kind));
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as T & { savedAt?: number };
+    if (parsed.savedAt && Date.now() - parsed.savedAt > 6 * 60 * 60 * 1000) {
+      clearReportDraft(serviceId, kind);
+      return fallback;
+    }
+    return parsed as T;
+  } catch {
+    clearReportDraft(serviceId, kind);
+    return fallback;
+  }
+}
+
+function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draft: UnavailableDraft | DirtyDraft) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
+  } catch {
+    // Draft persistence is best-effort; capture/submit must keep working.
+  }
+}
+
+function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(reportDraftKey(serviceId, kind));
+  } catch {
+    // noop
+  }
+}
+
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
   component: () => <OfflineGuard label="service verification"><ServiceDetail /></OfflineGuard>,
@@ -511,10 +566,11 @@ function PhotoSlot({
 
 
 function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<string>("");
-  const [notes, setNotes] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const initialDraft = readReportDraft<UnavailableDraft>(serviceId, "unavailable", { reason: "", notes: "", photos: [], open: false });
+  const [open, setOpen] = useState(initialDraft.open || initialDraft.photos.length > 0);
+  const [reason, setReason] = useState<string>(initialDraft.reason);
+  const [notes, setNotes] = useState(initialDraft.notes);
+  const [photos, setPhotos] = useState<string[]>(initialDraft.photos);
   const [capturing, setCapturing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -527,6 +583,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     !!reason &&
     photos.length >= MIN_PHOTOS &&
     (!needsRemarks || notes.trim().length > 0);
+
+  useEffect(() => {
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open });
+  }, [serviceId, reason, notes, photos, open]);
 
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
@@ -552,21 +612,28 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     }
     setUploading(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/unavailable-${photos.length + 1}-${Date.now()}.jpg`;
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!u.user) throw new Error("Please sign in again");
+      const photoIndex = photos.length + 1;
+      const path = `${u.user.id}/${serviceId}/unavailable-${photoIndex}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
       if (error) {
         await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
         toast.error(error.message);
         return;
       }
-      setPhotos((p) => [...p, path]);
+      setPhotos((p) => {
+        const next = [...p, path];
+        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
+        return next;
+      });
       await logApkEvidence({
         eventType: "unavailable_photo_upload_result",
         serviceId,
         assignmentId,
         status: "success",
-        payload: { photo_index: photos.length + 1, path, size: file.size, type: file.type },
+        payload: { photo_index: photoIndex, path, size: file.size, type: file.type },
       });
     } finally {
       setUploading(false);
@@ -580,44 +647,53 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     if (photos.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     setSaving(true);
-    const pos = await getPosition();
-    await logApkEvidence({
-      eventType: "unavailable_submit_attempt",
-      serviceId,
-      assignmentId,
-      gps: pos,
-      payload: { reason, photo_count: photos.length, has_notes: Boolean(notes.trim()) },
-    });
-    const { data, error } = await supabase.rpc("submit_service_unavailable", {
-      p_service_id: serviceId,
-      p_reason: reason,
-      p_notes: notes || "",
-      p_photos: photos,
-      p_lat: pos?.lat ?? 0,
-      p_lng: pos?.lng ?? 0,
-    } as any);
-    setSaving(false);
-    if (error) {
+    let pos: { lat: number; lng: number } | null = null;
+    try {
+      pos = await getPosition();
+      await logApkEvidence({
+        eventType: "unavailable_submit_attempt",
+        serviceId,
+        assignmentId,
+        gps: pos,
+        payload: { reason, photo_count: photos.length, has_notes: Boolean(notes.trim()) },
+      });
+      const { data, error } = await supabase.rpc("submit_service_unavailable", {
+        p_service_id: serviceId,
+        p_reason: reason,
+        p_notes: notes || "",
+        p_photos: photos,
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
+      } as any);
+      if (error) throw error;
+      console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
+      await logApkEvidence({
+        eventType: "unavailable_submit_result",
+        serviceId,
+        assignmentId,
+        gps: pos,
+        status: "success",
+        payload: { rpc: data },
+      });
+      toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+      clearReportDraft(serviceId, "unavailable");
+      qc.invalidateQueries({ queryKey: ["service", serviceId] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+      qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setReason("");
+      setNotes("");
+      setPhotos([]);
+      setOpen(false);
+      onDone();
+    } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
-      toast.error(error.message);
-      return;
+      toast.error(error?.message ?? "Could not submit unavailable report");
+    } finally {
+      setSaving(false);
     }
-    console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
-    await logApkEvidence({
-      eventType: "unavailable_submit_result",
-      serviceId,
-      assignmentId,
-      gps: pos,
-      status: "success",
-      payload: { rpc: data },
-    });
-    toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
-    qc.invalidateQueries({ queryKey: ["service", serviceId] });
-    qc.invalidateQueries({ queryKey: ["route-today"] });
-    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-    setOpen(false);
-    onDone();
   };
 
   return (
@@ -625,11 +701,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       open={open}
       onOpenChange={(value) => {
         setOpen(value);
-        if (!value) {
-          setReason("");
-          setNotes("");
-          setPhotos([]);
-        }
       }}
     >
       <DialogTrigger asChild>
@@ -700,10 +771,11 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
 
 function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
-  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const initialDraft = readReportDraft<DirtyDraft>(serviceId, "dirty", { reason: "", notes: "", photos: {}, open: false });
+  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialDraft.photos).length > 0);
+  const [reason, setReason] = useState(initialDraft.reason);
+  const [notes, setNotes] = useState(initialDraft.notes);
+  const [photos, setPhotos] = useState<Record<string, string>>(initialDraft.photos);
   const [uploadingAngle, setUploadingAngle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
@@ -712,18 +784,28 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     Object.keys(photos).length === 4 &&
     !(reason === "Other" && !notes.trim());
 
+  useEffect(() => {
+    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open });
+  }, [serviceId, reason, notes, photos, open]);
+
   const upload = async (angle: string, file: File) => {
     setUploadingAngle(angle);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
+      const { data: u, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!u.user) throw new Error("Please sign in again");
+      const path = `${u.user.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
       const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
       if (error) {
         await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
         toast.error(error.message);
         return;
       }
-      setPhotos((p) => ({ ...p, [angle]: path }));
+      setPhotos((p) => {
+        const next = { ...p, [angle]: path };
+        writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
+        return next;
+      });
       await logApkEvidence({
         eventType: "dirty_photo_upload_result",
         serviceId,
@@ -744,45 +826,55 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (Object.keys(photos).length < 4 || !photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
     setSaving(true);
-    const pos = await getPosition();
-    await logApkEvidence({
-      eventType: "dirty_submit_attempt",
-      serviceId,
-      assignmentId,
-      gps: pos,
-      payload: { reason, photo_count: Object.keys(photos).length, has_notes: Boolean(notes.trim()) },
-    });
-    // Server-side RPC atomically creates the dirty report, customer/admin notifications,
-    // wallet entry, and route progression. This avoids APK partial-success states.
-    const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
-      p_service_id: serviceId,
-      p_reason: "dirty_vehicle",
-      p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
-      p_photos: [photos.front, photos.rear, photos.left, photos.right],
-      p_lat: pos?.lat ?? 0,
-      p_lng: pos?.lng ?? 0,
-    } as any);
-    setSaving(false);
-    if (e2) {
-      await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(e2) });
-      return toast.error(e2.message);
+    let pos: { lat: number; lng: number } | null = null;
+    try {
+      pos = await getPosition();
+      await logApkEvidence({
+        eventType: "dirty_submit_attempt",
+        serviceId,
+        assignmentId,
+        gps: pos,
+        payload: { reason, photo_count: Object.keys(photos).length, has_notes: Boolean(notes.trim()) },
+      });
+      // Server-side RPC atomically creates the dirty report, customer/admin notifications,
+      // wallet entry, and route progression. This avoids APK partial-success states.
+      const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
+        p_service_id: serviceId,
+        p_reason: "dirty_vehicle",
+        p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
+        p_photos: [photos.front, photos.rear, photos.left, photos.right],
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
+      } as any);
+      if (e2) throw e2;
+      console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
+      await logApkEvidence({
+        eventType: "dirty_submit_result",
+        serviceId,
+        assignmentId,
+        gps: pos,
+        status: "success",
+        payload: { rpc: data },
+      });
+      toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
+      clearReportDraft(serviceId, "dirty");
+      qc.invalidateQueries({ queryKey: ["service", serviceId] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+      qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setReason("");
+      setNotes("");
+      setPhotos({});
+      setOpen(false);
+      void onDone?.();
+    } catch (error: any) {
+      await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      toast.error(error?.message ?? "Could not submit dirty vehicle report");
+    } finally {
+      setSaving(false);
     }
-    console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
-    await logApkEvidence({
-      eventType: "dirty_submit_result",
-      serviceId,
-      assignmentId,
-      gps: pos,
-      status: "success",
-      payload: { rpc: data },
-    });
-    toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
-    qc.invalidateQueries({ queryKey: ["service", serviceId] });
-    qc.invalidateQueries({ queryKey: ["route-today"] });
-    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-    setOpen(false);
-    void onDone?.();
   };
 
   return (
@@ -790,11 +882,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       open={open}
       onOpenChange={(value) => {
         setOpen(value);
-        if (!value) {
-          setReason("");
-          setNotes("");
-          setPhotos({});
-        }
       }}
     >
       <DialogTrigger asChild>
