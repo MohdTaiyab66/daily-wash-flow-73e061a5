@@ -7,7 +7,7 @@
  */
 import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
-import { Camera as CapacitorCamera, CameraResultType, CameraSource, type Photo } from "@capacitor/camera";
+import { Camera as CapacitorCamera, CameraDirection, type MediaResult } from "@capacitor/camera";
 
 type CaptureContext = {
   serviceId?: string | null;
@@ -53,16 +53,17 @@ export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot
 async function captureFromCameraOnce(): Promise<File | null> {
   if (shouldUseNativeCamera()) {
     try {
-      const getCameraPhoto = () => CapacitorCamera.getPhoto({
+      const getCameraPhoto = () => CapacitorCamera.takePhoto({
         quality: 70,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera, // camera only — never Photos/Gallery/Prompt
         saveToGallery: false,
         correctOrientation: true,
-        width: 1600,
+        cameraDirection: CameraDirection.Rear,
+        editable: "no",
+        targetWidth: 1600,
+        targetHeight: 1200,
+        includeMetadata: true,
       });
-      let photo: Photo;
+      let photo: MediaResult;
       try {
         // Call the native camera immediately. Pre-checking permissions first can
         // break the tap → camera chain on Android and sometimes returns to the app
@@ -76,8 +77,7 @@ async function captureFromCameraOnce(): Promise<File | null> {
         if (permissions.camera !== "granted") return null;
         photo = await getCameraPhoto();
       }
-      if (!photo.base64String) return null;
-      return fileFromBase64(photo.base64String, photo.format ?? "jpeg");
+      return fileFromMediaResult(photo);
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
@@ -99,6 +99,29 @@ function fileFromBase64(base64: string, format: string) {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return new File([bytes], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: mime });
+}
+
+async function fileFromMediaResult(result: MediaResult): Promise<File | null> {
+  const format = normalizeImageFormat(result.metadata?.format);
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  if (result.webPath || result.uri) {
+    try {
+      const res = await fetch(result.webPath ?? result.uri!);
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.size > 0) return new File([blob], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: blob.type || mime });
+      }
+    } catch (err) {
+      console.warn("[camera] captured file fetch failed", err);
+    }
+  }
+  if (result.thumbnail) return fileFromBase64(result.thumbnail, format);
+  return null;
+}
+
+function normalizeImageFormat(format?: string) {
+  const f = (format ?? "jpeg").toLowerCase();
+  return f === "png" ? "png" : "jpeg";
 }
 
 async function captureWithBrowserCamera(): Promise<File | null> {
