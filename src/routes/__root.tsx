@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { installCameraRouteRestore } from "@/lib/cameraRestore";
 
 function NotFoundComponent() {
   return (
@@ -130,6 +131,8 @@ function RootComponent() {
     });
     return () => listener.subscription.unsubscribe();
   }, [queryClient]);
+
+  useEffect(() => installCameraRouteRestore(), []);
 
   return (
     <QueryClientProvider client={queryClient}>

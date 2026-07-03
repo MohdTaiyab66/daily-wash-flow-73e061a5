@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { MapPin, Phone, Navigation, Play, AlertTriangle, Clock, Car, Loader2, CheckCircle2 } from "lucide-react";
+import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2 } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
@@ -133,15 +133,6 @@ function RoutePage() {
 
   const currentStop = pending[0] ?? null;
   const nextStop = pending[1] ?? null;
-  const distanceRemaining = (pending ?? []).reduce((sum: number, s: any) => sum + Number(s.distance_km || 0), 0);
-  const estimatedFinish = (() => {
-    const lastEta = pending.map((s: any) => s.eta_at).filter(Boolean).at(-1);
-    if (lastEta) return new Date(lastEta).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    if (!pending.length) return "Done";
-    const mins = pending.length * 12 + Math.round(distanceRemaining * 3);
-    return new Date(Date.now() + mins * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  })();
-
   useEffect(() => {
     if (!services) return;
     void logApkEvidence({
@@ -184,8 +175,6 @@ function RoutePage() {
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-center">
             <KPI label="Current stop" value={currentStop ? `#1` : "—"} />
             <KPI label="Next stop" value={nextStop ? `#2` : "—"} />
-            <KPI label="Distance left" value={distanceRemaining ? `${distanceRemaining.toFixed(1)} km` : "—"} />
-            <KPI label="Est. finish" value={estimatedFinish} />
             <KPI label="Expected left" value={`₹${remainingEarnings.toLocaleString("en-IN")}`} />
             <KPI label="Done/Total" value={`${done}/${total}`} />
           </div>
@@ -210,8 +199,6 @@ function RoutePage() {
           const v = s.vehicles as any;
           const gps = { lat: (s as any).lat, lng: (s as any).lng };
           const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
-          const cutoffTime = c?.service_required_before ?? c?.preferred_time;
-          const isExact = (c?.time_window_type ?? "soft") === "exact";
           return (
             <div key={s.id}>
               <Card className="overflow-hidden p-0">
@@ -225,14 +212,6 @@ function RoutePage() {
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {v?.registration_number}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        <MapPin className="mr-1 inline h-3 w-3" />
-                        {c?.area ?? "Location unavailable"}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        <Clock className="mr-1 inline h-3 w-3" />
-                        {isExact ? formatTime12(c?.exact_time ?? cutoffTime) : cutoffTime ? formatTime12(cutoffTime) : "Flexible"}
                       </p>
                     </div>
                   </div>
@@ -290,9 +269,6 @@ function RoutePage() {
             {completed.map((s) => {
               const c = s.customers as any;
               const v = s.vehicles as any;
-              const dur = s.started_at && s.completed_at
-                ? Math.max(1, Math.round((+new Date(s.completed_at) - +new Date(s.started_at)) / 60000))
-                : null;
               return (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
                   <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
@@ -302,7 +278,6 @@ function RoutePage() {
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       <CheckCircle2 className="mr-1 inline h-3 w-3 text-[color:var(--success)]" />
                       {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                      {dur != null && ` · ${dur} min`}
                     </p>
                   </div>
                 </Card>

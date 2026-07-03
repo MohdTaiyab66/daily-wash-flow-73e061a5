@@ -9,16 +9,36 @@
  * is still safe: no file is uploaded unless the user picks/captures one.
  */
 import { Capacitor } from "@capacitor/core";
+import { clearPendingCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
 
-let activeCapture: Promise<File | null> | null = null;
+type CaptureContext = {
+  serviceId?: string | null;
+  assignmentId?: string | null;
+  workflow?: "service_photo" | "dirty_vehicle" | "unavailable_vehicle";
+  stage?: "before" | "after" | "report";
+  angle?: string;
+  slot?: string;
+};
 
-export async function captureFromCamera(): Promise<File | null> {
-  if (activeCapture) return activeCapture;
-  activeCapture = captureFromCameraOnce().finally(() => {
-    activeCapture = null;
-  });
-  return activeCapture;
+let activeCapture = false;
+
+export async function captureFromCamera(context: CaptureContext = {}): Promise<File | null> {
+  // Never share one native camera result across two UI slots. Returning the
+  // same promise is what can mark the wrong slot complete after quick taps.
+  if (activeCapture) return null;
+  activeCapture = true;
+  persistPendingCapture(context);
+  try {
+    const file = await captureFromCameraOnce();
+    clearPendingCapture();
+    return file;
+  } catch (err) {
+    clearPendingCapture();
+    throw err;
+  } finally {
+    activeCapture = false;
+  }
 }
 
 async function captureFromCameraOnce(): Promise<File | null> {
@@ -31,38 +51,59 @@ async function captureFromCameraOnce(): Promise<File | null> {
       }
       if (permissions.camera !== "granted") return null;
       const photo = await Camera.getPhoto({
-        quality: 70,
+        quality: 72,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl,
+        resultType: CameraResultType.Uri,
         source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
         width: 1600,
+        promptLabelHeader: "Camera",
+        promptLabelPhoto: "Camera",
+        promptLabelPicture: "Take photo",
       });
-      if (!photo.dataUrl) return null;
-      return fileFromDataUrl(photo.dataUrl, `capture-${Date.now()}.${photo.format ?? "jpg"}`);
+      if (!photo.webPath) return null;
+      const response = await fetch(photo.webPath);
+      const blob = await response.blob();
+      return new File([blob], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type: blob.type || "image/jpeg" });
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
     }
   }
 
+  if (isAndroidWebView()) {
+    console.warn("[camera] native bridge unavailable in Android WebView; blocked gallery fallback");
+    return null;
+  }
+
   return new Promise<File | null>((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
+    input.capture = "environment";
     // `capture` = camera on mobile browsers; ignored on desktop where partners
     // don't run the field app anyway.
     input.setAttribute("capture", "environment");
     input.style.display = "none";
+    let resolved = false;
+    const finish = (file: File | null) => {
+      if (resolved) return;
+      resolved = true;
+      window.removeEventListener("focus", onFocus);
+      input.remove();
+      resolve(file);
+    };
+    const onFocus = () => {
+      window.setTimeout(() => finish(input.files?.[0] ?? null), 400);
+    };
+    window.addEventListener("focus", onFocus, { once: true });
     input.onchange = () => {
       const f = input.files?.[0] ?? null;
-      input.remove();
-      resolve(f);
+      finish(f);
     };
     input.oncancel = () => {
-      input.remove();
-      resolve(null);
+      finish(null);
     };
     document.body.appendChild(input);
     input.click();
@@ -78,11 +119,7 @@ function shouldUseNativeCamera() {
   }
 }
 
-function fileFromDataUrl(dataUrl: string, name: string) {
-  const [header, payload] = dataUrl.split(",");
-  const mime = header.match(/^data:(.*?);/)?.[1] || "image/jpeg";
-  const binary = atob(payload ?? "");
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], name, { type: mime });
+function isAndroidWebView() {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent) && /; wv\)|Version\/\d+\.\d+ Chrome\//i.test(navigator.userAgent);
 }
