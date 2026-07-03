@@ -1,112 +1,86 @@
-# Phase 1.5 — Settings Cleanup + Phase 2 — Dynamic Assignment Recovery
 
-Two sequential phases. Phase 1.5 lands first and is verified before DAR begins.
+# Daily Shine — Persistent Assignments & Time-Gated Daily Route
 
----
+Today Daily Shine behaves like a marketplace: the partner rebuilds the assignment each day, sees all future customers up front, and re-accepts customers through offers. We already have most of the primitives (`assignments` with `start_date/end_date/duration_days`, `subscription_assignment_queue.lock_until/locked_partner_id`, `services` per day, `platform_settings`). The change is behavioural: **lock once, generate daily, gate visibility, honour it everywhere**.
 
-## Phase 1.5 — Zero Fake Settings
+## 1. Behaviour rules (product)
 
-Goal: every editable Partner Operations setting must either drive runtime behavior or be hidden from the Admin UI. No "placeholder" state remains.
+- Partner builds a single **assignment period** (default 30 days, admin-configurable 7–90).
+- On accept, every currently-queued customer for that partner is **locked to that partner for the full period** (`subscription_assignment_queue.locked_partner_id`, `lock_until = assignment.end_date`).
+- Each day a scheduler generates that day's `services` rows for every locked customer of every active assignment.
+- Partner does **not** see tomorrow's route until `shift_start − route_visibility_hours` (admin setting, default 6h). Before that, "Today's Route" hides stops and shows a countdown; "My Assignment" shows only aggregates.
+- Marketplace/offers path skips customers already locked to a partner whose assignment covers the target date. It only fires for genuinely new / unassigned customers.
+- New Daily Shine customer created by admin → auto-merged into a matching active assignment (same area, capacity remaining), otherwise queued to marketplace.
+- Cancellations / address-out-of-coverage / partner unavailable → row removed from tomorrow's generation; today's remaining stops handled by DAR as today.
 
-### Triage of the 12 dormant keys (from Phase 4 audit)
+## 2. Data model changes (single migration)
 
-**Wire to runtime (Option A) — cheap, observable effects:**
-1. `notify_offer`, `notify_assignment`, `notify_completion`, `notify_wallet`, `notify_attendance`, `notify_reminder` → gate inserts in `partner_notifications` / push dispatch by category. Add a `category` column check in the notify helper.
-2. `sound_enabled`, `vibration_enabled` → expose via `get_partner_ui_prefs` RPC; partner shell reads and applies to OfferPopup + toast.
-3. `allow_partner_cancel` → already partly wired; enforce in `cancel_assignment` RPC (raise if false).
-4. `gps_verification`, `selfie_required` → enforce in attendance check-in RPC (reject without coords / selfie URL).
+- `assignments`: add `route_visibility_hours int` (nullable, falls back to global setting), `auto_renew boolean default false`, `hours_per_day numeric` (2–6, the "hours picker"), `shift_start_time text` (already `expected_start_time` — reuse).
+- `platform_settings` seed keys (via `supabase--insert`, not migration):
+  - `route_visibility_hours` = 6
+  - `assignment_min_days` = 7, `assignment_max_days` = 90, `assignment_default_days` = 30
+  - `assignment_hours_options` = `[2,3,4,5,6]`
+- No new tables. `services` remains the per-day materialisation.
 
-**Hide (Option B) — not feasible to implement now without scope creep:**
-5. `background_tracking` → requires native capability; hide from UI with a tooltip "Coming with native app".
-6. `auto_capacity_calc` → depends on historical analytics not yet built; hide.
-7. `heat_map` (maps tab) → hide until Coverage Manager heat layer ships.
+## 3. Server logic
 
-### Deliverables
-- Migration: add `category` to notification insert triggers; add guards in `cancel_assignment`, attendance RPCs.
-- New RPC: `get_partner_ui_prefs()` returns sound/vibration/notify toggles.
-- Edit `src/routes/admin.settings.tsx`: remove hidden keys from SECTIONS arrays.
-- Edit `OfferPopup.tsx` + partner shell: read prefs, apply sound/vibration.
-- Final audit doc: `/mnt/documents/UrbanWash_Phase1.5_Settings_Final.md` classifying all 39 as **Runtime Active / Hidden / Removed**.
-- Playwright verification: toggle 3 representative settings (notify_offer OFF, sound_enabled OFF, allow_partner_cancel OFF) and observe behavior change.
+### 3a. Accept flow (existing `respond_subscription_offer` / assignment builder)
+- When the partner locks in the assignment, set `locked_partner_id` and `lock_until = end_date` on every queue row we assign to that partner in that build.
+- Skip queue rows whose `lock_until >= today` and `locked_partner_id <> me` when computing offers.
 
----
+### 3b. Daily route generation — new SQL function `generate_daily_services(p_date date)`
+- For each `assignments` row with `status='active'` and `start_date <= p_date <= end_date`, and where `p_date`'s weekday ≠ the partner's weekly off:
+  - For every `subscription_assignment_queue` row with `locked_partner_id = assignment.partner_id` and `lock_until >= p_date` and `status = 'assigned'`:
+    - Upsert a `services` row `(assignment_id, partner_id, customer_id, vehicle_id, scheduled_date=p_date, status='pending', rate_per_car)` — idempotent on `(assignment_id, customer_id, scheduled_date)` (add partial unique index).
+- Runs from a new cron `src/routes/api/public/cron/generate-daily-routes.ts` scheduled at 00:05 IST; also invoked on assignment accept for today (if `visibility` already open) and on admin add/remove of a customer.
 
-## Phase 2 — Dynamic Assignment Recovery (DAR)
+### 3c. Route visibility gating
+- New server fn `getTodayRouteVisibility(partnerId)` → returns `{ visible: bool, unlockAt: ISO }` computed from `assignment.shift_start_time`, `route_visibility_hours`, and `now()`.
+- `app/live` route (Today's Route) and `getMyAssignment`:
+  - If not visible yet, return `services: []` + `unlockAt` so UI can show countdown.
+  - After unlockAt, return today's generated services as usual.
 
-New operational module. Triggers when a partner can no longer serve their Daily Shine customers, releases those customers, finds nearby partners, offers them as "extra cars", reoptimizes routes, keeps customers unaware.
+### 3d. Offer/marketplace filter
+- `offer_next_for_queue` (or its caller) — skip already-locked queue rows for the assignment window. If the marketplace list previously showed all locked customers to the partner-owner, it should still show (it's theirs), but should NOT re-offer.
 
-### 2.1 Database
+### 3e. Admin add/remove customer
+- Admin "assign customer to partner" or create-DS-subscription flow (existing) → after inserting queue row, if a matching active assignment exists, set `locked_partner_id`+`lock_until` immediately and call `generate_daily_services(today)` for that partner so the row appears in either today's route (if visibility open and shift not started) or tomorrow's.
+- Cancel/remove → set queue.status='cancelled' and delete pending future `services` rows.
 
-New tables:
-- `dar_events` — one row per recovery trigger. Columns: `partner_id`, `reason` (`absent|unavailable|cancelled|offline|suspended`), `triggered_at`, `affected_service_ids[]`, `status` (`pending|offered|recovered|partial|expired`), `recovered_count`, `resolved_at`.
-- `dar_offers` — per (event, partner) offer. Columns: `event_id`, `partner_id`, `service_ids[]`, `score`, `extra_distance_km`, `extra_time_min`, `extra_monthly_earnings`, `status` (`pending|accepted|ignored|expired`), `sent_at`, `responded_at`, `expires_at`.
+## 4. Partner UI
 
-New columns:
-- `services.recovery_event_id`, `services.original_partner_id` for audit.
+- `_authenticated/app/assignments.tsx` (builder): add **Hours per day picker (2/3/4/5/6)** and **Duration picker** (min/default/max from settings). Copy: "Locks your route for N days — no rebuilding."
+- `_authenticated/app/my-assignment.tsx`: header shows `Remaining days`, `Auto-renew` toggle if enabled by admin, and `Today's route: Ready | Unlocks at HH:MM`.
+- `_authenticated/app/live.tsx` (Today's Route): if `unlockAt > now`, render a "Route unlocks at HH:MM" empty state with countdown instead of stops.
+- Hide the "Build assignment" CTA whenever an active assignment exists that covers today. Show "My Assignment" instead.
 
-### 2.2 RPCs / Server functions
+## 5. Admin UI
 
-- `trg_partner_status_dar` — trigger on `partners.status` / `attendance` / `assignments.status` → calls `dar_trigger_recovery(partner_id, reason)`.
-- `dar_trigger_recovery(p_partner_id, p_reason)` — selects today's pending Daily Shine `services` for that partner, marks `status='released'` + `original_partner_id`, inserts `dar_events`, calls `dar_find_candidates`.
-- `dar_find_candidates(event_id)` — uses `get_coverage_at` + existing marketplace scoring (`weight_distance`, `weight_reliability`, `weight_capacity`, `weight_route_impact`, `weight_urgency`) filtered by DAR settings (`dar_min_remaining_capacity`, `dar_search_radius_km`, `dar_max_travel_increase_pct`). Inserts top-N `dar_offers`.
-- `dar_accept_offer(offer_id, service_ids[])` — assigns selected services to the partner, calls existing route optimizer (cluster-first, respects locked/exact/emergency), updates `dar_events`.
-- `dar_ignore_offer(offer_id)`, `dar_expire_offers()` (cron).
-- `dar_dashboard_metrics()` — 8 metrics for admin.
+- `admin.settings.tsx` → new "Assignment" section: `Route visibility hours` (dropdown 1/2/3/4/5/6/8/12/24), `Min/Max/Default duration days`, `Hours-per-day options` (multi-select), `Auto-renew allowed` toggle.
+- `admin.marketplace.tsx`: hide locked queue rows from the awaiting/offered tabs (they belong to a partner already); surface them in a new "Locked" chip on the queue detail page.
 
-### 2.3 Partner UI
+## 6. DAR interaction
+- DAR path unchanged for today. When DAR reassigns a stop temporarily, do NOT overwrite `locked_partner_id`/`lock_until` — just create the day's `services` row against the DAR partner. Tomorrow's generation reads the queue lock and returns the customer to the original partner. Admin "permanent reassign" is the only path that rewrites the lock.
 
-- New card in `app.live.tsx` / `app.assignments.tsx`: **"Extra Customers Available"** when an active `dar_offers` row exists.
-- Shows: count, +₹ monthly, +km, +min, service windows.
-- Buttons: Accept All / Accept Selected (checkbox list) / Ignore.
-- Realtime via `dar_offers` channel.
+## 7. Files touched
 
-### 2.4 Admin Dashboard
+- **Migration**: 1 file — add columns, partial unique index on `services(assignment_id, customer_id, scheduled_date)`, `generate_daily_services()` fn, tweak `offer_next_for_queue` to skip locked rows.
+- **Cron route**: `src/routes/api/public/cron/generate-daily-routes.ts` (+ pg_cron schedule inserted via `supabase--insert`).
+- **Server fns**: extend `src/lib/assignment.functions.ts` (visibility, hours/duration in accept), new `src/lib/daily-shine.functions.ts` for admin add/remove helpers if needed.
+- **Partner UI**: `src/routes/_authenticated/app.assignments.tsx`, `.../app.my-assignment.tsx`, `.../app.live.tsx`.
+- **Admin UI**: `src/routes/admin.settings.tsx`, `src/routes/admin.marketplace.tsx` (+ detail).
+- **Types regen**: `src/integrations/supabase/types.ts` after migration.
 
-- New route `/admin/dar` with 8 metric cards and live tables (Released, Pending, Recovered).
-- Realtime via `dar_events` + `dar_offers` channels.
-- Sidebar link "Recovery (DAR)" under Operations.
+## 8. Acceptance mapping
 
-### 2.5 Customer experience
+- Accept once → no rebuild for `duration_days` days: enforced by queue lock + skip-locked in offer engine + UI hides builder.
+- Route appears only within visibility window: enforced by `getTodayRouteVisibility` gate on both `my-assignment` and `live`.
+- Admin adds customer → next-day auto-appear: enforced by generator + immediate lock + regen call.
+- DAR still works: today's `services` row assigned to DAR partner; queue lock untouched.
+- Marketplace / Coverage Manager / Wallet / Notifications unchanged.
 
-- No new customer notifications. Whitelist trigger already blocks ETA/route. Service window unchanged. Verified via existing `trg_block_forbidden_customer_notifications`.
+## 9. Out of scope / follow-ups
 
-### 2.6 Settings wired (all 11 DAR keys, already seeded)
-
-| Key | Effect |
-|---|---|
-| `dar_enabled` | Master switch in `dar_trigger_recovery` |
-| `dar_min_remaining_capacity` | Filter in `dar_find_candidates` |
-| `dar_max_extra_cars` | Cap per offer |
-| `dar_search_radius_km` | Initial radius |
-| `dar_max_travel_increase_pct` | Route-impact filter |
-| `dar_min_extra_earnings` | Offer floor |
-| `dar_retry_count` | Re-fan-out retries |
-| `dar_offer_timeout_sec` | `expires_at` calc + cron |
-| `dar_emergency_mode` | Skip earnings floor when true |
-| `dar_auto_optimize` | If false, partner manually reorders |
-
-### 2.7 End-to-end verification (Playwright, no inspection-only PASS)
-
-Script `/tmp/browser/dar/e2e.py`:
-1. Seed: partner A with 3 daily-shine stops today; partner B nearby with capacity.
-2. Sign in admin → mark partner A `unavailable`.
-3. Poll `dar_events` until status=`offered`.
-4. Sign in partner B → screenshot offer card → click Accept All.
-5. Verify `services.partner_id` updated, route reoptimized (no zig-zag — assert sequence_no monotonic by cluster).
-6. Sign in customer of one released service → verify booking page shows window only, no "reassigned" text, no ETA.
-7. Open `/admin/dar` → verify metrics incremented in realtime.
-8. Output PASS/FAIL table with screenshot paths.
-
-Deliverable: `/mnt/documents/UrbanWash_DAR_E2E_Report.md`.
-
----
-
-## Order of execution
-
-1. Phase 1.5 migration + UI prune + verification.
-2. DAR schema migration.
-3. DAR RPCs + triggers migration.
-4. Partner UI + Admin dashboard.
-5. E2E Playwright run + report.
-
-Stop and report after Phase 1.5 verification before starting DAR migrations? **No** — proceed continuously per the user's request, but produce one combined final report at the end.
+- Auto-renew billing flow (only the flag + expiry banner ship now).
+- Multi-partner splitting within one assignment.
+- Historical migration of already-in-flight assignments — new rules apply from deploy; existing active assignments get `locked_partner_id` back-filled by a one-shot admin action in the migration.

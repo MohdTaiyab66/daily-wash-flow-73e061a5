@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { getRouteVisibility } from "@/lib/assignment.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,18 @@ function RoutePage() {
     refetchOnWindowFocus: true,
   });
 
+  const visibilityFn = useServerFn(getRouteVisibility);
+  const { data: visibilityInfo } = useQuery({
+    queryKey: ["route-visibility-unlock"],
+    queryFn: () => visibilityFn(),
+    refetchInterval: 60000,
+  });
+  const visibilityUnlockAt = visibilityInfo?.unlock_at ? new Date(visibilityInfo.unlock_at) : null;
+  const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
+  const unlockCountdown = visibilityUnlockAt
+    ? Math.max(0, Math.ceil((visibilityUnlockAt.getTime() - Date.now()) / 60000))
+    : 0;
+
   const { data: visibilitySetting } = useQuery({
     queryKey: ["route-visibility-until"],
     queryFn: async () => {
@@ -55,7 +68,6 @@ function RoutePage() {
         .select("value")
         .eq("key", "route_visibility_until")
         .maybeSingle();
-      // value is jsonb, e.g. "10:00" or "all_day"
       const v = data?.value;
       return (typeof v === "string" ? v : (v as any)) ?? "10:00";
     },
@@ -186,15 +198,25 @@ function RoutePage() {
       {/* Pending stops */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Pending</h2>
       <div className="mt-3 space-y-3">
-        {pending.length === 0 && !isEndOfDay && (
+        {!routeUnlocked && (
+          <Card className="p-6 text-center">
+            <p className="text-sm font-medium">Today's route unlocks soon</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {visibilityUnlockAt
+                ? `Available at ${visibilityUnlockAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${unlockCountdown > 0 ? ` · in ${unlockCountdown < 60 ? `${unlockCountdown} min` : `${Math.floor(unlockCountdown / 60)}h ${unlockCountdown % 60}m`}` : ""}`
+                : "Your route will appear before your shift starts."}
+            </p>
+          </Card>
+        )}
+        {routeUnlocked && pending.length === 0 && !isEndOfDay && (
           <Card className="p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
         )}
-        {!routeVisible && pending.length > 0 && (
+        {routeUnlocked && !routeVisible && pending.length > 0 && (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Route is hidden until tomorrow. Contact admin if you need access.
           </Card>
         )}
-        {routeVisible && pending.map((s, idx) => {
+        {routeUnlocked && routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
           const gps = { lat: (s as any).lat, lng: (s as any).lng };

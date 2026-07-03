@@ -45,7 +45,7 @@ function MyAssignmentPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">My assignment</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{a.area} · Day {data.day_progress} of {a.duration_days}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{a.area} · Day {data.day_progress} of {a.duration_days} · {data.remaining_days ?? 0} days left</p>
 
       
 
