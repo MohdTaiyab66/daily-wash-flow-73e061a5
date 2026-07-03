@@ -799,11 +799,11 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     !(reason === "Other" && !notes.trim());
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] DIRTY FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
   }, [serviceId, open]);
 
   useEffect(() => {
-    if (dirtyCanSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=dirty_vehicle · photos=${REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length}/${REPORT_ANGLES.length}`);
+    if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length}/${REPORT_ANGLES.length}`);
   }, [serviceId, dirtyCanSubmit, photos]);
 
   const storePhoto = (slot: string, path?: string) => {
@@ -815,7 +815,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (!photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
-    console.log(`[SVC ${serviceId}] DIRTY Submit pressed · photos=4 · reason=${reason}`);
+    console.log(`[SVC][DIRTY] Submit pressed · svc=${serviceId} · photos=4 · reason=${reason}`);
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     const rpcStart = Date.now();
@@ -828,7 +828,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         gps: pos,
         payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
-      console.log(`[SVC ${serviceId}] DIRTY RPC started · submit_service_unavailable(dirty_vehicle)`);
+      console.log(`[SVC][DIRTY] RPC started · submit_service_unavailable(dirty_vehicle) · svc=${serviceId}`);
       const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: "dirty_vehicle",
@@ -838,7 +838,10 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         p_lng: pos?.lng ?? null,
       } as any);
       if (e2) throw e2;
-      console.log(`[SVC ${serviceId}] DIRTY RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
+      const r: any = data ?? {};
+      console.log(`[SVC][DIRTY] RPC completed · svc=${serviceId} · Δ${Date.now()-rpcStart}ms · response=`, data);
+      if (r.report_id) console.log(`[SVC][DIRTY] Report created: ${r.report_id} · svc=${serviceId}`);
+      if (r.wallet_entry_id) console.log(`[SVC][DIRTY] Wallet entry: ${r.wallet_entry_id} · svc=${serviceId}`);
       await logApkEvidence({
         eventType: "dirty_submit_result",
         serviceId,
@@ -847,16 +850,17 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         status: "success",
         payload: { rpc: data },
       });
-      console.log(`[SVC ${serviceId}] DIRTY Wallet updated · credited=₹${(data as any)?.credited ?? COMPENSATION}`);
-      console.log(`[SVC ${serviceId}] DIRTY Notifications dispatched (customer + admin) via RPC`);
-      toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
+      console.log(`[SVC][DIRTY] Wallet updated (+₹${r.credited ?? COMPENSATION}) · svc=${serviceId}`);
+      console.log(`[SVC][DIRTY] Customer notification sent · svc=${serviceId}`);
+      console.log(`[SVC][DIRTY] Admin notification sent · svc=${serviceId}`);
+      toast.success(`Dirty vehicle reported · ₹${r.credited ?? COMPENSATION} credited`);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-      console.log(`[SVC ${serviceId}] DIRTY Route advanced · queries invalidated`);
+      console.log(`[SVC][DIRTY] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
       setPhotos({});
@@ -864,6 +868,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       void onDone?.();
     } catch (error: any) {
       await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      console.error(`[SVC][DIRTY][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit dirty vehicle report");
     } finally {
       setSaving(false);
@@ -875,7 +880,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
-        if (value) console.log(`[SVC ${serviceId}] Dirty dialog opened`);
+        if (value) console.log(`[SVC][DIRTY] Dialog opened · svc=${serviceId}`);
         setOpen(value);
       }}
     >
