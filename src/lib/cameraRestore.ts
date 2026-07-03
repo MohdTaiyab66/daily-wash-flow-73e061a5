@@ -1,6 +1,7 @@
 import { isNative } from "@/lib/platform";
 
 export const CAMERA_PENDING_KEY = "uw_partner_camera_pending";
+export const CAMERA_RESTORED_KEY = "uw_partner_camera_restored";
 
 type PendingCapture = {
   serviceId?: string | null;
@@ -13,10 +14,36 @@ type PendingCapture = {
   at?: number;
 };
 
+type RestoredCapture = PendingCapture & {
+  base64String: string;
+  format?: string;
+};
+
+function readStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.setItem(key, value); } catch { /* noop */ }
+  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
+}
+
+function removeStorage(key: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
+  try { window.localStorage.removeItem(key); } catch { /* noop */ }
+}
+
 export function readPendingCapture(): PendingCapture | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem(CAMERA_PENDING_KEY);
+    const raw = readStorage(CAMERA_PENDING_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PendingCapture;
     if (!parsed.at || Date.now() - parsed.at > 10 * 60 * 1000) {
@@ -33,7 +60,7 @@ export function readPendingCapture(): PendingCapture | null {
 export function persistPendingCapture(context: Omit<PendingCapture, "pathname" | "at">) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(
+    writeStorage(
       CAMERA_PENDING_KEY,
       JSON.stringify({ ...context, pathname: window.location.pathname, at: Date.now() }),
     );
@@ -44,10 +71,33 @@ export function persistPendingCapture(context: Omit<PendingCapture, "pathname" |
 
 export function clearPendingCapture() {
   if (typeof window === "undefined") return;
+  removeStorage(CAMERA_PENDING_KEY);
+}
+
+function saveRestoredCapture(data: unknown) {
+  const pending = readPendingCapture();
+  const photo = data as { base64String?: string; format?: string } | null;
+  if (!pending?.slot || !photo?.base64String) return;
+  writeStorage(CAMERA_RESTORED_KEY, JSON.stringify({ ...pending, base64String: photo.base64String, format: photo.format ?? "jpeg", at: Date.now() }));
+}
+
+export function consumeRestoredCapture(slot: string): RestoredCapture | null {
+  if (typeof window === "undefined") return null;
   try {
-    window.sessionStorage.removeItem(CAMERA_PENDING_KEY);
+    const raw = readStorage(CAMERA_RESTORED_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as RestoredCapture;
+    if (!parsed.at || Date.now() - parsed.at > 10 * 60 * 1000) {
+      removeStorage(CAMERA_RESTORED_KEY);
+      return null;
+    }
+    if (parsed.slot !== slot) return null;
+    removeStorage(CAMERA_RESTORED_KEY);
+    clearPendingCapture();
+    return parsed;
   } catch {
-    // noop
+    removeStorage(CAMERA_RESTORED_KEY);
+    return null;
   }
 }
 
@@ -67,7 +117,10 @@ export function installCameraRouteRestore() {
 
   void import("@capacitor/app")
     .then(({ App }) => {
-      void App.addListener("appRestoredResult", restoreRoute);
+      void App.addListener("appRestoredResult", (event: { pluginId?: string; methodName?: string; data?: unknown }) => {
+        if (event?.pluginId === "Camera" && event?.methodName === "getPhoto") saveRestoredCapture(event.data);
+        restoreRoute();
+      });
       void App.addListener("appStateChange", ({ isActive }) => {
         if (isActive) window.setTimeout(restoreRoute, 50);
       });
