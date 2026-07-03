@@ -18,7 +18,7 @@ import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
@@ -489,26 +489,10 @@ function PhotoSlot({
 }: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean; autoOpen?: boolean; onAutoOpenConsumed?: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const slot = `${stage}_${angle}`;
   const busy = capturing || uploading;
 
-  const openCamera = async () => {
-    if (busy) return;
-    const t0 = Date.now();
-    console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
-    setCapturing(true);
-      await logApkEvidence({
-        eventType: "service_photo_camera_attempt",
-        serviceId,
-        payload: { stage, angle, slot: `${stage}_${angle}` },
-      });
-      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot: `${stage}_${angle}` }).finally(() => setCapturing(false));
-      if (!file) {
-        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
-        await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
-        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-        return;
-      }
-      await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
+  const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -533,13 +517,42 @@ function PhotoSlot({
           { onConflict: "service_id,stage,angle" },
         );
       if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
-      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-t0}ms`);
-      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, gps: pos, status: "success", payload: { stage, angle, path, elapsed_ms: Date.now() - t0 } });
+      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, gps: pos, status: "success", payload: { stage, angle, path, elapsed_ms: Date.now() - startedAt } });
       onUploaded();
     } finally {
       setUploading(false);
     }
   };
+
+  const openCamera = async () => {
+    if (busy) return;
+    const t0 = Date.now();
+    console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
+    setCapturing(true);
+      await logApkEvidence({
+        eventType: "service_photo_camera_attempt",
+        serviceId,
+        payload: { stage, angle, slot },
+      });
+      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
+      if (!file) {
+        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
+        await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
+        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+        return;
+      }
+      await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
+    await uploadCapturedFile(file, t0);
+  };
+
+  useEffect(() => {
+    if (done || busy) return;
+    const restored = consumeRestoredCameraCapture({ slot });
+    if (!restored) return;
+    void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
+    void uploadCapturedFile(restored);
+  }, [done, busy, slot]);
 
   useEffect(() => {
     if (!autoOpen || done || busy) return;
