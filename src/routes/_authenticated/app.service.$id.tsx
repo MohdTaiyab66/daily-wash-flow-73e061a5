@@ -647,18 +647,31 @@ function UnavailableDialog({
   photos,
   refetch,
   onDone,
+  autoOpen,
+  onAutoOpenConsumed,
 }: {
   serviceId: string;
   assignmentId?: string | null;
   photos: ServicePhotoRow[];
   refetch: () => void;
   onDone: () => void;
+  autoOpen?: boolean;
+  onAutoOpenConsumed?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (autoOpen && !open) {
+      console.log(`[SVC][UNAVAILABLE] Auto-open after camera restore · svc=${serviceId}`);
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, open, serviceId, onAutoOpenConsumed]);
+
 
   const needsRemarks = reason === "other";
   const capturedPaths = pickPhotoPaths(photos, "unavailable", UNAVAILABLE_ANGLES);
