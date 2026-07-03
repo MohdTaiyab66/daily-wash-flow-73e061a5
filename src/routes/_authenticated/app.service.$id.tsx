@@ -64,6 +64,7 @@ type DirtyDraft = {
 };
 
 const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
+type EvidenceFile = File & { previewUrl?: string };
 
 function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
   return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
@@ -548,8 +549,9 @@ function PhotoSlot({
     if (busy) return;
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
+    const capturePromise = captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot });
     setCapturing(true);
-      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
+      const file = await capturePromise.finally(() => setCapturing(false));
       void logApkEvidence({
         eventType: "service_photo_camera_attempt",
         serviceId,
@@ -630,17 +632,18 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
     const photoIndex = photos.length + 1;
     const slot = `unavailable_${photoIndex}`;
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
-    setOpen(true);
-    setCapturing(true);
-    const file = await captureFromCamera({
+    const capturePromise = captureFromCamera({
       serviceId,
       assignmentId,
       workflow: "unavailable_vehicle",
       stage: "report",
       angle: String(photoIndex),
       slot,
-    }).finally(() => setCapturing(false));
+    });
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
+    setOpen(true);
+    setCapturing(true);
+    const file = await capturePromise.finally(() => setCapturing(false));
     void logApkEvidence({
       eventType: "unavailable_camera_attempt",
       serviceId,
@@ -885,10 +888,11 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const capture = async (angle: string) => {
     if (capturingAngle || uploadingAngle || saving) return;
     const slot = `dirty_${angle}`;
+    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot });
     writeReportDraft(serviceId, "dirty", { reason, notes, photos, open: true });
     setOpen(true);
     setCapturingAngle(angle);
-    const file = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot }).finally(() => setCapturingAngle(null));
+    const file = await capturePromise.finally(() => setCapturingAngle(null));
     void logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
     if (!file) {
       await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
@@ -1023,6 +1027,8 @@ async function getPosition(): Promise<{ lat: number; lng: number } | null> {
 }
 
 async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
+  const previewUrl = (file as EvidenceFile).previewUrl;
+  if (previewUrl && file.size <= 1) return previewUrl;
   const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
