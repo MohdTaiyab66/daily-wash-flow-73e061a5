@@ -649,6 +649,11 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
      let pos: { lat: number; lng: number } | null = null;
      const rpcStart = Date.now();
      try {
+     console.log(`[SVC][UNAVAILABLE] Submit pressed · svc=${serviceId} · photos=${photoList.length} · reason=${reason}`);
+     setSaving(true);
+     let pos: { lat: number; lng: number } | null = null;
+     const rpcStart = Date.now();
+     try {
        pos = await getPosition();
        await logApkEvidence({
          eventType: "unavailable_submit_attempt",
@@ -657,7 +662,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          gps: pos,
          payload: { reason, photo_count: photoList.length, has_notes: Boolean(notes.trim()) },
        });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC started · submit_service_unavailable`);
+       console.log(`[SVC][UNAVAILABLE] RPC started · submit_service_unavailable · svc=${serviceId}`);
        const { data, error } = await supabase.rpc("submit_service_unavailable", {
          p_service_id: serviceId,
          p_reason: reason,
@@ -667,7 +672,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          p_lng: pos?.lng ?? null,
        } as any);
        if (error) throw error;
-       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
+       const r: any = data ?? {};
+       console.log(`[SVC][UNAVAILABLE] RPC completed · svc=${serviceId} · Δ${Date.now()-rpcStart}ms · response=`, data);
+       if (r.report_id) console.log(`[SVC][UNAVAILABLE] Report created: ${r.report_id} · svc=${serviceId}`);
+       if (r.wallet_entry_id) console.log(`[SVC][UNAVAILABLE] Wallet entry: ${r.wallet_entry_id} · svc=${serviceId}`);
        await logApkEvidence({
          eventType: "unavailable_submit_result",
          serviceId,
@@ -676,16 +684,17 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          status: "success",
          payload: { rpc: data },
        });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Wallet updated · credited=₹${(data as any)?.credited ?? 12}`);
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Notifications dispatched (customer + admin) via RPC`);
-       toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+       console.log(`[SVC][UNAVAILABLE] Wallet updated (+₹${r.credited ?? 12}) · svc=${serviceId}`);
+       console.log(`[SVC][UNAVAILABLE] Customer notification sent · svc=${serviceId}`);
+       console.log(`[SVC][UNAVAILABLE] Admin notification sent · svc=${serviceId}`);
+       toast.success(`Marked unavailable · ₹${r.credited ?? 12} credited`);
        qc.invalidateQueries({ queryKey: ["service", serviceId] });
        qc.invalidateQueries({ queryKey: ["route-today"] });
        qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
        qc.invalidateQueries({ queryKey: ["today-services-mini"] });
        qc.invalidateQueries({ queryKey: ["earnings-v3"] });
        qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Route advanced · queries invalidated`);
+       console.log(`[SVC][UNAVAILABLE] Route advanced · queries invalidated · svc=${serviceId}`);
        setReason("");
        setNotes("");
        setPhotos({});
@@ -693,6 +702,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
        onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      console.error(`[SVC][UNAVAILABLE][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit unavailable report");
     } finally {
       setSaving(false);
@@ -704,7 +714,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
-        if (value) console.log(`[SVC ${serviceId}] Unavailable dialog opened`);
+        if (value) console.log(`[SVC][UNAVAILABLE] Dialog opened · svc=${serviceId}`);
         setOpen(value);
       }}
     >
