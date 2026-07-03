@@ -285,40 +285,16 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | nu
     };
 
     const takeSnapshot = async () => {
+      if (capture.dataset.busy === "true") return;
+      capture.dataset.busy = "true";
       capture.disabled = true;
       capture.textContent = "Saving…";
-      const videoReady = await waitForVideoFrame(video);
-      if (!videoReady) {
-        console.warn("[camera] video frame not ready");
-        return finish(null);
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return finish(null);
-      try {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      } catch (err) {
-        console.warn("[camera] frame capture failed", err);
-        return finish(null);
-      }
-      let settled = false;
-      const done = (file: File | null) => {
-        if (settled) return;
-        settled = true;
-        finish(file);
-      };
-      if (typeof canvas.toBlob === "function") {
-        canvas.toBlob(
-          (blob) => done(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : fallbackDataUrlFile()),
-          "image/jpeg",
-          0.82,
-        );
-      } else {
-        done(fallbackDataUrlFile());
-      }
-      window.setTimeout(() => done(fallbackDataUrlFile()), 1200);
+      const file = await captureFrameFile(video, stream);
+      if (file) return finish(file);
+      console.warn("[camera] no frame captured; leaving camera open");
+      capture.dataset.busy = "false";
+      capture.disabled = false;
+      capture.textContent = "Capture";
     };
 
     const bindTap = (el: HTMLElement, action: () => void) => {
@@ -331,16 +307,100 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | nu
         handledAt = now;
         void action();
       };
-      el.addEventListener("pointerdown", run, { passive: false });
       el.addEventListener("pointerup", run, { passive: false });
-      el.addEventListener("touchstart", run, { passive: false });
       el.addEventListener("touchend", run, { passive: false });
-      el.addEventListener("mousedown", run, { passive: false });
+      el.addEventListener("mouseup", run, { passive: false });
       el.addEventListener("click", run, { passive: false });
     };
 
     bindTap(cancel, () => finish(null));
     bindTap(capture, takeSnapshot);
+  });
+}
+
+async function captureFrameFile(video: HTMLVideoElement, stream: MediaStream): Promise<CaptureFile | null> {
+  const track = stream.getVideoTracks()[0];
+  const imageCaptureFile = await captureWithImageCapture(track);
+  if (imageCaptureFile) return imageCaptureFile;
+
+  try {
+    await video.play();
+  } catch {
+    // The stream can already be playing; continue to canvas capture.
+  }
+
+  const videoReady = await waitForVideoFrame(video);
+  if (!videoReady) console.warn("[camera] video frame not ready; trying track dimensions");
+
+  const settings = track?.getSettings?.();
+  const width = video.videoWidth || settings?.width || 1280;
+  const height = video.videoHeight || settings?.height || 720;
+  if (!width || !height) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  try {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  } catch (err) {
+    console.warn("[camera] frame capture failed", err);
+    return null;
+  }
+  return canvasToFile(canvas);
+}
+
+async function captureWithImageCapture(track?: MediaStreamTrack): Promise<CaptureFile | null> {
+  const ImageCaptureCtor = typeof window !== "undefined" ? (window as any).ImageCapture : null;
+  if (!track || !ImageCaptureCtor) return null;
+  try {
+    const imageCapture = new ImageCaptureCtor(track);
+    if (typeof imageCapture.takePhoto === "function") {
+      const blob = await imageCapture.takePhoto();
+      if (blob?.size > 0) return new File([blob], `capture-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" });
+    }
+  } catch (err) {
+    console.warn("[camera] ImageCapture.takePhoto failed", err);
+  }
+  try {
+    const imageCapture = new ImageCaptureCtor(track);
+    if (typeof imageCapture.grabFrame === "function") {
+      const bitmap = await imageCapture.grabFrame();
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width || 1280;
+      canvas.height = bitmap.height || 720;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+      return canvasToFile(canvas);
+    }
+  } catch (err) {
+    console.warn("[camera] ImageCapture.grabFrame failed", err);
+  }
+  return null;
+}
+
+function canvasToFile(canvas: HTMLCanvasElement): Promise<CaptureFile | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (file: CaptureFile | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(file);
+    };
+    const fallback = () => fileFromDataUrl(canvas.toDataURL("image/jpeg", 0.82));
+    if (typeof canvas.toBlob === "function") {
+      canvas.toBlob(
+        (blob) => done(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : fallback()),
+        "image/jpeg",
+        0.82,
+      );
+    } else {
+      done(fallback());
+    }
+    window.setTimeout(() => done(fallback()), 1200);
   });
 }
 
