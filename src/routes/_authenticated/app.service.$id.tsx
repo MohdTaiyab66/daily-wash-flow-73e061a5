@@ -607,7 +607,17 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) {
+          setReason("");
+          setNotes("");
+          setPhotos([]);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="lg">
           <XCircle className="mr-2 h-4 w-4" /> Mark unavailable
@@ -683,6 +693,10 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const [uploadingAngle, setUploadingAngle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const dirtyCanSubmit =
+    !!reason &&
+    Object.keys(photos).length === 4 &&
+    !(reason === "Other" && !notes.trim());
 
   const upload = async (angle: string, file: File) => {
     setUploadingAngle(angle);
@@ -714,7 +728,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-    if (Object.keys(photos).length < 4) return toast.error("All 4 photos required");
+    if (Object.keys(photos).length < 4 || !photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
     setSaving(true);
     const pos = await getPosition();
     await logApkEvidence({
@@ -758,7 +772,17 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) {
+          setReason("");
+          setNotes("");
+          setPhotos({});
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm"><AlertTriangle className="mr-1.5 h-4 w-4" />Dirty vehicle</Button>
       </DialogTrigger>
@@ -787,7 +811,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving}>
+          <Button onClick={submit} disabled={saving || uploadingAngle !== null || !dirtyCanSubmit}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
           </Button>
         </DialogFooter>
