@@ -7,6 +7,7 @@
  */
 import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
+import { Camera as CapacitorCamera, CameraResultType, CameraSource, type Photo } from "@capacitor/camera";
 
 type CaptureContext = {
   serviceId?: string | null;
@@ -52,8 +53,7 @@ export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot
 async function captureFromCameraOnce(): Promise<File | null> {
   if (shouldUseNativeCamera()) {
     try {
-      const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
-      const getCameraPhoto = () => Camera.getPhoto({
+      const getCameraPhoto = () => CapacitorCamera.getPhoto({
         quality: 70,
         allowEditing: false,
         resultType: CameraResultType.Base64,
@@ -62,7 +62,7 @@ async function captureFromCameraOnce(): Promise<File | null> {
         correctOrientation: true,
         width: 1600,
       });
-      let photo: Awaited<ReturnType<typeof Camera.getPhoto>>;
+      let photo: Photo;
       try {
         // Call the native camera immediately. Pre-checking permissions first can
         // break the tap → camera chain on Android and sometimes returns to the app
@@ -72,7 +72,7 @@ async function captureFromCameraOnce(): Promise<File | null> {
         const e = err as { message?: string; code?: string };
         const permissionLike = /permission|denied|not.?grant|not.?allow/i.test(`${e?.code ?? ""} ${e?.message ?? ""}`);
         if (!permissionLike) throw err;
-        const permissions = await Camera.requestPermissions({ permissions: ["camera"] });
+        const permissions = await CapacitorCamera.requestPermissions({ permissions: ["camera"] });
         if (permissions.camera !== "granted") return null;
         photo = await getCameraPhoto();
       }
