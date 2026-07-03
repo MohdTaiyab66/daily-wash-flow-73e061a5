@@ -2,8 +2,8 @@
  * Camera-only capture helper.
  *
  * P0 mandate: Partner evidence photos must come from a live camera only.
- * There is deliberately no `<input type="file">`, picker prompt, gallery,
- * Photos source, or upload fallback anywhere in this helper.
+ * There is deliberately no picker prompt, gallery, Photos source, or upload
+ * fallback anywhere in this helper.
  */
 import { clearPendingCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
