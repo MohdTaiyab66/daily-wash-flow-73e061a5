@@ -167,6 +167,7 @@ export type Database = {
         Row: {
           accepted_at: string
           area: string
+          auto_renew: boolean
           completed_at: string | null
           created_at: string
           duration_days: number
@@ -176,11 +177,13 @@ export type Database = {
           estimated_hours: number
           expected_start_time: string
           fulfilled_cars: number
+          hours_per_day: number | null
           id: string
           last_modified_at: string | null
           modification_count: number
           partner_id: string
           rate_per_car: number
+          route_visibility_hours: number | null
           scheduled_date: string
           search_radius_km: number
           start_date: string
@@ -192,6 +195,7 @@ export type Database = {
         Insert: {
           accepted_at?: string
           area: string
+          auto_renew?: boolean
           completed_at?: string | null
           created_at?: string
           duration_days?: number
@@ -201,11 +205,13 @@ export type Database = {
           estimated_hours: number
           expected_start_time?: string
           fulfilled_cars?: number
+          hours_per_day?: number | null
           id?: string
           last_modified_at?: string | null
           modification_count?: number
           partner_id: string
           rate_per_car?: number
+          route_visibility_hours?: number | null
           scheduled_date?: string
           search_radius_km?: number
           start_date?: string
@@ -217,6 +223,7 @@ export type Database = {
         Update: {
           accepted_at?: string
           area?: string
+          auto_renew?: boolean
           completed_at?: string | null
           created_at?: string
           duration_days?: number
@@ -226,11 +233,13 @@ export type Database = {
           estimated_hours?: number
           expected_start_time?: string
           fulfilled_cars?: number
+          hours_per_day?: number | null
           id?: string
           last_modified_at?: string | null
           modification_count?: number
           partner_id?: string
           rate_per_car?: number
+          route_visibility_hours?: number | null
           scheduled_date?: string
           search_radius_km?: number
           start_date?: string
@@ -4167,6 +4176,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_daily_routes: { Args: { p_date?: string }; Returns: number }
+      generate_services_for_queue: {
+        Args: { p_queue_id: string }
+        Returns: number
+      }
       get_admin_user_ids: {
         Args: never
         Returns: {
@@ -4235,6 +4249,15 @@ export type Database = {
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
         Returns: Json
+      }
+      get_route_visibility: {
+        Args: { p_partner: string }
+        Returns: {
+          assignment_id: string
+          shift_start: string
+          unlock_at: string
+          visible: boolean
+        }[]
       }
       get_zone_capacity: {
         Args: { p_date?: string; p_zone: string }
