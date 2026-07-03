@@ -82,6 +82,25 @@ export const getMyAssignment = createServerFn({ method: "GET" })
       modifications_max: maxMods,
       can_modify: canModify,
       cooldown_until: cooldownUntil ? cooldownUntil.toISOString() : null,
+      remaining_days: Math.max(0, Math.ceil((new Date(a.end_date).getTime() - Date.now()) / 86400000) + 1),
+    };
+  });
+
+// Route visibility — today's route unlocks N hours before shift start.
+// Admin-configurable via platform_settings.route_visibility_hours (default 6).
+export const getRouteVisibility = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context.supabase as any)
+      .rpc("get_route_visibility", { p_partner: context.userId });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null };
+    return {
+      visible: !!row.visible,
+      unlock_at: row.unlock_at ?? null,
+      shift_start: row.shift_start ?? null,
+      assignment_id: row.assignment_id ?? null,
     };
   });
 
