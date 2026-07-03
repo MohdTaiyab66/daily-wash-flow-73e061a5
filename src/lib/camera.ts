@@ -68,8 +68,9 @@ async function captureFromCameraOnce(): Promise<File | null> {
   return captureWithBrowserCamera();
 }
 
-function shouldUseNativeCamera() {
+function shouldUseNativeCamera(): boolean {
   if (isNative() || nativePlatform() !== "web") return true;
+  return false;
 }
 
 function fileFromBase64(base64: string, format: string) {
