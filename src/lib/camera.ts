@@ -5,7 +5,7 @@
  * There is deliberately no picker prompt, gallery, Photos source, or upload
  * fallback anywhere in this helper.
  */
-import { clearPendingCapture, persistPendingCapture } from "@/lib/cameraRestore";
+import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
 
 type CaptureContext = {
@@ -28,7 +28,10 @@ export async function captureFromCamera(context: CaptureContext = {}): Promise<F
   activeCapture = true;
   persistPendingCapture(context);
   try {
-    const file = await captureFromCameraOnce();
+    const restored = context.slot ? consumeRestoredCapture(context.slot) : null;
+    const file = restored
+      ? fileFromBase64(restored.base64String, restored.format ?? "jpeg")
+      : await captureFromCameraOnce();
     clearPendingCapture();
     return file;
   } catch (err) {
@@ -37,6 +40,13 @@ export async function captureFromCamera(context: CaptureContext = {}): Promise<F
   } finally {
     activeCapture = false;
   }
+}
+
+export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot">): File | null {
+  if (!context.slot) return null;
+  const restored = consumeRestoredCapture(context.slot);
+  if (!restored) return null;
+  return fileFromBase64(restored.base64String, restored.format ?? "jpeg");
 }
 
 async function captureFromCameraOnce(): Promise<File | null> {

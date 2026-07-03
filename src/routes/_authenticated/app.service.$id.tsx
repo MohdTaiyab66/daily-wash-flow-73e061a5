@@ -18,13 +18,15 @@ import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
+import { readPendingCapture } from "@/lib/cameraRestore";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 type Angle = (typeof AFTER_ANGLES)[number];
+const REPORT_ANGLES = ["front", "rear", "left", "right"] as const;
 
 const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
@@ -67,10 +69,31 @@ function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
   return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
 }
 
+function readDraftStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeDraftStorage(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.setItem(key, value); } catch { /* noop */ }
+  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
+}
+
+function removeDraftStorage(key: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
+  try { window.localStorage.removeItem(key); } catch { /* noop */ }
+}
+
 function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.sessionStorage.getItem(reportDraftKey(serviceId, kind));
+    const raw = readDraftStorage(reportDraftKey(serviceId, kind));
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as T & { savedAt?: number };
     if (parsed.savedAt && Date.now() - parsed.savedAt > 6 * 60 * 60 * 1000) {
@@ -87,7 +110,7 @@ function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fa
 function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draft: UnavailableDraft | DirtyDraft) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
+    writeDraftStorage(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
   } catch {
     // Draft persistence is best-effort; capture/submit must keep working.
   }
@@ -95,11 +118,7 @@ function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draf
 
 function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
   if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(reportDraftKey(serviceId, kind));
-  } catch {
-    // noop
-  }
+  removeDraftStorage(reportDraftKey(serviceId, kind));
 }
 
 
@@ -489,26 +508,10 @@ function PhotoSlot({
 }: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean; autoOpen?: boolean; onAutoOpenConsumed?: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const slot = `${stage}_${angle}`;
   const busy = capturing || uploading;
 
-  const openCamera = async () => {
-    if (busy) return;
-    const t0 = Date.now();
-    console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
-    setCapturing(true);
-      await logApkEvidence({
-        eventType: "service_photo_camera_attempt",
-        serviceId,
-        payload: { stage, angle, slot: `${stage}_${angle}` },
-      });
-      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot: `${stage}_${angle}` }).finally(() => setCapturing(false));
-      if (!file) {
-        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
-        await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
-        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-        return;
-      }
-      await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
+  const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -533,13 +536,42 @@ function PhotoSlot({
           { onConflict: "service_id,stage,angle" },
         );
       if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
-      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-t0}ms`);
-      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, gps: pos, status: "success", payload: { stage, angle, path, elapsed_ms: Date.now() - t0 } });
+      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, gps: pos, status: "success", payload: { stage, angle, path, elapsed_ms: Date.now() - startedAt } });
       onUploaded();
     } finally {
       setUploading(false);
     }
   };
+
+  const openCamera = async () => {
+    if (busy) return;
+    const t0 = Date.now();
+    console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
+    setCapturing(true);
+      await logApkEvidence({
+        eventType: "service_photo_camera_attempt",
+        serviceId,
+        payload: { stage, angle, slot },
+      });
+      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
+      if (!file) {
+        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
+        await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
+        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+        return;
+      }
+      await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
+    await uploadCapturedFile(file, t0);
+  };
+
+  useEffect(() => {
+    if (done || busy) return;
+    const restored = consumeRestoredCameraCapture({ slot });
+    if (!restored) return;
+    void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
+    void uploadCapturedFile(restored);
+  }, [done, busy, slot]);
 
   useEffect(() => {
     if (!autoOpen || done || busy) return;
@@ -575,6 +607,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const nextSlot = `unavailable_${photos.length + 1}`;
 
   const MIN_PHOTOS = 2;
   const MAX_PHOTOS = 4;
@@ -588,22 +621,31 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open });
   }, [serviceId, reason, notes, photos, open]);
 
+  useEffect(() => {
+    const pending = readPendingCapture();
+    if (pending?.serviceId === serviceId && pending.workflow === "unavailable_vehicle") setOpen(true);
+  }, [serviceId]);
+
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
+    const photoIndex = photos.length + 1;
+    const slot = `unavailable_${photoIndex}`;
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
+    setOpen(true);
     setCapturing(true);
     await logApkEvidence({
       eventType: "unavailable_camera_attempt",
       serviceId,
       assignmentId,
-      payload: { photo_index: photos.length + 1, max_photos: MAX_PHOTOS },
+      payload: { photo_index: photoIndex, max_photos: MAX_PHOTOS, slot },
     });
     const file = await captureFromCamera({
       serviceId,
       assignmentId,
       workflow: "unavailable_vehicle",
       stage: "report",
-      angle: String(photos.length + 1),
-      slot: `unavailable_${photos.length + 1}`,
+      angle: String(photoIndex),
+      slot,
     }).finally(() => setCapturing(false));
     if (!file) {
       await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
@@ -615,19 +657,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
-      const photoIndex = photos.length + 1;
-      const path = `${u.user.id}/${serviceId}/unavailable-${photoIndex}-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) {
-        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
-        toast.error(error.message);
-        return;
-      }
-      setPhotos((p) => {
-        const next = [...p, path];
-        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
-        return next;
-      });
+      const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file });
+      const next = [...photos, path];
+      setPhotos(next);
+      writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
       await logApkEvidence({
         eventType: "unavailable_photo_upload_result",
         serviceId,
@@ -635,10 +668,39 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         status: "success",
         payload: { photo_index: photoIndex, path, size: file.size, type: file.type },
       });
+    } catch (err) {
+      await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
+      toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
       setUploading(false);
     }
   };
+
+  useEffect(() => {
+    if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
+    const restored = consumeRestoredCameraCapture({ slot: nextSlot });
+    if (!restored) return;
+    setOpen(true);
+    setUploading(true);
+    void (async () => {
+      const photoIndex = photos.length + 1;
+      try {
+        const { data: u, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!u.user) throw new Error("Please sign in again");
+        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file: restored });
+        const next = [...photos, path];
+        setPhotos(next);
+        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "success", payload: { photo_index: photoIndex, path, restored: true, size: restored.size, type: restored.type } });
+      } catch (err) {
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
+        toast.error((err as any)?.message ?? "Could not save photo");
+      } finally {
+        setUploading(false);
+      }
+    })();
+  }, [nextSlot, photos.length, capturing, uploading, saving, serviceId, assignmentId, reason, notes]);
 
   const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
 
@@ -662,8 +724,8 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         p_reason: reason,
         p_notes: notes || "",
         p_photos: photos,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
       } as any);
       if (error) throw error;
       console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
@@ -700,6 +762,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     <Dialog
       open={open}
       onOpenChange={(value) => {
+        if (!value && (capturing || uploading || saving)) return;
         setOpen(value);
       }}
     >
@@ -776,6 +839,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const [reason, setReason] = useState(initialDraft.reason);
   const [notes, setNotes] = useState(initialDraft.notes);
   const [photos, setPhotos] = useState<Record<string, string>>(initialDraft.photos);
+  const [capturingAngle, setCapturingAngle] = useState<string | null>(null);
   const [uploadingAngle, setUploadingAngle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
@@ -788,30 +852,27 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     writeReportDraft(serviceId, "dirty", { reason, notes, photos, open });
   }, [serviceId, reason, notes, photos, open]);
 
-  const upload = async (angle: string, file: File) => {
+  useEffect(() => {
+    const pending = readPendingCapture();
+    if (pending?.serviceId === serviceId && pending.workflow === "dirty_vehicle") setOpen(true);
+  }, [serviceId]);
+
+  const upload = async (angle: string, file: File, restored = false) => {
     setUploadingAngle(angle);
     try {
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
-      const path = `${u.user.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) {
-        await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
-        toast.error(error.message);
-        return;
-      }
-      setPhotos((p) => {
-        const next = { ...p, [angle]: path };
-        writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
-        return next;
-      });
+      const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `dirty-${angle}`, file });
+      const next = { ...photos, [angle]: path };
+      setPhotos(next);
+      writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
       await logApkEvidence({
         eventType: "dirty_photo_upload_result",
         serviceId,
         assignmentId,
         status: "success",
-        payload: { angle, path, size: file.size, type: file.type },
+        payload: { angle, path, restored, size: file.size, type: file.type },
       });
     } catch (err) {
       await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(err) } });
@@ -820,6 +881,35 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       setUploadingAngle(null);
     }
   };
+
+  const capture = async (angle: string) => {
+    if (capturingAngle || uploadingAngle || saving) return;
+    const slot = `dirty_${angle}`;
+    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open: true });
+    setOpen(true);
+    setCapturingAngle(angle);
+    await logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
+    const file = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot }).finally(() => setCapturingAngle(null));
+    if (!file) {
+      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, size: file.size, type: file.type } });
+    await upload(angle, file);
+  };
+
+  useEffect(() => {
+    if (capturingAngle || uploadingAngle || saving) return;
+    for (const angle of REPORT_ANGLES) {
+      const restored = consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
+      if (!restored) continue;
+      setOpen(true);
+      void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
+      void upload(angle, restored, true);
+      break;
+    }
+  }, [capturingAngle, uploadingAngle, saving, serviceId, assignmentId, reason, notes, photos]);
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
@@ -843,8 +933,8 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         p_reason: "dirty_vehicle",
         p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
         p_photos: [photos.front, photos.rear, photos.left, photos.right],
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
       } as any);
       if (e2) throw e2;
       console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
@@ -881,6 +971,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     <Dialog
       open={open}
       onOpenChange={(value) => {
+        if (!value && (capturingAngle || uploadingAngle || saving)) return;
         setOpen(value);
       }}
     >
@@ -897,22 +988,28 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
           ))}
         </RadioGroup>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {["front", "rear", "left", "right"].map((a) => (
-            <ReportPhoto
-              key={a}
-              serviceId={serviceId}
-              assignmentId={assignmentId}
-              angle={a}
-              done={!!photos[a]}
-              uploading={uploadingAngle === a}
-              disabled={!!uploadingAngle || saving}
-              onPicked={(f) => upload(a, f)}
-            />
-          ))}
+          {REPORT_ANGLES.map((a) => {
+            const busy = capturingAngle === a || uploadingAngle === a;
+            const done = !!photos[a];
+            return (
+              <button
+                key={a}
+                type="button"
+                onClick={() => capture(a)}
+                disabled={!!capturingAngle || !!uploadingAngle || saving}
+                className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
+                  done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
+                }`}
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                {done ? "✓ Captured" : a}
+              </button>
+            );
+          })}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploadingAngle !== null || !dirtyCanSubmit}>
+          <Button onClick={submit} disabled={saving || capturingAngle !== null || uploadingAngle !== null || !dirtyCanSubmit}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
           </Button>
         </DialogFooter>
@@ -921,48 +1018,18 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   );
 }
 
-
-
-
-function ReportPhoto({
-  serviceId,
-  assignmentId,
-  angle,
-  done,
-  uploading,
-  disabled,
-  onPicked,
-}: { serviceId: string; assignmentId?: string | null; angle: string; done: boolean; uploading?: boolean; disabled?: boolean; onPicked: (f: File) => void }) {
-  const [capturing, setCapturing] = useState(false);
-  const busy = Boolean(disabled || capturing || uploading);
-  const trigger = async () => {
-    if (busy) return;
-    setCapturing(true);
-    await logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle } });
-    const f = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot: `dirty_${angle}` }).finally(() => setCapturing(false));
-    if (f) {
-      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, size: f.size, type: f.type } });
-      onPicked(f);
-    } else {
-      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
-      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-    }
-  };
-  return (
-    <button
-      onClick={trigger}
-      disabled={busy}
-      className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
-        done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
-      }`}
-    >
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{done ? "✓ Captured" : angle}
-    </button>
-  );
-}
-
-
-
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
+  const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+    if (!error) return path;
+    lastError = error;
+    await new Promise((resolve) => window.setTimeout(resolve, attempt * 350));
+  }
+  throw lastError;
 }
