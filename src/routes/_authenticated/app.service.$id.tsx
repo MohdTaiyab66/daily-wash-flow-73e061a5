@@ -48,6 +48,7 @@ const DIRTY_REASONS = [
 ];
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
+const FLOW_VERSION = 5;
 
 function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
   if (workflow === "service_photo") return `service_photo_${phase}`;
@@ -473,8 +474,13 @@ function PhotoSlot({
   const slot = slotId ?? `${stage}_${angle}`;
   const busy = capturing || uploading;
 
+  useEffect(() => {
+    console.log(`[SVC ${serviceId}] PhotoSlot mounted · workflow=${workflow} · stage=${stage} · angle=${angle} · slot=${slot}`);
+  }, [serviceId, workflow, stage, angle, slot]);
+
   const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
+    console.log(`[SVC ${serviceId}] upload started · workflow=${workflow} · slot=${slot} · size=${file.size}b`);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Please sign in again");
@@ -489,7 +495,9 @@ function PhotoSlot({
           status: "success",
           payload: { slot, angle, path, elapsed_ms: Date.now() - startedAt, size: file.size, type: file.type },
         });
+        console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
         onUploaded(path);
+        console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
         return;
       }
 
@@ -516,7 +524,9 @@ function PhotoSlot({
       if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
       console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
       await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, assignmentId, gps: pos, status: "success", payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt } });
+      console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
       onUploaded(path);
+      console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
     } catch (err) {
       if (workflow !== "service_photo") {
         await logApkEvidence({ eventType: workflowEventName(workflow, "photo_upload_result"), serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
@@ -531,9 +541,11 @@ function PhotoSlot({
     if (disabled || busy) return;
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${workflow}/${slot}`);
+    console.log(`[SVC ${serviceId}] captureFromCamera called · workflow=${workflow} · slot=${slot}`);
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
     const file = await capturePromise.finally(() => setCapturing(false));
+    console.log(`[SVC ${serviceId}] Camera returned · workflow=${workflow} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
     void logApkEvidence({
       eventType: workflowEventName(workflow, "camera_attempt"),
       serviceId,
@@ -602,6 +614,14 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     !!reason &&
     capturedCount >= MIN_PHOTOS &&
     (!needsRemarks || notes.trim().length > 0);
+
+  useEffect(() => {
+    console.log(`[SVC ${serviceId}] UNAVAILABLE FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+  }, [serviceId, open]);
+
+  useEffect(() => {
+    if (canSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=unavailable_vehicle · photos=${capturedCount}/${MIN_PHOTOS}`);
+  }, [serviceId, canSubmit, capturedCount]);
 
   const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
@@ -673,6 +693,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
+        if (value) console.log(`[SVC ${serviceId}] Unavailable dialog opened`);
         setOpen(value);
       }}
     >
@@ -682,6 +703,9 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
+          UNAVAILABLE FLOW VERSION {FLOW_VERSION}
+        </div>
         <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
         <p className="text-xs text-muted-foreground">Pick a reason and capture at least {MIN_PHOTOS} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
@@ -758,6 +782,14 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     REPORT_ANGLES.every((slot) => Boolean(photos[slot])) &&
     !(reason === "Other" && !notes.trim());
 
+  useEffect(() => {
+    console.log(`[SVC ${serviceId}] DIRTY FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+  }, [serviceId, open]);
+
+  useEffect(() => {
+    if (dirtyCanSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=dirty_vehicle · photos=${REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length}/${REPORT_ANGLES.length}`);
+  }, [serviceId, dirtyCanSubmit, photos]);
+
   const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
     setPhotos((previous) => ({ ...previous, [slot]: path }));
@@ -821,6 +853,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
+        if (value) console.log(`[SVC ${serviceId}] Dirty dialog opened`);
         setOpen(value);
       }}
     >
@@ -828,6 +861,9 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         <Button variant="outline" size="sm"><AlertTriangle className="mr-1.5 h-4 w-4" />Dirty vehicle</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
+          DIRTY FLOW VERSION {FLOW_VERSION}
+        </div>
         <DialogHeader><DialogTitle>Report dirty vehicle</DialogTitle></DialogHeader>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
           {DIRTY_REASONS.map((r) => (
