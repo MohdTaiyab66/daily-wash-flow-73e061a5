@@ -337,12 +337,8 @@ async function captureFrameFile(video: HTMLVideoElement, stream: MediaStream): P
   try {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   } catch (err) {
-    console.warn("[camera] frame capture failed; trying black-frame proof file", err);
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#111";
-    ctx.font = "20px sans-serif";
-    ctx.fillText("Camera evidence captured", 24, 40);
+    console.warn("[camera] frame capture failed", err);
+    return null;
   }
   return canvasToFile(canvas);
 }
