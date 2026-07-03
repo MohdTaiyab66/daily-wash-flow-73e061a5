@@ -334,7 +334,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />
+          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={refreshAfterReport} />
         </div>
       )}
 
@@ -368,8 +368,8 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
-            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={goNext} />}
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={refreshAfterReport} />}
+            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={refreshAfterReport} />}
           </div>
 
           <Card className="mt-5 p-4">
