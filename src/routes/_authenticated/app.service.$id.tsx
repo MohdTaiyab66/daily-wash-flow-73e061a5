@@ -448,13 +448,11 @@ function PhotoSlot({
   slotId,
   done,
   onUploaded,
-  onBeforeCapture,
   label,
   wide,
   autoOpen,
   onAutoOpenConsumed,
   disabled,
-  uploadPrefix,
 }: {
   serviceId: string;
   assignmentId?: string | null;
@@ -464,13 +462,11 @@ function PhotoSlot({
   slotId?: string;
   done: boolean;
   onUploaded: (path?: string) => void;
-  onBeforeCapture?: (slotId: string) => void;
   label: string;
   wide?: boolean;
   autoOpen?: boolean;
   onAutoOpenConsumed?: () => void;
   disabled?: boolean;
-  uploadPrefix?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -484,7 +480,7 @@ function PhotoSlot({
       if (!u.user) throw new Error("Please sign in again");
 
       if (workflow !== "service_photo") {
-        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: uploadPrefix ?? `${workflow}-${slot}`, file });
+        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `${workflow}-${slot}`, file });
         console.log(`[SVC ${serviceId}] REPORT PHOTO ok · ${workflow}/${slot} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
         await logApkEvidence({
           eventType: workflowEventName(workflow, "photo_upload_result"),
@@ -534,24 +530,23 @@ function PhotoSlot({
   const openCamera = async () => {
     if (disabled || busy) return;
     const t0 = Date.now();
-    onBeforeCapture?.(slot);
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${workflow}/${slot}`);
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
-      const file = await capturePromise.finally(() => setCapturing(false));
-      void logApkEvidence({
-        eventType: workflowEventName(workflow, "camera_attempt"),
-        serviceId,
-        assignmentId,
-        payload: { stage, angle, slot },
-      });
-      if (!file) {
-        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
-        await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
-        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-        return;
-      }
-      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
+    const file = await capturePromise.finally(() => setCapturing(false));
+    void logApkEvidence({
+      eventType: workflowEventName(workflow, "camera_attempt"),
+      serviceId,
+      assignmentId,
+      payload: { stage, angle, slot },
+    });
+    if (!file) {
+      console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
+      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
     await uploadCapturedFile(file, t0);
   };
 
@@ -589,6 +584,7 @@ function PhotoSlot({
     </button>
   );
 }
+
 
 
 function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
