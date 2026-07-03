@@ -69,10 +69,27 @@ function ServiceDetail() {
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [autoOpenBefore, setAutoOpenBefore] = useState(false);
+  const [autoOpenReport, setAutoOpenReport] = useState<"unavailable" | "dirty" | null>(null);
+
+  // After Android kills the WebView while the native camera is foreground,
+  // the app cold-remounts with report dialogs closed. Inspect the restored
+  // capture context and re-open the correct dialog so its PhotoSlot mounts
+  // and consumes the restored photo.
+  useEffect(() => {
+    const ctx = peekCaptureContext();
+    if (!ctx?.slot || ctx.serviceId !== id) return;
+    if (ctx.slot.startsWith("unavailable_")) {
+      console.log(`[SVC][UNAVAILABLE] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
+      setAutoOpenReport("unavailable");
+    } else if (ctx.slot.startsWith("dirty_")) {
+      console.log(`[SVC][DIRTY] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
+      setAutoOpenReport("dirty");
+    }
+  }, [id]);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    const iv = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(iv);
   }, []);
 
   const { data: service } = useQuery({
