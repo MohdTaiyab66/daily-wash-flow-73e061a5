@@ -262,8 +262,8 @@ function computeFallbackStats(stops: Stop[], partnerPos: { lat: number; lng: num
 function RouteFallback({ stops }: { stops: Stop[] }) {
   const first = stops[0];
   return (
-    <div className="absolute inset-0 bg-muted p-4">
-      <div className="flex h-full flex-col justify-between rounded-md border border-border bg-background/80 p-4">
+    <div className="absolute inset-0 z-10 bg-muted p-4">
+      <div className="flex h-full flex-col justify-between rounded-md border border-border bg-background p-4 shadow-sm">
         <div>
           <MapPin className="h-5 w-5 text-primary" />
           <p className="mt-2 text-sm font-semibold">Route ready</p>
