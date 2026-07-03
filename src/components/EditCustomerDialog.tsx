@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Check, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Check, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 import {
   adminUpdateCustomer,
   createVehicleImageUploadUrl,
@@ -14,7 +14,7 @@ import {
   adminDeleteVehicle,
 } from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { FILE_PICKER_UNAVAILABLE_MESSAGE, selectImageFile } from "@/lib/fileSelect";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const BEFORE_TIMES = [
@@ -181,9 +181,9 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     onError: (e: any) => toast.error(e?.message ?? "Remove failed"),
   });
 
-  const captureImage = async (slot: 1 | 2) => {
-    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_vehicle_${slot}` });
-    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+  const pickImage = async (slot: 1 | 2) => {
+    const file = await selectImageFile();
+    if (!file) return toast.error(FILE_PICKER_UNAVAILABLE_MESSAGE);
     await uploadImage(file, slot);
   };
 
@@ -245,12 +245,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
           <Field label="Vehicle front image" full>
             <button
               type="button"
-              onClick={() => void captureImage(1)}
+              onClick={() => void pickImage(1)}
               disabled={uploadingImage}
               className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm disabled:opacity-50 ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
             >
-              {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-              {f.front_image_path ? "✓ Captured" : "Capture car front photo"}
+              {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+              {f.front_image_path ? "✓ Uploaded" : "Upload car front photo"}
             </button>
           </Field>
           <Field label="Status">
@@ -299,12 +299,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
             <Field label="Vehicle front image" full>
               <button
                 type="button"
-                onClick={() => void captureImage(2)}
+                onClick={() => void pickImage(2)}
                 disabled={uploadingImage2}
                 className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm disabled:opacity-50 ${v2.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
               >
-                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                {v2.front_image_path ? "✓ Captured" : "Capture car front photo"}
+                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                {v2.front_image_path ? "✓ Uploaded" : "Upload car front photo"}
               </button>
             </Field>
           </div>

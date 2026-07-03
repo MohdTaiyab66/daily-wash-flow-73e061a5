@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Loader2, UserPlus } from "lucide-react";
+import { Check, Loader2, Upload, UserPlus } from "lucide-react";
 import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { FILE_PICKER_UNAVAILABLE_MESSAGE, selectImageFile } from "@/lib/fileSelect";
 
 
 export const Route = createFileRoute("/admin/import")({
@@ -76,9 +76,9 @@ function ImportPage() {
     toast.success("Vehicle photo uploaded");
   };
 
-  const captureVehicleImage = async (idx: number) => {
-    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_import_vehicle_${idx}` });
-    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+  const pickVehicleImage = async (idx: number) => {
+    const file = await selectImageFile();
+    if (!file) return toast.error(FILE_PICKER_UNAVAILABLE_MESSAGE);
     await uploadVehicleImage(idx, file);
   };
 
@@ -212,11 +212,11 @@ function ImportPage() {
               <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
                 <button
                   type="button"
-                  onClick={() => void captureVehicleImage(i)}
+                  onClick={() => void pickVehicleImage(i)}
                   className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
                 >
-                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                  {v.front_image_path ? "✓ Captured" : "Capture car photo"}
+                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                  {v.front_image_path ? "✓ Uploaded" : "Upload car photo"}
                 </button>
               </Field>
             </div>
