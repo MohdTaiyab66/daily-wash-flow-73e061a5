@@ -805,8 +805,10 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (!photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
+    console.log(`[SVC ${serviceId}] DIRTY Submit pressed · photos=4 · reason=${reason}`);
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
+    const rpcStart = Date.now();
     try {
       pos = await getPosition();
       await logApkEvidence({
@@ -816,6 +818,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         gps: pos,
         payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
+      console.log(`[SVC ${serviceId}] DIRTY RPC started · submit_service_unavailable(dirty_vehicle)`);
       const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: "dirty_vehicle",
@@ -825,7 +828,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         p_lng: pos?.lng ?? null,
       } as any);
       if (e2) throw e2;
-      console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
+      console.log(`[SVC ${serviceId}] DIRTY RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
       await logApkEvidence({
         eventType: "dirty_submit_result",
         serviceId,
@@ -834,6 +837,8 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         status: "success",
         payload: { rpc: data },
       });
+      console.log(`[SVC ${serviceId}] DIRTY Wallet updated · credited=₹${(data as any)?.credited ?? COMPENSATION}`);
+      console.log(`[SVC ${serviceId}] DIRTY Notifications dispatched (customer + admin) via RPC`);
       toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -841,6 +846,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      console.log(`[SVC ${serviceId}] DIRTY Route advanced · queries invalidated`);
       setReason("");
       setNotes("");
       setPhotos({});
