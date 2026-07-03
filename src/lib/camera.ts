@@ -263,6 +263,7 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | nu
     controls.append(cancel, capture);
     overlay.append(video, controls);
     document.body.appendChild(overlay);
+    void video.play().catch((err) => console.warn("[camera] video play failed", err));
 
     const finish = (file: CaptureFile | null) => {
       if (finished) return;
@@ -353,10 +354,12 @@ function waitForVideoFrame(video: HTMLVideoElement): Promise<boolean> {
       if (settled) return;
       settled = true;
       video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("loadedmetadata", onReady);
       video.removeEventListener("canplay", onReady);
       resolve(ok);
     };
     const onReady = () => done(video.videoWidth > 0 && video.videoHeight > 0);
+    video.addEventListener("loadedmetadata", onReady, { once: true });
     video.addEventListener("loadeddata", onReady, { once: true });
     video.addEventListener("canplay", onReady, { once: true });
     window.setTimeout(() => done(video.videoWidth > 0 && video.videoHeight > 0), 1500);
