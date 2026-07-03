@@ -4578,7 +4578,7 @@ export type Database = {
         | "offline"
       payout_status: "pending" | "processing" | "paid" | "failed"
       photo_angle: "front" | "rear" | "left" | "right"
-      photo_stage: "before" | "after"
+      photo_stage: "before" | "after" | "unavailable" | "dirty"
       reliability_event_type:
         | "assignment_accepted"
         | "service_completed"
@@ -4746,7 +4746,7 @@ export const Constants = {
       ],
       payout_status: ["pending", "processing", "paid", "failed"],
       photo_angle: ["front", "rear", "left", "right"],
-      photo_stage: ["before", "after"],
+      photo_stage: ["before", "after", "unavailable", "dirty"],
       reliability_event_type: [
         "assignment_accepted",
         "service_completed",
