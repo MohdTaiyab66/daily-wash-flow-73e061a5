@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Check, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Check, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 import {
   adminUpdateCustomer,
   createVehicleImageUploadUrl,
@@ -14,7 +14,7 @@ import {
   adminDeleteVehicle,
 } from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { FILE_PICKER_UNAVAILABLE_MESSAGE, selectImageFile } from "@/lib/fileSelect";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const BEFORE_TIMES = [
