@@ -963,25 +963,6 @@ function DirtyVehicleSection({
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
         </Button>
       </div>
-
-      {/* Background-mounted PhotoSlots so restored captures land even when
-          the section is collapsed after an Android process kill. */}
-      <div className="hidden">
-        {DIRTY_ANGLES.map((angle) => (
-          <PhotoSlot
-            key={`bg-${angle}`}
-            serviceId={serviceId}
-            assignmentId={assignmentId}
-            workflow="dirty_vehicle"
-            stage="dirty"
-            angle={angle}
-            slotId={`dirty_${angle}`}
-            done={photos.some((p) => p.stage === "dirty" && p.angle === angle)}
-            onUploaded={() => refetch()}
-            label=""
-          />
-        ))}
-      </div>
     </Card>
   );
 }
