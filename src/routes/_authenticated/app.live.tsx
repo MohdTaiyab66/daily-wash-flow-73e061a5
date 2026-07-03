@@ -198,15 +198,25 @@ function RoutePage() {
       {/* Pending stops */}
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Pending</h2>
       <div className="mt-3 space-y-3">
-        {pending.length === 0 && !isEndOfDay && (
+        {!routeUnlocked && (
+          <Card className="p-6 text-center">
+            <p className="text-sm font-medium">Today's route unlocks soon</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {visibilityUnlockAt
+                ? `Available at ${visibilityUnlockAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${unlockCountdown > 0 ? ` · in ${unlockCountdown < 60 ? `${unlockCountdown} min` : `${Math.floor(unlockCountdown / 60)}h ${unlockCountdown % 60}m`}` : ""}`
+                : "Your route will appear before your shift starts."}
+            </p>
+          </Card>
+        )}
+        {routeUnlocked && pending.length === 0 && !isEndOfDay && (
           <Card className="p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
         )}
-        {!routeVisible && pending.length > 0 && (
+        {routeUnlocked && !routeVisible && pending.length > 0 && (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             Route is hidden until tomorrow. Contact admin if you need access.
           </Card>
         )}
-        {routeVisible && pending.map((s, idx) => {
+        {routeUnlocked && routeVisible && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
           const gps = { lat: (s as any).lat, lng: (s as any).lng };
