@@ -9,16 +9,36 @@
  * is still safe: no file is uploaded unless the user picks/captures one.
  */
 import { Capacitor } from "@capacitor/core";
+import { clearPendingCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
 
-let activeCapture: Promise<File | null> | null = null;
+type CaptureContext = {
+  serviceId?: string | null;
+  assignmentId?: string | null;
+  workflow?: "service_photo" | "dirty_vehicle" | "unavailable_vehicle";
+  stage?: "before" | "after" | "report";
+  angle?: string;
+  slot?: string;
+};
 
-export async function captureFromCamera(): Promise<File | null> {
-  if (activeCapture) return activeCapture;
-  activeCapture = captureFromCameraOnce().finally(() => {
-    activeCapture = null;
-  });
-  return activeCapture;
+let activeCapture = false;
+
+export async function captureFromCamera(context: CaptureContext = {}): Promise<File | null> {
+  // Never share one native camera result across two UI slots. Returning the
+  // same promise is what can mark the wrong slot complete after quick taps.
+  if (activeCapture) return null;
+  activeCapture = true;
+  persistPendingCapture(context);
+  try {
+    const file = await captureFromCameraOnce();
+    clearPendingCapture();
+    return file;
+  } catch (err) {
+    clearPendingCapture();
+    throw err;
+  } finally {
+    activeCapture = false;
+  }
 }
 
 async function captureFromCameraOnce(): Promise<File | null> {
@@ -38,6 +58,9 @@ async function captureFromCameraOnce(): Promise<File | null> {
         saveToGallery: false,
         correctOrientation: true,
         width: 1600,
+        promptLabelHeader: "Camera",
+        promptLabelPhoto: "Camera",
+        promptLabelPicture: "Take photo",
       });
       if (!photo.dataUrl) return null;
       return fileFromDataUrl(photo.dataUrl, `capture-${Date.now()}.${photo.format ?? "jpg"}`);
@@ -47,10 +70,16 @@ async function captureFromCameraOnce(): Promise<File | null> {
     }
   }
 
+  if (isAndroidWebView()) {
+    console.warn("[camera] native bridge unavailable in Android WebView; blocked gallery fallback");
+    return null;
+  }
+
   return new Promise<File | null>((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
+    input.capture = "environment";
     // `capture` = camera on mobile browsers; ignored on desktop where partners
     // don't run the field app anyway.
     input.setAttribute("capture", "environment");
@@ -85,4 +114,9 @@ function fileFromDataUrl(dataUrl: string, name: string) {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return new File([bytes], name, { type: mime });
+}
+
+function isAndroidWebView() {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent) && /; wv\)|Version\/\d+\.\d+ Chrome\//i.test(navigator.userAgent);
 }

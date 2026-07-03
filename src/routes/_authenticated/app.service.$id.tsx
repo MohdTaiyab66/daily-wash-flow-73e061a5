@@ -293,8 +293,7 @@ function ServiceDetail() {
               <p className="mt-1 text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
               <div className="mt-3 space-y-0.5">
-                <p className="text-xs text-muted-foreground">{c?.area ?? "—"}</p>
-                <p className="text-xs text-muted-foreground">Preferred {formatTime12(c?.service_required_before ?? c?.preferred_time) || "—"}</p>
+                <p className="text-xs text-muted-foreground">{formatTime12(c?.service_required_before ?? c?.preferred_time) || "Flexible"}</p>
               </div>
             </div>
             <Badge variant="outline" className="capitalize shrink-0">{service?.status?.replace("_", " ")}</Badge>
@@ -431,8 +430,19 @@ function PhotoSlot({
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
     setCapturing(true);
-    const file = await captureFromCamera().finally(() => setCapturing(false));
-    if (!file) { console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`); return; }
+      await logApkEvidence({
+        eventType: "service_photo_camera_attempt",
+        serviceId,
+        payload: { stage, angle, slot: `${stage}_${angle}` },
+      });
+      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot: `${stage}_${angle}` }).finally(() => setCapturing(false));
+      if (!file) {
+        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
+        await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
+        toast.error("Camera did not return a photo. Please tap the same slot again.");
+        return;
+      }
+      await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -458,6 +468,7 @@ function PhotoSlot({
         );
       if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
       console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-t0}ms`);
+      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, gps: pos, status: "success", payload: { stage, angle, path, elapsed_ms: Date.now() - t0 } });
       onUploaded();
     } finally {
       setUploading(false);
@@ -513,7 +524,14 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       assignmentId,
       payload: { photo_index: photos.length + 1, max_photos: MAX_PHOTOS },
     });
-    const file = await captureFromCamera();
+    const file = await captureFromCamera({
+      serviceId,
+      assignmentId,
+      workflow: "unavailable_vehicle",
+      stage: "report",
+      angle: String(photos.length + 1),
+      slot: `unavailable_${photos.length + 1}`,
+    });
     if (!file) {
       await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
       return;
@@ -755,7 +773,16 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         </RadioGroup>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {["front", "rear", "left", "right"].map((a) => (
-            <ReportPhoto key={a} angle={a} done={!!photos[a]} uploading={uploadingAngle === a} disabled={!!uploadingAngle || saving} onPicked={(f) => upload(a, f)} />
+            <ReportPhoto
+              key={a}
+              serviceId={serviceId}
+              assignmentId={assignmentId}
+              angle={a}
+              done={!!photos[a]}
+              uploading={uploadingAngle === a}
+              disabled={!!uploadingAngle || saving}
+              onPicked={(f) => upload(a, f)}
+            />
           ))}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
@@ -772,14 +799,29 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
 
 
 
-function ReportPhoto({ angle, done, uploading, disabled, onPicked }: { angle: string; done: boolean; uploading?: boolean; disabled?: boolean; onPicked: (f: File) => void }) {
+function ReportPhoto({
+  serviceId,
+  assignmentId,
+  angle,
+  done,
+  uploading,
+  disabled,
+  onPicked,
+}: { serviceId: string; assignmentId?: string | null; angle: string; done: boolean; uploading?: boolean; disabled?: boolean; onPicked: (f: File) => void }) {
   const [capturing, setCapturing] = useState(false);
   const busy = Boolean(disabled || capturing || uploading);
   const trigger = async () => {
     if (busy) return;
     setCapturing(true);
-    const f = await captureFromCamera().finally(() => setCapturing(false));
-    if (f) onPicked(f);
+    await logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle } });
+    const f = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot: `dirty_${angle}` }).finally(() => setCapturing(false));
+    if (f) {
+      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, size: f.size, type: f.type } });
+      onPicked(f);
+    } else {
+      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
+      toast.error("Camera did not return a photo. Please tap the same slot again.");
+    }
   };
   return (
     <button
