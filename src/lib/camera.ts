@@ -42,6 +42,13 @@ export async function captureFromCamera(context: CaptureContext = {}): Promise<F
   }
 }
 
+export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot">): File | null {
+  if (!context.slot) return null;
+  const restored = consumeRestoredCapture(context.slot);
+  if (!restored) return null;
+  return fileFromBase64(restored.base64String, restored.format ?? "jpeg");
+}
+
 async function captureFromCameraOnce(): Promise<File | null> {
   if (shouldUseNativeCamera()) {
     try {
