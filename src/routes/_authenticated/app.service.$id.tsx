@@ -588,6 +588,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const nextSlot = `unavailable_${photos.length + 1}`;
 
   const MIN_PHOTOS = 2;
   const MAX_PHOTOS = 4;
@@ -603,20 +604,24 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
+    const photoIndex = photos.length + 1;
+    const slot = `unavailable_${photoIndex}`;
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
+    setOpen(true);
     setCapturing(true);
     await logApkEvidence({
       eventType: "unavailable_camera_attempt",
       serviceId,
       assignmentId,
-      payload: { photo_index: photos.length + 1, max_photos: MAX_PHOTOS },
+      payload: { photo_index: photoIndex, max_photos: MAX_PHOTOS, slot },
     });
     const file = await captureFromCamera({
       serviceId,
       assignmentId,
       workflow: "unavailable_vehicle",
       stage: "report",
-      angle: String(photos.length + 1),
-      slot: `unavailable_${photos.length + 1}`,
+      angle: String(photoIndex),
+      slot,
     }).finally(() => setCapturing(false));
     if (!file) {
       await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
@@ -628,9 +633,8 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
-      const photoIndex = photos.length + 1;
-      const path = `${u.user.id}/${serviceId}/unavailable-${photoIndex}-${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+      const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file });
+      const error = null;
       if (error) {
         await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
         toast.error(error.message);
@@ -652,6 +656,34 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       setUploading(false);
     }
   };
+
+  useEffect(() => {
+    if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
+    const restored = consumeRestoredCameraCapture({ slot: nextSlot });
+    if (!restored) return;
+    setOpen(true);
+    setUploading(true);
+    void (async () => {
+      const photoIndex = photos.length + 1;
+      try {
+        const { data: u, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!u.user) throw new Error("Please sign in again");
+        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file: restored });
+        setPhotos((p) => {
+          const next = [...p, path];
+          writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
+          return next;
+        });
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "success", payload: { photo_index: photoIndex, path, restored: true, size: restored.size, type: restored.type } });
+      } catch (err) {
+        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
+        toast.error((err as any)?.message ?? "Could not save photo");
+      } finally {
+        setUploading(false);
+      }
+    })();
+  }, [nextSlot, photos.length, capturing, uploading, saving, serviceId, assignmentId, reason, notes]);
 
   const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
 
@@ -713,6 +745,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     <Dialog
       open={open}
       onOpenChange={(value) => {
+        if (!value && (capturing || uploading || saving)) return;
         setOpen(value);
       }}
     >
