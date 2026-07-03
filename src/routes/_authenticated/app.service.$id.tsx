@@ -644,11 +644,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     const photoList = UNAVAILABLE_SLOTS.map((slot) => photos[slot]).filter(Boolean);
      if (photoList.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
      if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-     console.log(`[SVC ${serviceId}] UNAVAILABLE Submit pressed · photos=${photoList.length} · reason=${reason}`);
-     setSaving(true);
-     let pos: { lat: number; lng: number } | null = null;
-     const rpcStart = Date.now();
-     try {
      console.log(`[SVC][UNAVAILABLE] Submit pressed · svc=${serviceId} · photos=${photoList.length} · reason=${reason}`);
      setSaving(true);
      let pos: { lat: number; lng: number } | null = null;
