@@ -181,9 +181,9 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     onError: (e: any) => toast.error(e?.message ?? "Remove failed"),
   });
 
-  const captureImage = async (slot: 1 | 2) => {
-    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_vehicle_${slot}` });
-    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+  const pickImage = async (slot: 1 | 2) => {
+    const file = await selectImageFile();
+    if (!file) return toast.error(FILE_PICKER_UNAVAILABLE_MESSAGE);
     await uploadImage(file, slot);
   };
 
