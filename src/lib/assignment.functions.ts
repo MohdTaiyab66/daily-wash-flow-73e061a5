@@ -95,7 +95,7 @@ export const getRouteVisibility = createServerFn({ method: "GET" })
       .rpc("get_route_visibility", { p_partner: context.userId });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
-    if (!row) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null };
+    if (!row || !row.assignment_id) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null };
     return {
       visible: !!row.visible,
       unlock_at: row.unlock_at ?? null,
