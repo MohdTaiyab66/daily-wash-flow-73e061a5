@@ -746,69 +746,27 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
 
 function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
-  const initialDraft = readReportDraft<DirtyDraft>(serviceId, "dirty", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
-  const initialPhotos = normalizePhotoRecord(initialDraft.photos, REPORT_ANGLES);
-  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
-  const [reason, setReason] = useState(initialDraft.reason);
-  const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
-  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-  const reasonRef = useRef(reason);
-  const notesRef = useRef(notes);
-  const photosRef = useRef(photos);
-  const pendingSlotIdRef = useRef(pendingSlotId);
+
   const dirtyCanSubmit =
     !!reason &&
     REPORT_ANGLES.every((slot) => Boolean(photos[slot])) &&
     !(reason === "Other" && !notes.trim());
 
-  useEffect(() => {
-    reasonRef.current = reason;
-    notesRef.current = notes;
-    photosRef.current = photos;
-    pendingSlotIdRef.current = pendingSlotId;
-    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open, pendingSlotId });
-  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
-
-  useEffect(() => {
-    const pending = readPendingCapture();
-    if (pending?.serviceId === serviceId && pending.workflow === "dirty_vehicle") setOpen(true);
-  }, [serviceId]);
-
-  const beforeDirtyCapture = (slot: string) => {
-    setPendingSlotId(slot);
-    setOpen(true);
-    writeReportDraft(serviceId, "dirty", {
-      reason: reasonRef.current,
-      notes: notesRef.current,
-      photos: photosRef.current,
-      open: true,
-      pendingSlotId: slot,
-    });
-  };
-
-  const storeDirtyPhoto = (slot: string, path?: string) => {
+  const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
-    setPendingSlotId(null);
-    setPhotos((previous) => {
-      const next = { ...previous, [slot]: path };
-      writeReportDraft(serviceId, "dirty", {
-        reason: reasonRef.current,
-        notes: notesRef.current,
-        photos: next,
-        open: true,
-        pendingSlotId: null,
-      });
-      return next;
-    });
+    setPhotos((previous) => ({ ...previous, [slot]: path }));
   };
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-    if (Object.keys(photos).length < 4 || !photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
+    if (!photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     try {
@@ -820,8 +778,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         gps: pos,
         payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
-      // Server-side RPC atomically creates the dirty report, customer/admin notifications,
-      // wallet entry, and route progression. This avoids APK partial-success states.
       const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: "dirty_vehicle",
@@ -841,7 +797,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         payload: { rpc: data },
       });
       toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
-      clearReportDraft(serviceId, "dirty");
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
@@ -851,7 +806,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       setReason("");
       setNotes("");
       setPhotos({});
-      setPendingSlotId(null);
       setOpen(false);
       void onDone?.();
     } catch (error: any) {
@@ -893,9 +847,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
               angle={slot}
               slotId={slot}
               done={Boolean(photos[slot])}
-              onBeforeCapture={beforeDirtyCapture}
-              onUploaded={(path) => storeDirtyPhoto(slot, path)}
-              uploadPrefix={`dirty-${slot}`}
+              onUploaded={(path) => storePhoto(slot, path)}
               label={slot}
               disabled={saving}
             />
@@ -911,6 +863,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     </Dialog>
   );
 }
+
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
