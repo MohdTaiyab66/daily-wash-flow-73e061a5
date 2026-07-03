@@ -10,14 +10,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, MapPin, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
-import { formatTime12, maskPhone } from "@/lib/format";
+import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
-import { googleMapsDirectionsUrl, gpsLabel, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
+import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { captureFromCamera } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
@@ -58,6 +58,7 @@ function ServiceDetail() {
   const qc = useQueryClient();
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
+  const [autoOpenBefore, setAutoOpenBefore] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 1000);
@@ -144,7 +145,10 @@ function ServiceDetail() {
         payload: { elapsed_ms: Date.now() - t0, next_status: "in_progress" },
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["service", id] }),
+    onSuccess: () => {
+      setAutoOpenBefore(true);
+      qc.invalidateQueries({ queryKey: ["service", id] });
+    },
   });
 
   // before = single photo (stored as stage='before', angle='front' to satisfy enum)
@@ -272,8 +276,7 @@ function ServiceDetail() {
     : 0;
   const elapsedLabel = `${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 
-  const navUrl = googleMapsDirectionsUrl(destLat, destLng);
-  const gpsExact = Boolean(navUrl);
+  const hasNavigation = destLat != null && destLng != null;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
@@ -286,40 +289,28 @@ function ServiceDetail() {
         <div className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number} · {v?.color ?? "—"}</p>
+              <p className="text-sm font-medium leading-tight">{c?.full_name}</p>
+              <p className="mt-1 text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
               <div className="mt-3 space-y-0.5">
-                <p className="text-sm font-medium">{c?.full_name}</p>
-                <p className="text-xs text-muted-foreground">📞 {maskPhone(c?.phone)}</p>
+                <p className="text-xs text-muted-foreground">{c?.area ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">Preferred {formatTime12(c?.service_required_before ?? c?.preferred_time) || "—"}</p>
               </div>
             </div>
             <Badge variant="outline" className="capitalize shrink-0">{service?.status?.replace("_", " ")}</Badge>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-[11px]">
-            <div><p className="text-muted-foreground">Area</p><p className="font-medium text-foreground">{c?.area ?? "—"}</p></div>
-            <div><p className="text-muted-foreground">Scheduled</p><p className="font-medium text-foreground">Before {formatTime12(c?.service_required_before ?? c?.preferred_time) || "—"}</p></div>
-            <div><p className="text-muted-foreground">Package</p><p className="font-medium text-foreground">Daily Shine</p></div>
-            <div><p className="text-muted-foreground">Today's service</p><p className="font-medium text-foreground">Exterior Cleaning</p></div>
-          </div>
-          <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-            <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{c?.address_line}, {c?.area}</p>
-            <p className={`flex items-center gap-1.5 ${gpsExact ? "" : "text-amber-600"}`}>
-              <Navigation className="h-3.5 w-3.5" />
-              {gpsExact ? `GPS: ${gpsLabel(destLat, destLng)} · ${destinationSource}` : "⚠️ Location unavailable — exact GPS required"}
-            </p>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={!navUrl}
+              disabled={!hasNavigation}
               onClick={async () => {
                 await logApkEvidence({
                   eventType: "navigation_open_attempt",
                   serviceId: id,
                   assignmentId: (service as any)?.assignment_id ?? null,
-                  status: navUrl ? "info" : "blocked",
+                  status: hasNavigation ? "info" : "blocked",
                   payload: { destination_lat: destLat, destination_lng: destLng, destination_source: destinationSource },
                 });
                 const opened = await openGoogleMapsDirections(destLat, destLng);
@@ -332,7 +323,7 @@ function ServiceDetail() {
                 });
               }}
             >
-              <Navigation className="mr-1.5 h-4 w-4" /> {navUrl ? "Navigate" : "No GPS"}
+              <Navigation className="mr-1.5 h-4 w-4" /> {hasNavigation ? "Navigate" : "No GPS"}
             </Button>
             <MaskedCallButton serviceId={id} />
           </div>
@@ -354,7 +345,17 @@ function ServiceDetail() {
           <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Before service</h2>
           <p className="mt-1 text-xs text-muted-foreground">One photo. Camera only.</p>
           <div className="mt-3">
-            <PhotoSlot serviceId={id} stage="before" angle="front" done={beforeDone} onUploaded={() => refetchPhotos()} label="Before photo" wide />
+            <PhotoSlot
+              serviceId={id}
+              stage="before"
+              angle="front"
+              done={beforeDone}
+              onUploaded={() => refetchPhotos()}
+              label="Before photo"
+              wide
+              autoOpen={autoOpenBefore && !beforeDone}
+              onAutoOpenConsumed={() => setAutoOpenBefore(false)}
+            />
           </div>
 
           {/* After — 4 photos */}
@@ -419,14 +420,18 @@ function ServiceDetail() {
 }
 
 function PhotoSlot({
-  serviceId, stage, angle, done, onUploaded, label, wide,
-}: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean }) {
+  serviceId, stage, angle, done, onUploaded, label, wide, autoOpen, onAutoOpenConsumed,
+}: { serviceId: string; stage: "before" | "after"; angle: string; done: boolean; onUploaded: () => void; label: string; wide?: boolean; autoOpen?: boolean; onAutoOpenConsumed?: () => void }) {
   const [uploading, setUploading] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const busy = capturing || uploading;
 
   const openCamera = async () => {
+    if (busy) return;
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
-    const file = await captureFromCamera();
+    setCapturing(true);
+    const file = await captureFromCamera().finally(() => setCapturing(false));
     if (!file) { console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`); return; }
     setUploading(true);
     try {
@@ -459,17 +464,24 @@ function PhotoSlot({
     }
   };
 
+  useEffect(() => {
+    if (!autoOpen || done || busy) return;
+    onAutoOpenConsumed?.();
+    const timer = window.setTimeout(() => void openCamera(), 250);
+    return () => window.clearTimeout(timer);
+  }, [autoOpen, done, busy]);
+
   return (
     <button
       onClick={openCamera}
-      disabled={uploading}
+      disabled={busy}
       className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
         done
           ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
           : "border-border text-muted-foreground hover:border-primary hover:text-primary"
       }`}
     >
-      {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
       {label}
     </button>
   );
@@ -650,26 +662,35 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [uploadingAngle, setUploadingAngle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
 
   const upload = async (angle: string, file: File) => {
-    const { data: u } = await supabase.auth.getUser();
-    const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) {
-      await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
-      toast.error(error.message);
-      return;
+    setUploadingAngle(angle);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const path = `${u.user!.id}/${serviceId}/dirty-${angle}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) {
+        await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(error) } });
+        toast.error(error.message);
+        return;
+      }
+      setPhotos((p) => ({ ...p, [angle]: path }));
+      await logApkEvidence({
+        eventType: "dirty_photo_upload_result",
+        serviceId,
+        assignmentId,
+        status: "success",
+        payload: { angle, path, size: file.size, type: file.type },
+      });
+    } catch (err) {
+      await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(err) } });
+      toast.error("Could not save photo");
+    } finally {
+      setUploadingAngle(null);
     }
-    setPhotos((p) => ({ ...p, [angle]: path }));
-    await logApkEvidence({
-      eventType: "dirty_photo_upload_result",
-      serviceId,
-      assignmentId,
-      status: "success",
-      payload: { angle, path, size: file.size, type: file.type },
-    });
   };
 
   const submit = async () => {
@@ -713,6 +734,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     qc.invalidateQueries({ queryKey: ["service", serviceId] });
     qc.invalidateQueries({ queryKey: ["route-today"] });
     qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     setOpen(false);
     void onDone?.();
   };
@@ -733,7 +755,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         </RadioGroup>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {["front", "rear", "left", "right"].map((a) => (
-            <ReportPhoto key={a} angle={a} done={!!photos[a]} onPicked={(f) => upload(a, f)} />
+            <ReportPhoto key={a} angle={a} done={!!photos[a]} uploading={uploadingAngle === a} disabled={!!uploadingAngle || saving} onPicked={(f) => upload(a, f)} />
           ))}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
@@ -750,19 +772,24 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
 
 
 
-function ReportPhoto({ angle, done, onPicked }: { angle: string; done: boolean; onPicked: (f: File) => void }) {
+function ReportPhoto({ angle, done, uploading, disabled, onPicked }: { angle: string; done: boolean; uploading?: boolean; disabled?: boolean; onPicked: (f: File) => void }) {
+  const [capturing, setCapturing] = useState(false);
+  const busy = Boolean(disabled || capturing || uploading);
   const trigger = async () => {
-    const f = await captureFromCamera();
+    if (busy) return;
+    setCapturing(true);
+    const f = await captureFromCamera().finally(() => setCapturing(false));
     if (f) onPicked(f);
   };
   return (
     <button
       onClick={trigger}
+      disabled={busy}
       className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
         done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
       }`}
     >
-      {done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
     </button>
   );
 }

@@ -2,16 +2,27 @@
  * Camera-only capture helper.
  *
  * P0-07 mandate: partners MUST NOT be able to pick photos from the gallery.
- * On native (Capacitor Camera) we force `source: CAMERA`. On the web we fall
+ * On native (Capacitor Camera) we force `source: Camera`. On the web we fall
  * back to a hidden `<input type="file" accept="image/*" capture="environment">`
  * which most mobile browsers honour as "open the camera". Desktop browsers
  * that ignore `capture` are irrelevant for the partner APK, but the fallback
  * is still safe: no file is uploaded unless the user picks/captures one.
  */
-import { isNative } from "@/lib/platform";
+import { Capacitor } from "@capacitor/core";
+import { isNative, nativePlatform } from "@/lib/platform";
+
+let activeCapture: Promise<File | null> | null = null;
 
 export async function captureFromCamera(): Promise<File | null> {
-  if (isNative()) {
+  if (activeCapture) return activeCapture;
+  activeCapture = captureFromCameraOnce().finally(() => {
+    activeCapture = null;
+  });
+  return activeCapture;
+}
+
+async function captureFromCameraOnce(): Promise<File | null> {
+  if (shouldUseNativeCamera()) {
     try {
       const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
       let permissions = await Camera.checkPermissions();
@@ -20,17 +31,16 @@ export async function captureFromCamera(): Promise<File | null> {
       }
       if (permissions.camera !== "granted") return null;
       const photo = await Camera.getPhoto({
-        quality: 72,
+        quality: 70,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
+        width: 1600,
       });
-      if (!photo.webPath) return null;
-      const type = photo.format ? `image/${photo.format}` : "image/jpeg";
-      const blob = await fetch(photo.webPath).then((r) => r.blob());
-      return new File([blob], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type: blob.type || type });
+      if (!photo.dataUrl) return null;
+      return fileFromDataUrl(photo.dataUrl, `capture-${Date.now()}.${photo.format ?? "jpg"}`);
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
@@ -57,4 +67,22 @@ export async function captureFromCamera(): Promise<File | null> {
     document.body.appendChild(input);
     input.click();
   });
+}
+
+function shouldUseNativeCamera() {
+  if (isNative() || nativePlatform() !== "web") return true;
+  try {
+    return Capacitor.isNativePlatform?.() === true || Capacitor.getPlatform?.() === "android" || Capacitor.getPlatform?.() === "ios";
+  } catch {
+    return false;
+  }
+}
+
+function fileFromDataUrl(dataUrl: string, name: string) {
+  const [header, payload] = dataUrl.split(",");
+  const mime = header.match(/^data:(.*?);/)?.[1] || "image/jpeg";
+  const binary = atob(payload ?? "");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], name, { type: mime });
 }
