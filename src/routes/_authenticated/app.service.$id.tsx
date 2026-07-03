@@ -621,11 +621,11 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     (!needsRemarks || notes.trim().length > 0);
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] UNAVAILABLE FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
   }, [serviceId, open]);
 
   useEffect(() => {
-    if (canSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=unavailable_vehicle · photos=${capturedCount}/${MIN_PHOTOS}`);
+    if (canSubmit) console.log(`[SVC][UNAVAILABLE] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${MIN_PHOTOS}`);
   }, [serviceId, canSubmit, capturedCount]);
 
   const storePhoto = (slot: string, path?: string) => {
