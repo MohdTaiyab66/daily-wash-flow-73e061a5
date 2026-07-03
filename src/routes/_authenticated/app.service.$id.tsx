@@ -19,6 +19,7 @@ import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
+import { peekCaptureContext } from "@/lib/cameraRestore";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
@@ -68,10 +69,27 @@ function ServiceDetail() {
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [autoOpenBefore, setAutoOpenBefore] = useState(false);
+  const [autoOpenReport, setAutoOpenReport] = useState<"unavailable" | "dirty" | null>(null);
+
+  // After Android kills the WebView while the native camera is foreground,
+  // the app cold-remounts with report dialogs closed. Inspect the restored
+  // capture context and re-open the correct dialog so its PhotoSlot mounts
+  // and consumes the restored photo.
+  useEffect(() => {
+    const ctx = peekCaptureContext();
+    if (!ctx?.slot || ctx.serviceId !== id) return;
+    if (ctx.slot.startsWith("unavailable_")) {
+      console.log(`[SVC][UNAVAILABLE] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
+      setAutoOpenReport("unavailable");
+    } else if (ctx.slot.startsWith("dirty_")) {
+      console.log(`[SVC][DIRTY] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
+      setAutoOpenReport("dirty");
+    }
+  }, [id]);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    const iv = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(iv);
   }, []);
 
   const { data: service } = useQuery({
@@ -354,7 +372,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "unavailable"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />
         </div>
       )}
 
@@ -390,8 +408,8 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />}
-            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />}
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "unavailable"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
+            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "dirty"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
           </div>
 
           <Card className="mt-5 p-4">
@@ -629,18 +647,31 @@ function UnavailableDialog({
   photos,
   refetch,
   onDone,
+  autoOpen,
+  onAutoOpenConsumed,
 }: {
   serviceId: string;
   assignmentId?: string | null;
   photos: ServicePhotoRow[];
   refetch: () => void;
   onDone: () => void;
+  autoOpen?: boolean;
+  onAutoOpenConsumed?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (autoOpen && !open) {
+      console.log(`[SVC][UNAVAILABLE] Auto-open after camera restore · svc=${serviceId}`);
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, open, serviceId, onAutoOpenConsumed]);
+
 
   const needsRemarks = reason === "other";
   const capturedPaths = pickPhotoPaths(photos, "unavailable", UNAVAILABLE_ANGLES);
@@ -794,18 +825,31 @@ function DirtyVehicleDialog({
   photos,
   refetch,
   onDone,
+  autoOpen,
+  onAutoOpenConsumed,
 }: {
   serviceId: string;
   assignmentId?: string | null;
   photos: ServicePhotoRow[];
   refetch: () => void;
   onDone?: () => void;
+  autoOpen?: boolean;
+  onAutoOpenConsumed?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (autoOpen && !open) {
+      console.log(`[SVC][DIRTY] Auto-open after camera restore · svc=${serviceId}`);
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, open, serviceId, onAutoOpenConsumed]);
+
 
   const capturedPaths = pickPhotoPaths(photos, "dirty", DIRTY_ANGLES);
   const allDone = capturedPaths.length === DIRTY_ANGLES.length;
