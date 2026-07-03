@@ -21,7 +21,6 @@ import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
-import { readPendingCapture } from "@/lib/cameraRestore";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
