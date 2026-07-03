@@ -879,88 +879,64 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
 
 function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
-  const initialDraft = readReportDraft<DirtyDraft>(serviceId, "dirty", { reason: "", notes: "", photos: {}, open: false });
-  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialDraft.photos).length > 0);
+  const initialDraft = readReportDraft<DirtyDraft>(serviceId, "dirty", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
+  const initialPhotos = normalizePhotoRecord(initialDraft.photos, REPORT_ANGLES);
+  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
   const [reason, setReason] = useState(initialDraft.reason);
   const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<Record<string, string>>(initialDraft.photos);
-  const [capturingAngle, setCapturingAngle] = useState<string | null>(null);
-  const [uploadingAngle, setUploadingAngle] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
+  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const reasonRef = useRef(reason);
+  const notesRef = useRef(notes);
+  const photosRef = useRef(photos);
+  const pendingSlotIdRef = useRef(pendingSlotId);
   const dirtyCanSubmit =
     !!reason &&
-    Object.keys(photos).length === 4 &&
+    REPORT_ANGLES.every((slot) => Boolean(photos[slot])) &&
     !(reason === "Other" && !notes.trim());
 
   useEffect(() => {
-    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open });
-  }, [serviceId, reason, notes, photos, open]);
+    reasonRef.current = reason;
+    notesRef.current = notes;
+    photosRef.current = photos;
+    pendingSlotIdRef.current = pendingSlotId;
+    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open, pendingSlotId });
+  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
 
   useEffect(() => {
     const pending = readPendingCapture();
     if (pending?.serviceId === serviceId && pending.workflow === "dirty_vehicle") setOpen(true);
   }, [serviceId]);
 
-  const upload = async (angle: string, file: File, restored = false) => {
-    setUploadingAngle(angle);
-    try {
-      const { data: u, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!u.user) throw new Error("Please sign in again");
-      const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `dirty-${angle}`, file });
-      const next = { ...photos, [angle]: path };
-      setPhotos(next);
-      writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
-      await logApkEvidence({
-        eventType: "dirty_photo_upload_result",
-        serviceId,
-        assignmentId,
-        status: "success",
-        payload: { angle, path, restored, size: file.size, type: file.type },
-      });
-    } catch (err) {
-      await logApkEvidence({ eventType: "dirty_photo_upload_result", serviceId, assignmentId, status: "error", payload: { angle, ...evidenceError(err) } });
-      toast.error("Could not save photo");
-    } finally {
-      setUploadingAngle(null);
-    }
-  };
-
-  const capture = async (angle: string) => {
-    if (capturingAngle || uploadingAngle || saving) return;
-    const slot = `dirty_${angle}`;
-    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot });
-    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open: true });
+  const beforeDirtyCapture = (slot: string) => {
+    setPendingSlotId(slot);
     setOpen(true);
-    setCapturingAngle(angle);
-    const file = await capturePromise.finally(() => setCapturingAngle(null));
-    void logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
-    if (!file) {
-      await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
-      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-      return;
-    }
-    await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, size: file.size, type: file.type } });
-    await upload(angle, file);
+    writeReportDraft(serviceId, "dirty", {
+      reason: reasonRef.current,
+      notes: notesRef.current,
+      photos: photosRef.current,
+      open: true,
+      pendingSlotId: slot,
+    });
   };
 
-  useEffect(() => {
-    if (capturingAngle || uploadingAngle || saving) return;
-    let cancelled = false;
-    void (async () => {
-      for (const angle of REPORT_ANGLES) {
-        const restored = await consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
-        if (cancelled) return;
-        if (!restored) continue;
-        setOpen(true);
-        void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
-        void upload(angle, restored, true);
-        break;
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [capturingAngle, uploadingAngle, saving, serviceId, assignmentId, reason, notes, photos]);
+  const storeDirtyPhoto = (slot: string, path?: string) => {
+    if (!path) return;
+    setPendingSlotId(null);
+    setPhotos((previous) => {
+      const next = { ...previous, [slot]: path };
+      writeReportDraft(serviceId, "dirty", {
+        reason: reasonRef.current,
+        notes: notesRef.current,
+        photos: next,
+        open: true,
+        pendingSlotId: null,
+      });
+      return next;
+    });
+  };
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
@@ -975,7 +951,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         serviceId,
         assignmentId,
         gps: pos,
-        payload: { reason, photo_count: Object.keys(photos).length, has_notes: Boolean(notes.trim()) },
+        payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
       // Server-side RPC atomically creates the dirty report, customer/admin notifications,
       // wallet entry, and route progression. This avoids APK partial-success states.
@@ -1008,6 +984,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       setReason("");
       setNotes("");
       setPhotos({});
+      setPendingSlotId(null);
       setOpen(false);
       void onDone?.();
     } catch (error: any) {
@@ -1022,7 +999,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value && (capturingAngle || uploadingAngle || saving)) return;
+        if (!value && saving) return;
         setOpen(value);
       }}
     >
@@ -1039,28 +1016,27 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
           ))}
         </RadioGroup>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {REPORT_ANGLES.map((a) => {
-            const busy = capturingAngle === a || uploadingAngle === a;
-            const done = !!photos[a];
-            return (
-              <button
-                key={a}
-                type="button"
-                onClick={() => capture(a)}
-                disabled={!!capturingAngle || !!uploadingAngle || saving}
-                className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-[11px] capitalize ${
-                  done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
-                }`}
-              >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                {done ? "✓ Captured" : a}
-              </button>
-            );
-          })}
+          {REPORT_ANGLES.map((slot) => (
+            <PhotoSlot
+              key={slot}
+              serviceId={serviceId}
+              assignmentId={assignmentId}
+              workflow="dirty_vehicle"
+              stage="report"
+              angle={slot}
+              slotId={slot}
+              done={Boolean(photos[slot])}
+              onBeforeCapture={beforeDirtyCapture}
+              onUploaded={(path) => storeDirtyPhoto(slot, path)}
+              uploadPrefix={`dirty-${slot}`}
+              label={slot}
+              disabled={saving}
+            />
+          ))}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || capturingAngle !== null || uploadingAngle !== null || !dirtyCanSubmit}>
+          <Button onClick={submit} disabled={saving || !dirtyCanSubmit}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
           </Button>
         </DialogFooter>
