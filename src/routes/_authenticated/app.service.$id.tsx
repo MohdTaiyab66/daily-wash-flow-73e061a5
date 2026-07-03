@@ -550,7 +550,7 @@ function PhotoSlot({
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
     const file = await capturePromise.finally(() => setCapturing(false));
-    console.log(`[SVC ${serviceId}] Camera returned · workflow=${workflow} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
+    console.log(`${tag} Camera returned · svc=${serviceId} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
     void logApkEvidence({
       eventType: workflowEventName(workflow, "camera_attempt"),
       serviceId,
@@ -558,7 +558,7 @@ function PhotoSlot({
       payload: { stage, angle, slot },
     });
     if (!file) {
-      console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
+      console.warn(`${errTag} Camera returned no file (cancelled/blocked) · slot=${slot}`);
       await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
       toast.error(CAMERA_UNAVAILABLE_MESSAGE);
       return;
