@@ -390,8 +390,8 @@ function ServiceDetail() {
 
           {/* Reports */}
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={refreshAfterReport} />}
-            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} onDone={refreshAfterReport} />}
+            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />}
+            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />}
           </div>
 
           <Card className="mt-5 p-4">
