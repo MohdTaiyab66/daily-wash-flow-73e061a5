@@ -48,6 +48,18 @@ function RoutePage() {
     refetchOnWindowFocus: true,
   });
 
+  const visibilityFn = useServerFn(getRouteVisibility);
+  const { data: visibilityInfo } = useQuery({
+    queryKey: ["route-visibility-unlock"],
+    queryFn: () => visibilityFn(),
+    refetchInterval: 60000,
+  });
+  const visibilityUnlockAt = visibilityInfo?.unlock_at ? new Date(visibilityInfo.unlock_at) : null;
+  const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
+  const unlockCountdown = visibilityUnlockAt
+    ? Math.max(0, Math.ceil((visibilityUnlockAt.getTime() - Date.now()) / 60000))
+    : 0;
+
   const { data: visibilitySetting } = useQuery({
     queryKey: ["route-visibility-until"],
     queryFn: async () => {
@@ -56,7 +68,6 @@ function RoutePage() {
         .select("value")
         .eq("key", "route_visibility_until")
         .maybeSingle();
-      // value is jsonb, e.g. "10:00" or "all_day"
       const v = data?.value;
       return (typeof v === "string" ? v : (v as any)) ?? "10:00";
     },
