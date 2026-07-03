@@ -265,6 +265,14 @@ function ServiceDetail() {
     else navigate({ to: "/app/live" });
   };
 
+  const refreshAfterReport = () => {
+    qc.invalidateQueries({ queryKey: ["service", id] });
+    qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
+    qc.invalidateQueries({ queryKey: ["route-today"] });
+    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+  };
+
   const c = service?.customers as any;
   const v = service?.vehicles as any;
   const exactDestination = validateExactGps((service as any)?.destination_lat, (service as any)?.destination_lng);
