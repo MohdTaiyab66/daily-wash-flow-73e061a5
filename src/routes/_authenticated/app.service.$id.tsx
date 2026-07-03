@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Camera, Check, Loader2, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
@@ -21,7 +21,6 @@ import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
-import { readPendingCapture } from "@/lib/cameraRestore";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -50,98 +49,10 @@ const DIRTY_REASONS = [
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
 
-type UnavailableDraft = {
-  reason: string;
-  notes: string;
-  photos: Record<string, string>;
-  open: boolean;
-  pendingSlotId?: string | null;
-};
-
-type DirtyDraft = {
-  reason: string;
-  notes: string;
-  photos: Record<string, string>;
-  open: boolean;
-  pendingSlotId?: string | null;
-};
-
-const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
-
-function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
-  return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
-}
-
-function readDraftStorage(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeDraftStorage(key: string, value: string) {
-  if (typeof window === "undefined") return;
-  try { window.sessionStorage.setItem(key, value); } catch { /* noop */ }
-  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
-}
-
-function removeDraftStorage(key: string) {
-  if (typeof window === "undefined") return;
-  try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
-  try { window.localStorage.removeItem(key); } catch { /* noop */ }
-}
-
-function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = readDraftStorage(reportDraftKey(serviceId, kind));
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as T & { savedAt?: number };
-    if (parsed.savedAt && Date.now() - parsed.savedAt > 6 * 60 * 60 * 1000) {
-      clearReportDraft(serviceId, kind);
-      return fallback;
-    }
-    return parsed as T;
-  } catch {
-    clearReportDraft(serviceId, kind);
-    return fallback;
-  }
-}
-
-function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draft: UnavailableDraft | DirtyDraft) {
-  if (typeof window === "undefined") return;
-  try {
-    writeDraftStorage(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
-  } catch {
-    // Draft persistence is best-effort; capture/submit must keep working.
-  }
-}
-
-function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
-  if (typeof window === "undefined") return;
-  removeDraftStorage(reportDraftKey(serviceId, kind));
-}
-
 function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
   if (workflow === "service_photo") return `service_photo_${phase}`;
   if (workflow === "dirty_vehicle") return `dirty_${phase}`;
   return `unavailable_${phase}`;
-}
-
-function normalizePhotoRecord(value: unknown, slots: readonly string[]) {
-  if (Array.isArray(value)) {
-    return value.reduce<Record<string, string>>((acc, path, index) => {
-      if (typeof path === "string" && slots[index]) acc[slots[index]] = path;
-      return acc;
-    }, {});
-  }
-  if (!value || typeof value !== "object") return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>((acc, [slot, path]) => {
-    if (typeof path === "string" && slots.includes(slot)) acc[slot] = path;
-    return acc;
-  }, {});
 }
 
 
@@ -537,13 +448,11 @@ function PhotoSlot({
   slotId,
   done,
   onUploaded,
-  onBeforeCapture,
   label,
   wide,
   autoOpen,
   onAutoOpenConsumed,
   disabled,
-  uploadPrefix,
 }: {
   serviceId: string;
   assignmentId?: string | null;
@@ -553,13 +462,11 @@ function PhotoSlot({
   slotId?: string;
   done: boolean;
   onUploaded: (path?: string) => void;
-  onBeforeCapture?: (slotId: string) => void;
   label: string;
   wide?: boolean;
   autoOpen?: boolean;
   onAutoOpenConsumed?: () => void;
   disabled?: boolean;
-  uploadPrefix?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -573,7 +480,7 @@ function PhotoSlot({
       if (!u.user) throw new Error("Please sign in again");
 
       if (workflow !== "service_photo") {
-        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: uploadPrefix ?? `${workflow}-${slot}`, file });
+        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `${workflow}-${slot}`, file });
         console.log(`[SVC ${serviceId}] REPORT PHOTO ok · ${workflow}/${slot} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
         await logApkEvidence({
           eventType: workflowEventName(workflow, "photo_upload_result"),
@@ -623,24 +530,23 @@ function PhotoSlot({
   const openCamera = async () => {
     if (disabled || busy) return;
     const t0 = Date.now();
-    onBeforeCapture?.(slot);
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${workflow}/${slot}`);
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
-      const file = await capturePromise.finally(() => setCapturing(false));
-      void logApkEvidence({
-        eventType: workflowEventName(workflow, "camera_attempt"),
-        serviceId,
-        assignmentId,
-        payload: { stage, angle, slot },
-      });
-      if (!file) {
-        console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
-        await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
-        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
-        return;
-      }
-      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
+    const file = await capturePromise.finally(() => setCapturing(false));
+    void logApkEvidence({
+      eventType: workflowEventName(workflow, "camera_attempt"),
+      serviceId,
+      assignmentId,
+      payload: { stage, angle, slot },
+    });
+    if (!file) {
+      console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
+      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+      return;
+    }
+    await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
     await uploadCapturedFile(file, t0);
   };
 
@@ -680,20 +586,14 @@ function PhotoSlot({
 }
 
 
+
 function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
-  const initialDraft = readReportDraft<UnavailableDraft>(serviceId, "unavailable", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
-  const initialPhotos = normalizePhotoRecord(initialDraft.photos, UNAVAILABLE_SLOTS);
-  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
-  const [reason, setReason] = useState<string>(initialDraft.reason);
-  const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
-  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<string>("");
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-  const reasonRef = useRef(reason);
-  const notesRef = useRef(notes);
-  const photosRef = useRef(photos);
-  const pendingSlotIdRef = useRef(pendingSlotId);
 
   const MIN_PHOTOS = 2;
   const needsRemarks = reason === "other";
@@ -703,51 +603,14 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     capturedCount >= MIN_PHOTOS &&
     (!needsRemarks || notes.trim().length > 0);
 
-  useEffect(() => {
-    reasonRef.current = reason;
-    notesRef.current = notes;
-    photosRef.current = photos;
-    pendingSlotIdRef.current = pendingSlotId;
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open, pendingSlotId });
-  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
-
-  useEffect(() => {
-    const pending = readPendingCapture();
-    if (pending?.serviceId === serviceId && pending.workflow === "unavailable_vehicle") setOpen(true);
-  }, [serviceId]);
-
-  const beforeUnavailableCapture = (slot: string) => {
-    setPendingSlotId(slot);
-    setOpen(true);
-    writeReportDraft(serviceId, "unavailable", {
-      reason: reasonRef.current,
-      notes: notesRef.current,
-      photos: photosRef.current,
-      open: true,
-      pendingSlotId: slot,
-    });
-  };
-
-  const storeUnavailablePhoto = (slot: string, path?: string) => {
+  const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
-    setPendingSlotId(null);
-    setPhotos((previous) => {
-      const next = { ...previous, [slot]: path };
-      writeReportDraft(serviceId, "unavailable", {
-        reason: reasonRef.current,
-        notes: notesRef.current,
-        photos: next,
-        open: true,
-        pendingSlotId: null,
-      });
-      return next;
-    });
+    setPhotos((previous) => ({ ...previous, [slot]: path }));
   };
 
   const removePhoto = (slot: string) => setPhotos((previous) => {
     const next = { ...previous };
     delete next[slot];
-    writeReportDraft(serviceId, "unavailable", { reason: reasonRef.current, notes: notesRef.current, photos: next, open: true, pendingSlotId: pendingSlotIdRef.current });
     return next;
   });
 
@@ -786,7 +649,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         payload: { rpc: data },
       });
       toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
-      clearReportDraft(serviceId, "unavailable");
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
@@ -796,7 +658,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       setReason("");
       setNotes("");
       setPhotos({});
-      setPendingSlotId(null);
       setOpen(false);
       onDone();
     } catch (error: any) {
@@ -847,9 +708,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
                   angle={slot}
                   slotId={slot}
                   done={Boolean(photos[slot])}
-                  onBeforeCapture={beforeUnavailableCapture}
-                  onUploaded={(path) => storeUnavailablePhoto(slot, path)}
-                  uploadPrefix={`unavailable-${slot}`}
+                  onUploaded={(path) => storePhoto(slot, path)}
                   label={`Photo ${index + 1}`}
                   disabled={saving}
                 />
@@ -885,70 +744,29 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 }
 
 
+
 function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
-  const initialDraft = readReportDraft<DirtyDraft>(serviceId, "dirty", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
-  const initialPhotos = normalizePhotoRecord(initialDraft.photos, REPORT_ANGLES);
-  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
-  const [reason, setReason] = useState(initialDraft.reason);
-  const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
-  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-  const reasonRef = useRef(reason);
-  const notesRef = useRef(notes);
-  const photosRef = useRef(photos);
-  const pendingSlotIdRef = useRef(pendingSlotId);
+
   const dirtyCanSubmit =
     !!reason &&
     REPORT_ANGLES.every((slot) => Boolean(photos[slot])) &&
     !(reason === "Other" && !notes.trim());
 
-  useEffect(() => {
-    reasonRef.current = reason;
-    notesRef.current = notes;
-    photosRef.current = photos;
-    pendingSlotIdRef.current = pendingSlotId;
-    writeReportDraft(serviceId, "dirty", { reason, notes, photos, open, pendingSlotId });
-  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
-
-  useEffect(() => {
-    const pending = readPendingCapture();
-    if (pending?.serviceId === serviceId && pending.workflow === "dirty_vehicle") setOpen(true);
-  }, [serviceId]);
-
-  const beforeDirtyCapture = (slot: string) => {
-    setPendingSlotId(slot);
-    setOpen(true);
-    writeReportDraft(serviceId, "dirty", {
-      reason: reasonRef.current,
-      notes: notesRef.current,
-      photos: photosRef.current,
-      open: true,
-      pendingSlotId: slot,
-    });
-  };
-
-  const storeDirtyPhoto = (slot: string, path?: string) => {
+  const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
-    setPendingSlotId(null);
-    setPhotos((previous) => {
-      const next = { ...previous, [slot]: path };
-      writeReportDraft(serviceId, "dirty", {
-        reason: reasonRef.current,
-        notes: notesRef.current,
-        photos: next,
-        open: true,
-        pendingSlotId: null,
-      });
-      return next;
-    });
+    setPhotos((previous) => ({ ...previous, [slot]: path }));
   };
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-    if (Object.keys(photos).length < 4 || !photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
+    if (!photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     try {
@@ -960,8 +778,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         gps: pos,
         payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
-      // Server-side RPC atomically creates the dirty report, customer/admin notifications,
-      // wallet entry, and route progression. This avoids APK partial-success states.
       const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: "dirty_vehicle",
@@ -981,7 +797,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         payload: { rpc: data },
       });
       toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
-      clearReportDraft(serviceId, "dirty");
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
@@ -991,7 +806,6 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       setReason("");
       setNotes("");
       setPhotos({});
-      setPendingSlotId(null);
       setOpen(false);
       void onDone?.();
     } catch (error: any) {
@@ -1033,9 +847,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
               angle={slot}
               slotId={slot}
               done={Boolean(photos[slot])}
-              onBeforeCapture={beforeDirtyCapture}
-              onUploaded={(path) => storeDirtyPhoto(slot, path)}
-              uploadPrefix={`dirty-${slot}`}
+              onUploaded={(path) => storePhoto(slot, path)}
               label={slot}
               disabled={saving}
             />
@@ -1051,6 +863,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     </Dialog>
   );
 }
+
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
