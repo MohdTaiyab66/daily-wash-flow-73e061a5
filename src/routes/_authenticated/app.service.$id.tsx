@@ -4,13 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
-} from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, Loader2, Navigation, XCircle, AlertTriangle, Clock, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -19,7 +16,6 @@ import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
-import { peekCaptureContext } from "@/lib/cameraRestore";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
@@ -69,23 +65,6 @@ function ServiceDetail() {
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [autoOpenBefore, setAutoOpenBefore] = useState(false);
-  const [autoOpenReport, setAutoOpenReport] = useState<"unavailable" | "dirty" | null>(null);
-
-  // After Android kills the WebView while the native camera is foreground,
-  // the app cold-remounts with report dialogs closed. Inspect the restored
-  // capture context and re-open the correct dialog so its PhotoSlot mounts
-  // and consumes the restored photo.
-  useEffect(() => {
-    const ctx = peekCaptureContext();
-    if (!ctx?.slot || ctx.serviceId !== id) return;
-    if (ctx.slot.startsWith("unavailable_")) {
-      console.log(`[SVC][UNAVAILABLE] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
-      setAutoOpenReport("unavailable");
-    } else if (ctx.slot.startsWith("dirty_")) {
-      console.log(`[SVC][DIRTY] Restoring after process kill · reopening dialog · slot=${ctx.slot}`);
-      setAutoOpenReport("dirty");
-    }
-  }, [id]);
 
   useEffect(() => {
     const iv = window.setInterval(() => setNowTick(Date.now()), 1000);
@@ -372,7 +351,7 @@ function ServiceDetail() {
           <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
             {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
           </Button>
-          <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "unavailable"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />
+          <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
         </div>
       )}
 
@@ -406,11 +385,14 @@ function ServiceDetail() {
             ))}
           </div>
 
-          {/* Reports */}
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "unavailable"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
-            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "dirty"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
-          </div>
+          {/* Reports — inline sections (never modals) so PhotoSlots remain mounted
+              across Android process kills, matching Before/After lifecycle. */}
+          {service.status === "in_progress" && (
+            <div className="mt-5 space-y-3">
+              <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+              <DirtyVehicleSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+            </div>
+          )}
 
           <Card className="mt-5 p-4">
             <div className="flex items-center justify-between text-sm font-semibold">
@@ -641,46 +623,55 @@ function pickPhotoPaths(photos: ServicePhotoRow[], stage: string, angles: readon
     .filter((p): p is string => Boolean(p));
 }
 
-function UnavailableDialog({
+// ------------------------------------------------------------------
+// Inline sections (NOT modals). Rendered directly into the service
+// screen so their PhotoSlots remain mounted for the entire in_progress
+// lifecycle — identical to Before/After. When Android kills the
+// WebView while the native camera is foreground and the app cold-
+// remounts, the same PhotoSlot re-mounts on this page and its
+// consumeRestoredCameraCapture effect attaches the restored photo,
+// with zero special dialog-reopen plumbing.
+//
+// The expand/collapse toggle uses `hidden` (CSS display:none) rather
+// than conditional rendering, so PhotoSlots stay in the tree even when
+// the panel is visually collapsed.
+// ------------------------------------------------------------------
+
+function UnavailableSection({
   serviceId,
   assignmentId,
   photos,
   refetch,
   onDone,
-  autoOpen,
-  onAutoOpenConsumed,
 }: {
   serviceId: string;
   assignmentId?: string | null;
   photos: ServicePhotoRow[];
   refetch: () => void;
   onDone: () => void;
-  autoOpen?: boolean;
-  onAutoOpenConsumed?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-
-  useEffect(() => {
-    if (autoOpen && !open) {
-      console.log(`[SVC][UNAVAILABLE] Auto-open after camera restore · svc=${serviceId}`);
-      setOpen(true);
-      onAutoOpenConsumed?.();
-    }
-  }, [autoOpen, open, serviceId, onAutoOpenConsumed]);
-
 
   const needsRemarks = reason === "other";
   const capturedPaths = pickPhotoPaths(photos, "unavailable", UNAVAILABLE_ANGLES);
   const capturedCount = capturedPaths.length;
   const canSubmit = !!reason && capturedCount >= UNAVAILABLE_REQUIRED && (!needsRemarks || notes.trim().length > 0);
 
+  // Auto-expand as soon as a captured photo lands (covers the case where
+  // Android killed the WebView during camera and remounted this page —
+  // the restored capture writes a row via PhotoSlot's mount effect, and
+  // we re-open the panel so the partner sees the ✓ + Submit button).
   useEffect(() => {
-    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
-  }, [serviceId, open]);
+    if (capturedCount > 0 && !expanded) setExpanded(true);
+  }, [capturedCount, expanded]);
+
+  useEffect(() => {
+    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
+  }, [serviceId, expanded, capturedCount]);
 
   useEffect(() => {
     if (canSubmit) console.log(`[SVC][UNAVAILABLE] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
@@ -737,7 +728,6 @@ function UnavailableDialog({
       console.log(`[SVC][UNAVAILABLE] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
-      setOpen(false);
       onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -749,25 +739,30 @@ function UnavailableDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        if (!value && saving) return;
-        if (value) console.log(`[SVC][UNAVAILABLE] Dialog opened · svc=${serviceId}`);
-        setOpen(value);
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="lg">
-          <XCircle className="mr-2 h-4 w-4" /> Mark unavailable
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => {
+          const next = !expanded;
+          if (next) console.log(`[SVC][UNAVAILABLE] Section opened · svc=${serviceId}`);
+          setExpanded(next);
+        }}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-semibold">
+          <XCircle className="h-4 w-4" /> Mark unavailable
+          {capturedCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{UNAVAILABLE_REQUIRED} photos</span>}
+        </span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* Body stays MOUNTED even when collapsed (CSS hidden) so the
+          PhotoSlots survive Android process kill/remount cycles. */}
+      <div className={expanded ? "border-t border-border p-4" : "hidden"}>
         <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
           UNAVAILABLE FLOW VERSION {FLOW_VERSION}
         </div>
-        <DialogHeader><DialogTitle>Vehicle unavailable</DialogTitle></DialogHeader>
-        <p className="text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
@@ -809,59 +804,49 @@ function UnavailableDialog({
           onChange={(e) => setNotes(e.target.value)}
           className="mt-3"
         />
-        <DialogFooter>
-          <Button onClick={submit} disabled={saving || !canSubmit}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !canSubmit}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
+        </Button>
+      </div>
+    </Card>
   );
 }
 
-function DirtyVehicleDialog({
+function DirtyVehicleSection({
   serviceId,
   assignmentId,
   photos,
   refetch,
   onDone,
-  autoOpen,
-  onAutoOpenConsumed,
 }: {
   serviceId: string;
   assignmentId?: string | null;
   photos: ServicePhotoRow[];
   refetch: () => void;
   onDone?: () => void;
-  autoOpen?: boolean;
-  onAutoOpenConsumed?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
 
-  useEffect(() => {
-    if (autoOpen && !open) {
-      console.log(`[SVC][DIRTY] Auto-open after camera restore · svc=${serviceId}`);
-      setOpen(true);
-      onAutoOpenConsumed?.();
-    }
-  }, [autoOpen, open, serviceId, onAutoOpenConsumed]);
-
-
   const capturedPaths = pickPhotoPaths(photos, "dirty", DIRTY_ANGLES);
-  const allDone = capturedPaths.length === DIRTY_ANGLES.length;
+  const capturedCount = capturedPaths.length;
+  const allDone = capturedCount === DIRTY_ANGLES.length;
   const dirtyCanSubmit = !!reason && allDone && !(reason === "Other" && !notes.trim());
 
   useEffect(() => {
-    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
-  }, [serviceId, open]);
+    if (capturedCount > 0 && !expanded) setExpanded(true);
+  }, [capturedCount, expanded]);
 
   useEffect(() => {
-    if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${capturedPaths.length}/${DIRTY_ANGLES.length}`);
-  }, [serviceId, dirtyCanSubmit, capturedPaths.length]);
+    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
+  }, [serviceId, expanded, capturedCount]);
+
+  useEffect(() => {
+    if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
+  }, [serviceId, dirtyCanSubmit, capturedCount]);
 
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
@@ -914,7 +899,6 @@ function DirtyVehicleDialog({
       console.log(`[SVC][DIRTY] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
-      setOpen(false);
       void onDone?.();
     } catch (error: any) {
       await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -926,23 +910,28 @@ function DirtyVehicleDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        if (!value && saving) return;
-        if (value) console.log(`[SVC][DIRTY] Dialog opened · svc=${serviceId}`);
-        setOpen(value);
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm"><AlertTriangle className="mr-1.5 h-4 w-4" />Dirty vehicle</Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => {
+          const next = !expanded;
+          if (next) console.log(`[SVC][DIRTY] Section opened · svc=${serviceId}`);
+          setExpanded(next);
+        }}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-semibold">
+          <AlertTriangle className="h-4 w-4" /> Report dirty vehicle
+          {capturedCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{DIRTY_ANGLES.length} photos</span>}
+        </span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
+
+      <div className={expanded ? "border-t border-border p-4" : "hidden"}>
         <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
           DIRTY FLOW VERSION {FLOW_VERSION}
         </div>
-        <DialogHeader><DialogTitle>Report dirty vehicle</DialogTitle></DialogHeader>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-1">
+        <RadioGroup value={reason} onValueChange={setReason} className="mt-3 space-y-1">
           {DIRTY_REASONS.map((r) => (
             <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
               <RadioGroupItem value={r} />{r}
@@ -970,15 +959,14 @@ function DirtyVehicleDialog({
           })}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
-        <DialogFooter>
-          <Button onClick={submit} disabled={saving || !dirtyCanSubmit}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !dirtyCanSubmit}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
+        </Button>
+      </div>
+    </Card>
   );
 }
+
 
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
