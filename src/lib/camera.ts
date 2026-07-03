@@ -233,8 +233,11 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
         handledAt = now;
         void action();
       };
+      el.addEventListener("pointerdown", run, { passive: false });
       el.addEventListener("pointerup", run, { passive: false });
+      el.addEventListener("touchstart", run, { passive: false });
       el.addEventListener("touchend", run, { passive: false });
+      el.addEventListener("mousedown", run, { passive: false });
       el.addEventListener("click", run, { passive: false });
     };
 
