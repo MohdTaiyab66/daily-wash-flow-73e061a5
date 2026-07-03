@@ -588,19 +588,12 @@ function PhotoSlot({
 
 
 function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone: () => void }) {
-  const initialDraft = readReportDraft<UnavailableDraft>(serviceId, "unavailable", { reason: "", notes: "", photos: {}, open: false, pendingSlotId: null });
-  const initialPhotos = normalizePhotoRecord(initialDraft.photos, UNAVAILABLE_SLOTS);
-  const [open, setOpen] = useState(initialDraft.open || Object.keys(initialPhotos).length > 0 || Boolean(initialDraft.pendingSlotId));
-  const [reason, setReason] = useState<string>(initialDraft.reason);
-  const [notes, setNotes] = useState(initialDraft.notes);
-  const [photos, setPhotos] = useState<Record<string, string>>(initialPhotos);
-  const [pendingSlotId, setPendingSlotId] = useState<string | null>(initialDraft.pendingSlotId ?? null);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<string>("");
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
-  const reasonRef = useRef(reason);
-  const notesRef = useRef(notes);
-  const photosRef = useRef(photos);
-  const pendingSlotIdRef = useRef(pendingSlotId);
 
   const MIN_PHOTOS = 2;
   const needsRemarks = reason === "other";
@@ -610,51 +603,14 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     capturedCount >= MIN_PHOTOS &&
     (!needsRemarks || notes.trim().length > 0);
 
-  useEffect(() => {
-    reasonRef.current = reason;
-    notesRef.current = notes;
-    photosRef.current = photos;
-    pendingSlotIdRef.current = pendingSlotId;
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open, pendingSlotId });
-  }, [serviceId, reason, notes, photos, open, pendingSlotId]);
-
-  useEffect(() => {
-    const pending = readPendingCapture();
-    if (pending?.serviceId === serviceId && pending.workflow === "unavailable_vehicle") setOpen(true);
-  }, [serviceId]);
-
-  const beforeUnavailableCapture = (slot: string) => {
-    setPendingSlotId(slot);
-    setOpen(true);
-    writeReportDraft(serviceId, "unavailable", {
-      reason: reasonRef.current,
-      notes: notesRef.current,
-      photos: photosRef.current,
-      open: true,
-      pendingSlotId: slot,
-    });
-  };
-
-  const storeUnavailablePhoto = (slot: string, path?: string) => {
+  const storePhoto = (slot: string, path?: string) => {
     if (!path) return;
-    setPendingSlotId(null);
-    setPhotos((previous) => {
-      const next = { ...previous, [slot]: path };
-      writeReportDraft(serviceId, "unavailable", {
-        reason: reasonRef.current,
-        notes: notesRef.current,
-        photos: next,
-        open: true,
-        pendingSlotId: null,
-      });
-      return next;
-    });
+    setPhotos((previous) => ({ ...previous, [slot]: path }));
   };
 
   const removePhoto = (slot: string) => setPhotos((previous) => {
     const next = { ...previous };
     delete next[slot];
-    writeReportDraft(serviceId, "unavailable", { reason: reasonRef.current, notes: notesRef.current, photos: next, open: true, pendingSlotId: pendingSlotIdRef.current });
     return next;
   });
 
@@ -693,7 +649,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         payload: { rpc: data },
       });
       toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
-      clearReportDraft(serviceId, "unavailable");
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
@@ -703,7 +658,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       setReason("");
       setNotes("");
       setPhotos({});
-      setPendingSlotId(null);
       setOpen(false);
       onDone();
     } catch (error: any) {
@@ -754,9 +708,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
                   angle={slot}
                   slotId={slot}
                   done={Boolean(photos[slot])}
-                  onBeforeCapture={beforeUnavailableCapture}
-                  onUploaded={(path) => storeUnavailablePhoto(slot, path)}
-                  uploadPrefix={`unavailable-${slot}`}
+                  onUploaded={(path) => storePhoto(slot, path)}
                   label={`Photo ${index + 1}`}
                   disabled={saving}
                 />
@@ -790,6 +742,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     </Dialog>
   );
 }
+
 
 
 function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: string; assignmentId?: string | null; onDone?: () => void }) {
