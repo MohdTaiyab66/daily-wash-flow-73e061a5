@@ -487,14 +487,14 @@ function PhotoSlot({
 
   const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
-    console.log(`[SVC ${serviceId}] upload started · workflow=${workflow} · slot=${slot} · size=${file.size}b`);
+    console.log(`${tag} Upload started · svc=${serviceId} · slot=${slot} · size=${file.size}b`);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Please sign in again");
 
       if (workflow !== "service_photo") {
         const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `${workflow}-${slot}`, file });
-        console.log(`[SVC ${serviceId}] REPORT PHOTO ok · ${workflow}/${slot} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+        console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · Δ${Date.now()-startedAt}ms`);
         await logApkEvidence({
           eventType: workflowEventName(workflow, "photo_upload_result"),
           serviceId,
@@ -502,9 +502,8 @@ function PhotoSlot({
           status: "success",
           payload: { slot, angle, path, elapsed_ms: Date.now() - startedAt, size: file.size, type: file.type },
         });
-        console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
         onUploaded(path);
-        console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
+        console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
         return;
       }
 
@@ -513,7 +512,7 @@ function PhotoSlot({
       const { error } = await supabase.storage
         .from("service-photos")
         .upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { console.error(`[SVC ${serviceId}] PHOTO storage fail · ${stage}/${angle} · ${error.message}`); toast.error(error.message); return; }
+      if (error) { console.error(`${errTag} Storage fail · slot=${slot} · ${error.message}`); toast.error(error.message); return; }
       const { error: e2 } = await supabase
         .from("service_photos")
         .upsert(
@@ -528,16 +527,16 @@ function PhotoSlot({
           },
           { onConflict: "service_id,stage,angle" },
         );
-      if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
-      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+      if (e2) { console.error(`${errTag} Row fail · slot=${slot} · ${e2.message}`); toast.error(e2.message); return; }
+      console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · Δ${Date.now()-startedAt}ms`);
       await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, assignmentId, gps: pos, status: "success", payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt } });
-      console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
       onUploaded(path);
-      console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
+      console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
     } catch (err) {
       if (workflow !== "service_photo") {
         await logApkEvidence({ eventType: workflowEventName(workflow, "photo_upload_result"), serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
       }
+      console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
       toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
       setUploading(false);
@@ -547,8 +546,7 @@ function PhotoSlot({
   const openCamera = async () => {
     if (disabled || busy) return;
     const t0 = Date.now();
-    console.log(`[SVC ${serviceId}] PHOTO capture start · ${workflow}/${slot}`);
-    console.log(`[SVC ${serviceId}] captureFromCamera called · workflow=${workflow} · slot=${slot}`);
+    console.log(`${tag} Capture requested (${slot}) · svc=${serviceId}`);
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
     const file = await capturePromise.finally(() => setCapturing(false));
