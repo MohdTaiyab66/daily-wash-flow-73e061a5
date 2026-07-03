@@ -56,6 +56,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
   const fittedRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapRenderFailed, setMapRenderFailed] = useState(false);
   const [partnerPos, setPartnerPos] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<{ km: number; mins: number } | null>(null);
   const compute = useServerFn(computeRoute);
@@ -84,6 +85,24 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       })
       .catch((e) => setError(e.message));
   }, []);
+
+  useEffect(() => {
+    if (!ready || !ref.current) return;
+    const el = ref.current;
+    const detectFailure = () => {
+      const text = el.innerText || "";
+      if (el.querySelector(".gm-err-container") || text.includes("Oops! Something went wrong")) {
+        setMapRenderFailed(true);
+      }
+    };
+    const observer = new MutationObserver(detectFailure);
+    observer.observe(el, { childList: true, subtree: true, characterData: true });
+    const timer = window.setTimeout(detectFailure, 1200);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [ready]);
 
   // Partner location (watch)
   useEffect(() => {
@@ -215,7 +234,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}
-        {error && <RouteFallback stops={stableStops} />}
+        {(error || mapRenderFailed) && <RouteFallback stops={stableStops} />}
       </div>
       {showCustomers && (stats || fallbackStats) && (
         <div className="grid grid-cols-2 border-t border-border text-center">
