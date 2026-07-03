@@ -634,12 +634,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
       const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file });
-      const error = null;
-      if (error) {
-        await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(error) });
-        toast.error(error.message);
-        return;
-      }
       setPhotos((p) => {
         const next = [...p, path];
         writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
@@ -1011,4 +1005,11 @@ function ReportPhoto({
 
 async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
+  const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
+  const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  return path;
 }
