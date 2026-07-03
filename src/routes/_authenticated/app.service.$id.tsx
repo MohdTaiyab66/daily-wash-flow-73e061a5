@@ -124,6 +124,12 @@ function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
   removeDraftStorage(reportDraftKey(serviceId, kind));
 }
 
+function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
+  if (workflow === "service_photo") return `service_photo_${phase}`;
+  if (workflow === "dirty_vehicle") return `dirty_${phase}`;
+  return `unavailable_${phase}`;
+}
+
 function normalizePhotoRecord(value: unknown, slots: readonly string[]) {
   if (Array.isArray(value)) {
     return value.reduce<Record<string, string>>((acc, path, index) => {
