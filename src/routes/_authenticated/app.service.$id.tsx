@@ -114,7 +114,7 @@ function ServiceDetail() {
   const { data: photos, refetch: refetchPhotos } = useQuery({
     queryKey: ["service-photos", id],
     queryFn: async () => {
-      const { data } = await supabase.from("service_photos").select("angle,stage").eq("service_id", id);
+      const { data } = await supabase.from("service_photos").select("angle,stage,storage_path").eq("service_id", id);
       return data ?? [];
     },
   });
