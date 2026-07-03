@@ -647,6 +647,9 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         status: "success",
         payload: { photo_index: photoIndex, path, size: file.size, type: file.type },
       });
+    } catch (err) {
+      await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
+      toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
       setUploading(false);
     }
@@ -999,7 +1002,12 @@ async function getPosition(): Promise<{ lat: number; lng: number } | null> {
 
 async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
   const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-  if (error) throw error;
-  return path;
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
+    if (!error) return path;
+    lastError = error;
+    await new Promise((resolve) => window.setTimeout(resolve, attempt * 350));
+  }
+  throw lastError;
 }
