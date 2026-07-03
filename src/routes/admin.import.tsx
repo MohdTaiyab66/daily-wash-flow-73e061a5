@@ -212,11 +212,11 @@ function ImportPage() {
               <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
                 <button
                   type="button"
-                  onClick={() => void captureVehicleImage(i)}
+                  onClick={() => void pickVehicleImage(i)}
                   className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
                 >
-                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                  {v.front_image_path ? "✓ Captured" : "Capture car photo"}
+                  {v.front_image_path ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                  {v.front_image_path ? "✓ Uploaded" : "Upload car photo"}
                 </button>
               </Field>
             </div>
