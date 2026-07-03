@@ -808,26 +808,6 @@ function UnavailableSection({
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
         </Button>
       </div>
-
-      {/* Keep PhotoSlots mounted even when the section is fully collapsed
-          AND the panel body is hidden — belt-and-braces guarantee that the
-          restored-capture consumer effect always exists in the tree. */}
-      <div className="hidden">
-        {UNAVAILABLE_ANGLES.map((angle) => (
-          <PhotoSlot
-            key={`bg-${angle}`}
-            serviceId={serviceId}
-            assignmentId={assignmentId}
-            workflow="unavailable_vehicle"
-            stage="unavailable"
-            angle={angle}
-            slotId={`unavailable_${angle}`}
-            done={photos.some((p) => p.stage === "unavailable" && p.angle === angle)}
-            onUploaded={() => refetch()}
-            label=""
-          />
-        ))}
-      </div>
     </Card>
   );
 }
