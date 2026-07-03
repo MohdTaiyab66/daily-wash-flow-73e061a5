@@ -473,21 +473,28 @@ function PhotoSlot({
   const [capturing, setCapturing] = useState(false);
   const slot = slotId ?? `${stage}_${angle}`;
   const busy = capturing || uploading;
+  const tag =
+    workflow === "unavailable_vehicle"
+      ? "[SVC][UNAVAILABLE]"
+      : workflow === "dirty_vehicle"
+        ? "[SVC][DIRTY]"
+        : "[SVC][PHOTO]";
+  const errTag = `${tag}[ERROR]`;
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] PhotoSlot mounted · workflow=${workflow} · stage=${stage} · angle=${angle} · slot=${slot}`);
-  }, [serviceId, workflow, stage, angle, slot]);
+    console.log(`${tag} PhotoSlot mounted · svc=${serviceId} · slot=${slot} · stage=${stage} · angle=${angle}`);
+  }, [tag, serviceId, stage, angle, slot]);
 
   const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
-    console.log(`[SVC ${serviceId}] upload started · workflow=${workflow} · slot=${slot} · size=${file.size}b`);
+    console.log(`${tag} Upload started · svc=${serviceId} · slot=${slot} · size=${file.size}b`);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Please sign in again");
 
       if (workflow !== "service_photo") {
         const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `${workflow}-${slot}`, file });
-        console.log(`[SVC ${serviceId}] REPORT PHOTO ok · ${workflow}/${slot} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+        console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · Δ${Date.now()-startedAt}ms`);
         await logApkEvidence({
           eventType: workflowEventName(workflow, "photo_upload_result"),
           serviceId,
@@ -495,9 +502,8 @@ function PhotoSlot({
           status: "success",
           payload: { slot, angle, path, elapsed_ms: Date.now() - startedAt, size: file.size, type: file.type },
         });
-        console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
         onUploaded(path);
-        console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
+        console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
         return;
       }
 
@@ -506,7 +512,7 @@ function PhotoSlot({
       const { error } = await supabase.storage
         .from("service-photos")
         .upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { console.error(`[SVC ${serviceId}] PHOTO storage fail · ${stage}/${angle} · ${error.message}`); toast.error(error.message); return; }
+      if (error) { console.error(`${errTag} Storage fail · slot=${slot} · ${error.message}`); toast.error(error.message); return; }
       const { error: e2 } = await supabase
         .from("service_photos")
         .upsert(
@@ -521,16 +527,16 @@ function PhotoSlot({
           },
           { onConflict: "service_id,stage,angle" },
         );
-      if (e2) { console.error(`[SVC ${serviceId}] PHOTO row fail · ${e2.message}`); toast.error(e2.message); return; }
-      console.log(`[SVC ${serviceId}] PHOTO ok · ${stage}/${angle} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
+      if (e2) { console.error(`${errTag} Row fail · slot=${slot} · ${e2.message}`); toast.error(e2.message); return; }
+      console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · Δ${Date.now()-startedAt}ms`);
       await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, assignmentId, gps: pos, status: "success", payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt } });
-      console.log(`[SVC ${serviceId}] upload finished · workflow=${workflow} · slot=${slot} · path=${path}`);
       onUploaded(path);
-      console.log(`[SVC ${serviceId}] photo attached · workflow=${workflow} · slot=${slot}`);
+      console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
     } catch (err) {
       if (workflow !== "service_photo") {
         await logApkEvidence({ eventType: workflowEventName(workflow, "photo_upload_result"), serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
       }
+      console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
       toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
       setUploading(false);
@@ -540,12 +546,11 @@ function PhotoSlot({
   const openCamera = async () => {
     if (disabled || busy) return;
     const t0 = Date.now();
-    console.log(`[SVC ${serviceId}] PHOTO capture start · ${workflow}/${slot}`);
-    console.log(`[SVC ${serviceId}] captureFromCamera called · workflow=${workflow} · slot=${slot}`);
+    console.log(`${tag} Capture requested (${slot}) · svc=${serviceId}`);
     const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
     setCapturing(true);
     const file = await capturePromise.finally(() => setCapturing(false));
-    console.log(`[SVC ${serviceId}] Camera returned · workflow=${workflow} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
+    console.log(`${tag} Camera returned · svc=${serviceId} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
     void logApkEvidence({
       eventType: workflowEventName(workflow, "camera_attempt"),
       serviceId,
@@ -553,7 +558,7 @@ function PhotoSlot({
       payload: { stage, angle, slot },
     });
     if (!file) {
-      console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
+      console.warn(`${errTag} Camera returned no file (cancelled/blocked) · slot=${slot}`);
       await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
       toast.error(CAMERA_UNAVAILABLE_MESSAGE);
       return;
@@ -616,11 +621,11 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     (!needsRemarks || notes.trim().length > 0);
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] UNAVAILABLE FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
   }, [serviceId, open]);
 
   useEffect(() => {
-    if (canSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=unavailable_vehicle · photos=${capturedCount}/${MIN_PHOTOS}`);
+    if (canSubmit) console.log(`[SVC][UNAVAILABLE] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${MIN_PHOTOS}`);
   }, [serviceId, canSubmit, capturedCount]);
 
   const storePhoto = (slot: string, path?: string) => {
@@ -639,7 +644,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     const photoList = UNAVAILABLE_SLOTS.map((slot) => photos[slot]).filter(Boolean);
      if (photoList.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
      if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-     console.log(`[SVC ${serviceId}] UNAVAILABLE Submit pressed · photos=${photoList.length} · reason=${reason}`);
+     console.log(`[SVC][UNAVAILABLE] Submit pressed · svc=${serviceId} · photos=${photoList.length} · reason=${reason}`);
      setSaving(true);
      let pos: { lat: number; lng: number } | null = null;
      const rpcStart = Date.now();
@@ -652,7 +657,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          gps: pos,
          payload: { reason, photo_count: photoList.length, has_notes: Boolean(notes.trim()) },
        });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC started · submit_service_unavailable`);
+       console.log(`[SVC][UNAVAILABLE] RPC started · submit_service_unavailable · svc=${serviceId}`);
        const { data, error } = await supabase.rpc("submit_service_unavailable", {
          p_service_id: serviceId,
          p_reason: reason,
@@ -662,7 +667,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          p_lng: pos?.lng ?? null,
        } as any);
        if (error) throw error;
-       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
+       const r: any = data ?? {};
+       console.log(`[SVC][UNAVAILABLE] RPC completed · svc=${serviceId} · Δ${Date.now()-rpcStart}ms · response=`, data);
+       if (r.report_id) console.log(`[SVC][UNAVAILABLE] Report created: ${r.report_id} · svc=${serviceId}`);
+       if (r.wallet_entry_id) console.log(`[SVC][UNAVAILABLE] Wallet entry: ${r.wallet_entry_id} · svc=${serviceId}`);
        await logApkEvidence({
          eventType: "unavailable_submit_result",
          serviceId,
@@ -671,16 +679,17 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
          status: "success",
          payload: { rpc: data },
        });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Wallet updated · credited=₹${(data as any)?.credited ?? 12}`);
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Notifications dispatched (customer + admin) via RPC`);
-       toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+       console.log(`[SVC][UNAVAILABLE] Wallet updated (+₹${r.credited ?? 12}) · svc=${serviceId}`);
+       console.log(`[SVC][UNAVAILABLE] Customer notification sent · svc=${serviceId}`);
+       console.log(`[SVC][UNAVAILABLE] Admin notification sent · svc=${serviceId}`);
+       toast.success(`Marked unavailable · ₹${r.credited ?? 12} credited`);
        qc.invalidateQueries({ queryKey: ["service", serviceId] });
        qc.invalidateQueries({ queryKey: ["route-today"] });
        qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
        qc.invalidateQueries({ queryKey: ["today-services-mini"] });
        qc.invalidateQueries({ queryKey: ["earnings-v3"] });
        qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-       console.log(`[SVC ${serviceId}] UNAVAILABLE Route advanced · queries invalidated`);
+       console.log(`[SVC][UNAVAILABLE] Route advanced · queries invalidated · svc=${serviceId}`);
        setReason("");
        setNotes("");
        setPhotos({});
@@ -688,6 +697,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
        onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      console.error(`[SVC][UNAVAILABLE][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit unavailable report");
     } finally {
       setSaving(false);
@@ -699,7 +709,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
-        if (value) console.log(`[SVC ${serviceId}] Unavailable dialog opened`);
+        if (value) console.log(`[SVC][UNAVAILABLE] Dialog opened · svc=${serviceId}`);
         setOpen(value);
       }}
     >
@@ -789,11 +799,11 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     !(reason === "Other" && !notes.trim());
 
   useEffect(() => {
-    console.log(`[SVC ${serviceId}] DIRTY FLOW VERSION ${FLOW_VERSION} rendered · open=${open}`);
+    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · open=${open}`);
   }, [serviceId, open]);
 
   useEffect(() => {
-    if (dirtyCanSubmit) console.log(`[SVC ${serviceId}] Submit enabled · workflow=dirty_vehicle · photos=${REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length}/${REPORT_ANGLES.length}`);
+    if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length}/${REPORT_ANGLES.length}`);
   }, [serviceId, dirtyCanSubmit, photos]);
 
   const storePhoto = (slot: string, path?: string) => {
@@ -805,7 +815,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (!photos.front || !photos.rear || !photos.left || !photos.right) return toast.error("All 4 photos required");
-    console.log(`[SVC ${serviceId}] DIRTY Submit pressed · photos=4 · reason=${reason}`);
+    console.log(`[SVC][DIRTY] Submit pressed · svc=${serviceId} · photos=4 · reason=${reason}`);
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     const rpcStart = Date.now();
@@ -818,7 +828,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         gps: pos,
         payload: { reason, photo_count: REPORT_ANGLES.filter((slot) => Boolean(photos[slot])).length, has_notes: Boolean(notes.trim()) },
       });
-      console.log(`[SVC ${serviceId}] DIRTY RPC started · submit_service_unavailable(dirty_vehicle)`);
+      console.log(`[SVC][DIRTY] RPC started · submit_service_unavailable(dirty_vehicle) · svc=${serviceId}`);
       const { data, error: e2 } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: "dirty_vehicle",
@@ -828,7 +838,10 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         p_lng: pos?.lng ?? null,
       } as any);
       if (e2) throw e2;
-      console.log(`[SVC ${serviceId}] DIRTY RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
+      const r: any = data ?? {};
+      console.log(`[SVC][DIRTY] RPC completed · svc=${serviceId} · Δ${Date.now()-rpcStart}ms · response=`, data);
+      if (r.report_id) console.log(`[SVC][DIRTY] Report created: ${r.report_id} · svc=${serviceId}`);
+      if (r.wallet_entry_id) console.log(`[SVC][DIRTY] Wallet entry: ${r.wallet_entry_id} · svc=${serviceId}`);
       await logApkEvidence({
         eventType: "dirty_submit_result",
         serviceId,
@@ -837,16 +850,17 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         status: "success",
         payload: { rpc: data },
       });
-      console.log(`[SVC ${serviceId}] DIRTY Wallet updated · credited=₹${(data as any)?.credited ?? COMPENSATION}`);
-      console.log(`[SVC ${serviceId}] DIRTY Notifications dispatched (customer + admin) via RPC`);
-      toast.success(`Dirty vehicle reported · ₹${(data as any)?.credited ?? COMPENSATION} credited`);
+      console.log(`[SVC][DIRTY] Wallet updated (+₹${r.credited ?? COMPENSATION}) · svc=${serviceId}`);
+      console.log(`[SVC][DIRTY] Customer notification sent · svc=${serviceId}`);
+      console.log(`[SVC][DIRTY] Admin notification sent · svc=${serviceId}`);
+      toast.success(`Dirty vehicle reported · ₹${r.credited ?? COMPENSATION} credited`);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-      console.log(`[SVC ${serviceId}] DIRTY Route advanced · queries invalidated`);
+      console.log(`[SVC][DIRTY] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
       setPhotos({});
@@ -854,6 +868,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       void onDone?.();
     } catch (error: any) {
       await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      console.error(`[SVC][DIRTY][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit dirty vehicle report");
     } finally {
       setSaving(false);
@@ -865,7 +880,7 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       open={open}
       onOpenChange={(value) => {
         if (!value && saving) return;
-        if (value) console.log(`[SVC ${serviceId}] Dirty dialog opened`);
+        if (value) console.log(`[SVC][DIRTY] Dialog opened · svc=${serviceId}`);
         setOpen(value);
       }}
     >
