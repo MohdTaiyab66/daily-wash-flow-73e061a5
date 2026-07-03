@@ -51,9 +51,9 @@ async function captureFromCameraOnce(): Promise<File | null> {
       }
       if (permissions.camera !== "granted") return null;
       const photo = await Camera.getPhoto({
-        quality: 70,
+        quality: 72,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl,
+        resultType: CameraResultType.Uri,
         source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
@@ -62,8 +62,10 @@ async function captureFromCameraOnce(): Promise<File | null> {
         promptLabelPhoto: "Camera",
         promptLabelPicture: "Take photo",
       });
-      if (!photo.dataUrl) return null;
-      return fileFromDataUrl(photo.dataUrl, `capture-${Date.now()}.${photo.format ?? "jpg"}`);
+      if (!photo.webPath) return null;
+      const response = await fetch(photo.webPath);
+      const blob = await response.blob();
+      return new File([blob], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type: blob.type || "image/jpeg" });
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
@@ -84,14 +86,24 @@ async function captureFromCameraOnce(): Promise<File | null> {
     // don't run the field app anyway.
     input.setAttribute("capture", "environment");
     input.style.display = "none";
+    let resolved = false;
+    const finish = (file: File | null) => {
+      if (resolved) return;
+      resolved = true;
+      window.removeEventListener("focus", onFocus);
+      input.remove();
+      resolve(file);
+    };
+    const onFocus = () => {
+      window.setTimeout(() => finish(input.files?.[0] ?? null), 400);
+    };
+    window.addEventListener("focus", onFocus, { once: true });
     input.onchange = () => {
       const f = input.files?.[0] ?? null;
-      input.remove();
-      resolve(f);
+      finish(f);
     };
     input.oncancel = () => {
-      input.remove();
-      resolve(null);
+      finish(null);
     };
     document.body.appendChild(input);
     input.click();
@@ -105,15 +117,6 @@ function shouldUseNativeCamera() {
   } catch {
     return false;
   }
-}
-
-function fileFromDataUrl(dataUrl: string, name: string) {
-  const [header, payload] = dataUrl.split(",");
-  const mime = header.match(/^data:(.*?);/)?.[1] || "image/jpeg";
-  const binary = atob(payload ?? "");
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], name, { type: mime });
 }
 
 function isAndroidWebView() {
