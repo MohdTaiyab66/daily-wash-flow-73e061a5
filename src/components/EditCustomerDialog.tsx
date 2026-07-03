@@ -299,12 +299,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
             <Field label="Vehicle front image" full>
               <button
                 type="button"
-                onClick={() => void captureImage(2)}
+                onClick={() => void pickImage(2)}
                 disabled={uploadingImage2}
                 className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm disabled:opacity-50 ${v2.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
               >
-                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                {v2.front_image_path ? "✓ Captured" : "Capture car front photo"}
+                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                {v2.front_image_path ? "✓ Uploaded" : "Upload car front photo"}
               </button>
             </Field>
           </div>
