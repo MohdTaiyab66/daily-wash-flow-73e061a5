@@ -1,0 +1,43 @@
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+
+const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.27";
+const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "27");
+const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-01";
+const gradleFile = "android/app/build.gradle";
+const syncedBuildInfo = "android/app/src/main/assets/public/build-info.json";
+
+if (!existsSync(gradleFile)) {
+  console.error(`[partner-build] missing ${gradleFile}; run npx cap add/sync android first`);
+  process.exit(1);
+}
+
+let gradle = await readFile(gradleFile, "utf8");
+
+if (/versionCode\s+\d+/.test(gradle)) {
+  gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`);
+} else {
+  gradle = gradle.replace(/defaultConfig\s*\{/, `defaultConfig {\n        versionCode ${versionCode}`);
+}
+
+if (/versionName\s+["'][^"']+["']/.test(gradle)) {
+  gradle = gradle.replace(/versionName\s+["'][^"']+["']/, `versionName "${versionName}"`);
+} else {
+  gradle = gradle.replace(/defaultConfig\s*\{/, `defaultConfig {\n        versionName "${versionName}"`);
+}
+
+await writeFile(gradleFile, gradle);
+console.log(`[partner-build] Android version stamped: ${versionName} (${versionCode})`);
+
+if (!existsSync(syncedBuildInfo)) {
+  console.error(`[partner-build] missing synced asset ${syncedBuildInfo}`);
+  process.exit(1);
+}
+
+const info = JSON.parse(await readFile(syncedBuildInfo, "utf8"));
+if (info.version !== versionName || info.build !== buildId) {
+  console.error(`[partner-build] synced asset mismatch: expected ${versionName} / ${buildId}, got ${info.version} / ${info.build}`);
+  process.exit(1);
+}
+
+console.log(`[partner-build] Synced asset verified: ${syncedBuildInfo} -> ${info.version} / ${info.build}`);

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { prepareStaffLogin } from "@/lib/staff-auth.functions";
+import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -202,6 +203,14 @@ function AuthPage() {
             <Button size="lg" className="w-full" onClick={saveName} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue
             </Button>
+          </div>
+        )}
+
+        {!isAdminLogin && (
+          <div className="mt-10 border-t border-border pt-4 text-center text-[10px] text-muted-foreground">
+            <p className="font-semibold uppercase tracking-wider">Partner Build</p>
+            <p className="mt-1">v{PARTNER_APP_VERSION}</p>
+            <p className="mt-0.5 font-mono">{PARTNER_BUILD_ID}</p>
           </div>
         )}
       </div>

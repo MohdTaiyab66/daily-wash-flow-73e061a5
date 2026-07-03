@@ -11,6 +11,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard";
 import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
+import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
   component: ProfilePage,
@@ -133,6 +134,12 @@ function ProfilePage() {
       </div>
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
+
+      <Card className="mt-3 border-dashed p-3 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Partner Build</p>
+        <p className="mt-1 text-sm font-semibold">v{PARTNER_APP_VERSION}</p>
+        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{PARTNER_BUILD_ID}</p>
+      </Card>
 
       <Button variant="outline" className="mt-3 w-full" onClick={signOut}>
         <LogOut className="mr-2 h-4 w-4" /> {t("sign_out")}
