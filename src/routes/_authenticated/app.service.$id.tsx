@@ -21,6 +21,7 @@ import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
+import { readPendingCapture } from "@/lib/cameraRestore";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -68,10 +69,31 @@ function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
   return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
 }
 
+function readDraftStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeDraftStorage(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.setItem(key, value); } catch { /* noop */ }
+  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
+}
+
+function removeDraftStorage(key: string) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
+  try { window.localStorage.removeItem(key); } catch { /* noop */ }
+}
+
 function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.sessionStorage.getItem(reportDraftKey(serviceId, kind));
+    const raw = readDraftStorage(reportDraftKey(serviceId, kind));
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as T & { savedAt?: number };
     if (parsed.savedAt && Date.now() - parsed.savedAt > 6 * 60 * 60 * 1000) {
@@ -88,7 +110,7 @@ function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fa
 function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draft: UnavailableDraft | DirtyDraft) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
+    writeDraftStorage(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
   } catch {
     // Draft persistence is best-effort; capture/submit must keep working.
   }
@@ -96,11 +118,7 @@ function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draf
 
 function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
   if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(reportDraftKey(serviceId, kind));
-  } catch {
-    // noop
-  }
+  removeDraftStorage(reportDraftKey(serviceId, kind));
 }
 
 
