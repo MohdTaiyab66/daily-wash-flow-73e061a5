@@ -576,7 +576,7 @@ function PhotoSlot({
         const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: uploadPrefix ?? `${workflow}-${slot}`, file });
         console.log(`[SVC ${serviceId}] REPORT PHOTO ok · ${workflow}/${slot} · size=${file.size}b · Δ${Date.now()-startedAt}ms`);
         await logApkEvidence({
-          eventType: `${workflow}_photo_upload_result`,
+          eventType: workflowEventName(workflow, "photo_upload_result"),
           serviceId,
           assignmentId,
           status: "success",
@@ -612,7 +612,7 @@ function PhotoSlot({
       onUploaded(path);
     } catch (err) {
       if (workflow !== "service_photo") {
-        await logApkEvidence({ eventType: `${workflow}_photo_upload_result`, serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
+        await logApkEvidence({ eventType: workflowEventName(workflow, "photo_upload_result"), serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
       }
       toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
@@ -629,18 +629,18 @@ function PhotoSlot({
     setCapturing(true);
       const file = await capturePromise.finally(() => setCapturing(false));
       void logApkEvidence({
-        eventType: workflow === "service_photo" ? "service_photo_camera_attempt" : `${workflow}_camera_attempt`,
+        eventType: workflowEventName(workflow, "camera_attempt"),
         serviceId,
         assignmentId,
         payload: { stage, angle, slot },
       });
       if (!file) {
         console.log(`[SVC ${serviceId}] PHOTO cancelled · ${workflow}/${slot}`);
-        await logApkEvidence({ eventType: workflow === "service_photo" ? "service_photo_camera_result" : `${workflow}_camera_result`, serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
+        await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
         toast.error(CAMERA_UNAVAILABLE_MESSAGE);
         return;
       }
-      await logApkEvidence({ eventType: workflow === "service_photo" ? "service_photo_camera_result" : `${workflow}_camera_result`, serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
+      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
     await uploadCapturedFile(file, t0);
   };
 
@@ -650,7 +650,7 @@ function PhotoSlot({
     void (async () => {
       const restored = await consumeRestoredCameraCapture({ slot });
       if (cancelled || !restored) return;
-      void logApkEvidence({ eventType: workflow === "service_photo" ? "service_photo_camera_result" : `${workflow}_camera_result`, serviceId, assignmentId, status: "success", payload: { stage, angle, slot, restored: true, size: restored.size, type: restored.type } });
+      void logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, restored: true, size: restored.size, type: restored.type } });
       void uploadCapturedFile(restored);
     })();
     return () => { cancelled = true; };
