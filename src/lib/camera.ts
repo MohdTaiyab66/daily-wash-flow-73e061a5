@@ -202,11 +202,15 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
         settled = true;
         finish(file);
       };
-      canvas.toBlob(
-        (blob) => done(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : fallbackDataUrlFile()),
-        "image/jpeg",
-        0.82,
-      );
+      if (typeof canvas.toBlob === "function") {
+        canvas.toBlob(
+          (blob) => done(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : fallbackDataUrlFile()),
+          "image/jpeg",
+          0.82,
+        );
+      } else {
+        done(fallbackDataUrlFile());
+      }
       window.setTimeout(() => done(fallbackDataUrlFile()), 1200);
     };
   });
