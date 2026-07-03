@@ -458,7 +458,7 @@ function PhotoSlot({
   serviceId: string;
   assignmentId?: string | null;
   workflow?: "service_photo" | "dirty_vehicle" | "unavailable_vehicle";
-  stage: "before" | "after" | "report";
+  stage: "before" | "after" | "unavailable" | "dirty";
   angle: string;
   slotId?: string;
   done: boolean;
@@ -485,30 +485,18 @@ function PhotoSlot({
     console.log(`${tag} PhotoSlot mounted · svc=${serviceId} · slot=${slot} · stage=${stage} · angle=${angle}`);
   }, [tag, serviceId, stage, angle, slot]);
 
+  // Unified upload pipeline — identical for Before, After, Unavailable, and Dirty.
+  // The only difference between workflows is the stage value written to service_photos
+  // and the submit RPC called by the parent dialog. Camera, storage upload, DB write,
+  // and slot-completion logic are identical.
   const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
     setUploading(true);
     console.log(`${tag} Upload started · svc=${serviceId} · slot=${slot} · size=${file.size}b`);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Please sign in again");
-
-      if (workflow !== "service_photo") {
-        const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `${workflow}-${slot}`, file });
-        console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · Δ${Date.now()-startedAt}ms`);
-        await logApkEvidence({
-          eventType: workflowEventName(workflow, "photo_upload_result"),
-          serviceId,
-          assignmentId,
-          status: "success",
-          payload: { slot, angle, path, elapsed_ms: Date.now() - startedAt, size: file.size, type: file.type },
-        });
-        onUploaded(path);
-        console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
-        return;
-      }
-
       const pos = await getPosition();
-      const path = `${u.user!.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
+      const path = `${u.user.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
       const { error } = await supabase.storage
         .from("service-photos")
         .upload(path, file, { upsert: true, contentType: file.type });
@@ -518,7 +506,7 @@ function PhotoSlot({
         .upsert(
           {
             service_id: serviceId,
-            partner_id: u.user!.id,
+            partner_id: u.user.id,
             stage: stage as any,
             angle: angle as any,
             storage_path: path,
@@ -529,13 +517,24 @@ function PhotoSlot({
         );
       if (e2) { console.error(`${errTag} Row fail · slot=${slot} · ${e2.message}`); toast.error(e2.message); return; }
       console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · Δ${Date.now()-startedAt}ms`);
-      await logApkEvidence({ eventType: "service_photo_upload_result", serviceId, assignmentId, gps: pos, status: "success", payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt } });
+      await logApkEvidence({
+        eventType: workflowEventName(workflow, "photo_upload_result"),
+        serviceId,
+        assignmentId,
+        gps: pos,
+        status: "success",
+        payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt },
+      });
       onUploaded(path);
       console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
     } catch (err) {
-      if (workflow !== "service_photo") {
-        await logApkEvidence({ eventType: workflowEventName(workflow, "photo_upload_result"), serviceId, assignmentId, status: "error", payload: { slot, angle, ...evidenceError(err) } });
-      }
+      await logApkEvidence({
+        eventType: workflowEventName(workflow, "photo_upload_result"),
+        serviceId,
+        assignmentId,
+        status: "error",
+        payload: { slot, angle, ...evidenceError(err) },
+      });
       console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
       toast.error((err as any)?.message ?? "Could not save photo");
     } finally {
@@ -547,7 +546,7 @@ function PhotoSlot({
     if (disabled || busy) return;
     const t0 = Date.now();
     console.log(`${tag} Capture requested (${slot}) · svc=${serviceId}`);
-    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage, angle, slot });
+    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage: stage === "unavailable" || stage === "dirty" ? "report" : stage, angle, slot });
     setCapturing(true);
     const file = await capturePromise.finally(() => setCapturing(false));
     console.log(`${tag} Camera returned · svc=${serviceId} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
