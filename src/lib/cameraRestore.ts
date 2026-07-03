@@ -55,16 +55,24 @@ export function installCameraRouteRestore() {
   if (typeof window === "undefined" || !isNative()) return () => {};
 
   let cancelled = false;
+  const restoreRoute = () => {
+    if (cancelled) return;
+    const pending = readPendingCapture();
+    if (!pending?.pathname) return;
+    if (window.location.pathname !== pending.pathname) {
+      window.history.replaceState(window.history.state, "", pending.pathname);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  };
+
   void import("@capacitor/app")
-    .then(({ App }) => App.addListener("appRestoredResult", () => {
-      if (cancelled) return;
-      const pending = readPendingCapture();
-      if (!pending?.pathname) return;
-      if (window.location.pathname !== pending.pathname) {
-        window.history.replaceState(window.history.state, "", pending.pathname);
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
-    }))
+    .then(({ App }) => {
+      void App.addListener("appRestoredResult", restoreRoute);
+      void App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) window.setTimeout(restoreRoute, 50);
+      });
+      void App.addListener("resume", () => window.setTimeout(restoreRoute, 50));
+    })
     .catch(() => null);
 
   return () => {

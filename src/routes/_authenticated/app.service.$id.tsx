@@ -18,7 +18,7 @@ import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { captureFromCamera } from "@/lib/camera";
+import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
@@ -266,11 +266,14 @@ function ServiceDetail() {
   };
 
   const refreshAfterReport = () => {
-    qc.invalidateQueries({ queryKey: ["service", id] });
-    qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
-    qc.invalidateQueries({ queryKey: ["route-today"] });
-    qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-    qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+    void qc.invalidateQueries({ queryKey: ["service", id] });
+    void qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
+    void qc.invalidateQueries({ queryKey: ["route-today"] });
+    void qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+    void qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+    void qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+    void qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+    window.setTimeout(() => void goNext(), 900);
   };
 
   const c = service?.customers as any;
@@ -447,7 +450,7 @@ function PhotoSlot({
       if (!file) {
         console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
         await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
-        toast.error("Camera did not return a photo. Please tap the same slot again.");
+        toast.error(CAMERA_UNAVAILABLE_MESSAGE);
         return;
       }
       await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, size: file.size, type: file.type } });
@@ -501,7 +504,7 @@ function PhotoSlot({
       }`}
     >
       {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-      {label}
+      {done ? "✓ Captured" : label}
     </button>
   );
 }
@@ -512,6 +515,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [capturing, setCapturing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
@@ -525,7 +529,8 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     (!needsRemarks || notes.trim().length > 0);
 
   const capturePhoto = async () => {
-    if (photos.length >= MAX_PHOTOS) return;
+    if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
+    setCapturing(true);
     await logApkEvidence({
       eventType: "unavailable_camera_attempt",
       serviceId,
@@ -539,9 +544,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       stage: "report",
       angle: String(photos.length + 1),
       slot: `unavailable_${photos.length + 1}`,
-    });
+    }).finally(() => setCapturing(false));
     if (!file) {
       await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
       return;
     }
     setUploading(true);
@@ -666,10 +672,10 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
               <button
                 type="button"
                 onClick={capturePhoto}
-                disabled={uploading}
+                disabled={capturing || uploading || saving}
                 className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary"
               >
-                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                {capturing || uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
                 {photos.length === 0 ? "Capture" : "Add another"}
               </button>
             )}
@@ -683,7 +689,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
           className="mt-3"
         />
         <DialogFooter>
-          <Button onClick={submit} disabled={saving || uploading || !canSubmit}>
+          <Button onClick={submit} disabled={saving || capturing || uploading || !canSubmit}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
           </Button>
         </DialogFooter>
@@ -852,7 +858,7 @@ function ReportPhoto({
       onPicked(f);
     } else {
       await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
-      toast.error("Camera did not return a photo. Please tap the same slot again.");
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
     }
   };
   return (
@@ -863,7 +869,7 @@ function ReportPhoto({
         done ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]" : "border-border text-muted-foreground"
       }`}
     >
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{angle}
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : done ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}{done ? "✓ Captured" : angle}
     </button>
   );
 }

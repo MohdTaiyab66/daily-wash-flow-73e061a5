@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Camera, Check, Loader2, Pencil, Trash2 } from "lucide-react";
 import {
   adminUpdateCustomer,
   createVehicleImageUploadUrl,
@@ -14,6 +14,7 @@ import {
   adminDeleteVehicle,
 } from "@/lib/admin.functions";
 import { SERVICE_AREA_NAMES } from "@/lib/areas";
+import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
 
 const PLANS = ["daily_shine_monthly", "daily_shine_quarterly", "daily_shine_yearly"];
 const BEFORE_TIMES = [
@@ -180,6 +181,12 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
     onError: (e: any) => toast.error(e?.message ?? "Remove failed"),
   });
 
+  const captureImage = async (slot: 1 | 2) => {
+    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_vehicle_${slot}` });
+    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+    await uploadImage(file, slot);
+  };
+
   const uploadImage = async (file: File, slot: 1 | 2) => {
     const setU = slot === 1 ? setUploadingImage : setUploadingImage2;
     setU(true);
@@ -236,10 +243,15 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
           <Field label="Vehicle color"><Input value={f.color} onChange={set("color")} /></Field>
           <Field label="Parking notes" full><Input value={f.parking_notes} onChange={set("parking_notes")} /></Field>
           <Field label="Vehicle front image" full>
-            <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 1)} />
-              {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? "Photo uploaded" : "Upload car front photo"}
-            </label>
+            <button
+              type="button"
+              onClick={() => void captureImage(1)}
+              disabled={uploadingImage}
+              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm disabled:opacity-50 ${f.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
+            >
+              {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : f.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+              {f.front_image_path ? "✓ Captured" : "Capture car front photo"}
+            </button>
           </Field>
           <Field label="Status">
             <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={f.is_active ? "1" : "0"} onChange={(e: any) => setF((p) => ({ ...p, is_active: e.target.value === "1" }))}>
@@ -285,10 +297,15 @@ export function EditCustomerDialog({ customer, vehicles = [] }: { customer: any;
             </Field>
             <Field label="Parking notes"><Input value={v2.parking_notes} onChange={set2("parking_notes")} /></Field>
             <Field label="Vehicle front image" full>
-              <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v2.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], 2)} />
-                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? "Photo uploaded" : "Upload car front photo"}
-              </label>
+              <button
+                type="button"
+                onClick={() => void captureImage(2)}
+                disabled={uploadingImage2}
+                className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm disabled:opacity-50 ${v2.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
+              >
+                {uploadingImage2 ? <Loader2 className="h-4 w-4 animate-spin" /> : v2.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                {v2.front_image_path ? "✓ Captured" : "Capture car front photo"}
+              </button>
             </Field>
           </div>
         </div>

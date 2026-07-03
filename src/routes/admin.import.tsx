@@ -11,6 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Camera, Check, Loader2, UserPlus } from "lucide-react";
 import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
+import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
 
 
 export const Route = createFileRoute("/admin/import")({
@@ -73,6 +74,12 @@ function ImportPage() {
     if (error) return toast.error(error.message);
     setVehicles((arr) => arr.map((v, i) => (i === idx ? { ...v, front_image_path: path } : v)));
     toast.success("Vehicle photo uploaded");
+  };
+
+  const captureVehicleImage = async (idx: number) => {
+    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_import_vehicle_${idx}` });
+    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+    await uploadVehicleImage(idx, file);
   };
 
   const mut = useMutation({
@@ -203,11 +210,14 @@ function ImportPage() {
               <Field label="Vehicle Color"><Input value={v.color} onChange={setVehicle(i, "color")} /></Field>
               <Field label="Parking Notes" full><Textarea value={v.parking_notes} onChange={setVehicle(i, "parking_notes")} /></Field>
               <Field label={i === 0 ? "Car front photo *" : "Car front photo"} full>
-                <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}>
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVehicleImage(i, e.target.files[0])} />
+                <button
+                  type="button"
+                  onClick={() => void captureVehicleImage(i)}
+                  className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm ${v.front_image_path ? "border-success text-success" : "border-border text-muted-foreground"}`}
+                >
                   {v.front_image_path ? <Check className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                  {v.front_image_path ? "Photo uploaded" : "Upload car photo"}
-                </label>
+                  {v.front_image_path ? "✓ Captured" : "Capture car photo"}
+                </button>
               </Field>
             </div>
           </Card>

@@ -54,11 +54,12 @@ function HomePage() {
   });
 
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
+  const done = (today ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
   const total = today?.length ?? 0;
-  const remaining = total - completed;
+  const remaining = total - done;
   const earnings = (today ?? [])
-    .filter((s) => s.status === "completed")
-    .reduce((sum, s) => sum + Number(s.rate_per_car || 0), 0);
+    .filter((s) => s.status === "completed" || s.status === "unavailable")
+    .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
 
   const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
   const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();
@@ -115,14 +116,14 @@ function HomePage() {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
             <div><p className="text-background/60">{t("assigned")}</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
-            <div><p className="text-background/60">{t("done")}</p><p className="mt-0.5 text-base font-semibold">{completed}</p></div>
+            <div><p className="text-background/60">{t("done")}</p><p className="mt-0.5 text-base font-semibold">{done}</p></div>
             <div><p className="text-background/60">{t("left")}</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
             <div><p className="text-background/60">{t("distance")}</p><p className="mt-0.5 text-base font-semibold">{remDistance} km</p></div>
             <div><p className="text-background/60">{t("eta")}</p><p className="mt-0.5 text-base font-semibold">{remTime}h</p></div>
             <div><p className="text-background/60">{t("earned")}</p><p className="mt-0.5 text-base font-semibold">₹{earnings}</p></div>
           </div>
           <div className="mt-4 h-1.5 rounded-full bg-background/15">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (completed / total) * 100 : 0}%` }} />
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
             <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("view_todays_route")}</Link>
@@ -140,7 +141,7 @@ function HomePage() {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
             <div><p className="text-background/60">Assigned</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
-            <div><p className="text-background/60">Done</p><p className="mt-0.5 text-base font-semibold">{completed}</p></div>
+            <div><p className="text-background/60">Done</p><p className="mt-0.5 text-base font-semibold">{done}</p></div>
             <div><p className="text-background/60">Left</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
