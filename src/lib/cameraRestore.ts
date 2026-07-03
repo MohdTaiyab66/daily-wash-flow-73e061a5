@@ -14,9 +14,11 @@ type PendingCapture = {
   at?: number;
 };
 
-type RestoredCapture = PendingCapture & {
-  base64String: string;
+export type RestoredCapture = PendingCapture & {
+  base64String?: string;
   format?: string;
+  uri?: string;
+  webPath?: string;
 };
 
 function readStorage(key: string): string | null {
@@ -76,10 +78,21 @@ export function clearPendingCapture() {
 
 function saveRestoredCapture(data: unknown) {
   const pending = readPendingCapture();
-  const photo = data as { base64String?: string; thumbnail?: string; format?: string; metadata?: { format?: string } } | null;
+  const photo = data as { base64String?: string; thumbnail?: string; format?: string; metadata?: { format?: string }; uri?: string; webPath?: string; path?: string } | null;
   const base64String = photo?.base64String ?? photo?.thumbnail;
-  if (!pending?.slot || !base64String) return;
-  writeStorage(CAMERA_RESTORED_KEY, JSON.stringify({ ...pending, base64String, format: photo?.format ?? photo?.metadata?.format ?? "jpeg", at: Date.now() }));
+  const uri = photo?.uri ?? photo?.path;
+  if (!pending?.slot || (!base64String && !photo?.webPath && !uri)) return;
+  writeStorage(
+    CAMERA_RESTORED_KEY,
+    JSON.stringify({
+      ...pending,
+      base64String,
+      uri,
+      webPath: photo?.webPath,
+      format: photo?.format ?? photo?.metadata?.format ?? "jpeg",
+      at: Date.now(),
+    }),
+  );
 }
 
 export function consumeRestoredCapture(slot: string): RestoredCapture | null {

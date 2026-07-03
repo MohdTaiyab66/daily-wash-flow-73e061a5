@@ -548,8 +548,9 @@ function PhotoSlot({
     if (busy) return;
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
+    const capturePromise = captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot });
     setCapturing(true);
-      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
+      const file = await capturePromise.finally(() => setCapturing(false));
       void logApkEvidence({
         eventType: "service_photo_camera_attempt",
         serviceId,
@@ -567,10 +568,14 @@ function PhotoSlot({
 
   useEffect(() => {
     if (done || busy) return;
-    const restored = consumeRestoredCameraCapture({ slot });
-    if (!restored) return;
-    void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
-    void uploadCapturedFile(restored);
+    let cancelled = false;
+    void (async () => {
+      const restored = await consumeRestoredCameraCapture({ slot });
+      if (cancelled || !restored) return;
+      void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
+      void uploadCapturedFile(restored);
+    })();
+    return () => { cancelled = true; };
   }, [done, busy, slot]);
 
   useEffect(() => {
@@ -630,17 +635,18 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
     const photoIndex = photos.length + 1;
     const slot = `unavailable_${photoIndex}`;
-    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
-    setOpen(true);
-    setCapturing(true);
-    const file = await captureFromCamera({
+    const capturePromise = captureFromCamera({
       serviceId,
       assignmentId,
       workflow: "unavailable_vehicle",
       stage: "report",
       angle: String(photoIndex),
       slot,
-    }).finally(() => setCapturing(false));
+    });
+    writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
+    setOpen(true);
+    setCapturing(true);
+    const file = await capturePromise.finally(() => setCapturing(false));
     void logApkEvidence({
       eventType: "unavailable_camera_attempt",
       serviceId,
@@ -678,11 +684,12 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
   useEffect(() => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
-    const restored = consumeRestoredCameraCapture({ slot: nextSlot });
-    if (!restored) return;
-    setOpen(true);
-    setUploading(true);
+    let cancelled = false;
     void (async () => {
+      const restored = await consumeRestoredCameraCapture({ slot: nextSlot });
+      if (cancelled || !restored) return;
+      setOpen(true);
+      setUploading(true);
       const photoIndex = photos.length + 1;
       try {
         const { data: u, error: userError } = await supabase.auth.getUser();
@@ -700,6 +707,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         setUploading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [nextSlot, photos.length, capturing, uploading, saving, serviceId, assignmentId, reason, notes]);
 
   const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
@@ -885,10 +893,11 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
   const capture = async (angle: string) => {
     if (capturingAngle || uploadingAngle || saving) return;
     const slot = `dirty_${angle}`;
+    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot });
     writeReportDraft(serviceId, "dirty", { reason, notes, photos, open: true });
     setOpen(true);
     setCapturingAngle(angle);
-    const file = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot }).finally(() => setCapturingAngle(null));
+    const file = await capturePromise.finally(() => setCapturingAngle(null));
     void logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
     if (!file) {
       await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
@@ -901,14 +910,19 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
 
   useEffect(() => {
     if (capturingAngle || uploadingAngle || saving) return;
-    for (const angle of REPORT_ANGLES) {
-      const restored = consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
-      if (!restored) continue;
-      setOpen(true);
-      void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
-      void upload(angle, restored, true);
-      break;
-    }
+    let cancelled = false;
+    void (async () => {
+      for (const angle of REPORT_ANGLES) {
+        const restored = await consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
+        if (cancelled) return;
+        if (!restored) continue;
+        setOpen(true);
+        void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
+        void upload(angle, restored, true);
+        break;
+      }
+    })();
+    return () => { cancelled = true; };
   }, [capturingAngle, uploadingAngle, saving, serviceId, assignmentId, reason, notes, photos]);
 
   const submit = async () => {

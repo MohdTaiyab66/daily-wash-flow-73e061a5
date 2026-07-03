@@ -5,9 +5,10 @@
  * There is deliberately no picker prompt, gallery, Photos source, or upload
  * fallback anywhere in this helper.
  */
-import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture } from "@/lib/cameraRestore";
+import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture, type RestoredCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
-import { Camera as CapacitorCamera, CameraDirection, type MediaResult } from "@capacitor/camera";
+import { Capacitor } from "@capacitor/core";
+import { Camera as CapacitorCamera, CameraDirection, CameraResultType, CameraSource, type MediaResult, type Photo } from "@capacitor/camera";
 
 type CaptureContext = {
   serviceId?: string | null;
@@ -18,11 +19,13 @@ type CaptureContext = {
   slot?: string;
 };
 
+type CaptureFile = File;
+
 let activeCapture = false;
 
 export const CAMERA_UNAVAILABLE_MESSAGE = "Camera unavailable";
 
-export async function captureFromCamera(context: CaptureContext = {}): Promise<File | null> {
+export async function captureFromCamera(context: CaptureContext = {}): Promise<CaptureFile | null> {
   // Never share one native camera result across two UI slots. Returning the
   // same promise is what can mark the wrong slot complete after quick taps.
   if (activeCapture) return null;
@@ -30,9 +33,7 @@ export async function captureFromCamera(context: CaptureContext = {}): Promise<F
   persistPendingCapture(context);
   try {
     const restored = context.slot ? consumeRestoredCapture(context.slot) : null;
-    const file = restored
-      ? fileFromBase64(restored.base64String, restored.format ?? "jpeg")
-      : await captureFromCameraOnce();
+    const file = restored ? await fileFromRestoredCapture(restored) : await captureFromCameraOnce();
     clearPendingCapture();
     return file;
   } catch (err) {
@@ -43,14 +44,24 @@ export async function captureFromCamera(context: CaptureContext = {}): Promise<F
   }
 }
 
-export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot">): File | null {
+export async function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot">): Promise<CaptureFile | null> {
   if (!context.slot) return null;
   const restored = consumeRestoredCapture(context.slot);
   if (!restored) return null;
-  return fileFromBase64(restored.base64String, restored.format ?? "jpeg");
+  return fileFromRestoredCapture(restored);
 }
 
-async function captureFromCameraOnce(): Promise<File | null> {
+async function fileFromRestoredCapture(restored: RestoredCapture): Promise<CaptureFile | null> {
+  if (restored.base64String) return fileFromBase64(restored.base64String, restored.format ?? "jpeg");
+  const format = normalizeImageFormat(restored.format);
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  const native = await fileFromNativePath(restored.uri ?? null, mime, format);
+  if (native) return native;
+  const url = normalizeNativeFileUrl(restored.webPath ?? null);
+  return url ? fileFromUrl(url, mime, format) : null;
+}
+
+async function captureFromCameraOnce(): Promise<CaptureFile | null> {
   if (shouldUseNativeCamera()) {
     try {
       const getCameraPhoto = () => CapacitorCamera.takePhoto({
@@ -79,8 +90,27 @@ async function captureFromCameraOnce(): Promise<File | null> {
       }
       return fileFromMediaResult(photo);
     } catch (err) {
-      console.warn("[camera] native capture failed", err);
-      return null;
+      const primary = err as { message?: string; code?: string };
+      const cancelled = /cancel/i.test(`${primary?.code ?? ""} ${primary?.message ?? ""}`);
+      if (cancelled) return null;
+      console.warn("[camera] native takePhoto failed; retrying camera-only legacy capture", err);
+      try {
+        const legacy = await CapacitorCamera.getPhoto({
+          quality: 70,
+          resultType: CameraResultType.Uri,
+          source: CameraSource.Camera,
+          saveToGallery: false,
+          correctOrientation: true,
+          direction: CameraDirection.Rear,
+          allowEditing: false,
+          width: 1600,
+          height: 1200,
+        });
+        return fileFromLegacyPhoto(legacy);
+      } catch (fallbackErr) {
+        console.warn("[camera] native legacy capture failed", fallbackErr);
+        return null;
+      }
     }
   }
 
@@ -93,7 +123,7 @@ function shouldUseNativeCamera(): boolean {
   return false;
 }
 
-function fileFromBase64(base64: string, format: string) {
+function fileFromBase64(base64: string, format: string): CaptureFile {
   const mime = format === "png" ? "image/png" : "image/jpeg";
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -101,22 +131,89 @@ function fileFromBase64(base64: string, format: string) {
   return new File([bytes], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: mime });
 }
 
-async function fileFromMediaResult(result: MediaResult): Promise<File | null> {
+async function fileFromMediaResult(result: MediaResult): Promise<CaptureFile | null> {
   const format = normalizeImageFormat(result.metadata?.format);
   const mime = format === "png" ? "image/png" : "image/jpeg";
-  if (result.webPath || result.uri) {
-    try {
-      const res = await fetch(result.webPath ?? result.uri!);
-      if (res.ok) {
-        const blob = await res.blob();
-        if (blob.size > 0) return new File([blob], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: blob.type || mime });
-      }
-    } catch (err) {
-      console.warn("[camera] captured file fetch failed", err);
-    }
-  }
+  const native = await fileFromNativePath(result.uri ?? null, mime, format);
+  if (native) return native;
   if (result.thumbnail) return fileFromBase64(result.thumbnail, format);
+  const url = normalizeNativeFileUrl(result.webPath ?? result.uri ?? null);
+  if (url) {
+    const fetched = await fileFromUrl(url, mime, format);
+    if (fetched) return fetched;
+  }
   return null;
+}
+
+async function fileFromLegacyPhoto(result: Photo): Promise<CaptureFile | null> {
+  const format = normalizeImageFormat(result.format);
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  if (result.base64String) return fileFromBase64(result.base64String, format);
+  if (result.dataUrl) return fileFromDataUrl(result.dataUrl);
+  const native = await fileFromNativePath(result.path ?? null, mime, format);
+  if (native) return native;
+  const url = normalizeNativeFileUrl(result.webPath ?? result.path ?? null);
+  if (url) {
+    const fetched = await fileFromUrl(url, mime, format);
+    if (fetched) return fetched;
+  }
+  return null;
+}
+
+async function fileFromUrl(url: string, mime: string, format: string): Promise<CaptureFile | null> {
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob.size > 0) return new File([blob], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: blob.type || mime });
+    }
+  } catch (err) {
+    console.warn("[camera] captured file fetch failed", err);
+  }
+  return null;
+}
+
+async function fileFromNativePath(value: string | null, mime: string, format: string): Promise<CaptureFile | null> {
+  const path = normalizeFilesystemPath(value);
+  if (!path) return null;
+  try {
+    const { Filesystem } = await import("@capacitor/filesystem");
+    const { data } = await Filesystem.readFile({ path });
+    if (typeof data === "string" && data.length > 0) return fileFromBase64(data, format);
+    if (data instanceof Blob && data.size > 0) return new File([data], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: data.type || mime });
+  } catch (err) {
+    console.warn("[camera] native file read failed", err);
+  }
+  return null;
+}
+
+function normalizeFilesystemPath(value: string | null): string | null {
+  if (!value) return null;
+  if (value.startsWith("file://") || value.startsWith("content://")) return value;
+  if (value.startsWith("/")) return `file://${value}`;
+  return null;
+}
+
+function fileFromDataUrl(dataUrl: string): CaptureFile | null {
+  try {
+    const [header, data] = dataUrl.split(",");
+    if (!data) return null;
+    const mime = header.match(/data:(.*?);base64/)?.[1] ?? "image/jpeg";
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return new File([bytes], `capture-${Date.now()}.jpg`, { type: mime });
+  } catch {
+    return null;
+  }
+}
+
+function normalizeNativeFileUrl(value: string | null): string | null {
+  if (!value) return null;
+  if (/^https?:|^capacitor:|^data:|^blob:/.test(value)) return value;
+  if (/^file:/.test(value)) return Capacitor.convertFileSrc(value);
+  if (value.startsWith("/")) return Capacitor.convertFileSrc(`file://${value}`);
+  return value;
 }
 
 function normalizeImageFormat(format?: string) {
@@ -124,7 +221,7 @@ function normalizeImageFormat(format?: string) {
   return f === "png" ? "png" : "jpeg";
 }
 
-async function captureWithBrowserCamera(): Promise<File | null> {
+async function captureWithBrowserCamera(): Promise<CaptureFile | null> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return null;
   let stream: MediaStream | null = null;
   try {
@@ -137,7 +234,7 @@ async function captureWithBrowserCamera(): Promise<File | null> {
   }
 }
 
-function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
+function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | null> {
   return new Promise((resolve) => {
     let finished = false;
     const overlay = document.createElement("div");
@@ -166,8 +263,9 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
     controls.append(cancel, capture);
     overlay.append(video, controls);
     document.body.appendChild(overlay);
+    void video.play().catch((err) => console.warn("[camera] video play failed", err));
 
-    const finish = (file: File | null) => {
+    const finish = (file: CaptureFile | null) => {
       if (finished) return;
       finished = true;
       stream.getTracks().forEach((track) => track.stop());
@@ -256,10 +354,12 @@ function waitForVideoFrame(video: HTMLVideoElement): Promise<boolean> {
       if (settled) return;
       settled = true;
       video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("loadedmetadata", onReady);
       video.removeEventListener("canplay", onReady);
       resolve(ok);
     };
     const onReady = () => done(video.videoWidth > 0 && video.videoHeight > 0);
+    video.addEventListener("loadedmetadata", onReady, { once: true });
     video.addEventListener("loadeddata", onReady, { once: true });
     video.addEventListener("canplay", onReady, { once: true });
     window.setTimeout(() => done(video.videoWidth > 0 && video.videoHeight > 0), 1500);
