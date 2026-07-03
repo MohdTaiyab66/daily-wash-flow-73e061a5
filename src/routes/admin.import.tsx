@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Camera, Check, Loader2, UserPlus } from "lucide-react";
+import { Check, Loader2, Upload, UserPlus } from "lucide-react";
 import { SERVICE_AREA_NAMES, SERVICE_AREAS } from "@/lib/areas";
-import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera } from "@/lib/camera";
+import { FILE_PICKER_UNAVAILABLE_MESSAGE, selectImageFile } from "@/lib/fileSelect";
 
 
 export const Route = createFileRoute("/admin/import")({
