@@ -56,6 +56,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
   const fittedRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapRenderFailed, setMapRenderFailed] = useState(false);
   const [partnerPos, setPartnerPos] = useState<{ lat: number; lng: number } | null>(null);
   const [stats, setStats] = useState<{ km: number; mins: number } | null>(null);
   const compute = useServerFn(computeRoute);
@@ -66,6 +67,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
     [stops]
   );
   const stableStops = useMemo(() => stops, [stopsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fallbackStats = useMemo(() => computeFallbackStats(stableStops, partnerPos), [stableStops, partnerPos]);
 
   // Initialize map
   useEffect(() => {
@@ -83,6 +85,24 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
       })
       .catch((e) => setError(e.message));
   }, []);
+
+  useEffect(() => {
+    if (!ready || !ref.current) return;
+    const el = ref.current;
+    const detectFailure = () => {
+      const text = el.innerText || "";
+      if (el.querySelector(".gm-err-container") || text.includes("Oops! Something went wrong")) {
+        setMapRenderFailed(true);
+      }
+    };
+    const observer = new MutationObserver(detectFailure);
+    observer.observe(el, { childList: true, subtree: true, characterData: true });
+    const timer = window.setTimeout(detectFailure, 1200);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [ready]);
 
   // Partner location (watch)
   useEffect(() => {
@@ -214,24 +234,48 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}
-        {error && (
-          <div className="absolute inset-0 grid place-items-center text-center text-xs text-muted-foreground">
-            <div><MapPin className="mx-auto h-5 w-5" /> Map unavailable</div>
-          </div>
-        )}
+        {(error || mapRenderFailed) && <RouteFallback stops={stableStops} />}
       </div>
-      {showCustomers && stats && (
+      {showCustomers && (stats || fallbackStats) && (
         <div className="grid grid-cols-2 border-t border-border text-center">
           <div className="px-2 py-2">
-            <p className="text-base font-semibold">{stats.km} km</p>
+            <p className="text-base font-semibold">{(stats ?? fallbackStats)!.km} km</p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route distance</p>
           </div>
           <div className="px-2 py-2 border-l border-border">
-            <p className="text-base font-semibold">~{stats.mins} min</p>
+            <p className="text-base font-semibold">~{(stats ?? fallbackStats)!.mins} min</p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. completion</p>
           </div>
         </div>
       )}
     </Card>
+  );
+}
+
+function computeFallbackStats(stops: Stop[], partnerPos: { lat: number; lng: number } | null) {
+  const points = [partnerPos, ...stops.map((s) => ({ lat: s.lat, lng: s.lng }))].filter(Boolean) as Array<{ lat: number; lng: number }>;
+  if (points.length < 2) return null;
+  const km = points.slice(1).reduce((sum, point, i) => sum + haversineKm(points[i], point), 0);
+  return { km: Math.max(0.1, Math.round(km * 10) / 10), mins: Math.max(1, Math.round((km / 22) * 60)) };
+}
+
+function RouteFallback({ stops }: { stops: Stop[] }) {
+  const first = stops[0];
+  return (
+    <div className="absolute inset-0 z-10 bg-muted p-4">
+      <div className="flex h-full flex-col justify-between rounded-md border border-border bg-background p-4 shadow-sm">
+        <div>
+          <MapPin className="h-5 w-5 text-primary" />
+          <p className="mt-2 text-sm font-semibold">Route ready</p>
+          <p className="mt-1 text-xs text-muted-foreground">{stops.length} stop{stops.length === 1 ? "" : "s"} loaded from saved route order.</p>
+        </div>
+        {first && (
+          <div className="rounded-md bg-muted/70 p-3 text-xs">
+            <p className="font-medium">Next: {first.label}</p>
+            <p className="mt-0.5 text-muted-foreground">Use Navigate for turn-by-turn directions.</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MapPin, Phone, Navigation, Play, AlertTriangle, Clock, Car, Loader2, CheckCircle2 } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -213,41 +212,19 @@ function RoutePage() {
           const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
           const cutoffTime = c?.service_required_before ?? c?.preferred_time;
           const isExact = (c?.time_window_type ?? "soft") === "exact";
-          const isEmergency = !!(s as any).is_emergency;
-          const isLocked = !!(s as any).locked_position;
-          const priority = isExact || isEmergency;
-          const prevCluster = idx > 0 ? (pending[idx - 1] as any).cluster_id ?? (pending[idx - 1].customers as any)?.area : null;
-          const currCluster = (s as any).cluster_id ?? c?.area;
-          const showClusterHeader = idx === 0 || prevCluster !== currCluster;
           return (
             <div key={s.id}>
-              {showClusterHeader && (
-                <p className="mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {currCluster ?? "Cluster"}
-                </p>
-              )}
               <Card className="overflow-hidden p-0">
                 <ZoomableVehicleImage path={v?.front_image_path} className="h-32 w-full" alt={`${v?.make} ${v?.model}`} />
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${priority ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
-                      {idx + 1}
-                    </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-medium">#{idx + 1} · {c?.full_name ?? "Customer"}</p>
-                        <div className="flex items-center gap-1">
-                          {isEmergency && <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Emergency</Badge>}
-                          {isLocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
-                          {isExact ? (
-                            <Badge variant="outline" className="border-destructive/40 text-[10px] text-destructive">Exact time</Badge>
-                          ) : cutoffTime ? (
-                            <Badge variant="outline" className="text-[10px]">Prefers {formatTime12(cutoffTime)}</Badge>
-                          ) : null}
-                        </div>
-                      </div>
+                      <p className="truncate font-medium">{c?.full_name ?? "Customer"}</p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model} · {v?.color} · {v?.registration_number}
+                        <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {v?.registration_number}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         <MapPin className="mr-1 inline h-3 w-3" />
@@ -255,16 +232,15 @@ function RoutePage() {
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         <Clock className="mr-1 inline h-3 w-3" />
-                        {isExact ? `Exact · ${formatTime12(c?.exact_time ?? cutoffTime)}` : cutoffTime ? `Before ${formatTime12(cutoffTime)}` : "Flexible"}
+                        {isExact ? formatTime12(c?.exact_time ?? cutoffTime) : cutoffTime ? formatTime12(cutoffTime) : "Flexible"}
                       </p>
                     </div>
                   </div>
-                <div className="mt-3 grid grid-cols-4 gap-2">
+                <div className="mt-3 grid grid-cols-3 gap-2">
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="col-span-1"
                     disabled={!navUrl}
                     onClick={async () => {
                       await logApkEvidence({
@@ -290,12 +266,12 @@ function RoutePage() {
                     }}
                     aria-label={navUrl ? "Navigate" : "Location unavailable"}
                   >
-                    <Navigation className="h-4 w-4" />
+                    <Navigation className="mr-1.5 h-4 w-4" />Navigate
                   </Button>
                   <MaskedCallButton serviceId={s.id} compact />
-                  <Button asChild size="sm" className="col-span-2">
+                  <Button asChild size="sm">
                     <Link to="/app/service/$id" params={{ id: s.id }}>
-                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Start Service</>}
+                      {s.status === "in_progress" ? <><AlertTriangle className="mr-1.5 h-4 w-4" />Continue</> : <><Play className="mr-1.5 h-4 w-4" />Continue</>}
                     </Link>
                   </Button>
                   </div>
@@ -403,8 +379,8 @@ export function MaskedCallButton({ serviceId, compact, full }: { serviceId: stri
   };
   if (compact) {
     return (
-      <Button size="sm" variant="outline" className="col-span-1" onClick={onClick} disabled={loading} aria-label="Call Customer">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+      <Button size="sm" variant="outline" onClick={onClick} disabled={loading} aria-label="Call Customer">
+        {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />}Call
       </Button>
     );
   }
