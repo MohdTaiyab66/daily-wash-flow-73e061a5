@@ -76,9 +76,9 @@ function ImportPage() {
     toast.success("Vehicle photo uploaded");
   };
 
-  const captureVehicleImage = async (idx: number) => {
-    const file = await captureFromCamera({ workflow: "service_photo", stage: "before", slot: `admin_import_vehicle_${idx}` });
-    if (!file) return toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+  const pickVehicleImage = async (idx: number) => {
+    const file = await selectImageFile();
+    if (!file) return toast.error(FILE_PICKER_UNAVAILABLE_MESSAGE);
     await uploadVehicleImage(idx, file);
   };
 
