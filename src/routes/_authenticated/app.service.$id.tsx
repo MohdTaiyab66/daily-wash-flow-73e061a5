@@ -49,98 +49,10 @@ const DIRTY_REASONS = [
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
 
-type UnavailableDraft = {
-  reason: string;
-  notes: string;
-  photos: Record<string, string>;
-  open: boolean;
-  pendingSlotId?: string | null;
-};
-
-type DirtyDraft = {
-  reason: string;
-  notes: string;
-  photos: Record<string, string>;
-  open: boolean;
-  pendingSlotId?: string | null;
-};
-
-const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
-
-function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
-  return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
-}
-
-function readDraftStorage(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(key) ?? window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeDraftStorage(key: string, value: string) {
-  if (typeof window === "undefined") return;
-  try { window.sessionStorage.setItem(key, value); } catch { /* noop */ }
-  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
-}
-
-function removeDraftStorage(key: string) {
-  if (typeof window === "undefined") return;
-  try { window.sessionStorage.removeItem(key); } catch { /* noop */ }
-  try { window.localStorage.removeItem(key); } catch { /* noop */ }
-}
-
-function readReportDraft<T>(serviceId: string, kind: "unavailable" | "dirty", fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = readDraftStorage(reportDraftKey(serviceId, kind));
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as T & { savedAt?: number };
-    if (parsed.savedAt && Date.now() - parsed.savedAt > 6 * 60 * 60 * 1000) {
-      clearReportDraft(serviceId, kind);
-      return fallback;
-    }
-    return parsed as T;
-  } catch {
-    clearReportDraft(serviceId, kind);
-    return fallback;
-  }
-}
-
-function writeReportDraft(serviceId: string, kind: "unavailable" | "dirty", draft: UnavailableDraft | DirtyDraft) {
-  if (typeof window === "undefined") return;
-  try {
-    writeDraftStorage(reportDraftKey(serviceId, kind), JSON.stringify({ ...draft, savedAt: Date.now() }));
-  } catch {
-    // Draft persistence is best-effort; capture/submit must keep working.
-  }
-}
-
-function clearReportDraft(serviceId: string, kind: "unavailable" | "dirty") {
-  if (typeof window === "undefined") return;
-  removeDraftStorage(reportDraftKey(serviceId, kind));
-}
-
 function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
   if (workflow === "service_photo") return `service_photo_${phase}`;
   if (workflow === "dirty_vehicle") return `dirty_${phase}`;
   return `unavailable_${phase}`;
-}
-
-function normalizePhotoRecord(value: unknown, slots: readonly string[]) {
-  if (Array.isArray(value)) {
-    return value.reduce<Record<string, string>>((acc, path, index) => {
-      if (typeof path === "string" && slots[index]) acc[slots[index]] = path;
-      return acc;
-    }, {});
-  }
-  if (!value || typeof value !== "object") return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>((acc, [slot, path]) => {
-    if (typeof path === "string" && slots.includes(slot)) acc[slot] = path;
-    return acc;
-  }, {});
 }
 
 
