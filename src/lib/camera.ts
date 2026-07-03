@@ -1,14 +1,10 @@
 /**
  * Camera-only capture helper.
  *
- * P0-07 mandate: partners MUST NOT be able to pick photos from the gallery.
- * On native (Capacitor Camera) we force `source: Camera`. On the web we fall
- * back to a hidden `<input type="file" accept="image/*" capture="environment">`
- * which most mobile browsers honour as "open the camera". Desktop browsers
- * that ignore `capture` are irrelevant for the partner APK, but the fallback
- * is still safe: no file is uploaded unless the user picks/captures one.
+ * P0 mandate: Partner evidence photos must come from a live camera only.
+ * There is deliberately no `<input type="file">`, picker prompt, gallery,
+ * Photos source, or upload fallback anywhere in this helper.
  */
-import { Capacitor } from "@capacitor/core";
 import { clearPendingCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
 
@@ -22,6 +18,8 @@ type CaptureContext = {
 };
 
 let activeCapture = false;
+
+export const CAMERA_UNAVAILABLE_MESSAGE = "Camera unavailable";
 
 export async function captureFromCamera(context: CaptureContext = {}): Promise<File | null> {
   // Never share one native camera result across two UI slots. Returning the
@@ -51,75 +49,96 @@ async function captureFromCameraOnce(): Promise<File | null> {
       }
       if (permissions.camera !== "granted") return null;
       const photo = await Camera.getPhoto({
-        quality: 72,
+        quality: 70,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.Base64,
         source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
         width: 1600,
-        promptLabelHeader: "Camera",
-        promptLabelPhoto: "Camera",
-        promptLabelPicture: "Take photo",
       });
-      if (!photo.webPath) return null;
-      const response = await fetch(photo.webPath);
-      const blob = await response.blob();
-      return new File([blob], `capture-${Date.now()}.${photo.format ?? "jpg"}`, { type: blob.type || "image/jpeg" });
+      if (!photo.base64String) return null;
+      return fileFromBase64(photo.base64String, photo.format ?? "jpeg");
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
     }
   }
 
-  if (isAndroidWebView()) {
-    console.warn("[camera] native bridge unavailable in Android WebView; blocked gallery fallback");
-    return null;
-  }
-
-  return new Promise<File | null>((resolve) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-    // `capture` = camera on mobile browsers; ignored on desktop where partners
-    // don't run the field app anyway.
-    input.setAttribute("capture", "environment");
-    input.style.display = "none";
-    let resolved = false;
-    const finish = (file: File | null) => {
-      if (resolved) return;
-      resolved = true;
-      window.removeEventListener("focus", onFocus);
-      input.remove();
-      resolve(file);
-    };
-    const onFocus = () => {
-      window.setTimeout(() => finish(input.files?.[0] ?? null), 400);
-    };
-    window.addEventListener("focus", onFocus, { once: true });
-    input.onchange = () => {
-      const f = input.files?.[0] ?? null;
-      finish(f);
-    };
-    input.oncancel = () => {
-      finish(null);
-    };
-    document.body.appendChild(input);
-    input.click();
-  });
+  return captureWithBrowserCamera();
 }
 
 function shouldUseNativeCamera() {
   if (isNative() || nativePlatform() !== "web") return true;
+}
+
+function fileFromBase64(base64: string, format: string) {
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: mime });
+}
+
+async function captureWithBrowserCamera(): Promise<File | null> {
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return null;
+  let stream: MediaStream | null = null;
   try {
-    return Capacitor.isNativePlatform?.() === true || Capacitor.getPlatform?.() === "android" || Capacitor.getPlatform?.() === "ios";
-  } catch {
-    return false;
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    return await showBrowserCameraOverlay(stream);
+  } catch (err) {
+    console.warn("[camera] browser camera unavailable", err);
+    stream?.getTracks().forEach((track) => track.stop());
+    return null;
   }
 }
 
-function isAndroidWebView() {
-  if (typeof navigator === "undefined") return false;
-  return /Android/i.test(navigator.userAgent) && /; wv\)|Version\/\d+\.\d+ Chrome\//i.test(navigator.userAgent);
+function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;flex-direction:column;";
+
+    const video = document.createElement("video");
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+    video.srcObject = stream;
+    video.style.cssText = "flex:1;width:100%;min-height:0;object-fit:cover;background:#000;";
+
+    const controls = document.createElement("div");
+    controls.style.cssText = "display:flex;gap:12px;justify-content:center;padding:16px;background:#000;";
+
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "Cancel";
+    cancel.style.cssText = "border:1px solid #555;border-radius:8px;background:#111;color:#fff;padding:12px 18px;font:600 14px system-ui;";
+
+    const capture = document.createElement("button");
+    capture.type = "button";
+    capture.textContent = "Capture";
+    capture.style.cssText = "border:0;border-radius:8px;background:#fff;color:#000;padding:12px 22px;font:700 14px system-ui;";
+
+    controls.append(cancel, capture);
+    overlay.append(video, controls);
+    document.body.appendChild(overlay);
+
+    const finish = (file: File | null) => {
+      stream.getTracks().forEach((track) => track.stop());
+      overlay.remove();
+      resolve(file);
+    };
+
+    cancel.onclick = () => finish(null);
+    capture.onclick = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return finish(null);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        finish(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : null);
+      }, "image/jpeg", 0.82);
+    };
+  });
 }
