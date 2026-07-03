@@ -161,7 +161,7 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
     const capture = document.createElement("button");
     capture.type = "button";
     capture.textContent = "Capture";
-    capture.style.cssText = "border:0;border-radius:8px;background:#fff;color:#000;padding:12px 22px;font:700 14px system-ui;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;";
+    capture.style.cssText = "border:0;border-radius:8px;background:#fff;color:#000;padding:14px 26px;font:700 16px system-ui;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;";
 
     controls.append(cancel, capture);
     overlay.append(video, controls);
@@ -186,7 +186,14 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
       return new File([bytes], `capture-${Date.now()}.jpg`, { type: mime });
     };
 
-    const takeSnapshot = () => {
+    const takeSnapshot = async () => {
+      capture.disabled = true;
+      capture.textContent = "Saving…";
+      const videoReady = await waitForVideoFrame(video);
+      if (!videoReady) {
+        console.warn("[camera] video frame not ready");
+        return finish(null);
+      }
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth || 1280;
       canvas.height = video.videoHeight || 720;
@@ -224,7 +231,7 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
         const now = Date.now();
         if (now - handledAt < 500) return;
         handledAt = now;
-        action();
+        void action();
       };
       el.addEventListener("pointerup", run, { passive: false });
       el.addEventListener("touchend", run, { passive: false });
@@ -233,6 +240,26 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
 
     bindTap(cancel, () => finish(null));
     bindTap(capture, takeSnapshot);
+  });
+}
+
+function waitForVideoFrame(video: HTMLVideoElement): Promise<boolean> {
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+    return Promise.resolve(true);
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("canplay", onReady);
+      resolve(ok);
+    };
+    const onReady = () => done(video.videoWidth > 0 && video.videoHeight > 0);
+    video.addEventListener("loadeddata", onReady, { once: true });
+    video.addEventListener("canplay", onReady, { once: true });
+    window.setTimeout(() => done(video.videoWidth > 0 && video.videoHeight > 0), 1500);
   });
 }
 
