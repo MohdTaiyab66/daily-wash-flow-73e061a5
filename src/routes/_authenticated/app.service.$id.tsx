@@ -385,11 +385,14 @@ function ServiceDetail() {
             ))}
           </div>
 
-          {/* Reports */}
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {service.status === "in_progress" && <UnavailableDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "unavailable"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
-            {service.status === "in_progress" && <DirtyVehicleDialog serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} autoOpen={autoOpenReport === "dirty"} onAutoOpenConsumed={() => setAutoOpenReport(null)} />}
-          </div>
+          {/* Reports — inline sections (never modals) so PhotoSlots remain mounted
+              across Android process kills, matching Before/After lifecycle. */}
+          {service.status === "in_progress" && (
+            <div className="mt-5 space-y-3">
+              <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+              <DirtyVehicleSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+            </div>
+          )}
 
           <Card className="mt-5 p-4">
             <div className="flex items-center justify-between text-sm font-semibold">
