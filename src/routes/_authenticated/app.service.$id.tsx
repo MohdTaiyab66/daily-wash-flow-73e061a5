@@ -683,6 +683,9 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setReason("");
+      setNotes("");
+      setPhotos([]);
       setOpen(false);
       onDone();
     } catch (error: any) {
@@ -861,6 +864,9 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setReason("");
+      setNotes("");
+      setPhotos({});
       setOpen(false);
       void onDone?.();
     } catch (error: any) {
