@@ -58,8 +58,8 @@ function HomePage() {
   const total = today?.length ?? 0;
   const remaining = total - done;
   const earnings = (today ?? [])
-    .filter((s) => s.status === "completed")
-    .reduce((sum, s) => sum + Number(s.rate_per_car || 0), 0);
+    .filter((s) => s.status === "completed" || s.status === "unavailable")
+    .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
 
   const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
   const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();
@@ -123,7 +123,7 @@ function HomePage() {
             <div><p className="text-background/60">{t("earned")}</p><p className="mt-0.5 text-base font-semibold">₹{earnings}</p></div>
           </div>
           <div className="mt-4 h-1.5 rounded-full bg-background/15">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (completed / total) * 100 : 0}%` }} />
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
             <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("view_todays_route")}</Link>
