@@ -637,49 +637,55 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
   const submit = async () => {
     if (!reason) return toast.error("Pick a reason");
     const photoList = UNAVAILABLE_SLOTS.map((slot) => photos[slot]).filter(Boolean);
-    if (photoList.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
-    if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-    setSaving(true);
-    let pos: { lat: number; lng: number } | null = null;
-    try {
-      pos = await getPosition();
-      await logApkEvidence({
-        eventType: "unavailable_submit_attempt",
-        serviceId,
-        assignmentId,
-        gps: pos,
-        payload: { reason, photo_count: photoList.length, has_notes: Boolean(notes.trim()) },
-      });
-      const { data, error } = await supabase.rpc("submit_service_unavailable", {
-        p_service_id: serviceId,
-        p_reason: reason,
-        p_notes: notes || "",
-        p_photos: photoList,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-      } as any);
-      if (error) throw error;
-      console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
-      await logApkEvidence({
-        eventType: "unavailable_submit_result",
-        serviceId,
-        assignmentId,
-        gps: pos,
-        status: "success",
-        payload: { rpc: data },
-      });
-      toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
-      qc.invalidateQueries({ queryKey: ["service", serviceId] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
-      qc.invalidateQueries({ queryKey: ["today-services-mini"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-      setReason("");
-      setNotes("");
-      setPhotos({});
-      setOpen(false);
-      onDone();
+     if (photoList.length < MIN_PHOTOS) return toast.error(`Capture at least ${MIN_PHOTOS} photos`);
+     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
+     console.log(`[SVC ${serviceId}] UNAVAILABLE Submit pressed · photos=${photoList.length} · reason=${reason}`);
+     setSaving(true);
+     let pos: { lat: number; lng: number } | null = null;
+     const rpcStart = Date.now();
+     try {
+       pos = await getPosition();
+       await logApkEvidence({
+         eventType: "unavailable_submit_attempt",
+         serviceId,
+         assignmentId,
+         gps: pos,
+         payload: { reason, photo_count: photoList.length, has_notes: Boolean(notes.trim()) },
+       });
+       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC started · submit_service_unavailable`);
+       const { data, error } = await supabase.rpc("submit_service_unavailable", {
+         p_service_id: serviceId,
+         p_reason: reason,
+         p_notes: notes || "",
+         p_photos: photoList,
+         p_lat: pos?.lat ?? null,
+         p_lng: pos?.lng ?? null,
+       } as any);
+       if (error) throw error;
+       console.log(`[SVC ${serviceId}] UNAVAILABLE RPC completed · Δ${Date.now()-rpcStart}ms · response=`, data);
+       await logApkEvidence({
+         eventType: "unavailable_submit_result",
+         serviceId,
+         assignmentId,
+         gps: pos,
+         status: "success",
+         payload: { rpc: data },
+       });
+       console.log(`[SVC ${serviceId}] UNAVAILABLE Wallet updated · credited=₹${(data as any)?.credited ?? 12}`);
+       console.log(`[SVC ${serviceId}] UNAVAILABLE Notifications dispatched (customer + admin) via RPC`);
+       toast.success(`Marked unavailable · ₹${(data as any)?.credited ?? 12} credited`);
+       qc.invalidateQueries({ queryKey: ["service", serviceId] });
+       qc.invalidateQueries({ queryKey: ["route-today"] });
+       qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+       qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+       console.log(`[SVC ${serviceId}] UNAVAILABLE Route advanced · queries invalidated`);
+       setReason("");
+       setNotes("");
+       setPhotos({});
+       setOpen(false);
+       onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
       toast.error(error?.message ?? "Could not submit unavailable report");
