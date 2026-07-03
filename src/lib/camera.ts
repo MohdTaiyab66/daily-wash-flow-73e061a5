@@ -139,8 +139,9 @@ async function captureWithBrowserCamera(): Promise<File | null> {
 
 function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
   return new Promise((resolve) => {
+    let finished = false;
     const overlay = document.createElement("div");
-    overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;flex-direction:column;";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none;";
 
     const video = document.createElement("video");
     video.autoplay = true;
@@ -150,23 +151,25 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
     video.style.cssText = "flex:1;width:100%;min-height:0;object-fit:cover;background:#000;";
 
     const controls = document.createElement("div");
-    controls.style.cssText = "display:flex;gap:12px;justify-content:center;padding:16px;background:#000;";
+    controls.style.cssText = "display:flex;gap:12px;justify-content:center;padding:16px;background:#000;touch-action:manipulation;user-select:none;-webkit-user-select:none;";
 
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.textContent = "Cancel";
-    cancel.style.cssText = "border:1px solid #555;border-radius:8px;background:#111;color:#fff;padding:12px 18px;font:600 14px system-ui;";
+    cancel.style.cssText = "border:1px solid #555;border-radius:8px;background:#111;color:#fff;padding:12px 18px;font:600 14px system-ui;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;";
 
     const capture = document.createElement("button");
     capture.type = "button";
     capture.textContent = "Capture";
-    capture.style.cssText = "border:0;border-radius:8px;background:#fff;color:#000;padding:12px 22px;font:700 14px system-ui;";
+    capture.style.cssText = "border:0;border-radius:8px;background:#fff;color:#000;padding:12px 22px;font:700 14px system-ui;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;";
 
     controls.append(cancel, capture);
     overlay.append(video, controls);
     document.body.appendChild(overlay);
 
     const finish = (file: File | null) => {
+      if (finished) return;
+      finished = true;
       stream.getTracks().forEach((track) => track.stop());
       overlay.remove();
       resolve(file);
@@ -183,8 +186,7 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
       return new File([bytes], `capture-${Date.now()}.jpg`, { type: mime });
     };
 
-    cancel.onclick = () => finish(null);
-    capture.onclick = () => {
+    const takeSnapshot = () => {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth || 1280;
       canvas.height = video.videoHeight || 720;
@@ -213,6 +215,24 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
       }
       window.setTimeout(() => done(fallbackDataUrlFile()), 1200);
     };
+
+    const bindTap = (el: HTMLElement, action: () => void) => {
+      let handledAt = 0;
+      const run = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const now = Date.now();
+        if (now - handledAt < 500) return;
+        handledAt = now;
+        action();
+      };
+      el.addEventListener("pointerup", run, { passive: false });
+      el.addEventListener("touchend", run, { passive: false });
+      el.addEventListener("click", run, { passive: false });
+    };
+
+    bindTap(cancel, () => finish(null));
+    bindTap(capture, takeSnapshot);
   });
 }
 
