@@ -621,6 +621,11 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open });
   }, [serviceId, reason, notes, photos, open]);
 
+  useEffect(() => {
+    const pending = readPendingCapture();
+    if (pending?.serviceId === serviceId && pending.workflow === "unavailable_vehicle") setOpen(true);
+  }, [serviceId]);
+
   const capturePhoto = async () => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
     const photoIndex = photos.length + 1;
@@ -653,11 +658,9 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
       const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file });
-      setPhotos((p) => {
-        const next = [...p, path];
-        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
-        return next;
-      });
+      const next = [...photos, path];
+      setPhotos(next);
+      writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
       await logApkEvidence({
         eventType: "unavailable_photo_upload_result",
         serviceId,
@@ -686,11 +689,9 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         if (userError) throw userError;
         if (!u.user) throw new Error("Please sign in again");
         const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `unavailable-${photoIndex}`, file: restored });
-        setPhotos((p) => {
-          const next = [...p, path];
-          writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
-          return next;
-        });
+        const next = [...photos, path];
+        setPhotos(next);
+        writeReportDraft(serviceId, "unavailable", { reason, notes, photos: next, open: true });
         await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "success", payload: { photo_index: photoIndex, path, restored: true, size: restored.size, type: restored.type } });
       } catch (err) {
         await logApkEvidence({ eventType: "unavailable_photo_upload_result", serviceId, assignmentId, status: "error", payload: evidenceError(err) });
@@ -723,8 +724,8 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         p_reason: reason,
         p_notes: notes || "",
         p_photos: photos,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
       } as any);
       if (error) throw error;
       console.log(`[SVC ${serviceId}] UNAVAILABLE submit_service_unavailable response`, data);
@@ -851,6 +852,11 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     writeReportDraft(serviceId, "dirty", { reason, notes, photos, open });
   }, [serviceId, reason, notes, photos, open]);
 
+  useEffect(() => {
+    const pending = readPendingCapture();
+    if (pending?.serviceId === serviceId && pending.workflow === "dirty_vehicle") setOpen(true);
+  }, [serviceId]);
+
   const upload = async (angle: string, file: File, restored = false) => {
     setUploadingAngle(angle);
     try {
@@ -858,11 +864,9 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
       if (userError) throw userError;
       if (!u.user) throw new Error("Please sign in again");
       const path = await uploadEvidencePhotoPath({ userId: u.user.id, serviceId, prefix: `dirty-${angle}`, file });
-      setPhotos((p) => {
-        const next = { ...p, [angle]: path };
-        writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
-        return next;
-      });
+      const next = { ...photos, [angle]: path };
+      setPhotos(next);
+      writeReportDraft(serviceId, "dirty", { reason, notes, photos: next, open: true });
       await logApkEvidence({
         eventType: "dirty_photo_upload_result",
         serviceId,
@@ -929,8 +933,8 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
         p_reason: "dirty_vehicle",
         p_notes: `${reason}${notes ? ` · ${notes}` : ""}`,
         p_photos: [photos.front, photos.rear, photos.left, photos.right],
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
       } as any);
       if (e2) throw e2;
       console.log(`[SVC ${serviceId}] DIRTY submit_service_unavailable response`, data);
