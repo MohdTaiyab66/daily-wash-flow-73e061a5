@@ -549,12 +549,12 @@ function PhotoSlot({
     const t0 = Date.now();
     console.log(`[SVC ${serviceId}] PHOTO capture start · ${stage}/${angle}`);
     setCapturing(true);
-      await logApkEvidence({
+      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
+      void logApkEvidence({
         eventType: "service_photo_camera_attempt",
         serviceId,
         payload: { stage, angle, slot },
       });
-      const file = await captureFromCamera({ serviceId, workflow: "service_photo", stage, angle, slot }).finally(() => setCapturing(false));
       if (!file) {
         console.log(`[SVC ${serviceId}] PHOTO cancelled · ${stage}/${angle}`);
         await logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "blocked", payload: { stage, angle, cancelled: true } });
@@ -633,12 +633,6 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
     writeReportDraft(serviceId, "unavailable", { reason, notes, photos, open: true });
     setOpen(true);
     setCapturing(true);
-    await logApkEvidence({
-      eventType: "unavailable_camera_attempt",
-      serviceId,
-      assignmentId,
-      payload: { photo_index: photoIndex, max_photos: MAX_PHOTOS, slot },
-    });
     const file = await captureFromCamera({
       serviceId,
       assignmentId,
@@ -647,6 +641,12 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
       angle: String(photoIndex),
       slot,
     }).finally(() => setCapturing(false));
+    void logApkEvidence({
+      eventType: "unavailable_camera_attempt",
+      serviceId,
+      assignmentId,
+      payload: { photo_index: photoIndex, max_photos: MAX_PHOTOS, slot },
+    });
     if (!file) {
       await logApkEvidence({ eventType: "unavailable_camera_result", serviceId, assignmentId, status: "blocked", payload: { cancelled: true } });
       toast.error(CAMERA_UNAVAILABLE_MESSAGE);
@@ -888,8 +888,8 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
     writeReportDraft(serviceId, "dirty", { reason, notes, photos, open: true });
     setOpen(true);
     setCapturingAngle(angle);
-    await logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
     const file = await captureFromCamera({ serviceId, assignmentId, workflow: "dirty_vehicle", stage: "report", angle, slot }).finally(() => setCapturingAngle(null));
+    void logApkEvidence({ eventType: "dirty_camera_attempt", serviceId, assignmentId, payload: { angle, slot } });
     if (!file) {
       await logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "blocked", payload: { angle, cancelled: true } });
       toast.error(CAMERA_UNAVAILABLE_MESSAGE);

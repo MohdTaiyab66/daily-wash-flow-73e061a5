@@ -7,6 +7,7 @@
  */
 import { clearPendingCapture, consumeRestoredCapture, persistPendingCapture } from "@/lib/cameraRestore";
 import { isNative, nativePlatform } from "@/lib/platform";
+import { Camera as CapacitorCamera, CameraDirection, type MediaResult } from "@capacitor/camera";
 
 type CaptureContext = {
   serviceId?: string | null;
@@ -52,23 +53,31 @@ export function consumeRestoredCameraCapture(context: Pick<CaptureContext, "slot
 async function captureFromCameraOnce(): Promise<File | null> {
   if (shouldUseNativeCamera()) {
     try {
-      const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
-      let permissions = await Camera.checkPermissions();
-      if (permissions.camera !== "granted") {
-        permissions = await Camera.requestPermissions({ permissions: ["camera"] });
-      }
-      if (permissions.camera !== "granted") return null;
-      const photo = await Camera.getPhoto({
+      const getCameraPhoto = () => CapacitorCamera.takePhoto({
         quality: 70,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera, // camera only — never Photos/Gallery
         saveToGallery: false,
         correctOrientation: true,
-        width: 1600,
+        cameraDirection: CameraDirection.Rear,
+        editable: "no",
+        targetWidth: 1600,
+        targetHeight: 1200,
+        includeMetadata: true,
       });
-      if (!photo.base64String) return null;
-      return fileFromBase64(photo.base64String, photo.format ?? "jpeg");
+      let photo: MediaResult;
+      try {
+        // Call the native camera immediately. Pre-checking permissions first can
+        // break the tap → camera chain on Android and sometimes returns to the app
+        // without opening the camera.
+        photo = await getCameraPhoto();
+      } catch (err) {
+        const e = err as { message?: string; code?: string };
+        const permissionLike = /permission|denied|not.?grant|not.?allow/i.test(`${e?.code ?? ""} ${e?.message ?? ""}`);
+        if (!permissionLike) throw err;
+        const permissions = await CapacitorCamera.requestPermissions({ permissions: ["camera"] });
+        if (permissions.camera !== "granted") return null;
+        photo = await getCameraPhoto();
+      }
+      return fileFromMediaResult(photo);
     } catch (err) {
       console.warn("[camera] native capture failed", err);
       return null;
@@ -80,6 +89,7 @@ async function captureFromCameraOnce(): Promise<File | null> {
 
 function shouldUseNativeCamera(): boolean {
   if (isNative() || nativePlatform() !== "web") return true;
+  if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) return true;
   return false;
 }
 
@@ -89,6 +99,29 @@ function fileFromBase64(base64: string, format: string) {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return new File([bytes], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: mime });
+}
+
+async function fileFromMediaResult(result: MediaResult): Promise<File | null> {
+  const format = normalizeImageFormat(result.metadata?.format);
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  if (result.webPath || result.uri) {
+    try {
+      const res = await fetch(result.webPath ?? result.uri!);
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.size > 0) return new File([blob], `capture-${Date.now()}.${format === "png" ? "png" : "jpg"}`, { type: blob.type || mime });
+      }
+    } catch (err) {
+      console.warn("[camera] captured file fetch failed", err);
+    }
+  }
+  if (result.thumbnail) return fileFromBase64(result.thumbnail, format);
+  return null;
+}
+
+function normalizeImageFormat(format?: string) {
+  const f = (format ?? "jpeg").toLowerCase();
+  return f === "png" ? "png" : "jpeg";
 }
 
 async function captureWithBrowserCamera(): Promise<File | null> {
@@ -139,6 +172,17 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
       resolve(file);
     };
 
+    const fallbackDataUrlFile = () => {
+      const dataUrl = canvasToDataUrl(video);
+      if (!dataUrl) return null;
+      const [header, data] = dataUrl.split(",");
+      const mime = header.match(/data:(.*?);base64/)?.[1] ?? "image/jpeg";
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      return new File([bytes], `capture-${Date.now()}.jpg`, { type: mime });
+    };
+
     cancel.onclick = () => finish(null);
     capture.onclick = () => {
       const canvas = document.createElement("canvas");
@@ -146,10 +190,42 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<File | null> {
       canvas.height = video.videoHeight || 720;
       const ctx = canvas.getContext("2d");
       if (!ctx) return finish(null);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        finish(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : null);
-      }, "image/jpeg", 0.82);
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      } catch (err) {
+        console.warn("[camera] frame capture failed", err);
+        return finish(null);
+      }
+      let settled = false;
+      const done = (file: File | null) => {
+        if (settled) return;
+        settled = true;
+        finish(file);
+      };
+      if (typeof canvas.toBlob === "function") {
+        canvas.toBlob(
+          (blob) => done(blob ? new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }) : fallbackDataUrlFile()),
+          "image/jpeg",
+          0.82,
+        );
+      } else {
+        done(fallbackDataUrlFile());
+      }
+      window.setTimeout(() => done(fallbackDataUrlFile()), 1200);
     };
   });
+}
+
+function canvasToDataUrl(video: HTMLVideoElement): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.82);
+  } catch {
+    return null;
+  }
 }

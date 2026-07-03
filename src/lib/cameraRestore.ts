@@ -76,9 +76,10 @@ export function clearPendingCapture() {
 
 function saveRestoredCapture(data: unknown) {
   const pending = readPendingCapture();
-  const photo = data as { base64String?: string; format?: string } | null;
-  if (!pending?.slot || !photo?.base64String) return;
-  writeStorage(CAMERA_RESTORED_KEY, JSON.stringify({ ...pending, base64String: photo.base64String, format: photo.format ?? "jpeg", at: Date.now() }));
+  const photo = data as { base64String?: string; thumbnail?: string; format?: string; metadata?: { format?: string } } | null;
+  const base64String = photo?.base64String ?? photo?.thumbnail;
+  if (!pending?.slot || !base64String) return;
+  writeStorage(CAMERA_RESTORED_KEY, JSON.stringify({ ...pending, base64String, format: photo?.format ?? photo?.metadata?.format ?? "jpeg", at: Date.now() }));
 }
 
 export function consumeRestoredCapture(slot: string): RestoredCapture | null {
@@ -118,7 +119,7 @@ export function installCameraRouteRestore() {
   void import("@capacitor/app")
     .then(({ App }) => {
       void App.addListener("appRestoredResult", (event: { pluginId?: string; methodName?: string; data?: unknown }) => {
-        if (event?.pluginId === "Camera" && event?.methodName === "getPhoto") saveRestoredCapture(event.data);
+        if (event?.pluginId === "Camera" && (event?.methodName === "getPhoto" || event?.methodName === "takePhoto")) saveRestoredCapture(event.data);
         restoreRoute();
       });
       void App.addListener("appStateChange", ({ isActive }) => {
