@@ -448,6 +448,7 @@ function ServiceDetail() {
           <div className="mt-3">
             <PhotoSlot
               serviceId={id}
+              assignmentId={(service as any)?.assignment_id ?? null}
               stage="before"
               angle="front"
               done={beforeDone}
@@ -464,7 +465,7 @@ function ServiceDetail() {
           <p className="mt-1 text-xs text-muted-foreground">4 angles. Camera only.</p>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {AFTER_ANGLES.map((a) => (
-              <PhotoSlot key={a} serviceId={id} stage="after" angle={a} done={afterDone.has(a)} onUploaded={() => refetchPhotos()} label={a} />
+              <PhotoSlot key={a} serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} stage="after" angle={a} done={afterDone.has(a)} onUploaded={() => refetchPhotos()} label={a} />
             ))}
           </div>
 
