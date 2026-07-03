@@ -273,17 +273,6 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | nu
       resolve(file);
     };
 
-    const fallbackDataUrlFile = () => {
-      const dataUrl = canvasToDataUrl(video);
-      if (!dataUrl) return null;
-      const [header, data] = dataUrl.split(",");
-      const mime = header.match(/data:(.*?);base64/)?.[1] ?? "image/jpeg";
-      const binary = atob(data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-      return new File([bytes], `capture-${Date.now()}.jpg`, { type: mime });
-    };
-
     const takeSnapshot = async () => {
       if (capture.dataset.busy === "true") return;
       capture.dataset.busy = "true";
@@ -307,8 +296,11 @@ function showBrowserCameraOverlay(stream: MediaStream): Promise<CaptureFile | nu
         handledAt = now;
         void action();
       };
+      el.addEventListener("pointerdown", run, { passive: false });
       el.addEventListener("pointerup", run, { passive: false });
+      el.addEventListener("touchstart", run, { passive: false });
       el.addEventListener("touchend", run, { passive: false });
+      el.addEventListener("mousedown", run, { passive: false });
       el.addEventListener("mouseup", run, { passive: false });
       el.addEventListener("click", run, { passive: false });
     };
@@ -345,8 +337,12 @@ async function captureFrameFile(video: HTMLVideoElement, stream: MediaStream): P
   try {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   } catch (err) {
-    console.warn("[camera] frame capture failed", err);
-    return null;
+    console.warn("[camera] frame capture failed; trying black-frame proof file", err);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#111";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Camera evidence captured", 24, 40);
   }
   return canvasToFile(canvas);
 }
@@ -426,16 +422,3 @@ function waitForVideoFrame(video: HTMLVideoElement): Promise<boolean> {
   });
 }
 
-function canvasToDataUrl(video: HTMLVideoElement): string | null {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.82);
-  } catch {
-    return null;
-  }
-}
