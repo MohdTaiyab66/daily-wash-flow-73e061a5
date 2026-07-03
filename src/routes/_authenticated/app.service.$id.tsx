@@ -941,14 +941,3 @@ async function getPosition(): Promise<{ lat: number; lng: number } | null> {
   return getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 }
 
-async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
-  const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
-  let lastError: unknown = null;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const { error } = await supabase.storage.from("service-photos").upload(path, file, { upsert: true, contentType: file.type });
-    if (!error) return path;
-    lastError = error;
-    await new Promise((resolve) => window.setTimeout(resolve, attempt * 350));
-  }
-  throw lastError;
-}
