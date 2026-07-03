@@ -115,6 +115,29 @@ export function consumeRestoredCapture(slot: string): RestoredCapture | null {
   }
 }
 
+/**
+ * Non-destructive peek at whichever capture context is currently pending or
+ * restored. Used on route mount to know which dialog to re-open after the
+ * Android WebView was killed while the native camera was foreground —
+ * without this the PhotoSlot inside the closed dialog never mounts and the
+ * restored photo is stranded in storage.
+ */
+export function peekCaptureContext(): PendingCapture | null {
+  if (typeof window === "undefined") return null;
+  const readOne = (key: string): PendingCapture | null => {
+    const raw = readStorage(key);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as PendingCapture;
+      if (!parsed.at || Date.now() - parsed.at > 10 * 60 * 1000) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+  return readOne(CAMERA_RESTORED_KEY) ?? readOne(CAMERA_PENDING_KEY);
+}
+
 export function installCameraRouteRestore() {
   if (typeof window === "undefined" || !isNative()) return () => {};
 

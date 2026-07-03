@@ -19,6 +19,7 @@ import { formatTime12 } from "@/lib/format";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
+import { peekCaptureContext } from "@/lib/cameraRestore";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 
