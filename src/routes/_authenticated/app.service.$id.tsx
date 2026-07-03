@@ -64,7 +64,6 @@ type DirtyDraft = {
 };
 
 const REPORT_DRAFT_PREFIX = "uw_partner_report_draft";
-type EvidenceFile = File & { previewUrl?: string };
 
 function reportDraftKey(serviceId: string, kind: "unavailable" | "dirty") {
   return `${REPORT_DRAFT_PREFIX}:${serviceId}:${kind}`;
@@ -569,10 +568,14 @@ function PhotoSlot({
 
   useEffect(() => {
     if (done || busy) return;
-    const restored = consumeRestoredCameraCapture({ slot });
-    if (!restored) return;
-    void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
-    void uploadCapturedFile(restored);
+    let cancelled = false;
+    void (async () => {
+      const restored = await consumeRestoredCameraCapture({ slot });
+      if (cancelled || !restored) return;
+      void logApkEvidence({ eventType: "service_photo_camera_result", serviceId, status: "success", payload: { stage, angle, restored: true, size: restored.size, type: restored.type } });
+      void uploadCapturedFile(restored);
+    })();
+    return () => { cancelled = true; };
   }, [done, busy, slot]);
 
   useEffect(() => {
@@ -681,11 +684,12 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
 
   useEffect(() => {
     if (photos.length >= MAX_PHOTOS || capturing || uploading || saving) return;
-    const restored = consumeRestoredCameraCapture({ slot: nextSlot });
-    if (!restored) return;
-    setOpen(true);
-    setUploading(true);
+    let cancelled = false;
     void (async () => {
+      const restored = await consumeRestoredCameraCapture({ slot: nextSlot });
+      if (cancelled || !restored) return;
+      setOpen(true);
+      setUploading(true);
       const photoIndex = photos.length + 1;
       try {
         const { data: u, error: userError } = await supabase.auth.getUser();
@@ -703,6 +707,7 @@ function UnavailableDialog({ serviceId, assignmentId, onDone }: { serviceId: str
         setUploading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [nextSlot, photos.length, capturing, uploading, saving, serviceId, assignmentId, reason, notes]);
 
   const removePhoto = (idx: number) => setPhotos((p) => p.filter((_, i) => i !== idx));
@@ -905,14 +910,19 @@ function DirtyVehicleDialog({ serviceId, assignmentId, onDone }: { serviceId: st
 
   useEffect(() => {
     if (capturingAngle || uploadingAngle || saving) return;
-    for (const angle of REPORT_ANGLES) {
-      const restored = consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
-      if (!restored) continue;
-      setOpen(true);
-      void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
-      void upload(angle, restored, true);
-      break;
-    }
+    let cancelled = false;
+    void (async () => {
+      for (const angle of REPORT_ANGLES) {
+        const restored = await consumeRestoredCameraCapture({ slot: `dirty_${angle}` });
+        if (cancelled) return;
+        if (!restored) continue;
+        setOpen(true);
+        void logApkEvidence({ eventType: "dirty_camera_result", serviceId, assignmentId, status: "success", payload: { angle, restored: true, size: restored.size, type: restored.type } });
+        void upload(angle, restored, true);
+        break;
+      }
+    })();
+    return () => { cancelled = true; };
   }, [capturingAngle, uploadingAngle, saving, serviceId, assignmentId, reason, notes, photos]);
 
   const submit = async () => {
@@ -1027,8 +1037,6 @@ async function getPosition(): Promise<{ lat: number; lng: number } | null> {
 }
 
 async function uploadEvidencePhotoPath({ userId, serviceId, prefix, file }: { userId: string; serviceId: string; prefix: string; file: File }) {
-  const previewUrl = (file as EvidenceFile).previewUrl;
-  if (previewUrl && file.size <= 1) return previewUrl;
   const path = `${userId}/${serviceId}/${prefix}-${Date.now()}.jpg`;
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
