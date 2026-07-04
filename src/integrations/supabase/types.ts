@@ -1772,6 +1772,7 @@ export type Database = {
           home_area: string | null
           home_lat: number | null
           home_lng: number | null
+          home_zone_id: string | null
           id: string
           joined_on: string
           last_seen: string | null
@@ -1823,6 +1824,7 @@ export type Database = {
           home_area?: string | null
           home_lat?: number | null
           home_lng?: number | null
+          home_zone_id?: string | null
           id: string
           joined_on?: string
           last_seen?: string | null
@@ -1874,6 +1876,7 @@ export type Database = {
           home_area?: string | null
           home_lat?: number | null
           home_lng?: number | null
+          home_zone_id?: string | null
           id?: string
           joined_on?: string
           last_seen?: string | null
@@ -1903,6 +1906,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "partners_home_zone_id_fkey"
+            columns: ["home_zone_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_zones"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partners_referred_by_fkey"
             columns: ["referred_by"]
@@ -4100,6 +4110,10 @@ export type Database = {
         Returns: undefined
       }
       admin_zone_upsert: { Args: { payload: Json }; Returns: string }
+      assert_serviceable: {
+        Args: { p_lat: number; p_lng: number; p_slug: string }
+        Returns: string
+      }
       available_customers_by_area: {
         Args: never
         Returns: {
@@ -4457,6 +4471,14 @@ export type Database = {
       }
       point_in_polygon: {
         Args: { p_lat: number; p_lng: number; p_poly: Json }
+        Returns: boolean
+      }
+      point_in_zone: {
+        Args: { p_lat: number; p_lng: number; p_zone_id: string }
+        Returns: boolean
+      }
+      polygon_contains_point: {
+        Args: { p_lat: number; p_lng: number; p_polygon: Json }
         Returns: boolean
       }
       preview_assignment: {
