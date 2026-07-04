@@ -89,7 +89,9 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     fields: [
       { key: "route_visibility_hours", label: "Show today’s route this many hours before shift", kind: "select", options: ["1","2","3","4","5","6","8","12","24"] },
       { key: "route_visibility_until", label: "Today’s route visible until", kind: "select", options: TIME_OPTS },
+      { key: "assignment_min_days", label: "Minimum assignment length (days)" },
       { key: "assignment_default_days", label: "Default assignment length (days)" },
+      { key: "assignment_max_days", label: "Maximum assignment length (days)" },
       { key: "assignment_hours_options", label: "Hours-per-day options (JSON list)", kind: "json" },
       { key: "assignment_auto_renew_allowed", label: "Allow auto-renew", kind: "bool" },
       { key: "auto_notify_partners_on_new_customer", label: "Auto-notify on new customers", kind: "bool" },
