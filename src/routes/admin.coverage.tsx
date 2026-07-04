@@ -125,13 +125,86 @@ function isSelfIntersecting(pts: number[][]): boolean {
   return false;
 }
 
+// Bbox of a polygon in [minLat, minLng, maxLat, maxLng].
+type Bbox = [number, number, number, number];
+function polygonBbox(pts: number[][]): Bbox {
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  for (const p of pts) {
+    if (p[1] < minLat) minLat = p[1];
+    if (p[1] > maxLat) maxLat = p[1];
+    if (p[0] < minLng) minLng = p[0];
+    if (p[0] > maxLng) maxLng = p[0];
+  }
+  return [minLat, minLng, maxLat, maxLng];
+}
+function boundsIntersect(gBounds: any, bb: Bbox): boolean {
+  if (!gBounds) return true;
+  const sw = gBounds.getSouthWest(); const ne = gBounds.getNorthEast();
+  return !(bb[2] < sw.lat() || bb[0] > ne.lat() || bb[3] < sw.lng() || bb[1] > ne.lng());
+}
+
+// Stable signature — if this string is unchanged we skip re-creating the overlay.
+function zoneSignature(z: Zone, editable: boolean): string {
+  const geom = z.zone_type === "radius"
+    ? `r:${z.center_lat},${z.center_lng},${z.radius_m}`
+    : `p:${JSON.stringify(z.polygon)}`;
+  return [
+    z.zone_type, z.status, z.color, heatColor(z), editable ? "1" : "0", geom,
+  ].join("|");
+}
+
+function buildOverlay(
+  z: Zone,
+  map: any,
+  opts: { editable: boolean; onClick: () => void; onEditCommit: (pts: number[][]) => void },
+) {
+  const fill = heatColor(z);
+  const base = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
+  let overlay: any = null;
+  let cull: Bbox | null = null;
+  const listeners: any[] = [];
+  const editListeners: any[] = [];
+  if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
+    overlay = new window.google.maps.Circle({ ...base, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
+    // Approximate bbox for a radius zone (~111km per deg lat).
+    const dLat = z.radius_m / 111000;
+    const dLng = z.radius_m / (111000 * Math.cos((z.center_lat * Math.PI) / 180));
+    cull = [z.center_lat - dLat, z.center_lng - dLng, z.center_lat + dLat, z.center_lng + dLng];
+  } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
+    const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
+    overlay = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
+    cull = polygonBbox(z.polygon);
+    if (opts.editable) {
+      const commit = () => {
+        const p = overlay.getPath();
+        const pts: number[][] = [];
+        for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+        opts.onEditCommit(pts);
+      };
+      const p0 = overlay.getPath();
+      editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
+      editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
+      editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
+    }
+  }
+  if (!overlay) return null;
+  listeners.push(overlay.addListener("click", opts.onClick));
+  const entry: any = { overlay, sig: "", listeners, editListeners, type: z.zone_type, cull };
+  return entry;
+}
+
+
+
 function CoveragePage() {
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const overlaysRef = useRef<Map<string, any>>(new Map());
+  // Overlay cache: id → { overlay, signature, listeners, editListeners }
+  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" | "radius" }>>(new Map());
   const drawingMgrRef = useRef<any>(null);
   const expansionMarkersRef = useRef<any[]>([]);
+  const boundsRef = useRef<any>(null);
+  const boundsTimerRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Zone> | null>(null);
@@ -183,29 +256,53 @@ function CoveragePage() {
         streetViewControl: false,
         fullscreenControl: false,
       });
+      // Viewport culling — remember bounds; re-apply visibility on debounced idle.
+      const applyBoundsCull = () => {
+        if (!mapRef.current) return;
+        boundsRef.current = mapRef.current.getBounds();
+        const b = boundsRef.current;
+        if (!b) return;
+        for (const [, entry] of overlaysRef.current) {
+          const meta = (entry as any).cull;
+          if (!meta) { entry.overlay.setMap(mapRef.current); continue; }
+          const visible = boundsIntersect(b, meta);
+          entry.overlay.setMap(visible ? mapRef.current : null);
+        }
+      };
+      mapRef.current.addListener("idle", () => {
+        clearTimeout(boundsTimerRef.current);
+        boundsTimerRef.current = setTimeout(applyBoundsCull, 120);
+      });
       setReady(true);
     }).catch((e) => setError(String(e?.message ?? e)));
   }, []);
 
-  // render zone overlays
+  // Diff-based zone overlay render.
+  // - Never rebuilds unchanged overlays (avoids Google Maps DOM churn).
+  // - Only the currently-selected polygon is editable — editable polygons carry
+  //   per-vertex handles which get very expensive at 100–500 zones.
+  // - Viewport culling: overlays outside the current map bounds are detached.
   useEffect(() => {
     if (!ready || !mapRef.current || !zonesQ.data) return;
     const map = mapRef.current;
-    overlaysRef.current.forEach((o) => o.setMap(null));
-    overlaysRef.current.clear();
+    const nextIds = new Set<string>();
+    const selectedId = editing?.id;
+
     for (const z of zonesQ.data) {
-      const fill = heatColor(z);
-      const opts = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
-      let ov: any;
-      if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
-        ov = new window.google.maps.Circle({ ...opts, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
-      } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
-        const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-        ov = new window.google.maps.Polygon({ ...opts, paths: path, map, editable: true, draggable: false });
-        const commit = async () => {
-          const p = ov.getPath();
-          const pts: number[][] = [];
-          for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+      nextIds.add(z.id);
+      const sig = zoneSignature(z, selectedId === z.id);
+      const existing = overlaysRef.current.get(z.id);
+      if (existing && existing.sig === sig) continue; // unchanged
+      if (existing) {
+        existing.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+        existing.editListeners.forEach((l) => window.google.maps.event.removeListener(l));
+        existing.overlay.setMap(null);
+        overlaysRef.current.delete(z.id);
+      }
+      const built = buildOverlay(z, map, {
+        editable: selectedId === z.id,
+        onClick: () => setEditing(z),
+        onEditCommit: async (pts) => {
           if (pts.length < 3) return;
           if (isSelfIntersecting(pts)) {
             toast.error("Edit rejected — edges would cross.");
@@ -215,18 +312,28 @@ function CoveragePage() {
           const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload: { id: z.id, polygon: pts } });
           if (error) toast.error(error.message);
           else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
-        };
-        const path0 = ov.getPath();
-        window.google.maps.event.addListener(path0, "set_at", commit);
-        window.google.maps.event.addListener(path0, "insert_at", commit);
-        window.google.maps.event.addListener(path0, "remove_at", commit);
-      }
-      if (ov) {
-        ov.addListener("click", () => setEditing(z));
-        overlaysRef.current.set(z.id, ov);
+        },
+      });
+      if (built) { built.sig = sig; overlaysRef.current.set(z.id, built); }
+    }
+    // Remove overlays for zones that no longer exist.
+    for (const [id, entry] of overlaysRef.current) {
+      if (nextIds.has(id)) continue;
+      entry.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+      entry.editListeners.forEach((l) => window.google.maps.event.removeListener(l));
+      entry.overlay.setMap(null);
+      overlaysRef.current.delete(id);
+    }
+    // Re-apply viewport culling to the fresh set.
+    const b = mapRef.current?.getBounds?.();
+    if (b) {
+      for (const [, entry] of overlaysRef.current) {
+        const meta = (entry as any).cull;
+        entry.overlay.setMap(!meta || boundsIntersect(b, meta) ? map : null);
       }
     }
-  }, [ready, zonesQ.data]);
+  }, [ready, zonesQ.data, editing?.id, qc]);
+
 
   // expansion request pins
   useEffect(() => {
@@ -422,6 +529,9 @@ function CoveragePage() {
             <Legend color="#f97316" label="Premium only" />
             <Legend color="#9ca3af" label="No services" />
             <Legend color="#dc2626" label="Paused" />
+            <div className="mt-2 border-t pt-1 text-muted-foreground">
+              Boundary rule: points on an edge or vertex count as <b>inside</b> (serviceable).
+            </div>
           </div>
         </main>
       </div>
@@ -467,6 +577,11 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
+          {zone.zone_type === "polygon" && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
+              <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Zone Name</Label>
