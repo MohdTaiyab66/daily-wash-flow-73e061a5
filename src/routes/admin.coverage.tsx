@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, MapPin, Pause, Play, Copy, Trash2, Plus, Pencil, BarChart3, CalendarDays, Bell, History, FlaskConical, Undo2, CheckCircle2 } from "lucide-react";
+import { Loader2, MapPin, Pause, Play, Copy, Trash2, Plus, Pencil, BarChart3, CalendarDays, Bell, History, Undo2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/coverage")({ component: CoveragePage });
@@ -63,8 +63,7 @@ async function loadGoogleMaps(): Promise<void> {
 
 type Zone = {
   id: string; name: string; city: string | null; color: string; priority: number;
-  zone_type: "radius" | "polygon"; status: "active" | "paused" | "coming_soon";
-  center_lat: number | null; center_lng: number | null; radius_m: number | null;
+  zone_type: "polygon"; status: "active" | "paused" | "coming_soon";
   polygon: number[][] | null;
   daily_shine_enabled: boolean; premium_enabled: boolean;
   washing_enabled: boolean; interior_enabled: boolean; exterior_enabled: boolean;
@@ -78,6 +77,36 @@ type Zone = {
   start_time: string; finish_time: string;
   preferred_partner_ids: string[]; backup_partner_ids: string[]; neighbour_expand: boolean;
 };
+
+// Spherical polygon area in km² using the shoelace formula on lat/lng.
+function polygonAreaKm2(pts: number[][] | null | undefined): number {
+  if (!pts || pts.length < 3) return 0;
+  const R = 6371; // km
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[(i + 1) % pts.length];
+    s += ((x2 - x1) * Math.PI / 180) * (2 + Math.sin((y1 * Math.PI) / 180) + Math.sin((y2 * Math.PI) / 180));
+  }
+  return Math.abs((s * R * R) / 2);
+}
+
+// Lucknow locality presets — approximate bounding polygons. Admin can adjust
+// vertices after loading. Coordinates are [lng, lat].
+const LUCKNOW_LOCALITIES: Array<{ name: string; polygon: number[][] }> = [
+  { name: "Gomti Nagar",   polygon: [[80.980, 26.840], [81.030, 26.840], [81.030, 26.870], [80.980, 26.870]] },
+  { name: "Indira Nagar",  polygon: [[80.970, 26.870], [81.020, 26.870], [81.020, 26.900], [80.970, 26.900]] },
+  { name: "Aliganj",       polygon: [[80.920, 26.880], [80.960, 26.880], [80.960, 26.910], [80.920, 26.910]] },
+  { name: "Jankipuram",    polygon: [[80.910, 26.910], [80.960, 26.910], [80.960, 26.945], [80.910, 26.945]] },
+  { name: "Hazratganj",    polygon: [[80.935, 26.845], [80.960, 26.845], [80.960, 26.865], [80.935, 26.865]] },
+  { name: "Mahanagar",     polygon: [[80.940, 26.875], [80.975, 26.875], [80.975, 26.900], [80.940, 26.900]] },
+  { name: "Ashiyana",      polygon: [[80.895, 26.795], [80.935, 26.795], [80.935, 26.825], [80.895, 26.825]] },
+  { name: "Alambagh",      polygon: [[80.885, 26.810], [80.920, 26.810], [80.920, 26.840], [80.885, 26.840]] },
+  { name: "Chinhat",       polygon: [[81.020, 26.855], [81.060, 26.855], [81.060, 26.885], [81.020, 26.885]] },
+  { name: "Rajajipuram",   polygon: [[80.870, 26.840], [80.905, 26.840], [80.905, 26.870], [80.870, 26.870]] },
+  { name: "Vikas Nagar",   polygon: [[80.910, 26.895], [80.945, 26.895], [80.945, 26.920], [80.910, 26.920]] },
+  { name: "Kaiserbagh",    polygon: [[80.915, 26.855], [80.940, 26.855], [80.940, 26.875], [80.915, 26.875]] },
+];
 
 const SERVICE_FLAGS: Array<{ key: keyof Zone; label: string }> = [
   { key: "daily_shine_enabled", label: "Daily Shine Subscription" },
@@ -145,11 +174,9 @@ function boundsIntersect(gBounds: any, bb: Bbox): boolean {
 
 // Stable signature — if this string is unchanged we skip re-creating the overlay.
 function zoneSignature(z: Zone, editable: boolean): string {
-  const geom = z.zone_type === "radius"
-    ? `r:${z.center_lat},${z.center_lng},${z.radius_m}`
-    : `p:${JSON.stringify(z.polygon)}`;
   return [
-    z.zone_type, z.status, z.color, heatColor(z), editable ? "1" : "0", geom,
+    z.status, z.color, heatColor(z), editable ? "1" : "0",
+    `p:${JSON.stringify(z.polygon)}`,
   ].join("|");
 }
 
@@ -158,40 +185,30 @@ function buildOverlay(
   map: any,
   opts: { editable: boolean; onClick: () => void; onEditCommit: (pts: number[][]) => void },
 ) {
+  if (!Array.isArray(z.polygon) || z.polygon.length < 3) return null;
   const fill = heatColor(z);
   const base = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
-  let overlay: any = null;
-  let cull: Bbox | null = null;
+  const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
+  const overlay: any = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
+  const cull = polygonBbox(z.polygon);
   const listeners: any[] = [];
   const editListeners: any[] = [];
-  if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
-    overlay = new window.google.maps.Circle({ ...base, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
-    // Approximate bbox for a radius zone (~111km per deg lat).
-    const dLat = z.radius_m / 111000;
-    const dLng = z.radius_m / (111000 * Math.cos((z.center_lat * Math.PI) / 180));
-    cull = [z.center_lat - dLat, z.center_lng - dLng, z.center_lat + dLat, z.center_lng + dLng];
-  } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
-    const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-    overlay = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
-    cull = polygonBbox(z.polygon);
-    if (opts.editable) {
-      const commit = () => {
-        const p = overlay.getPath();
-        const pts: number[][] = [];
-        for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
-        opts.onEditCommit(pts);
-      };
-      const p0 = overlay.getPath();
-      editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
-      editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
-      editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
-    }
+  if (opts.editable) {
+    const commit = () => {
+      const p = overlay.getPath();
+      const pts: number[][] = [];
+      for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+      opts.onEditCommit(pts);
+    };
+    const p0 = overlay.getPath();
+    editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
+    editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
+    editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
   }
-  if (!overlay) return null;
   listeners.push(overlay.addListener("click", opts.onClick));
-  const entry: any = { overlay, sig: "", listeners, editListeners, type: z.zone_type, cull };
-  return entry;
+  return { overlay, sig: "", listeners, editListeners, type: "polygon" as const, cull };
 }
+
 
 
 
@@ -200,7 +217,7 @@ function CoveragePage() {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   // Overlay cache: id → { overlay, signature, listeners, editListeners }
-  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" | "radius" }>>(new Map());
+  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" }>>(new Map());
   const drawingMgrRef = useRef<any>(null);
   const expansionMarkersRef = useRef<any[]>([]);
   const boundsRef = useRef<any>(null);
@@ -352,33 +369,25 @@ function CoveragePage() {
     }
   }, [ready, expansionQ.data]);
 
-  const startRadiusDraw = () => {
-    if (!ready) return;
-    if (drawingMgrRef.current) drawingMgrRef.current.setMap(null);
-    const dm = new window.google.maps.drawing.DrawingManager({
-      drawingMode: window.google.maps.drawing.OverlayType.CIRCLE,
-      drawingControl: false,
-      circleOptions: { fillColor: "#3b82f6", fillOpacity: 0.2, strokeColor: "#3b82f6", strokeWeight: 2, editable: true },
-    });
-    dm.setMap(mapRef.current);
-    drawingMgrRef.current = dm;
-    window.google.maps.event.addListenerOnce(dm, "circlecomplete", (circle: any) => {
-      const c = circle.getCenter();
-      const r = circle.getRadius();
-      circle.setMap(null);
-      dm.setMap(null);
-      drawingMgrRef.current = null;
-      setEditing({
-        zone_type: "radius", center_lat: c.lat(), center_lng: c.lng(), radius_m: Math.round(r),
-        name: "", color: "#3b82f6", priority: 10, status: "active",
-        daily_shine_enabled: true, premium_enabled: true,
-        washing_enabled: true, interior_enabled: true, exterior_enabled: true, int_ext_enabled: true,
-        deep_clean_enabled: true, polish_enabled: true, cutter_polish_enabled: true,
-        roof_cleaning_enabled: true, seat_cleaning_enabled: true,
-        corporate_fleet_enabled: false, emergency_enabled: true,
-      } as Partial<Zone>);
-    });
+  // Preset a new polygon zone from a Lucknow locality template.
+  const startFromLocality = (loc: { name: string; polygon: number[][] }) => {
+    if (mapRef.current && window.google?.maps) {
+      const b = new window.google.maps.LatLngBounds();
+      for (const [lng, lat] of loc.polygon) b.extend({ lat, lng });
+      mapRef.current.fitBounds(b);
+    }
+    setEditing({
+      zone_type: "polygon", polygon: loc.polygon,
+      name: `Lucknow – ${loc.name}`, city: "Lucknow",
+      color: "#3b82f6", priority: 10, status: "active",
+      daily_shine_enabled: true, premium_enabled: true,
+      washing_enabled: true, interior_enabled: true, exterior_enabled: true, int_ext_enabled: true,
+      deep_clean_enabled: true, polish_enabled: true, cutter_polish_enabled: true,
+      roof_cleaning_enabled: true, seat_cleaning_enabled: true,
+      corporate_fleet_enabled: false, emergency_enabled: true,
+    } as Partial<Zone>);
   };
+
 
   const startPolygonDraw = () => {
     if (!ready) return;
@@ -491,8 +500,9 @@ function CoveragePage() {
           <Button size="sm" variant="outline" onClick={() => setOpsView("calendar")}><CalendarDays className="mr-1 h-4 w-4" />Calendar</Button>
           <Button size="sm" variant="outline" onClick={() => setOpsView("alerts")}><Bell className="mr-1 h-4 w-4" />Alerts</Button>
           <Button size="sm" variant="outline" onClick={() => setOpsView("history")}><History className="mr-1 h-4 w-4" />History</Button>
-          <Button size="sm" onClick={startRadiusDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Radius Zone</Button>
-          <Button size="sm" variant="outline" onClick={startPolygonDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Polygon</Button>
+          <LocalityMenu onPick={startFromLocality} disabled={!ready} />
+          <Button size="sm" onClick={startPolygonDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />New Zone</Button>
+
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
@@ -507,9 +517,9 @@ function CoveragePage() {
                   {z.status === "paused" && <Badge variant="destructive" className="h-4 text-[10px]">Paused</Badge>}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {z.zone_type} • priority {z.priority}
-                  {z.zone_type === "radius" && z.radius_m ? ` • ${(z.radius_m / 1000).toFixed(1)}km` : ""}
+                  polygon • priority {z.priority} • {polygonAreaKm2(z.polygon).toFixed(2)} km²
                 </div>
+
                 <div className="mt-0.5 flex gap-1 text-[10px]">
                   {z.daily_shine_enabled && <span className="rounded bg-blue-100 px-1 text-blue-700">DS</span>}
                   {z.premium_enabled && <span className="rounded bg-orange-100 px-1 text-orange-700">Prem</span>}
@@ -541,6 +551,34 @@ function CoveragePage() {
       <OperationsSheet view={opsView} onClose={() => setOpsView(null)} zones={zonesQ.data ?? []} />
       <SimulateDialog zoneId={simZoneId} onClose={() => setSimZoneId(null)} />
     </div>
+  );
+}
+
+function LocalityMenu({ onPick, disabled }: { onPick: (loc: { name: string; polygon: number[][] }) => void; disabled: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
+        <Plus className="mr-1 h-4 w-4" />From Locality
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Create Zone from Lucknow Locality</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Loads an approximate boundary for the selected locality. Adjust vertices on the map before saving.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {LUCKNOW_LOCALITIES.map((l) => (
+              <Button key={l.name} variant="outline" size="sm" className="justify-start"
+                onClick={() => { onPick(l); setOpen(false); }}>
+                <MapPin className="mr-1 h-3.5 w-3.5" />{l.name}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -577,11 +615,10 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
-          {zone.zone_type === "polygon" && (
-            <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
-              <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
-            </div>
-          )}
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
+            <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Zone Name</Label>
@@ -599,12 +636,10 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
               <Label>Color</Label>
               <Input type="color" value={zone.color ?? "#3b82f6"} onChange={(e) => set({ color: e.target.value })} />
             </div>
-            {zone.zone_type === "radius" && (
-              <div className="col-span-2">
-                <Label>Radius (metres) — {zone.radius_m ?? 0} m ({((zone.radius_m ?? 0) / 1000).toFixed(1)} km)</Label>
-                <Input type="number" min={500} max={25000} value={zone.radius_m ?? 0} onChange={(e) => set({ radius_m: parseInt(e.target.value) || 0 })} />
-              </div>
-            )}
+            <div className="col-span-2 rounded-md bg-muted p-2 text-[11px] text-muted-foreground">
+              Area: <b>{polygonAreaKm2(zone.polygon ?? null).toFixed(2)} km²</b> · Vertices: <b>{zone.polygon?.length ?? 0}</b>
+            </div>
+
           </div>
 
           <div>
@@ -652,7 +687,7 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
               <Button variant="outline" size="sm" onClick={() => onToggleStatus(zone as Zone)}>
                 {zone.status === "active" ? <><Pause className="mr-1 h-4 w-4" />Pause</> : <><Play className="mr-1 h-4 w-4" />Resume</>}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => onSimulate(zone.id!)}><FlaskConical className="mr-1 h-4 w-4" />Simulate</Button>
+              
               <Button variant="outline" size="sm" onClick={() => onDuplicate(zone.id!)}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>
               <Button variant="destructive" size="sm" onClick={() => onDelete(zone.id!)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
             </>
