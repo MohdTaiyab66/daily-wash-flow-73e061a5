@@ -140,33 +140,43 @@ async function main() {
   );
 
   // ---- 5. Mock customer addresses (inside / outside / vertex / edge) ----
-  // Use a synthetic user_id so this test needs no auth signup. Rows are
-  // tagged and cleaned up at the end so RLS-only production data is safe.
-  const MOCK_USER = "00000000-0000-0000-0000-00000000c0de";
-  await sb.from("customer_addresses").delete().eq("user_id", MOCK_USER);
+  // Create a throw-away auth user; customer_addresses.user_id FKs auth.users.
+  const mockEmail = `mock-coverage+${Date.now()}@customer.urbanwash.app`;
+  const { data: created, error: userErr } = await sb.auth.admin.createUser({
+    email: mockEmail, password: `Mock!${Date.now()}aA1`, email_confirm: true,
+    user_metadata: { role: "customer", full_name: "Mock Coverage" },
+  });
+  check("mock: auth user created", !userErr && !!created?.user, userErr?.message);
+  const MOCK_USER = created?.user?.id;
+
   const points = [
     { label: "MOCK-inside",  ...INSIDE,    expect: true  },
     { label: "MOCK-vertex",  ...ON_VERTEX, expect: true  },
     { label: "MOCK-edge",    ...ON_EDGE,   expect: true  },
     { label: "MOCK-outside", ...OUTSIDE,   expect: false },
   ];
-  for (const p of points) {
-    const { error: insErr } = await sb.from("customer_addresses").insert({
-      user_id: MOCK_USER, label: p.label,
-      address_line: `${p.label} @ ${p.lat.toFixed(4)},${p.lng.toFixed(4)}`,
-      area: "Mock", latitude: p.lat, longitude: p.lng,
-    });
-    if (insErr) { check(`mock: insert ${p.label}`, false, insErr.message); continue; }
-    const cov = await coverageAt({ lat: p.lat, lng: p.lng });
-    const got = !!cov?.matched;
-    check(
-      `mock: ${p.label} at ${p.lat},${p.lng} coverage=${got} (expected ${p.expect})`,
-      got === p.expect,
-    );
+  if (MOCK_USER) {
+    for (const p of points) {
+      const { error: insErr } = await sb.from("customer_addresses").insert({
+        user_id: MOCK_USER, label: p.label,
+        address_line: `${p.label} @ ${p.lat.toFixed(4)},${p.lng.toFixed(4)}`,
+        area: "Mock", latitude: p.lat, longitude: p.lng,
+      });
+      if (insErr) { check(`mock: insert ${p.label}`, false, insErr.message); continue; }
+      const cov = await coverageAt({ lat: p.lat, lng: p.lng });
+      const got = !!cov?.matched;
+      check(
+        `mock: ${p.label} at ${p.lat},${p.lng} coverage=${got} (expected ${p.expect})`,
+        got === p.expect,
+      );
+    }
   }
 
   // ---- Cleanup ----
-  await sb.from("customer_addresses").delete().eq("user_id", MOCK_USER);
+  if (MOCK_USER) {
+    await sb.from("customer_addresses").delete().eq("user_id", MOCK_USER);
+    await sb.auth.admin.deleteUser(MOCK_USER);
+  }
   await sb.from("coverage_zones").delete().eq("id", newId);
 
   const failed = results.filter((r) => !r.ok);
