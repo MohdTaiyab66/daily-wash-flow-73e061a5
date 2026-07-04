@@ -517,9 +517,9 @@ function CoveragePage() {
                   {z.status === "paused" && <Badge variant="destructive" className="h-4 text-[10px]">Paused</Badge>}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {z.zone_type} • priority {z.priority}
-                  {z.zone_type === "radius" && z.radius_m ? ` • ${(z.radius_m / 1000).toFixed(1)}km` : ""}
+                  polygon • priority {z.priority} • {polygonAreaKm2(z.polygon).toFixed(2)} km²
                 </div>
+
                 <div className="mt-0.5 flex gap-1 text-[10px]">
                   {z.daily_shine_enabled && <span className="rounded bg-blue-100 px-1 text-blue-700">DS</span>}
                   {z.premium_enabled && <span className="rounded bg-orange-100 px-1 text-orange-700">Prem</span>}
