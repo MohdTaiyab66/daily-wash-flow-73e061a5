@@ -782,13 +782,18 @@ export const adminUpdateAssignment = createServerFn({ method: "POST" }).middlewa
     end_date?: string;
     total_earnings?: number;
     estimated_hours?: number;
+    route_visibility_hours?: number | null;
+    auto_renew?: boolean;
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { assignment_id, ...rest } = data;
     const patch: Record<string, any> = {};
     Object.entries(rest).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== "") patch[k] = v;
+      if (v === undefined) return;
+      if (v === "") return;
+      // Allow explicit null (clears per-assignment override) and false (auto-renew off)
+      patch[k] = v;
     });
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await (supabaseAdmin.from("assignments") as any).update(patch).eq("id", assignment_id);
