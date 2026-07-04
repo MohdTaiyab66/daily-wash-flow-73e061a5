@@ -248,15 +248,30 @@ function CoveragePage() {
 
   const startPolygonDraw = () => {
     if (!ready) return;
+    if (!window.google?.maps?.drawing) {
+      toast.error("Drawing library not loaded — reload the page and try again.");
+      return;
+    }
     if (drawingMgrRef.current) drawingMgrRef.current.setMap(null);
     const dm = new window.google.maps.drawing.DrawingManager({
       drawingMode: window.google.maps.drawing.OverlayType.POLYGON,
       drawingControl: false,
-      polygonOptions: { fillColor: "#3b82f6", fillOpacity: 0.2, strokeColor: "#3b82f6", strokeWeight: 2, editable: true },
+      polygonOptions: { fillColor: "#3b82f6", fillOpacity: 0.2, strokeColor: "#3b82f6", strokeWeight: 2, editable: true, draggable: true, clickable: true },
     });
     dm.setMap(mapRef.current);
     drawingMgrRef.current = dm;
+    toast.info("Click on the map to add vertices. Double-click to finish. ESC to cancel.");
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        dm.setMap(null);
+        drawingMgrRef.current = null;
+        window.removeEventListener("keydown", onKey);
+        toast.message("Drawing cancelled");
+      }
+    };
+    window.addEventListener("keydown", onKey);
     window.google.maps.event.addListenerOnce(dm, "polygoncomplete", (poly: any) => {
+      window.removeEventListener("keydown", onKey);
       const path = poly.getPath();
       const pts: number[][] = [];
       for (let i = 0; i < path.getLength(); i++) {
@@ -266,6 +281,10 @@ function CoveragePage() {
       poly.setMap(null);
       dm.setMap(null);
       drawingMgrRef.current = null;
+      if (pts.length < 3) {
+        toast.error("Polygon needs at least 3 vertices.");
+        return;
+      }
       setEditing({
         zone_type: "polygon", polygon: pts,
         name: "", color: "#3b82f6", priority: 10, status: "active",
