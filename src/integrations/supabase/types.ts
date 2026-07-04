@@ -4150,6 +4150,10 @@ export type Database = {
         }
         Returns: string
       }
+      customer_has_pro_booking_on: {
+        Args: { p_customer_id: string; p_date: string }
+        Returns: boolean
+      }
       dar_accept_offer: {
         Args: { p_offer_id: string; p_service_ids?: string[] }
         Returns: Json
@@ -4586,6 +4590,10 @@ export type Database = {
         Returns: Json
       }
       sweep_subscription_offers: { Args: never; Returns: number }
+      working_days_end_date: {
+        Args: { p_off_dow?: number; p_start: string; p_working: number }
+        Returns: string
+      }
       zone_calendar_mask: {
         Args: { p_date: string; p_zone: string }
         Returns: {

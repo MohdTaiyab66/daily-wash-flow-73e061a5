@@ -27,10 +27,7 @@ const REPORT_ANGLES = ["front", "rear", "left", "right"] as const;
 const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
   { value: "customer_not_responding", label: "Customer not responding" },
-  { value: "vehicle_taken_out", label: "Vehicle taken out" },
-  { value: "keys_not_available", label: "Keys not available" },
   { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "security_guard_denied", label: "Security guard denied entry" },
   { value: "other", label: "Other (remarks required)" },
 ] as const;
 
@@ -38,14 +35,10 @@ const DIRTY_REASONS = [
   "Heavy Mud",
   "Heavy Dust",
   "Bird Droppings",
-  "Tree Sap",
-  "Cement",
-  "Interior Extremely Dirty",
   "Other",
 ];
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
-const FLOW_VERSION = 5;
 
 function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
   if (workflow === "service_photo") return `service_photo_${phase}`;
@@ -669,9 +662,8 @@ function UnavailableSection({
     if (capturedCount > 0 && !expanded) setExpanded(true);
   }, [capturedCount, expanded]);
 
-  useEffect(() => {
-    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
-  }, [serviceId, expanded, capturedCount]);
+  // debug flow-version instrumentation removed for trial release
+
 
   useEffect(() => {
     if (canSubmit) console.log(`[SVC][UNAVAILABLE] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
@@ -759,10 +751,7 @@ function UnavailableSection({
       {/* Body stays MOUNTED even when collapsed (CSS hidden) so the
           PhotoSlots survive Android process kill/remount cycles. */}
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
-          UNAVAILABLE FLOW VERSION {FLOW_VERSION}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
@@ -840,9 +829,8 @@ function DirtyVehicleSection({
     if (capturedCount > 0 && !expanded) setExpanded(true);
   }, [capturedCount, expanded]);
 
-  useEffect(() => {
-    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
-  }, [serviceId, expanded, capturedCount]);
+  // debug flow-version instrumentation removed for trial release
+
 
   useEffect(() => {
     if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
@@ -928,10 +916,7 @@ function DirtyVehicleSection({
       </button>
 
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
-          DIRTY FLOW VERSION {FLOW_VERSION}
-        </div>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-3 space-y-1">
+        <RadioGroup value={reason} onValueChange={setReason} className="mt-1 space-y-1">
           {DIRTY_REASONS.map((r) => (
             <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
               <RadioGroupItem value={r} />{r}
