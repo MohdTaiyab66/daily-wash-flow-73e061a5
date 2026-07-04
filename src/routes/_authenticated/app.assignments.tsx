@@ -311,8 +311,8 @@ function AssignmentsPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Assignment duration</p>
           <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
         </div>
-        <Slider value={[duration]} min={7} max={30} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays}</span><span>{maxDays}</span></div>
       </Card>
 
       {/* Today's plan */}
