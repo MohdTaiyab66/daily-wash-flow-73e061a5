@@ -120,7 +120,29 @@ function PartnerAssignmentPage() {
               <Field label="Total earnings (₹)">
                 <Input type="number" defaultValue={a.total_earnings ?? 0} onChange={(e) => setForm({ ...form, total_earnings: Number(e.target.value) })} />
               </Field>
-            </div>
+              <Field label="Route visibility (hrs before shift, blank = use admin default)">
+                <Input
+                  type="number"
+                  min={0}
+                  max={24}
+                  defaultValue={a.route_visibility_hours ?? ""}
+                  placeholder="Global default"
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    setForm({ ...form, route_visibility_hours: raw === "" ? null : Number(raw) });
+                  }}
+                />
+              </Field>
+              <Field label="Auto-renew when this assignment ends">
+                <select
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                  defaultValue={a.auto_renew ? "true" : "false"}
+                  onChange={(e) => setForm({ ...form, auto_renew: e.target.value === "true" })}
+                >
+                  <option value="false">Off</option>
+                  <option value="true">On (extend by default duration)</option>
+                </select>
+              </Field>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <Button onClick={() => updateMut.mutate(form)} disabled={updateMut.isPending || Object.keys(form).length === 0}>
