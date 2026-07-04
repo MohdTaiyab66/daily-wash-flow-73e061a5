@@ -117,13 +117,25 @@ function AssignmentsPage() {
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
-  const [hours, setHours] = useState(4);
-  const [duration, setDuration] = useState(15);
+  const minDays = settings?.minDays ?? 7;
+  const maxDays = settings?.maxDays ?? 90;
+  const defaultDays = settings?.defaultDays ?? 30;
 
-  // Keep hours within admin bounds when settings change
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(defaultDays);
+
+  // Keep hours + duration within admin bounds when settings change
   useEffect(() => {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
+  useEffect(() => {
+    setDuration((d) => {
+      // If user hasn't nudged the slider, snap to admin default; otherwise clamp.
+      if (d === 15 || d < minDays || d > maxDays) return Math.min(maxDays, Math.max(minDays, defaultDays));
+      return d;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minDays, maxDays, defaultDays]);
 
   const cars = useMemo(() => {
     const raw = Math.round(hours * carsPerHour);
