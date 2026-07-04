@@ -751,10 +751,7 @@ function UnavailableSection({
       {/* Body stays MOUNTED even when collapsed (CSS hidden) so the
           PhotoSlots survive Android process kill/remount cycles. */}
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
-          UNAVAILABLE FLOW VERSION {FLOW_VERSION}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
           {UNAVAILABLE_REASONS.map((r) => (
             <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
