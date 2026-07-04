@@ -174,11 +174,9 @@ function boundsIntersect(gBounds: any, bb: Bbox): boolean {
 
 // Stable signature — if this string is unchanged we skip re-creating the overlay.
 function zoneSignature(z: Zone, editable: boolean): string {
-  const geom = z.zone_type === "radius"
-    ? `r:${z.center_lat},${z.center_lng},${z.radius_m}`
-    : `p:${JSON.stringify(z.polygon)}`;
   return [
-    z.zone_type, z.status, z.color, heatColor(z), editable ? "1" : "0", geom,
+    z.status, z.color, heatColor(z), editable ? "1" : "0",
+    `p:${JSON.stringify(z.polygon)}`,
   ].join("|");
 }
 
@@ -187,40 +185,30 @@ function buildOverlay(
   map: any,
   opts: { editable: boolean; onClick: () => void; onEditCommit: (pts: number[][]) => void },
 ) {
+  if (!Array.isArray(z.polygon) || z.polygon.length < 3) return null;
   const fill = heatColor(z);
   const base = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
-  let overlay: any = null;
-  let cull: Bbox | null = null;
+  const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
+  const overlay: any = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
+  const cull = polygonBbox(z.polygon);
   const listeners: any[] = [];
   const editListeners: any[] = [];
-  if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
-    overlay = new window.google.maps.Circle({ ...base, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
-    // Approximate bbox for a radius zone (~111km per deg lat).
-    const dLat = z.radius_m / 111000;
-    const dLng = z.radius_m / (111000 * Math.cos((z.center_lat * Math.PI) / 180));
-    cull = [z.center_lat - dLat, z.center_lng - dLng, z.center_lat + dLat, z.center_lng + dLng];
-  } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
-    const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-    overlay = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
-    cull = polygonBbox(z.polygon);
-    if (opts.editable) {
-      const commit = () => {
-        const p = overlay.getPath();
-        const pts: number[][] = [];
-        for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
-        opts.onEditCommit(pts);
-      };
-      const p0 = overlay.getPath();
-      editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
-      editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
-      editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
-    }
+  if (opts.editable) {
+    const commit = () => {
+      const p = overlay.getPath();
+      const pts: number[][] = [];
+      for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+      opts.onEditCommit(pts);
+    };
+    const p0 = overlay.getPath();
+    editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
+    editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
+    editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
   }
-  if (!overlay) return null;
   listeners.push(overlay.addListener("click", opts.onClick));
-  const entry: any = { overlay, sig: "", listeners, editListeners, type: z.zone_type, cull };
-  return entry;
+  return { overlay, sig: "", listeners, editListeners, type: "polygon" as const, cull };
 }
+
 
 
 
