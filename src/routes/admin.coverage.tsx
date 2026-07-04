@@ -25,35 +25,34 @@ declare global {
 
 async function loadGoogleMaps(): Promise<void> {
   if (typeof window === "undefined") return;
-  // Already fully loaded with drawing lib
-  if (window.google?.maps?.drawing && window.google?.maps?.geometry) return;
-  // Base API loaded (e.g. by LiveMap) without drawing — pull in additional libraries dynamically.
+  // Already fully loaded with the core map primitives we need.
+  if (window.google?.maps?.Map && window.google?.maps?.Polygon) return;
+  // Base API loaded (e.g. by LiveMap) — pull in additional libraries dynamically.
   if (window.google?.maps?.importLibrary) {
     await Promise.all([
-      window.google.maps.importLibrary("drawing"),
       window.google.maps.importLibrary("geometry"),
       window.google.maps.importLibrary("maps"),
     ]);
     return;
   }
-  // Wait for an in-flight base load then import libraries
+  // Wait for an in-flight base load then import libraries.
   if (window.__lovableMapReady) {
     await window.__lovableMapReady;
     if (window.google?.maps?.importLibrary) {
       await Promise.all([
-        window.google.maps.importLibrary("drawing"),
         window.google.maps.importLibrary("geometry"),
+        window.google.maps.importLibrary("maps"),
       ]);
     }
     return;
   }
-  // Cold load — include drawing + geometry up front.
+  // Cold load — polygon drawing is handled by this component, no deprecated drawing lib required.
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   if (!key) throw new Error("Google Maps key missing");
   window.__lovableMapReady = new Promise<void>((resolve, reject) => {
     window.__initLovableMap = () => resolve();
     const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap&libraries=geometry,drawing&v=weekly`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap&libraries=geometry&v=weekly`;
     s.async = true;
     s.onerror = () => reject(new Error("Failed to load Google Maps"));
     document.head.appendChild(s);
@@ -154,6 +153,39 @@ function isSelfIntersecting(pts: number[][]): boolean {
   return false;
 }
 
+function cleanPolygonPoints(pts: number[][] | null | undefined): number[][] {
+  if (!Array.isArray(pts)) return [];
+  const clean: number[][] = [];
+  for (const p of pts) {
+    if (!Array.isArray(p) || p.length < 2) continue;
+    const lng = Number(p[0]);
+    const lat = Number(p[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const prev = clean[clean.length - 1];
+    if (prev && Math.abs(prev[0] - lng) < 1e-10 && Math.abs(prev[1] - lat) < 1e-10) continue;
+    clean.push([lng, lat]);
+  }
+  if (clean.length > 1) {
+    const first = clean[0];
+    const last = clean[clean.length - 1];
+    if (Math.abs(first[0] - last[0]) < 1e-10 && Math.abs(first[1] - last[1]) < 1e-10) clean.pop();
+  }
+  return clean;
+}
+
+function pathToPolygon(path: any): number[][] {
+  const pts: number[][] = [];
+  for (let i = 0; i < path.getLength(); i++) {
+    const v = path.getAt(i);
+    pts.push([v.lng(), v.lat()]);
+  }
+  return cleanPolygonPoints(pts);
+}
+
+function polygonToPath(pts: number[][]) {
+  return pts.map((p) => ({ lat: p[1], lng: p[0] }));
+}
+
 // Bbox of a polygon in [minLat, minLng, maxLat, maxLng].
 type Bbox = [number, number, number, number];
 function polygonBbox(pts: number[][]): Bbox {
@@ -188,22 +220,20 @@ function buildOverlay(
   if (!Array.isArray(z.polygon) || z.polygon.length < 3) return null;
   const fill = heatColor(z);
   const base = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
-  const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-  const overlay: any = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
+  const path = polygonToPath(z.polygon);
+  const overlay: any = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: opts.editable });
   const cull = polygonBbox(z.polygon);
   const listeners: any[] = [];
   const editListeners: any[] = [];
   if (opts.editable) {
     const commit = () => {
-      const p = overlay.getPath();
-      const pts: number[][] = [];
-      for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
-      opts.onEditCommit(pts);
+      opts.onEditCommit(pathToPolygon(overlay.getPath()));
     };
     const p0 = overlay.getPath();
     editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
     editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
     editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
+    editListeners.push(overlay.addListener("dragend", commit));
   }
   listeners.push(overlay.addListener("click", opts.onClick));
   return { overlay, sig: "", listeners, editListeners, type: "polygon" as const, cull };
