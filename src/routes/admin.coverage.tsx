@@ -125,6 +125,76 @@ function isSelfIntersecting(pts: number[][]): boolean {
   return false;
 }
 
+// Bbox of a polygon in [minLat, minLng, maxLat, maxLng].
+type Bbox = [number, number, number, number];
+function polygonBbox(pts: number[][]): Bbox {
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  for (const p of pts) {
+    if (p[1] < minLat) minLat = p[1];
+    if (p[1] > maxLat) maxLat = p[1];
+    if (p[0] < minLng) minLng = p[0];
+    if (p[0] > maxLng) maxLng = p[0];
+  }
+  return [minLat, minLng, maxLat, maxLng];
+}
+function boundsIntersect(gBounds: any, bb: Bbox): boolean {
+  if (!gBounds) return true;
+  const sw = gBounds.getSouthWest(); const ne = gBounds.getNorthEast();
+  return !(bb[2] < sw.lat() || bb[0] > ne.lat() || bb[3] < sw.lng() || bb[1] > ne.lng());
+}
+
+// Stable signature — if this string is unchanged we skip re-creating the overlay.
+function zoneSignature(z: Zone, editable: boolean): string {
+  const geom = z.zone_type === "radius"
+    ? `r:${z.center_lat},${z.center_lng},${z.radius_m}`
+    : `p:${JSON.stringify(z.polygon)}`;
+  return [
+    z.zone_type, z.status, z.color, heatColor(z), editable ? "1" : "0", geom,
+  ].join("|");
+}
+
+function buildOverlay(
+  z: Zone,
+  map: any,
+  opts: { editable: boolean; onClick: () => void; onEditCommit: (pts: number[][]) => void },
+) {
+  const fill = heatColor(z);
+  const base = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
+  let overlay: any = null;
+  let cull: Bbox | null = null;
+  const listeners: any[] = [];
+  const editListeners: any[] = [];
+  if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
+    overlay = new window.google.maps.Circle({ ...base, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
+    // Approximate bbox for a radius zone (~111km per deg lat).
+    const dLat = z.radius_m / 111000;
+    const dLng = z.radius_m / (111000 * Math.cos((z.center_lat * Math.PI) / 180));
+    cull = [z.center_lat - dLat, z.center_lng - dLng, z.center_lat + dLat, z.center_lng + dLng];
+  } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
+    const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
+    overlay = new window.google.maps.Polygon({ ...base, paths: path, map, editable: opts.editable, draggable: false });
+    cull = polygonBbox(z.polygon);
+    if (opts.editable) {
+      const commit = () => {
+        const p = overlay.getPath();
+        const pts: number[][] = [];
+        for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+        opts.onEditCommit(pts);
+      };
+      const p0 = overlay.getPath();
+      editListeners.push(window.google.maps.event.addListener(p0, "set_at", commit));
+      editListeners.push(window.google.maps.event.addListener(p0, "insert_at", commit));
+      editListeners.push(window.google.maps.event.addListener(p0, "remove_at", commit));
+    }
+  }
+  if (!overlay) return null;
+  listeners.push(overlay.addListener("click", opts.onClick));
+  const entry: any = { overlay, sig: "", listeners, editListeners, type: z.zone_type, cull };
+  return entry;
+}
+
+
+
 function CoveragePage() {
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
