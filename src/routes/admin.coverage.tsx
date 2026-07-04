@@ -207,6 +207,11 @@ function CoveragePage() {
           const pts: number[][] = [];
           for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
           if (pts.length < 3) return;
+          if (isSelfIntersecting(pts)) {
+            toast.error("Edit rejected — edges would cross.");
+            qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+            return;
+          }
           const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload: { id: z.id, polygon: pts } });
           if (error) toast.error(error.message);
           else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
