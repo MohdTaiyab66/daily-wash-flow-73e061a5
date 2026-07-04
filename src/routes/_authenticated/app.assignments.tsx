@@ -75,6 +75,7 @@ function AssignmentsPage() {
         "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
         "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
         "avg_bike_mileage_kmpl", "fuel_price_per_litre", "fuel_calc_enabled",
+        "assignment_min_days", "assignment_max_days", "assignment_default_days",
       ]);
       const m: Record<string, any> = {};
       (data ?? []).forEach((s: any) => (m[s.key] = s.value));
@@ -93,6 +94,9 @@ function AssignmentsPage() {
         fuelEnabled: m.fuel_calc_enabled !== false,
         startRules: rules,
         weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
+        minDays: Math.max(1, Number(m.assignment_min_days ?? 7)),
+        maxDays: Math.max(1, Number(m.assignment_max_days ?? 90)),
+        defaultDays: Math.max(1, Number(m.assignment_default_days ?? 30)),
       };
     },
   });
