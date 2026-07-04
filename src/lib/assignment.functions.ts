@@ -64,6 +64,16 @@ export const getMyAssignment = createServerFn({ method: "GET" })
 
     const progressPct = all.length > 0 ? Math.round((completed / all.length) * 100) : 0;
 
+    // Working-day math (dynamic per assignment; supports any duration).
+    const workingDaysTotal = Number(a.working_days ?? 0);
+    const distinctScheduled = Array.from(new Set(all.map((s: any) => s.scheduled_date))).sort();
+    const todayStr = today;
+    const workingDaysCompleted = distinctScheduled.filter((d) => d && d < todayStr).length;
+    const workingDaysRemaining = Math.max(0, workingDaysTotal - workingDaysCompleted);
+    const hoursPerDay = Number(a.hours_per_day ?? a.estimated_hours ?? 0);
+    const todaysCustomers = todays.length;
+    const expectedEarningsToday = todaysCustomers * rate;
+
     return {
       assignment: a,
       day_progress: Math.max(1, Math.min(dayNum, a.duration_days)),
@@ -72,6 +82,13 @@ export const getMyAssignment = createServerFn({ method: "GET" })
       remaining_cars: remaining,
       completed_today: completedToday,
       remaining_today: remainingToday,
+      todays_customers: todaysCustomers,
+      expected_earnings_today: expectedEarningsToday,
+      hours_per_day: hoursPerDay,
+      working_days_total: workingDaysTotal,
+      working_days_completed: workingDaysCompleted,
+      working_days_remaining: workingDaysRemaining,
+      original_duration_days: Number(a.original_duration_days ?? a.duration_days ?? 0),
       earned,
       held,
       available_payout: available,
