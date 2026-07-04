@@ -1,0 +1,1 @@
+ALTER TYPE public.service_status ADD VALUE IF NOT EXISTS 'covered_by_booking';
