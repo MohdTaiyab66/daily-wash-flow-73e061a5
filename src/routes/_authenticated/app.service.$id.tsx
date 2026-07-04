@@ -662,9 +662,8 @@ function UnavailableSection({
     if (capturedCount > 0 && !expanded) setExpanded(true);
   }, [capturedCount, expanded]);
 
-  useEffect(() => {
-    console.log(`[SVC][UNAVAILABLE] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
-  }, [serviceId, expanded, capturedCount]);
+  // debug flow-version instrumentation removed for trial release
+
 
   useEffect(() => {
     if (canSubmit) console.log(`[SVC][UNAVAILABLE] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${UNAVAILABLE_REQUIRED}`);
