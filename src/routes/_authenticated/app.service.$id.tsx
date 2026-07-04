@@ -829,9 +829,8 @@ function DirtyVehicleSection({
     if (capturedCount > 0 && !expanded) setExpanded(true);
   }, [capturedCount, expanded]);
 
-  useEffect(() => {
-    console.log(`[SVC][DIRTY] Flow version ${FLOW_VERSION} rendered · svc=${serviceId} · expanded=${expanded} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
-  }, [serviceId, expanded, capturedCount]);
+  // debug flow-version instrumentation removed for trial release
+
 
   useEffect(() => {
     if (dirtyCanSubmit) console.log(`[SVC][DIRTY] Submit enabled · svc=${serviceId} · photos=${capturedCount}/${DIRTY_ANGLES.length}`);
