@@ -167,7 +167,7 @@ async function main() {
 
   // ---- Cleanup ----
   await sb.from("customer_addresses").delete().eq("user_id", MOCK_USER);
-  await sb.rpc("admin_zone_delete", { p_id: newId });
+  await sb.from("coverage_zones").delete().eq("id", newId);
 
   const failed = results.filter((r) => !r.ok);
   console.log("\n" + "─".repeat(60));
