@@ -248,7 +248,8 @@ function CoveragePage() {
   const mapRef = useRef<any>(null);
   // Overlay cache: id → { overlay, signature, listeners, editListeners }
   const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" }>>(new Map());
-  const drawingMgrRef = useRef<any>(null);
+  const drawingSessionRef = useRef<null | { cleanup: () => void }>(null);
+  const draftOverlayRef = useRef<{ overlay: any; listeners: any[] } | null>(null);
   const expansionMarkersRef = useRef<any[]>([]);
   const boundsRef = useRef<any>(null);
   const boundsTimerRef = useRef<any>(null);
@@ -391,6 +392,50 @@ function CoveragePage() {
     }
   }, [ready, zonesQ.data, editing?.id, qc]);
 
+  // Editable overlay for new, unsaved polygons created from scratch or locality.
+  useEffect(() => {
+    if (!ready || !mapRef.current || !window.google?.maps) return;
+    if (draftOverlayRef.current) {
+      draftOverlayRef.current.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+      draftOverlayRef.current.overlay.setMap(null);
+      draftOverlayRef.current = null;
+    }
+    if (!editing || editing.id) return;
+    const pts = cleanPolygonPoints(editing.polygon);
+    if (pts.length < 3) return;
+    const overlay = new window.google.maps.Polygon({
+      paths: polygonToPath(pts),
+      map: mapRef.current,
+      editable: true,
+      draggable: true,
+      clickable: true,
+      strokeColor: editing.color ?? "#3b82f6",
+      strokeWeight: 2,
+      fillColor: heatColor({ ...(editing as Zone), status: editing.status ?? "active", color: editing.color ?? "#3b82f6" }),
+      fillOpacity: 0.28,
+      zIndex: 999,
+    });
+    const commit = () => {
+      const next = pathToPolygon(overlay.getPath());
+      if (next.length >= 3) setEditing((current) => current && !current.id ? { ...current, polygon: next } : current);
+    };
+    const path = overlay.getPath();
+    draftOverlayRef.current = {
+      overlay,
+      listeners: [
+        window.google.maps.event.addListener(path, "set_at", commit),
+        window.google.maps.event.addListener(path, "insert_at", commit),
+        window.google.maps.event.addListener(path, "remove_at", commit),
+        overlay.addListener("dragend", commit),
+      ],
+    };
+    return () => {
+      draftOverlayRef.current?.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+      draftOverlayRef.current?.overlay.setMap(null);
+      draftOverlayRef.current = null;
+    };
+  }, [ready, editing?.id, editing?.polygon, editing?.color, editing?.status]);
+
 
   // expansion request pins
   useEffect(() => {
@@ -431,68 +476,112 @@ function CoveragePage() {
 
   const startPolygonDraw = () => {
     if (!ready) return;
-    if (!window.google?.maps?.drawing) {
-      toast.error("Drawing library not loaded — reload the page and try again.");
+    if (!mapRef.current || !window.google?.maps) {
+      toast.error("Map is not ready yet — try again in a moment.");
       return;
     }
-    if (drawingMgrRef.current) drawingMgrRef.current.setMap(null);
-    const dm = new window.google.maps.drawing.DrawingManager({
-      drawingMode: window.google.maps.drawing.OverlayType.POLYGON,
-      drawingControl: false,
-      polygonOptions: { fillColor: "#3b82f6", fillOpacity: 0.2, strokeColor: "#3b82f6", strokeWeight: 2, editable: true, draggable: true, clickable: true },
-    });
-    dm.setMap(mapRef.current);
-    drawingMgrRef.current = dm;
+    drawingSessionRef.current?.cleanup();
+    setEditing(null);
+    const map = mapRef.current;
+    const previousDoubleClickZoom = map.get("disableDoubleClickZoom");
+    map.set("disableDoubleClickZoom", true);
+    const pts: number[][] = [];
+    const listeners: any[] = [];
+    const markers: any[] = [];
+    let preview: any = null;
+    const renderPreview = (cursor?: any) => {
+      const path = polygonToPath(cursor ? [...pts, [cursor.lng(), cursor.lat()]] : pts);
+      if (!preview) {
+        preview = new window.google.maps.Polygon({
+          map,
+          paths: path,
+          strokeColor: "#3b82f6",
+          strokeWeight: 2,
+          strokeOpacity: 0.95,
+          fillColor: "#3b82f6",
+          fillOpacity: pts.length >= 3 ? 0.18 : 0.06,
+          clickable: false,
+          zIndex: 1000,
+        });
+      } else {
+        preview.setPath(path);
+      }
+    };
+    const cleanup = () => {
+      listeners.forEach((l) => window.google.maps.event.removeListener(l));
+      markers.forEach((m) => m.setMap(null));
+      preview?.setMap(null);
+      map.set("disableDoubleClickZoom", previousDoubleClickZoom);
+      drawingSessionRef.current = null;
+    };
+    drawingSessionRef.current = { cleanup };
     toast.info("Click on the map to add vertices. Double-click to finish. ESC to cancel.");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        dm.setMap(null);
-        drawingMgrRef.current = null;
+        cleanup();
         window.removeEventListener("keydown", onKey);
         toast.message("Drawing cancelled");
       }
     };
     window.addEventListener("keydown", onKey);
-    window.google.maps.event.addListenerOnce(dm, "polygoncomplete", (poly: any) => {
+    const finish = () => {
       window.removeEventListener("keydown", onKey);
-      const path = poly.getPath();
-      const pts: number[][] = [];
-      for (let i = 0; i < path.getLength(); i++) {
-        const p = path.getAt(i);
-        pts.push([p.lng(), p.lat()]);
-      }
-      poly.setMap(null);
-      dm.setMap(null);
-      drawingMgrRef.current = null;
-      if (pts.length < 3) {
+      const finalPts = cleanPolygonPoints(pts);
+      cleanup();
+      if (finalPts.length < 3) {
         toast.error("Polygon needs at least 3 vertices.");
         return;
       }
-      if (isSelfIntersecting(pts)) {
+      if (isSelfIntersecting(finalPts)) {
         toast.error("Polygon edges cross — redraw without self-intersections.");
         return;
       }
       setEditing({
-        zone_type: "polygon", polygon: pts,
-        name: "", color: "#3b82f6", priority: 10, status: "active",
+        zone_type: "polygon", polygon: finalPts,
+        name: "Lucknow – New Zone", city: "Lucknow", color: "#3b82f6", priority: 10, status: "active",
         daily_shine_enabled: true, premium_enabled: true,
         washing_enabled: true, interior_enabled: true, exterior_enabled: true, int_ext_enabled: true,
         deep_clean_enabled: true, polish_enabled: true, cutter_polish_enabled: true,
         roof_cleaning_enabled: true, seat_cleaning_enabled: true,
         corporate_fleet_enabled: false, emergency_enabled: true,
       } as Partial<Zone>);
-    });
+      toast.success("Polygon captured. Adjust vertices, name it, then save.");
+    };
+    listeners.push(map.addListener("click", (e: any) => {
+      if (!e.latLng) return;
+      pts.push([e.latLng.lng(), e.latLng.lat()]);
+      markers.push(new window.google.maps.Marker({
+        position: e.latLng,
+        map,
+        clickable: false,
+        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: "#3b82f6", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 },
+      }));
+      renderPreview();
+    }));
+    listeners.push(map.addListener("mousemove", (e: any) => {
+      if (!e.latLng || pts.length === 0) return;
+      renderPreview(e.latLng);
+    }));
+    listeners.push(map.addListener("dblclick", finish));
   };
 
   const save = async () => {
     if (!editing?.name) { toast.error("Zone name is required"); return; }
-    const payload: any = { ...editing };
+    const polygon = cleanPolygonPoints(editing.polygon);
+    if (polygon.length < 3) { toast.error("Polygon needs at least 3 vertices."); return; }
+    if (isSelfIntersecting(polygon)) { toast.error("Polygon edges cross — adjust vertices before saving."); return; }
+    const payload: any = { ...editing, zone_type: "polygon", polygon, center_lat: null, center_lng: null, radius_m: null };
     if (editing.id) payload.id = editing.id;
-    const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload });
+    const { data, error } = await (supabase as any).rpc("admin_zone_upsert", { payload });
     if (error) { toast.error(error.message); return; }
     toast.success("Zone saved");
-    setEditing(null);
-    qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+    const savedId = data as string | null;
+    await qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+    await qc.invalidateQueries({ queryKey: ["zone-dashboard"] });
+    if (savedId) {
+      const { data: saved } = await (supabase as any).from("coverage_zones").select("*").eq("id", savedId).single();
+      if (saved) setEditing(saved as Zone);
+    }
   };
 
   const onDelete = async (id: string) => {
