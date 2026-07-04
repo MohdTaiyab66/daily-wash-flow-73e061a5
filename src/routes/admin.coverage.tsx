@@ -609,12 +609,10 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
               <Label>Color</Label>
               <Input type="color" value={zone.color ?? "#3b82f6"} onChange={(e) => set({ color: e.target.value })} />
             </div>
-            {zone.zone_type === "radius" && (
-              <div className="col-span-2">
-                <Label>Radius (metres) — {zone.radius_m ?? 0} m ({((zone.radius_m ?? 0) / 1000).toFixed(1)} km)</Label>
-                <Input type="number" min={500} max={25000} value={zone.radius_m ?? 0} onChange={(e) => set({ radius_m: parseInt(e.target.value) || 0 })} />
-              </div>
-            )}
+            <div className="col-span-2 rounded-md bg-muted p-2 text-[11px] text-muted-foreground">
+              Area: <b>{polygonAreaKm2(zone.polygon ?? null).toFixed(2)} km²</b> · Vertices: <b>{zone.polygon?.length ?? 0}</b>
+            </div>
+
           </div>
 
           <div>
