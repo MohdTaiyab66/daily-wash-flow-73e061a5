@@ -529,6 +529,9 @@ function CoveragePage() {
             <Legend color="#f97316" label="Premium only" />
             <Legend color="#9ca3af" label="No services" />
             <Legend color="#dc2626" label="Paused" />
+            <div className="mt-2 border-t pt-1 text-muted-foreground">
+              Boundary rule: points on an edge or vertex count as <b>inside</b> (serviceable).
+            </div>
           </div>
         </main>
       </div>
