@@ -4628,6 +4628,7 @@ export type Database = {
         | "completed"
         | "unavailable"
         | "skipped"
+        | "covered_by_booking"
       subscription_plan:
         | "daily_shine_monthly"
         | "daily_shine_quarterly"
@@ -4797,6 +4798,7 @@ export const Constants = {
         "completed",
         "unavailable",
         "skipped",
+        "covered_by_booking",
       ],
       subscription_plan: [
         "daily_shine_monthly",
