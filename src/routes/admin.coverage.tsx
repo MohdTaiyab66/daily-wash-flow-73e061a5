@@ -580,9 +580,16 @@ function CoveragePage() {
       }));
       renderPreview();
     }));
+    let rafId = 0;
+    let pendingLatLng: any = null;
     listeners.push(map.addListener("mousemove", (e: any) => {
       if (!e.latLng || pts.length === 0) return;
-      renderPreview(e.latLng);
+      pendingLatLng = e.latLng;
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (pendingLatLng) renderPreview(pendingLatLng);
+      });
     }));
     listeners.push(map.addListener("dblclick", finish));
   };
