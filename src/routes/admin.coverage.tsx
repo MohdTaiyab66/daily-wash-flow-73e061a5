@@ -554,6 +554,34 @@ function CoveragePage() {
   );
 }
 
+function LocalityMenu({ onPick, disabled }: { onPick: (loc: { name: string; polygon: number[][] }) => void; disabled: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
+        <Plus className="mr-1 h-4 w-4" />From Locality
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Create Zone from Lucknow Locality</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Loads an approximate boundary for the selected locality. Adjust vertices on the map before saving.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {LUCKNOW_LOCALITIES.map((l) => (
+              <Button key={l.name} variant="outline" size="sm" className="justify-start"
+                onClick={() => { onPick(l); setOpen(false); }}>
+                <MapPin className="mr-1 h-3.5 w-3.5" />{l.name}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function Legend({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
