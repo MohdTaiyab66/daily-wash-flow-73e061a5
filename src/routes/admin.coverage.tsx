@@ -103,6 +103,28 @@ function heatColor(z: Zone): string {
   return "#9ca3af";
 }
 
+// Segment intersection test (proper crossings only; shared endpoints allowed).
+function segmentsCross(a: number[], b: number[], c: number[], d: number[]): boolean {
+  const o = (p: number[], q: number[], r: number[]) =>
+    Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  const o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b);
+  return o1 !== 0 && o2 !== 0 && o3 !== 0 && o4 !== 0 && o1 !== o2 && o3 !== o4;
+}
+function isSelfIntersecting(pts: number[][]): boolean {
+  const n = pts.length;
+  if (n < 4) return false;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      // Skip adjacent segments (share a vertex)
+      if (j === i || (j + 1) % n === i || (i + 1) % n === j) continue;
+      const c = pts[j], d = pts[(j + 1) % n];
+      if (segmentsCross(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+
 function CoveragePage() {
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
