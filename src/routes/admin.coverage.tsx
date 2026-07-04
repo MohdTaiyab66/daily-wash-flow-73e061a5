@@ -500,8 +500,9 @@ function CoveragePage() {
           <Button size="sm" variant="outline" onClick={() => setOpsView("calendar")}><CalendarDays className="mr-1 h-4 w-4" />Calendar</Button>
           <Button size="sm" variant="outline" onClick={() => setOpsView("alerts")}><Bell className="mr-1 h-4 w-4" />Alerts</Button>
           <Button size="sm" variant="outline" onClick={() => setOpsView("history")}><History className="mr-1 h-4 w-4" />History</Button>
-          <Button size="sm" onClick={startRadiusDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Radius Zone</Button>
-          <Button size="sm" variant="outline" onClick={startPolygonDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />Polygon</Button>
+          <LocalityMenu onPick={startFromLocality} disabled={!ready} />
+          <Button size="sm" onClick={startPolygonDraw} disabled={!ready}><Plus className="mr-1 h-4 w-4" />New Zone</Button>
+
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
