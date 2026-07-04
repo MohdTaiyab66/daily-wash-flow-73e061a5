@@ -237,6 +237,16 @@ function CoveragePage() {
     },
   });
 
+  const dashQ = useQuery({
+    queryKey: ["zone-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_zone_dashboard");
+      if (error) throw error;
+      return (data ?? []) as DashRow[];
+    },
+    refetchInterval: 30_000,
+  });
+
   const expansionQ = useQuery({
     queryKey: ["expansion-requests-map"],
     queryFn: async () => {
