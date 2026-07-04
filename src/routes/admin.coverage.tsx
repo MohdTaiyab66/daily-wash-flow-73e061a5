@@ -129,9 +129,12 @@ function CoveragePage() {
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const overlaysRef = useRef<Map<string, any>>(new Map());
+  // Overlay cache: id → { overlay, signature, listeners, editListeners }
+  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" | "radius" }>>(new Map());
   const drawingMgrRef = useRef<any>(null);
   const expansionMarkersRef = useRef<any[]>([]);
+  const boundsRef = useRef<any>(null);
+  const boundsTimerRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Zone> | null>(null);
@@ -183,29 +186,53 @@ function CoveragePage() {
         streetViewControl: false,
         fullscreenControl: false,
       });
+      // Viewport culling — remember bounds; re-apply visibility on debounced idle.
+      const applyBoundsCull = () => {
+        if (!mapRef.current) return;
+        boundsRef.current = mapRef.current.getBounds();
+        const b = boundsRef.current;
+        if (!b) return;
+        for (const [, entry] of overlaysRef.current) {
+          const meta = (entry as any).cull;
+          if (!meta) { entry.overlay.setMap(mapRef.current); continue; }
+          const visible = boundsIntersect(b, meta);
+          entry.overlay.setMap(visible ? mapRef.current : null);
+        }
+      };
+      mapRef.current.addListener("idle", () => {
+        clearTimeout(boundsTimerRef.current);
+        boundsTimerRef.current = setTimeout(applyBoundsCull, 120);
+      });
       setReady(true);
     }).catch((e) => setError(String(e?.message ?? e)));
   }, []);
 
-  // render zone overlays
+  // Diff-based zone overlay render.
+  // - Never rebuilds unchanged overlays (avoids Google Maps DOM churn).
+  // - Only the currently-selected polygon is editable — editable polygons carry
+  //   per-vertex handles which get very expensive at 100–500 zones.
+  // - Viewport culling: overlays outside the current map bounds are detached.
   useEffect(() => {
     if (!ready || !mapRef.current || !zonesQ.data) return;
     const map = mapRef.current;
-    overlaysRef.current.forEach((o) => o.setMap(null));
-    overlaysRef.current.clear();
+    const nextIds = new Set<string>();
+    const selectedId = editing?.id;
+
     for (const z of zonesQ.data) {
-      const fill = heatColor(z);
-      const opts = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
-      let ov: any;
-      if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
-        ov = new window.google.maps.Circle({ ...opts, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
-      } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
-        const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-        ov = new window.google.maps.Polygon({ ...opts, paths: path, map, editable: true, draggable: false });
-        const commit = async () => {
-          const p = ov.getPath();
-          const pts: number[][] = [];
-          for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+      nextIds.add(z.id);
+      const sig = zoneSignature(z, selectedId === z.id);
+      const existing = overlaysRef.current.get(z.id);
+      if (existing && existing.sig === sig) continue; // unchanged
+      if (existing) {
+        existing.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+        existing.editListeners.forEach((l) => window.google.maps.event.removeListener(l));
+        existing.overlay.setMap(null);
+        overlaysRef.current.delete(z.id);
+      }
+      const built = buildOverlay(z, map, {
+        editable: selectedId === z.id,
+        onClick: () => setEditing(z),
+        onEditCommit: async (pts) => {
           if (pts.length < 3) return;
           if (isSelfIntersecting(pts)) {
             toast.error("Edit rejected — edges would cross.");
@@ -215,18 +242,28 @@ function CoveragePage() {
           const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload: { id: z.id, polygon: pts } });
           if (error) toast.error(error.message);
           else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
-        };
-        const path0 = ov.getPath();
-        window.google.maps.event.addListener(path0, "set_at", commit);
-        window.google.maps.event.addListener(path0, "insert_at", commit);
-        window.google.maps.event.addListener(path0, "remove_at", commit);
-      }
-      if (ov) {
-        ov.addListener("click", () => setEditing(z));
-        overlaysRef.current.set(z.id, ov);
+        },
+      });
+      if (built) overlaysRef.current.set(z.id, built);
+    }
+    // Remove overlays for zones that no longer exist.
+    for (const [id, entry] of overlaysRef.current) {
+      if (nextIds.has(id)) continue;
+      entry.listeners.forEach((l) => window.google.maps.event.removeListener(l));
+      entry.editListeners.forEach((l) => window.google.maps.event.removeListener(l));
+      entry.overlay.setMap(null);
+      overlaysRef.current.delete(id);
+    }
+    // Re-apply viewport culling to the fresh set.
+    const b = mapRef.current?.getBounds?.();
+    if (b) {
+      for (const [, entry] of overlaysRef.current) {
+        const meta = (entry as any).cull;
+        entry.overlay.setMap(!meta || boundsIntersect(b, meta) ? map : null);
       }
     }
-  }, [ready, zonesQ.data]);
+  }, [ready, zonesQ.data, editing?.id, qc]);
+
 
   // expansion request pins
   useEffect(() => {
