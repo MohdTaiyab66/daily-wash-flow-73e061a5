@@ -589,7 +589,10 @@ function CoveragePage() {
 
   const save = async () => {
     if (!editing?.name) { toast.error("Zone name is required"); return; }
-    const polygon = cleanPolygonPoints(editing.polygon);
+    const liveDraftPolygon = !editing.id && draftOverlayRef.current
+      ? pathToPolygon(draftOverlayRef.current.overlay.getPath())
+      : editing.polygon;
+    const polygon = cleanPolygonPoints(liveDraftPolygon);
     if (polygon.length < 3) { toast.error("Polygon needs at least 3 vertices."); return; }
     if (isSelfIntersecting(polygon)) { toast.error("Polygon edges cross — adjust vertices before saving."); return; }
     const payload: any = { ...editing, zone_type: "polygon", polygon, center_lat: null, center_lng: null, radius_m: null };
