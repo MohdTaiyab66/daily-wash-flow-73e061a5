@@ -916,10 +916,7 @@ function DirtyVehicleSection({
       </button>
 
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
-          DIRTY FLOW VERSION {FLOW_VERSION}
-        </div>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-3 space-y-1">
+        <RadioGroup value={reason} onValueChange={setReason} className="mt-1 space-y-1">
           {DIRTY_REASONS.map((r) => (
             <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
               <RadioGroupItem value={r} />{r}
