@@ -695,34 +695,26 @@ function CoveragePage() {
             </button>
           ))}
         </aside>
-        <main className="relative flex-1">
+        <main className="relative flex-1 min-w-0">
           {error && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80 p-6 text-center text-sm text-destructive">{error}</div>}
           {!ready && !error && <div className="absolute inset-0 z-10 grid place-items-center bg-background/60"><Loader2 className="h-6 w-6 animate-spin" /></div>}
           <div ref={ref} className="h-full w-full" />
-          <div className="absolute bottom-3 left-3 rounded-md border bg-card/95 p-2 text-[11px] shadow">
-            <div className="mb-1 font-semibold">Heat Map</div>
-            <Legend color="#22c55e" label="Daily Shine + Premium" />
-            <Legend color="#3b82f6" label="Daily Shine only" />
-            <Legend color="#f97316" label="Premium only" />
-            <Legend color="#9ca3af" label="No services" />
-            <Legend color="#dc2626" label="Paused" />
-            <div className="mt-2 border-t pt-1 text-muted-foreground">
-              Boundary rule: points on an edge or vertex count as <b>inside</b> (serviceable).
-            </div>
+          <div className="pointer-events-none absolute bottom-2 left-2 rounded-md border bg-card/95 px-2 py-1 text-[10px] text-muted-foreground shadow">
+            Boundary rule: edge/vertex points count as <b>inside</b>.
           </div>
         </main>
+        <ZoneEditor
+          zone={editing}
+          dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
+          onClose={() => setEditing(null)}
+          onChange={setEditing}
+          onSave={save}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onToggleStatus={onToggleStatus}
+          onSimulate={(id) => setSimZoneId(id)}
+        />
       </div>
-      <ZoneEditor
-        zone={editing}
-        dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
-        onClose={() => setEditing(null)}
-        onChange={setEditing}
-        onSave={save}
-        onDelete={onDelete}
-        onDuplicate={onDuplicate}
-        onToggleStatus={onToggleStatus}
-        onSimulate={(id) => setSimZoneId(id)}
-      />
       <OperationsSheet view={opsView} onClose={() => setOpsView(null)} zones={zonesQ.data ?? []} />
       <SimulateDialog zoneId={simZoneId} onClose={() => setSimZoneId(null)} />
     </div>
