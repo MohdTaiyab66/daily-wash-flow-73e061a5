@@ -27,10 +27,7 @@ const REPORT_ANGLES = ["front", "rear", "left", "right"] as const;
 const UNAVAILABLE_REASONS = [
   { value: "vehicle_not_available", label: "Vehicle not available" },
   { value: "customer_not_responding", label: "Customer not responding" },
-  { value: "vehicle_taken_out", label: "Vehicle taken out" },
-  { value: "keys_not_available", label: "Keys not available" },
   { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "security_guard_denied", label: "Security guard denied entry" },
   { value: "other", label: "Other (remarks required)" },
 ] as const;
 
@@ -38,14 +35,10 @@ const DIRTY_REASONS = [
   "Heavy Mud",
   "Heavy Dust",
   "Bird Droppings",
-  "Tree Sap",
-  "Cement",
-  "Interior Extremely Dirty",
   "Other",
 ];
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
-const FLOW_VERSION = 5;
 
 function workflowEventName(workflow: "service_photo" | "dirty_vehicle" | "unavailable_vehicle", phase: "camera_attempt" | "camera_result" | "photo_upload_result") {
   if (workflow === "service_photo") return `service_photo_${phase}`;
