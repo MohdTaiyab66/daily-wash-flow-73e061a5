@@ -555,9 +555,17 @@ function CoveragePage() {
           </div>
         </main>
       </div>
-      <ZoneEditor zone={editing} onClose={() => setEditing(null)} onChange={setEditing}
-        onSave={save} onDelete={onDelete} onDuplicate={onDuplicate} onToggleStatus={onToggleStatus}
-        onSimulate={(id) => setSimZoneId(id)} />
+      <ZoneEditor
+        zone={editing}
+        dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
+        onClose={() => setEditing(null)}
+        onChange={setEditing}
+        onSave={save}
+        onDelete={onDelete}
+        onDuplicate={onDuplicate}
+        onToggleStatus={onToggleStatus}
+        onSimulate={(id) => setSimZoneId(id)}
+      />
       <OperationsSheet view={opsView} onClose={() => setOpsView(null)} zones={zonesQ.data ?? []} />
       <SimulateDialog zoneId={simZoneId} onClose={() => setSimZoneId(null)} />
     </div>
