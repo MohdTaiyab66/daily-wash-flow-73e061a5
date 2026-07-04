@@ -4494,6 +4494,7 @@ export type Database = {
           vehicle_id: string
         }[]
       }
+      renew_assignments: { Args: never; Returns: number }
       respond_subscription_offer: {
         Args: { p_accept: boolean; p_offer_id: string }
         Returns: Json
