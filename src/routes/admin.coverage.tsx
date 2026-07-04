@@ -673,7 +673,7 @@ function CoveragePage() {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-80 shrink-0 overflow-y-auto border-r bg-card">
+        <aside className={`${editing ? "hidden xl:flex" : "flex"} w-64 shrink-0 flex-col overflow-y-auto border-r bg-card`}>
           <div className="p-3 text-xs font-semibold uppercase text-muted-foreground">Zones</div>
           {(zonesQ.data ?? []).map((z) => (
             <button key={z.id} onClick={() => selectZone(z)} className="flex w-full items-start gap-2 border-b px-3 py-2 text-left hover:bg-accent">
