@@ -776,10 +776,7 @@ function ZoneEditor({ zone, dashRow, onClose, onChange, onSave, onDelete, onDupl
 
   return (
     <aside
-      className="pointer-events-auto absolute inset-y-0 right-0 z-20 flex w-[380px] max-w-[92vw] flex-col border-l bg-card shadow-2xl"
-      // Prevent map drag/click from being swallowed only inside this panel.
-      onMouseDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
+      className="flex w-[360px] max-w-[92vw] shrink-0 flex-col border-l bg-card shadow-xl"
     >
       <div className="flex items-center gap-2 border-b px-3 py-2">
         {isExisting ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
