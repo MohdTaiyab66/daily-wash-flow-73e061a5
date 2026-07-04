@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -235,6 +235,16 @@ function CoveragePage() {
       if (error) throw error;
       return (data ?? []) as Zone[];
     },
+  });
+
+  const dashQ = useQuery({
+    queryKey: ["zone-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_zone_dashboard");
+      if (error) throw error;
+      return (data ?? []) as DashRow[];
+    },
+    refetchInterval: 30_000,
   });
 
   const expansionQ = useQuery({
@@ -545,9 +555,17 @@ function CoveragePage() {
           </div>
         </main>
       </div>
-      <ZoneEditor zone={editing} onClose={() => setEditing(null)} onChange={setEditing}
-        onSave={save} onDelete={onDelete} onDuplicate={onDuplicate} onToggleStatus={onToggleStatus}
-        onSimulate={(id) => setSimZoneId(id)} />
+      <ZoneEditor
+        zone={editing}
+        dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
+        onClose={() => setEditing(null)}
+        onChange={setEditing}
+        onSave={save}
+        onDelete={onDelete}
+        onDuplicate={onDuplicate}
+        onToggleStatus={onToggleStatus}
+        onSimulate={(id) => setSimZoneId(id)}
+      />
       <OperationsSheet view={opsView} onClose={() => setOpsView(null)} zones={zonesQ.data ?? []} />
       <SimulateDialog zoneId={simZoneId} onClose={() => setSimZoneId(null)} />
     </div>
@@ -591,8 +609,9 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, onToggleStatus, onSimulate }: {
+function ZoneEditor({ zone, dashRow, onClose, onChange, onSave, onDelete, onDuplicate, onToggleStatus }: {
   zone: Partial<Zone> | null;
+  dashRow: DashRow | null;
   onClose: () => void;
   onChange: (z: Partial<Zone>) => void;
   onSave: () => void;
@@ -604,100 +623,126 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
   if (!zone) return null;
   const set = (patch: Partial<Zone>) => onChange({ ...zone, ...patch });
   const isExisting = !!zone.id;
+  const status = zone.status ?? "active";
 
   return (
-    <Dialog open={!!zone} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isExisting ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {isExisting ? "Edit Zone" : "New Zone"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4">
-          <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
-            <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
+    <aside
+      className="pointer-events-auto absolute inset-y-0 right-0 z-20 flex w-[380px] max-w-[92vw] flex-col border-l bg-card shadow-2xl"
+      // Prevent map drag/click from being swallowed only inside this panel.
+      onMouseDown={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        {isExisting ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+        <div className="text-sm font-semibold truncate flex-1">{isExisting ? (zone.name || "Edit Zone") : "New Zone"}</div>
+        <Badge variant={status === "active" ? "default" : status === "paused" ? "destructive" : "secondary"} className="h-5 text-[10px]">{status}</Badge>
+        <Button size="sm" variant="ghost" onClick={onClose}>✕</Button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        {/* Quick actions */}
+        {isExisting && (
+          <div className="flex flex-wrap gap-2">
+            {status === "active" ? (
+              <Button size="sm" variant="outline" onClick={() => onToggleStatus(zone as Zone)}><Pause className="mr-1 h-3.5 w-3.5" />Pause</Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => onToggleStatus(zone as Zone)}><Play className="mr-1 h-3.5 w-3.5" />Activate</Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => onDuplicate(zone.id!)}><Copy className="mr-1 h-3.5 w-3.5" />Duplicate</Button>
+            <Button size="sm" variant="destructive" onClick={() => onDelete(zone.id!)}><Trash2 className="mr-1 h-3.5 w-3.5" />Delete</Button>
           </div>
+        )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Zone Name</Label>
-              <Input value={zone.name ?? ""} onChange={(e) => set({ name: e.target.value })} placeholder="Lucknow – Daily Shine East" />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input value={zone.city ?? ""} onChange={(e) => set({ city: e.target.value })} placeholder="Lucknow" />
-            </div>
-            <div>
-              <Label>Priority</Label>
-              <Input type="number" value={zone.priority ?? 10} onChange={(e) => set({ priority: parseInt(e.target.value) || 0 })} />
-            </div>
-            <div>
-              <Label>Color</Label>
-              <Input type="color" value={zone.color ?? "#3b82f6"} onChange={(e) => set({ color: e.target.value })} />
-            </div>
-            <div className="col-span-2 rounded-md bg-muted p-2 text-[11px] text-muted-foreground">
-              Area: <b>{polygonAreaKm2(zone.polygon ?? null).toFixed(2)} km²</b> · Vertices: <b>{zone.polygon?.length ?? 0}</b>
-            </div>
-
-          </div>
-
-          <div>
-            <div className="mb-2 text-sm font-semibold">Services Available</div>
-            <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
-              {SERVICE_FLAGS.map((s) => (
-                <label key={s.key as string} className="flex items-center justify-between gap-2 text-sm">
-                  <span>{s.label}</span>
-                  <Switch checked={!!(zone as any)[s.key]} onCheckedChange={(v) => set({ [s.key]: v } as any)} />
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-2 text-sm font-semibold">Capacity & Routing (overrides)</div>
-            <div className="grid grid-cols-2 gap-3">
-              <NumField label="Max Cars / Partner" v={zone.max_cars_per_partner ?? 30} onChange={(n) => set({ max_cars_per_partner: (n ?? 30) as any })} />
-              <NumField label="Max Daily Capacity (override)" v={zone.max_daily_capacity} onChange={(n) => set({ max_daily_capacity: n })} />
-              <NumField label="Max Active Partners" v={zone.max_active_partners} onChange={(n) => set({ max_active_partners: n })} />
-              <NumField label="Max Route Distance (km)" v={zone.max_route_distance_km as any} onChange={(n) => set({ max_route_distance_km: (n ?? 8) as any })} />
-              <NumField label="Max Travel Time (min)" v={zone.max_travel_time_min as any} onChange={(n) => set({ max_travel_time_min: (n ?? 90) as any })} />
-              <NumField label="Assignment Radius (m)" v={zone.assignment_radius_m} onChange={(n) => set({ assignment_radius_m: n })} />
-              <NumField label="Route Opt Radius (m)" v={zone.route_optimization_radius_m} onChange={(n) => set({ route_optimization_radius_m: n })} />
-              <NumField label="Travel Buffer (min)" v={zone.travel_buffer_min} onChange={(n) => set({ travel_buffer_min: n })} />
-              <div>
-                <Label>Start Time</Label>
-                <Input type="time" value={(zone.start_time ?? "07:00").slice(0,5)} onChange={(e) => set({ start_time: e.target.value as any })} />
-              </div>
-              <div>
-                <Label>Finish Time</Label>
-                <Input type="time" value={(zone.finish_time ?? "14:00").slice(0,5)} onChange={(e) => set({ finish_time: e.target.value as any })} />
-              </div>
-              <label className="col-span-2 flex items-center justify-between rounded-md border p-2 text-sm">
-                <span>Expand into neighbouring zones if no partners</span>
-                <Switch checked={zone.neighbour_expand !== false} onCheckedChange={(v) => set({ neighbour_expand: v as any })} />
-              </label>
-            </div>
+        {/* Live details */}
+        <div className="rounded-md border bg-muted/40 p-2">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase text-muted-foreground">Live Details</div>
+          <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+            <StatCell label="Area" value={`${polygonAreaKm2(zone.polygon ?? null).toFixed(2)} km²`} />
+            <StatCell label="Priority" value={String(zone.priority ?? 10)} />
+            <StatCell label="Vertices" value={String(zone.polygon?.length ?? 0)} />
+            <StatCell label="Customers" value={dashRow?.active_customers ?? (isExisting ? "…" : "—")} />
+            <StatCell label="Daily Shine" value={dashRow?.ds_customers ?? (isExisting ? "…" : "—")} />
+            <StatCell label="Premium" value={dashRow?.premium_customers ?? (isExisting ? "…" : "—")} />
+            <StatCell label="Partners" value={dashRow?.active_partners ?? (isExisting ? "…" : "—")} />
+            <StatCell label="Available" value={dashRow?.available_partners ?? (isExisting ? "…" : "—")} />
+            <StatCell label="Today" value={dashRow?.services_today ?? (isExisting ? "…" : "—")} />
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          {isExisting && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => onToggleStatus(zone as Zone)}>
-                {zone.status === "active" ? <><Pause className="mr-1 h-4 w-4" />Pause</> : <><Play className="mr-1 h-4 w-4" />Resume</>}
-              </Button>
-              
-              <Button variant="outline" size="sm" onClick={() => onDuplicate(zone.id!)}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>
-              <Button variant="destructive" size="sm" onClick={() => onDelete(zone.id!)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
-            </>
-          )}
-          <div className="flex-1" />
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={onSave}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
+          <b>Boundary rule:</b> points on an edge or vertex count as <b>inside</b>.
+          Drag any vertex on the map to reshape — changes autosave.
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2">
+            <Label className="text-xs">Zone Name</Label>
+            <Input value={zone.name ?? ""} onChange={(e) => set({ name: e.target.value })} placeholder="Lucknow – East" />
+          </div>
+          <div>
+            <Label className="text-xs">City</Label>
+            <Input value={zone.city ?? ""} onChange={(e) => set({ city: e.target.value })} placeholder="Lucknow" />
+          </div>
+          <div>
+            <Label className="text-xs">Priority</Label>
+            <Input type="number" value={zone.priority ?? 10} onChange={(e) => set({ priority: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <Label className="text-xs">Color</Label>
+            <Input type="color" value={zone.color ?? "#3b82f6"} onChange={(e) => set({ color: e.target.value })} />
+          </div>
+          <div>
+            <Label className="text-xs">Status</Label>
+            <select
+              value={status}
+              onChange={(e) => set({ status: e.target.value as any })}
+              className="block w-full rounded-md border bg-background px-2 py-2 text-sm"
+            >
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="coming_soon">Coming Soon</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1.5 text-xs font-semibold">Services Enabled</div>
+          <div className="grid gap-1.5 rounded-md border p-2">
+            {SERVICE_FLAGS.map((s) => (
+              <label key={s.key as string} className="flex items-center justify-between gap-2 text-xs">
+                <span>{s.label}</span>
+                <Switch checked={!!(zone as any)[s.key]} onCheckedChange={(v) => set({ [s.key]: v } as any)} />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1.5 text-xs font-semibold">Capacity & Routing</div>
+          <div className="grid grid-cols-2 gap-2">
+            <NumField label="Max Cars / Partner" v={zone.max_cars_per_partner ?? 30} onChange={(n) => set({ max_cars_per_partner: (n ?? 30) as any })} />
+            <NumField label="Max Daily Capacity" v={zone.max_daily_capacity} onChange={(n) => set({ max_daily_capacity: n })} />
+            <NumField label="Max Active Partners" v={zone.max_active_partners} onChange={(n) => set({ max_active_partners: n })} />
+            <NumField label="Assignment Radius (m)" v={zone.assignment_radius_m} onChange={(n) => set({ assignment_radius_m: n })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-t p-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+        <div className="flex-1" />
+        <Button size="sm" onClick={onSave}>Save</Button>
+      </div>
+    </aside>
+  );
+}
+
+function StatCell({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded border bg-background px-1.5 py-1">
+      <div className="text-[9px] uppercase text-muted-foreground">{label}</div>
+      <div className="text-xs font-semibold truncate">{value}</div>
+    </div>
   );
 }
 
