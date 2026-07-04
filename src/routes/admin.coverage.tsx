@@ -580,9 +580,16 @@ function CoveragePage() {
       }));
       renderPreview();
     }));
+    let rafId = 0;
+    let pendingLatLng: any = null;
     listeners.push(map.addListener("mousemove", (e: any) => {
       if (!e.latLng || pts.length === 0) return;
-      renderPreview(e.latLng);
+      pendingLatLng = e.latLng;
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (pendingLatLng) renderPreview(pendingLatLng);
+      });
     }));
     listeners.push(map.addListener("dblclick", finish));
   };
@@ -666,7 +673,7 @@ function CoveragePage() {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-80 shrink-0 overflow-y-auto border-r bg-card">
+        <aside className={`${editing ? "hidden xl:flex" : "flex"} w-64 shrink-0 flex-col overflow-y-auto border-r bg-card`}>
           <div className="p-3 text-xs font-semibold uppercase text-muted-foreground">Zones</div>
           {(zonesQ.data ?? []).map((z) => (
             <button key={z.id} onClick={() => selectZone(z)} className="flex w-full items-start gap-2 border-b px-3 py-2 text-left hover:bg-accent">
@@ -688,34 +695,26 @@ function CoveragePage() {
             </button>
           ))}
         </aside>
-        <main className="relative flex-1">
+        <main className="relative flex-1 min-w-0">
           {error && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80 p-6 text-center text-sm text-destructive">{error}</div>}
           {!ready && !error && <div className="absolute inset-0 z-10 grid place-items-center bg-background/60"><Loader2 className="h-6 w-6 animate-spin" /></div>}
           <div ref={ref} className="h-full w-full" />
-          <div className="absolute bottom-3 left-3 rounded-md border bg-card/95 p-2 text-[11px] shadow">
-            <div className="mb-1 font-semibold">Heat Map</div>
-            <Legend color="#22c55e" label="Daily Shine + Premium" />
-            <Legend color="#3b82f6" label="Daily Shine only" />
-            <Legend color="#f97316" label="Premium only" />
-            <Legend color="#9ca3af" label="No services" />
-            <Legend color="#dc2626" label="Paused" />
-            <div className="mt-2 border-t pt-1 text-muted-foreground">
-              Boundary rule: points on an edge or vertex count as <b>inside</b> (serviceable).
-            </div>
+          <div className="pointer-events-none absolute bottom-2 left-2 rounded-md border bg-card/95 px-2 py-1 text-[10px] text-muted-foreground shadow">
+            Boundary rule: edge/vertex points count as <b>inside</b>.
           </div>
         </main>
+        <ZoneEditor
+          zone={editing}
+          dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
+          onClose={() => setEditing(null)}
+          onChange={setEditing}
+          onSave={save}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onToggleStatus={onToggleStatus}
+          onSimulate={(id) => setSimZoneId(id)}
+        />
       </div>
-      <ZoneEditor
-        zone={editing}
-        dashRow={editing?.id ? (dashQ.data ?? []).find((r) => r.zone_id === editing.id) ?? null : null}
-        onClose={() => setEditing(null)}
-        onChange={setEditing}
-        onSave={save}
-        onDelete={onDelete}
-        onDuplicate={onDuplicate}
-        onToggleStatus={onToggleStatus}
-        onSimulate={(id) => setSimZoneId(id)}
-      />
       <OperationsSheet view={opsView} onClose={() => setOpsView(null)} zones={zonesQ.data ?? []} />
       <SimulateDialog zoneId={simZoneId} onClose={() => setSimZoneId(null)} />
     </div>
@@ -777,10 +776,7 @@ function ZoneEditor({ zone, dashRow, onClose, onChange, onSave, onDelete, onDupl
 
   return (
     <aside
-      className="pointer-events-auto absolute inset-y-0 right-0 z-20 flex w-[380px] max-w-[92vw] flex-col border-l bg-card shadow-2xl"
-      // Prevent map drag/click from being swallowed only inside this panel.
-      onMouseDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
+      className="flex w-[360px] max-w-[92vw] shrink-0 flex-col border-l bg-card shadow-xl"
     >
       <div className="flex items-center gap-2 border-b px-3 py-2">
         {isExisting ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
