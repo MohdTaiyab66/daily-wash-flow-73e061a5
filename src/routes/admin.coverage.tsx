@@ -687,7 +687,7 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
               <Button variant="outline" size="sm" onClick={() => onToggleStatus(zone as Zone)}>
                 {zone.status === "active" ? <><Pause className="mr-1 h-4 w-4" />Pause</> : <><Play className="mr-1 h-4 w-4" />Resume</>}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => onSimulate(zone.id!)}><FlaskConical className="mr-1 h-4 w-4" />Simulate</Button>
+              
               <Button variant="outline" size="sm" onClick={() => onDuplicate(zone.id!)}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>
               <Button variant="destructive" size="sm" onClick={() => onDelete(zone.id!)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
             </>
