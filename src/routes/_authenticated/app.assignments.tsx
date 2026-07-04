@@ -305,14 +305,15 @@ function AssignmentsPage() {
         </div>
       </Card>
 
-      {/* Duration slider */}
+      {/* Duration slider — working days (Mondays are the weekly off) */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Assignment duration</p>
-          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
+          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">Working Days</span></p>
         </div>
         <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays}</span><span>{maxDays}</span></div>
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} Working Days</span><span>{maxDays} Working Days</span></div>
+        <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s are the weekly off. Duration counts only actual service days.</p>
       </Card>
 
       {/* Today's plan */}
