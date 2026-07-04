@@ -217,7 +217,7 @@ function CoveragePage() {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   // Overlay cache: id → { overlay, signature, listeners, editListeners }
-  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" | "radius" }>>(new Map());
+  const overlaysRef = useRef<Map<string, { overlay: any; sig: string; listeners: any[]; editListeners: any[]; type: "polygon" }>>(new Map());
   const drawingMgrRef = useRef<any>(null);
   const expansionMarkersRef = useRef<any[]>([]);
   const boundsRef = useRef<any>(null);
