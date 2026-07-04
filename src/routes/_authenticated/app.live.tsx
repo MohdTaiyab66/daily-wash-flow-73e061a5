@@ -73,9 +73,11 @@ function RoutePage() {
     },
   });
 
-  const total = services?.length ?? 0;
-  const doneList = (services ?? []).filter((s) => s.status === "completed" || s.status === "unavailable");
-  const completedCount = (services ?? []).filter((s) => s.status === "completed").length;
+  // Hide services already covered by a professional booking — the pro detailer performs both.
+  const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
+  const total = visibleServices.length;
+  const doneList = visibleServices.filter((s) => s.status === "completed" || s.status === "unavailable");
+  const completedCount = visibleServices.filter((s) => s.status === "completed").length;
   const done = doneList.length;
   const remaining = total - done;
   const isEndOfDay = total > 0 && remaining === 0;
@@ -103,7 +105,7 @@ function RoutePage() {
     routeVisible = nowMins < cutoffMins;
   }
 
-  const pendingRaw = (services ?? []).filter((s) => s.status !== "completed" && s.status !== "unavailable");
+  const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
   const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
   const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
