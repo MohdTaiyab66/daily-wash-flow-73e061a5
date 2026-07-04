@@ -813,7 +813,7 @@ export const adminAddCustomerToAssignment = createServerFn({ method: "POST" }).m
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: a } = await supabaseAdmin
       .from("assignments")
-      .select("id,partner_id,start_date,end_date,rate_per_car")
+      .select("id,partner_id,start_date,end_date,rate_per_car,expected_start_time")
       .eq("id", data.assignment_id)
       .maybeSingle();
     if (!a) throw new Error("Assignment not found");
@@ -831,11 +831,20 @@ export const adminAddCustomerToAssignment = createServerFn({ method: "POST" }).m
       .eq("id", data.customer_id)
       .maybeSingle();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Merge start point: today unless today's shift has already started (IST) —
+    // in that case, begin from tomorrow so the partner isn't asked to add a stop mid-run.
+    const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const todayIST = new Date(nowIST); todayIST.setHours(0, 0, 0, 0);
+    const shiftHHMM = String((a as any).expected_start_time ?? "07:00").slice(0, 5);
+    const [sh, sm] = shiftHHMM.split(":").map((x) => parseInt(x, 10) || 0);
+    const shiftStart = new Date(todayIST); shiftStart.setHours(sh, sm, 0, 0);
+    const startFromTomorrow = nowIST >= shiftStart;
+    const effectiveStart = new Date(todayIST);
+    if (startFromTomorrow) effectiveStart.setDate(effectiveStart.getDate() + 1);
+
     const startDate = new Date((a as any).start_date);
     const endDate = new Date((a as any).end_date);
-    const cursor = startDate > today ? startDate : today;
+    const cursor = startDate > effectiveStart ? startDate : effectiveStart;
 
     const rows: any[] = [];
     for (let d = new Date(cursor); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -855,7 +864,7 @@ export const adminAddCustomerToAssignment = createServerFn({ method: "POST" }).m
       const { error } = await (supabaseAdmin.from("services") as any).insert(rows);
       if (error) throw new Error(error.message);
     }
-    return { ok: true, added: rows.length };
+    return { ok: true, added: rows.length, starts_on: rows[0]?.scheduled_date ?? null };
   });
 
 export const adminRemoveCustomerFromAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
