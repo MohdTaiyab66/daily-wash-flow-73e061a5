@@ -75,6 +75,7 @@ function AssignmentsPage() {
         "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
         "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
         "avg_bike_mileage_kmpl", "fuel_price_per_litre", "fuel_calc_enabled",
+        "assignment_min_days", "assignment_max_days", "assignment_default_days",
       ]);
       const m: Record<string, any> = {};
       (data ?? []).forEach((s: any) => (m[s.key] = s.value));
@@ -93,6 +94,9 @@ function AssignmentsPage() {
         fuelEnabled: m.fuel_calc_enabled !== false,
         startRules: rules,
         weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
+        minDays: Math.max(1, Number(m.assignment_min_days ?? 7)),
+        maxDays: Math.max(1, Number(m.assignment_max_days ?? 90)),
+        defaultDays: Math.max(1, Number(m.assignment_default_days ?? 30)),
       };
     },
   });
@@ -113,13 +117,25 @@ function AssignmentsPage() {
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
-  const [hours, setHours] = useState(4);
-  const [duration, setDuration] = useState(15);
+  const minDays = settings?.minDays ?? 7;
+  const maxDays = settings?.maxDays ?? 90;
+  const defaultDays = settings?.defaultDays ?? 30;
 
-  // Keep hours within admin bounds when settings change
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(defaultDays);
+
+  // Keep hours + duration within admin bounds when settings change
   useEffect(() => {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
+  useEffect(() => {
+    setDuration((d) => {
+      // If user hasn't nudged the slider, snap to admin default; otherwise clamp.
+      if (d === 15 || d < minDays || d > maxDays) return Math.min(maxDays, Math.max(minDays, defaultDays));
+      return d;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minDays, maxDays, defaultDays]);
 
   const cars = useMemo(() => {
     const raw = Math.round(hours * carsPerHour);
@@ -295,8 +311,8 @@ function AssignmentsPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Assignment duration</p>
           <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">days</span></p>
         </div>
-        <Slider value={[duration]} min={7} max={30} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>7</span><span>30</span></div>
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays}</span><span>{maxDays}</span></div>
       </Card>
 
       {/* Today's plan */}

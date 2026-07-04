@@ -181,6 +181,7 @@ export type Database = {
           id: string
           last_modified_at: string | null
           modification_count: number
+          original_duration_days: number | null
           partner_id: string
           rate_per_car: number
           route_visibility_hours: number | null
@@ -209,6 +210,7 @@ export type Database = {
           id?: string
           last_modified_at?: string | null
           modification_count?: number
+          original_duration_days?: number | null
           partner_id: string
           rate_per_car?: number
           route_visibility_hours?: number | null
@@ -237,6 +239,7 @@ export type Database = {
           id?: string
           last_modified_at?: string | null
           modification_count?: number
+          original_duration_days?: number | null
           partner_id?: string
           rate_per_car?: number
           route_visibility_hours?: number | null

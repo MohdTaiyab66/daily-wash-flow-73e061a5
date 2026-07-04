@@ -41,13 +41,15 @@ function MyAssignmentPage() {
   }
 
   const a = data.assignment as any;
+  const workingDaysLabel = (n: number) => `${n} Working Day${n === 1 ? "" : "s"}`;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">My assignment</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{a.area} · Day {data.day_progress} of {a.duration_days} · {data.remaining_days ?? 0} days left</p>
-
-      
+      <p className="mt-1 text-sm text-muted-foreground">
+        {a.area} · {workingDaysLabel(data.working_days_completed)} of {workingDaysLabel(data.working_days_total)} completed
+        {a.auto_renew ? " · Auto-renew ON" : ""}
+      </p>
 
       <Card className="mt-5 border-0 bg-foreground p-5 text-background">
         <div className="flex items-start justify-between">
@@ -55,7 +57,7 @@ function MyAssignmentPage() {
             <p className="text-[10px] uppercase tracking-wider text-background/60">Active</p>
             <p className="mt-1 text-3xl font-semibold">{a.target_cars} cars/day</p>
             <p className="mt-0.5 text-xs text-background/60">
-              {a.start_date} → {a.end_date} · {a.working_days} working days
+              {a.start_date} → {a.end_date} · {workingDaysLabel(data.working_days_total)}
             </p>
           </div>
           <Badge className="border-0 bg-primary text-primary-foreground">Active</Badge>
@@ -69,10 +71,23 @@ function MyAssignmentPage() {
         </div>
       </Card>
 
+      {/* Assignment breakdown — dynamic to any duration */}
+      <Card className="mt-4 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignment</p>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <MiniLight label="Duration" value={workingDaysLabel(data.working_days_total)} />
+          <MiniLight label="Completed" value={workingDaysLabel(data.working_days_completed)} />
+          <MiniLight label="Remaining" value={workingDaysLabel(data.working_days_remaining)} />
+          <MiniLight label="Hours / day" value={`${data.hours_per_day} Hour${data.hours_per_day === 1 ? "" : "s"}`} />
+        </div>
+      </Card>
+
       {/* Today */}
       <Card className="mt-4 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today</p>
         <div className="mt-2 grid grid-cols-2 gap-3">
+          <MiniLight label="Today's customers" value={String(data.todays_customers)} />
+          <MiniLight label="Expected earnings today" value={`₹${data.expected_earnings_today.toLocaleString("en-IN")}`} />
           <MiniLight label="Completed today" value={String(data.completed_today)} />
           <MiniLight label="Remaining today" value={String(data.remaining_today)} />
         </div>
@@ -85,7 +100,7 @@ function MyAssignmentPage() {
         <Tile icon={<Wallet className="h-3.5 w-3.5" />} label="Available payout" value={`₹${data.available_payout.toLocaleString("en-IN")}`} />
         <Tile icon={<Wallet className="h-3.5 w-3.5" />} label="Held" value={`₹${data.held.toLocaleString("en-IN")}`} />
         <Tile icon={<Calendar className="h-3.5 w-3.5" />} label="Next payout" value={data.next_payout_date} />
-        <Tile icon={<Clock className="h-3.5 w-3.5" />} label="Total services" value={String(data.total_cars)} />
+        <Tile icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="Customers assigned" value={String(data.total_cars)} />
       </div>
 
       <Card className="mt-4 p-4">
