@@ -63,8 +63,7 @@ async function loadGoogleMaps(): Promise<void> {
 
 type Zone = {
   id: string; name: string; city: string | null; color: string; priority: number;
-  zone_type: "radius" | "polygon"; status: "active" | "paused" | "coming_soon";
-  center_lat: number | null; center_lng: number | null; radius_m: number | null;
+  zone_type: "polygon"; status: "active" | "paused" | "coming_soon";
   polygon: number[][] | null;
   daily_shine_enabled: boolean; premium_enabled: boolean;
   washing_enabled: boolean; interior_enabled: boolean; exterior_enabled: boolean;
@@ -78,6 +77,36 @@ type Zone = {
   start_time: string; finish_time: string;
   preferred_partner_ids: string[]; backup_partner_ids: string[]; neighbour_expand: boolean;
 };
+
+// Spherical polygon area in km² using the shoelace formula on lat/lng.
+function polygonAreaKm2(pts: number[][] | null | undefined): number {
+  if (!pts || pts.length < 3) return 0;
+  const R = 6371; // km
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[(i + 1) % pts.length];
+    s += ((x2 - x1) * Math.PI / 180) * (2 + Math.sin((y1 * Math.PI) / 180) + Math.sin((y2 * Math.PI) / 180));
+  }
+  return Math.abs((s * R * R) / 2);
+}
+
+// Lucknow locality presets — approximate bounding polygons. Admin can adjust
+// vertices after loading. Coordinates are [lng, lat].
+const LUCKNOW_LOCALITIES: Array<{ name: string; polygon: number[][] }> = [
+  { name: "Gomti Nagar",   polygon: [[80.980, 26.840], [81.030, 26.840], [81.030, 26.870], [80.980, 26.870]] },
+  { name: "Indira Nagar",  polygon: [[80.970, 26.870], [81.020, 26.870], [81.020, 26.900], [80.970, 26.900]] },
+  { name: "Aliganj",       polygon: [[80.920, 26.880], [80.960, 26.880], [80.960, 26.910], [80.920, 26.910]] },
+  { name: "Jankipuram",    polygon: [[80.910, 26.910], [80.960, 26.910], [80.960, 26.945], [80.910, 26.945]] },
+  { name: "Hazratganj",    polygon: [[80.935, 26.845], [80.960, 26.845], [80.960, 26.865], [80.935, 26.865]] },
+  { name: "Mahanagar",     polygon: [[80.940, 26.875], [80.975, 26.875], [80.975, 26.900], [80.940, 26.900]] },
+  { name: "Ashiyana",      polygon: [[80.895, 26.795], [80.935, 26.795], [80.935, 26.825], [80.895, 26.825]] },
+  { name: "Alambagh",      polygon: [[80.885, 26.810], [80.920, 26.810], [80.920, 26.840], [80.885, 26.840]] },
+  { name: "Chinhat",       polygon: [[81.020, 26.855], [81.060, 26.855], [81.060, 26.885], [81.020, 26.885]] },
+  { name: "Rajajipuram",   polygon: [[80.870, 26.840], [80.905, 26.840], [80.905, 26.870], [80.870, 26.870]] },
+  { name: "Vikas Nagar",   polygon: [[80.910, 26.895], [80.945, 26.895], [80.945, 26.920], [80.910, 26.920]] },
+  { name: "Kaiserbagh",    polygon: [[80.915, 26.855], [80.940, 26.855], [80.940, 26.875], [80.915, 26.875]] },
+];
 
 const SERVICE_FLAGS: Array<{ key: keyof Zone; label: string }> = [
   { key: "daily_shine_enabled", label: "Daily Shine Subscription" },
