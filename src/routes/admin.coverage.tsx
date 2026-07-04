@@ -23,20 +23,42 @@ declare global {
   }
 }
 
-function loadGoogleMaps(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.maps?.drawing) return Promise.resolve();
-  if (window.__lovableMapReady && window.google?.maps?.drawing) return window.__lovableMapReady;
+async function loadGoogleMaps(): Promise<void> {
+  if (typeof window === "undefined") return;
+  // Already fully loaded with drawing lib
+  if (window.google?.maps?.drawing && window.google?.maps?.geometry) return;
+  // Base API loaded (e.g. by LiveMap) without drawing — pull in additional libraries dynamically.
+  if (window.google?.maps?.importLibrary) {
+    await Promise.all([
+      window.google.maps.importLibrary("drawing"),
+      window.google.maps.importLibrary("geometry"),
+      window.google.maps.importLibrary("maps"),
+    ]);
+    return;
+  }
+  // Wait for an in-flight base load then import libraries
+  if (window.__lovableMapReady) {
+    await window.__lovableMapReady;
+    if (window.google?.maps?.importLibrary) {
+      await Promise.all([
+        window.google.maps.importLibrary("drawing"),
+        window.google.maps.importLibrary("geometry"),
+      ]);
+    }
+    return;
+  }
+  // Cold load — include drawing + geometry up front.
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
-  if (!key) return Promise.reject(new Error("Google Maps key missing"));
-  window.__lovableMapReady = new Promise<void>((resolve) => {
+  if (!key) throw new Error("Google Maps key missing");
+  window.__lovableMapReady = new Promise<void>((resolve, reject) => {
     window.__initLovableMap = () => resolve();
     const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap&libraries=geometry,drawing`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap&libraries=geometry,drawing&v=weekly`;
     s.async = true;
+    s.onerror = () => reject(new Error("Failed to load Google Maps"));
     document.head.appendChild(s);
   });
-  return window.__lovableMapReady;
+  await window.__lovableMapReady;
 }
 
 type Zone = {
