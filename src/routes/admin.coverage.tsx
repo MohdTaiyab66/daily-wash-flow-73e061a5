@@ -256,6 +256,7 @@ function CoveragePage() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Zone> | null>(null);
+  const [draftSeed, setDraftSeed] = useState(0);
   const [opsView, setOpsView] = useState<null | "dashboard" | "calendar" | "alerts" | "history">(null);
   const [simZoneId, setSimZoneId] = useState<string | null>(null);
 
@@ -369,7 +370,11 @@ function CoveragePage() {
           }
           const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload: { id: z.id, polygon: pts } });
           if (error) toast.error(error.message);
-          else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+          else {
+            setEditing((current) => current?.id === z.id ? { ...current, polygon: pts } : current);
+            qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+            qc.invalidateQueries({ queryKey: ["zone-dashboard"] });
+          }
         },
       });
       if (built) { built.sig = sig; overlaysRef.current.set(z.id, built); }
@@ -434,7 +439,7 @@ function CoveragePage() {
       draftOverlayRef.current?.overlay.setMap(null);
       draftOverlayRef.current = null;
     };
-  }, [ready, editing?.id, editing?.polygon, editing?.color, editing?.status]);
+  }, [ready, editing?.id, draftSeed, editing?.color, editing?.status]);
 
 
   // expansion request pins
@@ -456,11 +461,13 @@ function CoveragePage() {
 
   // Preset a new polygon zone from a Lucknow locality template.
   const startFromLocality = (loc: { name: string; polygon: number[][] }) => {
+    drawingSessionRef.current?.cleanup();
     if (mapRef.current && window.google?.maps) {
       const b = new window.google.maps.LatLngBounds();
       for (const [lng, lat] of loc.polygon) b.extend({ lat, lng });
       mapRef.current.fitBounds(b);
     }
+    setDraftSeed((v) => v + 1);
     setEditing({
       zone_type: "polygon", polygon: loc.polygon,
       name: `Lucknow – ${loc.name}`, city: "Lucknow",
@@ -545,6 +552,7 @@ function CoveragePage() {
         roof_cleaning_enabled: true, seat_cleaning_enabled: true,
         corporate_fleet_enabled: false, emergency_enabled: true,
       } as Partial<Zone>);
+      setDraftSeed((v) => v + 1);
       toast.success("Polygon captured. Adjust vertices, name it, then save.");
     };
     listeners.push(map.addListener("click", (e: any) => {
