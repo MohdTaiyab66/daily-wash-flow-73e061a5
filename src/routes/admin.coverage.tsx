@@ -186,6 +186,14 @@ function polygonToPath(pts: number[][]) {
   return pts.map((p) => ({ lat: p[1], lng: p[0] }));
 }
 
+function fitMapToPolygon(map: any, pts: number[][] | null | undefined) {
+  const clean = cleanPolygonPoints(pts);
+  if (!map || !window.google?.maps || clean.length === 0) return;
+  const b = new window.google.maps.LatLngBounds();
+  for (const [lng, lat] of clean) b.extend({ lat, lng });
+  map.fitBounds(b);
+}
+
 // Bbox of a polygon in [minLat, minLng, maxLat, maxLng].
 type Bbox = [number, number, number, number];
 function polygonBbox(pts: number[][]): Bbox {
@@ -360,7 +368,11 @@ function CoveragePage() {
       }
       const built = buildOverlay(z, map, {
         editable: selectedId === z.id,
-        onClick: () => setEditing(z),
+        onClick: () => {
+          drawingSessionRef.current?.cleanup();
+          setEditing(z);
+          fitMapToPolygon(mapRef.current, z.polygon);
+        },
         onEditCommit: async (pts) => {
           if (pts.length < 3) return;
           if (isSelfIntersecting(pts)) {
@@ -462,11 +474,7 @@ function CoveragePage() {
   // Preset a new polygon zone from a Lucknow locality template.
   const startFromLocality = (loc: { name: string; polygon: number[][] }) => {
     drawingSessionRef.current?.cleanup();
-    if (mapRef.current && window.google?.maps) {
-      const b = new window.google.maps.LatLngBounds();
-      for (const [lng, lat] of loc.polygon) b.extend({ lat, lng });
-      mapRef.current.fitBounds(b);
-    }
+    fitMapToPolygon(mapRef.current, loc.polygon);
     setDraftSeed((v) => v + 1);
     setEditing({
       zone_type: "polygon", polygon: loc.polygon,
@@ -478,6 +486,12 @@ function CoveragePage() {
       roof_cleaning_enabled: true, seat_cleaning_enabled: true,
       corporate_fleet_enabled: false, emergency_enabled: true,
     } as Partial<Zone>);
+  };
+
+  const selectZone = (z: Zone) => {
+    drawingSessionRef.current?.cleanup();
+    setEditing(z);
+    fitMapToPolygon(mapRef.current, z.polygon);
   };
 
 
@@ -588,7 +602,13 @@ function CoveragePage() {
     await qc.invalidateQueries({ queryKey: ["zone-dashboard"] });
     if (savedId) {
       const { data: saved } = await (supabase as any).from("coverage_zones").select("*").eq("id", savedId).single();
-      if (saved) setEditing(saved as Zone);
+      if (saved) {
+        setEditing(saved as Zone);
+        fitMapToPolygon(mapRef.current, (saved as Zone).polygon);
+      } else {
+        setEditing({ ...payload, id: savedId });
+        fitMapToPolygon(mapRef.current, polygon);
+      }
     }
   };
 
@@ -646,7 +666,7 @@ function CoveragePage() {
         <aside className="w-80 shrink-0 overflow-y-auto border-r bg-card">
           <div className="p-3 text-xs font-semibold uppercase text-muted-foreground">Zones</div>
           {(zonesQ.data ?? []).map((z) => (
-            <button key={z.id} onClick={() => setEditing(z)} className="flex w-full items-start gap-2 border-b px-3 py-2 text-left hover:bg-accent">
+            <button key={z.id} onClick={() => selectZone(z)} className="flex w-full items-start gap-2 border-b px-3 py-2 text-left hover:bg-accent">
               <span className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: heatColor(z) }} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
