@@ -587,11 +587,10 @@ function ZoneEditor({ zone, onClose, onChange, onSave, onDelete, onDuplicate, on
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
-          {zone.zone_type === "polygon" && (
-            <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
-              <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
-            </div>
-          )}
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-[11px] text-blue-900">
+            <b>Boundary rule:</b> customer GPS points on a polygon edge or vertex are treated as <b>inside</b> this zone (serviceable). The same rule applies to booking, partner assignment, and Daily Shine routing.
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Zone Name</Label>
