@@ -235,6 +235,11 @@ function RoutePage() {
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {v?.registration_number}
                       </p>
+                      {(c?.service_required_before || c?.preferred_time) && (
+                        <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          🕒 Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
