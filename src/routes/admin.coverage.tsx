@@ -314,7 +314,7 @@ function CoveragePage() {
           else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
         },
       });
-      if (built) overlaysRef.current.set(z.id, built);
+      if (built) { built.sig = sig; overlaysRef.current.set(z.id, built); }
     }
     // Remove overlays for zones that no longer exist.
     for (const [id, entry] of overlaysRef.current) {
