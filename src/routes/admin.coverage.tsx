@@ -285,6 +285,10 @@ function CoveragePage() {
         toast.error("Polygon needs at least 3 vertices.");
         return;
       }
+      if (isSelfIntersecting(pts)) {
+        toast.error("Polygon edges cross — redraw without self-intersections.");
+        return;
+      }
       setEditing({
         zone_type: "polygon", polygon: pts,
         name: "", color: "#3b82f6", priority: 10, status: "active",
