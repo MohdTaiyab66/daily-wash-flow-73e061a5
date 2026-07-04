@@ -737,7 +737,7 @@ function ZoneEditor({ zone, dashRow, onClose, onChange, onSave, onDelete, onDupl
   );
 }
 
-function StatCell({ label, value }: { label: string; value: React.ReactNode }) {
+function StatCell({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded border bg-background px-1.5 py-1">
       <div className="text-[9px] uppercase text-muted-foreground">{label}</div>
