@@ -154,10 +154,23 @@ function CoveragePage() {
       const opts = { strokeColor: z.color, strokeWeight: 2, fillColor: fill, fillOpacity: 0.25, clickable: true };
       let ov: any;
       if (z.zone_type === "radius" && z.center_lat != null && z.center_lng != null && z.radius_m) {
-        ov = new window.google.maps.Circle({ ...opts, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map });
+        ov = new window.google.maps.Circle({ ...opts, center: { lat: z.center_lat, lng: z.center_lng }, radius: z.radius_m, map, editable: false });
       } else if (z.zone_type === "polygon" && Array.isArray(z.polygon)) {
         const path = z.polygon.map((p) => ({ lat: p[1], lng: p[0] }));
-        ov = new window.google.maps.Polygon({ ...opts, paths: path, map });
+        ov = new window.google.maps.Polygon({ ...opts, paths: path, map, editable: true, draggable: false });
+        const commit = async () => {
+          const p = ov.getPath();
+          const pts: number[][] = [];
+          for (let i = 0; i < p.getLength(); i++) { const v = p.getAt(i); pts.push([v.lng(), v.lat()]); }
+          if (pts.length < 3) return;
+          const { error } = await (supabase as any).rpc("admin_zone_upsert", { payload: { id: z.id, polygon: pts } });
+          if (error) toast.error(error.message);
+          else qc.invalidateQueries({ queryKey: ["coverage-zones"] });
+        };
+        const path0 = ov.getPath();
+        window.google.maps.event.addListener(path0, "set_at", commit);
+        window.google.maps.event.addListener(path0, "insert_at", commit);
+        window.google.maps.event.addListener(path0, "remove_at", commit);
       }
       if (ov) {
         ov.addListener("click", () => setEditing(z));

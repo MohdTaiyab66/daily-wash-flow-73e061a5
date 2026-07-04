@@ -213,19 +213,23 @@ function ServiceDetail() {
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
-    // Coverage Zone validation (GPS-based)
-    try {
+    // Coverage Zone validation (GPS-based, server-side, fail-closed).
+    // Coverage Manager is the single source of truth for serviceability.
+    {
       let geo: any = {};
       try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
-      if (geo.lat != null && geo.lng != null) {
-        const { fetchAreaAvailability, isServiceAllowed } = await import("@/lib/area-availability");
-        const av = await fetchAreaAvailability({ lat: geo.lat, lng: geo.lng });
-        if (!av.matched || !isServiceAllowed(service.slug, av)) {
-          fail("This service isn't available in your area yet.");
-          return;
-        }
+      if (geo.lat == null || geo.lng == null) {
+        fail("We need your location to confirm this area is serviceable. Please set your location and try again.");
+        return;
       }
-    } catch { /* fail-open */ }
+      const { error: covErr } = await supabase.rpc("assert_serviceable", {
+        p_lat: geo.lat, p_lng: geo.lng, p_slug: service.slug,
+      });
+      if (covErr) {
+        fail(covErr.message || "This service isn't available in your area yet.");
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
