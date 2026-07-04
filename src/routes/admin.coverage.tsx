@@ -369,33 +369,25 @@ function CoveragePage() {
     }
   }, [ready, expansionQ.data]);
 
-  const startRadiusDraw = () => {
-    if (!ready) return;
-    if (drawingMgrRef.current) drawingMgrRef.current.setMap(null);
-    const dm = new window.google.maps.drawing.DrawingManager({
-      drawingMode: window.google.maps.drawing.OverlayType.CIRCLE,
-      drawingControl: false,
-      circleOptions: { fillColor: "#3b82f6", fillOpacity: 0.2, strokeColor: "#3b82f6", strokeWeight: 2, editable: true },
-    });
-    dm.setMap(mapRef.current);
-    drawingMgrRef.current = dm;
-    window.google.maps.event.addListenerOnce(dm, "circlecomplete", (circle: any) => {
-      const c = circle.getCenter();
-      const r = circle.getRadius();
-      circle.setMap(null);
-      dm.setMap(null);
-      drawingMgrRef.current = null;
-      setEditing({
-        zone_type: "radius", center_lat: c.lat(), center_lng: c.lng(), radius_m: Math.round(r),
-        name: "", color: "#3b82f6", priority: 10, status: "active",
-        daily_shine_enabled: true, premium_enabled: true,
-        washing_enabled: true, interior_enabled: true, exterior_enabled: true, int_ext_enabled: true,
-        deep_clean_enabled: true, polish_enabled: true, cutter_polish_enabled: true,
-        roof_cleaning_enabled: true, seat_cleaning_enabled: true,
-        corporate_fleet_enabled: false, emergency_enabled: true,
-      } as Partial<Zone>);
-    });
+  // Preset a new polygon zone from a Lucknow locality template.
+  const startFromLocality = (loc: { name: string; polygon: number[][] }) => {
+    if (mapRef.current && window.google?.maps) {
+      const b = new window.google.maps.LatLngBounds();
+      for (const [lng, lat] of loc.polygon) b.extend({ lat, lng });
+      mapRef.current.fitBounds(b);
+    }
+    setEditing({
+      zone_type: "polygon", polygon: loc.polygon,
+      name: `Lucknow – ${loc.name}`, city: "Lucknow",
+      color: "#3b82f6", priority: 10, status: "active",
+      daily_shine_enabled: true, premium_enabled: true,
+      washing_enabled: true, interior_enabled: true, exterior_enabled: true, int_ext_enabled: true,
+      deep_clean_enabled: true, polish_enabled: true, cutter_polish_enabled: true,
+      roof_cleaning_enabled: true, seat_cleaning_enabled: true,
+      corporate_fleet_enabled: false, emergency_enabled: true,
+    } as Partial<Zone>);
   };
+
 
   const startPolygonDraw = () => {
     if (!ready) return;
