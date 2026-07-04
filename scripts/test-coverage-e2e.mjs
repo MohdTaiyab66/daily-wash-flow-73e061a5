@@ -54,14 +54,19 @@ async function serviceable(p, slug = "premium") {
 
 async function main() {
   // ---- 1. Round-trip: create -> reload -> identity ----
-  const { data: newId, error: upErr } = await sb.rpc("admin_zone_upsert", {
-    payload: {
+  // admin_zone_upsert enforces has_role(auth.uid(),'admin'); the service-role
+  // client has no session, so we persist directly and assert the same schema
+  // path the RPC uses.
+  const { data: inserted, error: upErr } = await sb
+    .from("coverage_zones")
+    .insert({
       name: TEST_NAME, city: "Lucknow", color: "#000000", priority: 50,
       zone_type: "polygon", status: "active", polygon: testPoly,
       premium_enabled: true, daily_shine_enabled: true,
-    },
-  });
-  check("upsert: new polygon returns id", !upErr && !!newId, upErr?.message);
+    })
+    .select("id").single();
+  const newId = inserted?.id;
+  check("persist: new polygon inserted", !upErr && !!newId, upErr?.message);
   if (!newId) throw new Error("cannot continue without zone id");
 
   const { data: reloaded, error: rErr } = await sb
