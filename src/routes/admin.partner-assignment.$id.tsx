@@ -143,6 +143,7 @@ function PartnerAssignmentPage() {
                   <option value="true">On (extend by default duration)</option>
                 </select>
               </Field>
+            </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <Button onClick={() => updateMut.mutate(form)} disabled={updateMut.isPending || Object.keys(form).length === 0}>
