@@ -12,6 +12,7 @@ import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
+import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { traceVehicle } from "@/lib/vehicle-trace";
 
@@ -325,6 +326,12 @@ function MyPlanPage() {
 
           {/* Plan inclusions (dynamic, admin-editable) */}
           <PlanInclusionsCard planSlug={activePlanSlug} />
+
+          {/* Per-vehicle remaining benefits */}
+          <div className="mt-4">
+            <PlanBalanceCard vehicleId={selectedVehicleId} />
+          </div>
+
 
 
 
@@ -702,7 +709,7 @@ function ScheduleWashDialog({
           while (cursor.getDay() !== weekday) cursor.setDate(cursor.getDate() + 1);
           for (let i = 0; i < occurrences; i++) {
             if (cursor.getDay() !== 1) {
-              const { data: reqId, error } = await (supabase as any).rpc("create_addon_request", {
+              const { data: res, error } = await (supabase as any).rpc("create_addon_request", {
                 p_subscription_id: subRow.id,
                 p_service_id: service.id,
                 p_preferred_date: cursor.toISOString().slice(0, 10),
@@ -711,16 +718,18 @@ function ScheduleWashDialog({
                 p_vehicle_id: vehicle.id,
               });
               if (error) throw error;
+              const reqId: string | null = res?.addon_request_id ?? null;
               if (reqId) {
                 ids.push(reqId);
-                traceVehicle("create_addon", { addon_request_id: reqId, vehicle_id: vehicle.id, details: { service_slug: service.slug, date: cursor.toISOString().slice(0, 10), slot } });
+                traceVehicle("create_addon", { addon_request_id: reqId, vehicle_id: vehicle.id, details: { service_slug: service.slug, date: cursor.toISOString().slice(0, 10), slot, paid: res?.paid, entitlement: res?.entitlement } });
               }
             }
             cursor.setDate(cursor.getDate() + 7);
           }
           toast.success(`Sent ${ids.length} requests to admin · you'll be notified when scheduled`);
+          qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicle.id] });
         } else {
-          const { data: reqId, error } = await (supabase as any).rpc("create_addon_request", {
+          const { data: res, error } = await (supabase as any).rpc("create_addon_request", {
             p_subscription_id: subRow.id,
             p_service_id: service.id,
             p_preferred_date: date,
@@ -729,8 +738,15 @@ function ScheduleWashDialog({
             p_vehicle_id: vehicle.id,
           });
           if (error) throw error;
-          traceVehicle("create_addon", { addon_request_id: reqId ?? null, vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
-          toast.success(`Request sent for ${date} · ${slot} · admin will confirm shortly`);
+          const reqId: string | null = res?.addon_request_id ?? null;
+          const paid = !!res?.paid;
+          traceVehicle("create_addon", { addon_request_id: reqId, vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot, paid, entitlement: res?.entitlement } });
+          if (!paid) {
+            toast.success(`₹0 — included in your Daily Shine plan · ${date} · ${slot}`);
+          } else {
+            toast.success(`Add-on request sent · ${date} · ${slot} · admin will confirm shortly`);
+          }
+          qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicle.id] });
         }
         qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
         qc.invalidateQueries({ queryKey: ["customer-bookings"] });

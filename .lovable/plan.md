@@ -1,89 +1,103 @@
+# Per-Vehicle Subscription Entitlements
 
-## Goal
+Today the system charges every add-on flat rate and has **zero entitlement tracking** — there is no table that says "Vehicle A has 1 Interior left". This plan builds that end-to-end so included benefits are consumed before any payment is requested, scoped strictly per vehicle.
 
-Guarantee — and prove — that every service/premium row references the exact car the customer selected at booking time. Ship an audit UI, hard DB guardrails, an automated multi-car test, and traceable logs on both ends.
+## 1. Data model (new)
 
----
+`subscription_entitlements` (one row per vehicle × benefit type):
+- `subscription_id` (FK, unique per benefit_type)
+- `vehicle_id`, `user_id`, `plan_slug`
+- `benefit_type` enum: `interior`, `exterior_daily`, `exterior_hydrophobic`, `dusting`, `tyre_polish`, `paper_mats`, `fragrance`
+- `total_allocated int`, `consumed int default 0`
+- `cycle_start date`, `cycle_end date` (monthly renewal window)
+- Unique index: `(subscription_id, benefit_type, cycle_start)`
 
-## 1. Database: constraints, triggers, backfill
+`entitlement_ledger` (audit; append-only):
+- `entitlement_id`, `booking_id`, `addon_request_id`, `service_id`
+- `delta int` (usually −1), `reason` text, `actor_user_id`, `created_at`
 
-New migration `20260705170000_vehicle_integrity.sql`:
+Plan → allocation map seeded in migration for `daily-shine`:
+`interior=1, exterior_daily=26, exterior_hydrophobic=1, dusting=∞ (nullable=unlimited), tyre_polish=1, paper_mats=1, fragrance=1`.
 
-- **Backfill** existing rows first (before adding the reject trigger, so it doesn't block itself):
-  - `UPDATE services s SET vehicle_id = b.vehicle_id, vehicle_label = <make model reg> FROM bookings b WHERE s.booking_id = b.id AND s.vehicle_id IS DISTINCT FROM b.vehicle_id`.
-  - Same pass for `subscription_addon_requests` and any premium/booking-derived tables that carry a `vehicle_id`.
-- **FK hardening**: `ALTER TABLE public.services ADD CONSTRAINT services_vehicle_fk FOREIGN KEY (vehicle_id) REFERENCES public.customer_vehicles(id)` (via NOT VALID + VALIDATE to avoid locking; skipped if it already matches).
-- **Reject trigger** `tg_services_enforce_booking_vehicle` BEFORE INSERT OR UPDATE OF vehicle_id, booking_id, customer_id ON `public.services`:
-  - If `booking_id` is not null and `NEW.vehicle_id` ≠ `bookings.vehicle_id`, `RAISE EXCEPTION 'vehicle_mismatch: service.vehicle_id % != bookings.vehicle_id %'`.
-  - If `NEW.vehicle_id` is not owned by `NEW.customer_id` in `customer_vehicles`, raise.
-  - Also refresh `vehicle_label` from `customer_vehicles` so labels can never drift.
-- Same trigger shape on `subscription_addon_requests` (compare against the row's own `vehicle_id`/subscription owner).
-- **Audit log table** `public.vehicle_trace_log` (booking_id, service_id, vehicle_id, customer_id, source enum: `customer_schedule|admin_render|activate_booking|create_addon|route_generate|trigger_reject`, payload jsonb, actor uuid, created_at) with GRANTs + RLS (only admins can read via `has_role`).
-- RPC `log_vehicle_trace(p_source, p_booking_id, p_service_id, p_vehicle_id, p_customer_id, p_payload)` — SECURITY DEFINER, callable by `authenticated` — inserts one row.
+**Trigger** on `subscriptions` INSERT / status→active: create/refresh entitlement rows for that vehicle for the current cycle. Renewal date roll creates the next cycle's rows.
 
-## 2. Admin audit screen
+## 2. RPCs (SECURITY DEFINER)
 
-New route `src/routes/admin.vehicle-audit.tsx` (linked from `admin.tsx` sidebar):
+- `get_vehicle_entitlements(p_vehicle_id uuid)` → returns remaining balances the customer UI reads.
+- `try_consume_entitlement(p_vehicle_id, p_benefit_type, p_booking_id, p_addon_request_id)` → atomic: locks the row, checks `consumed < total_allocated` (or unlimited), increments, writes ledger, returns `{consumed: true}` or `{consumed: false, reason}`.
+- `service_slug_to_benefit(slug)` mapping helper.
 
-- Tabs: **All services** and **Mismatches**.
-- Server fn `getVehicleAudit({ scope: 'all'|'mismatch', limit })` in `src/lib/audit.functions.ts` under `requireAdmin`; joins services → bookings → customer_vehicles and returns:
-  - `service_id`, `booking_id`, `scheduled_date`, `customer_name`
-  - `service_vehicle_id`, `booking_vehicle_id`
-  - `service_vehicle_label`, `booking_vehicle_label`, `booking_vehicle_reg`
-  - `mismatch` boolean (either id or label differs)
-- Second server fn `getVehicleTraceLog({ booking_id })` for a drill-in drawer that shows every trace event for a booking chronologically.
-- UI: shadcn Table with a red badge on mismatch rows, filters by date range and customer search, "View trace" opens a Sheet with the log timeline.
+All queries and RPCs scope by `vehicle_id` / `subscription_id`. Never `customer_id` for balances.
 
-## 3. End-to-end trace logging
+## 3. Booking flow rewrite
 
-Add small `traceVehicle(source, payload)` helper in `src/lib/vehicle-trace.ts` that:
-- Console: `console.info("[vehicle-trace]", source, { booking_id, vehicle_id, ... })`.
-- Fire-and-forget calls the `log_vehicle_trace` RPC (skips silently on failure).
+`confirm_customer_booking` (server RPC) becomes:
 
-Instrumentation points:
-- `src/routes/c/_authed/service.$slug.tsx` — before creating the booking and after `activate_paid_booking` returns.
-- `src/routes/c/_authed/subscriptions.tsx` — on `create_addon_request` call.
-- Admin route render: `src/routes/admin.service.$id.tsx` and `admin.customers.$id.tsx` on load (source `admin_render`).
-- DB side: `tg_services_enforce_booking_vehicle` inserts a `trigger_reject` row before raising, and `generate_services_for_queue` inserts a `route_generate` row per service produced.
+```text
+find active subscription for p_vehicle_id  (NOT customer_id)
+if subscription exists AND service maps to a benefit_type:
+    try_consume_entitlement(...)
+    if consumed: booking.amount=0, booking.paid_via='entitlement', skip Razorpay, notify admin+partner
+    else: fall through to paid add-on flow
+else:
+    paid add-on flow (existing)
+```
 
-## 4. Playwright end-to-end test
+Client (`service.$slug.tsx`, `subscriptions.tsx` add-on dialog):
+- Before render, fetch `get_vehicle_entitlements(vehicleId)`.
+- If remaining > 0 for the requested benefit: show "₹0 — included in your Daily Shine plan", hide Razorpay button, single **Confirm** action.
+- If remaining == 0: show "You've used all included Interior Washes" banner + paid add-on card with correct hatch/SUV price and **Continue** → Razorpay.
 
-`scripts/test-vehicle-integrity.mjs` — Playwright script (headless Chromium) that:
+## 4. Admin & partner
 
-1. Uses `supabaseAdmin` (via a small helper script that reads `SUPABASE_*` from env) to seed:
-   - One customer + auth user with a known password.
-   - Three `customer_vehicles`: Maruti Swift, Hyundai Venue, Honda City (distinct regs).
-2. Signs in as the customer in the preview, and for each car:
-   - Opens `/c/subscriptions`, switches the VehicleSelector, books an add-on for a fixed date.
-   - Screenshots to `/tmp/browser/vehicle-integrity/`.
-3. Signs in as an admin user and:
-   - Opens `/admin/vehicle-audit` → asserts the three new bookings appear with `mismatch=false`.
-   - Opens each `/admin/service/<id>` and asserts the visible make/model/reg matches the booked car.
-4. Runs a **negative test**: directly attempts `UPDATE services SET vehicle_id = <other-car>` via service-role SQL — expects the trigger to raise `vehicle_mismatch`.
-5. Exits non-zero on any assertion or unexpected success.
+- Admin booking notification payload already includes `vehicle_id`; extend to include the benefit consumed and remaining balances for that vehicle.
+- Admin customer detail (`admin.customers.$id.tsx`) adds a per-vehicle "Plan balance" card (Interior 0/1, Exterior 12/26, Dusting ∞, etc.).
+- Vehicle-audit page (already built) gets a new "Entitlement" column showing which benefit was consumed.
+- Partner assignment payload is already vehicle-scoped; verify addon_request path also carries only the booked vehicle.
 
-Auth: the script uses env vars `TEST_ADMIN_EMAIL`, `TEST_ADMIN_PASSWORD`, `TEST_CUSTOMER_EMAIL`, `TEST_CUSTOMER_PASSWORD`; on Lovable Cloud it falls back to seeding with `supabaseAdmin.auth.admin.createUser` and signing in with those credentials. Cleanup at end deletes the seeded rows.
+## 5. Notifications
 
-Documented in `docs/TEST_VEHICLE_INTEGRITY.md` with run command.
+Trigger on `try_consume_entitlement` when `consumed == total_allocated`: enqueue customer notification "You've used all included {Benefit} Washes in your Daily Shine plan." Uses existing `customer_notifications` table.
 
----
+## 6. Vehicle-scoped query audit
 
-## Technical details
+Grep + fix every read that lists bookings/subscriptions/services by `customer_id` where a `vehicle_id` filter is needed for display:
+- Admin customer detail
+- Admin route manager
+- Partner "My assignment"
+- Customer "My Plan"
 
-- Files created:
-  - `supabase/migrations/20260705170000_vehicle_integrity.sql`
-  - `src/lib/audit.functions.ts`
-  - `src/lib/vehicle-trace.ts`
-  - `src/routes/admin.vehicle-audit.tsx`
-  - `scripts/test-vehicle-integrity.mjs`
-  - `docs/TEST_VEHICLE_INTEGRITY.md`
-- Files edited:
-  - `src/routes/admin.tsx` (nav entry)
-  - `src/routes/c/_authed/service.$slug.tsx`, `c/_authed/subscriptions.tsx` (trace calls)
-  - `src/routes/admin.service.$id.tsx`, `admin.customers.$id.tsx` (trace on render)
-  - `src/integrations/supabase/types.ts` regenerates after migration approval
-- The reject trigger runs BEFORE INSERT/UPDATE so app-level RPCs (`activate_paid_booking`, `create_addon_request`, `generate_services_for_queue`) that already pass the right vehicle continue to work; any code path that regresses will fail loudly instead of silently mis-labelling.
-- Trace-log RLS: only `authenticated` with `has_role(auth.uid(),'admin')` can SELECT; anyone authenticated can INSERT via the SECURITY DEFINER RPC (never direct table write).
-- Playwright driven via `code--exec` per project browser rules; screenshots viewed to verify.
+Verified list emitted after implementation.
 
-Approve to proceed and I'll ship the migration + files in one pass.
+## 7. Playwright regression (`scripts/test-entitlements.mjs`)
+
+Extends existing multi-car test:
+1. Create customer with Vehicle A (Daily Shine), Vehicle B (Daily Shine), Vehicle C (none).
+2. Book Interior for A → assert ₹0, entitlement A.interior → 0/1, B.interior still 1/1.
+3. Book Interior for A again → assert paid add-on shown, Razorpay invoked.
+4. Book Interior for B → assert ₹0, B.interior → 0/1.
+5. Book anything for C → assert paid.
+6. Assert admin sees Vehicle A on step 2, Vehicle B on step 4 (no bleed).
+
+## Technical notes
+
+- Race safety: `try_consume_entitlement` uses `SELECT ... FOR UPDATE` inside the RPC so concurrent bookings can't double-spend the last credit.
+- Cycle rollover: nightly cron already exists (`renewals`); extend to insert next-cycle entitlement rows when a subscription rolls.
+- Dusting is unlimited in the plan; represent as `total_allocated = NULL` and treat `NULL` as "always consumable".
+- Migration order: (a) create tables/enum, (b) backfill entitlements for existing active subscriptions from `plan_inclusions`, (c) grants + RLS (customer read own, admin all, service_role all; no anon), (d) install trigger + RPCs, (e) alter `confirm_customer_booking`.
+
+## Files
+
+**Create**
+- `supabase/migrations/2026070517xxxx_entitlements.sql`
+- `scripts/test-entitlements.mjs`
+- `src/components/customer/PlanBalanceCard.tsx`
+- `src/lib/entitlements.ts` (client helpers + benefit slug map)
+
+**Modify**
+- `src/routes/c/_authed/service.$slug.tsx` — entitlement check + zero-price flow
+- `src/routes/c/_authed/subscriptions.tsx` — add-on dialog uses entitlement first
+- `src/routes/c/_authed/home.tsx` — show balances per vehicle
+- `src/routes/admin.customers.$id.tsx` — per-vehicle balance card
+- `src/routes/admin.vehicle-audit.tsx` — entitlement column
+- `src/integrations/supabase/types.ts` — regenerated after migration
