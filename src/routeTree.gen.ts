@@ -85,6 +85,7 @@ import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/publ
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
 import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
+import { Route as AuthenticatedAppLeadsOfferIdRouteImport } from './routes/_authenticated/app.leads.$offerId'
 
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
@@ -481,6 +482,12 @@ const AuthenticatedAppServiceIdRoute =
     path: '/service/$id',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppLeadsOfferIdRoute =
+  AuthenticatedAppLeadsOfferIdRouteImport.update({
+    id: '/leads/$offerId',
+    path: '/leads/$offerId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -620,6 +628,7 @@ export interface FileRoutesByTo {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -699,6 +708,7 @@ export interface FileRoutesById {
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -778,6 +788,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app/'
+    | '/app/leads/$offerId'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -852,6 +863,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app'
+    | '/app/leads/$offerId'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -930,6 +942,7 @@ export interface FileRouteTypes {
     | '/c/_authed/vehicles'
     | '/c/location/search'
     | '/_authenticated/app/'
+    | '/_authenticated/app/leads/$offerId'
     | '/_authenticated/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -1500,6 +1513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/leads/$offerId': {
+      id: '/_authenticated/app/leads/$offerId'
+      path: '/leads/$offerId'
+      fullPath: '/app/leads/$offerId'
+      preLoaderRoute: typeof AuthenticatedAppLeadsOfferIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -1515,6 +1535,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppRewardsRoute: typeof AuthenticatedAppRewardsRoute
   AuthenticatedAppTrainingRoute: typeof AuthenticatedAppTrainingRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppLeadsOfferIdRoute: typeof AuthenticatedAppLeadsOfferIdRoute
   AuthenticatedAppServiceIdRoute: typeof AuthenticatedAppServiceIdRoute
 }
 
@@ -1530,6 +1551,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppRewardsRoute: AuthenticatedAppRewardsRoute,
   AuthenticatedAppTrainingRoute: AuthenticatedAppTrainingRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppLeadsOfferIdRoute: AuthenticatedAppLeadsOfferIdRoute,
   AuthenticatedAppServiceIdRoute: AuthenticatedAppServiceIdRoute,
 }
 
