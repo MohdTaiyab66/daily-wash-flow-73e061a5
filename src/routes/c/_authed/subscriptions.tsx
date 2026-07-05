@@ -479,6 +479,7 @@ function MyPlanPage() {
       )}
 
       <ScheduleWashDialog
+        key={scheduleOpen ? (selectedVehicleId ?? "no-vehicle") : "closed"}
         open={scheduleOpen}
         onOpenChange={setScheduleOpen}
         userId={userId}
@@ -615,14 +616,13 @@ function ScheduleWashDialog({
     }
     if (vehQ.data?.length) {
       const stored = localStorage.getItem("uw_customer_vehicle");
-      const hasInitial = !!initialVehicleId && vehQ.data.some((v) => v.id === initialVehicleId);
       const nextVehicleId =
-        hasInitial
+        initialVehicleId && vehQ.data.some((v) => v.id === initialVehicleId)
           ? initialVehicleId
           : stored && vehQ.data.some((v) => v.id === stored)
           ? stored
           : (vehQ.data.find((v) => v.is_default)?.id ?? vehQ.data[0].id);
-      if (hasInitial || !vehicleId || !vehQ.data.some((v) => v.id === vehicleId)) {
+      if (!vehicleId || !vehQ.data.some((v) => v.id === vehicleId)) {
         setVehicleId(nextVehicleId);
         localStorage.setItem("uw_customer_vehicle", nextVehicleId);
       }
