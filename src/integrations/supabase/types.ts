@@ -4156,6 +4156,7 @@ export type Database = {
         Returns: string
       }
       cleanup_old_service_photos: { Args: never; Returns: Json }
+      compute_area_lock_until: { Args: { _partner: string }; Returns: string }
       compute_coverage_alerts: { Args: never; Returns: number }
       confirm_customer_booking: {
         Args: {
