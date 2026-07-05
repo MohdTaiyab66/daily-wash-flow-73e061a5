@@ -80,6 +80,7 @@ import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticate
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
+import { Route as ApiPublicMarketplaceOfferActionRouteImport } from './routes/api/public/marketplace/offer-action'
 import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
@@ -456,6 +457,12 @@ const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CAuthedBookingsRoute,
 } as any)
+const ApiPublicMarketplaceOfferActionRoute =
+  ApiPublicMarketplaceOfferActionRouteImport.update({
+    id: '/api/public/marketplace/offer-action',
+    path: '/api/public/marketplace/offer-action',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksNotificationPushRoute =
   ApiPublicHooksNotificationPushRouteImport.update({
     id: '/api/public/hooks/notification-push',
@@ -608,6 +615,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
+  '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -689,6 +697,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
+  '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
@@ -775,6 +784,7 @@ export interface FileRoutesById {
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
+  '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
@@ -861,6 +871,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
+    | '/api/public/marketplace/offer-action'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -942,6 +953,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
+    | '/api/public/marketplace/offer-action'
     | '/c/bookings/$id'
     | '/c/service/$slug'
     | '/c/vehicles/add'
@@ -1027,6 +1039,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
+    | '/api/public/marketplace/offer-action'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
     | '/c/_authed/vehicles_/add'
@@ -1054,6 +1067,7 @@ export interface RootRouteChildren {
   ApiPublicCronMarketplaceTickRoute: typeof ApiPublicCronMarketplaceTickRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
   ApiPublicHooksNotificationPushRoute: typeof ApiPublicHooksNotificationPushRoute
+  ApiPublicMarketplaceOfferActionRoute: typeof ApiPublicMarketplaceOfferActionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1555,6 +1569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsIdRouteImport
       parentRoute: typeof CAuthedBookingsRoute
     }
+    '/api/public/marketplace/offer-action': {
+      id: '/api/public/marketplace/offer-action'
+      path: '/api/public/marketplace/offer-action'
+      fullPath: '/api/public/marketplace/offer-action'
+      preLoaderRoute: typeof ApiPublicMarketplaceOfferActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/notification-push': {
       id: '/api/public/hooks/notification-push'
       path: '/api/public/hooks/notification-push'
@@ -1864,6 +1885,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronMarketplaceTickRoute: ApiPublicCronMarketplaceTickRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
   ApiPublicHooksNotificationPushRoute: ApiPublicHooksNotificationPushRoute,
+  ApiPublicMarketplaceOfferActionRoute: ApiPublicMarketplaceOfferActionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
