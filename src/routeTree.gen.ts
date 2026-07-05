@@ -36,6 +36,7 @@ import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMarketplaceSettingsRouteImport } from './routes/admin.marketplace-settings'
+import { Route as AdminMarketplaceLiveRouteImport } from './routes/admin.marketplace-live'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
@@ -227,6 +228,11 @@ const AdminMarketplaceSettingsRoute =
     path: '/marketplace-settings',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminMarketplaceLiveRoute = AdminMarketplaceLiveRouteImport.update({
+  id: '/marketplace-live',
+  path: '/marketplace-live',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
   id: '/marketplace',
   path: '/marketplace',
@@ -542,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-live': typeof AdminMarketplaceLiveRoute
   '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
@@ -623,6 +630,7 @@ export interface FileRoutesByTo {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-live': typeof AdminMarketplaceLiveRoute
   '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
@@ -707,6 +715,7 @@ export interface FileRoutesById {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-live': typeof AdminMarketplaceLiveRoute
   '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
@@ -792,6 +801,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-live'
     | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
@@ -873,6 +883,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-live'
     | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
@@ -956,6 +967,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-live'
     | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
@@ -1233,6 +1245,13 @@ declare module '@tanstack/react-router' {
       path: '/marketplace-settings'
       fullPath: '/admin/marketplace-settings'
       preLoaderRoute: typeof AdminMarketplaceSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace-live': {
+      id: '/admin/marketplace-live'
+      path: '/marketplace-live'
+      fullPath: '/admin/marketplace-live'
+      preLoaderRoute: typeof AdminMarketplaceLiveRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketplace': {
@@ -1706,6 +1725,7 @@ interface AdminRouteChildren {
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
+  AdminMarketplaceLiveRoute: typeof AdminMarketplaceLiveRoute
   AdminMarketplaceSettingsRoute: typeof AdminMarketplaceSettingsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
@@ -1744,6 +1764,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
+  AdminMarketplaceLiveRoute: AdminMarketplaceLiveRoute,
   AdminMarketplaceSettingsRoute: AdminMarketplaceSettingsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
