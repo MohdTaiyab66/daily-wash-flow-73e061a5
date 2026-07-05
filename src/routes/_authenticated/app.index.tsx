@@ -104,6 +104,10 @@ function HomePage() {
         </div>
       </header>
 
+      <div className="mt-5">
+        <MarketplaceOffersList />
+      </div>
+
       {/* Assignment summary card */}
       {assignment ? (
         <Card className="mt-5 border-0 bg-foreground p-5 text-background">
