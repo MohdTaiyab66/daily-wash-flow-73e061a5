@@ -27,7 +27,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     companion object {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
-        const val CHANNEL_OFFERS = "offers_v2"
+        const val CHANNEL_OFFERS = "offers_v3"
         const val CHANNEL_GENERAL = "general"
         const val NOTIF_ID_OFFER = 42001
         const val ACTION_ACCEPT = "com.urbanwash.push.ACCEPT"
@@ -45,12 +45,17 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: return
-        if (type != "marketplace_offer") {
-            postGeneric(msg)
-            return
+        when (type) {
+            "marketplace_offer" -> {
+                ensureOffersChannel()
+                postOffer(data, isUpdate = false)
+            }
+            "marketplace_offer_update" -> {
+                ensureOffersChannel()
+                postOffer(data, isUpdate = true)
+            }
+            else -> postGeneric(msg)
         }
-        ensureOffersChannel()
-        postOffer(data)
     }
 
     private fun ensureOffersChannel() {
