@@ -88,13 +88,50 @@ function MyPlanPage() {
   };
 
 
-  const bookingsQ = useQuery({
-    queryKey: ["customer-bookings-all", userId],
+  // Vehicle selector: subscription is per-vehicle. All queries below are scoped
+  // to the selected vehicle. Default = first vehicle with an active subscription,
+  // else first vehicle. Selection persists in sessionStorage.
+  const vehiclesQ = useQuery({
+    queryKey: ["customer-vehicles", userId],
     enabled: !!userId,
+    queryFn: async (): Promise<SelectorVehicle[]> => {
+      const { data } = await (supabase as any)
+        .from("customer_vehicles")
+        .select("id, make, model, registration_number, is_default")
+        .order("created_at");
+      return (data ?? []) as SelectorVehicle[];
+    },
+  });
+
+  // Preferred default: the vehicle with an active subscription.
+  const preferredSubQ = useQuery({
+    queryKey: ["preferred-sub-vehicle", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("vehicle_id, status, created_at")
+        .eq("user_id", userId)
+        .in("status", ["active", "assigned", "awaiting_partner_assignment"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data?.vehicle_id as string | null) ?? null;
+    },
+  });
+  const [selectedVehicleId, setSelectedVehicleId] = useSelectedVehicleId(
+    vehiclesQ.data,
+    preferredSubQ.data ?? null,
+  );
+
+  const bookingsQ = useQuery({
+    queryKey: ["customer-bookings-all", userId, selectedVehicleId],
+    enabled: !!userId && !!selectedVehicleId,
     queryFn: async (): Promise<Booking[]> => {
       const { data, error } = await (supabase as any)
         .from("bookings")
-        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, service_catalog:service_id(name, service_type, slug)")
+        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, vehicle_id, service_catalog:service_id(name, service_type, slug)")
+        .eq("vehicle_id", selectedVehicleId)
         .order("scheduled_date", { ascending: false })
         .limit(120);
       if (error) throw error;
