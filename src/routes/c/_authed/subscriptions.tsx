@@ -266,13 +266,19 @@ function MyPlanPage() {
       )}
 
 
-      {activeSub && (
+      {hasVehicles && activeSub && (
         <>
           {/* Active plan hero */}
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wide text-primary">Active plan</p>
+                {vehicleLabel && (
+                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                    <Car className="h-3 w-3" /> {vehicleLabel}
+                    {selectedVehicle?.registration_number ? ` · ${selectedVehicle.registration_number}` : ""}
+                  </p>
+                )}
                 <h2 className="mt-0.5 truncate text-xl font-semibold">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
