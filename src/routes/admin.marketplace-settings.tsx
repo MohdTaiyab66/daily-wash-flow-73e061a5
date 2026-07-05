@@ -71,12 +71,16 @@ function MarketplaceSettingsPage() {
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4 text-xs sm:grid-cols-4">
           <Stat label="Broadcasts (30d)" value={a.total} />
           <Stat label="Assigned" value={a.assigned} />
+          <Stat label="Cancelled" value={a.cancelled ?? 0} />
+          <Stat label="Expired / alert" value={a.expired} />
           <Stat label="Conversion" value={`${a.conversion}%`} />
           <Stat label="Avg accept time" value={`${a.avg_accept_seconds}s`} />
           <Stat label="Avg incentive" value={`₹${a.avg_incentive}`} />
-          <Stat label="Expired / alert" value={a.expired} />
           <Stat label="Round 1 wins" value={a.accepted_by_round[1] ?? 0} />
-          <Stat label="Later rounds" value={a.assigned - (a.accepted_by_round[1] ?? 0)} />
+          <Stat label="Offers accepted" value={a.offers?.accepted ?? 0} />
+          <Stat label="Offers declined" value={a.offers?.declined ?? 0} />
+          <Stat label="Offers expired" value={a.offers?.expired ?? 0} />
+          <Stat label="Offers superseded" value={a.offers?.superseded ?? 0} />
         </div>
       )}
 
