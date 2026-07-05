@@ -534,11 +534,13 @@ function ScheduleWashDialog({
   open,
   onOpenChange,
   userId,
+  initialVehicleId,
   kind = "any",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
+  initialVehicleId: string | null;
   kind?: "any" | "interior" | "exterior" | "dusting";
 }) {
 
@@ -608,7 +610,9 @@ function ScheduleWashDialog({
     if (vehQ.data?.length) {
       const stored = localStorage.getItem("uw_customer_vehicle");
       const nextVehicleId =
-        stored && vehQ.data.some((v) => v.id === stored)
+        initialVehicleId && vehQ.data.some((v) => v.id === initialVehicleId)
+          ? initialVehicleId
+          : stored && vehQ.data.some((v) => v.id === stored)
           ? stored
           : (vehQ.data.find((v) => v.is_default)?.id ?? vehQ.data[0].id);
       if (!vehicleId || !vehQ.data.some((v) => v.id === vehicleId)) {
@@ -620,7 +624,7 @@ function ScheduleWashDialog({
       const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
       setAddressId(def.id);
     }
-  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId]);
+  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId, initialVehicleId]);
 
 
   const service = svcQ.data?.find((s) => s.id === serviceId);
