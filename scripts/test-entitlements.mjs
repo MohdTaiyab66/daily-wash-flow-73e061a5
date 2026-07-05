@@ -5,6 +5,7 @@
 
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { mkdirSync } from "node:fs";
 
 const {
   SUPABASE_URL,
@@ -63,6 +64,13 @@ async function seed(userId) {
     .single();
   if (svcErr) throw svcErr;
 
+  const { data: planService, error: planSvcErr } = await admin
+    .from("service_catalog")
+    .select("id,slug")
+    .eq("slug", "daily-shine")
+    .single();
+  if (planSvcErr) throw planSvcErr;
+
   const { data: addr, error: addrErr } = await admin.from("customer_addresses").insert({
     user_id: userId,
     label: "Home",
@@ -74,11 +82,30 @@ async function seed(userId) {
   }).select("id").single();
   if (addrErr) throw addrErr;
 
-  const subRows = vehicles.slice(0, 2).map((v) => ({
-    booking_id: crypto.randomUUID(),
+  const subBookings = [];
+  for (const v of vehicles.slice(0, 2)) {
+    const { data: booking, error } = await admin.from("bookings").insert({
+      user_id: userId,
+      service_id: planService.id,
+      vehicle_id: v.id,
+      address_id: addr.id,
+      scheduled_date: new Date().toISOString().slice(0, 10),
+      scheduled_time: "Before 10 AM",
+      preferred_before_time: "Before 10 AM",
+      base_amount: 999,
+      total_amount: 999,
+      status: "paid",
+      payment_status: "paid",
+    }).select("id,vehicle_id").single();
+    if (error) throw error;
+    subBookings.push(booking);
+  }
+
+  const subRows = subBookings.map((booking) => ({
+    booking_id: booking.id,
     user_id: userId,
     customer_id: userId,
-    vehicle_id: v.id,
+    vehicle_id: booking.vehicle_id,
     plan_slug: "daily-shine",
     status: "active",
     start_date: new Date().toISOString().slice(0, 10),
@@ -99,7 +126,9 @@ async function main() {
   const user = await ensureUser();
   const { vehicles, service, addr } = await seed(user.id);
 
-  const customer = createClient(SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY, {
+  const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  req("VITE_SUPABASE_PUBLISHABLE_KEY", publishableKey);
+  const customer = createClient(SUPABASE_URL, publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const signIn = await customer.auth.signInWithPassword({ email: TEST_CUSTOMER_EMAIL, password: TEST_CUSTOMER_PASSWORD });
@@ -159,6 +188,7 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 1800 } });
   const page = await context.newPage();
+  mkdirSync("/tmp/browser/entitlements", { recursive: true });
   await page.goto(`${BASE_URL}/c/auth`, { waitUntil: "domcontentloaded" });
   await page.fill('input[type="email"]', TEST_CUSTOMER_EMAIL);
   await page.fill('input[type="password"]', TEST_CUSTOMER_PASSWORD);

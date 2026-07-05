@@ -677,7 +677,8 @@ function ScheduleWashDialog({
     },
   });
   const preview = previewQ.data ?? null;
-  const payable = preview ? Number(preview.payable ?? 0) : catalogPrice;
+  const previewReady = !!preview && !previewQ.isError;
+  const payable = previewReady ? Number(preview.payable ?? 0) : 0;
   const isIncludedBooking = !!preview?.used_entitlement;
   const isExhausted = !!preview?.exhausted;
 
@@ -994,16 +995,16 @@ function ScheduleWashDialog({
 
           <div className="flex items-baseline justify-between rounded-xl bg-accent/40 px-3 py-2">
             <span className="text-xs text-muted-foreground">
-              {previewQ.isLoading ? "Checking plan" : isIncludedBooking ? INCLUDED_PLAN_MESSAGE : "Total · pay after service"}
+              {!previewReady ? "Checking plan" : isIncludedBooking ? INCLUDED_PLAN_MESSAGE : "Total · pay after service"}
             </span>
             <span className="text-base font-semibold">
-              {previewQ.isLoading ? "…" : isIncludedBooking ? "₹0 Payable" : `₹${payable}`}
+              {!previewReady ? "…" : isIncludedBooking ? "₹0 Payable" : `₹${payable}`}
             </span>
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={confirm} disabled={saving || previewQ.isLoading || noVehicles || noAddresses}>
+          <Button onClick={confirm} disabled={saving || !previewReady || noVehicles || noAddresses}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : "Confirm booking"}
           </Button>
         </DialogFooter>

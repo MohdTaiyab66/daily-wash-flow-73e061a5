@@ -248,7 +248,8 @@ function ServiceDetail() {
   const discountAmt = Math.round((subtotal * discountPct) / 100);
   const localTotal = subtotal - discountAmt;
   const preview = previewQ.data ?? null;
-  const previewPayable = preview ? Number(preview.payable ?? 0) : localTotal;
+  const previewReady = !!preview && !previewQ.isError;
+  const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
   const isIncludedBooking = !!preview?.used_entitlement;
   const isEntitlementExhausted = !!preview?.exhausted;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
@@ -544,7 +545,7 @@ function ServiceDetail() {
         </SectionCard>
 
         {/* Add-ons */}
-        {!isIncludedBooking && addonsQ.data && addonsQ.data.length > 0 && (
+        {previewReady && !isIncludedBooking && addonsQ.data && addonsQ.data.length > 0 && (
           <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Tap + to add more">
             <div className="space-y-2">
               {addonsQ.data.map((a) => {
@@ -615,7 +616,7 @@ function ServiceDetail() {
         </SectionCard>
 
         {/* Multi-car discount */}
-        {!isIncludedBooking && <SectionCard
+        {previewReady && !isIncludedBooking && <SectionCard
           icon={<Sparkles className="h-4 w-4" />}
           title="Multi-car discount"
           hint={`${vehicleCount} car${vehicleCount === 1 ? "" : "s"} on account`}
@@ -655,7 +656,7 @@ function ServiceDetail() {
 
         {/* Summary */}
         <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
-          {previewQ.isLoading ? (
+          {!previewReady ? (
             <Row label="Checking plan"><span>…</span></Row>
           ) : isIncludedBooking ? (
             <>
@@ -682,7 +683,7 @@ function ServiceDetail() {
           )}
           <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
             <span className="font-semibold">{isIncludedBooking ? "Payable" : "Total"}</span>
-            <span className="text-lg font-semibold">{previewQ.isLoading ? "…" : `₹${previewPayable}`}</span>
+            <span className="text-lg font-semibold">{!previewReady ? "…" : `₹${previewPayable}`}</span>
           </div>
         </div>
       </div>
@@ -698,7 +699,7 @@ function ServiceDetail() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs text-muted-foreground">Total</div>
-              <div className="text-xl font-semibold">{previewQ.isLoading ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
+              <div className="text-xl font-semibold">{!previewReady ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
               <div className="text-[10px] text-muted-foreground">
                 {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
               </div>
@@ -707,7 +708,7 @@ function ServiceDetail() {
             <Button
               type="button"
               onClick={confirm}
-              disabled={submitting || previewQ.isLoading || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
+              disabled={submitting || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
             >
