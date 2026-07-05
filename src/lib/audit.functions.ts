@@ -35,7 +35,7 @@ export const getVehicleAudit = createServerFn({ method: "GET" })
     if (data.scope === "mismatch") q = q.eq("mismatch", true);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as VehicleAuditRow[];
+    return ((rows as unknown) ?? []) as VehicleAuditRow[];
   });
 
 export const getVehicleTraceLog = createServerFn({ method: "GET" })
