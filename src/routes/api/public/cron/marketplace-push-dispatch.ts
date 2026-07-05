@@ -48,6 +48,18 @@ async function dispatchPending() {
   for (const r of rows ?? []) {
     if ((r as any).broadcast?.status !== "open") continue;
 
+    // Is this a subsequent round for the same partner+broadcast? If so we
+    // silently UPDATE the existing notification instead of posting a new one.
+    const { data: priorRows } = await (supabaseAdmin as any)
+      .from("marketplace_offers")
+      .select("id")
+      .eq("broadcast_id", r.broadcast_id)
+      .eq("partner_id", r.partner_id)
+      .not("viewed_at", "is", null)
+      .neq("id", r.id)
+      .limit(1);
+    const isUpdate = Array.isArray(priorRows) && priorRows.length > 0;
+
     // Mark viewed_at first so we don't re-push if sending is slow.
     await (supabaseAdmin as any)
       .from("marketplace_offers")
@@ -78,7 +90,7 @@ async function dispatchPending() {
     const title = "🚗 New Daily Shine Customer";
     const body = `${vehicleLabel} · ${area} · ${distStr} · ₹${r.incentive}/day`;
     const data: Record<string, string> = {
-      type: "marketplace_offer",
+      type: isUpdate ? "marketplace_offer_update" : "marketplace_offer",
       broadcast_id: String(r.broadcast_id),
       offer_id: String(r.id),
       partner_id: String(r.partner_id),
@@ -94,10 +106,32 @@ async function dispatchPending() {
     };
 
     try {
-      await sendOfferPush({ userId: r.partner_id, title, body, data, channelId: "offers" });
+      const result = await sendOfferPush({
+        userId: r.partner_id,
+        title,
+        body,
+        data,
+        channelId: "offers",
+        silent: isUpdate,
+        tag: String(r.broadcast_id),
+      });
       dispatched++;
+      // Delivery tracking — non-blocking
+      await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
+        offer_id: r.id,
+        broadcast_id: r.broadcast_id,
+        partner_id: r.partner_id,
+        stage: result.sent > 0 ? (isUpdate ? "push_update_sent" : "push_sent") : "push_failed",
+        meta: { round: r.round, incentive: r.incentive, sent: result.sent, failed: result.failed },
+      });
     } catch {
-      /* best effort */
+      await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
+        offer_id: r.id,
+        broadcast_id: r.broadcast_id,
+        partner_id: r.partner_id,
+        stage: "push_failed",
+        meta: { round: r.round },
+      });
     }
   }
   return dispatched;
