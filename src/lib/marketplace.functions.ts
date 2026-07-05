@@ -109,24 +109,47 @@ export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
     const rows = broadcasts ?? [];
     const total = rows.length;
     const assigned = rows.filter((r: any) => r.status === "assigned");
+    const cancelled = rows.filter((r: any) => r.status === "cancelled").length;
+    const expired = rows.filter((r: any) => r.status === "admin_alert" || r.status === "expired").length;
+    const open = rows.filter((r: any) => r.status === "open").length;
     const byRound: Record<number, number> = {};
     assigned.forEach((r: any) => {
       byRound[r.current_round] = (byRound[r.current_round] ?? 0) + 1;
     });
-    const expired = rows.filter((r: any) => r.status === "admin_alert" || r.status === "expired").length;
     const avgAcceptSec = assigned.length
       ? assigned.reduce((s: number, r: any) => s + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime()) / 1000, 0) / assigned.length
       : 0;
     const avgIncentive = assigned.length
       ? assigned.reduce((s: number, r: any) => s + Number(r.current_incentive), 0) / assigned.length
       : 0;
+
+    // Offer-level counters (accepted/declined/superseded/expired/pending) in the same window
+    const { data: offerCounts } = await (context.supabase as any)
+      .from("marketplace_offers")
+      .select("response", { count: "exact", head: false })
+      .gte("sent_at", since);
+    const offers = (offerCounts ?? []) as { response: string }[];
+    const byResponse: Record<string, number> = {};
+    offers.forEach((o) => {
+      byResponse[o.response] = (byResponse[o.response] ?? 0) + 1;
+    });
+
     return {
       total,
       assigned: assigned.length,
       expired,
+      cancelled,
+      open,
       accepted_by_round: byRound,
       avg_accept_seconds: Math.round(avgAcceptSec),
       avg_incentive: Number(avgIncentive.toFixed(2)),
       conversion: total ? Number(((assigned.length / total) * 100).toFixed(1)) : 0,
+      offers: {
+        accepted: byResponse.accepted ?? 0,
+        declined: byResponse.declined ?? 0,
+        superseded: byResponse.superseded ?? 0,
+        expired: byResponse.expired ?? 0,
+        pending: byResponse.pending ?? 0,
+      },
     };
   });
