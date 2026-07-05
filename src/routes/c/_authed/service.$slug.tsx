@@ -24,11 +24,35 @@ type Service = {
   price_hatchback: number; price_sedan_suv: number; service_type: string; benefits: string[] | null;
   duration_minutes: number | null;
 };
-type Vehicle = { id: string; make: string; model: string; category: string; registration_number: string; is_default?: boolean | null };
+type Vehicle = {
+  id: string;
+  make: string;
+  model: string;
+  category: string;
+  registration_number: string;
+  is_default?: boolean | null;
+  discount_approved?: boolean | null;
+  created_at?: string | null;
+};
 type Address = { id: string; label: string; address_line: string; area: string; pincode: string | null; latitude?: number | null; longitude?: number | null };
 type Addon = { id: string; name: string; description: string | null; price_hatchback: number; price_sedan_suv: number; applies_to_slugs: string[] };
 
 const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
+
+function toIsoDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function isMondayIso(iso: string) {
+  return new Date(`${iso}T12:00:00`).getDay() === 1;
+}
+
+function nextBookableDateIso(start = new Date()) {
+  const d = new Date(start);
+  d.setDate(d.getDate() + 1);
+  while (d.getDay() === 1) d.setDate(d.getDate() + 1);
+  return toIsoDate(d);
+}
 
 declare global {
   interface Window {
@@ -62,10 +86,7 @@ function ServiceDetail() {
   const verifyPayment = useServerFn(verifyRazorpayPayment);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
-  const [date, setDate] = useState<string>(() => {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [date, setDate] = useState<string>(() => nextBookableDateIso());
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
@@ -151,6 +172,13 @@ function ServiceDetail() {
   const vehicle = vehiclesQ.data?.find((v) => v.id === vehicleId);
   const address = addressesQ.data?.find((a) => a.id === addressId);
   const isSUV = vehicle?.category === "sedan_suv";
+  const isDailyShine = service?.service_type === "subscription" || service?.slug?.startsWith("daily-shine");
+
+  useEffect(() => {
+    if (isDailyShine && isMondayIso(date)) {
+      setDate(nextBookableDateIso(new Date(`${date}T12:00:00`)));
+    }
+  }, [isDailyShine, date]);
 
   const basePrice = useMemo(() => {
     if (!service) return 0;
@@ -183,14 +211,15 @@ function ServiceDetail() {
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
   // Multi-vehicle coupon: only unlocked when booking for a non-first car.
+  // Admin can explicitly approve a first-vehicle exception for edge cases.
   // 2 cars → 10%, 3 cars → 15%, 4+ cars → 20%.
   const eligibleCoupon = useMemo(() => {
     if (vehicleCount < 2) return null;
-    if (isFirstVehicle) return null;
+    if (isFirstVehicle && !vehicle?.discount_approved) return null;
     if (vehicleCount >= 4) return { code: "MULTI20", percent: 20 };
     if (vehicleCount === 3) return { code: "EXTRA15", percent: 15 };
     return { code: "EXTRA10", percent: 10 };
-  }, [vehicleCount, isFirstVehicle]);
+  }, [vehicleCount, isFirstVehicle, vehicle?.discount_approved]);
 
   // If the selected vehicle changes to one that is no longer eligible
   // (e.g. user switches back to their first car), silently drop the coupon.
@@ -203,7 +232,7 @@ function ServiceDetail() {
       toast.error("Add another car to your account to unlock multi-car discounts.");
       return;
     }
-    if (isFirstVehicle) {
+    if (isFirstVehicle && !vehicle?.discount_approved) {
       toast.error("Coupons apply only when booking for an additional car, not your first one.");
       return;
     }
@@ -232,6 +261,7 @@ function ServiceDetail() {
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
+    if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
     // Coverage Zone validation (GPS-based, server-side, fail-closed).
     // Coverage Manager is the single source of truth for serviceability.
     {
@@ -492,7 +522,20 @@ function ServiceDetail() {
 
         {/* Date + Slot */}
         <SectionCard icon={<Calendar className="h-4 w-4" />} title="When">
-          <Input type="date" min={new Date().toISOString().slice(0, 10)} value={date} onChange={(e) => setDate(e.target.value)} />
+          <Input
+            type="date"
+            min={toIsoDate(new Date())}
+            value={date}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (isDailyShine && isMondayIso(next)) {
+                toast.error("Daily Shine does not run on Mondays. Please pick another date.");
+                setDate(nextBookableDateIso(new Date(`${next}T12:00:00`)));
+                return;
+              }
+              setDate(next);
+            }}
+          />
           <div className="mt-3 grid grid-cols-2 gap-2">
             {TIME_SLOTS.map((s) => (
               <button key={s} onClick={() => setSlot(s)}
@@ -527,7 +570,7 @@ function ServiceDetail() {
               </div>
               <Button type="button" size="sm" onClick={applyBestCoupon} className="shrink-0 rounded-full">Apply coupon</Button>
             </div>
-          ) : isFirstVehicle && vehicleCount >= 2 ? (
+          ) : isFirstVehicle && vehicleCount >= 2 && !vehicle?.discount_approved ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
               Coupons apply only when you book service for an additional car — not your first one.
               Switch the car above to a different vehicle to unlock your multi-car discount.

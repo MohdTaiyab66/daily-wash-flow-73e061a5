@@ -337,6 +337,7 @@ export type Database = {
           address_id: string | null
           base_amount: number
           claimed_at: string | null
+          coupon_code: string | null
           created_at: string
           discount_amount: number
           gps_source: string | null
@@ -364,6 +365,7 @@ export type Database = {
           address_id?: string | null
           base_amount?: number
           claimed_at?: string | null
+          coupon_code?: string | null
           created_at?: string
           discount_amount?: number
           gps_source?: string | null
@@ -391,6 +393,7 @@ export type Database = {
           address_id?: string | null
           base_amount?: number
           claimed_at?: string | null
+          coupon_code?: string | null
           created_at?: string
           discount_amount?: number
           gps_source?: string | null
@@ -955,6 +958,9 @@ export type Database = {
           category: string
           color: string | null
           created_at: string
+          discount_approved: boolean
+          discount_approved_at: string | null
+          discount_approved_by: string | null
           id: string
           image_path: string | null
           is_default: boolean
@@ -969,6 +975,9 @@ export type Database = {
           category: string
           color?: string | null
           created_at?: string
+          discount_approved?: boolean
+          discount_approved_at?: string | null
+          discount_approved_by?: string | null
           id?: string
           image_path?: string | null
           is_default?: boolean
@@ -983,6 +992,9 @@ export type Database = {
           category?: string
           color?: string | null
           created_at?: string
+          discount_approved?: boolean
+          discount_approved_at?: string | null
+          discount_approved_by?: string | null
           id?: string
           image_path?: string | null
           is_default?: boolean
@@ -4042,6 +4054,10 @@ export type Database = {
       admin_set_customer_payment: {
         Args: { p_id: string; p_status: string }
         Returns: undefined
+      }
+      admin_set_vehicle_discount_approval: {
+        Args: { p_approved: boolean; p_vehicle_id: string }
+        Returns: boolean
       }
       admin_update_customer: {
         Args: {

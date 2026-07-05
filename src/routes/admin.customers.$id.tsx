@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminDeleteCustomer, getCustomerProfile, adminSetCustomerPayment } from "@/lib/admin.functions";
+import { adminDeleteCustomer, getCustomerProfile, adminSetCustomerPayment, adminSetVehicleDiscountApproval } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,9 +35,19 @@ function CustomerProfilePage() {
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
   const setPayFn = useServerFn(adminSetCustomerPayment);
+  const setDiscountApprovalFn = useServerFn(adminSetVehicleDiscountApproval);
   const setPayMut = useMutation({
     mutationFn: (status: "paid" | "pending") => setPayFn({ data: { id: (data?.customer as any)?.id, status } }),
     onSuccess: () => { toast.success("Payment status updated"); qc.invalidateQueries({ queryKey: ["customer-profile", id] }); qc.invalidateQueries({ queryKey: ["admin-revenue"] }); },
+    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
+  const setDiscountApprovalMut = useMutation({
+    mutationFn: ({ vehicleId, approved }: { vehicleId: string; approved: boolean }) =>
+      setDiscountApprovalFn({ data: { vehicle_id: vehicleId, approved } }),
+    onSuccess: () => {
+      toast.success("Vehicle discount approval updated");
+      qc.invalidateQueries({ queryKey: ["customer-profile", id] });
+    },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
@@ -111,6 +121,21 @@ function CustomerProfilePage() {
               <div className="flex items-center gap-2 text-sm font-medium"><Car className="h-4 w-4" />{v.make} {v.model}</div>
               <p className="mt-1 text-xs text-muted-foreground">{v.registration_number}{v.color ? ` · ${v.color}` : ""}</p>
               <p className="mt-1 text-xs font-medium">Package: {v.package_amount ? `₹${v.package_amount}` : "—"}</p>
+              <div className="mt-3 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <div>
+                  <p className="text-xs font-medium">First-car discount exception</p>
+                  <p className="text-[10px] text-muted-foreground">Only approve when admin wants this vehicle to receive coupon discounts.</p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={v.discount_approved ? "default" : "outline"}
+                  disabled={setDiscountApprovalMut.isPending}
+                  onClick={() => setDiscountApprovalMut.mutate({ vehicleId: v.id, approved: !v.discount_approved })}
+                >
+                  {v.discount_approved ? "Approved" : "Approve"}
+                </Button>
+              </div>
               {v.parking_notes && <p className="mt-2 text-xs text-muted-foreground">{v.parking_notes}</p>}
             </Card>
           ))}
