@@ -118,6 +118,26 @@ export function AwaitingPartnerBanner({
     },
   });
 
+  // 3b) Open marketplace broadcast for this customer — while a broadcast is
+  // still open we must keep showing "Searching…", never "unable to assign".
+  const { data: openBroadcast } = useQuery({
+    queryKey: ["awaiting-partner-broadcast", userId, primarySub?.id ?? null],
+    enabled: !!userId && noPartnerAnywhere,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      let q: any = (supabase as any)
+        .from("marketplace_broadcasts")
+        .select("id, status, subscription_id")
+        .eq("customer_id", userId)
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (primarySub?.id) q = q.eq("subscription_id", primarySub.id);
+      const { data } = await q.maybeSingle();
+      return data as { id: string; status: string } | null;
+    },
+  });
+
   // Booking window: prefer today's service booking; else the primary sub's booking.
   const bookingIdForWindow = primarySub?.booking_id ?? queue?.booking_id ?? null;
   const { data: booking } = useQuery({
@@ -156,6 +176,7 @@ export function AwaitingPartnerBanner({
     const refresh = () => {
       qc.invalidateQueries({ queryKey: ["awaiting-partner-subs", userId] });
       qc.invalidateQueries({ queryKey: ["awaiting-partner-queue", userId] });
+      qc.invalidateQueries({ queryKey: ["awaiting-partner-broadcast", userId] });
       qc.invalidateQueries({ queryKey: ["customer-today-service", userId, today] });
     };
     const ch = supabase
@@ -163,6 +184,7 @@ export function AwaitingPartnerBanner({
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscription_assignment_queue", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "marketplace_broadcasts", filter: `customer_id=eq.${userId}` }, refresh)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -182,7 +204,7 @@ export function AwaitingPartnerBanner({
   if (completed) state = "completed";
   else if (inProgress) state = "in_progress";
   else if (assignedPartnerId) state = "assigned";
-  else if (queue?.status === "failed") state = "unassignable";
+  else if (queue?.status === "failed" && !openBroadcast) state = "unassignable";
   else state = "searching";
 
   // Hard block: if we have an assigned partner anywhere, never render the red
