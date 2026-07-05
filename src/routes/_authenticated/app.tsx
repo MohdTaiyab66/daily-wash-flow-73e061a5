@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Home, Briefcase, Wallet, Gift, User, Bell } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 import { OfferPopup } from "@/components/partner/OfferPopup";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
+import { consumePendingLink } from "@/lib/push/fcm";
 import { usePartnerRouteSync } from "@/hooks/use-route-sync";
 
 export const Route = createFileRoute("/_authenticated/app")({
