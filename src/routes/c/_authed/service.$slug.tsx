@@ -15,6 +15,9 @@ import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
+  }),
   head: () => ({ meta: [{ title: "Book service — Urban Wash" }] }),
   component: ServiceDetail,
 });
