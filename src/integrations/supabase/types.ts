@@ -1419,6 +1419,56 @@ export type Database = {
           },
         ]
       }
+      entitlement_ledger: {
+        Row: {
+          actor_user_id: string | null
+          addon_request_id: string | null
+          benefit_type: Database["public"]["Enums"]["benefit_type"]
+          booking_id: string | null
+          created_at: string
+          delta: number
+          entitlement_id: string
+          id: string
+          reason: string | null
+          subscription_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          addon_request_id?: string | null
+          benefit_type: Database["public"]["Enums"]["benefit_type"]
+          booking_id?: string | null
+          created_at?: string
+          delta: number
+          entitlement_id: string
+          id?: string
+          reason?: string | null
+          subscription_id: string
+          vehicle_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          addon_request_id?: string | null
+          benefit_type?: Database["public"]["Enums"]["benefit_type"]
+          booking_id?: string | null
+          created_at?: string
+          delta?: number
+          entitlement_id?: string
+          id?: string
+          reason?: string | null
+          subscription_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlement_ledger_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_entitlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expansion_requests: {
         Row: {
           area_name: string | null
@@ -3343,6 +3393,66 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_entitlements: {
+        Row: {
+          benefit_type: Database["public"]["Enums"]["benefit_type"]
+          consumed: number
+          created_at: string
+          cycle_end: string
+          cycle_start: string
+          id: string
+          plan_slug: string
+          subscription_id: string
+          total_allocated: number | null
+          updated_at: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          benefit_type: Database["public"]["Enums"]["benefit_type"]
+          consumed?: number
+          created_at?: string
+          cycle_end: string
+          cycle_start: string
+          id?: string
+          plan_slug: string
+          subscription_id: string
+          total_allocated?: number | null
+          updated_at?: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          benefit_type?: Database["public"]["Enums"]["benefit_type"]
+          consumed?: number
+          created_at?: string
+          cycle_end?: string
+          cycle_start?: string
+          id?: string
+          plan_slug?: string
+          subscription_id?: string
+          total_allocated?: number | null
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_entitlements_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_entitlements_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "customer_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_extensions: {
         Row: {
           created_at: string
@@ -4481,7 +4591,7 @@ export type Database = {
           p_subscription_id: string
           p_vehicle_id?: string
         }
-        Returns: string
+        Returns: Json
       }
       customer_cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }
@@ -4508,6 +4618,10 @@ export type Database = {
       enqueue_subscription_booking: {
         Args: { p_booking_id: string }
         Returns: string
+      }
+      ensure_entitlements_for_subscription: {
+        Args: { p_sub_id: string }
+        Returns: undefined
       }
       ensure_ops_customer_for_booking: {
         Args: { p_booking_id: string }
@@ -4602,6 +4716,18 @@ export type Database = {
           shift_start: string
           unlock_at: string
           visible: boolean
+        }[]
+      }
+      get_vehicle_entitlements: {
+        Args: { p_vehicle_id: string }
+        Returns: {
+          benefit_type: Database["public"]["Enums"]["benefit_type"]
+          consumed: number
+          cycle_end: string
+          remaining: number
+          subscription_id: string
+          total_allocated: number
+          unlimited: boolean
         }[]
       }
       get_zone_capacity: {
@@ -4829,6 +4955,13 @@ export type Database = {
           score_breakdown: Json
         }[]
       }
+      plan_benefit_allocation: {
+        Args: {
+          p_benefit: Database["public"]["Enums"]["benefit_type"]
+          p_plan: string
+        }
+        Returns: number
+      }
       point_in_polygon: {
         Args: { p_lat: number; p_lng: number; p_poly: Json }
         Returns: boolean
@@ -4912,6 +5045,10 @@ export type Database = {
         }
         Returns: string
       }
+      service_slug_to_benefit: {
+        Args: { p_slug: string }
+        Returns: Database["public"]["Enums"]["benefit_type"]
+      }
       set_partner_area: {
         Args: { p_area: string; p_lat: number; p_lng: number }
         Returns: undefined
@@ -4972,6 +5109,16 @@ export type Database = {
         Returns: Json
       }
       sweep_subscription_offers: { Args: never; Returns: number }
+      try_consume_entitlement: {
+        Args: {
+          p_addon_request_id?: string
+          p_benefit: Database["public"]["Enums"]["benefit_type"]
+          p_booking_id?: string
+          p_reason?: string
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
       working_days_end_date: {
         Args: { p_off_dow?: number; p_start: string; p_working: number }
         Returns: string
@@ -4987,6 +5134,14 @@ export type Database = {
     Enums: {
       app_role: "admin" | "supervisor" | "partner" | "customer" | "ops_manager"
       availability_status: "online" | "offline" | "leave" | "emergency_leave"
+      benefit_type:
+        | "interior"
+        | "exterior_daily"
+        | "exterior_hydrophobic"
+        | "dusting"
+        | "tyre_polish"
+        | "paper_mats"
+        | "fragrance"
       complaint_status: "open" | "investigating" | "resolved" | "dismissed"
       partner_status:
         | "pending_verification"
@@ -5155,6 +5310,15 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "supervisor", "partner", "customer", "ops_manager"],
       availability_status: ["online", "offline", "leave", "emergency_leave"],
+      benefit_type: [
+        "interior",
+        "exterior_daily",
+        "exterior_hydrophobic",
+        "dusting",
+        "tyre_polish",
+        "paper_mats",
+        "fragrance",
+      ],
       complaint_status: ["open", "investigating", "resolved", "dismissed"],
       partner_status: [
         "pending_verification",
