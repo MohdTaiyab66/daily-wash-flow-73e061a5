@@ -166,6 +166,8 @@ export async function sendOfferPush(args: {
   body: string;
   data: Record<string, string>;
   channelId?: string;
+  silent?: boolean;
+  tag?: string;
 }): Promise<{ sent: number; failed: number; results: FcmSendResult[] }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: tokens, error } = await (supabaseAdmin as any)
@@ -178,7 +180,15 @@ export async function sendOfferPush(args: {
 
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
-      sendOne({ token: t.token, title: args.title, body: args.body, data: args.data, channelId: args.channelId }),
+      sendOne({
+        token: t.token,
+        title: args.title,
+        body: args.body,
+        data: args.data,
+        channelId: args.channelId,
+        silent: args.silent,
+        tag: args.tag,
+      }),
     ),
   );
 
