@@ -411,7 +411,11 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["sub-queue", currentUser.user.id] });
-      await navigate({ to: "/c/subscriptions" });
+      if (service.service_type === "subscription") {
+        await navigate({ to: "/c/subscriptions" });
+      } else {
+        await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
+      }
     } catch (err: any) {
       fail(err?.message || "Could not confirm booking");
     } finally {
