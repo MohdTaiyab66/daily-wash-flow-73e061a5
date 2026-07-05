@@ -13,9 +13,13 @@ import { MarketplaceOfferCard } from "./MarketplaceOfferCard";
 export function MarketplaceOfferSheet({
   offer,
   onClose,
+  onAccept,
+  onDecline,
 }: {
   offer: any;
   onClose: () => void;
+  onAccept?: () => void;
+  onDecline?: () => void;
 }) {
   const roundExpiresAt = offer?.broadcast?.round_expires_at;
   const remaining = roundExpiresAt
@@ -47,7 +51,7 @@ export function MarketplaceOfferSheet({
         </VisuallyHidden>
         <div className="mx-auto h-1 w-10 rounded-full bg-muted-foreground/30" />
         <div className="mt-3">
-          <MarketplaceOfferCard offer={offer} />
+          <MarketplaceOfferCard offer={offer} onAccept={onAccept} onDecline={onDecline} />
         </div>
       </SheetContent>
     </Sheet>
