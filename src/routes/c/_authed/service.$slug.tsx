@@ -690,7 +690,7 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
-          {service?.service_type === "subscription" && vehicleSubQ.data ? (
+          {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
             </div>
