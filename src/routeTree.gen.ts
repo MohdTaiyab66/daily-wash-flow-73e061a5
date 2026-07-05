@@ -33,6 +33,7 @@ import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-modes'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
@@ -204,6 +205,11 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
 const AdminOfferHistoryRoute = AdminOfferHistoryRouteImport.update({
   id: '/offer-history',
   path: '/offer-history',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -585,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -664,6 +672,7 @@ export interface FileRoutesById {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -744,6 +753,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -820,6 +830,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -898,6 +909,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -1147,6 +1159,13 @@ declare module '@tanstack/react-router' {
       path: '/offer-history'
       fullPath: '/admin/offer-history'
       preLoaderRoute: typeof AdminOfferHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketplace': {
@@ -1606,6 +1625,7 @@ interface AdminRouteChildren {
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPaymentModesRoute: typeof AdminPaymentModesRoute
@@ -1641,6 +1661,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPaymentModesRoute: AdminPaymentModesRoute,
