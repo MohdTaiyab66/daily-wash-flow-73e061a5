@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
+import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -194,19 +195,12 @@ function ServiceDetail() {
     }
   }, [isDailyShine, date]);
 
-  const basePrice = useMemo(() => {
-    if (!service) return 0;
-    return isSUV ? service.price_sedan_suv : service.price_hatchback;
-  }, [service, isSUV]);
-
-  const addonPrice = useMemo(() => {
-    if (!addonsQ.data) return 0;
-    return addonsQ.data.reduce((s, a) => {
-      const q = addonQty[a.id] ?? 0;
-      if (!q) return s;
-      return s + q * (isSUV ? a.price_sedan_suv : a.price_hatchback);
-    }, 0);
-  }, [addonsQ.data, addonQty, isSUV]);
+  const selectedAddons = useMemo(
+    () => Object.entries(addonQty)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([id, quantity]) => ({ id, quantity })),
+    [addonQty],
+  );
 
   const vehicleCount = vehiclesQ.data?.length ?? 1;
 
@@ -216,12 +210,35 @@ function ServiceDetail() {
   const firstVehicleId = vehiclesQ.data?.[0]?.id ?? null;
   const isFirstVehicle = !!vehicleId && vehicleId === firstVehicleId;
 
+  const previewQ = useQuery({
+    queryKey: ["booking-preview", service?.id, vehicleId, addressId, date, slot, appliedCoupon?.code ?? null, selectedAddons],
+    enabled: !!service?.id && !!vehicleId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("preview_customer_booking", {
+        p_service_id: service!.id,
+        p_vehicle_id: vehicleId,
+        p_address_id: addressId,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_addons: selectedAddons,
+        p_coupon_code: appliedCoupon?.code ?? null,
+      });
+      if (error) throw error;
+      return normalizeBookingPreview(data);
+    },
+  });
+
   // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle
   // AND must be booking for a car other than their first one).
-  const subtotal = basePrice + addonPrice;
   const discountPct = appliedCoupon?.percent ?? 0;
-  const discountAmt = Math.round((subtotal * discountPct) / 100);
-  const total = subtotal - discountAmt;
+  const preview = previewQ.data ?? null;
+  const previewReady = !!preview && !previewQ.isError;
+  const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
+  const previewBase = Number(preview?.base_amount ?? previewPayable);
+  const previewAddon = Number(preview?.addon_amount ?? 0);
+  const previewDiscount = Number(preview?.discount_amount ?? 0);
+  const isIncludedBooking = !!preview?.used_entitlement;
+  const isEntitlementExhausted = !!preview?.exhausted;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
   // Multi-vehicle coupon: only unlocked when booking for a non-first car.
@@ -336,10 +353,6 @@ function ServiceDetail() {
       });
       if (covErr) throw new Error(covErr.message || "This service isn't available in your area yet.");
 
-      const selectedAddons = Object.entries(addonQty)
-        .filter(([, quantity]) => quantity > 0)
-        .map(([id, quantity]) => ({ id, quantity }));
-
       const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -355,6 +368,15 @@ function ServiceDetail() {
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
       traceVehicle("customer_schedule", { booking_id: String(bookingId), vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
 
+      const { data: bookingAfterCreate, error: bookingReadError } = await (supabase as any)
+        .from("bookings")
+        .select("total_amount,payment_status")
+        .eq("id", bookingId)
+        .maybeSingle();
+      if (bookingReadError) throw bookingReadError;
+      const createdPayable = Number(bookingAfterCreate?.total_amount ?? previewPayable ?? 0);
+      const alreadyPaid = bookingAfterCreate?.payment_status === "paid" || createdPayable <= 0;
+
       // Pre/Post payment is driven by admin flags on the service + each addon.
       // Default is 'pre' (online payment before work). Post-payment skips Razorpay.
       const servicePrepay = ((service as any).payment_mode ?? "pre") === "pre";
@@ -364,10 +386,11 @@ function ServiceDetail() {
       });
       const requiresPrepay = servicePrepay || addonPrepay;
 
-      if (!requiresPrepay) {
-        toast.success("Booking confirmed! You'll pay after the service is completed.");
+      if (alreadyPaid || !requiresPrepay) {
+        toast.success(alreadyPaid ? "Included in your Daily Shine Plan · ₹0 payable" : "Booking confirmed! You'll pay after the service is completed.");
         qc.invalidateQueries({ queryKey: ["customer-bookings"] });
         qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicle.id] });
         if (service.service_type === "subscription") {
           await navigate({ to: "/c/subscriptions" });
         } else {
@@ -509,7 +532,7 @@ function ServiceDetail() {
         </SectionCard>
 
         {/* Add-ons */}
-        {addonsQ.data && addonsQ.data.length > 0 && (
+        {previewReady && !isIncludedBooking && addonsQ.data && addonsQ.data.length > 0 && (
           <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Tap + to add more">
             <div className="space-y-2">
               {addonsQ.data.map((a) => {
@@ -580,7 +603,7 @@ function ServiceDetail() {
         </SectionCard>
 
         {/* Multi-car discount */}
-        <SectionCard
+        {previewReady && !isIncludedBooking && <SectionCard
           icon={<Sparkles className="h-4 w-4" />}
           title="Multi-car discount"
           hint={`${vehicleCount} car${vehicleCount === 1 ? "" : "s"} on account`}
@@ -616,20 +639,38 @@ function ServiceDetail() {
               </div>
             </div>
           )}
-        </SectionCard>
+        </SectionCard>}
 
         {/* Summary */}
         <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
-          <Row label="Base"><span>₹{basePrice}</span></Row>
-          {addonPrice > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{addonPrice}</span></Row>}
-          {appliedCoupon && discountAmt > 0 && (
+          {!previewReady ? (
+            <Row label="Checking plan"><span>…</span></Row>
+          ) : isIncludedBooking ? (
+            <>
+              <Row label={INCLUDED_PLAN_MESSAGE}><span className="text-success">₹0</span></Row>
+              <div className="mt-2 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs font-medium text-success">
+                ₹0 Payable
+              </div>
+            </>
+          ) : (
+            <>
+              {isEntitlementExhausted && (
+                <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  {exhaustedEntitlementMessage(preview)}
+                </div>
+              )}
+              <Row label="Base"><span>₹{previewBase}</span></Row>
+              {previewAddon > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{previewAddon}</span></Row>}
+            </>
+          )}
+          {!isIncludedBooking && appliedCoupon && previewDiscount > 0 && (
             <Row label={`Coupon ${appliedCoupon.code} (${discountPct}%)`}>
-              <span className="text-success">−₹{discountAmt}</span>
+              <span className="text-success">−₹{previewDiscount}</span>
             </Row>
           )}
           <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
-            <span className="font-semibold">Total</span>
-            <span className="text-lg font-semibold">₹{total}</span>
+            <span className="font-semibold">{isIncludedBooking ? "Payable" : "Total"}</span>
+            <span className="text-lg font-semibold">{!previewReady ? "…" : `₹${previewPayable}`}</span>
           </div>
         </div>
       </div>
@@ -637,7 +678,7 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
-          {service?.service_type === "subscription" && vehicleSubQ.data ? (
+          {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
             </div>
@@ -645,20 +686,20 @@ function ServiceDetail() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs text-muted-foreground">Total</div>
-              <div className="text-xl font-semibold">₹{total}</div>
+              <div className="text-xl font-semibold">{!previewReady ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
               <div className="text-[10px] text-muted-foreground">
-                {service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
               </div>
               {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
             </div>
             <Button
               type="button"
               onClick={confirm}
-              disabled={submitting || (service?.service_type === "subscription" && !!vehicleSubQ.data)}
+              disabled={submitting || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
             >
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>

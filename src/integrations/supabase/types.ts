@@ -4244,6 +4244,13 @@ export type Database = {
         }
         Returns: Json
       }
+      addon_price_for_benefit: {
+        Args: {
+          p_benefit: Database["public"]["Enums"]["benefit_type"]
+          p_vehicle_category: string
+        }
+        Returns: number
+      }
       admin_accept_recalc: {
         Args: { _snapshot_id: string }
         Returns: undefined
@@ -4584,6 +4591,7 @@ export type Database = {
       }
       create_addon_request: {
         Args: {
+          p_address_id?: string
           p_notes: string
           p_preferred_date: string
           p_preferred_time: string
@@ -4995,6 +5003,18 @@ export type Database = {
           zone_name: string
           zone_used_pct: number
         }[]
+      }
+      preview_customer_booking: {
+        Args: {
+          p_addons?: Json
+          p_address_id?: string
+          p_coupon_code?: string
+          p_scheduled_date?: string
+          p_scheduled_time?: string
+          p_service_id: string
+          p_vehicle_id: string
+        }
+        Returns: Json
       }
       rank_expansion_requests: {
         Args: never
