@@ -1731,46 +1731,64 @@ export type Database = {
           auto_assign_final_round: boolean
           base_incentive: number
           broadcast_enabled: boolean
+          countdown_seconds: number
           created_at: string
           expand_radius_enabled: boolean
+          full_screen_enabled: boolean
+          heads_up_enabled: boolean
           id: boolean
           max_incentive: number
           max_rounds: number
           neighbour_polygon_expansion: boolean
+          notification_priority: string
+          notification_sound: string
           radius_per_round_m: number[]
           round_duration_sec: number
           round_increments: number[]
           updated_at: string
+          vibration_enabled: boolean
         }
         Insert: {
           auto_assign_final_round?: boolean
           base_incentive?: number
           broadcast_enabled?: boolean
+          countdown_seconds?: number
           created_at?: string
           expand_radius_enabled?: boolean
+          full_screen_enabled?: boolean
+          heads_up_enabled?: boolean
           id?: boolean
           max_incentive?: number
           max_rounds?: number
           neighbour_polygon_expansion?: boolean
+          notification_priority?: string
+          notification_sound?: string
           radius_per_round_m?: number[]
           round_duration_sec?: number
           round_increments?: number[]
           updated_at?: string
+          vibration_enabled?: boolean
         }
         Update: {
           auto_assign_final_round?: boolean
           base_incentive?: number
           broadcast_enabled?: boolean
+          countdown_seconds?: number
           created_at?: string
           expand_radius_enabled?: boolean
+          full_screen_enabled?: boolean
+          heads_up_enabled?: boolean
           id?: boolean
           max_incentive?: number
           max_rounds?: number
           neighbour_polygon_expansion?: boolean
+          notification_priority?: string
+          notification_sound?: string
           radius_per_round_m?: number[]
           round_duration_sec?: number
           round_increments?: number[]
           updated_at?: string
+          vibration_enabled?: boolean
         }
         Relationships: []
       }
@@ -2592,6 +2610,51 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      push_action_tokens: {
+        Row: {
+          broadcast_id: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          offer_id: string
+          partner_id: string
+          token: string
+        }
+        Insert: {
+          broadcast_id: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          offer_id: string
+          partner_id: string
+          token: string
+        }
+        Update: {
+          broadcast_id?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          offer_id?: string
+          partner_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_action_tokens_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_action_tokens_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_offers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_tokens: {
         Row: {
@@ -5226,6 +5289,10 @@ export type Database = {
         Returns: Json
       }
       mp_advance_round: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_consume_action_token: {
+        Args: { p_action: string; p_token: string }
+        Returns: Json
+      }
       mp_decline_offer: { Args: { p_broadcast_id: string }; Returns: Json }
       mp_eligible_partners: {
         Args: {
@@ -5243,6 +5310,14 @@ export type Database = {
       mp_haversine_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
+      }
+      mp_mint_action_token: {
+        Args: {
+          p_broadcast_id: string
+          p_offer_id: string
+          p_partner_id: string
+        }
+        Returns: string
       }
       mp_open_broadcast: {
         Args: { p_subscription_id: string }
