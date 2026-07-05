@@ -478,7 +478,14 @@ function MyPlanPage() {
         </>
       )}
 
-      <ScheduleWashDialog open={scheduleOpen} onOpenChange={setScheduleOpen} userId={userId} kind={scheduleKind} />
+      <ScheduleWashDialog
+        key={scheduleOpen ? (selectedVehicleId ?? "no-vehicle") : "closed"}
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        userId={userId}
+        initialVehicleId={selectedVehicleId}
+        kind={scheduleKind}
+      />
     </div>
   );
 }
@@ -534,11 +541,13 @@ function ScheduleWashDialog({
   open,
   onOpenChange,
   userId,
+  initialVehicleId,
   kind = "any",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string | null;
+  initialVehicleId: string | null;
   kind?: "any" | "interior" | "exterior" | "dusting";
 }) {
 
@@ -608,7 +617,9 @@ function ScheduleWashDialog({
     if (vehQ.data?.length) {
       const stored = localStorage.getItem("uw_customer_vehicle");
       const nextVehicleId =
-        stored && vehQ.data.some((v) => v.id === stored)
+        initialVehicleId && vehQ.data.some((v) => v.id === initialVehicleId)
+          ? initialVehicleId
+          : stored && vehQ.data.some((v) => v.id === stored)
           ? stored
           : (vehQ.data.find((v) => v.is_default)?.id ?? vehQ.data[0].id);
       if (!vehicleId || !vehQ.data.some((v) => v.id === vehicleId)) {
@@ -620,7 +631,7 @@ function ScheduleWashDialog({
       const def = addrQ.data.find((a) => a.is_default) ?? addrQ.data[0];
       setAddressId(def.id);
     }
-  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId]);
+  }, [open, kind, svcQ.data, vehQ.data, addrQ.data, vehicleId, addressId, initialVehicleId]);
 
 
   const service = svcQ.data?.find((s) => s.id === serviceId);
@@ -667,18 +678,19 @@ function ScheduleWashDialog({
     setSaving(true);
     try {
       if (isPlanService) {
-        // Find an active subscription for this customer.
+        // Find the active subscription for the exact selected vehicle.
         const { data: subRow, error: subErr } = await (supabase as any)
           .from("subscriptions")
           .select("id, status, vehicle_id")
           .eq("user_id", userId)
+          .eq("vehicle_id", vehicle.id)
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (subErr) throw subErr;
         if (!subRow) {
-          toast.error("No active Daily Shine subscription found. Subscribe to schedule included washes.");
+          toast.error("This vehicle does not have an active Daily Shine subscription.");
           setSaving(false);
           return;
         }

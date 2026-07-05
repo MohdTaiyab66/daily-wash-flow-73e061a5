@@ -4272,28 +4272,17 @@ export type Database = {
         }
         Returns: string
       }
-      create_addon_request:
-        | {
-            Args: {
-              p_notes: string
-              p_preferred_date: string
-              p_preferred_time: string
-              p_service_id: string
-              p_subscription_id: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_notes: string
-              p_preferred_date: string
-              p_preferred_time: string
-              p_service_id: string
-              p_subscription_id: string
-              p_vehicle_id?: string
-            }
-            Returns: string
-          }
+      create_addon_request: {
+        Args: {
+          p_notes: string
+          p_preferred_date: string
+          p_preferred_time: string
+          p_service_id: string
+          p_subscription_id: string
+          p_vehicle_id?: string
+        }
+        Returns: string
+      }
       customer_cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
