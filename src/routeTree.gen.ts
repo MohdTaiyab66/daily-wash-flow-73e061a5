@@ -30,6 +30,7 @@ import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability
 import { Route as AdminPlanInclusionsRouteImport } from './routes/admin.plan-inclusions'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-modes'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
@@ -187,6 +188,11 @@ const AdminPhotosRoute = AdminPhotosRouteImport.update({
 const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
   id: '/payouts',
   path: '/payouts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentModesRoute = AdminPaymentModesRouteImport.update({
+  id: '/payment-modes',
+  path: '/payment-modes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnersRoute = AdminPartnersRouteImport.update({
@@ -498,6 +504,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payment-modes': typeof AdminPaymentModesRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
@@ -572,6 +579,7 @@ export interface FileRoutesByTo {
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payment-modes': typeof AdminPaymentModesRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
@@ -649,6 +657,7 @@ export interface FileRoutesById {
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
+  '/admin/payment-modes': typeof AdminPaymentModesRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
@@ -727,6 +736,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/offer-history'
     | '/admin/partners'
+    | '/admin/payment-modes'
     | '/admin/payouts'
     | '/admin/photos'
     | '/admin/plan-inclusions'
@@ -801,6 +811,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/offer-history'
     | '/admin/partners'
+    | '/admin/payment-modes'
     | '/admin/payouts'
     | '/admin/photos'
     | '/admin/plan-inclusions'
@@ -877,6 +888,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/offer-history'
     | '/admin/partners'
+    | '/admin/payment-modes'
     | '/admin/payouts'
     | '/admin/photos'
     | '/admin/plan-inclusions'
@@ -1101,6 +1113,13 @@ declare module '@tanstack/react-router' {
       path: '/payouts'
       fullPath: '/admin/payouts'
       preLoaderRoute: typeof AdminPayoutsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payment-modes': {
+      id: '/admin/payment-modes'
+      path: '/payment-modes'
+      fullPath: '/admin/payment-modes'
+      preLoaderRoute: typeof AdminPaymentModesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/partners': {
@@ -1567,6 +1586,7 @@ interface AdminRouteChildren {
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
+  AdminPaymentModesRoute: typeof AdminPaymentModesRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminPlanInclusionsRoute: typeof AdminPlanInclusionsRoute
@@ -1601,6 +1621,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
   AdminPartnersRoute: AdminPartnersRoute,
+  AdminPaymentModesRoute: AdminPaymentModesRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,
   AdminPlanInclusionsRoute: AdminPlanInclusionsRoute,
