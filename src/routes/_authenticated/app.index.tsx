@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
+import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
@@ -102,6 +103,10 @@ function HomePage() {
           <Switch checked={online} onCheckedChange={handleToggle} />
         </div>
       </header>
+
+      <div className="mt-5">
+        <MarketplaceOffersList />
+      </div>
 
       {/* Assignment summary card */}
       {assignment ? (

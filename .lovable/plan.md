@@ -1,103 +1,100 @@
-# Per-Vehicle Subscription Entitlements
+# Daily Shine Marketplace V2 — Broadcast + Dynamic Incentive
 
-Today the system charges every add-on flat rate and has **zero entitlement tracking** — there is no table that says "Vehicle A has 1 Interior left". This plan builds that end-to-end so included benefits are consumed before any payment is requested, scoped strictly per vehicle.
+Replace today's sequential single-partner offer (`dar_offers` one-at-a-time) with a broadcast marketplace: every eligible partner sees a lead at the same time, the first valid acceptance wins atomically, and unaccepted leads auto-escalate through configurable rounds with rising incentive and expanding radius.
 
-## 1. Data model (new)
+## Scope
+- Applies only to Daily Shine subscription leads. Premium/one-off services keep their existing flow.
+- Existing sequential DAR tick/timeout crons will be retired for Daily Shine after cutover; kept only for premium.
 
-`subscription_entitlements` (one row per vehicle × benefit type):
-- `subscription_id` (FK, unique per benefit_type)
-- `vehicle_id`, `user_id`, `plan_slug`
-- `benefit_type` enum: `interior`, `exterior_daily`, `exterior_hydrophobic`, `dusting`, `tyre_polish`, `paper_mats`, `fragrance`
-- `total_allocated int`, `consumed int default 0`
-- `cycle_start date`, `cycle_end date` (monthly renewal window)
-- Unique index: `(subscription_id, benefit_type, cycle_start)`
+## Data model (new migration)
 
-`entitlement_ledger` (audit; append-only):
-- `entitlement_id`, `booking_id`, `addon_request_id`, `service_id`
-- `delta int` (usually −1), `reason` text, `actor_user_id`, `created_at`
+New tables:
+- `marketplace_broadcasts` — one row per lead: `subscription_id`, `booking_id`, `vehicle_id`, `service_area_id`, `customer_lat/lng`, `status` (`open|assigned|expired|admin_alert`), `current_round`, `current_incentive`, `current_radius_m`, `round_started_at`, `round_expires_at`, `winning_partner_id`, `assignment_id`.
+- `marketplace_offers` — one row per (broadcast, partner, round): `partner_id`, `round`, `incentive`, `distance_from_route_m`, `route_impact_m`, `sent_at`, `viewed_at`, `response` (`pending|accepted|declined|superseded|expired`), `responded_at`.
+- `marketplace_settings` (single-row config in `platform_settings` JSON or dedicated table): `base_incentive`, `round_increments[]`, `max_incentive`, `round_duration_sec`, `max_rounds`, `broadcast_enabled`, `expand_radius_enabled`, `radius_per_round_m[]`, `neighbour_polygon_expansion`, `auto_assign_final_round`.
+- `marketplace_round_history` — audit of round transitions.
 
-Plan → allocation map seeded in migration for `daily-shine`:
-`interior=1, exterior_daily=26, exterior_hydrophobic=1, dusting=∞ (nullable=unlimited), tyre_polish=1, paper_mats=1, fragrance=1`.
+All tables: GRANT to `authenticated`/`service_role`, RLS, `updated_at` triggers.
 
-**Trigger** on `subscriptions` INSERT / status→active: create/refresh entitlement rows for that vehicle for the current cycle. Renewal date roll creates the next cycle's rows.
+## Core RPCs (SECURITY DEFINER)
 
-## 2. RPCs (SECURITY DEFINER)
+- `mp_open_broadcast(p_subscription_id)` — called by `activate_paid_booking` after a Daily Shine subscription becomes active. Computes eligible partners in polygon (online, accepting, active assignment in area, capacity, not suspended, route not full), inserts `marketplace_broadcasts` + `marketplace_offers` rows for round 1, fires realtime.
+- `mp_accept_offer(p_broadcast_id)` — atomic: `UPDATE marketplace_broadcasts SET status='assigned', winning_partner_id=auth.uid() WHERE id=... AND status='open'` with `RETURNING`. If 0 rows → race lost, return `{ ok:false, reason:'already_taken' }`. On win: create assignment, mark other offers `superseded`, subscription → `assigned`, insert `assignment_changes` audit row, return `{ ok:true, assignment_id }`.
+- `mp_decline_offer(p_broadcast_id)` — marks partner's offer `declined`; if all pending in this round are non-pending → immediately trigger next round (short-circuits the timer).
+- `mp_advance_round(p_broadcast_id)` — called by cron when round expires. Increments round + incentive + radius per settings, recomputes eligible partners (route-distance ranked when beyond initial polygon), inserts new offers. At `max_rounds`: if `auto_assign_final_round` on → pick top-ranked partner; else set `admin_alert` and insert `admin_alerts` row.
+- `mp_eligible_partners(p_broadcast_id, p_radius_m, p_include_neighbours)` — helper returning ranked partner list (route distance, remaining capacity, today's load, acceptance rate).
 
-- `get_vehicle_entitlements(p_vehicle_id uuid)` → returns remaining balances the customer UI reads.
-- `try_consume_entitlement(p_vehicle_id, p_benefit_type, p_booking_id, p_addon_request_id)` → atomic: locks the row, checks `consumed < total_allocated` (or unlimited), increments, writes ledger, returns `{consumed: true}` or `{consumed: false, reason}`.
-- `service_slug_to_benefit(slug)` mapping helper.
+## Cron / scheduler
 
-All queries and RPCs scope by `vehicle_id` / `subscription_id`. Never `customer_id` for balances.
+Replace `dar-timeouts` for Daily Shine with `/api/public/cron/marketplace-tick` (every 15s):
+- Selects broadcasts where `status='open' AND round_expires_at <= now()`.
+- Calls `mp_advance_round` for each.
+- Auth via `apikey` header (Supabase anon key), per convention.
 
-## 3. Booking flow rewrite
+Existing `dar-timeouts` continues to serve premium DAR only.
 
-`confirm_customer_booking` (server RPC) becomes:
+## Server functions / routes
 
-```text
-find active subscription for p_vehicle_id  (NOT customer_id)
-if subscription exists AND service maps to a benefit_type:
-    try_consume_entitlement(...)
-    if consumed: booking.amount=0, booking.paid_via='entitlement', skip Razorpay, notify admin+partner
-    else: fall through to paid add-on flow
-else:
-    paid add-on flow (existing)
-```
+- `src/lib/marketplace.functions.ts`:
+  - `acceptMarketplaceOffer({ broadcastId })` — `requireSupabaseAuth`, wraps `mp_accept_offer`.
+  - `declineMarketplaceOffer({ broadcastId })`.
+  - `getPartnerOpenOffers()` — lists open broadcasts where this partner has a pending offer in the current round, with distance/route-impact/earning info.
+- `src/lib/admin-marketplace.functions.ts` (admin-gated): CRUD on `marketplace_settings`, analytics reads.
+- Wire `mp_open_broadcast` call into `activate_paid_booking` (or the post-payment assignment queue processor) — replace current `dar-offer` seeding for Daily Shine only.
 
-Client (`service.$slug.tsx`, `subscriptions.tsx` add-on dialog):
-- Before render, fetch `get_vehicle_entitlements(vehicleId)`.
-- If remaining > 0 for the requested benefit: show "₹0 — included in your Daily Shine plan", hide Razorpay button, single **Confirm** action.
-- If remaining == 0: show "You've used all included Interior Washes" banner + paid add-on card with correct hatch/SUV price and **Continue** → Razorpay.
+## Frontend
 
-## 4. Admin & partner
+**Partner app**
+- New `src/components/partner/MarketplaceOfferCard.tsx` — shows customer, vehicle, distance-from-route, earning, working days, hours/day, route impact (`Adds only 350m` vs `Adds 2.3km`), estimated finish time, live countdown, Accept/Decline.
+- `src/routes/_authenticated/app.index.tsx` and `app.notifications.tsx`: subscribe to realtime on `marketplace_offers` filtered by `partner_id=auth.uid()` and `marketplace_broadcasts` (status changes). On `status='assigned'` for a broadcast the partner didn't win → toast "Customer already accepted" and remove card.
+- Retire the sequential `DarOfferCard` for Daily Shine leads (keep for premium).
 
-- Admin booking notification payload already includes `vehicle_id`; extend to include the benefit consumed and remaining balances for that vehicle.
-- Admin customer detail (`admin.customers.$id.tsx`) adds a per-vehicle "Plan balance" card (Interior 0/1, Exterior 12/26, Dusting ∞, etc.).
-- Vehicle-audit page (already built) gets a new "Entitlement" column showing which benefit was consumed.
-- Partner assignment payload is already vehicle-scoped; verify addon_request path also carries only the booked vehicle.
+**Admin**
+- New `src/routes/admin.marketplace-settings.tsx` — form bound to `marketplace_settings`: base rate, per-round increments array, max incentive, round duration, max rounds, broadcast on/off, expand radius on/off, radius per round, neighbour polygon on/off, auto-assign toggle.
+- Extend existing `src/routes/admin.marketplace.tsx` with analytics: broadcasts sent, accepted by round, expired, avg acceptance time, avg incentive, most active partners, conversion rate.
+- Live view of open broadcasts with round/incentive/eligible-partner count.
 
-## 5. Notifications
+**Customer**
+- No new screen; existing awaiting-partner banner listens to subscription status → refreshes on `assigned`.
 
-Trigger on `try_consume_entitlement` when `consumed == total_allocated`: enqueue customer notification "You've used all included {Benefit} Washes in your Daily Shine plan." Uses existing `customer_notifications` table.
+## Realtime
 
-## 6. Vehicle-scoped query audit
+Enable realtime on `marketplace_broadcasts` and `marketplace_offers`. Partner app subscribes filtered by `partner_id`; admin dashboard subscribes to all; customer subscribes to their subscription row.
 
-Grep + fix every read that lists bookings/subscriptions/services by `customer_id` where a `vehicle_id` filter is needed for display:
-- Admin customer detail
-- Admin route manager
-- Partner "My assignment"
-- Customer "My Plan"
+## Atomicity guarantees
 
-Verified list emitted after implementation.
+- `mp_accept_offer` uses conditional `UPDATE ... WHERE status='open'` with `RETURNING` inside a transaction — Postgres row-lock guarantees exactly one winner even under concurrent accepts.
+- Unique partial index: `CREATE UNIQUE INDEX ON marketplace_broadcasts(subscription_id) WHERE status IN ('open','assigned')` — prevents duplicate open broadcasts per subscription.
+- Assignment insert guarded by the same subscription-uniqueness check already used in `activate_paid_booking`.
 
-## 7. Playwright regression (`scripts/test-entitlements.mjs`)
+## Round-2+ ranking (route-aware)
 
-Extends existing multi-car test:
-1. Create customer with Vehicle A (Daily Shine), Vehicle B (Daily Shine), Vehicle C (none).
-2. Book Interior for A → assert ₹0, entitlement A.interior → 0/1, B.interior still 1/1.
-3. Book Interior for A again → assert paid add-on shown, Razorpay invoked.
-4. Book Interior for B → assert ₹0, B.interior → 0/1.
-5. Book anything for C → assert paid.
-6. Assert admin sees Vehicle A on step 2, Vehicle B on step 4 (no bleed).
+`mp_eligible_partners` for round ≥ 2 ranks by:
+1. Route insertion cost (m added to today's route) — computed via existing route helpers.
+2. Remaining daily capacity.
+3. Today's assignment count (ascending).
+4. 30-day acceptance rate (descending).
 
-## Technical notes
+Uses `coverage_zones` polygons + `ST_DWithin` on partner route line for radius expansion; `neighbour_polygon_expansion` union of touching polygons at the final round.
 
-- Race safety: `try_consume_entitlement` uses `SELECT ... FOR UPDATE` inside the RPC so concurrent bookings can't double-spend the last credit.
-- Cycle rollover: nightly cron already exists (`renewals`); extend to insert next-cycle entitlement rows when a subscription rolls.
-- Dusting is unlimited in the plan; represent as `total_allocated = NULL` and treat `NULL` as "always consumable".
-- Migration order: (a) create tables/enum, (b) backfill entitlements for existing active subscriptions from `plan_inclusions`, (c) grants + RLS (customer read own, admin all, service_role all; no anon), (d) install trigger + RPCs, (e) alter `confirm_customer_booking`.
+## Analytics queries
 
-## Files
+Materialised view or on-demand admin RPC `mp_analytics(range)` returning the metrics above from `marketplace_broadcasts` + `marketplace_offers` + `marketplace_round_history`.
 
-**Create**
-- `supabase/migrations/2026070517xxxx_entitlements.sql`
-- `scripts/test-entitlements.mjs`
-- `src/components/customer/PlanBalanceCard.tsx`
-- `src/lib/entitlements.ts` (client helpers + benefit slug map)
+## Migration plan
 
-**Modify**
-- `src/routes/c/_authed/service.$slug.tsx` — entitlement check + zero-price flow
-- `src/routes/c/_authed/subscriptions.tsx` — add-on dialog uses entitlement first
-- `src/routes/c/_authed/home.tsx` — show balances per vehicle
-- `src/routes/admin.customers.$id.tsx` — per-vehicle balance card
-- `src/routes/admin.vehicle-audit.tsx` — entitlement column
-- `src/integrations/supabase/types.ts` — regenerated after migration
+1. Migration: tables, indexes, RLS, GRANTs, settings seed (defaults: base 17, increments [1,2,2], max 22, 90s, 4 rounds, radii [in-polygon, 2km, 5km, neighbour]).
+2. Migration: RPCs above.
+3. Migration: enable realtime on new tables; wire `activate_paid_booking` → `mp_open_broadcast` for Daily Shine; leave premium untouched.
+4. Cron route + `pg_cron` schedule (15s tick).
+5. Server functions + admin server functions.
+6. Partner UI: new offer card + list + realtime; retire Daily Shine path in old `DarOfferCard`.
+7. Admin: settings screen + analytics extension.
+8. Playwright regression `scripts/test-marketplace-v2.mjs`: broadcast to N partners, first-accept-wins race, round advancement with incentive/radius change, admin-alert at final round, premium leads bypass broadcast.
+
+## Out of scope
+- No changes to premium/one-off booking flow.
+- No changes to entitlement / pricing engine.
+- No changes to payments or Razorpay path.
+
+Confirm to proceed and I'll implement in the order above.

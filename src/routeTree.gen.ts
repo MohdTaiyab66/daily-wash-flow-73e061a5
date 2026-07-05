@@ -35,6 +35,7 @@ import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-mo
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminMarketplaceSettingsRouteImport } from './routes/admin.marketplace-settings'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
@@ -80,6 +81,7 @@ import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/servi
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
 import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
+import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
 import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
 import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
@@ -218,6 +220,12 @@ const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMarketplaceSettingsRoute =
+  AdminMarketplaceSettingsRouteImport.update({
+    id: '/marketplace-settings',
+    path: '/marketplace-settings',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
   id: '/marketplace',
   path: '/marketplace',
@@ -453,6 +461,12 @@ const ApiPublicCronOfferPushDispatchRoute =
     path: '/api/public/cron/offer-push-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronMarketplaceTickRoute =
+  ApiPublicCronMarketplaceTickRouteImport.update({
+    id: '/api/public/cron/marketplace-tick',
+    path: '/api/public/cron/marketplace-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDarTimeoutsRoute =
   ApiPublicCronDarTimeoutsRouteImport.update({
     id: '/api/public/cron/dar-timeouts',
@@ -521,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
@@ -575,6 +590,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
+  '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -599,6 +615,7 @@ export interface FileRoutesByTo {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
@@ -652,6 +669,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
+  '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -680,6 +698,7 @@ export interface FileRoutesById {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/marketplace-settings': typeof AdminMarketplaceSettingsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
@@ -734,6 +753,7 @@ export interface FileRoutesById {
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
+  '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
@@ -762,6 +782,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
@@ -816,6 +837,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
+    | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/c/bookings/$id'
@@ -840,6 +862,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
@@ -893,6 +916,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
+    | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/c/bookings/$id'
@@ -920,6 +944,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/marketplace-settings'
     | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
@@ -974,6 +999,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/assignment-tick'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
+    | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/c/_authed/bookings/$id'
@@ -999,6 +1025,7 @@ export interface RootRouteChildren {
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
   ApiPublicCronDarOfflinePartnersRoute: typeof ApiPublicCronDarOfflinePartnersRoute
   ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
+  ApiPublicCronMarketplaceTickRoute: typeof ApiPublicCronMarketplaceTickRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
   ApiPublicHooksNotificationPushRoute: typeof ApiPublicHooksNotificationPushRoute
 }
@@ -1185,6 +1212,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace-settings': {
+      id: '/admin/marketplace-settings'
+      path: '/marketplace-settings'
+      fullPath: '/admin/marketplace-settings'
+      preLoaderRoute: typeof AdminMarketplaceSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketplace': {
@@ -1502,6 +1536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/marketplace-tick': {
+      id: '/api/public/cron/marketplace-tick'
+      path: '/api/public/cron/marketplace-tick'
+      fullPath: '/api/public/cron/marketplace-tick'
+      preLoaderRoute: typeof ApiPublicCronMarketplaceTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/dar-timeouts': {
       id: '/api/public/cron/dar-timeouts'
       path: '/api/public/cron/dar-timeouts'
@@ -1644,6 +1685,7 @@ interface AdminRouteChildren {
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
+  AdminMarketplaceSettingsRoute: typeof AdminMarketplaceSettingsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
@@ -1681,6 +1723,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
+  AdminMarketplaceSettingsRoute: AdminMarketplaceSettingsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
   AdminPartnersRoute: AdminPartnersRoute,
@@ -1774,6 +1817,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
   ApiPublicCronDarOfflinePartnersRoute: ApiPublicCronDarOfflinePartnersRoute,
   ApiPublicCronDarTimeoutsRoute: ApiPublicCronDarTimeoutsRoute,
+  ApiPublicCronMarketplaceTickRoute: ApiPublicCronMarketplaceTickRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
   ApiPublicHooksNotificationPushRoute: ApiPublicHooksNotificationPushRoute,
 }
