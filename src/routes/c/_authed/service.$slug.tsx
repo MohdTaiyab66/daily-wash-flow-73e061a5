@@ -150,19 +150,29 @@ function ServiceDetail() {
 
 
 
+  const search = Route.useSearch();
+  const preselectVehicleId = search.vehicleId ?? null;
+
   useEffect(() => {
     if (vehiclesQ.data?.length) {
+      // Priority: 1) explicit ?vehicleId= from Subscribe Now, 2) sessionStorage
+      // selection from My Plan, 3) localStorage remembered, 4) default, 5) first.
+      let session: string | null = null;
+      try { session = sessionStorage.getItem("uw:selectedVehicleId"); } catch { /* noop */ }
       const stored = localStorage.getItem("uw_customer_vehicle");
+      const inList = (id: string | null) => !!id && vehiclesQ.data!.some((v) => v.id === id);
       const nextVehicleId =
-        stored && vehiclesQ.data.some((v) => v.id === stored)
-          ? stored
-          : (vehiclesQ.data.find((v) => v.is_default)?.id ?? vehiclesQ.data[0].id);
+        (inList(preselectVehicleId) && preselectVehicleId) ||
+        (inList(session) && session) ||
+        (inList(stored) && stored) ||
+        vehiclesQ.data.find((v) => v.is_default)?.id ||
+        vehiclesQ.data[0].id;
       if (!vehicleId || !vehiclesQ.data.some((v) => v.id === vehicleId)) {
-        setVehicleId(nextVehicleId);
-        localStorage.setItem("uw_customer_vehicle", nextVehicleId);
+        setVehicleId(nextVehicleId!);
+        localStorage.setItem("uw_customer_vehicle", nextVehicleId!);
       }
     }
-  }, [vehiclesQ.data, vehicleId]);
+  }, [vehiclesQ.data, vehicleId, preselectVehicleId]);
 
   useEffect(() => {
     if (!addressId && addressesQ.data?.length) {
