@@ -4591,6 +4591,7 @@ export type Database = {
       }
       create_addon_request: {
         Args: {
+          p_address_id?: string
           p_notes: string
           p_preferred_date: string
           p_preferred_time: string
