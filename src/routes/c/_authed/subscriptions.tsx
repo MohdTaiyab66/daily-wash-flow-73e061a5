@@ -212,37 +212,59 @@ function MyPlanPage() {
   const completedCount = all.filter((b) => b.status === "completed").length;
   const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
 
+  const selectedVehicle = vehiclesQ.data?.find((v) => v.id === selectedVehicleId) ?? null;
+  const vehicleLabel = selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : null;
+  const hasVehicles = (vehiclesQ.data?.length ?? 0) > 0;
+  const activePlanSlug = activeSub?.service_catalog?.slug ?? null;
+
   return (
     <div className="px-5 pt-6 pb-12">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">My Plan</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Track your Daily Shine service.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {vehicleLabel ? `Tracking ${vehicleLabel}` : "Track your Daily Shine service."}
+          </p>
         </div>
-        <Sparkles className="h-6 w-6 text-primary" />
+        {hasVehicles && (
+          <VehicleSelector
+            vehicles={vehiclesQ.data ?? []}
+            value={selectedVehicleId}
+            onChange={setSelectedVehicleId}
+          />
+        )}
       </div>
 
-      <AwaitingPartnerBanner userId={userId} />
-
-      <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
-
-      {bookingsQ.isLoading && (
-        <div className="mt-6 space-y-3">
-          <div className="h-32 animate-pulse rounded-3xl bg-muted" />
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-        </div>
-      )}
-
-      {!bookingsQ.isLoading && !activeSub && (
+      {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border p-10 text-center">
-          <Sparkles className="h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-3 text-base font-semibold">No active plan</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Subscribe to Daily Shine to enjoy daily car care.</p>
+          <Car className="h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-3 text-base font-semibold">Add a vehicle to get started</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Daily Shine is per-vehicle. Add a car to subscribe.</p>
           <Button asChild className="mt-5 rounded-full">
-            <Link to="/c/home">Browse plans</Link>
+            <Link to="/c/vehicles/add">Add vehicle</Link>
           </Button>
         </div>
       )}
+
+      {hasVehicles && (
+        <>
+          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+
+          {bookingsQ.isLoading && (
+            <div className="mt-6 space-y-3">
+              <div className="h-32 animate-pulse rounded-3xl bg-muted" />
+              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+            </div>
+          )}
+
+          {!bookingsQ.isLoading && !activeSub && (
+            <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
+          )}
+        </>
+      )}
+
 
       {activeSub && (
         <>
