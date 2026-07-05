@@ -168,27 +168,46 @@ function ServiceDetail() {
 
   const vehicleCount = vehiclesQ.data?.length ?? 1;
 
-  // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle to use code)
+  // The "first" car on the account is the earliest-created vehicle.
+  // Coupons never apply to the first car — only to additional cars
+  // (2nd, 3rd, 4th...). vehiclesQ is ordered by created_at asc.
+  const firstVehicleId = vehiclesQ.data?.[0]?.id ?? null;
+  const isFirstVehicle = !!vehicleId && vehicleId === firstVehicleId;
+
+  // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle
+  // AND must be booking for a car other than their first one).
   const subtotal = basePrice + addonPrice;
   const discountPct = appliedCoupon?.percent ?? 0;
   const discountAmt = Math.round((subtotal * discountPct) / 100);
   const total = subtotal - discountAmt;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
 
-  // Multi-vehicle coupon: auto-detected from number of cars on the account.
+  // Multi-vehicle coupon: only unlocked when booking for a non-first car.
   // 2 cars → 10%, 3 cars → 15%, 4+ cars → 20%.
   const eligibleCoupon = useMemo(() => {
+    if (vehicleCount < 2) return null;
+    if (isFirstVehicle) return null;
     if (vehicleCount >= 4) return { code: "MULTI20", percent: 20 };
     if (vehicleCount === 3) return { code: "EXTRA15", percent: 15 };
-    if (vehicleCount === 2) return { code: "EXTRA10", percent: 10 };
-    return null;
-  }, [vehicleCount]);
+    return { code: "EXTRA10", percent: 10 };
+  }, [vehicleCount, isFirstVehicle]);
+
+  // If the selected vehicle changes to one that is no longer eligible
+  // (e.g. user switches back to their first car), silently drop the coupon.
+  useEffect(() => {
+    if (appliedCoupon && !eligibleCoupon) setAppliedCoupon(null);
+  }, [appliedCoupon, eligibleCoupon]);
 
   const applyBestCoupon = () => {
-    if (!eligibleCoupon) {
+    if (vehicleCount < 2) {
       toast.error("Add another car to your account to unlock multi-car discounts.");
       return;
     }
+    if (isFirstVehicle) {
+      toast.error("Coupons apply only when booking for an additional car, not your first one.");
+      return;
+    }
+    if (!eligibleCoupon) return;
     setAppliedCoupon(eligibleCoupon);
     toast.success(`${eligibleCoupon.percent}% multi-car discount applied`);
   };
@@ -508,9 +527,14 @@ function ServiceDetail() {
               </div>
               <Button type="button" size="sm" onClick={applyBestCoupon} className="shrink-0 rounded-full">Apply coupon</Button>
             </div>
+          ) : isFirstVehicle && vehicleCount >= 2 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
+              Coupons apply only when you book service for an additional car — not your first one.
+              Switch the car above to a different vehicle to unlock your multi-car discount.
+            </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
-              Add another car to unlock multi-car discounts: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
+              Add another car to unlock multi-car discounts on the next car: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
               <div className="mt-2">
                 <Button asChild size="sm" variant="outline" className="rounded-full">
                   <Link to="/c/vehicles/add">Add another car</Link>
