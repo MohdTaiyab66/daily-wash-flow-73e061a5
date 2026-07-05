@@ -44,9 +44,19 @@ export function MarketplaceOffersList() {
     };
   }, [qc]);
 
-  const offers = (q.data ?? []) as any[];
+  const offers = useMemo(() => {
+    const list = ((q.data ?? []) as any[]).slice();
+    // Highest-value offer wins the full-screen slot; break ties by newest.
+    list.sort((a, b) => {
+      const di = Number(b.incentive) - Number(a.incentive);
+      if (di !== 0) return di;
+      return new Date(b.sent_at ?? 0).getTime() - new Date(a.sent_at ?? 0).getTime();
+    });
+    return list;
+  }, [q.data]);
   const top = offers[0] ?? null;
   const rest = offers.slice(1);
+  const count = offers.length;
 
   // Play a short chirp + vibrate once per new top offer id.
   const seenIdRef = useRef<string | null>(null);
@@ -82,19 +92,24 @@ export function MarketplaceOffersList() {
     [qc],
   );
 
-  if (offers.length === 0) return null;
+  if (count === 0) return null;
 
   return (
-    <>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">Marketplace</h3>
+        <span className="inline-flex min-w-[24px] items-center justify-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground animate-pulse">
+          {count}
+        </span>
+      </div>
       {top && <MarketplaceOfferSheet offer={top} onClose={closeTop} />}
       {rest.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">More marketplace offers</h3>
+        <div className="space-y-2">
           {rest.map((o) => (
-            <MarketplaceOfferCard key={o.id} offer={o} />
+            <MarketplaceOfferCard key={o.id} offer={o} compact />
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
