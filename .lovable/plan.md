@@ -1,106 +1,110 @@
-# P0 — Vehicle-Specific Daily Shine + Plan Inclusions
 
-Two coordinated changes: (1) make every Daily Shine surface scoped to the selected vehicle, (2) introduce a normalized `plan_inclusions` table with an admin editor. Shipped in one pass so customers never see mixed-vehicle data again.
+# P0 – Partner Lead Acceptance & Realtime Notification System
 
-## 1. Database
+Scope covers all 12 issues raised. Grouped by area so we can ship in one coherent pass without touching unrelated modules.
 
-New table `public.plan_inclusions`:
+## 1. Notification data model (DB migration)
 
-```text
-id            uuid pk
-plan_slug     text not null   -- matches service_catalog.slug (e.g. 'daily-shine')
-title         text not null
-description   text null
-icon          text null       -- lucide icon name, e.g. 'droplets'
-display_order int  not null default 0
-is_active     bool not null default true
-created_at    timestamptz
-updated_at    timestamptz
-```
+Extend `partner_notifications` and add matching admin table:
 
-- Index on `(plan_slug, display_order)`.
-- RLS: `SELECT` open to `anon` + `authenticated` where `is_active = true`; full CRUD to admins via `has_role`. GRANTs per Lovable Cloud rules.
-- Seed the six Daily Shine inclusions from the spec.
-- Trigger `update_updated_at_column` on update.
+- Add `category` text (`daily_shine | dar | wallet | system | assignments | premium | payments | expansion | alerts | bookings`), `subject_type`, `subject_id`, `metadata jsonb`.
+- Backfill existing rows to sensible categories from `type`.
+- New table `admin_notifications` (id, category, title, body, link, subject_type, subject_id, metadata, read_at, created_at) + RLS restricted to admins, GRANT to authenticated/service_role.
+- Helper RPC `notify_admins_new_booking(booking_id)` and `notify_partner_new_offer(offer_id)` — SECURITY DEFINER — producing correctly-linked notifications with `link = /app/leads/:offerId` for partners and `/admin/service/:id` (premium) or `/admin/live` (daily shine) for admin.
 
-Notifications: add nullable `vehicle_id uuid` to `customer_notifications` (FK → `customer_vehicles`, ON DELETE SET NULL) so future notifications can label the vehicle. Backfill left null; UI shows vehicle name when present.
+## 2. Booking → routing rules (DB triggers)
 
-No other schema changes. `bookings.vehicle_id`, `subscriptions.vehicle_id`, `services.vehicle_id`, `dirty_vehicle_reports.vehicle_id`, `service_photos` (via service) already exist — we filter on them.
+Single trigger on `bookings` insert:
 
-## 2. Customer App — `src/routes/c/_authed/subscriptions.tsx`
+- If service is **Daily Shine** → enqueue via existing `subscription_assignment_queue` + `pick_scored_partner_for_queue` (no change); ensure `notify_partner_new_offer` fires when a `subscription_offers` row is inserted.
+- If service is **Premium / Interior / Exterior / Deep Clean** → **do NOT** enqueue in Daily Shine marketplace. Instead insert into `admin_notifications` (category=`premium`/`bookings`) and mark booking `assignment_state = 'awaiting_admin'`.
+- Always insert an `admin_notifications` row for every new booking (category by service_type).
 
-Rewrite around a **selected vehicle**:
+This kills issue 6 (premium leaking into DS marketplace).
 
-- Header right side: vehicle selector dropdown (`🚙 Tata Safari ▼`) listing all customer vehicles + `+ Add Vehicle` (routes to `/c/vehicles/add`). Selected id stored in `useState` + `sessionStorage("uw:selectedVehicleId")` so it survives navigation within the session. Default = first vehicle with an active subscription, else first vehicle.
-- All queries below scoped by `vehicle_id = selectedVehicleId`:
-  - `subscriptions` (single row per vehicle: `.eq("vehicle_id", …)`)
-  - `bookings` (recent + counters)
-  - `services` (today's live status)
-  - `dirty_vehicle_reports` / `unavailability_reports`
-  - `booking_addons` (via that vehicle's booking ids)
-  - `plan_inclusions` (by `subscriptions.plan_slug`)
-- If no active subscription for the selected vehicle: hide plan/progress/history/photos and show a **No Active Subscription** empty state with a large `Subscribe Now` CTA → navigates to `/c/service/daily-shine?vehicleId=<id>`.
-- Active plan card gains: vehicle icon + name, plan name, paid badge, price, **What's Included** list rendered from `plan_inclusions`.
-- Progress, This Month tiles, Recent Services all read from the vehicle-scoped bookings/services.
+## 3. Partner offer popup / lead page
 
-Booking flow (`service.$slug.tsx`): read `vehicleId` search param and pre-select that vehicle; skip the vehicle picker step when present.
+Rework so notification "Open" always lands on a dedicated **Lead Details** route:
 
-`AwaitingPartnerBanner` becomes vehicle-scoped: accepts `vehicleId`, filters `subscriptions` / `services` / `queue` by it. Existing "hard block" against showing `unassignable` when a partner exists is kept.
+- New route `src/routes/_authenticated/app.leads.$offerId.tsx`
+  - Loads offer via `get_offer_details_for_partner(offer_id)` (new SECURITY DEFINER RPC returning customer name, vehicle, area, address, distance-from-nearest-assignment, route delta, ₹/day, ₹/month, working days, hours, expires_at).
+  - Renders full details + Accept / Decline calling existing `respond_subscription_offer`.
+  - Countdown + auto-expire (client polls, server tick already handled by `assignment-tick` cron).
+- `OfferPopup` remains as **foreground heads-up** but its CTA "View full details" navigates to `/app/leads/:offerId`. Popup stays for quick Accept/Decline.
+- `partner_notifications.link` for offers set to `/app/leads/:offerId` (fix issue 1, 3).
 
-`RecentServiceFeed` accepts `vehicleId` and filters services + photos + complaints by it.
+## 4. Distance = nearest assigned customer
 
-`bookings.tsx` (Bookings tab): show the same vehicle selector at top and filter list by vehicle.
+New SQL helper `distance_from_partner_route(partner_id, lat, lng)`:
+- Reads partner's active assignments (today's route stops), returns min haversine distance to any stop's lat/lng, plus rough route delta (2× distance / avg speed).
+- If partner has no assignments today, falls back to partner home coords.
+- Wired into `pick_scored_partner_for_queue` output + surfaced in lead details and popup (replaces `distance_from_route_m` current value where GPS was used).
 
-Notifications list: when a row has `vehicle_id`, prefix the title with the vehicle name.
+## 5. FCM push (foreground + background + killed)
 
-## 3. Admin
+- Cron `offer-push-dispatch.ts` already sends FCM on new offers. Update payload:
+  - `data.link = /app/leads/<offerId>`
+  - `data.category = daily_shine`
+  - `notification.click_action = FLUTTER_NOTIFICATION_CLICK` + Android channel `daily_shine_leads` with high importance (heads-up on device).
+- Native handler in `src/lib/push/fcm.ts`: on `pushNotificationActionPerformed`, read `data.link` and `router.navigate({ to: data.link })`. Handles killed + background taps (issue 3).
+- Foreground: when push arrives while app open, rely on existing realtime `OfferPopup` (already ringing + vibrating).
 
-**Plan Inclusions editor** — new route `/admin/plan-inclusions` (linked from `admin.settings.tsx` under a new "Subscription Plans" section):
+## 6. Accept flow realtime
 
-- Plan selector (lists distinct `service_catalog` rows where `service_type = 'subscription'`).
-- Table of inclusions for that plan: title, description, icon picker (curated lucide set: droplets, wrench, sparkles, sprayCan, shield, car, calendar, check), active toggle, up/down reorder buttons, edit, delete.
-- Add inclusion dialog.
-- Live preview panel rendering exactly like the customer card.
-- All writes go through admin-only server functions (`requireSupabaseAuth` + `has_role` check).
+`respond_subscription_offer` (accept branch) already:
+- Creates assignment, adds to route. Verify + patch:
+  - Insert `partner_notifications` (category=`assignments`, title="New customer added", link=`/app/my-assignment`).
+  - Insert `admin_notifications` (category=`assignments`).
+  - Insert `customer_notifications` ("Your Daily Shine partner is assigned").
+  - Broadcast handled by Realtime on the tables the customer/admin already subscribe to.
 
-**Customer detail page** (`admin.customers.$id.tsx`): group existing per-customer sections under a **Vehicles** tab list — one panel per vehicle with that vehicle's Subscription, Assigned Partner, Progress, Photos, Booking history. Reuses existing queries with `.eq("vehicle_id", v.id)`. No merged view.
+## 7. Decline flow → DAR next partner
 
-## 4. Server Functions
+Existing `respond_subscription_offer(false)` already reinserts into queue; ensure:
+- Declined offer row marked `response='declined'`, cannot be re-offered to same partner (unique index `(queue_id, partner_id) where response in ('declined','expired')`).
+- Assignment tick cron picks next eligible partner and creates a new offer → new notification.
 
-Add to `src/lib/admin.functions.ts`:
+## 8. Notification Center categories
 
-- `listPlanInclusions({ plan_slug })` — public read (active only) + admin read (all).
-- `adminUpsertPlanInclusion` — admin only.
-- `adminDeletePlanInclusion` — admin only.
-- `adminReorderPlanInclusions({ plan_slug, ordered_ids })` — admin only, single UPDATE using CASE.
+`app/notifications` page:
+- Tabs: All / Daily Shine / Assignments / DAR / Wallet / System.
+- Filter by `category`. Grouping headers, unread badges per tab.
+- "Open" uses `notification.link`; if it's a lead offer link, navigate to lead details.
 
-Customer app reads `plan_inclusions` directly via the browser Supabase client (RLS returns only `is_active` rows to non-admins).
+Add admin equivalent at `src/routes/admin.notifications.tsx` with tabs Bookings / Premium / Assignments / Payments / Expansion / Alerts, plus a bell in admin shell.
 
-## 5. Regression Guards
+## 9. Auto-expire 90s
 
-- Existing subscriptions untouched (no data migration on subscriptions/bookings).
-- Billing, renewals, assignment, DAR: no changes to their tables or flows.
-- Booking flow unchanged when `vehicleId` search param absent.
-- If a customer has no vehicles: show today's existing empty state.
-- Unique index `uq_subscriptions_vehicle_open` already prevents two active subs per vehicle — matches new UI model.
-- `AwaitingPartnerBanner`: existing rule "never show 'unable to assign' when a partner is assigned" preserved and now scoped per vehicle.
+Already 90s in offer creation. Add `assignment-tick` guard: on expiry, mark `response='expired'`, insert `partner_notifications` (category=`dar`, "Lead expired"), reinsert queue for next partner. Runs each minute — acceptable for 90s window with realtime for the accept side.
 
-## 6. Test Matrix
+## 10. Regression checklist (must retain)
 
-Verify manually against seed data plus a scripted probe:
-
-- 1 vehicle, subscribed → full plan view.
-- 2 vehicles, 1 subscribed → selector switches to empty state on unsubscribed.
-- 2 vehicles, both subscribed → each shows its own partner / progress / history.
-- 3 vehicles, different plans → inclusions differ per plan.
-- Subscribe Now from empty state → booking flow lands on Daily Shine with the right vehicle pre-selected.
-- Admin editor: add / edit / reorder / disable → customer sees change on next query.
-- Admin customer detail: each vehicle tab shows only its own data.
+- DS marketplace still lists queue for admin view (issue 6 changes only push routing, not admin marketplace listing which stays DS-only).
+- DAR page, partner route, assignment builder, wallet, customer timeline unchanged.
+- Existing pre/post payment logic untouched.
+- Cancellation window untouched.
 
 ## Files
 
-New: `supabase/migrations/<ts>_plan_inclusions.sql`, `src/routes/admin.plan-inclusions.tsx`, `src/components/customer/VehicleSelector.tsx`, `src/components/customer/PlanInclusionsCard.tsx`, `src/components/customer/NoSubscriptionState.tsx`.
+**New**
+- `supabase/migrations/<ts>_partner_lead_notifications.sql` — schema + RPCs + triggers.
+- `src/routes/_authenticated/app.leads.$offerId.tsx`
+- `src/routes/admin.notifications.tsx`
+- `src/components/admin/AdminNotificationBell.tsx`
 
-Edited: `src/routes/c/_authed/subscriptions.tsx`, `src/routes/c/_authed/bookings.tsx`, `src/routes/c/_authed/service.$slug.tsx`, `src/components/customer/AwaitingPartnerBanner.tsx`, `src/components/customer/RecentServiceFeed.tsx`, `src/routes/admin.customers.$id.tsx`, `src/routes/admin.settings.tsx`, `src/lib/admin.functions.ts`.
+**Edited**
+- `src/routes/_authenticated/app.notifications.tsx` — categories/tabs, link routing.
+- `src/components/partner/OfferPopup.tsx` — CTA to lead details, use RPC distance.
+- `src/lib/push/fcm.ts` — action handler navigates to `data.link`.
+- `src/routes/api/public/cron/offer-push-dispatch.ts` — payload category + link + channel.
+- `src/routes/api/public/cron/assignment-tick.ts` — expiry notification.
+- `src/routes/admin.tsx` — nav entry + bell.
+- `src/integrations/supabase/types.ts` — regenerated after migration approval.
 
-Approve to proceed.
+## Technical Notes
+
+- `notification-push` hook (existing) will fanout the new `admin_notifications` and `partner_notifications` inserts via FCM using each row's `link` — one code path for both.
+- Heads-up on Android requires `IMPORTANCE_HIGH` channel; will be created in `startFcm` on first run.
+- All new tables get GRANTs + RLS in the same migration.
+
+Ready to implement on approval.
