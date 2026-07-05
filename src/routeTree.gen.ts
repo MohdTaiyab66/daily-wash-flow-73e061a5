@@ -42,6 +42,7 @@ import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
 import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
+import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
 import { Route as AdminAddonQueueRouteImport } from './routes/admin.addon-queue'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
@@ -245,6 +246,11 @@ const AdminCoverageRoute = AdminCoverageRouteImport.update({
 const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAddonsRoute = AdminAddonsRouteImport.update({
+  id: '/addons',
+  path: '/addons',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAddonQueueRoute = AdminAddonQueueRouteImport.update({
@@ -472,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/c': typeof CAuthedRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/addon-queue': typeof AdminAddonQueueRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -544,6 +551,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/c': typeof CIndexRoute
   '/admin/addon-queue': typeof AdminAddonQueueRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -619,6 +627,7 @@ export interface FileRoutesById {
   '/c/_authed': typeof CAuthedRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/admin/addon-queue': typeof AdminAddonQueueRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
@@ -695,6 +704,7 @@ export interface FileRouteTypes {
     | '/c'
     | '/app'
     | '/admin/addon-queue'
+    | '/admin/addons'
     | '/admin/attendance'
     | '/admin/coverage'
     | '/admin/customer-map'
@@ -767,6 +777,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/c'
     | '/admin/addon-queue'
+    | '/admin/addons'
     | '/admin/attendance'
     | '/admin/coverage'
     | '/admin/customer-map'
@@ -841,6 +852,7 @@ export interface FileRouteTypes {
     | '/c/_authed'
     | '/_authenticated/app'
     | '/admin/addon-queue'
+    | '/admin/addons'
     | '/admin/attendance'
     | '/admin/coverage'
     | '/admin/customer-map'
@@ -1161,6 +1173,13 @@ declare module '@tanstack/react-router' {
       path: '/attendance'
       fullPath: '/admin/attendance'
       preLoaderRoute: typeof AdminAttendanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/addons': {
+      id: '/admin/addons'
+      path: '/addons'
+      fullPath: '/admin/addons'
+      preLoaderRoute: typeof AdminAddonsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/addon-queue': {
@@ -1515,6 +1534,7 @@ const AdminMarketplaceRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAddonQueueRoute: typeof AdminAddonQueueRoute
+  AdminAddonsRoute: typeof AdminAddonsRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCoverageRoute: typeof AdminCoverageRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
@@ -1547,6 +1567,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAddonQueueRoute: AdminAddonQueueRoute,
+  AdminAddonsRoute: AdminAddonsRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCoverageRoute: AdminCoverageRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
