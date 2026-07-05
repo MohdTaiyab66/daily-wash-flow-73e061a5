@@ -368,7 +368,7 @@ export function MarketplaceOfferCard({
           </Button>
           <Button
             className="h-12 flex-[1.4] bg-emerald-600 text-base font-bold hover:bg-emerald-700"
-            onClick={onAccept}
+            onClick={handleAccept}
             disabled={busy || remaining === 0}
           >
             <Check className="mr-1 h-5 w-5" /> Accept
