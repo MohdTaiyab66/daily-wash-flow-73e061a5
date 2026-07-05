@@ -176,6 +176,7 @@ export function AwaitingPartnerBanner({
     const refresh = () => {
       qc.invalidateQueries({ queryKey: ["awaiting-partner-subs", userId] });
       qc.invalidateQueries({ queryKey: ["awaiting-partner-queue", userId] });
+      qc.invalidateQueries({ queryKey: ["awaiting-partner-broadcast", userId] });
       qc.invalidateQueries({ queryKey: ["customer-today-service", userId, today] });
     };
     const ch = supabase
