@@ -1519,6 +1519,261 @@ export type Database = {
           },
         ]
       }
+      marketplace_broadcasts: {
+        Row: {
+          assignment_id: string | null
+          booking_id: string | null
+          created_at: string
+          current_incentive: number
+          current_radius_m: number
+          current_round: number
+          customer_id: string
+          customer_lat: number | null
+          customer_lng: number | null
+          id: string
+          round_expires_at: string
+          round_started_at: string
+          service_area_id: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+          vehicle_id: string | null
+          winning_partner_id: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          booking_id?: string | null
+          created_at?: string
+          current_incentive?: number
+          current_radius_m?: number
+          current_round?: number
+          customer_id: string
+          customer_lat?: number | null
+          customer_lng?: number | null
+          id?: string
+          round_expires_at?: string
+          round_started_at?: string
+          service_area_id?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+          winning_partner_id?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          booking_id?: string | null
+          created_at?: string
+          current_incentive?: number
+          current_radius_m?: number
+          current_round?: number
+          customer_id?: string
+          customer_lat?: number | null
+          customer_lng?: number | null
+          id?: string
+          round_expires_at?: string
+          round_started_at?: string
+          service_area_id?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          winning_partner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_broadcasts_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_vehicle_audit"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_service_area_id_fkey"
+            columns: ["service_area_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_winning_partner_id_fkey"
+            columns: ["winning_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_offers: {
+        Row: {
+          broadcast_id: string
+          distance_from_route_m: number | null
+          id: string
+          incentive: number
+          partner_id: string
+          responded_at: string | null
+          response: string
+          round: number
+          route_impact_m: number | null
+          sent_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          broadcast_id: string
+          distance_from_route_m?: number | null
+          id?: string
+          incentive: number
+          partner_id: string
+          responded_at?: string | null
+          response?: string
+          round?: number
+          route_impact_m?: number | null
+          sent_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          broadcast_id?: string
+          distance_from_route_m?: number | null
+          id?: string
+          incentive?: number
+          partner_id?: string
+          responded_at?: string | null
+          response?: string
+          round?: number
+          route_impact_m?: number | null
+          sent_at?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_offers_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_round_history: {
+        Row: {
+          broadcast_id: string
+          ended_at: string | null
+          id: string
+          incentive: number
+          offers_sent: number
+          radius_m: number
+          reason: string | null
+          round: number
+          started_at: string
+        }
+        Insert: {
+          broadcast_id: string
+          ended_at?: string | null
+          id?: string
+          incentive: number
+          offers_sent?: number
+          radius_m: number
+          reason?: string | null
+          round: number
+          started_at?: string
+        }
+        Update: {
+          broadcast_id?: string
+          ended_at?: string | null
+          id?: string
+          incentive?: number
+          offers_sent?: number
+          radius_m?: number
+          reason?: string | null
+          round?: number
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_round_history_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_settings: {
+        Row: {
+          auto_assign_final_round: boolean
+          base_incentive: number
+          broadcast_enabled: boolean
+          created_at: string
+          expand_radius_enabled: boolean
+          id: boolean
+          max_incentive: number
+          max_rounds: number
+          neighbour_polygon_expansion: boolean
+          radius_per_round_m: number[]
+          round_duration_sec: number
+          round_increments: number[]
+          updated_at: string
+        }
+        Insert: {
+          auto_assign_final_round?: boolean
+          base_incentive?: number
+          broadcast_enabled?: boolean
+          created_at?: string
+          expand_radius_enabled?: boolean
+          id?: boolean
+          max_incentive?: number
+          max_rounds?: number
+          neighbour_polygon_expansion?: boolean
+          radius_per_round_m?: number[]
+          round_duration_sec?: number
+          round_increments?: number[]
+          updated_at?: string
+        }
+        Update: {
+          auto_assign_final_round?: boolean
+          base_incentive?: number
+          broadcast_enabled?: boolean
+          created_at?: string
+          expand_radius_enabled?: boolean
+          id?: boolean
+          max_incentive?: number
+          max_rounds?: number
+          neighbour_polygon_expansion?: boolean
+          radius_per_round_m?: number[]
+          round_duration_sec?: number
+          round_increments?: number[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       multi_vehicle_discounts: {
         Row: {
           active: boolean
@@ -4936,6 +5191,31 @@ export type Database = {
         Args: { p_assignment_id: string; p_delta: number }
         Returns: Json
       }
+      mp_accept_offer: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_advance_round: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_decline_offer: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_eligible_partners: {
+        Args: {
+          p_broadcast_id: string
+          p_include_neighbours?: boolean
+          p_radius_m: number
+        }
+        Returns: {
+          distance_m: number
+          partner_id: string
+          remaining_capacity: number
+          today_cars: number
+        }[]
+      }
+      mp_haversine_m: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      mp_open_broadcast: {
+        Args: { p_subscription_id: string }
+        Returns: string
+      }
+      mp_tick: { Args: never; Returns: number }
       offer_next_for_queue: { Args: { p_queue_id: string }; Returns: string }
       partner_complete_service: {
         Args: {
