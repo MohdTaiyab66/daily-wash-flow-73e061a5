@@ -28,6 +28,14 @@ async function handle(request: Request) {
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Look up the token metadata BEFORE consuming so we can log against the offer,
+  // regardless of whether the RPC succeeds.
+  const { data: tokenRow } = await (supabaseAdmin as any)
+    .from("push_action_tokens")
+    .select("offer_id, broadcast_id, partner_id")
+    .eq("token", parsed.data.token)
+    .maybeSingle();
+
   const { data, error } = await (supabaseAdmin as any).rpc("mp_consume_action_token", {
     p_token: parsed.data.token,
     p_action: parsed.data.action,
@@ -35,19 +43,20 @@ async function handle(request: Request) {
   if (error) {
     return Response.json({ ok: false, reason: "server_error", detail: error.message }, { status: 500 });
   }
-  // Delivery tracking — best-effort
-  try {
-    const res = (data ?? {}) as { ok?: boolean; offer_id?: string; broadcast_id?: string; partner_id?: string };
-    if (res.ok && res.offer_id) {
+  const res = (data ?? {}) as { ok?: boolean; reason?: string };
+  if (tokenRow?.offer_id) {
+    try {
       await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
-        offer_id: res.offer_id,
-        broadcast_id: res.broadcast_id ?? null,
-        partner_id: res.partner_id ?? null,
-        stage: parsed.data.action === "accept" ? "accepted" : "declined",
-        meta: { source: "native_notification" },
+        offer_id: tokenRow.offer_id,
+        broadcast_id: tokenRow.broadcast_id,
+        partner_id: tokenRow.partner_id,
+        stage: res.ok
+          ? parsed.data.action === "accept" ? "accepted" : "declined"
+          : "push_failed",
+        meta: { source: "native_notification", ok: res.ok, reason: res.reason ?? null },
       });
-    }
-  } catch { /* noop */ }
+    } catch { /* noop */ }
+  }
   return Response.json(data ?? { ok: false, reason: "unknown" });
 }
 
