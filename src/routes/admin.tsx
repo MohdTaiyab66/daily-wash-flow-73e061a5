@@ -36,6 +36,7 @@ function AdminLayout() {
   const nav: Array<{ to: any; label: string; icon: typeof Users; exact?: boolean }> = [
     { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: "/admin/notifications", label: "Notifications", icon: BellRing },
+    { to: "/admin/vehicle-audit", label: "Vehicle Audit", icon: ShieldAlert },
     { to: "/admin/customers", label: "Customers", icon: UserSquare2 },
     { to: "/admin/import", label: "Import Customer", icon: UserPlus },
     { to: "/admin/partners", label: "Partners", icon: Users },
