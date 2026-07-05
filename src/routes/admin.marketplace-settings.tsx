@@ -44,6 +44,12 @@ function MarketplaceSettingsPage() {
         radius_per_round_m: (form.radius_per_round_m as any[]).map((n) => Math.round(Number(n))),
         neighbour_polygon_expansion: !!form.neighbour_polygon_expansion,
         auto_assign_final_round: !!form.auto_assign_final_round,
+        notification_sound: String(form.notification_sound ?? "uw_offer"),
+        vibration_enabled: !!form.vibration_enabled,
+        heads_up_enabled: !!form.heads_up_enabled,
+        full_screen_enabled: !!form.full_screen_enabled,
+        countdown_seconds: Number(form.countdown_seconds ?? 90),
+        notification_priority: (form.notification_priority ?? "max") as "high" | "max",
       };
       await saveSettings({ data: payload });
     },
@@ -119,12 +125,46 @@ function MarketplaceSettingsPage() {
           <Toggle label="Auto-assign after final round" checked={!!form.auto_assign_final_round} onChange={(v) => setForm({ ...form, auto_assign_final_round: v })} />
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save settings"}
-          </Button>
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
+        <div>
+          <h2 className="text-base font-semibold">Partner notification</h2>
+          <p className="text-xs text-muted-foreground">
+            Controls the Uber-style heads-up shown on partner phones when a new customer is available.
+            Changes to sound require a new Android install to take effect.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Countdown (seconds)">
+            <Input type="number" value={form.countdown_seconds ?? 90} onChange={(e) => setForm({ ...form, countdown_seconds: e.target.value })} />
+          </Field>
+          <Field label="Sound file (res/raw/*.mp3)">
+            <Input value={form.notification_sound ?? "uw_offer"} onChange={(e) => setForm({ ...form, notification_sound: e.target.value })} />
+          </Field>
+          <Field label="Priority">
+            <select
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              value={form.notification_priority ?? "max"}
+              onChange={(e) => setForm({ ...form, notification_priority: e.target.value })}
+            >
+              <option value="max">MAX (Uber / Rapido)</option>
+              <option value="high">HIGH</option>
+            </select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Toggle label="Heads-up notification" checked={!!form.heads_up_enabled} onChange={(v) => setForm({ ...form, heads_up_enabled: v })} />
+          <Toggle label="Full-screen over lock screen" checked={!!form.full_screen_enabled} onChange={(v) => setForm({ ...form, full_screen_enabled: v })} />
+          <Toggle label="Vibration" checked={!!form.vibration_enabled} onChange={(v) => setForm({ ...form, vibration_enabled: v })} />
         </div>
       </section>
+
+      <div className="flex justify-end">
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? "Saving…" : "Save settings"}
+        </Button>
+      </div>
     </div>
   );
 }

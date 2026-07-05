@@ -74,6 +74,13 @@ const settingsInput = z.object({
   radius_per_round_m: z.array(z.number().int().nonnegative()).max(10),
   neighbour_polygon_expansion: z.boolean(),
   auto_assign_final_round: z.boolean(),
+  // Notification tuning — read by the native Android service and the push dispatcher.
+  notification_sound: z.string().min(1).max(60).optional(),
+  vibration_enabled: z.boolean().optional(),
+  heads_up_enabled: z.boolean().optional(),
+  full_screen_enabled: z.boolean().optional(),
+  countdown_seconds: z.number().int().min(15).max(600).optional(),
+  notification_priority: z.enum(["high", "max"]).optional(),
 });
 
 export const updateMarketplaceSettings = createServerFn({ method: "POST" })
