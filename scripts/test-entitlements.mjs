@@ -51,6 +51,22 @@ async function ensureUser() {
 }
 
 async function seed(userId) {
+  const userEmail = TEST_CUSTOMER_EMAIL;
+  const { error: customerErr } = await admin.from("customers").upsert({
+    id: userId,
+    full_name: "Entitlement Test Customer",
+    phone: "9000000000",
+    email: userEmail,
+    address_line: "Entitlement Test Address",
+    area: "Test Area",
+    city: "Lucknow",
+    latitude: 26.8467,
+    longitude: 80.9462,
+    payment_status: "paid",
+    paid_at: new Date().toISOString(),
+  });
+  if (customerErr) throw customerErr;
+
   await admin.from("customer_vehicles").delete().in("registration_number", CARS.map((c) => c.registration_number));
   const { data: vehicles, error: vehErr } = await admin.from("customer_vehicles").insert(
     CARS.map((c, i) => ({ user_id: userId, ...c, is_default: i === 0 })),
