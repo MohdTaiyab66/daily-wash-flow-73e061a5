@@ -1,10 +1,25 @@
-import { useEffect, useState } from "react";
-import { Car, MapPin, Clock, IndianRupee, Route as RouteIcon, Calendar } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Car,
+  MapPin,
+  IndianRupee,
+  Route as RouteIcon,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  X,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { acceptMarketplaceOffer, declineMarketplaceOffer } from "@/lib/marketplace.functions";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  acceptMarketplaceOffer,
+  declineMarketplaceOffer,
+  getPartnerRoutePreview,
+} from "@/lib/marketplace.functions";
 
 type OfferRow = {
   id: string;
@@ -38,24 +53,85 @@ function workingDaysBetween(start?: string, end?: string) {
   return Math.min(days, 30);
 }
 
-export function MarketplaceOfferCard({ offer }: { offer: OfferRow }) {
+/** Circular countdown ring: green → amber → red as the timer drains. */
+function CountdownRing({ remaining, total }: { remaining: number; total: number }) {
+  const size = 68;
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, total > 0 ? remaining / total : 0));
+  const dash = c * pct;
+  const color =
+    pct > 0.5 ? "text-emerald-500" : pct > 0.2 ? "text-amber-500" : "text-red-500";
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="currentColor"
+          strokeWidth={stroke}
+          fill="none"
+          className="text-muted/40"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="currentColor"
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c}`}
+          className={`${color} transition-all duration-500 ease-linear`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={`text-lg font-bold leading-none ${color}`}>{remaining}</span>
+        <span className="text-[10px] font-medium uppercase text-muted-foreground">sec</span>
+      </div>
+    </div>
+  );
+}
+
+export function MarketplaceOfferCard({
+  offer,
+  compact = false,
+}: {
+  offer: OfferRow;
+  /** Compact mode is used in the stacked "More offers" list — no route preview. */
+  compact?: boolean;
+}) {
   const qc = useQueryClient();
   const accept = useServerFn(acceptMarketplaceOffer);
   const decline = useServerFn(declineMarketplaceOffer);
+  const fetchPreview = useServerFn(getPartnerRoutePreview);
+
   const [busy, setBusy] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [expanded, setExpanded] = useState(!compact);
+
+  const expiresAt = new Date(offer.broadcast.round_expires_at).getTime();
   const [remaining, setRemaining] = useState(() =>
-    Math.max(0, Math.round((new Date(offer.broadcast.round_expires_at).getTime() - Date.now()) / 1000))
+    Math.max(0, Math.round((expiresAt - Date.now()) / 1000)),
   );
+  const [total] = useState(() => Math.max(remaining, 30));
 
   useEffect(() => {
     const t = setInterval(() => {
-      setRemaining(
-        Math.max(0, Math.round((new Date(offer.broadcast.round_expires_at).getTime() - Date.now()) / 1000))
-      );
-    }, 1000);
+      setRemaining(Math.max(0, Math.round((expiresAt - Date.now()) / 1000)));
+    }, 500);
     return () => clearInterval(t);
-  }, [offer.broadcast.round_expires_at]);
+  }, [expiresAt]);
+
+  // Route preview — only for the full (top) card, not the stacked compact ones.
+  const preview = useQuery({
+    queryKey: ["partner-route-preview"],
+    queryFn: () => fetchPreview(),
+    enabled: !compact,
+    staleTime: 30_000,
+  });
 
   const v = offer.broadcast.vehicle;
   const label = v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
@@ -64,9 +140,13 @@ export function MarketplaceOfferCard({ offer }: { offer: OfferRow }) {
   const impact = offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
   const workingDays = workingDaysBetween(
     offer.broadcast.subscription?.start_date,
-    offer.broadcast.subscription?.renewal_date
+    offer.broadcast.subscription?.renewal_date,
   );
   const monthEarnings = Math.round(Number(offer.incentive) * workingDays);
+  const finishOffsetMin = useMemo(
+    () => (impact ? Math.round((impact / 1000) * 4) : 0),
+    [impact],
+  );
 
   const onAccept = async () => {
     if (busy || accepted) return;
@@ -86,6 +166,7 @@ export function MarketplaceOfferCard({ offer }: { offer: OfferRow }) {
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
       qc.invalidateQueries({ queryKey: ["partner-services"] });
+      qc.invalidateQueries({ queryKey: ["partner-route-preview"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to accept");
     } finally {
@@ -94,7 +175,7 @@ export function MarketplaceOfferCard({ offer }: { offer: OfferRow }) {
   };
 
   const onDecline = async () => {
-    if (busy) return;
+    if (busy || accepted) return;
     setBusy(true);
     try {
       await decline({ data: { broadcastId: offer.broadcast_id } });
@@ -106,57 +187,185 @@ export function MarketplaceOfferCard({ offer }: { offer: OfferRow }) {
     }
   };
 
-  return (
-    <div className="rounded-2xl border border-primary/40 bg-card p-4 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Car className="h-4 w-4 text-primary" />
-          🚗 New Daily Shine Customer
+  // ── Accept animation overlay ────────────────────────────────────────────
+  if (accepted) {
+    return (
+      <div className="animate-scale-in rounded-2xl border-2 border-emerald-500/60 bg-emerald-50 p-6 text-center dark:bg-emerald-950/40">
+        <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500 animate-scale-in" />
+        <div className="mt-2 text-lg font-bold text-emerald-700 dark:text-emerald-300">
+          Customer Assigned
         </div>
-        <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-          <Clock className="h-3 w-3" /> {remaining}s
+        <div className="text-sm text-emerald-700/80 dark:text-emerald-300/80">
+          Updating your route…
         </div>
       </div>
+    );
+  }
 
-      <div className="text-base font-semibold">{label}</div>
-      {v?.registration_number && (
-        <div className="text-xs text-muted-foreground">{v.registration_number}</div>
+  const carsBefore = preview.data?.cars_today ?? 0;
+  const earnBefore = preview.data?.earnings_today ?? 0;
+  const rate = preview.data?.rate_per_car ?? Number(offer.incentive);
+  const earnAfter = earnBefore + Math.round(Number(offer.incentive));
+  const carsAfter = carsBefore + 1;
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border-2 bg-card shadow-lg ${
+        compact ? "border-primary/30" : "border-primary/70 animate-scale-in"
+      }`}
+    >
+      {/* Header bar — Uber-style attention grabber */}
+      {!compact && (
+        <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-primary-foreground">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
+            Incoming Customer
+          </div>
+        </div>
       )}
 
-      <div className="mt-3 space-y-1.5 text-xs">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" />
-          <span>{areaName} · {fmtDist(dist)} from your route</span>
+      <div className="p-4">
+        {/* Top row: vehicle + countdown ring */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <Car className="h-3.5 w-3.5 text-primary" />
+              New Daily Shine Customer
+            </div>
+            <div className="mt-1 truncate text-xl font-bold">{label}</div>
+            {v?.registration_number && (
+              <div className="text-xs text-muted-foreground">{v.registration_number}</div>
+            )}
+          </div>
+          {compact ? (
+            <div className="text-right">
+              <div className="text-sm font-bold text-primary">{remaining}s</div>
+            </div>
+          ) : (
+            <CountdownRing remaining={remaining} total={total} />
+          )}
         </div>
-        {impact !== null && (
-          <div className="flex items-center gap-1.5 text-primary">
-            <RouteIcon className="h-3.5 w-3.5" />
-            <span>Adds {fmtDist(impact)} to today's route</span>
+
+        {/* Key stats row */}
+        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-lg bg-muted/50 px-2.5 py-2">
+            <div className="flex items-center gap-1 text-[11px] uppercase text-muted-foreground">
+              <MapPin className="h-3 w-3" /> Area
+            </div>
+            <div className="mt-0.5 truncate font-semibold">{areaName}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {fmtDist(dist)} from route
+            </div>
+          </div>
+          <div className="rounded-lg bg-primary/10 px-2.5 py-2">
+            <div className="flex items-center gap-1 text-[11px] uppercase text-primary/80">
+              <IndianRupee className="h-3 w-3" /> Earnings
+            </div>
+            <div className="mt-0.5 font-bold text-primary">₹{offer.incentive}/day</div>
+            <div className="text-[11px] text-muted-foreground">
+              ₹{monthEarnings.toLocaleString("en-IN")} · {workingDays}d
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable details */}
+        {!compact && (
+          <>
+            <button
+              type="button"
+              onClick={() => setExpanded((e) => !e)}
+              className="mt-3 flex w-full items-center justify-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              {expanded ? (
+                <>
+                  Hide details <ChevronUp className="h-3.5 w-3.5" />
+                </>
+              ) : (
+                <>
+                  Show details <ChevronDown className="h-3.5 w-3.5" />
+                </>
+              )}
+            </button>
+
+            {expanded && (
+              <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3 text-xs animate-fade-in">
+                {impact !== null && (
+                  <div className="flex items-center gap-2">
+                    <RouteIcon className="h-3.5 w-3.5 text-primary" />
+                    <span>Adds {fmtDist(impact)} to today's route</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                  <span>{workingDays} working days assignment</span>
+                </div>
+                {finishOffsetMin > 0 && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>~+{finishOffsetMin} min to finish today's route</span>
+                  </div>
+                )}
+
+                {/* Route preview: before → after */}
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-2">
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground">
+                      Today's Route
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 font-semibold">
+                      <span className="text-muted-foreground">{carsBefore}</span>
+                      <span className="text-primary">→</span>
+                      <span className="text-primary">{carsAfter} cars</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase text-muted-foreground">
+                      Today's Earnings
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 font-semibold">
+                      <span className="text-muted-foreground">
+                        ₹{earnBefore.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-primary">→</span>
+                      <span className="text-primary">
+                        ₹{earnAfter.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {rate > 0 && (
+                  <div className="text-[10px] text-muted-foreground">
+                    Rate ₹{rate}/car
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {offer.round > 1 && (
+          <div className="mt-3 rounded-md bg-amber-100 px-2 py-1 text-center text-xs font-medium text-amber-900">
+            Round {offer.round} · Incentive raised
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          <span>{workingDays} working days</span>
-        </div>
-        <div className="flex items-center gap-1.5 font-semibold text-foreground">
-          <IndianRupee className="h-3.5 w-3.5" />
-          <span>₹{offer.incentive}/day · ₹{monthEarnings.toLocaleString("en-IN")} total</span>
-        </div>
-      </div>
 
-      {offer.round > 1 && (
-        <div className="mt-2 rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-900">
-          Round {offer.round} — incentive raised
+        {/* Big action buttons — Uber-style */}
+        <div className="mt-4 flex gap-2">
+          <Button
+            variant="outline"
+            className="h-12 flex-1 border-2 text-base font-semibold"
+            onClick={onDecline}
+            disabled={busy || remaining === 0}
+          >
+            <X className="mr-1 h-5 w-5" /> Decline
+          </Button>
+          <Button
+            className="h-12 flex-[1.4] bg-emerald-600 text-base font-bold hover:bg-emerald-700"
+            onClick={onAccept}
+            disabled={busy || remaining === 0}
+          >
+            <Check className="mr-1 h-5 w-5" /> Accept
+          </Button>
         </div>
-      )}
-
-      <div className="mt-3 flex gap-2">
-        <Button className="flex-1" onClick={onAccept} disabled={busy || accepted || remaining === 0}>
-          {accepted ? "Accepted" : busy ? "…" : "Accept"}
-        </Button>
-        <Button variant="outline" className="flex-1" onClick={onDecline} disabled={busy || accepted}>
-          Decline
-        </Button>
       </div>
     </div>
   );
