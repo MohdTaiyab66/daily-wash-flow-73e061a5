@@ -2392,6 +2392,7 @@ export type Database = {
           icon_url: string | null
           id: string
           name: string
+          payment_mode: string
           price_hatchback: number
           price_sedan_suv: number
           sort_order: number
@@ -2405,6 +2406,7 @@ export type Database = {
           icon_url?: string | null
           id?: string
           name: string
+          payment_mode?: string
           price_hatchback?: number
           price_sedan_suv?: number
           sort_order?: number
@@ -2418,6 +2420,7 @@ export type Database = {
           icon_url?: string | null
           id?: string
           name?: string
+          payment_mode?: string
           price_hatchback?: number
           price_sedan_suv?: number
           sort_order?: number
@@ -2568,6 +2571,7 @@ export type Database = {
           includes_hatchback: string[]
           includes_sedan_suv: string[]
           name: string
+          payment_mode: string
           price_hatchback: number
           price_sedan_suv: number
           service_type: string
@@ -2589,6 +2593,7 @@ export type Database = {
           includes_hatchback?: string[]
           includes_sedan_suv?: string[]
           name: string
+          payment_mode?: string
           price_hatchback?: number
           price_sedan_suv?: number
           service_type: string
@@ -2610,6 +2615,7 @@ export type Database = {
           includes_hatchback?: string[]
           includes_sedan_suv?: string[]
           name?: string
+          payment_mode?: string
           price_hatchback?: number
           price_sedan_suv?: number
           service_type?: string

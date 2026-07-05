@@ -51,6 +51,7 @@ function AdminLayout() {
     { to: "/admin/services", label: "Services", icon: ClipboardList },
     { to: "/admin/addons", label: "Add-ons Catalog", icon: Sparkles },
     { to: "/admin/plan-inclusions", label: "Plan Inclusions", icon: Sparkles },
+    { to: "/admin/payment-modes", label: "Payment Modes", icon: IndianRupee },
     { to: "/admin/photos", label: "Photos", icon: Camera },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
     { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
