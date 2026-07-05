@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
+import { traceVehicle } from "@/lib/vehicle-trace";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -352,6 +353,7 @@ function ServiceDetail() {
 
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
+      traceVehicle("customer_schedule", { booking_id: String(bookingId), vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
 
       // Pre/Post payment is driven by admin flags on the service + each addon.
       // Default is 'pre' (online payment before work). Post-payment skips Razorpay.

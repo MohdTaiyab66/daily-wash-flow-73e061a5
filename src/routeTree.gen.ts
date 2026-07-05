@@ -19,6 +19,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CLocationRouteImport } from './routes/c/location'
 import { Route as CAuthRouteImport } from './routes/c/auth'
 import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
+import { Route as AdminVehicleAuditRouteImport } from './routes/admin.vehicle-audit'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
@@ -135,6 +136,11 @@ const CAuthRoute = CAuthRouteImport.update({
 const AdminWalletRoute = AdminWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVehicleAuditRoute = AdminVehicleAuditRouteImport.update({
+  id: '/vehicle-audit',
+  path: '/vehicle-audit',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
@@ -530,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/vehicle-audit': typeof AdminVehicleAuditRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -607,6 +614,7 @@ export interface FileRoutesByTo {
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/vehicle-audit': typeof AdminVehicleAuditRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -687,6 +695,7 @@ export interface FileRoutesById {
   '/admin/service-leads': typeof AdminServiceLeadsRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/vehicle-audit': typeof AdminVehicleAuditRoute
   '/admin/wallet': typeof AdminWalletRoute
   '/c/auth': typeof CAuthRoute
   '/c/location': typeof CLocationRouteWithChildren
@@ -768,6 +777,7 @@ export interface FileRouteTypes {
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/vehicle-audit'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/vehicle-audit'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -924,6 +935,7 @@ export interface FileRouteTypes {
     | '/admin/service-leads'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/vehicle-audit'
     | '/admin/wallet'
     | '/c/auth'
     | '/c/location'
@@ -1061,6 +1073,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/admin/wallet'
       preLoaderRoute: typeof AdminWalletRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/vehicle-audit': {
+      id: '/admin/vehicle-audit'
+      path: '/vehicle-audit'
+      fullPath: '/admin/vehicle-audit'
+      preLoaderRoute: typeof AdminVehicleAuditRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/settings': {
@@ -1640,6 +1659,7 @@ interface AdminRouteChildren {
   AdminServiceLeadsRoute: typeof AdminServiceLeadsRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminVehicleAuditRoute: typeof AdminVehicleAuditRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminOfferDeliveryIdRoute: typeof AdminOfferDeliveryIdRoute
@@ -1676,6 +1696,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServiceLeadsRoute: AdminServiceLeadsRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminVehicleAuditRoute: AdminVehicleAuditRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminOfferDeliveryIdRoute: AdminOfferDeliveryIdRoute,

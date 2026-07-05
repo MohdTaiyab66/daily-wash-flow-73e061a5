@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import { getAdminServiceDetail } from "@/lib/admin.functions";
+import { traceVehicle } from "@/lib/vehicle-trace";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, MapPin } from "lucide-react";
@@ -15,6 +17,18 @@ function ServiceDetailAdmin() {
   const fn = useServerFn(getAdminServiceDetail);
   const { data } = useQuery({ queryKey: ["admin-service", id], queryFn: () => fn({ data: { service_id: id } }) });
 
+  useEffect(() => {
+    if (data?.service) {
+      const s: any = data.service;
+      traceVehicle("admin_render", {
+        service_id: s.id,
+        vehicle_id: s.vehicle_id,
+        customer_id: s.customer_id,
+        details: { view: "admin.service.detail", vehicle_label: `${s.vehicles?.make ?? ""} ${s.vehicles?.model ?? ""} ${s.vehicles?.registration_number ?? ""}`.trim() },
+      });
+    }
+  }, [data?.service]);
+
   if (!data?.service) return <p className="text-sm text-muted-foreground">Loading…</p>;
   const s: any = data.service;
   const c = s.customers;
@@ -26,6 +40,7 @@ function ServiceDetailAdmin() {
       : null;
   const before = data.photos.find((x: any) => x.stage === "before");
   const after = data.photos.filter((x: any) => x.stage === "after");
+
 
   return (
     <div>
