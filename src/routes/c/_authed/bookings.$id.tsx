@@ -460,18 +460,22 @@ function RescheduleDialog({ open, onOpenChange, bookingId, currentDate, currentS
 function CancelDialog({ open, onOpenChange, bookingId, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; bookingId: string; onDone: () => void }) {
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+      const { error } = await (supabase as any).rpc("customer_cancel_booking", {
+        p_booking_id: bookingId,
+        p_reason: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Booking cancelled"); onDone(); onOpenChange(false); },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message ?? "Could not cancel booking"),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Cancel this booking?</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This cannot be undone. You can always book a new slot from the home screen.
+          Cancellation is only allowed within the window set by the admin
+          (defaults to 60 minutes after booking). After that, please contact support.
         </p>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep booking</Button>

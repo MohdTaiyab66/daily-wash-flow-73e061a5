@@ -72,6 +72,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "unavailable_compensation", label: "Unavailable vehicle reward (INR)" },
       { key: "complaint_deduction", label: "Complaint deduction (INR)" },
       { key: "cancel_penalty", label: "Cancellation penalty (INR)" },
+      { key: "cancellation_window_minutes", label: "Customer cancellation window (minutes)", help: "Time after booking within which the customer can cancel from the app. Admins can always cancel." },
       { key: "reliability_bonus", label: "Reliability bonus (INR)" },
       { key: "monthly_bonus", label: "Monthly bonus (INR)" },
       { key: "attendance_bonus", label: "Attendance bonus (INR)" },

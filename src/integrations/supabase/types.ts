@@ -4234,6 +4234,10 @@ export type Database = {
         }
         Returns: string
       }
+      customer_cancel_booking: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: undefined
+      }
       customer_has_pro_booking_on: {
         Args: { p_customer_id: string; p_date: string }
         Returns: boolean
