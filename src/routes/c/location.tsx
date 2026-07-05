@@ -1,16 +1,23 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
-// The location page is unified with the address-selection search screen
-// (single source of truth for picking a location — before or after login).
+// `/c/location` is a layout for `/c/location/search`. Its own path just
+// forwards to the search screen — but the layout MUST render <Outlet /> so
+// the child route (search) can appear. Previously this rendered `null`,
+// which silently blanked the child and left the previous page (e.g. the
+// verify-OTP screen) visible even though the URL updated correctly.
 export const Route = createFileRoute("/c/location")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data } = await supabase.auth.getUser();
     if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
-    throw redirect({ to: "/c/location/search" });
+    // Only bounce the bare `/c/location` URL — never intercept children like
+    // `/c/location/search`, otherwise we redirect-loop the child away.
+    if (location.pathname === "/c/location" || location.pathname === "/c/location/") {
+      throw redirect({ to: "/c/location/search" });
+    }
   },
-  component: () => null,
+  component: () => <Outlet />,
 });
