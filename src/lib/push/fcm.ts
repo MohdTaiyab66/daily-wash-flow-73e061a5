@@ -25,6 +25,7 @@ type OfferPayload = {
 const DEVICE_ID_KEY = "urbanwash.device_id";
 let started = false;
 let pendingDeepLink: OfferPayload | null = null;
+let pendingLink: string | null = null;
 
 async function getOrCreateDeviceId(): Promise<string> {
   const existing = await Preferences.get({ key: DEVICE_ID_KEY });
@@ -38,6 +39,12 @@ export function consumePendingOfferDeepLink(): OfferPayload | null {
   const p = pendingDeepLink;
   pendingDeepLink = null;
   return p;
+}
+
+export function consumePendingLink(): string | null {
+  const l = pendingLink;
+  pendingLink = null;
+  return l;
 }
 
 async function recordEvent(stage: string, offer: OfferPayload, extra: Record<string, unknown> = {}) {
