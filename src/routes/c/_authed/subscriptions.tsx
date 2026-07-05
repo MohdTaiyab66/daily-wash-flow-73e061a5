@@ -734,6 +734,7 @@ function ScheduleWashDialog({
                 p_preferred_time: slot,
                 p_notes: "Recurring plan request from My Plan",
                 p_vehicle_id: vehicle.id,
+                p_address_id: addressId,
               });
               if (error) throw error;
               const reqId: string | null = res?.addon_request_id ?? null;
@@ -754,6 +755,7 @@ function ScheduleWashDialog({
             p_preferred_time: slot,
             p_notes: "Scheduled from My Plan",
             p_vehicle_id: vehicle.id,
+            p_address_id: addressId,
           });
           if (error) throw error;
           const reqId: string | null = res?.addon_request_id ?? null;
