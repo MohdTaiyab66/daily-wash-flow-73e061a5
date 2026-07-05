@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock, Star, Search, UserCheck, Loader2, PlayCircle, CheckCircle2 } from "lucide-react";
@@ -7,16 +7,21 @@ import { cn } from "@/lib/utils";
 /**
  * Customer-facing status card for Daily Shine.
  *
- * Per product policy we DO NOT expose ETA, live location, route position,
- * stop number, or any optimisation detail. Customers only see:
- *   1. Today's promised service window (e.g. "Before 10:00 AM")
- *   2. A simple status (Scheduled / Searching Partner / Partner Assigned /
- *      In Progress / Completed)
- *   3. The assigned partner's profile (name, photo, rating) — no location.
+ * Source of truth (in this order):
+ *   1. `subscriptions.assigned_partner_id`  → partner is confirmed for this
+ *      vehicle. Show partner card. Never show "unable to assign".
+ *   2. Today's `services` row for this customer → show live status
+ *      (in-progress / completed) and the servicing partner.
+ *   3. `subscription_assignment_queue`      → only used to distinguish
+ *      "searching" vs "unable to assign automatically" when NO partner is
+ *      assigned anywhere.
+ *
+ * Per product policy: no ETA, no live location, no route position.
  */
 
-type Queue = {
+type Sub = {
   id: string;
+  vehicle_id: string | null;
   status: string;
   assigned_partner_id: string | null;
   booking_id: string;
@@ -33,14 +38,65 @@ type TodayService = {
   status: string;
   started_at: string | null;
   completed_at: string | null;
+  partner_id: string | null;
+  vehicle_id: string | null;
+};
+
+type Queue = {
+  id: string;
+  status: string;
+  assigned_partner_id: string | null;
+  booking_id: string;
 };
 
 export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
   const qc = useQueryClient();
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 1) Active/awaiting subscriptions for this user (any vehicle).
+  const { data: subs } = useQuery({
+    queryKey: ["awaiting-partner-subs", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("id, vehicle_id, status, assigned_partner_id, booking_id")
+        .eq("user_id", userId)
+        .in("status", ["active", "awaiting_partner_assignment", "assigned"])
+        .order("created_at", { ascending: false });
+      return (data ?? []) as Sub[];
+    },
+  });
+
+  // 2) Today's service (if any) — carries the servicing partner + live status.
+  const { data: todayService } = useQuery({
+    queryKey: ["customer-today-service", userId, today],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("services")
+        .select("id, status, started_at, completed_at, partner_id, vehicle_id")
+        .eq("customer_id", userId)
+        .eq("scheduled_date", today)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as TodayService | null;
+    },
+  });
+
+  // Pick the "primary" subscription to describe: one that already has a
+  // partner if any, else the newest awaiting.
+  const primarySub =
+    subs?.find((s) => !!s.assigned_partner_id) ?? subs?.[0] ?? null;
+
+  // 3) Only look at the queue when no partner is assigned anywhere.
+  const noPartnerAnywhere =
+    !todayService?.partner_id && !primarySub?.assigned_partner_id;
 
   const { data: queue } = useQuery({
-    queryKey: ["sub-queue", userId],
-    enabled: !!userId,
+    queryKey: ["awaiting-partner-queue", userId],
+    enabled: !!userId && noPartnerAnywhere,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("subscription_assignment_queue")
@@ -53,25 +109,30 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     },
   });
 
+  // Booking window: prefer today's service booking; else the primary sub's booking.
+  const bookingIdForWindow = primarySub?.booking_id ?? queue?.booking_id ?? null;
   const { data: booking } = useQuery({
-    queryKey: ["sub-queue-booking", queue?.booking_id],
-    enabled: !!queue?.booking_id,
+    queryKey: ["awaiting-partner-booking", bookingIdForWindow],
+    enabled: !!bookingIdForWindow,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("bookings")
         .select("id, preferred_before_time, scheduled_date")
-        .eq("id", queue!.booking_id)
+        .eq("id", bookingIdForWindow!)
         .maybeSingle();
       return data as Booking | null;
     },
   });
 
+  const assignedPartnerId =
+    todayService?.partner_id ?? primarySub?.assigned_partner_id ?? null;
+
   const { data: partner } = useQuery({
-    queryKey: ["sub-queue-partner", queue?.assigned_partner_id],
-    enabled: !!queue?.assigned_partner_id,
+    queryKey: ["awaiting-partner-profile", assignedPartnerId],
+    enabled: !!assignedPartnerId,
     queryFn: async () => {
       const { data } = await (supabase as any).rpc("get_assigned_partner_public", {
-        p_partner_id: queue!.assigned_partner_id!,
+        p_partner_id: assignedPartnerId!,
       });
       const row = Array.isArray(data) ? data[0] : data;
       return (row ?? null) as
@@ -80,32 +141,17 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     },
   });
 
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: todayService } = useQuery({
-    queryKey: ["customer-today-service", userId, today],
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("services")
-        .select("id, status, started_at, completed_at")
-        .eq("customer_id", userId)
-        .eq("scheduled_date", today)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data as TodayService | null;
-    },
-  });
-
-  // Realtime: refresh on queue, service, and partner changes only.
+  // Realtime: refetch when anything relevant to this user changes.
   useEffect(() => {
     if (!userId) return;
     const refresh = () => {
-      qc.invalidateQueries({ queryKey: ["sub-queue", userId] });
+      qc.invalidateQueries({ queryKey: ["awaiting-partner-subs", userId] });
+      qc.invalidateQueries({ queryKey: ["awaiting-partner-queue", userId] });
       qc.invalidateQueries({ queryKey: ["customer-today-service", userId, today] });
     };
     const ch = supabase
       .channel(`sub-status-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscription_assignment_queue", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
       .subscribe();
@@ -114,30 +160,33 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
     };
   }, [userId, qc, today]);
 
-  if (!queue) return null;
+  // Nothing to show when the user has no Daily Shine at all.
+  if (!subs || subs.length === 0) return null;
 
-  if (queue.status === "failed") {
+  const serviceWindow = booking?.preferred_before_time?.trim() || null;
+  const completedAt = todayService?.completed_at ? new Date(todayService.completed_at) : null;
+  const inProgress = todayService?.status === "in_progress";
+  const completed = todayService?.status === "completed";
+
+  type State = "searching" | "assigned" | "in_progress" | "completed" | "unassignable";
+  let state: State;
+  if (completed) state = "completed";
+  else if (inProgress) state = "in_progress";
+  else if (assignedPartnerId) state = "assigned";
+  else if (queue?.status === "failed") state = "unassignable";
+  else state = "searching";
+
+  // Hard block: if we have an assigned partner anywhere, never render the red
+  // "unable to assign" state — even if a stale queue row still says "failed".
+  if (state === "unassignable" && assignedPartnerId) state = "assigned";
+
+  if (state === "unassignable") {
     return (
       <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
         We're unable to assign a partner automatically. Our team will take care of this for you shortly.
       </div>
     );
   }
-
-  const serviceWindow = booking?.preferred_before_time?.trim() || null;
-  const isAssigned = queue.status === "assigned" && !!queue.assigned_partner_id;
-  const completedAt = todayService?.completed_at ? new Date(todayService.completed_at) : null;
-  const inProgress = todayService?.status === "in_progress";
-  const completed = todayService?.status === "completed";
-
-  type State = "searching" | "assigned" | "in_progress" | "completed";
-  const state: State = completed
-    ? "completed"
-    : inProgress
-    ? "in_progress"
-    : isAssigned
-    ? "assigned"
-    : "searching";
 
   const tone =
     state === "completed"
@@ -148,13 +197,13 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
       ? "border-success/30 bg-success/5"
       : "border-primary/30 bg-primary/5";
 
-  const titleMap: Record<State, string> = {
+  const titleMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "Searching for a partner",
     assigned: "Today's service is scheduled",
     in_progress: "Your Daily Shine service is in progress",
     completed: "Service completed",
   };
-  const copyMap: Record<State, string> = {
+  const copyMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "We're finding the right partner for your area. We'll let you know as soon as it's confirmed.",
     assigned: "Your vehicle will be serviced before your selected time.",
     in_progress: "Your partner is taking care of your vehicle now.",
@@ -175,13 +224,10 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
   const iconCls =
     state === "completed" || state === "assigned"
       ? "text-success"
-      : state === "in_progress"
-      ? "text-primary"
       : "text-primary";
 
   return (
     <div className={cn("mt-4 rounded-2xl border p-4", tone)}>
-      {/* Service window */}
       {serviceWindow && (
         <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/70 px-3 py-2.5">
           <Clock className="h-4 w-4 text-primary" />
@@ -202,7 +248,6 @@ export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
           <p className="text-sm font-semibold">{titleMap[state]}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{copyMap[state]}</p>
 
-          {/* Partner profile — no location, route, or ETA shown. */}
           {partner && state !== "searching" && (
             <div className="mt-3 rounded-xl bg-background/60 p-3">
               <div className="flex items-center gap-3">
