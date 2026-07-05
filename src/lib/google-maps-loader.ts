@@ -3,7 +3,7 @@
 // script tag is only injected once.
 declare global {
   interface Window {
-    google?: any;
+    google: any;
     __lovableMapReady?: Promise<void>;
     __initLovableMap?: () => void;
   }
