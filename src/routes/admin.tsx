@@ -44,6 +44,7 @@ function AdminLayout() {
     { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
     { to: "/admin/reliability", label: "Reliability", icon: TrendingUp },
     { to: "/admin/marketplace", label: "Daily Shine Marketplace", icon: Sparkles },
+    { to: "/admin/marketplace-settings", label: "Marketplace Settings", icon: Settings },
     { to: "/admin/service-leads", label: "Service Leads", icon: ClipboardList },
     { to: "/admin/addon-queue", label: "Add-on Queue", icon: Bell },
     { to: "/admin/offer-history", label: "Offer History", icon: ClipboardList },
