@@ -72,33 +72,57 @@ type SendInput = {
   data: Record<string, string>;
   channelId?: string;
   android?: { priority?: "HIGH" | "NORMAL"; ttl?: string };
+  /** When true, send a data-only message with no visible notification block —
+   * the native service uses this to update the existing heads-up in place
+   * (incentive bumped, radius expanded) without firing a fresh alert. */
+  silent?: boolean;
+  /** Optional Android collapse key. Marketplace passes the broadcast id so
+   * successive updates replace the same notification. */
+  tag?: string;
 };
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const accessToken = await getAccessToken();
 
-  const message = {
+  const androidBlock: Record<string, unknown> = {
+    priority: input.silent ? "NORMAL" : input.android?.priority ?? "HIGH",
+    ttl: input.android?.ttl ?? "120s",
+  };
+  if (input.tag) androidBlock.collapse_key = input.tag;
+  if (!input.silent) {
+    androidBlock.notification = {
+      title: input.title,
+      body: input.body,
+      channel_id: input.channelId ?? "general",
+      sound: "default",
+      default_vibrate_timings: true,
+      notification_priority: "PRIORITY_MAX",
+      tag: input.tag,
+    };
+  }
+
+  const message: Record<string, unknown> = {
     message: {
       token: input.token,
-      data: input.data, // FCM v1 requires all-string data values
-      android: {
-        priority: input.android?.priority ?? "HIGH",
-        ttl: input.android?.ttl ?? "120s",
-        notification: {
-          title: input.title,
-          body: input.body,
-          channel_id: input.channelId ?? "general",
-          sound: "default",
-          default_vibrate_timings: true,
-          notification_priority: "PRIORITY_MAX",
-        },
-      },
-      apns: {
-        headers: { "apns-priority": "10" },
-        payload: { aps: { alert: { title: input.title, body: input.body }, sound: "default", "content-available": 1 } },
-      },
-      notification: { title: input.title, body: input.body },
+      data: input.data,
+      android: androidBlock,
+      ...(input.silent
+        ? {
+            apns: {
+              headers: { "apns-priority": "5", "apns-push-type": "background" },
+              payload: { aps: { "content-available": 1 } },
+            },
+          }
+        : {
+            apns: {
+              headers: { "apns-priority": "10" },
+              payload: {
+                aps: { alert: { title: input.title, body: input.body }, sound: "default", "content-available": 1 },
+              },
+            },
+            notification: { title: input.title, body: input.body },
+          }),
     },
   };
 
