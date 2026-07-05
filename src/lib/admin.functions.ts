@@ -181,6 +181,17 @@ export const adminSetCustomerPayment = createServerFn({ method: "POST" }).middle
     return { ok: true };
   });
 
+export const adminSetVehicleDiscountApproval = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { vehicle_id: string; approved: boolean }) => d)
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase.rpc as any)("admin_set_vehicle_discount_approval", {
+      p_vehicle_id: data.vehicle_id,
+      p_approved: data.approved,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const adminRevenueSummary = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: sum }, { data: rows }] = await Promise.all([
