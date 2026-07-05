@@ -4400,6 +4400,18 @@ export type Database = {
         }
         Relationships: []
       }
+      mp_health: {
+        Row: {
+          assigned_30d: number | null
+          cancelled_30d: number | null
+          expired_30d: number | null
+          live_broadcasts: number | null
+          longest_wait_broadcast_id: string | null
+          longest_wait_seconds: number | null
+          waiting_round1: number | null
+        }
+        Relationships: []
+      }
       v_live_ops_today: {
         Row: {
           assigned_today: number | null
@@ -5192,6 +5204,27 @@ export type Database = {
         Returns: Json
       }
       mp_accept_offer: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_admin_cancel_broadcast: {
+        Args: { p_broadcast_id: string; p_reason?: string }
+        Returns: Json
+      }
+      mp_admin_extend_timer: {
+        Args: { p_broadcast_id: string; p_seconds: number }
+        Returns: Json
+      }
+      mp_admin_force_assign: {
+        Args: { p_broadcast_id: string; p_partner_id: string }
+        Returns: Json
+      }
+      mp_admin_rebroadcast: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_admin_set_incentive: {
+        Args: { p_broadcast_id: string; p_incentive: number }
+        Returns: Json
+      }
+      mp_admin_set_radius: {
+        Args: { p_broadcast_id: string; p_radius_m: number }
+        Returns: Json
+      }
       mp_advance_round: { Args: { p_broadcast_id: string }; Returns: Json }
       mp_decline_offer: { Args: { p_broadcast_id: string }; Returns: Json }
       mp_eligible_partners: {
