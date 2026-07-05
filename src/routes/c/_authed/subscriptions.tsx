@@ -710,6 +710,7 @@ function ScheduleWashDialog({
             p_preferred_date: date,
             p_preferred_time: slot,
             p_notes: "Scheduled from My Plan",
+            p_vehicle_id: vehicle.id,
           });
           if (error) throw error;
           toast.success(`Request sent for ${date} · ${slot} · admin will confirm shortly`);
