@@ -1625,6 +1625,58 @@ export type Database = {
           },
         ]
       }
+      marketplace_delivery_events: {
+        Row: {
+          broadcast_id: string | null
+          created_at: string
+          id: string
+          meta: Json
+          offer_id: string | null
+          partner_id: string | null
+          stage: string
+        }
+        Insert: {
+          broadcast_id?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          stage: string
+        }
+        Update: {
+          broadcast_id?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_delivery_events_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_delivery_events_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_delivery_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_offers: {
         Row: {
           broadcast_id: string
@@ -4462,6 +4514,29 @@ export type Database = {
           pending: number | null
         }
         Relationships: []
+      }
+      marketplace_delivery_stats: {
+        Row: {
+          accepted: number | null
+          broadcast_id: string | null
+          declined: number | null
+          expired: number | null
+          first_event_at: string | null
+          last_event_at: string | null
+          opened: number | null
+          pushes_delivered: number | null
+          pushes_failed: number | null
+          pushes_sent: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_delivery_events_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mp_health: {
         Row: {
