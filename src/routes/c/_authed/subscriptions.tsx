@@ -29,6 +29,7 @@ type Booking = {
   base_amount: number;
   addon_amount: number;
   service_id: string;
+  vehicle_id: string | null;
   service_catalog: { name: string; service_type: string; slug: string } | null;
 };
 
