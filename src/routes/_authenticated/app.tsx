@@ -28,9 +28,23 @@ function AppLayout() {
 
 function PartnerRuntime() {
   const { data: partner } = usePartner();
+  const navigate = useNavigate();
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
+
+  // Deep-link from push notifications (background/killed app taps).
+  useEffect(() => {
+    const pending = consumePendingLink();
+    if (pending) navigate({ to: pending as any });
+    const onLink = (e: Event) => {
+      const link = (e as CustomEvent).detail?.link;
+      if (typeof link === "string" && link.startsWith("/")) navigate({ to: link as any });
+    };
+    window.addEventListener("urbanwash:deeplink", onLink);
+    return () => window.removeEventListener("urbanwash:deeplink", onLink);
+  }, [navigate]);
+
   return <OfferPopup partnerId={partner?.id ?? null} />;
 }
 
