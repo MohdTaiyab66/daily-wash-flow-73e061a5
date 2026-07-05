@@ -183,6 +183,7 @@ export function AwaitingPartnerBanner({
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscription_assignment_queue", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "marketplace_broadcasts", filter: `customer_id=eq.${userId}` }, refresh)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
