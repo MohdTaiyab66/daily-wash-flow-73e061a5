@@ -395,7 +395,8 @@ function MyPlanPage() {
           </div>
 
           {/* Recent service feed with photos + complaint window */}
-          <RecentServiceFeed userId={userId} />
+          <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+
 
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
