@@ -654,11 +654,6 @@ function ScheduleWashDialog({
     [svcQ.data],
   );
   const serviceOptions = kind === "any" ? customServices : planServices;
-  const isSUV = vehicle?.category === "sedan_suv";
-  const catalogPrice = useMemo(() => {
-    if (!service) return 0;
-    return Number(isSUV ? service.price_sedan_suv : service.price_hatchback);
-  }, [service, isSUV]);
   const previewQ = useQuery({
     queryKey: ["booking-preview", serviceId, vehicleId, addressId, date, slot],
     enabled: open && !!serviceId && !!vehicleId,

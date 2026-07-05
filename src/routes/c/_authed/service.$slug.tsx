@@ -246,7 +246,6 @@ function ServiceDetail() {
   const subtotal = basePrice + addonPrice;
   const discountPct = appliedCoupon?.percent ?? 0;
   const discountAmt = Math.round((subtotal * discountPct) / 100);
-  const localTotal = subtotal - discountAmt;
   const preview = previewQ.data ?? null;
   const previewReady = !!preview && !previewQ.isError;
   const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
