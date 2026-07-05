@@ -98,10 +98,16 @@ function CountdownRing({ remaining, total }: { remaining: number; total: number 
 export function MarketplaceOfferCard({
   offer,
   compact = false,
+  onAccept,
+  onDecline,
 }: {
   offer: OfferRow;
   /** Compact mode is used in the stacked "More offers" list — no route preview. */
   compact?: boolean;
+  /** Optional hooks so the parent list can play a success chirp / start the
+   * post-decline cooldown when the partner acts on this specific offer. */
+  onAccept?: () => void;
+  onDecline?: () => void;
 }) {
   const qc = useQueryClient();
   const accept = useServerFn(acceptMarketplaceOffer);
