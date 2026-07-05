@@ -15,6 +15,7 @@ import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
 import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { traceVehicle } from "@/lib/vehicle-trace";
+import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -654,10 +655,31 @@ function ScheduleWashDialog({
   );
   const serviceOptions = kind === "any" ? customServices : planServices;
   const isSUV = vehicle?.category === "sedan_suv";
-  const price = useMemo(() => {
+  const catalogPrice = useMemo(() => {
     if (!service) return 0;
     return Number(isSUV ? service.price_sedan_suv : service.price_hatchback);
   }, [service, isSUV]);
+  const previewQ = useQuery({
+    queryKey: ["booking-preview", serviceId, vehicleId, addressId, date, slot],
+    enabled: open && !!serviceId && !!vehicleId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("preview_customer_booking", {
+        p_service_id: serviceId,
+        p_vehicle_id: vehicleId,
+        p_address_id: addressId || null,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_addons: [],
+        p_coupon_code: null,
+      });
+      if (error) throw error;
+      return normalizeBookingPreview(data);
+    },
+  });
+  const preview = previewQ.data ?? null;
+  const payable = preview ? Number(preview.payable ?? 0) : catalogPrice;
+  const isIncludedBooking = !!preview?.used_entitlement;
+  const isExhausted = !!preview?.exhausted;
 
   const confirm = async () => {
     if (!userId) { toast.error("Please sign in again"); return; }
@@ -692,7 +714,7 @@ function ScheduleWashDialog({
           .select("id, status, vehicle_id")
           .eq("user_id", userId)
           .eq("vehicle_id", vehicle.id)
-          .eq("status", "active")
+          .in("status", ["active", "assigned", "awaiting_partner_assignment"])
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -835,9 +857,7 @@ function ScheduleWashDialog({
               className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
             >
               {serviceOptions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} · {Number(isSUV ? s.price_sedan_suv : s.price_hatchback) === 0 ? "Included" : `₹${isSUV ? s.price_sedan_suv : s.price_hatchback}`}
-                </option>
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
             {kind !== "any" && (
@@ -966,15 +986,25 @@ function ScheduleWashDialog({
             </div>
           </div>
 
+          {isExhausted && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              {exhaustedEntitlementMessage(preview)}
+            </div>
+          )}
+
           <div className="flex items-baseline justify-between rounded-xl bg-accent/40 px-3 py-2">
-            <span className="text-xs text-muted-foreground">Total · {price === 0 ? "included in plan" : "pay after service"}</span>
-            <span className="text-base font-semibold">{price === 0 ? "Included" : `₹${price}`}</span>
+            <span className="text-xs text-muted-foreground">
+              {previewQ.isLoading ? "Checking plan" : isIncludedBooking ? INCLUDED_PLAN_MESSAGE : "Total · pay after service"}
+            </span>
+            <span className="text-base font-semibold">
+              {previewQ.isLoading ? "…" : isIncludedBooking ? "₹0 Payable" : `₹${payable}`}
+            </span>
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={confirm} disabled={saving || noVehicles || noAddresses}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Confirm booking
+          <Button onClick={confirm} disabled={saving || previewQ.isLoading || noVehicles || noAddresses}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : "Confirm booking"}
           </Button>
         </DialogFooter>
       </DialogContent>
