@@ -361,7 +361,7 @@ export function MarketplaceOfferCard({
           <Button
             variant="outline"
             className="h-12 flex-1 border-2 text-base font-semibold"
-            onClick={onDecline}
+            onClick={handleDecline}
             disabled={busy || remaining === 0}
           >
             <X className="mr-1 h-5 w-5" /> Decline
