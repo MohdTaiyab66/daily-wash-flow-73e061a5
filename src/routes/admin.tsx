@@ -49,6 +49,7 @@ function AdminLayout() {
     { to: "/admin/dar", label: "Recovery (DAR)", icon: LifeBuoy },
     { to: "/admin/customer-map", label: "Customer Map", icon: Map },
     { to: "/admin/services", label: "Services", icon: ClipboardList },
+    { to: "/admin/addons", label: "Add-ons Catalog", icon: Sparkles },
     { to: "/admin/photos", label: "Photos", icon: Camera },
     { to: "/admin/live", label: "Live Ops", icon: Activity },
     { to: "/admin/revenue", label: "Revenue", icon: IndianRupee },
