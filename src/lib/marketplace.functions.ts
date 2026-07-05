@@ -32,12 +32,13 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     const { data, error } = await (context.supabase as any)
       .from("marketplace_offers")
       .select(
-        `id, broadcast_id, round, incentive, distance_from_route_m, sent_at, response,
+        `id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at, response,
          broadcast:marketplace_broadcasts!inner (
            id, status, current_round, current_incentive, current_radius_m,
-           round_expires_at, customer_lat, customer_lng, vehicle_id,
+           round_expires_at, customer_lat, customer_lng, vehicle_id, subscription_id,
            vehicle:customer_vehicles ( make, model, registration_number ),
-           service_area:coverage_zones ( name )
+           service_area:coverage_zones ( name ),
+           subscription:subscriptions ( amount, start_date, renewal_date )
          )`
       )
       .eq("partner_id", context.userId)
