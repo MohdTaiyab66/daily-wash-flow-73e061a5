@@ -12,6 +12,7 @@ import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
+import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { traceVehicle } from "@/lib/vehicle-trace";
 
