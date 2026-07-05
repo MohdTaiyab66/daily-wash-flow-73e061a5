@@ -353,13 +353,27 @@ function ServiceDetail() {
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
 
-      if (service.service_type !== "subscription") {
-        toast.success("Booking confirmed!");
+      // Pre/Post payment is driven by admin flags on the service + each addon.
+      // Default is 'pre' (online payment before work). Post-payment skips Razorpay.
+      const servicePrepay = ((service as any).payment_mode ?? "pre") === "pre";
+      const addonPrepay = (addonsQ.data ?? []).some((a: any) => {
+        const q = addonQty[a.id] ?? 0;
+        return q > 0 && ((a.payment_mode ?? "pre") === "pre");
+      });
+      const requiresPrepay = servicePrepay || addonPrepay;
+
+      if (!requiresPrepay) {
+        toast.success("Booking confirmed! You'll pay after the service is completed.");
         qc.invalidateQueries({ queryKey: ["customer-bookings"] });
         qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-        await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
+        if (service.service_type === "subscription") {
+          await navigate({ to: "/c/subscriptions" });
+        } else {
+          await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
+        }
         return;
       }
+
 
       await loadRazorpayCheckout();
       const order = await createOrder({ data: { bookingId: String(bookingId) } });
