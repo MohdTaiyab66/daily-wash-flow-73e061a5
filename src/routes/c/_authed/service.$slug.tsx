@@ -275,29 +275,14 @@ function ServiceDetail() {
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
     if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
-    // Coverage Zone validation (GPS-based, server-side, fail-closed).
-    // Coverage Manager is the single source of truth for serviceability.
-    {
-      let geo: any = {};
-      try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
-      if (geo.lat == null || geo.lng == null) {
-        fail("We need your location to confirm this area is serviceable. Please set your location and try again.");
-        return;
-      }
-      const { error: covErr } = await supabase.rpc("assert_serviceable", {
-        p_lat: geo.lat, p_lng: geo.lng, p_slug: service.slug,
-      });
-      if (covErr) {
-        fail(covErr.message || "This service isn't available in your area yet.");
-        return;
-      }
-    }
     setSubmitting(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error("Please sign in again before confirming.");
 
       let bookingAddressId = address?.id ?? null;
+      let servicePoint = validateExactGps(address?.latitude, address?.longitude);
+
       if (!bookingAddressId) {
         const savedArea = localStorage.getItem("uw_customer_area")?.trim();
         const savedAddress = localStorage.getItem("uw_customer_full_address")?.trim();
@@ -323,6 +308,7 @@ function ServiceDetail() {
             .single();
           if (addressError) throw addressError;
           bookingAddressId = createdAddress.id;
+          servicePoint = exact;
           setAddressId(createdAddress.id);
           qc.invalidateQueries({ queryKey: ["customer-addresses"] });
         } else {
@@ -332,10 +318,22 @@ function ServiceDetail() {
       }
 
       const selectedAddress = addressesQ.data?.find((a) => a.id === bookingAddressId);
-      if (selectedAddress && !validateExactGps((selectedAddress as any).latitude, (selectedAddress as any).longitude)) {
+      if (selectedAddress) servicePoint = validateExactGps((selectedAddress as any).latitude, (selectedAddress as any).longitude);
+      if (!servicePoint) {
         setAddrOpen(true);
         throw new Error("Exact GPS is required before booking. Please update this address using current location.");
       }
+
+      // Coverage Zone validation (server-side, fail-closed).
+      // The selected service address is the booking source of truth. Browser
+      // localStorage GPS may be stale from a previous customer/session and was
+      // causing valid polygon addresses to be rejected.
+      const { error: covErr } = await supabase.rpc("assert_serviceable", {
+        p_lat: servicePoint.latitude,
+        p_lng: servicePoint.longitude,
+        p_slug: service.slug,
+      });
+      if (covErr) throw new Error(covErr.message || "This service isn't available in your area yet.");
 
       const selectedAddons = Object.entries(addonQty)
         .filter(([, quantity]) => quantity > 0)
