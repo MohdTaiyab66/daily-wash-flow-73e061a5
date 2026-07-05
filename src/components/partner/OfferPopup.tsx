@@ -17,6 +17,7 @@ import { toast } from "sonner";
  */
 export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const audioCtxRef = useRef<AudioContext | null>(null);
