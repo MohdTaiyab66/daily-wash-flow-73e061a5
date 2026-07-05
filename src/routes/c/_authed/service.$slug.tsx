@@ -275,22 +275,24 @@ function ServiceDetail() {
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
     if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
-    // Coverage Zone validation (GPS-based, server-side, fail-closed).
-    // Coverage Manager is the single source of truth for serviceability.
-    {
-      let geo: any = {};
-      try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
-      if (geo.lat == null || geo.lng == null) {
-        fail("We need your location to confirm this area is serviceable. Please set your location and try again.");
-        return;
-      }
-      const { error: covErr } = await supabase.rpc("assert_serviceable", {
-        p_lat: geo.lat, p_lng: geo.lng, p_slug: service.slug,
-      });
-      if (covErr) {
-        fail(covErr.message || "This service isn't available in your area yet.");
-        return;
-      }
+    // Coverage Zone validation (server-side, fail-closed).
+    // The selected service address is the booking source of truth. Browser
+    // localStorage GPS may be stale from a previous customer/session and was
+    // causing valid polygon addresses to be rejected.
+    const coveragePoint = validateExactGps(address?.latitude, address?.longitude);
+    if (!coveragePoint) {
+      fail("Exact GPS is required before booking. Please update this address using current location.");
+      setAddrOpen(true);
+      return;
+    }
+    const { error: covErr } = await supabase.rpc("assert_serviceable", {
+      p_lat: coveragePoint.latitude,
+      p_lng: coveragePoint.longitude,
+      p_slug: service.slug,
+    });
+    if (covErr) {
+      fail(covErr.message || "This service isn't available in your area yet.");
+      return;
     }
     setSubmitting(true);
     try {
