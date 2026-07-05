@@ -195,19 +195,6 @@ function ServiceDetail() {
     }
   }, [isDailyShine, date]);
 
-  const basePrice = useMemo(() => {
-    if (!service) return 0;
-    return isSUV ? service.price_sedan_suv : service.price_hatchback;
-  }, [service, isSUV]);
-
-  const addonPrice = useMemo(() => {
-    if (!addonsQ.data) return 0;
-    return addonsQ.data.reduce((s, a) => {
-      const q = addonQty[a.id] ?? 0;
-      if (!q) return s;
-      return s + q * (isSUV ? a.price_sedan_suv : a.price_hatchback);
-    }, 0);
-  }, [addonsQ.data, addonQty, isSUV]);
   const selectedAddons = useMemo(
     () => Object.entries(addonQty)
       .filter(([, quantity]) => quantity > 0)
@@ -243,12 +230,13 @@ function ServiceDetail() {
 
   // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle
   // AND must be booking for a car other than their first one).
-  const subtotal = basePrice + addonPrice;
   const discountPct = appliedCoupon?.percent ?? 0;
-  const discountAmt = Math.round((subtotal * discountPct) / 100);
   const preview = previewQ.data ?? null;
   const previewReady = !!preview && !previewQ.isError;
   const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
+  const previewBase = Number(preview?.base_amount ?? previewPayable);
+  const previewAddon = Number(preview?.addon_amount ?? 0);
+  const previewDiscount = Number(preview?.discount_amount ?? 0);
   const isIncludedBooking = !!preview?.used_entitlement;
   const isEntitlementExhausted = !!preview?.exhausted;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
@@ -671,13 +659,13 @@ function ServiceDetail() {
                   {exhaustedEntitlementMessage(preview)}
                 </div>
               )}
-              <Row label="Base"><span>₹{previewPayable - addonPrice + discountAmt}</span></Row>
-              {addonPrice > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{addonPrice}</span></Row>}
+              <Row label="Base"><span>₹{previewBase}</span></Row>
+              {previewAddon > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{previewAddon}</span></Row>}
             </>
           )}
-          {!isIncludedBooking && appliedCoupon && discountAmt > 0 && (
+          {!isIncludedBooking && appliedCoupon && previewDiscount > 0 && (
             <Row label={`Coupon ${appliedCoupon.code} (${discountPct}%)`}>
-              <span className="text-success">−₹{discountAmt}</span>
+              <span className="text-success">−₹{previewDiscount}</span>
             </Row>
           )}
           <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
