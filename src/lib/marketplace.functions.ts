@@ -51,6 +51,42 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     );
   });
 
+/**
+ * Lightweight "route preview" for the incoming-offer sheet: how many cars
+ * are on today's route right now and today's expected earnings. The card
+ * uses this to render `24 → 25 cars` and `₹408 → ₹425` deltas so the
+ * partner sees the impact of accepting the offer at a glance.
+ */
+export const getPartnerRoutePreview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: a } = await (supabase as any)
+      .from("assignments")
+      .select("id, rate_per_car")
+      .eq("partner_id", userId)
+      .eq("status", "active")
+      .gte("end_date", today)
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!a) return { cars_today: 0, earnings_today: 0, rate_per_car: 0 };
+    const { data: services } = await (supabase as any)
+      .from("services")
+      .select("id, status, scheduled_date, rate_per_car")
+      .eq("assignment_id", a.id)
+      .eq("scheduled_date", today);
+    const rows = (services ?? []) as any[];
+    const cars = rows.filter((s) => s.status !== "cancelled").length;
+    const rate = Number(a.rate_per_car ?? 0);
+    const earnings = rows.reduce(
+      (sum, s) => (s.status !== "cancelled" ? sum + Number(s.rate_per_car ?? rate) : sum),
+      0,
+    );
+    return { cars_today: cars, earnings_today: Math.round(earnings), rate_per_car: rate };
+  });
+
 export const getMarketplaceSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
