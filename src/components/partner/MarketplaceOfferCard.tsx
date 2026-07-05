@@ -154,7 +154,7 @@ export function MarketplaceOfferCard({
     [impact],
   );
 
-  const onAccept = async () => {
+  const handleAccept = async () => {
     if (busy || accepted) return;
     setBusy(true);
     try {
@@ -168,6 +168,7 @@ export function MarketplaceOfferCard({
       } else {
         setAccepted(true);
         toast.success(`Accepted — ₹${offer.incentive}/day added to your route`);
+        onAccept?.();
       }
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
@@ -180,11 +181,12 @@ export function MarketplaceOfferCard({
     }
   };
 
-  const onDecline = async () => {
+  const handleDecline = async () => {
     if (busy || accepted) return;
     setBusy(true);
     try {
       await decline({ data: { broadcastId: offer.broadcast_id } });
+      onDecline?.();
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to decline");
