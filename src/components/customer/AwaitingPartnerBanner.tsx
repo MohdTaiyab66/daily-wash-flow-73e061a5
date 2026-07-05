@@ -118,6 +118,26 @@ export function AwaitingPartnerBanner({
     },
   });
 
+  // 3b) Open marketplace broadcast for this customer — while a broadcast is
+  // still open we must keep showing "Searching…", never "unable to assign".
+  const { data: openBroadcast } = useQuery({
+    queryKey: ["awaiting-partner-broadcast", userId, primarySub?.id ?? null],
+    enabled: !!userId && noPartnerAnywhere,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      let q: any = (supabase as any)
+        .from("marketplace_broadcasts")
+        .select("id, status, subscription_id")
+        .eq("customer_id", userId)
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (primarySub?.id) q = q.eq("subscription_id", primarySub.id);
+      const { data } = await q.maybeSingle();
+      return data as { id: string; status: string } | null;
+    },
+  });
+
   // Booking window: prefer today's service booking; else the primary sub's booking.
   const bookingIdForWindow = primarySub?.booking_id ?? queue?.booking_id ?? null;
   const { data: booking } = useQuery({
