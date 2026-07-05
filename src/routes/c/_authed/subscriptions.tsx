@@ -695,6 +695,7 @@ function ScheduleWashDialog({
                 p_preferred_date: cursor.toISOString().slice(0, 10),
                 p_preferred_time: slot,
                 p_notes: "Recurring plan request from My Plan",
+                p_vehicle_id: vehicle.id,
               });
               if (error) throw error;
               if (reqId) ids.push(reqId);
