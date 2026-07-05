@@ -35,6 +35,19 @@ async function handle(request: Request) {
   if (error) {
     return Response.json({ ok: false, reason: "server_error", detail: error.message }, { status: 500 });
   }
+  // Delivery tracking — best-effort
+  try {
+    const res = (data ?? {}) as { ok?: boolean; offer_id?: string; broadcast_id?: string; partner_id?: string };
+    if (res.ok && res.offer_id) {
+      await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
+        offer_id: res.offer_id,
+        broadcast_id: res.broadcast_id ?? null,
+        partner_id: res.partner_id ?? null,
+        stage: parsed.data.action === "accept" ? "accepted" : "declined",
+        meta: { source: "native_notification" },
+      });
+    }
+  } catch { /* noop */ }
   return Response.json(data ?? { ok: false, reason: "unknown" });
 }
 
