@@ -47,13 +47,15 @@ async function dispatchPending() {
       .eq("stage", "push_sent");
     if ((count ?? 0) > 0) continue;
 
-    const title = "New Daily Shine offer";
+    const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
     const data = {
       type: "offer",
       offer_id: r.offer_id,
       queue_id: r.queue_id,
       partner_id: r.partner_id,
+      category: "daily_shine",
+      link: `/app/leads/${r.offer_id}`,
     };
 
     try {

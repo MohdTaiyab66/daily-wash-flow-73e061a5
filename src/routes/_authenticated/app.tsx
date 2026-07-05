@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Home, Briefcase, Wallet, Gift, User, Bell } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 import { OfferPopup } from "@/components/partner/OfferPopup";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
+import { consumePendingLink } from "@/lib/push/fcm";
 import { usePartnerRouteSync } from "@/hooks/use-route-sync";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -27,9 +28,23 @@ function AppLayout() {
 
 function PartnerRuntime() {
   const { data: partner } = usePartner();
+  const navigate = useNavigate();
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
+
+  // Deep-link from push notifications (background/killed app taps).
+  useEffect(() => {
+    const pending = consumePendingLink();
+    if (pending) navigate({ to: pending as any });
+    const onLink = (e: Event) => {
+      const link = (e as CustomEvent).detail?.link;
+      if (typeof link === "string" && link.startsWith("/")) navigate({ to: link as any });
+    };
+    window.addEventListener("urbanwash:deeplink", onLink);
+    return () => window.removeEventListener("urbanwash:deeplink", onLink);
+  }, [navigate]);
+
   return <OfferPopup partnerId={partner?.id ?? null} />;
 }
 

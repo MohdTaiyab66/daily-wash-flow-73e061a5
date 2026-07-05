@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          body: string | null
+          category: string
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          pushed_at: string | null
+          read_at: string | null
+          subject_id: string | null
+          subject_type: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          pushed_at?: string | null
+          read_at?: string | null
+          subject_id?: string | null
+          subject_type?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          pushed_at?: string | null
+          read_at?: string | null
+          subject_id?: string | null
+          subject_type?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       area_change_history: {
         Row: {
           changed_at: string
@@ -834,6 +876,7 @@ export type Database = {
       customer_notifications: {
         Row: {
           body: string | null
+          category: string
           created_at: string
           id: string
           link: string | null
@@ -847,6 +890,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          category?: string
           created_at?: string
           id?: string
           link?: string | null
@@ -860,6 +904,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          category?: string
           created_at?: string
           id?: string
           link?: string | null
@@ -1628,6 +1673,7 @@ export type Database = {
       partner_notifications: {
         Row: {
           body: string | null
+          category: string
           created_at: string
           id: string
           link: string | null
@@ -1640,6 +1686,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          category?: string
           created_at?: string
           id?: string
           link?: string | null
@@ -1652,6 +1699,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          category?: string
           created_at?: string
           id?: string
           link?: string | null
@@ -4340,6 +4388,7 @@ export type Database = {
         Args: { p_expires?: number; p_storage_path: string }
         Returns: string
       }
+      get_offer_details_by_id: { Args: { p_offer_id: string }; Returns: Json }
       get_partner_ui_prefs: { Args: never; Returns: Json }
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }

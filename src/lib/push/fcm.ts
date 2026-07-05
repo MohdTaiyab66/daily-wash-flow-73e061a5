@@ -25,6 +25,7 @@ type OfferPayload = {
 const DEVICE_ID_KEY = "urbanwash.device_id";
 let started = false;
 let pendingDeepLink: OfferPayload | null = null;
+let pendingLink: string | null = null;
 
 async function getOrCreateDeviceId(): Promise<string> {
   const existing = await Preferences.get({ key: DEVICE_ID_KEY });
@@ -38,6 +39,12 @@ export function consumePendingOfferDeepLink(): OfferPayload | null {
   const p = pendingDeepLink;
   pendingDeepLink = null;
   return p;
+}
+
+export function consumePendingLink(): string | null {
+  const l = pendingLink;
+  pendingLink = null;
+  return l;
 }
 
 async function recordEvent(stage: string, offer: OfferPayload, extra: Record<string, unknown> = {}) {
@@ -156,11 +163,17 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   // 5) Tap / background open
   FirebaseMessaging.addListener("notificationActionPerformed", async (event) => {
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
+    const link = typeof data.link === "string" ? data.link : null;
     if (isOffer(data)) {
       await recordEvent("opened", data, { action: event.actionId });
       pendingDeepLink = data;
-      // Force OfferPopup to re-check by emitting a CustomEvent the popup listens for.
+      // Offer_id → dedicated Lead Details route
+      pendingLink = `/app/leads/${data.offer_id}`;
       window.dispatchEvent(new CustomEvent("urbanwash:offer-deeplink", { detail: data }));
+      window.dispatchEvent(new CustomEvent("urbanwash:deeplink", { detail: { link: pendingLink } }));
+    } else if (link && link.startsWith("/")) {
+      pendingLink = link;
+      window.dispatchEvent(new CustomEvent("urbanwash:deeplink", { detail: { link } }));
     }
   });
 

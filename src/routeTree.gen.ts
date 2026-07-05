@@ -33,6 +33,7 @@ import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-modes'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
@@ -85,6 +86,7 @@ import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/publ
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
 import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
+import { Route as AuthenticatedAppLeadsOfferIdRouteImport } from './routes/_authenticated/app.leads.$offerId'
 
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
@@ -203,6 +205,11 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
 const AdminOfferHistoryRoute = AdminOfferHistoryRouteImport.update({
   id: '/offer-history',
   path: '/offer-history',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
@@ -481,6 +488,12 @@ const AuthenticatedAppServiceIdRoute =
     path: '/service/$id',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppLeadsOfferIdRoute =
+  AuthenticatedAppLeadsOfferIdRouteImport.update({
+    id: '/leads/$offerId',
+    path: '/leads/$offerId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -502,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -546,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -577,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -620,6 +636,7 @@ export interface FileRoutesByTo {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -655,6 +672,7 @@ export interface FileRoutesById {
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/offer-history': typeof AdminOfferHistoryRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payment-modes': typeof AdminPaymentModesRoute
@@ -699,6 +717,7 @@ export interface FileRoutesById {
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/leads/$offerId': typeof AuthenticatedAppLeadsOfferIdRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -734,6 +753,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -778,6 +798,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app/'
+    | '/app/leads/$offerId'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -809,6 +830,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -852,6 +874,7 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app'
+    | '/app/leads/$offerId'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -886,6 +909,7 @@ export interface FileRouteTypes {
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
+    | '/admin/notifications'
     | '/admin/offer-history'
     | '/admin/partners'
     | '/admin/payment-modes'
@@ -930,6 +954,7 @@ export interface FileRouteTypes {
     | '/c/_authed/vehicles'
     | '/c/location/search'
     | '/_authenticated/app/'
+    | '/_authenticated/app/leads/$offerId'
     | '/_authenticated/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -1134,6 +1159,13 @@ declare module '@tanstack/react-router' {
       path: '/offer-history'
       fullPath: '/admin/offer-history'
       preLoaderRoute: typeof AdminOfferHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketplace': {
@@ -1500,6 +1532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/leads/$offerId': {
+      id: '/_authenticated/app/leads/$offerId'
+      path: '/leads/$offerId'
+      fullPath: '/app/leads/$offerId'
+      preLoaderRoute: typeof AuthenticatedAppLeadsOfferIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -1515,6 +1554,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppRewardsRoute: typeof AuthenticatedAppRewardsRoute
   AuthenticatedAppTrainingRoute: typeof AuthenticatedAppTrainingRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppLeadsOfferIdRoute: typeof AuthenticatedAppLeadsOfferIdRoute
   AuthenticatedAppServiceIdRoute: typeof AuthenticatedAppServiceIdRoute
 }
 
@@ -1530,6 +1570,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppRewardsRoute: AuthenticatedAppRewardsRoute,
   AuthenticatedAppTrainingRoute: AuthenticatedAppTrainingRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppLeadsOfferIdRoute: AuthenticatedAppLeadsOfferIdRoute,
   AuthenticatedAppServiceIdRoute: AuthenticatedAppServiceIdRoute,
 }
 
@@ -1584,6 +1625,7 @@ interface AdminRouteChildren {
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOfferHistoryRoute: typeof AdminOfferHistoryRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPaymentModesRoute: typeof AdminPaymentModesRoute
@@ -1619,6 +1661,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOfferHistoryRoute: AdminOfferHistoryRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPaymentModesRoute: AdminPaymentModesRoute,
