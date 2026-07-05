@@ -1,0 +1,1 @@
+ALTER VIEW public.mp_health SET (security_invoker = true);

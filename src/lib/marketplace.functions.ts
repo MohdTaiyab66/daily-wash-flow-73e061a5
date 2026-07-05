@@ -153,3 +153,74 @@ export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
       },
     };
   });
+
+// ────────────────────────── Admin controls on live broadcasts ──────────────────────────
+
+const bcastIdInput = z.object({ broadcastId: z.string().uuid() });
+
+async function rpc(context: any, fn: string, args: Record<string, unknown>) {
+  const { data, error } = await (context.supabase as any).rpc(fn, args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export const getLiveBroadcasts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { data, error } = await (context.supabase as any)
+      .from("marketplace_broadcasts")
+      .select(
+        `id, status, current_round, current_incentive, current_radius_m,
+         round_started_at, round_expires_at, created_at, subscription_id, customer_id, vehicle_id,
+         customer:customers ( full_name, phone ),
+         vehicle:customer_vehicles ( make, model, registration_number ),
+         service_area:coverage_zones ( name )`,
+      )
+      .eq("status", "open")
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const getMarketplaceHealth = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { data, error } = await (context.supabase as any).from("mp_health").select("*").maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+export const adminCancelBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.extend({ reason: z.string().max(280).optional() }).parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_cancel_broadcast", { p_broadcast_id: data.broadcastId, p_reason: data.reason ?? null }));
+
+export const adminExtendTimer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.extend({ seconds: z.number().int().min(5).max(900) }).parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_extend_timer", { p_broadcast_id: data.broadcastId, p_seconds: data.seconds }));
+
+export const adminSetIncentive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.extend({ incentive: z.number().nonnegative().max(500) }).parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_set_incentive", { p_broadcast_id: data.broadcastId, p_incentive: data.incentive }));
+
+export const adminSetRadius = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.extend({ radiusM: z.number().int().nonnegative().max(100000) }).parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_set_radius", { p_broadcast_id: data.broadcastId, p_radius_m: data.radiusM }));
+
+export const adminRebroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_rebroadcast", { p_broadcast_id: data.broadcastId }));
+
+export const adminForceAssignBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => bcastIdInput.extend({ partnerId: z.string().uuid() }).parse(i))
+  .handler(({ data, context }) => rpc(context, "mp_admin_force_assign", { p_broadcast_id: data.broadcastId, p_partner_id: data.partnerId }));
+
