@@ -46,7 +46,12 @@ function PartnerRuntime() {
     return () => window.removeEventListener("urbanwash:deeplink", onLink);
   }, [navigate]);
 
-  return <OfferPopup partnerId={partner?.id ?? null} />;
+  return (
+    <>
+      <OfferPopup partnerId={partner?.id ?? null} />
+      <DeviceSetupWizard />
+    </>
+  );
 }
 
 function TopBar() {
