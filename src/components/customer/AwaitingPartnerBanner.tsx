@@ -49,38 +49,47 @@ type Queue = {
   booking_id: string;
 };
 
-export function AwaitingPartnerBanner({ userId }: { userId: string | null }) {
+export function AwaitingPartnerBanner({
+  userId,
+  vehicleId = null,
+}: {
+  userId: string | null;
+  vehicleId?: string | null;
+}) {
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
 
-  // 1) Active/awaiting subscriptions for this user (any vehicle).
+  // 1) Active/awaiting subscriptions for this user, scoped to the selected vehicle when given.
   const { data: subs } = useQuery({
-    queryKey: ["awaiting-partner-subs", userId],
+    queryKey: ["awaiting-partner-subs", userId, vehicleId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      let q: any = (supabase as any)
         .from("subscriptions")
         .select("id, vehicle_id, status, assigned_partner_id, booking_id")
         .eq("user_id", userId)
         .in("status", ["active", "awaiting_partner_assignment", "assigned"])
         .order("created_at", { ascending: false });
+      if (vehicleId) q = q.eq("vehicle_id", vehicleId);
+      const { data } = await q;
       return (data ?? []) as Sub[];
     },
   });
 
   // 2) Today's service (if any) — carries the servicing partner + live status.
   const { data: todayService } = useQuery({
-    queryKey: ["customer-today-service", userId, today],
+    queryKey: ["customer-today-service", userId, today, vehicleId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      let q: any = (supabase as any)
         .from("services")
         .select("id, status, started_at, completed_at, partner_id, vehicle_id")
         .eq("customer_id", userId)
         .eq("scheduled_date", today)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      if (vehicleId) q = q.eq("vehicle_id", vehicleId);
+      const { data } = await q.maybeSingle();
       return data as TodayService | null;
     },
   });

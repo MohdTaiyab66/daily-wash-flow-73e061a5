@@ -27,6 +27,7 @@ import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-mana
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
 import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
+import { Route as AdminPlanInclusionsRouteImport } from './routes/admin.plan-inclusions'
 import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
@@ -171,6 +172,11 @@ const AdminRenewalsRoute = AdminRenewalsRouteImport.update({
 const AdminReliabilityRoute = AdminReliabilityRouteImport.update({
   id: '/reliability',
   path: '/reliability',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlanInclusionsRoute = AdminPlanInclusionsRouteImport.update({
+  id: '/plan-inclusions',
+  path: '/plan-inclusions',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPhotosRoute = AdminPhotosRouteImport.update({
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
@@ -567,6 +574,7 @@ export interface FileRoutesByTo {
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
@@ -643,6 +651,7 @@ export interface FileRoutesById {
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/photos': typeof AdminPhotosRoute
+  '/admin/plan-inclusions': typeof AdminPlanInclusionsRoute
   '/admin/reliability': typeof AdminReliabilityRoute
   '/admin/renewals': typeof AdminRenewalsRoute
   '/admin/revenue': typeof AdminRevenueRoute
@@ -720,6 +729,7 @@ export interface FileRouteTypes {
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/plan-inclusions'
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/plan-inclusions'
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
@@ -868,6 +879,7 @@ export interface FileRouteTypes {
     | '/admin/partners'
     | '/admin/payouts'
     | '/admin/photos'
+    | '/admin/plan-inclusions'
     | '/admin/reliability'
     | '/admin/renewals'
     | '/admin/revenue'
@@ -1068,6 +1080,13 @@ declare module '@tanstack/react-router' {
       path: '/reliability'
       fullPath: '/admin/reliability'
       preLoaderRoute: typeof AdminReliabilityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plan-inclusions': {
+      id: '/admin/plan-inclusions'
+      path: '/plan-inclusions'
+      fullPath: '/admin/plan-inclusions'
+      preLoaderRoute: typeof AdminPlanInclusionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/photos': {
@@ -1550,6 +1569,7 @@ interface AdminRouteChildren {
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminPhotosRoute: typeof AdminPhotosRoute
+  AdminPlanInclusionsRoute: typeof AdminPlanInclusionsRoute
   AdminReliabilityRoute: typeof AdminReliabilityRoute
   AdminRenewalsRoute: typeof AdminRenewalsRoute
   AdminRevenueRoute: typeof AdminRevenueRoute
@@ -1583,6 +1603,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminPhotosRoute: AdminPhotosRoute,
+  AdminPlanInclusionsRoute: AdminPlanInclusionsRoute,
   AdminReliabilityRoute: AdminReliabilityRoute,
   AdminRenewalsRoute: AdminRenewalsRoute,
   AdminRevenueRoute: AdminRevenueRoute,

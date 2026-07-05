@@ -38,14 +38,23 @@ type RecentService = {
   has_complaint: boolean;
 };
 
-export function RecentServiceFeed({ userId }: { userId: string | null }) {
+export function RecentServiceFeed({
+  userId,
+  vehicleId = null,
+}: {
+  userId: string | null;
+  vehicleId?: string | null;
+}) {
   const qc = useQueryClient();
   const recentQ = useQuery({
-    queryKey: ["my-recent-services", userId],
+    queryKey: ["my-recent-services", userId, vehicleId],
     enabled: !!userId,
     refetchInterval: 30000,
     queryFn: async (): Promise<RecentService[]> => {
-      const { data, error } = await (supabase as any).rpc("list_my_recent_services", { p_days: 2 });
+      const { data, error } = await (supabase as any).rpc("list_my_recent_services", {
+        p_days: 2,
+        p_vehicle_id: vehicleId,
+      });
       if (error) throw error;
       return (data ?? []) as RecentService[];
     },

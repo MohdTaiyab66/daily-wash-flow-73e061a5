@@ -843,6 +843,7 @@ export type Database = {
           title: string
           type: string
           user_id: string
+          vehicle_id: string | null
         }
         Insert: {
           body?: string | null
@@ -855,6 +856,7 @@ export type Database = {
           title: string
           type: string
           user_id: string
+          vehicle_id?: string | null
         }
         Update: {
           body?: string | null
@@ -867,8 +869,17 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+          vehicle_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_notifications_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "customer_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_profiles: {
         Row: {
@@ -2115,6 +2126,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_inclusions: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          plan_slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          plan_slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          plan_slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       platform_settings: {
         Row: {
@@ -4390,29 +4437,53 @@ export type Database = {
           vehicle_id: string
         }[]
       }
-      list_my_recent_services: {
-        Args: { p_days?: number }
-        Returns: {
-          booking_id: string
-          can_complain: boolean
-          complaint_window_ends_at: string
-          completed_at: string
-          dirty_report: Json
-          has_complaint: boolean
-          partner_id: string
-          partner_name: string
-          photos: Json
-          scheduled_date: string
-          service_id: string
-          service_name: string
-          service_slug: string
-          status: string
-          unavailable_notes: string
-          unavailable_photo: string
-          unavailable_reason: string
-          vehicle_label: string
-        }[]
-      }
+      list_my_recent_services:
+        | {
+            Args: { p_days?: number }
+            Returns: {
+              booking_id: string
+              can_complain: boolean
+              complaint_window_ends_at: string
+              completed_at: string
+              dirty_report: Json
+              has_complaint: boolean
+              partner_id: string
+              partner_name: string
+              photos: Json
+              scheduled_date: string
+              service_id: string
+              service_name: string
+              service_slug: string
+              status: string
+              unavailable_notes: string
+              unavailable_photo: string
+              unavailable_reason: string
+              vehicle_label: string
+            }[]
+          }
+        | {
+            Args: { p_days?: number; p_vehicle_id?: string }
+            Returns: {
+              booking_id: string
+              can_complain: boolean
+              complaint_window_ends_at: string
+              completed_at: string
+              dirty_report: Json
+              has_complaint: boolean
+              partner_id: string
+              partner_name: string
+              photos: Json
+              scheduled_date: string
+              service_id: string
+              service_name: string
+              service_slug: string
+              status: string
+              unavailable_notes: string
+              unavailable_photo: string
+              unavailable_reason: string
+              vehicle_label: string
+            }[]
+          }
       list_partner_booking_requests: {
         Args: never
         Returns: {

@@ -983,3 +983,82 @@ export const adminForceAssignQueue = createServerFn({ method: "POST" }).middlewa
     return res;
   });
 
+
+// =================== Plan Inclusions ===================
+export const listPlanInclusionsAdmin = createServerFn({ method: "GET" }).middleware([requireAdmin])
+  .inputValidator((d: { plan_slug: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await (context as any).supabase
+      .from("plan_inclusions")
+      .select("id, plan_slug, title, description, icon, display_order, is_active, updated_at")
+      .eq("plan_slug", data.plan_slug)
+      .order("display_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const listSubscriptionPlansAdmin = createServerFn({ method: "GET" }).middleware([requireAdmin])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context as any).supabase
+      .from("service_catalog")
+      .select("id, slug, name, service_type, active")
+      .in("service_type", ["subscription"])
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const adminUpsertPlanInclusion = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: {
+    id?: string | null;
+    plan_slug: string;
+    title: string;
+    description?: string | null;
+    icon?: string | null;
+    display_order?: number;
+    is_active?: boolean;
+  }) => d)
+  .handler(async ({ data, context }) => {
+    const payload = {
+      plan_slug: data.plan_slug,
+      title: data.title,
+      description: data.description ?? null,
+      icon: data.icon ?? null,
+      display_order: data.display_order ?? 0,
+      is_active: data.is_active ?? true,
+    };
+    const supabase = (context as any).supabase;
+    if (data.id) {
+      const { error } = await supabase.from("plan_inclusions").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: inserted, error } = await supabase
+      .from("plan_inclusions").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return { id: inserted.id as string };
+  });
+
+export const adminDeletePlanInclusion = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { error } = await (context as any).supabase
+      .from("plan_inclusions").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminReorderPlanInclusions = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { ordered_ids: string[] }) => d)
+  .handler(async ({ data, context }) => {
+    const supabase = (context as any).supabase;
+    // Simple, correct approach: iterate. Sequence length is small (typically < 20).
+    for (let i = 0; i < data.ordered_ids.length; i++) {
+      const { error } = await supabase
+        .from("plan_inclusions")
+        .update({ display_order: (i + 1) * 10 })
+        .eq("id", data.ordered_ids[i]);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });

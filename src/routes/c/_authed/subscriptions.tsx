@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
+import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
+import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
+import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -26,6 +29,7 @@ type Booking = {
   base_amount: number;
   addon_amount: number;
   service_id: string;
+  vehicle_id: string | null;
   service_catalog: { name: string; service_type: string; slug: string } | null;
 };
 
@@ -85,13 +89,50 @@ function MyPlanPage() {
   };
 
 
-  const bookingsQ = useQuery({
-    queryKey: ["customer-bookings-all", userId],
+  // Vehicle selector: subscription is per-vehicle. All queries below are scoped
+  // to the selected vehicle. Default = first vehicle with an active subscription,
+  // else first vehicle. Selection persists in sessionStorage.
+  const vehiclesQ = useQuery({
+    queryKey: ["customer-vehicles", userId],
     enabled: !!userId,
+    queryFn: async (): Promise<SelectorVehicle[]> => {
+      const { data } = await (supabase as any)
+        .from("customer_vehicles")
+        .select("id, make, model, registration_number, is_default")
+        .order("created_at");
+      return (data ?? []) as SelectorVehicle[];
+    },
+  });
+
+  // Preferred default: the vehicle with an active subscription.
+  const preferredSubQ = useQuery({
+    queryKey: ["preferred-sub-vehicle", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("vehicle_id, status, created_at")
+        .eq("user_id", userId)
+        .in("status", ["active", "assigned", "awaiting_partner_assignment"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data?.vehicle_id as string | null) ?? null;
+    },
+  });
+  const [selectedVehicleId, setSelectedVehicleId] = useSelectedVehicleId(
+    vehiclesQ.data,
+    preferredSubQ.data ?? null,
+  );
+
+  const bookingsQ = useQuery({
+    queryKey: ["customer-bookings-all", userId, selectedVehicleId],
+    enabled: !!userId && !!selectedVehicleId,
     queryFn: async (): Promise<Booking[]> => {
       const { data, error } = await (supabase as any)
         .from("bookings")
-        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, service_catalog:service_id(name, service_type, slug)")
+        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, vehicle_id, service_catalog:service_id(name, service_type, slug)")
+        .eq("vehicle_id", selectedVehicleId)
         .order("scheduled_date", { ascending: false })
         .limit(120);
       if (error) throw error;
@@ -172,45 +213,73 @@ function MyPlanPage() {
   const completedCount = all.filter((b) => b.status === "completed").length;
   const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
 
+  const selectedVehicle = vehiclesQ.data?.find((v) => v.id === selectedVehicleId) ?? null;
+  const vehicleLabel = selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : null;
+  const hasVehicles = (vehiclesQ.data?.length ?? 0) > 0;
+  const activePlanSlug = activeSub?.service_catalog?.slug ?? null;
+
   return (
     <div className="px-5 pt-6 pb-12">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">My Plan</h1>
-          <p className="mt-1 text-xs text-muted-foreground">Track your Daily Shine service.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {vehicleLabel ? `Tracking ${vehicleLabel}` : "Track your Daily Shine service."}
+          </p>
         </div>
-        <Sparkles className="h-6 w-6 text-primary" />
+        {hasVehicles && (
+          <VehicleSelector
+            vehicles={vehiclesQ.data ?? []}
+            value={selectedVehicleId}
+            onChange={setSelectedVehicleId}
+          />
+        )}
       </div>
 
-      <AwaitingPartnerBanner userId={userId} />
-
-      <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
-
-      {bookingsQ.isLoading && (
-        <div className="mt-6 space-y-3">
-          <div className="h-32 animate-pulse rounded-3xl bg-muted" />
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-        </div>
-      )}
-
-      {!bookingsQ.isLoading && !activeSub && (
+      {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border p-10 text-center">
-          <Sparkles className="h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-3 text-base font-semibold">No active plan</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Subscribe to Daily Shine to enjoy daily car care.</p>
+          <Car className="h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-3 text-base font-semibold">Add a vehicle to get started</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Daily Shine is per-vehicle. Add a car to subscribe.</p>
           <Button asChild className="mt-5 rounded-full">
-            <Link to="/c/home">Browse plans</Link>
+            <Link to="/c/vehicles/add">Add vehicle</Link>
           </Button>
         </div>
       )}
 
-      {activeSub && (
+      {hasVehicles && (
+        <>
+          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+
+          {bookingsQ.isLoading && (
+            <div className="mt-6 space-y-3">
+              <div className="h-32 animate-pulse rounded-3xl bg-muted" />
+              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+            </div>
+          )}
+
+          {!bookingsQ.isLoading && !activeSub && (
+            <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
+          )}
+        </>
+      )}
+
+
+      {hasVehicles && activeSub && (
         <>
           {/* Active plan hero */}
           <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-accent/40 to-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wide text-primary">Active plan</p>
+                {vehicleLabel && (
+                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                    <Car className="h-3 w-3" /> {vehicleLabel}
+                    {selectedVehicle?.registration_number ? ` · ${selectedVehicle.registration_number}` : ""}
+                  </p>
+                )}
                 <h2 className="mt-0.5 truncate text-xl font-semibold">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
@@ -252,6 +321,11 @@ function MyPlanPage() {
               </div>
             </div>
           </div>
+
+          {/* Plan inclusions (dynamic, admin-editable) */}
+          <PlanInclusionsCard planSlug={activePlanSlug} />
+
+
 
           {/* This month's washes */}
           <div className="mt-5">
@@ -322,7 +396,8 @@ function MyPlanPage() {
           </div>
 
           {/* Recent service feed with photos + complaint window */}
-          <RecentServiceFeed userId={userId} />
+          <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+
 
           {/* Counters */}
           <div className="mt-4 grid grid-cols-2 gap-3">
