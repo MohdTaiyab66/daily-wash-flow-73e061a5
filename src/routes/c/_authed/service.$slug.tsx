@@ -527,9 +527,14 @@ function ServiceDetail() {
               </div>
               <Button type="button" size="sm" onClick={applyBestCoupon} className="shrink-0 rounded-full">Apply coupon</Button>
             </div>
+          ) : isFirstVehicle && vehicleCount >= 2 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
+              Coupons apply only when you book service for an additional car — not your first one.
+              Switch the car above to a different vehicle to unlock your multi-car discount.
+            </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
-              Add another car to unlock multi-car discounts: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
+              Add another car to unlock multi-car discounts on the next car: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
               <div className="mt-2">
                 <Button asChild size="sm" variant="outline" className="rounded-full">
                   <Link to="/c/vehicles/add">Add another car</Link>
