@@ -35,15 +35,23 @@ function LocationSearch() {
   }, [q]);
 
   const choose = (name: string) => {
-    // We must never book a service without exact GPS coordinates — otherwise the
-    // partner ends up navigating to the area centroid instead of the customer's
-    // home. Remember the picked area for the UI, then send the user through the
-    // GPS capture screen where reverse-geocoding + address save happens.
+    // Save area + a centroid so the coverage lookup (get_coverage_at) has
+    // coordinates to test — without geo it always returns matched:false and the
+    // home screen incorrectly says "Daily Shine not available in your area".
+    // The user is still prompted for exact GPS on the next screen for pickup.
+    const area = SERVICE_AREAS.find((a) => a.name === name);
     localStorage.setItem("uw_customer_area", name);
     localStorage.setItem("uw_customer_full_address", `${name}, Lucknow`);
-    toast.success(`Location set: ${name}. Please share GPS for accurate pickup.`);
+    if (area) {
+      localStorage.setItem(
+        "uw_customer_geo",
+        JSON.stringify({ lat: area.lat, lng: area.lng, pincode: null, state: "Uttar Pradesh", city: "Lucknow" }),
+      );
+    }
+    toast.success(`Location set: ${name}. Share GPS for exact pickup.`);
     navigate({ to: "/c/location" });
   };
+
 
   const useGPS = async () => {
     setLocating(true);
