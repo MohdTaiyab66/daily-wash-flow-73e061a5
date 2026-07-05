@@ -710,13 +710,16 @@ function ScheduleWashDialog({
                 p_vehicle_id: vehicle.id,
               });
               if (error) throw error;
-              if (reqId) ids.push(reqId);
+              if (reqId) {
+                ids.push(reqId);
+                traceVehicle("create_addon", { addon_request_id: reqId, vehicle_id: vehicle.id, details: { service_slug: service.slug, date: cursor.toISOString().slice(0, 10), slot } });
+              }
             }
             cursor.setDate(cursor.getDate() + 7);
           }
           toast.success(`Sent ${ids.length} requests to admin · you'll be notified when scheduled`);
         } else {
-          const { error } = await (supabase as any).rpc("create_addon_request", {
+          const { data: reqId, error } = await (supabase as any).rpc("create_addon_request", {
             p_subscription_id: subRow.id,
             p_service_id: service.id,
             p_preferred_date: date,
@@ -725,6 +728,7 @@ function ScheduleWashDialog({
             p_vehicle_id: vehicle.id,
           });
           if (error) throw error;
+          traceVehicle("create_addon", { addon_request_id: reqId ?? null, vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
           toast.success(`Request sent for ${date} · ${slot} · admin will confirm shortly`);
         }
         qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
