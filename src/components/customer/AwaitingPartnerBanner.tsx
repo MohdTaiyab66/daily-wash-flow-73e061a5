@@ -202,7 +202,7 @@ export function AwaitingPartnerBanner({
   if (completed) state = "completed";
   else if (inProgress) state = "in_progress";
   else if (assignedPartnerId) state = "assigned";
-  else if (queue?.status === "failed") state = "unassignable";
+  else if (queue?.status === "failed" && !openBroadcast) state = "unassignable";
   else state = "searching";
 
   // Hard block: if we have an assigned partner anywhere, never render the red
