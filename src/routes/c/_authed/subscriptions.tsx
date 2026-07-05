@@ -327,6 +327,12 @@ function MyPlanPage() {
           {/* Plan inclusions (dynamic, admin-editable) */}
           <PlanInclusionsCard planSlug={activePlanSlug} />
 
+          {/* Per-vehicle remaining benefits */}
+          <div className="mt-4">
+            <PlanBalanceCard vehicleId={selectedVehicleId} />
+          </div>
+
+
 
 
           {/* This month's washes */}
