@@ -98,10 +98,16 @@ function CountdownRing({ remaining, total }: { remaining: number; total: number 
 export function MarketplaceOfferCard({
   offer,
   compact = false,
+  onAccept,
+  onDecline,
 }: {
   offer: OfferRow;
   /** Compact mode is used in the stacked "More offers" list — no route preview. */
   compact?: boolean;
+  /** Optional hooks so the parent list can play a success chirp / start the
+   * post-decline cooldown when the partner acts on this specific offer. */
+  onAccept?: () => void;
+  onDecline?: () => void;
 }) {
   const qc = useQueryClient();
   const accept = useServerFn(acceptMarketplaceOffer);
@@ -148,7 +154,7 @@ export function MarketplaceOfferCard({
     [impact],
   );
 
-  const onAccept = async () => {
+  const handleAccept = async () => {
     if (busy || accepted) return;
     setBusy(true);
     try {
@@ -162,6 +168,7 @@ export function MarketplaceOfferCard({
       } else {
         setAccepted(true);
         toast.success(`Accepted — ₹${offer.incentive}/day added to your route`);
+        onAccept?.();
       }
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
@@ -174,11 +181,12 @@ export function MarketplaceOfferCard({
     }
   };
 
-  const onDecline = async () => {
+  const handleDecline = async () => {
     if (busy || accepted) return;
     setBusy(true);
     try {
       await decline({ data: { broadcastId: offer.broadcast_id } });
+      onDecline?.();
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to decline");
@@ -353,14 +361,14 @@ export function MarketplaceOfferCard({
           <Button
             variant="outline"
             className="h-12 flex-1 border-2 text-base font-semibold"
-            onClick={onDecline}
+            onClick={handleDecline}
             disabled={busy || remaining === 0}
           >
             <X className="mr-1 h-5 w-5" /> Decline
           </Button>
           <Button
             className="h-12 flex-[1.4] bg-emerald-600 text-base font-bold hover:bg-emerald-700"
-            onClick={onAccept}
+            onClick={handleAccept}
             disabled={busy || remaining === 0}
           >
             <Check className="mr-1 h-5 w-5" /> Accept

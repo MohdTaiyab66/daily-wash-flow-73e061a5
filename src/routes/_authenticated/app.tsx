@@ -7,6 +7,7 @@ import logo from "@/assets/logo.jpeg";
 import { useI18n } from "@/lib/i18n";
 import { usePartner, usePartnerHeartbeat } from "@/hooks/use-partner";
 import { OfferPopup } from "@/components/partner/OfferPopup";
+import { DeviceSetupWizard } from "@/components/partner/DeviceSetupWizard";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { consumePendingLink } from "@/lib/push/fcm";
 import { usePartnerRouteSync } from "@/hooks/use-route-sync";
@@ -45,7 +46,12 @@ function PartnerRuntime() {
     return () => window.removeEventListener("urbanwash:deeplink", onLink);
   }, [navigate]);
 
-  return <OfferPopup partnerId={partner?.id ?? null} />;
+  return (
+    <>
+      <OfferPopup partnerId={partner?.id ?? null} />
+      <DeviceSetupWizard />
+    </>
+  );
 }
 
 function TopBar() {

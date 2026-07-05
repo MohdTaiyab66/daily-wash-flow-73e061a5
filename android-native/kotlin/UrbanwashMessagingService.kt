@@ -27,7 +27,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     companion object {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
-        const val CHANNEL_OFFERS = "offers_v2"
+        const val CHANNEL_OFFERS = "offers_v3"
         const val CHANNEL_GENERAL = "general"
         const val NOTIF_ID_OFFER = 42001
         const val ACTION_ACCEPT = "com.urbanwash.push.ACCEPT"
@@ -45,12 +45,17 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: return
-        if (type != "marketplace_offer") {
-            postGeneric(msg)
-            return
+        when (type) {
+            "marketplace_offer" -> {
+                ensureOffersChannel()
+                postOffer(data, isUpdate = false)
+            }
+            "marketplace_offer_update" -> {
+                ensureOffersChannel()
+                postOffer(data, isUpdate = true)
+            }
+            else -> postGeneric(msg)
         }
-        ensureOffersChannel()
-        postOffer(data)
     }
 
     private fun ensureOffersChannel() {
@@ -86,7 +91,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         nm.createNotificationChannel(ch)
     }
 
-    private fun postOffer(data: Map<String, String>) {
+    private fun postOffer(data: Map<String, String>, isUpdate: Boolean) {
         val ctx: Context = applicationContext
         val token = data[EXTRA_TOKEN] ?: return
         val broadcastId = data[EXTRA_BROADCAST] ?: return
@@ -109,14 +114,13 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             putExtra("deep_link", "/app/leads/$offerId")
         }
         val contentPI = PendingIntent.getActivity(
-            ctx, offerId.hashCode(), launch,
+            ctx, broadcastId.hashCode(), launch,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        // Full-screen intent = launched by system when phone is locked.
         val fullScreenPI = contentPI
 
         val acceptPI = PendingIntent.getBroadcast(
-            ctx, ("accept:$offerId").hashCode(),
+            ctx, ("accept:$broadcastId").hashCode(),
             Intent(ctx, OfferActionReceiver::class.java).apply {
                 action = ACTION_ACCEPT
                 putExtra(EXTRA_TOKEN, token)
@@ -126,7 +130,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val declinePI = PendingIntent.getBroadcast(
-            ctx, ("decline:$offerId").hashCode(),
+            ctx, ("decline:$broadcastId").hashCode(),
             Intent(ctx, OfferActionReceiver::class.java).apply {
                 action = ACTION_DECLINE
                 putExtra(EXTRA_TOKEN, token)
@@ -151,13 +155,16 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setOngoing(false)
             .setContentIntent(contentPI)
-            .setFullScreenIntent(fullScreenPI, true)
             .setTimeoutAfter(95_000L)
             .addAction(0, "Accept", acceptPI)
             .addAction(0, "Decline", declinePI)
+            // Silent updates should NOT re-alert. Fresh offers get full-screen intent.
+            .setOnlyAlertOnce(isUpdate)
+            .apply { if (!isUpdate) setFullScreenIntent(fullScreenPI, true) }
 
-        // Unique per offer so multiple offers can stack.
-        NotificationManagerCompat.from(ctx).notify(offerId.hashCode(), builder.build())
+        // Notification id = broadcast id → subsequent updates replace the same
+        // heads-up rather than stacking a fresh one.
+        NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
     }
 
     private fun postGeneric(msg: RemoteMessage) {
