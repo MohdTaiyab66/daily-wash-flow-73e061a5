@@ -73,9 +73,30 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
 
   useEffect(() => {
-    setArea(localStorage.getItem("uw_customer_area") ?? "");
+    const savedArea = localStorage.getItem("uw_customer_area") ?? "";
+    setArea(savedArea);
     setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
+    // Self-heal: older sessions stored `uw_customer_area` without `uw_customer_geo`.
+    // Without geo the coverage lookup returns matched:false and the home banner
+    // wrongly says "Daily Shine not yet available in your area". Back-fill from
+    // the canonical service-area list so the coverage RPC has coordinates to test.
+    try {
+      if (savedArea && !localStorage.getItem("uw_customer_geo")) {
+        // Late import so the module isn't loaded before hydration.
+        import("@/lib/areas").then(({ SERVICE_AREAS }) => {
+          const match = SERVICE_AREAS.find((a) => a.name.toLowerCase() === savedArea.toLowerCase());
+          if (match) {
+            localStorage.setItem(
+              "uw_customer_geo",
+              JSON.stringify({ lat: match.lat, lng: match.lng, pincode: null, state: "Uttar Pradesh", city: "Lucknow" }),
+            );
+            window.dispatchEvent(new StorageEvent("storage", { key: "uw_customer_geo" }));
+          }
+        });
+      }
+    } catch { /* ignore */ }
   }, []);
+
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
