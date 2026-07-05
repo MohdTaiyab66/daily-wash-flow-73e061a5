@@ -321,6 +321,11 @@ function MyPlanPage() {
             </div>
           </div>
 
+          {/* Plan inclusions (dynamic, admin-editable) */}
+          <PlanInclusionsCard planSlug={activePlanSlug} />
+
+
+
           {/* This month's washes */}
           <div className="mt-5">
             <h3 className="text-sm font-semibold tracking-tight">This month</h3>
