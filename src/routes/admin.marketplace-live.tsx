@@ -192,5 +192,3 @@ function formatDuration(seconds: number) {
   if (h === 0) return `${m}m ${s}s`;
   return `${h}h ${m % 60}m`;
 }
-// silence unused-var warning for useMemo import
-export const _unused = useMemo;
