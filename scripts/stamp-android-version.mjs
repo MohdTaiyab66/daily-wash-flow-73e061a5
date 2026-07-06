@@ -5,7 +5,10 @@ const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.28";
 const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "28");
 const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-02";
 const gradleFile = "android/app/build.gradle";
-const syncedBuildInfo = "android/app/src/main/assets/public/build-info.json";
+const syncedBuildInfoCandidates = [
+  "android/app/src/main/assets/build-info.json",
+  "android/app/src/main/assets/public/build-info.json",
+];
 
 if (!existsSync(gradleFile)) {
   console.error(`[partner-build] missing ${gradleFile}; run node_modules/.bin/cap add/sync android first`);
@@ -29,8 +32,9 @@ if (/versionName\s+["'][^"']+["']/.test(gradle)) {
 await writeFile(gradleFile, gradle);
 console.log(`[partner-build] Android version stamped: ${versionName} (${versionCode})`);
 
-if (!existsSync(syncedBuildInfo)) {
-  console.error(`[partner-build] missing synced asset ${syncedBuildInfo}`);
+const syncedBuildInfo = syncedBuildInfoCandidates.find((path) => existsSync(path));
+if (!syncedBuildInfo) {
+  console.error(`[partner-build] missing synced asset ${syncedBuildInfoCandidates.join(" or ")}`);
   process.exit(1);
 }
 
