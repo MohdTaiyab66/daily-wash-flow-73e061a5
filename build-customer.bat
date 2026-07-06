@@ -102,6 +102,16 @@ echo.
 echo [5/6] Building web bundle...
 call bun run build || goto :fail
 
+echo   Preparing mobile web shell (Capacitor webDir)...
+call node scripts\prepare-mobile-shell.mjs || goto :fail
+
+if not exist ".output\public\index.html" (
+  echo   [X] Missing .output\public\index.html after prepare-mobile-shell
+  goto :fail
+)
+
+
+
 if not exist "android" (
   echo   android/ folder missing - running: Capacitor add android
   call node "%CAP_CLI%" add android || goto :fail
