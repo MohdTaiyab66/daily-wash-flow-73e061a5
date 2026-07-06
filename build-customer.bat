@@ -7,6 +7,7 @@ setlocal EnableDelayedExpansion
 set "VARIANT=customer"
 set "APP_ID=com.urbanwash.customer"
 set "GSJSON=android-config\customer\google-services.json"
+set "CAP_CLI=node_modules\@capacitor\cli\bin\capacitor"
 
 echo.
 echo ============================================================
@@ -84,12 +85,12 @@ if not exist "node_modules" (
   echo   [OK] node_modules present - skipping bun install
 )
 
-if not exist "node_modules\.bin\cap.cmd" (
+if not exist "%CAP_CLI%" (
   echo   Capacitor CLI missing from node_modules - refreshing dependencies...
   call bun install || goto :fail
 )
 
-if not exist "node_modules\.bin\cap.cmd" (
+if not exist "%CAP_CLI%" (
   echo   [X] Capacitor CLI still missing after bun install.
   echo       Run: bun add @capacitor/cli @capacitor/core @capacitor/android
   echo       Then re-run: build-customer.bat
@@ -103,14 +104,14 @@ call bun run build || goto :fail
 
 if not exist "android" (
   echo   android/ folder missing - running: Capacitor add android
-  call node_modules\.bin\cap.cmd add android || goto :fail
+  call node "%CAP_CLI%" add android || goto :fail
 )
 
 echo   Copying Firebase config into android\app\google-services.json
 copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 
 echo   Syncing Capacitor...
-call node_modules\.bin\cap.cmd sync android || goto :fail
+call node "%CAP_CLI%" sync android || goto :fail
 
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
