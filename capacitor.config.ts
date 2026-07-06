@@ -25,6 +25,14 @@ const config: CapacitorConfig = {
     androidScheme: "https",
     url: process.env.CAP_SERVER_URL || undefined,
     cleartext: false,
+    allowNavigation: [
+      "daily-wash-flow.lovable.app",
+      "*.lovable.app",
+      "*.supabase.co",
+      "*.google.com",
+      "*.googleapis.com",
+      "*.gstatic.com",
+    ],
   },
   android: {
     allowMixedContent: false,
