@@ -108,12 +108,20 @@ echo   Source marker: public\build-info.json
 type public\build-info.json || goto :fail
 call bun run build || goto :fail
 
+echo   Preparing mobile web shell (Capacitor webDir)...
+call node scripts\prepare-mobile-shell.mjs || goto :fail
+
+if not exist ".output\public\index.html" (
+  echo   [X] Missing .output\public\index.html after prepare-mobile-shell
+  goto :fail
+)
 if not exist ".output\public\build-info.json" (
   echo   [X] Missing latest dist asset: .output\public\build-info.json
   goto :fail
 )
 echo   [OK] Latest dist asset present: .output\public\build-info.json
 type .output\public\build-info.json || goto :fail
+
 
 if not exist "android" (
   echo   android/ folder missing - running: Capacitor add android
