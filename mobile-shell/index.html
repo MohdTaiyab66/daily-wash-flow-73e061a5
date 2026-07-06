@@ -17,6 +17,7 @@
         var PARTNER_URL  = "https://daily-wash-flow.lovable.app/";
         // BUILD_VARIANT replaced by build script at copy time
         var variant = "__URBANWASH_VARIANT__";
+        if (variant.indexOf("__") === 0) variant = "partner";
         var url = variant === "customer" ? CUSTOMER_URL : PARTNER_URL;
         window.location.replace(url);
       })();
