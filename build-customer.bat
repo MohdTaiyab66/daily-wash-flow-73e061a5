@@ -84,6 +84,18 @@ if not exist "node_modules" (
   echo   [OK] node_modules present - skipping bun install
 )
 
+if not exist "node_modules\.bin\cap.cmd" (
+  echo   Capacitor CLI missing from node_modules - refreshing dependencies...
+  call bun install || goto :fail
+)
+
+if not exist "node_modules\.bin\cap.cmd" (
+  echo   [X] Capacitor CLI still missing after bun install.
+  echo       Run: bun add @capacitor/cli @capacitor/core @capacitor/android
+  echo       Then re-run: build-customer.bat
+  goto :fail
+)
+
 REM -- 5. Build web bundle + cap sync ------------------------------------
 echo.
 echo [5/6] Building web bundle...
@@ -91,14 +103,14 @@ call bun run build || goto :fail
 
 if not exist "android" (
   echo   android/ folder missing - running: npx cap add android
-  call npx cap add android || goto :fail
+  call bunx cap add android || goto :fail
 )
 
 echo   Copying Firebase config into android\app\google-services.json
 copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 
 echo   Syncing Capacitor...
-call npx cap sync android || goto :fail
+call bunx cap sync android || goto :fail
 
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
