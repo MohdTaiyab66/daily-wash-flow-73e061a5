@@ -115,15 +115,15 @@ echo   [OK] Latest dist asset present: .output\public\build-info.json
 type .output\public\build-info.json || goto :fail
 
 if not exist "android" (
-  echo   android/ folder missing - running: npx cap add android
-  call bunx cap add android || goto :fail
+  echo   android/ folder missing - running: Capacitor add android
+  call node_modules\.bin\cap.cmd add android || goto :fail
 )
 
 echo   Copying Firebase config into android\app\google-services.json
 copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 
 echo   Syncing Capacitor...
-call bunx cap sync android || goto :fail
+call node_modules\.bin\cap.cmd sync android || goto :fail
 
 if not exist "android\app\src\main\assets\public\build-info.json" (
   echo   [X] Capacitor did not copy latest web assets into Android.
