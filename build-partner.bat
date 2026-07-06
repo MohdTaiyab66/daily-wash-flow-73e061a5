@@ -111,8 +111,12 @@ call bun run build || goto :fail
 echo   Preparing mobile web shell (Capacitor webDir)...
 call node scripts\prepare-mobile-shell.mjs || goto :fail
 
-if not exist ".output\public\index.html" (
-  echo   [X] Missing .output\public\index.html after prepare-mobile-shell
+if not exist "mobile-shell\index.html" (
+  echo   [X] Missing mobile-shell\index.html after prepare-mobile-shell
+  goto :fail
+)
+if not exist "mobile-shell\build-info.json" (
+  echo   [X] Missing mobile-shell\build-info.json after prepare-mobile-shell
   goto :fail
 )
 if not exist ".output\public\build-info.json" (
@@ -121,6 +125,7 @@ if not exist ".output\public\build-info.json" (
 )
 echo   [OK] Latest dist asset present: .output\public\build-info.json
 type .output\public\build-info.json || goto :fail
+echo   [OK] Capacitor webDir ready: mobile-shell\index.html
 
 
 if not exist "android" (
@@ -134,13 +139,17 @@ copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 echo   Syncing Capacitor...
 call node "%CAP_CLI%" sync android || goto :fail
 
-if not exist "android\app\src\main\assets\public\build-info.json" (
+if not exist "android\app\src\main\assets\public\build-info.json" if not exist "android\app\src\main\assets\build-info.json" (
   echo   [X] Capacitor did not copy latest web assets into Android.
-  echo       Missing android\app\src\main\assets\public\build-info.json
+  echo       Missing android\app\src\main\assets\build-info.json
   goto :fail
 )
 echo   [OK] Android asset copied from latest dist:
-type android\app\src\main\assets\public\build-info.json || goto :fail
+if exist "android\app\src\main\assets\public\build-info.json" (
+  type android\app\src\main\assets\public\build-info.json || goto :fail
+) else (
+  type android\app\src\main\assets\build-info.json || goto :fail
+)
 
 echo   Stamping Android version and verifying synced build marker...
 call node scripts\stamp-android-version.mjs || goto :fail

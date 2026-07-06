@@ -1,5 +1,4 @@
 import type { CapacitorConfig } from "@capacitor/cli";
-import { existsSync } from "node:fs";
 
 /**
  * Capacitor config for Urban Wash.
@@ -16,14 +15,11 @@ import { existsSync } from "node:fs";
  */
 const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
 const isCustomer = variant === "customer";
-const preparedWebDir = ".output/public";
-const fallbackWebDir = "mobile-shell";
-const webDir = existsSync(`${preparedWebDir}/index.html`) ? preparedWebDir : fallbackWebDir;
 
 const config: CapacitorConfig = {
   appId: isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner",
   appName: isCustomer ? "Urban Wash" : "Urban Wash Partner",
-  webDir, // Use prepared TanStack output when available; otherwise use the mobile shell.
+  webDir: "mobile-shell", // Static Capacitor shell; the TanStack SSR build does not emit index.html.
   bundledWebRuntime: false,
   server: {
     androidScheme: "https",
