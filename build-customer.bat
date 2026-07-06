@@ -105,10 +105,15 @@ call bun run build || goto :fail
 echo   Preparing mobile web shell (Capacitor webDir)...
 call node scripts\prepare-mobile-shell.mjs || goto :fail
 
-if not exist ".output\public\index.html" (
-  echo   [X] Missing .output\public\index.html after prepare-mobile-shell
+if not exist "mobile-shell\index.html" (
+  echo   [X] Missing mobile-shell\index.html after prepare-mobile-shell
   goto :fail
 )
+if not exist "mobile-shell\build-info.json" (
+  echo   [X] Missing mobile-shell\build-info.json after prepare-mobile-shell
+  goto :fail
+)
+echo   [OK] Capacitor webDir ready: mobile-shell\index.html
 
 
 

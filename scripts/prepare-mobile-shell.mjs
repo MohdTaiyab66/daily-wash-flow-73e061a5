@@ -1,7 +1,6 @@
-// Copies mobile-shell/ into .output/public/ so Capacitor has a static webDir
-// with an index.html. TanStack Start SSR does not emit a static index.html,
-// so the native shell loads the hosted app instead.
-import { mkdirSync, readFileSync, writeFileSync, cpSync, existsSync } from "node:fs";
+// Prepares the static Capacitor shell. TanStack Start SSR does not emit a
+// static index.html, so Capacitor uses mobile-shell/ and loads the hosted app.
+import { mkdirSync, readFileSync, writeFileSync, cpSync, existsSync, copyFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,7 +16,18 @@ if (!existsSync(shellDir)) {
 
 mkdirSync(outDir, { recursive: true });
 
-// Copy every static asset from mobile-shell/ into .output/public/
+// Keep the native webDir self-contained for `cap add android`, which performs
+// an immediate copy before a later `cap sync`.
+const sourceBuildInfoPath = join(projectRoot, "public", "build-info.json");
+const shellBuildInfoPath = join(shellDir, "build-info.json");
+if (existsSync(sourceBuildInfoPath)) {
+  copyFileSync(sourceBuildInfoPath, shellBuildInfoPath);
+} else if (!existsSync(shellBuildInfoPath)) {
+  const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
+  writeFileSync(shellBuildInfoPath, JSON.stringify({ app: variant, version: "dev", build: "dev" }, null, 2));
+}
+
+// Also copy every static asset into .output/public/ for diagnostics and older scripts.
 cpSync(shellDir, outDir, { recursive: true });
 
 // Inject variant into index.html
