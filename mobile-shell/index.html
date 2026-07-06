@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Urban Wash</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #0F172A; color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .wrap { display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:16px; }
+      .spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:s 1s linear infinite; }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
+    <script>
+      (function () {
+        var CUSTOMER_URL = "https://daily-wash-flow.lovable.app/";
+        var PARTNER_URL  = "https://daily-wash-flow.lovable.app/";
+        // BUILD_VARIANT replaced by build script at copy time
+        var variant = "__URBANWASH_VARIANT__";
+        var url = variant === "customer" ? CUSTOMER_URL : PARTNER_URL;
+        window.location.replace(url);
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="wrap"><div class="spinner"></div><div>Loading Urban Wash…</div></div>
+  </body>
+</html>
