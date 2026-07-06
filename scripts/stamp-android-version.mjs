@@ -1,14 +1,14 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
-const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.27";
-const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "27");
-const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-01";
+const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.28";
+const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "28");
+const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-02";
 const gradleFile = "android/app/build.gradle";
 const syncedBuildInfo = "android/app/src/main/assets/public/build-info.json";
 
 if (!existsSync(gradleFile)) {
-  console.error(`[partner-build] missing ${gradleFile}; run npx cap add/sync android first`);
+  console.error(`[partner-build] missing ${gradleFile}; run node_modules/.bin/cap add/sync android first`);
   process.exit(1);
 }
 
