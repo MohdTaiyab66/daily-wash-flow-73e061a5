@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Clock, IndianRupee, Map as MapIcon } from "lucide-react";
+import { Loader2, Clock, IndianRupee, Map as MapIcon, Car, Users, Lock } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 import { prepareStaffLogin } from "@/lib/staff-auth.functions";
@@ -270,10 +270,10 @@ function AuthPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-7 pb-5">
         {/* Brand header */}
-        <div className="flex flex-col items-center gap-2.5 animate-fade-in">
+        <div className="flex flex-col items-center gap-1.5 animate-fade-in">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-2xl bg-orange-500/25 blur-lg" />
-            <img src={logo} alt="Urban Wash" className="relative h-12 w-12 rounded-2xl object-cover ring-1 ring-white/15" />
+            <div className="absolute -inset-1.5 rounded-2xl bg-orange-500/25 blur-lg" />
+            <img src={logo} alt="Urban Wash" className="relative h-14 w-14 rounded-2xl object-contain bg-black/40 p-1 ring-1 ring-white/15" />
           </div>
           <div className="text-center">
             <div className="text-[14px] font-semibold tracking-tight">Urban Wash</div>
@@ -312,12 +312,20 @@ function AuthPage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Marketplace</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Opportunities</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/70">
-            <span>🚗 <span className="font-semibold text-white">24</span> <span className="text-white/45"> Leads</span></span>
+          <div className="flex items-center gap-3 text-[11px] text-white/70">
+            <span className="inline-flex items-center gap-1.5">
+              <Car className="h-3.5 w-3.5 text-orange-400" />
+              <span className="font-semibold text-white">24</span>
+              <span className="text-white/55">New Leads</span>
+            </span>
             <span className="h-3 w-px bg-white/10" />
-            <span>👥 <span className="font-semibold text-white">86</span> <span className="text-white/45"> Online</span></span>
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-orange-400" />
+              <span className="font-semibold text-white">86</span>
+              <span className="text-white/55">Partners Online</span>
+            </span>
           </div>
         </div>
 
@@ -362,10 +370,10 @@ function AuthPage() {
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue
               </Button>
-              <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/40">
-                <span aria-hidden>🔒</span> Secure OTP Login
+              <p className="flex items-center justify-center gap-1.5 text-[10px] text-white/35">
+                <Lock className="h-3 w-3" aria-hidden /> Secure OTP Login
               </p>
-              <p className="text-[10px] leading-relaxed text-white/30 text-center">
+              <p className="mt-3 text-[9px] leading-relaxed text-white/25 text-center">
                 By continuing, you agree to Urban Wash {isAdminLogin ? "Admin" : "Partner"} terms.
               </p>
 
