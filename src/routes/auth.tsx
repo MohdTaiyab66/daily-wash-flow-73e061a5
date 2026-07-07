@@ -10,7 +10,7 @@ import { Loader2, Clock, IndianRupee, Map as MapIcon } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 import { prepareStaffLogin } from "@/lib/staff-auth.functions";
-import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
+import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
