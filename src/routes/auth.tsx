@@ -245,50 +245,67 @@ function AuthPage() {
         </div>
       )}
 
-      {/* Subtle ambient glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-orange-500/20 blur-[120px]" />
+      {/* Subtle ambient glow + slow showroom shine */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-orange-500/20 blur-[120px] animate-[pulse_12s_ease-in-out_infinite]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,120,40,0.10),transparent_60%)]" />
+        <div
+          className="absolute -inset-x-1/2 top-0 h-full opacity-[0.06]"
+          style={{
+            background:
+              "linear-gradient(115deg, transparent 30%, rgba(255,180,120,0.9) 50%, transparent 70%)",
+            animation: "showroom-shine 14s ease-in-out infinite",
+          }}
+        />
+        <style>{`
+          @keyframes showroom-shine {
+            0%   { transform: translateX(-40%); opacity: 0; }
+            15%  { opacity: 0.5; }
+            50%  { transform: translateX(40%); opacity: 0.6; }
+            85%  { opacity: 0.4; }
+            100% { transform: translateX(60%); opacity: 0; }
+          }
+        `}</style>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-12 pb-6">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-7 pb-5">
         {/* Brand header */}
-        <div className="flex flex-col items-center gap-3 animate-fade-in">
+        <div className="flex flex-col items-center gap-2.5 animate-fade-in">
           <div className="relative">
             <div className="absolute -inset-1 rounded-2xl bg-orange-500/25 blur-lg" />
-            <img src={logo} alt="Urban Wash" className="relative h-14 w-14 rounded-2xl object-cover ring-1 ring-white/15" />
+            <img src={logo} alt="Urban Wash" className="relative h-12 w-12 rounded-2xl object-cover ring-1 ring-white/15" />
           </div>
           <div className="text-center">
-            <div className="text-[15px] font-semibold tracking-tight">Urban Wash</div>
+            <div className="text-[14px] font-semibold tracking-tight">Urban Wash</div>
             <div className="text-[10px] uppercase tracking-[0.32em] text-orange-400">Partner</div>
           </div>
         </div>
 
         {/* Hero copy */}
-        <div className="mt-10 text-center animate-fade-in">
+        <div className="mt-7 text-center animate-fade-in">
           <h1 className="text-[26px] font-bold leading-[1.15] tracking-tight">
             Earn More. Drive Less.<br />
             <span className="text-orange-400">Shine Every Day.</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-[20rem] text-[13px] leading-relaxed text-white/55">
-            Steady monthly income with smart, optimized routes — designed for detailing pros.
-          </p>
         </div>
 
-        {/* Feature chips */}
-        <div className="mt-6 flex flex-wrap justify-center gap-2 animate-fade-in">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
-            <Clock className="h-3 w-3 text-orange-400" /> 4–6 Hour Workday
+        {/* Feature chips — equal width, equal height */}
+        <div className="mt-6 grid grid-cols-3 gap-2 animate-fade-in">
+          <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/75 backdrop-blur">
+            <Clock className="h-3 w-3 shrink-0 text-orange-400" />
+            <span className="truncate">4–6 Hrs/day</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
-            <IndianRupee className="h-3 w-3 text-orange-400" /> ₹110–150/hr*
+          <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/75 backdrop-blur">
+            <IndianRupee className="h-3 w-3 shrink-0 text-orange-400" />
+            <span className="truncate">₹110–150/hr*</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
-            <MapIcon className="h-3 w-3 text-orange-400" /> Smart Routes
+          <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/75 backdrop-blur">
+            <MapIcon className="h-3 w-3 shrink-0 text-orange-400" />
+            <span className="truncate">Smart Routes</span>
           </span>
         </div>
 
-        {/* Today's Marketplace strip */}
+        {/* Today's Marketplace strip — lighter */}
         <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 backdrop-blur animate-fade-in">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -297,14 +314,13 @@ function AuthPage() {
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Marketplace</span>
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-white/75">
-            <span><span className="font-semibold text-white">24</span> <span className="text-white/45">Leads</span></span>
+          <div className="flex items-center gap-2 text-[11px] text-white/70">
+            <span>🚗 <span className="font-semibold text-white">24</span> <span className="text-white/45"> Leads</span></span>
             <span className="h-3 w-px bg-white/10" />
-            <span><span className="font-semibold text-white">86</span> <span className="text-white/45">Online</span></span>
-            <span className="h-3 w-px bg-white/10" />
-            <span className="text-orange-400 font-semibold">₹1.2L</span>
+            <span>👥 <span className="font-semibold text-white">86</span> <span className="text-white/45"> Online</span></span>
           </div>
         </div>
+
 
 
         {/* Card */}
