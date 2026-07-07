@@ -270,10 +270,10 @@ function AuthPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-7 pb-5">
         {/* Brand header */}
-        <div className="flex flex-col items-center gap-2.5 animate-fade-in">
+        <div className="flex flex-col items-center gap-1.5 animate-fade-in">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-2xl bg-orange-500/25 blur-lg" />
-            <img src={logo} alt="Urban Wash" className="relative h-12 w-12 rounded-2xl object-cover ring-1 ring-white/15" />
+            <div className="absolute -inset-1.5 rounded-2xl bg-orange-500/25 blur-lg" />
+            <img src={logo} alt="Urban Wash" className="relative h-14 w-14 rounded-2xl object-contain bg-black/40 p-1 ring-1 ring-white/15" />
           </div>
           <div className="text-center">
             <div className="text-[14px] font-semibold tracking-tight">Urban Wash</div>
