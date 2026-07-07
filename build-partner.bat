@@ -153,7 +153,7 @@ if not exist "android\app\src\main\assets\capacitor.config.json" (
   echo   [X] Missing synced Android Capacitor config.
   goto :fail
 )
-findstr /C:"\"url\": \"https://daily-wash-flow.lovable.app/auth\"" "android\app\src\main\assets\capacitor.config.json" >nul || (
+findstr /C:"https://daily-wash-flow.lovable.app/auth" "android\app\src\main\assets\capacitor.config.json" >nul || (
   echo   [X] Synced Capacitor config is missing the Partner login server.url.
   echo       Delete the android folder, re-run this script, and do not continue with this APK.
   type android\app\src\main\assets\capacitor.config.json
