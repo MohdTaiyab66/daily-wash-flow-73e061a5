@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Loader2, Clock, IndianRupee, Map as MapIcon } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import heroImg from "@/assets/auth-hero.jpg";
 import { prepareStaffLogin } from "@/lib/staff-auth.functions";
