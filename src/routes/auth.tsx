@@ -312,12 +312,20 @@ function AuthPage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Marketplace</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Opportunities</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/70">
-            <span>🚗 <span className="font-semibold text-white">24</span> <span className="text-white/45"> Leads</span></span>
+          <div className="flex items-center gap-3 text-[11px] text-white/70">
+            <span className="inline-flex items-center gap-1.5">
+              <Car className="h-3.5 w-3.5 text-orange-400" />
+              <span className="font-semibold text-white">24</span>
+              <span className="text-white/55">New Leads</span>
+            </span>
             <span className="h-3 w-px bg-white/10" />
-            <span>👥 <span className="font-semibold text-white">86</span> <span className="text-white/45"> Online</span></span>
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-orange-400" />
+              <span className="font-semibold text-white">86</span>
+              <span className="text-white/55">Partners Online</span>
+            </span>
           </div>
         </div>
 
