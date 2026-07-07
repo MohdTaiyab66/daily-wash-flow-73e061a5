@@ -35,6 +35,7 @@ const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
 for (const indexPath of [join(outDir, "index.html"), join(shellDir, "index.html")]) {
   let html = readFileSync(indexPath, "utf8");
   html = html.replace(/__URBANWASH_VARIANT__/g, variant);
+  html = html.replace(/var variant = "(?:partner|customer)";/, `var variant = "${variant}";`);
   writeFileSync(indexPath, html);
 }
 
