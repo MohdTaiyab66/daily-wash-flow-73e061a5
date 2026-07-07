@@ -340,8 +340,8 @@ function AuthPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-white/60">Phone number</Label>
-                <div className="mt-2 flex overflow-hidden rounded-xl border border-white/10 bg-black/30 focus-within:border-orange-400/60 focus-within:ring-2 focus-within:ring-orange-400/20 transition">
-                  <span className="inline-flex items-center border-r border-white/10 bg-white/5 px-3 text-sm font-medium text-white/70">+91</span>
+                <div className="mt-2 flex h-[58px] overflow-hidden rounded-xl border border-white/10 bg-black/30 focus-within:border-orange-400/60 focus-within:ring-2 focus-within:ring-orange-400/20 transition">
+                  <span className="inline-flex items-center border-r border-white/5 bg-white/[0.04] px-4 text-sm font-medium text-white/75">+91</span>
                   <Input
                     id="phone"
                     inputMode="numeric"
@@ -350,7 +350,7 @@ function AuthPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                     placeholder="98765 43210"
-                    className="border-0 bg-transparent text-white placeholder:text-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-full border-0 bg-transparent text-base text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
               </div>
@@ -360,11 +360,15 @@ function AuthPage() {
                 onClick={sendOtp}
                 disabled={loading}
               >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send OTP
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue
               </Button>
-              <p className="text-[11px] leading-relaxed text-white/40">
+              <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/40">
+                <span aria-hidden>🔒</span> Secure OTP Login
+              </p>
+              <p className="text-[10px] leading-relaxed text-white/30 text-center">
                 By continuing, you agree to Urban Wash {isAdminLogin ? "Admin" : "Partner"} terms.
               </p>
+
             </div>
           )}
 
