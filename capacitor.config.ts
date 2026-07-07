@@ -15,16 +15,20 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
 const isCustomer = variant === "customer";
+const defaultServerUrl = isCustomer
+  ? "https://daily-wash-flow.lovable.app/c"
+  : "https://daily-wash-flow.lovable.app/auth";
+const serverUrl = process.env.CAP_SERVER_URL || defaultServerUrl;
 
 const config: CapacitorConfig = {
   appId: isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner",
   appName: isCustomer ? "Urban Wash" : "Urban Wash Partner",
-  webDir: "mobile-shell", // Static Capacitor shell; the TanStack SSR build does not emit index.html.
+  webDir: "mobile-shell", // Fallback shell if the hosted app cannot be reached.
   bundledWebRuntime: false,
   server: {
     androidScheme: "https",
-    url: process.env.CAP_SERVER_URL || undefined,
-    cleartext: false,
+    url: serverUrl,
+    cleartext: serverUrl.startsWith("http://"),
     allowNavigation: [
       "daily-wash-flow.lovable.app",
       "*.lovable.app",

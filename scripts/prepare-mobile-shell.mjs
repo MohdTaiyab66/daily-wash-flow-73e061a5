@@ -30,12 +30,13 @@ if (existsSync(sourceBuildInfoPath)) {
 // Also copy every static asset into .output/public/ for diagnostics and older scripts.
 cpSync(shellDir, outDir, { recursive: true });
 
-// Inject variant into index.html
+// Inject variant into both the diagnostic copy and Capacitor's actual webDir.
 const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
-const indexPath = join(outDir, "index.html");
-let html = readFileSync(indexPath, "utf8");
-html = html.replace(/__URBANWASH_VARIANT__/g, variant);
-writeFileSync(indexPath, html);
+for (const indexPath of [join(outDir, "index.html"), join(shellDir, "index.html")]) {
+  let html = readFileSync(indexPath, "utf8");
+  html = html.replace(/__URBANWASH_VARIANT__/g, variant);
+  writeFileSync(indexPath, html);
+}
 
 // Ensure build-info.json is present (already written by web build, but be safe)
 const buildInfoPath = join(outDir, "build-info.json");
