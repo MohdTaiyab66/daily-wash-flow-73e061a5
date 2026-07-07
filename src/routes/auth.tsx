@@ -308,7 +308,7 @@ function AuthPage() {
 
 
         {/* Card */}
-        <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fade-in">
+        <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fade-in">
           <div className="mb-5">
             <h2 className="text-lg font-semibold tracking-tight">
               {isAdminLogin ? "Admin login" : step === "name" ? "Almost done" : "Partner login"}
