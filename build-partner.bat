@@ -77,8 +77,10 @@ echo.
 echo [3/6] Setting variant environment...
 set "URBANWASH_APP=%VARIANT%"
 set "VITE_URBANWASH_APP=%VARIANT%"
+set "CAP_SERVER_URL=https://daily-wash-flow.lovable.app/auth"
 echo   URBANWASH_APP=%URBANWASH_APP%
 echo   VITE_URBANWASH_APP=%VITE_URBANWASH_APP%
+echo   CAP_SERVER_URL=%CAP_SERVER_URL%
 
 REM -- 4. Install deps (only if node_modules missing) --------------------
 echo.
@@ -119,6 +121,14 @@ if not exist "mobile-shell\build-info.json" (
   echo   [X] Missing mobile-shell\build-info.json after prepare-mobile-shell
   goto :fail
 )
+findstr /C:"https://daily-wash-flow.lovable.app/auth" "mobile-shell\index.html" >nul || (
+  echo   [X] mobile-shell\index.html does not point to the Partner login URL.
+  goto :fail
+)
+findstr /C:"var url =" "mobile-shell\index.html" >nul || (
+  echo   [X] mobile-shell\index.html was not regenerated correctly.
+  goto :fail
+)
 if not exist ".output\public\build-info.json" (
   echo   [X] Missing latest dist asset: .output\public\build-info.json
   goto :fail
@@ -138,6 +148,21 @@ copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 
 echo   Syncing Capacitor...
 call node "%CAP_CLI%" sync android || goto :fail
+
+if not exist "android\app\src\main\assets\capacitor.config.json" (
+  echo   [X] Missing synced Android Capacitor config.
+  goto :fail
+)
+findstr /C:"\"url\": \"https://daily-wash-flow.lovable.app/auth\"" "android\app\src\main\assets\capacitor.config.json" >nul || (
+  echo   [X] Synced Capacitor config is missing the Partner login server.url.
+  echo       Delete the android folder, re-run this script, and do not continue with this APK.
+  type android\app\src\main\assets\capacitor.config.json
+  goto :fail
+)
+findstr /C:"https://daily-wash-flow.lovable.app/auth" "android\app\src\main\assets\public\index.html" >nul || (
+  echo   [X] Synced Android fallback shell is stale or broken.
+  goto :fail
+)
 
 if not exist "android\app\src\main\assets\public\build-info.json" if not exist "android\app\src\main\assets\build-info.json" (
   echo   [X] Capacitor did not copy latest web assets into Android.
