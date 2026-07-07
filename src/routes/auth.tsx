@@ -421,10 +421,9 @@ function AuthPage() {
         </div>
 
         {!isAdminLogin && (
-          <div className="mt-auto pt-8 text-center text-[10px] text-white/35">
-            <p className="font-semibold uppercase tracking-[0.28em] text-white/50">Partner Build</p>
-            <p className="mt-1">v{PARTNER_APP_VERSION}</p>
-            <p className="mt-0.5 font-mono">{PARTNER_BUILD_ID}</p>
+          <div className="mt-auto flex items-center justify-between pt-8 text-[10px] text-white/40">
+            <a href="tel:+919999999999" className="hover:text-white/80 transition">Partner Support</a>
+            <span className="font-mono text-white/30">v{PARTNER_APP_VERSION} · {PARTNER_BUILD_ID}</span>
           </div>
         )}
       </div>
