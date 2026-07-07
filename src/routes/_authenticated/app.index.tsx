@@ -2,13 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Car, CheckCircle2, Clock, MapPin, Star, Timer, Award, Briefcase, Navigation } from "lucide-react";
+import {
+  Car,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Star,
+  Navigation,
+  Briefcase,
+  PartyPopper,
+  IndianRupee,
+} from "lucide-react";
 import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
-import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
 import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
 
@@ -20,7 +28,6 @@ function HomePage() {
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
-  const { t } = useI18n();
 
   const { data: assignment } = useQuery({
     queryKey: ["active-assignment-summary"],
@@ -55,140 +62,308 @@ function HomePage() {
   });
 
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
-  const done = (today ?? []).filter((s) => s.status === "completed" || s.status === "unavailable").length;
+  const done = (today ?? []).filter(
+    (s) => s.status === "completed" || s.status === "unavailable",
+  ).length;
   const total = today?.length ?? 0;
   const remaining = total - done;
-  const earnings = (today ?? [])
+  const expectedEarnings = (today ?? []).reduce(
+    (sum, s) => sum + Number(s.rate_per_car || 17),
+    0,
+  );
+  const earnedSoFar = (today ?? [])
     .filter((s) => s.status === "completed" || s.status === "unavailable")
-    .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
+    .reduce(
+      (sum, s) =>
+        sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)),
+      0,
+    );
 
   const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
   const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();
-  const hours = started.length && ended.length
-    ? ((new Date(ended[ended.length - 1]!).getTime() - new Date(started[0]!).getTime()) / 3.6e6).toFixed(1)
-    : "0.0";
+  const hours =
+    started.length && ended.length
+      ? (
+          (new Date(ended[ended.length - 1]!).getTime() -
+            new Date(started[0]!).getTime()) /
+          3.6e6
+        ).toFixed(1)
+      : "0.0";
 
   const handleToggle = async (on: boolean) => {
     await toggle(on);
-    toast.success(on ? t("online") : t("offline"));
+    toast.success(on ? "You're Online" : "You're Offline");
   };
 
-  // Day X of Y based on assignment start_date
-  let dayLabel = "";
-  if (assignment) {
-    const start = new Date(assignment.start_date);
-    const dayNum = Math.floor((Date.now() - start.getTime()) / 86400000) + 1;
-    dayLabel = t("day_of")(Math.max(1, Math.min(dayNum, assignment.duration_days)), assignment.duration_days);
-  }
-
-  const remDistance = assignment ? (assignment.estimated_distance_km * (total ? remaining / total : 0)).toFixed(1) : "0";
-  const remTime = assignment ? (assignment.estimated_hours * (total ? remaining / total : 0)).toFixed(1) : "0";
+  const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
+  const progressPct = total ? (done / total) * 100 : 0;
+  const allDone = total > 0 && remaining === 0;
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5">
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{t("good_morning")}</p>
-          <h1 className="text-xl font-semibold tracking-tight">{partner?.full_name ?? t("partner")}</h1>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{partner?.partner_code}</span>
-            <Badge className="border-0 bg-accent text-accent-foreground capitalize">
-              <Award className="mr-1 h-3 w-3" /> {partner?.level ?? "Bronze"}
-            </Badge>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2">
-          <span className={`h-2 w-2 rounded-full ${online ? "bg-[color:var(--success)]" : "bg-muted-foreground"}`} />
-          <span className="text-xs font-medium">{online ? t("online") : t("offline")}</span>
-          <Switch checked={online} onCheckedChange={handleToggle} />
-        </div>
+    <div className="mx-auto max-w-md px-5 pb-6 pt-6">
+      {/* Greeting */}
+      <header>
+        <p className="text-sm text-muted-foreground">Hello,</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{firstName} 👋</h1>
       </header>
 
-      <div className="mt-5">
+      {/* Online status card */}
+      <Card className="mt-5 flex items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <span
+            className={`grid h-10 w-10 place-items-center rounded-full ${
+              online ? "bg-[color:var(--success)]/15" : "bg-muted"
+            }`}
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                online ? "bg-[color:var(--success)]" : "bg-muted-foreground"
+              } ${online ? "animate-pulse" : ""}`}
+            />
+          </span>
+          <div>
+            <p className="text-base font-semibold">
+              {online ? "You're Online" : "You're Offline"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {online
+                ? "Receiving new customer opportunities"
+                : "Go online to receive work"}
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={online}
+          onCheckedChange={handleToggle}
+          className="scale-110"
+        />
+      </Card>
+
+      <div className="mt-4">
         <MarketplaceOffersList />
       </div>
 
-      {/* Assignment summary card */}
+      {/* Hero: Today's Route */}
       {assignment ? (
-        <Card className="mt-5 border-0 bg-foreground p-5 text-background">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-background/60">{t("current_assignment")}</p>
-              <p className="mt-1 text-lg font-semibold">{assignment.area}</p>
-              <p className="mt-0.5 text-xs text-background/60">{dayLabel} · {t("starts")} {formatTime12(assignment.expected_start_time)} · ETA {formatTime12("10:00")}</p>
+        allDone ? (
+          <Card className="mt-5 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
+            <PartyPopper className="h-8 w-8 text-primary" />
+            <p className="text-xl font-semibold">Great job, {firstName}!</p>
+            <p className="text-sm text-background/70">
+              You've completed today's customers. We'll notify you when new work
+              is available.
+            </p>
+          </Card>
+        ) : (
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground p-6 text-background">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+              Today's Route
+            </p>
+
+            <div className="mt-2 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-semibold">{assignment.area}</h2>
             </div>
-            <Badge className="border-0 bg-primary text-primary-foreground">{t("active")}</Badge>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
-            <div><p className="text-background/60">{t("assigned")}</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
-            <div><p className="text-background/60">{t("done")}</p><p className="mt-0.5 text-base font-semibold">{done}</p></div>
-            <div><p className="text-background/60">{t("left")}</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
-            <div><p className="text-background/60">{t("distance")}</p><p className="mt-0.5 text-base font-semibold">{remDistance} km</p></div>
-            <div><p className="text-background/60">{t("eta")}</p><p className="mt-0.5 text-base font-semibold">{remTime}h</p></div>
-            <div><p className="text-background/60">{t("earned")}</p><p className="mt-0.5 text-base font-semibold">₹{earnings}</p></div>
-          </div>
-          <div className="mt-4 h-1.5 rounded-full bg-background/15">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-          </div>
-          <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />{t("view_todays_route")}</Link>
-          </Button>
-        </Card>
+
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-background/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
+              Active Assignment
+            </div>
+
+            {/* Big trio */}
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <HeroStat
+                icon={<Car className="h-4 w-4" />}
+                label="Today's Customers"
+                value={total}
+              />
+              <HeroStat
+                icon={<CheckCircle2 className="h-4 w-4" />}
+                label="Completed"
+                value={done}
+              />
+              <HeroStat
+                icon={<MapPin className="h-4 w-4" />}
+                label="Remaining"
+                value={remaining}
+              />
+            </div>
+
+            {/* Progress */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-xs text-background/70">
+                <span>Today's Progress</span>
+                <span>
+                  {done} of {total} Completed
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Earnings + start-before */}
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-background/10 pt-5">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-background/60">
+                  Expected Today
+                </p>
+                <p className="mt-1 flex items-center text-2xl font-semibold text-primary">
+                  <IndianRupee className="h-5 w-5" />
+                  {expectedEarnings}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-background/60">
+                  Start Before
+                </p>
+                <p className="mt-1 flex items-center gap-1 text-2xl font-semibold">
+                  <Clock className="h-5 w-5 text-background/70" />
+                  {formatTime12(assignment.expected_start_time)}
+                </p>
+              </div>
+            </div>
+
+            {/* Primary action */}
+            <Button
+              asChild
+              size="lg"
+              className="mt-6 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Link to="/app/live">
+                <Navigation className="mr-2 h-5 w-5" />
+                Start Today's Route
+              </Link>
+            </Button>
+          </Card>
+        )
       ) : total > 0 ? (
-        <Card className="mt-5 border-0 bg-foreground p-5 text-background">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-background/60">Today's bookings</p>
-              <p className="mt-1 text-lg font-semibold">{total} customer service{total === 1 ? "" : "s"}</p>
-              <p className="mt-0.5 text-xs text-background/60">Bookings accepted from customers are ready in your route.</p>
-            </div>
-            <Badge className="border-0 bg-primary text-primary-foreground">Live</Badge>
+        <Card className="mt-5 border-0 bg-foreground p-6 text-background">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+            Today's Route
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold">
+            {total} customer{total === 1 ? "" : "s"} today
+          </h2>
+
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <HeroStat
+              icon={<Car className="h-4 w-4" />}
+              label="Today's Customers"
+              value={total}
+            />
+            <HeroStat
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              label="Completed"
+              value={done}
+            />
+            <HeroStat
+              icon={<MapPin className="h-4 w-4" />}
+              label="Remaining"
+              value={remaining}
+            />
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-background/10 pt-4 text-xs">
-            <div><p className="text-background/60">Assigned</p><p className="mt-0.5 text-base font-semibold">{total}</p></div>
-            <div><p className="text-background/60">Done</p><p className="mt-0.5 text-base font-semibold">{done}</p></div>
-            <div><p className="text-background/60">Left</p><p className="mt-0.5 text-base font-semibold">{remaining}</p></div>
-          </div>
-          <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Open today's route</Link>
+
+          <Button
+            asChild
+            size="lg"
+            className="mt-6 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            <Link to="/app/live">
+              <Navigation className="mr-2 h-5 w-5" />
+              Start Today's Route
+            </Link>
           </Button>
         </Card>
       ) : (
         <Card className="mt-5 flex flex-col items-center gap-3 p-8 text-center">
           <Briefcase className="h-6 w-6 text-muted-foreground" />
           <div>
-            <p className="font-medium">{t("no_active_assignment")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t("build_hint")}</p>
+            <p className="font-medium">No active assignment</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Build your own assignment — choose cars and duration.
+            </p>
           </div>
-          <Button asChild><Link to="/app/assignments">{t("build_assignment")}</Link></Button>
+          <Button asChild>
+            <Link to="/app/assignments">Build assignment</Link>
+          </Button>
         </Card>
       )}
 
-      {/* Stats row */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <Stat icon={<Car className="h-4 w-4" />} label={t("today")} value={`₹${earnings}`} />
-        <Stat icon={<Star className="h-4 w-4" />} label={t("rating")} value={Number(partner?.rating ?? 5).toFixed(2)} />
-        <Stat icon={<CheckCircle2 className="h-4 w-4" />} label={t("lifetime")} value={String(partner?.total_cars_completed ?? 0)} />
+      {/* Today's Stats — the 3 that matter each morning */}
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <MiniStat
+          icon={<IndianRupee className="h-4 w-4 text-primary" />}
+          label="Today's Earnings"
+          value={`₹${earnedSoFar}`}
+          accent
+        />
+        <MiniStat
+          icon={<Star className="h-4 w-4" />}
+          label="Rating"
+          value={Number(partner?.rating ?? 5).toFixed(2)}
+        />
+        <MiniStat
+          icon={<Clock className="h-4 w-4" />}
+          label="Hours"
+          value={`${hours}h`}
+        />
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        <Stat icon={<Timer className="h-4 w-4" />} label={t("hours")} value={`${hours}h`} />
-        <Stat icon={<MapPin className="h-4 w-4" />} label={t("distance")} value={`${assignment?.estimated_distance_km ?? 0} km`} />
-        <Stat icon={<Award className="h-4 w-4" />} label={t("level")} value={partner?.level ?? "Bronze"} />
-      </div>
-
-      <div className="h-6" />
     </div>
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function HeroStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-2xl bg-background/5 p-3">
+      <div className="flex items-center gap-1 text-background/60">
+        {icon}
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-background/60">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function MiniStat({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
     <Card className="p-3">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-center gap-1 text-muted-foreground">
         {icon}
-        <span className="text-[10px] uppercase tracking-wider">{label}</span>
       </div>
-      <p className="mt-1.5 text-xl font-semibold tracking-tight">{value}</p>
+      <p
+        className={`mt-1.5 text-xl font-semibold tracking-tight ${
+          accent ? "text-primary" : ""
+        }`}
+      >
+        {value}
+      </p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
     </Card>
   );
 }
