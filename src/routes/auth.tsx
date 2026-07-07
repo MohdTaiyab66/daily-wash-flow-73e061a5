@@ -8,7 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Clock, IndianRupee, Map as MapIcon } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-import heroImg from "@/assets/auth-hero.jpg";
+
 import { prepareStaffLogin } from "@/lib/staff-auth.functions";
 import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 
