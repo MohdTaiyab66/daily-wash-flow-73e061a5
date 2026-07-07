@@ -245,55 +245,67 @@ function AuthPage() {
         </div>
       )}
 
-      {/* Hero image */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[46vh]">
-        <img
-          src={heroImg}
-          alt=""
-          aria-hidden
-          className="h-full w-full object-cover opacity-90"
-          width={1200}
-          height={1600}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0B0B0F]/50 to-[#0B0B0F]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,120,40,0.25),transparent_55%)]" />
+      {/* Subtle ambient glow */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-orange-500/20 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,120,40,0.10),transparent_60%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-14 pb-8">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-6 pt-12 pb-6">
         {/* Brand header */}
-        <div className="flex items-center gap-3 animate-fade-in">
+        <div className="flex flex-col items-center gap-3 animate-fade-in">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-2xl bg-orange-500/30 blur-lg" />
-            <img src={logo} alt="Urban Wash" className="relative h-11 w-11 rounded-2xl object-cover ring-1 ring-white/15" />
+            <div className="absolute -inset-1 rounded-2xl bg-orange-500/25 blur-lg" />
+            <img src={logo} alt="Urban Wash" className="relative h-14 w-14 rounded-2xl object-cover ring-1 ring-white/15" />
           </div>
-          <div>
-            <div className="text-sm font-semibold tracking-tight">Urban Wash</div>
-            <div className="text-[10px] uppercase tracking-[0.28em] text-orange-400">Partner</div>
+          <div className="text-center">
+            <div className="text-[15px] font-semibold tracking-tight">Urban Wash</div>
+            <div className="text-[10px] uppercase tracking-[0.32em] text-orange-400">Partner</div>
           </div>
         </div>
 
         {/* Hero copy */}
-        <div className="mt-8 animate-fade-in">
-          <h1 className="text-[34px] font-bold leading-[1.05] tracking-tight">
-            Drive your <span className="text-orange-400">detailing</span> business forward.
+        <div className="mt-10 text-center animate-fade-in">
+          <h1 className="text-[26px] font-bold leading-[1.15] tracking-tight">
+            Earn More. Drive Less.<br />
+            <span className="text-orange-400">Shine Every Day.</span>
           </h1>
-          <p className="mt-3 max-w-[22rem] text-sm text-white/60">
-            Manage jobs, track earnings, and grow your route — all from your phone.
+          <p className="mx-auto mt-3 max-w-[20rem] text-[13px] leading-relaxed text-white/55">
+            Steady monthly income with smart, optimized routes — designed for detailing pros.
           </p>
         </div>
 
         {/* Feature chips */}
-        <div className="mt-5 flex flex-wrap gap-2 animate-fade-in">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/80 backdrop-blur">
-            <Zap className="h-3 w-3 text-orange-400" /> Instant jobs
+        <div className="mt-6 flex flex-wrap justify-center gap-2 animate-fade-in">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
+            <Clock className="h-3 w-3 text-orange-400" /> 4–6 Hour Workday
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/80 backdrop-blur">
-            <ShieldCheck className="h-3 w-3 text-orange-400" /> Secure payouts
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
+            <IndianRupee className="h-3 w-3 text-orange-400" /> ₹110–150/hr*
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/80 backdrop-blur">
-            <Sparkles className="h-3 w-3 text-orange-400" /> Premium tools
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/75 backdrop-blur">
+            <MapIcon className="h-3 w-3 text-orange-400" /> Smart Routes
           </span>
         </div>
+
+        {/* Today's Marketplace strip */}
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 backdrop-blur animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Today's Marketplace</span>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-white/75">
+            <span><span className="font-semibold text-white">24</span> <span className="text-white/45">Leads</span></span>
+            <span className="h-3 w-px bg-white/10" />
+            <span><span className="font-semibold text-white">86</span> <span className="text-white/45">Online</span></span>
+            <span className="h-3 w-px bg-white/10" />
+            <span className="text-orange-400 font-semibold">₹1.2L</span>
+          </div>
+        </div>
+
 
         {/* Card */}
         <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fade-in">
