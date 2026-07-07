@@ -17,12 +17,7 @@
     </style>
     <script>
       (function () {
-        var CUSTOMER_URL = "https://daily-wash-flow.lovable.app/c";
-        var PARTNER_URL  = "https://daily-wash-flow.lovable.app/auth";
-        // BUILD_VARIANT replaced by build script at copy time
-        var variant = "partner";
-        if (variant.indexOf("__") === 0) variant = "partner";
-        var url = variant === "customer" ? CUSTOMER_URL : PARTNER_URL;
+        var url = "https://daily-wash-flow.lovable.app/auth";
         window.URBANWASH_TARGET_URL = url;
         setTimeout(function () {
           var root = document.querySelector(".wrap");
@@ -30,7 +25,7 @@
           if (root) root.className += " failed";
           if (link) link.href = url;
         }, 6000);
-        window.location.href = url;
+        window.location.replace(url);
       })();
     </script>
   </head>
