@@ -36,7 +36,6 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
          broadcast:marketplace_broadcasts!inner (
            id, status, current_round, current_incentive, current_radius_m,
            round_expires_at, customer_lat, customer_lng, vehicle_id, subscription_id,
-           vehicle:customer_vehicles ( make, model, registration_number ),
            service_area:coverage_zones ( name ),
            subscription:subscriptions ( amount, start_date, renewal_date )
          )`
@@ -45,11 +44,26 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
       .eq("response", "pending")
       .order("sent_at", { ascending: false });
     if (error) throw new Error(error.message);
-    // Only include offers where the broadcast is still open and this offer is the current round
-    return (data ?? []).filter((o: any) =>
+    const open = (data ?? []).filter((o: any) =>
       o.broadcast?.status === "open" && o.broadcast?.current_round === o.round
     );
+    // Hydrate vehicle info separately — no FK between marketplace_broadcasts.vehicle_id and customer_vehicles.
+    const vehicleIds = Array.from(
+      new Set(open.map((o: any) => o.broadcast?.vehicle_id).filter(Boolean))
+    ) as string[];
+    if (vehicleIds.length) {
+      const { data: vehicles } = await (context.supabase as any)
+        .from("customer_vehicles")
+        .select("id, make, model, registration_number")
+        .in("id", vehicleIds);
+      const byId = new Map<string, any>((vehicles ?? []).map((v: any) => [v.id, v]));
+      for (const o of open) {
+        if (o.broadcast) o.broadcast.vehicle = byId.get(o.broadcast.vehicle_id) ?? null;
+      }
+    }
+    return open;
   });
+
 
 /**
  * Lightweight "route preview" for the incoming-offer sheet: how many cars
