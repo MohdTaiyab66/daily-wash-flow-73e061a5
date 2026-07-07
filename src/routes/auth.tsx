@@ -370,10 +370,10 @@ function AuthPage() {
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue
               </Button>
-              <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/40">
-                <span aria-hidden>🔒</span> Secure OTP Login
+              <p className="flex items-center justify-center gap-1.5 text-[10px] text-white/35">
+                <Lock className="h-3 w-3" aria-hidden /> Secure OTP Login
               </p>
-              <p className="text-[10px] leading-relaxed text-white/30 text-center">
+              <p className="mt-3 text-[9px] leading-relaxed text-white/25 text-center">
                 By continuing, you agree to Urban Wash {isAdminLogin ? "Admin" : "Partner"} terms.
               </p>
 
