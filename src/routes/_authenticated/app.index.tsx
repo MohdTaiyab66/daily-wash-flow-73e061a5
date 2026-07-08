@@ -122,17 +122,17 @@ function HomePage() {
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
   return (
-    <div className="mx-auto max-w-md px-5 pb-6 pt-4">
+    <div className="mx-auto max-w-md px-5 pb-6 pt-3">
       {/* Greeting */}
       <header>
         <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="mt-0.5 text-4xl font-bold uppercase tracking-tight">
+        <h1 className="text-4xl font-bold uppercase tracking-tight leading-tight">
           {firstName}
         </h1>
       </header>
 
       {/* Online status card */}
-      <Card className="mt-4 flex items-center justify-between gap-3 p-4">
+      <Card className="mt-3 flex items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           <span
             className={`grid h-10 w-10 place-items-center rounded-full ${
