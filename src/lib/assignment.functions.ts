@@ -213,22 +213,32 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
     const today = new Date().toISOString().slice(0, 10);
-    const { data: released } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: released } = await supabaseAdmin
       .from("services")
-      .select("id")
+      .select("id,recovery_event_id")
       .is("partner_id", null)
       .eq("original_partner_id", userId)
       .eq("scheduled_date", today)
       .eq("status", "pending");
-    const ids = (released ?? []).map((r: any) => r.id);
-    if (ids.length === 0) return { reclaimed: 0 };
-    const { error } = await supabase
-      .from("services")
+    const rows = released ?? [];
+    if (rows.length === 0) return { reclaimed: 0 };
+    const ids = rows.map((r: any) => r.id);
+    const { error } = await (supabaseAdmin.from("services") as any)
       .update({ partner_id: userId, updated_at: new Date().toISOString() })
       .in("id", ids);
     if (error) throw new Error(error.message);
+    // Resolve any pending DAR events tied to these services.
+    const eventIds = Array.from(new Set(rows.map((r: any) => r.recovery_event_id).filter(Boolean)));
+    if (eventIds.length) {
+      await (supabaseAdmin.from("dar_events") as any)
+        .update({ status: "recovered", resolved_at: new Date().toISOString() })
+        .in("id", eventIds)
+        .eq("status", "pending");
+    }
     return { reclaimed: ids.length };
   });
+
 
