@@ -8,6 +8,7 @@ import {
   Car,
   CheckCircle2,
   Clock,
+  Flag,
   MapPin,
   Star,
   Navigation,
@@ -15,6 +16,25 @@ import {
   PartyPopper,
   IndianRupee,
 } from "lucide-react";
+
+/**
+ * Rough per-partner finish estimate: start time + service time per remaining
+ * customer + short travel buffer between stops. Kept intentionally simple —
+ * real per-service durations aren't stored yet. Every partner still sees a
+ * different value because it's driven by their own start time and stop count.
+ */
+const AVG_SERVICE_MIN = 12;
+const AVG_TRAVEL_MIN = 3;
+function estimateFinishTime(startHHMM?: string | null, stops = 0): string {
+  if (!startHHMM || stops <= 0) return "";
+  const m = /^(\d{1,2}):(\d{2})/.exec(startHHMM);
+  if (!m) return "";
+  const start = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  const total = start + stops * AVG_SERVICE_MIN + Math.max(0, stops - 1) * AVG_TRAVEL_MIN;
+  const hh = Math.floor((total / 60) % 24);
+  const mm = total % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
 import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { formatTime12 } from "@/lib/format";
