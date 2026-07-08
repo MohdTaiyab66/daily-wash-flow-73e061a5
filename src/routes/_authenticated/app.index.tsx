@@ -140,8 +140,8 @@ function HomePage() {
             }`}
           >
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                online ? "bg-[color:var(--success)]" : "bg-muted-foreground"
+              className={`h-3 w-3 rounded-full ${
+                online ? "bg-[color:var(--success)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
               } ${online ? "animate-pulse" : ""}`}
             />
           </span>
