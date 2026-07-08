@@ -126,30 +126,30 @@ function HomePage() {
       {/* Greeting */}
       <header>
         <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="text-4xl font-bold uppercase tracking-tight leading-tight">
+        <h1 className="text-3xl font-bold uppercase tracking-tight leading-tight">
           {firstName}
         </h1>
       </header>
 
       {/* Online status card */}
-      <Card className="mt-3 flex items-center justify-between gap-3 p-4">
+      <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex items-center gap-3">
           <span
-            className={`grid h-10 w-10 place-items-center rounded-full ${
+            className={`grid h-8 w-8 place-items-center rounded-full ${
               online ? "bg-[color:var(--success)]/15" : "bg-muted"
             }`}
           >
             <span
-              className={`h-3 w-3 rounded-full ${
-                online ? "bg-[color:var(--success)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
+              className={`h-2.5 w-2.5 rounded-full ${
+                online ? "bg-[color:var(--success)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
               } ${online ? "animate-pulse" : ""}`}
             />
           </span>
           <div>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {online ? "You're Online" : "You're Offline"}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {online
                 ? "Ready to receive new customers"
                 : "Go online to receive work"}
@@ -179,23 +179,23 @@ function HomePage() {
             </p>
           </Card>
         ) : (
-          <Card className="mt-6 overflow-hidden border-0 bg-foreground p-6 text-background">
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Today's Route
             </p>
 
-            <div className="mt-2 flex items-center gap-2">
-              <MapPin className="h-6 w-6 text-primary" />
-              <h2 className="text-3xl font-semibold tracking-tight">{assignment.area}</h2>
+            <div className="mt-1.5 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
             </div>
 
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-background/60">
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-background/60">
               <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
               Active Assignment
             </div>
 
             {/* Big trio */}
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-3">
               <HeroStat
                 icon={<Car className="h-4 w-4" />}
                 label="Today's Customers"
@@ -214,12 +214,12 @@ function HomePage() {
             </div>
 
             {/* Progress */}
-            <div className="mt-6">
+            <div className="mt-4">
               <p className="text-sm font-medium text-background/80">
-                <span className="text-lg font-semibold text-background">{done} / {total}</span>{" "}
+                <span className="text-base font-semibold text-background">{done} / {total}</span>{" "}
                 Customers Completed
               </p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-background/15">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
                   style={{ width: `${progressPct}%` }}
@@ -228,20 +228,20 @@ function HomePage() {
             </div>
 
             {/* Earnings + start-before */}
-            <div className="mt-6 border-t border-background/10 pt-5">
+            <div className="mt-4 border-t border-background/10 pt-3">
               <p className="text-[11px] uppercase tracking-wider text-background/60">
                 Today's Earnings
               </p>
-              <p className="mt-1 flex items-center text-3xl font-bold text-primary">
-                <IndianRupee className="h-6 w-6" />
+              <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
+                <IndianRupee className="h-5 w-5" />
                 {expectedEarnings}
               </p>
-              <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-background/80">
+              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-background/80">
                 <Clock className="h-4 w-4 text-background/60" />
                 Start Before {formatTime12(assignment.expected_start_time)}
               </p>
               {finishHHMM ? (
-                <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-background/80">
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-background/80">
                   <Flag className="h-4 w-4 text-background/60" />
                   Estimated Finish {formatTime12(finishHHMM)}
                 </p>
@@ -252,7 +252,7 @@ function HomePage() {
             <Button
               asChild
               size="lg"
-              className="mt-6 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+              className="mt-4 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Link to="/app/live">
                 <Navigation className="mr-2 h-5 w-5" />
@@ -261,7 +261,7 @@ function HomePage() {
             </Button>
 
             {/* Support shortcut */}
-            <div className="mt-4 text-center text-xs text-background/60">
+            <div className="mt-3 text-center text-xs text-background/60">
               Need Help?{" "}
               <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
                 Partner Support
@@ -362,12 +362,12 @@ function HeroStat({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl bg-background/5 p-3">
+    <div className="rounded-2xl bg-background/5 px-3 py-2.5">
       <div className="flex items-center gap-1 text-background/60">
         {icon}
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-background/60">
+      <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-0.5 text-[9px] uppercase tracking-wider text-background/60">
         {label}
       </p>
     </div>
