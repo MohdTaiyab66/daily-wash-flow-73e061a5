@@ -132,24 +132,24 @@ function HomePage() {
       </header>
 
       {/* Online status card */}
-      <Card className="mt-3 flex items-center justify-between gap-3 p-4">
+      <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2.5">
         <div className="flex items-center gap-3">
           <span
-            className={`grid h-10 w-10 place-items-center rounded-full ${
+            className={`grid h-8 w-8 place-items-center rounded-full ${
               online ? "bg-[color:var(--success)]/15" : "bg-muted"
             }`}
           >
             <span
-              className={`h-3 w-3 rounded-full ${
-                online ? "bg-[color:var(--success)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
+              className={`h-2.5 w-2.5 rounded-full ${
+                online ? "bg-[color:var(--success)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
               } ${online ? "animate-pulse" : ""}`}
             />
           </span>
           <div>
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               {online ? "You're Online" : "You're Offline"}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {online
                 ? "Ready to receive new customers"
                 : "Go online to receive work"}
