@@ -203,3 +203,42 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
   const x = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(x));
 }
+
+// ============== Reclaim released route ==============
+// If the partner went briefly offline earlier, the Daily Auto Recovery flow
+// releases today's stops (services.partner_id set to NULL, original_partner_id
+// preserved). When the partner comes back online, we reclaim any of those
+// released stops that no other partner has picked up so the Home dashboard
+// counts stay in sync with the actual assignment.
+export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const today = new Date().toISOString().slice(0, 10);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: released } = await supabaseAdmin
+      .from("services")
+      .select("id,recovery_event_id")
+      .is("partner_id", null)
+      .eq("original_partner_id", userId)
+      .eq("scheduled_date", today)
+      .eq("status", "pending");
+    const rows = released ?? [];
+    if (rows.length === 0) return { reclaimed: 0 };
+    const ids = rows.map((r: any) => r.id);
+    const { error } = await (supabaseAdmin.from("services") as any)
+      .update({ partner_id: userId, updated_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) throw new Error(error.message);
+    // Resolve any pending DAR events tied to these services.
+    const eventIds = Array.from(new Set(rows.map((r: any) => r.recovery_event_id).filter(Boolean)));
+    if (eventIds.length) {
+      await (supabaseAdmin.from("dar_events") as any)
+        .update({ status: "recovered", resolved_at: new Date().toISOString() })
+        .in("id", eventIds)
+        .eq("status", "pending");
+    }
+    return { reclaimed: ids.length };
+  });
+
+
