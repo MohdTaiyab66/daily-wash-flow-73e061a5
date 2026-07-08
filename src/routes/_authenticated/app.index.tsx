@@ -126,7 +126,7 @@ function HomePage() {
       {/* Greeting */}
       <header>
         <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="text-4xl font-bold uppercase tracking-tight leading-tight">
+        <h1 className="text-3xl font-bold uppercase tracking-tight leading-tight">
           {firstName}
         </h1>
       </header>
