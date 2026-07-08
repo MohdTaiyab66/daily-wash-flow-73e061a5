@@ -8,6 +8,7 @@ import {
   Car,
   CheckCircle2,
   Clock,
+  Flag,
   MapPin,
   Star,
   Navigation,
@@ -15,6 +16,25 @@ import {
   PartyPopper,
   IndianRupee,
 } from "lucide-react";
+
+/**
+ * Rough per-partner finish estimate: start time + service time per remaining
+ * customer + short travel buffer between stops. Kept intentionally simple —
+ * real per-service durations aren't stored yet. Every partner still sees a
+ * different value because it's driven by their own start time and stop count.
+ */
+const AVG_SERVICE_MIN = 12;
+const AVG_TRAVEL_MIN = 3;
+function estimateFinishTime(startHHMM?: string | null, stops = 0): string {
+  if (!startHHMM || stops <= 0) return "";
+  const m = /^(\d{1,2}):(\d{2})/.exec(startHHMM);
+  if (!m) return "";
+  const start = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  const total = start + stops * AVG_SERVICE_MIN + Math.max(0, stops - 1) * AVG_TRAVEL_MIN;
+  const hh = Math.floor((total / 60) % 24);
+  const mm = total % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
 import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { formatTime12 } from "@/lib/format";
@@ -99,18 +119,20 @@ function HomePage() {
   const progressPct = total ? (done / total) * 100 : 0;
   const allDone = total > 0 && remaining === 0;
 
+  const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
+
   return (
-    <div className="mx-auto max-w-md px-5 pb-6 pt-6">
+    <div className="mx-auto max-w-md px-5 pb-6 pt-4">
       {/* Greeting */}
       <header>
         <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="mt-1 text-4xl font-bold uppercase tracking-tight">
+        <h1 className="mt-0.5 text-4xl font-bold uppercase tracking-tight">
           {firstName}
         </h1>
       </header>
 
       {/* Online status card */}
-      <Card className="mt-6 flex items-center justify-between gap-3 p-4">
+      <Card className="mt-4 flex items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           <span
             className={`grid h-10 w-10 place-items-center rounded-full ${
@@ -118,8 +140,8 @@ function HomePage() {
             }`}
           >
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                online ? "bg-[color:var(--success)]" : "bg-muted-foreground"
+              className={`h-3 w-3 rounded-full ${
+                online ? "bg-[color:var(--success)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
               } ${online ? "animate-pulse" : ""}`}
             />
           </span>
@@ -216,8 +238,14 @@ function HomePage() {
               </p>
               <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-background/80">
                 <Clock className="h-4 w-4 text-background/60" />
-                Start before {formatTime12(assignment.expected_start_time)}
+                Start Before {formatTime12(assignment.expected_start_time)}
               </p>
+              {finishHHMM ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-background/80">
+                  <Flag className="h-4 w-4 text-background/60" />
+                  Estimated Finish {formatTime12(finishHHMM)}
+                </p>
+              ) : null}
             </div>
 
             {/* Primary action */}
@@ -338,7 +366,7 @@ function HeroStat({
       <div className="flex items-center gap-1 text-background/60">
         {icon}
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
       <p className="mt-0.5 text-[10px] uppercase tracking-wider text-background/60">
         {label}
       </p>
