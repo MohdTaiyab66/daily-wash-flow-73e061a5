@@ -362,12 +362,12 @@ function HeroStat({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl bg-background/5 p-3">
+    <div className="rounded-2xl bg-background/5 px-3 py-2.5">
       <div className="flex items-center gap-1 text-background/60">
         {icon}
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-background/60">
+      <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-0.5 text-[9px] uppercase tracking-wider text-background/60">
         {label}
       </p>
     </div>
