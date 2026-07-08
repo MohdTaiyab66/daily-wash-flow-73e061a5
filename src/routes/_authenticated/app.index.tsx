@@ -302,7 +302,7 @@ function HomePage() {
       )}
 
       {/* Today's Stats — the 3 that matter each morning */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-3 gap-3">
         <MiniStat
           icon={<IndianRupee className="h-4 w-4 text-primary" />}
           label="Today's Earnings"
