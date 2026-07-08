@@ -238,8 +238,14 @@ function HomePage() {
               </p>
               <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-background/80">
                 <Clock className="h-4 w-4 text-background/60" />
-                Start before {formatTime12(assignment.expected_start_time)}
+                Start Before {formatTime12(assignment.expected_start_time)}
               </p>
+              {finishHHMM ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-background/80">
+                  <Flag className="h-4 w-4 text-background/60" />
+                  Estimated Finish {formatTime12(finishHHMM)}
+                </p>
+              ) : null}
             </div>
 
             {/* Primary action */}
