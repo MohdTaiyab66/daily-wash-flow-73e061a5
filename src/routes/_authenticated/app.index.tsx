@@ -252,7 +252,7 @@ function HomePage() {
             <Button
               asChild
               size="lg"
-              className="mt-6 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+              className="mt-4 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Link to="/app/live">
                 <Navigation className="mr-2 h-5 w-5" />
@@ -261,7 +261,7 @@ function HomePage() {
             </Button>
 
             {/* Support shortcut */}
-            <div className="mt-4 text-center text-xs text-background/60">
+            <div className="mt-3 text-center text-xs text-background/60">
               Need Help?{" "}
               <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
                 Partner Support
