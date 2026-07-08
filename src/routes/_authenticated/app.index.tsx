@@ -104,11 +104,13 @@ function HomePage() {
       {/* Greeting */}
       <header>
         <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="text-3xl font-semibold tracking-tight">{firstName} 👋</h1>
+        <h1 className="mt-1 text-4xl font-bold uppercase tracking-tight">
+          {firstName}
+        </h1>
       </header>
 
       {/* Online status card */}
-      <Card className="mt-5 flex items-center justify-between gap-3 p-4">
+      <Card className="mt-6 flex items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           <span
             className={`grid h-10 w-10 place-items-center rounded-full ${
@@ -127,7 +129,7 @@ function HomePage() {
             </p>
             <p className="text-xs text-muted-foreground">
               {online
-                ? "Receiving new customer opportunities"
+                ? "Ready to receive new customers"
                 : "Go online to receive work"}
             </p>
           </div>
@@ -139,33 +141,33 @@ function HomePage() {
         />
       </Card>
 
-      <div className="mt-4">
+      <div className="mt-5">
         <MarketplaceOffersList />
       </div>
 
       {/* Hero: Today's Route */}
       {assignment ? (
         allDone ? (
-          <Card className="mt-5 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
+          <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
             <PartyPopper className="h-8 w-8 text-primary" />
-            <p className="text-xl font-semibold">Great job, {firstName}!</p>
+            <p className="text-xl font-semibold">Great Job!</p>
             <p className="text-sm text-background/70">
-              You've completed today's customers. We'll notify you when new work
-              is available.
+              You've completed today's route. We'll notify you when new work
+              becomes available.
             </p>
           </Card>
         ) : (
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground p-6 text-background">
+          <Card className="mt-6 overflow-hidden border-0 bg-foreground p-6 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Today's Route
             </p>
 
             <div className="mt-2 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-semibold">{assignment.area}</h2>
+              <MapPin className="h-6 w-6 text-primary" />
+              <h2 className="text-3xl font-semibold tracking-tight">{assignment.area}</h2>
             </div>
 
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-background/70">
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-background/60">
               <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
               Active Assignment
             </div>
@@ -191,12 +193,10 @@ function HomePage() {
 
             {/* Progress */}
             <div className="mt-6">
-              <div className="flex items-center justify-between text-xs text-background/70">
-                <span>Today's Progress</span>
-                <span>
-                  {done} of {total} Completed
-                </span>
-              </div>
+              <p className="text-sm font-medium text-background/80">
+                <span className="text-lg font-semibold text-background">{done} / {total}</span>{" "}
+                Customers Completed
+              </p>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
@@ -206,42 +206,43 @@ function HomePage() {
             </div>
 
             {/* Earnings + start-before */}
-            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-background/10 pt-5">
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-background/60">
-                  Expected Today
-                </p>
-                <p className="mt-1 flex items-center text-2xl font-semibold text-primary">
-                  <IndianRupee className="h-5 w-5" />
-                  {expectedEarnings}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-background/60">
-                  Start Before
-                </p>
-                <p className="mt-1 flex items-center gap-1 text-2xl font-semibold">
-                  <Clock className="h-5 w-5 text-background/70" />
-                  {formatTime12(assignment.expected_start_time)}
-                </p>
-              </div>
+            <div className="mt-6 border-t border-background/10 pt-5">
+              <p className="text-[11px] uppercase tracking-wider text-background/60">
+                Today's Earnings
+              </p>
+              <p className="mt-1 flex items-center text-3xl font-bold text-primary">
+                <IndianRupee className="h-6 w-6" />
+                {expectedEarnings}
+              </p>
+              <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-background/80">
+                <Clock className="h-4 w-4 text-background/60" />
+                Start before {formatTime12(assignment.expected_start_time)}
+              </p>
             </div>
 
             {/* Primary action */}
             <Button
               asChild
               size="lg"
-              className="mt-6 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
+              className="mt-6 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Link to="/app/live">
                 <Navigation className="mr-2 h-5 w-5" />
                 Start Today's Route
               </Link>
             </Button>
+
+            {/* Support shortcut */}
+            <div className="mt-4 text-center text-xs text-background/60">
+              Need Help?{" "}
+              <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
+                Partner Support
+              </Link>
+            </div>
           </Card>
         )
       ) : total > 0 ? (
-        <Card className="mt-5 border-0 bg-foreground p-6 text-background">
+        <Card className="mt-6 border-0 bg-foreground p-6 text-background">
           <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
             Today's Route
           </p>
@@ -270,16 +271,23 @@ function HomePage() {
           <Button
             asChild
             size="lg"
-            className="mt-6 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            className="mt-6 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
           >
             <Link to="/app/live">
               <Navigation className="mr-2 h-5 w-5" />
               Start Today's Route
             </Link>
           </Button>
+
+          <div className="mt-4 text-center text-xs text-background/60">
+            Need Help?{" "}
+            <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
+              Partner Support
+            </Link>
+          </div>
         </Card>
       ) : (
-        <Card className="mt-5 flex flex-col items-center gap-3 p-8 text-center">
+        <Card className="mt-6 flex flex-col items-center gap-3 p-8 text-center">
           <Briefcase className="h-6 w-6 text-muted-foreground" />
           <div>
             <p className="font-medium">No active assignment</p>
@@ -294,7 +302,7 @@ function HomePage() {
       )}
 
       {/* Today's Stats — the 3 that matter each morning */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-3 gap-3">
         <MiniStat
           icon={<IndianRupee className="h-4 w-4 text-primary" />}
           label="Today's Earnings"
