@@ -179,23 +179,23 @@ function HomePage() {
             </p>
           </Card>
         ) : (
-          <Card className="mt-6 overflow-hidden border-0 bg-foreground p-6 text-background">
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Today's Route
             </p>
 
-            <div className="mt-2 flex items-center gap-2">
-              <MapPin className="h-6 w-6 text-primary" />
-              <h2 className="text-3xl font-semibold tracking-tight">{assignment.area}</h2>
+            <div className="mt-1.5 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
             </div>
 
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-background/60">
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-background/60">
               <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
               Active Assignment
             </div>
 
             {/* Big trio */}
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-3">
               <HeroStat
                 icon={<Car className="h-4 w-4" />}
                 label="Today's Customers"
@@ -214,12 +214,12 @@ function HomePage() {
             </div>
 
             {/* Progress */}
-            <div className="mt-6">
+            <div className="mt-4">
               <p className="text-sm font-medium text-background/80">
-                <span className="text-lg font-semibold text-background">{done} / {total}</span>{" "}
+                <span className="text-base font-semibold text-background">{done} / {total}</span>{" "}
                 Customers Completed
               </p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-background/15">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
                   style={{ width: `${progressPct}%` }}
@@ -228,20 +228,20 @@ function HomePage() {
             </div>
 
             {/* Earnings + start-before */}
-            <div className="mt-6 border-t border-background/10 pt-5">
+            <div className="mt-4 border-t border-background/10 pt-3">
               <p className="text-[11px] uppercase tracking-wider text-background/60">
                 Today's Earnings
               </p>
-              <p className="mt-1 flex items-center text-3xl font-bold text-primary">
-                <IndianRupee className="h-6 w-6" />
+              <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
+                <IndianRupee className="h-5 w-5" />
                 {expectedEarnings}
               </p>
-              <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-background/80">
+              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-background/80">
                 <Clock className="h-4 w-4 text-background/60" />
                 Start Before {formatTime12(assignment.expected_start_time)}
               </p>
               {finishHHMM ? (
-                <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-background/80">
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-background/80">
                   <Flag className="h-4 w-4 text-background/60" />
                   Estimated Finish {formatTime12(finishHHMM)}
                 </p>
