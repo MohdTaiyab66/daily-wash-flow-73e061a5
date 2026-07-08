@@ -42,8 +42,28 @@ export function useToggleOnline() {
     qc.setQueryData(["me-partner"], (current: any) =>
       current ? { ...current, availability: on ? "online" : "offline" } : current,
     );
+    // Coming back online: reclaim any stops that Auto-Recovery released while
+    // we were offline but no other partner picked up. Keeps today's route
+    // counts on the Home dashboard in sync with the actual assignment.
+    if (on) {
+      try {
+        const { reclaimReleasedRouteToday } = await import("@/lib/assignment.functions");
+        const res = await reclaimReleasedRouteToday();
+        if (res?.reclaimed) {
+          qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+          qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+          qc.invalidateQueries({ queryKey: ["partner-services"] });
+          qc.invalidateQueries({ queryKey: ["partner-route"] });
+          qc.invalidateQueries({ queryKey: ["partner-today"] });
+          qc.invalidateQueries({ queryKey: ["partner-live"] });
+        }
+      } catch {
+        // Non-fatal: reclaim is best-effort.
+      }
+    }
   };
 }
+
 
 /**
  * Partner heartbeat — pings `partners.last_seen` (and current GPS when available)
