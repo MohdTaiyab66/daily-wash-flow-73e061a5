@@ -195,12 +195,16 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
     }
 
     // Upgrade to the server-computed road route in the same approved sequence.
-    if (partnerPos && stableStops.length >= 1) {
-      const destination = stableStops[stableStops.length - 1];
-      const waypoints = stableStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
+    // If partner GPS isn't available yet, use the first stop as the origin so
+    // the blue driving polyline still renders between all customer stops.
+    const routeOrigin = partnerPos ?? (stableStops[0] ? { lat: stableStops[0].lat, lng: stableStops[0].lng } : null);
+    const routeStops = partnerPos ? stableStops : stableStops.slice(1);
+    if (routeOrigin && routeStops.length >= 1) {
+      const destination = routeStops[routeStops.length - 1];
+      const waypoints = routeStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
       compute({
         data: {
-          origin: partnerPos,
+          origin: routeOrigin,
           destination: { lat: destination.lat, lng: destination.lng },
           waypoints,
         },
@@ -215,7 +219,7 @@ export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers
               map: mapRef.current,
               strokeColor: "#1d4ed8",
               strokeWeight: 4,
-              strokeOpacity: 0.8,
+              strokeOpacity: 0.9,
             });
           }
         })
