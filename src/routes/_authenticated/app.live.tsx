@@ -54,24 +54,28 @@ function RoutePage() {
     queryFn: () => visibilityFn(),
     refetchInterval: 60000,
   });
+
+  // Live-ticking clock so the countdown updates every second without a network round-trip.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const visibilityUnlockAt = visibilityInfo?.unlock_at ? new Date(visibilityInfo.unlock_at) : null;
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
-  const unlockCountdown = visibilityUnlockAt
-    ? Math.max(0, Math.ceil((visibilityUnlockAt.getTime() - Date.now()) / 60000))
-    : 0;
-
-  const { data: visibilitySetting } = useQuery({
-    queryKey: ["route-visibility-until"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("key", "route_visibility_until")
-        .maybeSingle();
-      const v = data?.value;
-      return (typeof v === "string" ? v : (v as any)) ?? "10:00";
-    },
-  });
+  const unlockMsRemaining = visibilityUnlockAt ? Math.max(0, visibilityUnlockAt.getTime() - nowTs) : 0;
+  const unlockHH = Math.floor(unlockMsRemaining / 3_600_000);
+  const unlockMM = Math.floor((unlockMsRemaining % 3_600_000) / 60_000);
+  const unlockSS = Math.floor((unlockMsRemaining % 60_000) / 1000);
+  const countdownLabel = unlockHH > 0
+    ? `${unlockHH}h ${String(unlockMM).padStart(2, "0")}m ${String(unlockSS).padStart(2, "0")}s`
+    : `${unlockMM}m ${String(unlockSS).padStart(2, "0")}s`;
+  const fmtHM = (d: Date | null) =>
+    d ? d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+  const unlockClock = fmtHM(visibilityUnlockAt);
+  const shiftClock = visibilityInfo?.shift_start ? String(visibilityInfo.shift_start).slice(0, 5) : "";
+  const overrideMode = (visibilityInfo as any)?.override ?? "auto";
 
   // Hide services already covered by a professional booking — the pro detailer performs both.
   const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
@@ -94,16 +98,6 @@ function RoutePage() {
   const expectedEarnings = total * ratePerCar;
   const remainingEarnings = remaining * ratePerCar;
 
-  // Route visibility window
-  const now = new Date();
-  const cutoff = String(visibilitySetting ?? "10:00");
-  let routeVisible = true;
-  if (cutoff !== "all_day") {
-    const [hh, mm] = cutoff.split(":").map(Number);
-    const cutoffMins = (hh || 10) * 60 + (mm || 0);
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    routeVisible = nowMins < cutoffMins;
-  }
 
   const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
