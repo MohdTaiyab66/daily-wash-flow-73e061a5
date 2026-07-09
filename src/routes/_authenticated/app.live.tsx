@@ -200,23 +200,30 @@ function RoutePage() {
       <div className="mt-3 space-y-3">
         {!routeUnlocked && (
           <Card className="p-6 text-center">
-            <p className="text-sm font-medium">Today's route unlocks soon</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {visibilityUnlockAt
-                ? `Available at ${visibilityUnlockAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${unlockCountdown > 0 ? ` · in ${unlockCountdown < 60 ? `${unlockCountdown} min` : `${Math.floor(unlockCountdown / 60)}h ${unlockCountdown % 60}m`}` : ""}`
-                : "Your route will appear before your shift starts."}
+            <p className="text-sm font-medium">
+              {overrideMode === "hide"
+                ? "Route hidden by admin"
+                : unlockClock
+                ? `Today's route will be available at ${unlockClock}.`
+                : "Today's route unlocks soon"}
             </p>
+            {shiftClock && (
+              <p className="mt-1 text-xs text-muted-foreground">Your work starts at {shiftClock}.</p>
+            )}
+            {overrideMode !== "hide" && visibilityUnlockAt && unlockMsRemaining > 0 && (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold tabular-nums text-primary">
+                Unlocks in {countdownLabel}
+              </p>
+            )}
+            {overrideMode === "hide" && (
+              <p className="mt-1 text-xs text-muted-foreground">Contact admin if you need access.</p>
+            )}
           </Card>
         )}
         {routeUnlocked && pending.length === 0 && !isEndOfDay && (
           <Card className="p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
         )}
-        {routeUnlocked && !routeVisible && pending.length > 0 && (
-          <Card className="p-6 text-center text-sm text-muted-foreground">
-            Route is hidden until tomorrow. Contact admin if you need access.
-          </Card>
-        )}
-        {routeUnlocked && routeVisible && pending.map((s, idx) => {
+        {routeUnlocked && pending.map((s, idx) => {
           const c = s.customers as any;
           const v = s.vehicles as any;
           const gps = { lat: (s as any).lat, lng: (s as any).lng };
