@@ -89,7 +89,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     description: "When partners see today’s route.",
     fields: [
       { key: "route_visibility_hours", label: "Show today’s route this many hours before shift", kind: "select", options: ["1","2","3","4","5","6","8","12","24"] },
-      { key: "route_visibility_until", label: "Today’s route visible until", kind: "select", options: TIME_OPTS },
+      { key: "route_visibility_override", label: "Manual override", help: "Automatic follows the schedule above. Show Route Now forces today's route visible for all partners. Hide Route Now hides it. Manual override always wins over the schedule.", kind: "select", options: ["auto","show","hide"] },
       { key: "assignment_min_days", label: "Minimum assignment length (days)" },
       { key: "assignment_default_days", label: "Default assignment length (days)" },
       { key: "assignment_max_days", label: "Maximum assignment length (days)" },
