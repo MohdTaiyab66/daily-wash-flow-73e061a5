@@ -4979,6 +4979,7 @@ export type Database = {
         Returns: string
       }
       cleanup_old_service_photos: { Args: never; Returns: Json }
+      close_expired_assignments: { Args: never; Returns: number }
       compute_area_lock_until: { Args: { _partner: string }; Returns: string }
       compute_coverage_alerts: { Args: never; Returns: number }
       confirm_customer_booking: {
@@ -5500,6 +5501,10 @@ export type Database = {
           vehicle_id: string
         }[]
       }
+      regenerate_assignment_services: {
+        Args: { p_assignment_id: string; p_from_date?: string }
+        Returns: number
+      }
       renew_assignments: { Args: never; Returns: number }
       respond_subscription_offer: {
         Args: { p_accept: boolean; p_offer_id: string }
@@ -5592,6 +5597,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sweep_regenerate_active_assignments: { Args: never; Returns: number }
       sweep_subscription_offers: { Args: never; Returns: number }
       try_consume_entitlement: {
         Args: {
