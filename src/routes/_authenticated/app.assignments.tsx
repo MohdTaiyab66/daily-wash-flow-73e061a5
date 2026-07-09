@@ -176,8 +176,11 @@ function AssignmentsPage() {
     refetchInterval: 30000,
   });
 
+  // Active partners must NEVER see the onboarding/build flow. Send them to the
+  // live route (map + ordered customer list + navigate/complete actions) which
+  // is the single canonical "working" view for a partner with an assignment.
   useEffect(() => {
-    if (active?.id) navigate({ to: "/app/my-assignment", replace: true });
+    if (active?.id) navigate({ to: "/app/live", replace: true });
   }, [active?.id, navigate]);
 
   const hasArea = !!partner?.home_area;
