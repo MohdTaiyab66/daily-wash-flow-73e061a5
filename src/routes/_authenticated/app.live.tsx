@@ -152,12 +152,12 @@ function RoutePage() {
         completed: completedCount,
         unavailable: unavailable.length,
         dirty: dirty.length,
-        route_visible: routeVisible,
+        route_visible: routeUnlocked,
         first_service_id: currentStop?.id ?? null,
         first_destination: currentStop ? { lat: (currentStop as any).lat, lng: (currentStop as any).lng } : null,
       },
     });
-  }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeVisible, currentStop?.id]);
+  }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeUnlocked, currentStop?.id]);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
