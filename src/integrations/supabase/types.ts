@@ -5126,6 +5126,7 @@ export type Database = {
         Args: { p_partner: string }
         Returns: {
           assignment_id: string
+          override: string
           shift_start: string
           unlock_at: string
           visible: boolean
