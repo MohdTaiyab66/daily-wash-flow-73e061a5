@@ -163,7 +163,11 @@ function RoutePage() {
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {routeVisible ? "Saved Route Manager sequence with exact customer GPS." : `Route hidden after ${formatTime12(cutoff)}.`}
+        {routeUnlocked
+          ? "Saved Route Manager sequence with exact customer GPS."
+          : shiftClock
+          ? `Your work starts at ${shiftClock}.`
+          : "Your route will unlock before your shift starts."}
       </p>
 
       <div className="mt-4"><DarOfferCard /></div>
