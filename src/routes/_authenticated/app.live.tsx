@@ -243,7 +243,9 @@ function RoutePage() {
             <div className="flex flex-col items-center gap-0.5">
               <Clock className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">ETA</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {mapStats?.mins ? `${mapStats.mins} min left` : "ETA"}
+              </p>
             </div>
           </div>
         </Card>
