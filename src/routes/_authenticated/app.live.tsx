@@ -255,8 +255,10 @@ function RoutePage() {
       {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
         <section className="mt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Queue</h2>
-            <span className="text-[11px] text-muted-foreground">{queueStops.length} after next</span>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up next</h2>
+            <span className="text-[11px] text-muted-foreground">
+              {queueStops.length} customer{queueStops.length === 1 ? "" : "s"} waiting
+            </span>
           </div>
           <div className="space-y-2">
             {queueStops.map((s, idx) => (
