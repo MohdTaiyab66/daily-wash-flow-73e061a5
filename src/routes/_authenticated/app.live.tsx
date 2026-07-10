@@ -320,7 +320,7 @@ function RoutePage() {
       {/* Issues — merged dirty + unavailable, collapsed */}
       {(dirty.length + unavailable.length) > 0 && (
         <CollapsibleSection
-          title="Attention required"
+          title="Service exceptions"
           count={dirty.length + unavailable.length}
           accent="warning"
           defaultOpen={false}
