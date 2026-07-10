@@ -235,8 +235,10 @@ function RoutePage() {
       {/* Pending stops */}
       {!isEndOfDay && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Pending</h2>
-          <div className="mt-3 space-y-3">
+          <h2 className="text-sm font-semibold tracking-tight">
+            Remaining customers {routeUnlocked && pending.length > 0 && <span className="text-muted-foreground">({pending.length})</span>}
+          </h2>
+          <div className="mt-3 space-y-4">
             {!routeUnlocked && (
               <Card className="p-6 text-center">
                 <p className="text-sm font-medium">
@@ -269,11 +271,11 @@ function RoutePage() {
               return (
                 <Card
                   key={s.id}
-                  className={`overflow-hidden p-0 ${isNext ? "border-primary/60 ring-2 ring-primary/30 shadow-[0_10px_30px_-12px_hsl(var(--primary)/0.4)]" : ""}`}
+                  className={`overflow-hidden p-0 ${isNext ? "border-2 border-primary bg-[hsl(28_100%_97%)] shadow-[0_14px_36px_-14px_hsl(var(--primary)/0.55)]" : ""}`}
                 >
                   <ZoomableVehicleImage
                     path={v?.front_image_path}
-                    className={`${isNext ? "h-36" : "h-28"} w-full`}
+                    className={`${isNext ? "h-28" : "h-24"} w-full`}
                     alt={`${v?.make} ${v?.model}`}
                   />
                   <div className={isNext ? "p-4" : "p-3"}>
@@ -281,7 +283,7 @@ function RoutePage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {isNext && (
-                            <Badge className="bg-primary text-primary-foreground hover:bg-primary">Next customer</Badge>
+                            <Badge className="bg-primary uppercase tracking-wider text-primary-foreground hover:bg-primary">Next customer</Badge>
                           )}
                           <span className="text-[11px] font-medium text-muted-foreground">
                             {seqNo} of {total}
@@ -301,7 +303,7 @@ function RoutePage() {
                         )}
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className={`mt-3 grid gap-2 ${isNext ? "grid-cols-[1fr_1fr_1.4fr]" : "grid-cols-3"}`}>
                       <Button
                         type="button"
                         size={isNext ? "default" : "sm"}
@@ -329,15 +331,15 @@ function RoutePage() {
                             payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
                           });
                         }}
-                        aria-label={navUrl ? "Navigate" : "Location unavailable"}
+                        aria-label={navUrl ? "Open Maps" : "Location unavailable"}
                       >
-                        <Navigation className="mr-1.5 h-4 w-4" />Navigate
+                        <Navigation className="mr-1.5 h-4 w-4" />Open Maps
                       </Button>
                       <MaskedCallButton serviceId={s.id} size={isNext ? "default" : "sm"} />
-                      <Button asChild size={isNext ? "default" : "sm"} className={isNext ? "bg-primary" : ""}>
+                      <Button asChild size={isNext ? "default" : "sm"} className={isNext ? "bg-primary shadow-sm" : ""}>
                         <Link to="/app/service/$id" params={{ id: s.id }}>
                           <Play className="mr-1.5 h-4 w-4" />
-                          {inProgress ? "Resume" : "Start"}
+                          {inProgress ? "Resume" : "Start service"}
                         </Link>
                       </Button>
                     </div>
