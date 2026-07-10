@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin } from "lucide-react";
+import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
@@ -243,7 +243,9 @@ function RoutePage() {
             <div className="flex flex-col items-center gap-0.5">
               <Clock className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">ETA</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {mapStats?.mins ? `${mapStats.mins} min left` : "ETA"}
+              </p>
             </div>
           </div>
         </Card>
@@ -253,8 +255,10 @@ function RoutePage() {
       {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
         <section className="mt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Queue</h2>
-            <span className="text-[11px] text-muted-foreground">{queueStops.length} after next</span>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up next</h2>
+            <span className="text-[11px] text-muted-foreground">
+              {queueStops.length} customer{queueStops.length === 1 ? "" : "s"} waiting
+            </span>
           </div>
           <div className="space-y-2">
             {queueStops.map((s, idx) => (
@@ -316,7 +320,7 @@ function RoutePage() {
       {/* Issues — merged dirty + unavailable, collapsed */}
       {(dirty.length + unavailable.length) > 0 && (
         <CollapsibleSection
-          title="Attention required"
+          title="Service exceptions"
           count={dirty.length + unavailable.length}
           accent="warning"
           defaultOpen={false}
@@ -366,18 +370,6 @@ function RoutePage() {
         </CollapsibleSection>
       )}
 
-      {/* Floating "Resume route" FAB — opens Maps to next stop */}
-      {!isEndOfDay && routeUnlocked && nextStop && (
-        <button
-          type="button"
-          onClick={() => openGoogleMapsDirections((nextStop as any).lat, (nextStop as any).lng)}
-          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_10px_30px_-6px_hsl(var(--primary)/0.6)] transition-transform active:scale-95"
-          aria-label="Resume route"
-        >
-          <Navigation className="h-4 w-4" />
-          Resume route
-        </button>
-      )}
     </div>
   );
 }
@@ -389,27 +381,34 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   return (
-    <Card className="mt-5 overflow-hidden border-2 border-primary bg-[hsl(28_100%_97%)] p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.6)]">
+    <Card className="mt-5 overflow-hidden border border-border bg-background p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.35)]">
       <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Serve next</span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
       <div className="flex items-start gap-3 p-4">
-        <TappableVehicleImage
-          path={v?.front_image_path}
-          className="h-[80px] w-[80px] shrink-0 rounded-xl"
-          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
-          customerName={c?.full_name}
-          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
-          registration={v?.registration_number}
-        />
+        <div className="relative shrink-0">
+          <TappableVehicleImage
+            path={v?.front_image_path}
+            className="h-[80px] w-[80px] rounded-xl"
+            alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+            customerName={c?.full_name}
+            vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+            registration={v?.registration_number}
+          />
+          {v?.front_image_path && (
+            <span className="pointer-events-none absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-white shadow">
+              <ZoomIn className="h-3 w-3" />
+            </span>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
           <p className="mt-1 truncate text-sm text-foreground/80">
             <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
           </p>
           {v?.registration_number && (
-            <span className="mt-1 inline-block rounded-md border-2 border-foreground/80 bg-yellow-50 px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-foreground">
+            <span className="mt-1 inline-block rounded-md border border-foreground/70 bg-yellow-50 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-foreground">
               {v.registration_number}
             </span>
           )}
@@ -420,7 +419,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-primary/20 bg-background/60 p-3">
+      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-border/60 bg-muted/20 p-3">
         <IconAction
           icon={<Navigation className="h-5 w-5" />}
           ariaLabel="Open maps"
@@ -538,10 +537,11 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
         <Link
           to="/app/service/$id"
           params={{ id: stop.id }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           aria-label={inProgress ? "Resume service" : "Start service"}
         >
-          <Play className="h-4 w-4 fill-current" />
+          <Play className="h-3.5 w-3.5 fill-current" />
+          {inProgress ? "Resume" : "Start"}
         </Link>
       </div>
     </Card>
