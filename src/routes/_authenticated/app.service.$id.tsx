@@ -712,7 +712,13 @@ function readReportDraft(serviceId: string, workflow: "dirty" | "unavailable") {
 
 function writeReportDraft(serviceId: string, workflow: "dirty" | "unavailable", draft: { reason: string; notes: string; paths: Record<string, string> }) {
   if (typeof window === "undefined") return;
-  try { window.localStorage.setItem(reportDraftKey(serviceId, workflow), JSON.stringify({ ...draft, savedAt: Date.now() })); } catch { /* noop */ }
+  try {
+    if (!draft.reason && !draft.notes && Object.keys(draft.paths).length === 0) {
+      window.localStorage.removeItem(reportDraftKey(serviceId, workflow));
+      return;
+    }
+    window.localStorage.setItem(reportDraftKey(serviceId, workflow), JSON.stringify({ ...draft, savedAt: Date.now() }));
+  } catch { /* noop */ }
 }
 
 function clearReportDraft(serviceId: string, workflow: "dirty" | "unavailable") {
