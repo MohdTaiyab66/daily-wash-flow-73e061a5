@@ -365,6 +365,19 @@ function RoutePage() {
           </div>
         </CollapsibleSection>
       )}
+
+      {/* Floating "Resume route" FAB — opens Maps to next stop */}
+      {!isEndOfDay && routeUnlocked && nextStop && (
+        <button
+          type="button"
+          onClick={() => openGoogleMapsDirections((nextStop as any).lat, (nextStop as any).lng)}
+          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_10px_30px_-6px_hsl(var(--primary)/0.6)] transition-transform active:scale-95"
+          aria-label="Resume route"
+        >
+          <Navigation className="h-4 w-4" />
+          Resume route
+        </button>
+      )}
     </div>
   );
 }
