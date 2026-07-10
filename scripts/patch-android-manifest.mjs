@@ -28,6 +28,22 @@ for (const name of permissions) {
   }
 }
 
+// Keep Capacitor's MainActivity alive through camera/permission orientation and
+// screen-size changes. Without this, Android may recreate the WebView when the
+// camera returns, which feels like the partner flow refreshed/restarted and can
+// strand unsaved notes or report state.
+xml = xml.replace(
+  /<activity\b([^>]*android:name="\.MainActivity"[^>]*)>/,
+  (match, attrs) => {
+    let next = attrs;
+    if (!/android:configChanges=/.test(next)) {
+      next += ' android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"';
+    }
+    if (!/android:launchMode=/.test(next)) next += ' android:launchMode="singleTask"';
+    return `<activity${next}>`;
+  },
+);
+
 if (!xml.includes("com.google.android.apps.maps")) {
   const queries = `
     <queries>

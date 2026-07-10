@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
@@ -647,6 +647,7 @@ function UnavailableSection({
   const [reason, setReason] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
 
   const needsRemarks = reason === "other";
@@ -670,10 +671,12 @@ function UnavailableSection({
   }, [serviceId, canSubmit, capturedCount]);
 
   const submit = async () => {
+    if (submitInFlightRef.current) return;
     if (!reason) return toast.error("Pick a reason");
     if (capturedPaths.length < UNAVAILABLE_REQUIRED) return toast.error(`Capture ${UNAVAILABLE_REQUIRED} photos`);
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     console.log(`[SVC][UNAVAILABLE] Submit pressed · svc=${serviceId} · photos=${capturedPaths.length} · reason=${reason}`);
+    submitInFlightRef.current = true;
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     const rpcStart = Date.now();
@@ -708,8 +711,9 @@ function UnavailableSection({
         status: "success",
         payload: { rpc: data },
       });
-      console.log(`[SVC][UNAVAILABLE] Wallet updated (+₹${r.credited ?? 12}) · svc=${serviceId}`);
-      toast.success(`Marked unavailable · ₹${r.credited ?? 12} credited`);
+      const creditedAmount = Number(r.credit_amount ?? COMPENSATION);
+      console.log(`[SVC][UNAVAILABLE] Wallet updated (+₹${creditedAmount}) · svc=${serviceId}`);
+      toast.success(`Marked unavailable · ₹${creditedAmount} credited`);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -726,6 +730,7 @@ function UnavailableSection({
       console.error(`[SVC][UNAVAILABLE][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit unavailable report");
     } finally {
+      submitInFlightRef.current = false;
       setSaving(false);
     }
   };
@@ -818,6 +823,7 @@ function DirtyVehicleSection({
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
 
   const capturedPaths = pickPhotoPaths(photos, "dirty", DIRTY_ANGLES);
@@ -837,10 +843,12 @@ function DirtyVehicleSection({
   }, [serviceId, dirtyCanSubmit, capturedCount]);
 
   const submit = async () => {
+    if (submitInFlightRef.current) return;
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     if (!allDone) return toast.error("All 4 photos required");
     console.log(`[SVC][DIRTY] Submit pressed · svc=${serviceId} · photos=4 · reason=${reason}`);
+    submitInFlightRef.current = true;
     setSaving(true);
     let pos: { lat: number; lng: number } | null = null;
     const rpcStart = Date.now();
@@ -875,8 +883,9 @@ function DirtyVehicleSection({
         status: "success",
         payload: { rpc: data },
       });
-      console.log(`[SVC][DIRTY] Wallet updated (+₹${r.credited ?? COMPENSATION}) · svc=${serviceId}`);
-      toast.success(`Dirty vehicle reported · ₹${r.credited ?? COMPENSATION} credited`);
+      const creditedAmount = Number(r.credit_amount ?? COMPENSATION);
+      console.log(`[SVC][DIRTY] Wallet updated (+₹${creditedAmount}) · svc=${serviceId}`);
+      toast.success(`Dirty vehicle reported · ₹${creditedAmount} credited`);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -893,6 +902,7 @@ function DirtyVehicleSection({
       console.error(`[SVC][DIRTY][ERROR] Submit failed · svc=${serviceId} · ${error?.message ?? error}`);
       toast.error(error?.message ?? "Could not submit dirty vehicle report");
     } finally {
+      submitInFlightRef.current = false;
       setSaving(false);
     }
   };
