@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
-import { VehicleImage } from "@/components/VehicleImage";
 import { TappableVehicleImage } from "@/components/VehiclePhotoViewer";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
