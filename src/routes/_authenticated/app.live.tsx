@@ -490,18 +490,25 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   return (
-    <Card className="flex items-center gap-3 p-2.5">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-xs font-bold tabular-nums text-muted-foreground">
-        {seqNo}
+    <Card className="flex items-center gap-2.5 p-2">
+      <div className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground w-7 text-center">
+        #{seqNo}
       </div>
-      <VehicleImage path={v?.front_image_path} className="h-11 w-11 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+      <TappableVehicleImage
+        path={v?.front_image_path}
+        className="h-10 w-10 shrink-0 rounded-md"
+        alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+        customerName={c?.full_name}
+        vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+        registration={v?.registration_number}
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{c?.full_name ?? "Customer"}</p>
+        <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
         <p className="truncate text-[11px] text-muted-foreground">
           {v?.make} {v?.model} · {v?.registration_number}
         </p>
         {(c?.service_required_before || c?.preferred_time) && (
-          <p className="mt-0.5 truncate text-[10px] text-primary">
+          <p className="truncate text-[10px] text-primary">
             Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
           </p>
         )}
@@ -511,7 +518,7 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
           type="button"
           disabled={!navUrl}
           onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
-          className="grid h-9 w-9 place-items-center rounded-md border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
+          className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
           aria-label="Open maps"
         >
           <Navigation className="h-4 w-4" />
@@ -519,10 +526,10 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
         <Link
           to="/app/service/$id"
           params={{ id: stop.id }}
-          className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           aria-label={inProgress ? "Resume service" : "Start service"}
         >
-          <Play className="h-4 w-4" />
+          <Play className="h-4 w-4 fill-current" />
         </Link>
       </div>
     </Card>
