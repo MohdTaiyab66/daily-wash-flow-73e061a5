@@ -379,17 +379,28 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   return (
     <Card className="mt-5 overflow-hidden border-2 border-primary bg-[hsl(28_100%_97%)] p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.6)]">
       <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Next customer</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Serve next</span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
       <div className="flex items-start gap-3 p-4">
-        <VehicleImage path={v?.front_image_path} className="h-20 w-20 shrink-0 rounded-xl" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <TappableVehicleImage
+          path={v?.front_image_path}
+          className="h-[80px] w-[80px] shrink-0 rounded-xl"
+          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+          customerName={c?.full_name}
+          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+          registration={v?.registration_number}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
           <p className="mt-1 truncate text-sm text-foreground/80">
             <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{v?.registration_number}</p>
+          {v?.registration_number && (
+            <span className="mt-1 inline-block rounded-md border-2 border-foreground/80 bg-yellow-50 px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-foreground">
+              {v.registration_number}
+            </span>
+          )}
           {(c?.service_required_before || c?.preferred_time) && (
             <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
               <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
@@ -397,10 +408,10 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 border-t border-primary/20 bg-background/60 p-3">
-        <HeroAction
+      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-primary/20 bg-background/60 p-3">
+        <IconAction
           icon={<Navigation className="h-5 w-5" />}
-          label="Maps"
+          ariaLabel="Open maps"
           disabled={!navUrl}
           onClick={async () => {
             await logApkEvidence({
@@ -420,10 +431,54 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
             });
           }}
         />
-        <HeroCallAction serviceId={stop.id} />
-        <HeroStartAction serviceId={stop.id} inProgress={inProgress} />
+        <HeroCallIconAction serviceId={stop.id} />
+        <Link
+          to="/app/service/$id"
+          params={{ id: stop.id }}
+          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-md transition-colors hover:bg-primary/90"
+        >
+          <Play className="h-5 w-5 fill-current" />
+          <span>{inProgress ? "Resume" : "Start"}</span>
+        </Link>
       </div>
     </Card>
+  );
+}
+
+function IconAction({ icon, ariaLabel, onClick, disabled }: { icon: React.ReactNode; ariaLabel: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="grid h-11 place-items-center rounded-lg border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-50"
+    >
+      {icon}
+    </button>
+  );
+}
+
+function HeroCallIconAction({ serviceId }: { serviceId: string }) {
+  const call = useServerFn(initiateMaskedCall);
+  const [loading, setLoading] = useState(false);
+  const onClick = async () => {
+    setLoading(true);
+    try {
+      const r = await call({ data: { service_id: serviceId } });
+      toast.success(r.message ?? "Connecting...");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not place call");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <IconAction
+      icon={loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
+      ariaLabel="Call customer"
+      onClick={onClick}
+    />
   );
 }
 
