@@ -578,6 +578,19 @@ function ServiceDetail() {
   );
 }
 
+function useServicePhotoSignedUrl(path?: string | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!path) { setUrl(null); return; }
+    supabase.storage.from("service-photos").createSignedUrl(path, 60 * 60).then(({ data }) => {
+      if (!cancelled) setUrl(data?.signedUrl ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [path]);
+  return url;
+}
+
 function PhotoSlot({
   serviceId,
   assignmentId,
@@ -594,6 +607,10 @@ function PhotoSlot({
   autoOpen,
   onAutoOpenConsumed,
   disabled,
+  variant = "default",
+  stepNumber,
+  thumbPath,
+  hint,
 }: {
   serviceId: string;
   assignmentId?: string | null;
@@ -610,9 +627,14 @@ function PhotoSlot({
   autoOpen?: boolean;
   onAutoOpenConsumed?: () => void;
   disabled?: boolean;
+  variant?: "default" | "guided-active" | "guided-done" | "guided-locked";
+  stepNumber?: number;
+  thumbPath?: string | null;
+  hint?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const thumbUrl = useServicePhotoSignedUrl(variant === "guided-done" ? thumbPath : null);
   const [queuedPath, setQueuedPath] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     try { return window.localStorage.getItem(`uw_photo_path:${serviceId}:${slotId ?? `${stage}_${angle}`}`); } catch { return null; }
