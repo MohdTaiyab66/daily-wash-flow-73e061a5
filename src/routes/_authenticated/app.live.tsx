@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy } from "lucide-react";
+import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { LiveMap } from "@/components/LiveMap";
 import { EndOfDayCard } from "@/components/EndOfDayCard";
-import { VehicleImage } from "@/components/VehicleImage";
+import { TappableVehicleImage } from "@/components/VehiclePhotoViewer";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
@@ -135,7 +135,7 @@ function RoutePage() {
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const estFinishClock = mapStats?.mins
-    ? new Date(nowTs + mapStats.mins * 60_000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+    ? new Date(nowTs + mapStats.mins * 60_000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
     : null;
 
   const currentStop = pending[0] ?? null;
@@ -230,17 +230,20 @@ function RoutePage() {
           </div>
           <Progress value={progressPct} className="mt-3 h-2" />
           <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <Wallet className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">₹{earnedSoFar.toLocaleString("en-IN")}</p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earned</p>
             </div>
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <MapPin className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{mapStats ? `${mapStats.km} km` : "—"}</p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Left</p>
             </div>
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <Clock className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Finish by</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">ETA</p>
             </div>
           </div>
         </Card>
@@ -313,7 +316,7 @@ function RoutePage() {
       {/* Issues — merged dirty + unavailable, collapsed */}
       {(dirty.length + unavailable.length) > 0 && (
         <CollapsibleSection
-          title="Today's issues"
+          title="Attention required"
           count={dirty.length + unavailable.length}
           accent="warning"
           defaultOpen={false}
@@ -362,6 +365,19 @@ function RoutePage() {
           </div>
         </CollapsibleSection>
       )}
+
+      {/* Floating "Resume route" FAB — opens Maps to next stop */}
+      {!isEndOfDay && routeUnlocked && nextStop && (
+        <button
+          type="button"
+          onClick={() => openGoogleMapsDirections((nextStop as any).lat, (nextStop as any).lng)}
+          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_10px_30px_-6px_hsl(var(--primary)/0.6)] transition-transform active:scale-95"
+          aria-label="Resume route"
+        >
+          <Navigation className="h-4 w-4" />
+          Resume route
+        </button>
+      )}
     </div>
   );
 }
@@ -375,17 +391,28 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   return (
     <Card className="mt-5 overflow-hidden border-2 border-primary bg-[hsl(28_100%_97%)] p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.6)]">
       <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Next customer</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Serve next</span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
       <div className="flex items-start gap-3 p-4">
-        <VehicleImage path={v?.front_image_path} className="h-20 w-20 shrink-0 rounded-xl" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <TappableVehicleImage
+          path={v?.front_image_path}
+          className="h-[80px] w-[80px] shrink-0 rounded-xl"
+          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+          customerName={c?.full_name}
+          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+          registration={v?.registration_number}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
           <p className="mt-1 truncate text-sm text-foreground/80">
             <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{v?.registration_number}</p>
+          {v?.registration_number && (
+            <span className="mt-1 inline-block rounded-md border-2 border-foreground/80 bg-yellow-50 px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-foreground">
+              {v.registration_number}
+            </span>
+          )}
           {(c?.service_required_before || c?.preferred_time) && (
             <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
               <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
@@ -393,10 +420,10 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 border-t border-primary/20 bg-background/60 p-3">
-        <HeroAction
+      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-primary/20 bg-background/60 p-3">
+        <IconAction
           icon={<Navigation className="h-5 w-5" />}
-          label="Maps"
+          ariaLabel="Open maps"
           disabled={!navUrl}
           onClick={async () => {
             await logApkEvidence({
@@ -416,28 +443,35 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
             });
           }}
         />
-        <HeroCallAction serviceId={stop.id} />
-        <HeroStartAction serviceId={stop.id} inProgress={inProgress} />
+        <HeroCallIconAction serviceId={stop.id} />
+        <Link
+          to="/app/service/$id"
+          params={{ id: stop.id }}
+          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-md transition-colors hover:bg-primary/90"
+        >
+          <Play className="h-5 w-5 fill-current" />
+          <span>{inProgress ? "Resume" : "Start"}</span>
+        </Link>
       </div>
     </Card>
   );
 }
 
-function HeroAction({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
+function IconAction({ icon, ariaLabel, onClick, disabled }: { icon: React.ReactNode; ariaLabel: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-border/60 bg-background px-2 py-2.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-50"
+      aria-label={ariaLabel}
+      className="grid h-11 place-items-center rounded-lg border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-50"
     >
       {icon}
-      <span>{label}</span>
     </button>
   );
 }
 
-function HeroCallAction({ serviceId }: { serviceId: string }) {
+function HeroCallIconAction({ serviceId }: { serviceId: string }) {
   const call = useServerFn(initiateMaskedCall);
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
@@ -452,26 +486,14 @@ function HeroCallAction({ serviceId }: { serviceId: string }) {
     }
   };
   return (
-    <HeroAction
+    <IconAction
       icon={loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
-      label="Call"
+      ariaLabel="Call customer"
       onClick={onClick}
     />
   );
 }
 
-function HeroStartAction({ serviceId, inProgress }: { serviceId: string; inProgress: boolean }) {
-  return (
-    <Link
-      to="/app/service/$id"
-      params={{ id: serviceId }}
-      className="flex flex-col items-center justify-center gap-1 rounded-lg bg-primary px-2 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-    >
-      <Play className="h-5 w-5" />
-      <span>{inProgress ? "Resume" : "Start"}</span>
-    </Link>
-  );
-}
 
 function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
@@ -480,18 +502,25 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   return (
-    <Card className="flex items-center gap-3 p-2.5">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-xs font-bold tabular-nums text-muted-foreground">
-        {seqNo}
+    <Card className="flex items-center gap-2.5 p-2">
+      <div className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground w-7 text-center">
+        #{seqNo}
       </div>
-      <VehicleImage path={v?.front_image_path} className="h-11 w-11 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+      <TappableVehicleImage
+        path={v?.front_image_path}
+        className="h-10 w-10 shrink-0 rounded-md"
+        alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+        customerName={c?.full_name}
+        vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+        registration={v?.registration_number}
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{c?.full_name ?? "Customer"}</p>
+        <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
         <p className="truncate text-[11px] text-muted-foreground">
           {v?.make} {v?.model} · {v?.registration_number}
         </p>
         {(c?.service_required_before || c?.preferred_time) && (
-          <p className="mt-0.5 truncate text-[10px] text-primary">
+          <p className="truncate text-[10px] text-primary">
             Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
           </p>
         )}
@@ -501,7 +530,7 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
           type="button"
           disabled={!navUrl}
           onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
-          className="grid h-9 w-9 place-items-center rounded-md border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
+          className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
           aria-label="Open maps"
         >
           <Navigation className="h-4 w-4" />
@@ -509,10 +538,10 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
         <Link
           to="/app/service/$id"
           params={{ id: stop.id }}
-          className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           aria-label={inProgress ? "Resume service" : "Start service"}
         >
-          <Play className="h-4 w-4" />
+          <Play className="h-4 w-4 fill-current" />
         </Link>
       </div>
     </Card>
