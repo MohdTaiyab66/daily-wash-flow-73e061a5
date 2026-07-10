@@ -229,9 +229,12 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, showCustomers, stableStops, stopsKey, compute]);
 
+  const effectiveStats = stats ?? fallbackStats;
+  useEffect(() => { onStats?.(effectiveStats ?? null); }, [effectiveStats?.km, effectiveStats?.mins]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Card className="overflow-hidden p-0">
-      <div className="relative h-56 w-full bg-muted">
+      <div className={`relative w-full bg-muted ${heightClass ?? "h-56"}`}>
         <div ref={ref} className="h-full w-full" />
         {!ready && !error && (
           <div className="absolute inset-0 grid place-items-center">
@@ -240,14 +243,14 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats 
         )}
         {(error || mapRenderFailed) && <RouteFallback stops={stableStops} />}
       </div>
-      {showCustomers && (stats || fallbackStats) && (
+      {!hideStats && showCustomers && effectiveStats && (
         <div className="grid grid-cols-2 border-t border-border text-center">
           <div className="px-2 py-2">
-            <p className="text-base font-semibold">{(stats ?? fallbackStats)!.km} km</p>
+            <p className="text-base font-semibold">{effectiveStats.km} km</p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route distance</p>
           </div>
           <div className="px-2 py-2 border-l border-border">
-            <p className="text-base font-semibold">~{(stats ?? fallbackStats)!.mins} min</p>
+            <p className="text-base font-semibold">~{effectiveStats.mins} min</p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. completion</p>
           </div>
         </div>
