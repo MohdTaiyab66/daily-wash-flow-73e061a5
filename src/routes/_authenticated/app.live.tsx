@@ -231,17 +231,20 @@ function RoutePage() {
           </div>
           <Progress value={progressPct} className="mt-3 h-2" />
           <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <Wallet className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">₹{earnedSoFar.toLocaleString("en-IN")}</p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earned</p>
             </div>
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <MapPin className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{mapStats ? `${mapStats.km} km` : "—"}</p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Left</p>
             </div>
-            <div>
+            <div className="flex flex-col items-center gap-0.5">
+              <Clock className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Finish by</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">ETA</p>
             </div>
           </div>
         </Card>
