@@ -537,10 +537,11 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
         <Link
           to="/app/service/$id"
           params={{ id: stop.id }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           aria-label={inProgress ? "Resume service" : "Start service"}
         >
-          <Play className="h-4 w-4 fill-current" />
+          <Play className="h-3.5 w-3.5 fill-current" />
+          {inProgress ? "Resume" : "Start"}
         </Link>
       </div>
     </Card>
