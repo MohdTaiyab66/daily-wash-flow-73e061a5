@@ -63,6 +63,17 @@ async function fileFromRestoredCapture(restored: RestoredCapture): Promise<Captu
 
 async function captureFromCameraOnce(): Promise<CaptureFile | null> {
   if (shouldUseNativeCamera()) {
+    // On Android, launching the native camera Activity can kill/recreate the
+    // WebView on low-memory devices, which looks like the partner app
+    // refreshed after every shutter press. Prefer an in-WebView live camera
+    // stream first so the service route, report panels, timers, notes, and
+    // uploaded photo state remain mounted. This is still camera-only: no file
+    // picker, gallery, or stored-media fallback is introduced.
+    if (nativePlatform() === "android") {
+      const webViewCapture = await captureWithBrowserCamera();
+      if (webViewCapture) return webViewCapture;
+    }
+
     try {
       const getCameraPhoto = () => CapacitorCamera.takePhoto({
         quality: 70,
