@@ -313,32 +313,101 @@ function ServiceDetail() {
   const elapsedLabel = `${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 
   const hasNavigation = destLat != null && destLng != null;
+  const [photoOpen, setPhotoOpen] = useState(false);
+
+  const timeLabel = formatTime12(c?.service_required_before ?? c?.preferred_time);
+  const status = service?.status ?? "pending";
+  const statusStyle =
+    status === "completed"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+      : status === "in_progress"
+        ? "border-blue-500/40 bg-blue-500/10 text-blue-700"
+        : status === "unavailable"
+          ? "border-destructive/40 bg-destructive/10 text-destructive"
+          : "border-primary/40 bg-primary/10 text-primary";
+  const statusLabel = status === "in_progress" ? "In progress" : status === "completed" ? "Completed" : status === "unavailable" ? "Unavailable" : "Pending";
+
+  const total = routeProgress?.total ?? 1;
+  const position = routeProgress?.position ?? 1;
+  const progressPct = Math.min(100, Math.round(((routeProgress?.completed ?? 0) / total) * 100));
+  const remainingAfter = Math.max(0, total - position);
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5">
-      <button onClick={() => navigate({ to: "/app/live" })} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-        <ArrowLeft className="h-4 w-4" /> Back to route
-      </button>
+    <div className="mx-auto max-w-md px-5 pt-5 pb-24">
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate({ to: "/app/live" })} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Route
+        </button>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${statusStyle}`}>
+          {statusLabel}
+        </span>
+      </div>
+      <h1 className="mt-2 text-xl font-bold tracking-tight">Service details</h1>
 
-      <Card className="mt-4 overflow-hidden p-0">
-        <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+      {/* Route progress */}
+      <div className="mt-3 rounded-2xl border border-border bg-card p-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold">Customer {position} of {total}</span>
+          <span className="text-muted-foreground">
+            {remainingAfter === 0 ? "Last stop today" : `${remainingAfter} after this`}
+          </span>
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+        </div>
+      </div>
+
+      {/* Vehicle photo — tappable */}
+      <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
+        <button
+          type="button"
+          onClick={() => setPhotoOpen(true)}
+          className="relative block h-56 w-full overflow-hidden"
+          aria-label="View vehicle photo full screen"
+        >
+          <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+          <span className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+            <ZoomIn className="h-3 w-3" /> Tap to zoom
+          </span>
+        </button>
+
+        {/* Customer summary */}
         <div className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium leading-tight">{c?.full_name}</p>
-              <p className="mt-1 text-lg font-semibold leading-tight">{v?.make} {v?.model}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{v?.registration_number}</p>
-              <div className="mt-3 space-y-0.5">
-                <p className="text-xs text-muted-foreground">{formatTime12(c?.service_required_before ?? c?.preferred_time) || "Flexible"}</p>
-              </div>
-            </div>
-            <Badge variant="outline" className="capitalize shrink-0">{service?.status?.replace("_", " ")}</Badge>
-          </div>
+          <ul className="space-y-2.5 text-sm">
+            <li className="flex items-center gap-3">
+              <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="font-semibold">{c?.full_name ?? "—"}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <Car className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 truncate">{v?.make} {v?.model}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <IdCard className="h-4 w-4 shrink-0 text-muted-foreground" />
+              {v?.registration_number ? (
+                <span className="inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[13px] font-bold tracking-wider text-foreground">
+                  {v.registration_number}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">No plate on file</span>
+              )}
+            </li>
+            <li className="flex items-center gap-3">
+              <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>{timeLabel ? `Before ${timeLabel}` : "Flexible timing"}</span>
+            </li>
+            {c?.area && (
+              <li className="flex items-center gap-3">
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 truncate">{c.area}</span>
+              </li>
+            )}
+          </ul>
 
+          {/* Primary actions */}
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
               variant="outline"
-              size="sm"
               disabled={!hasNavigation}
               onClick={async () => {
                 await logApkEvidence({
@@ -363,16 +432,32 @@ function ServiceDetail() {
             <MaskedCallButton serviceId={id} />
           </div>
         </div>
-      </Card>
+      </div>
+
+      <VehiclePhotoViewer
+        open={photoOpen}
+        onClose={() => setPhotoOpen(false)}
+        photos={v?.front_image_path ? [{ path: v.front_image_path }] : []}
+        customerName={c?.full_name}
+        vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim() || null}
+        registration={v?.registration_number}
+      />
 
       {service?.status === "pending" && (
-        <div className="mt-4 grid grid-cols-1 gap-3">
-          <Button size="lg" onClick={() => start.mutate()} disabled={start.isPending}>
-            {start.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Start service
+        <div className="mt-5 space-y-3">
+          <Button size="lg" className="h-14 w-full text-base font-semibold shadow-[0_10px_28px_-12px_hsl(var(--primary)/0.6)]" onClick={() => start.mutate()} disabled={start.isPending}>
+            {start.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Play className="mr-2 h-5 w-5 fill-current" />}
+            Start service
           </Button>
+          {routeProgress?.nextName && (
+            <p className="text-center text-xs text-muted-foreground">
+              Next customer: <span className="font-medium text-foreground">{routeProgress.nextName}</span>
+            </p>
+          )}
           <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
         </div>
       )}
+
 
       {(service?.status === "in_progress" || service?.status === "completed") && (
         <>
