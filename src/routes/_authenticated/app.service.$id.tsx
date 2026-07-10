@@ -18,6 +18,7 @@ import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
+import { deleteQueuedPhoto, loadQueuedPhoto, saveQueuedPhoto } from "@/lib/photo-upload-queue";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -442,6 +443,8 @@ function PhotoSlot({
   slotId,
   done,
   onUploaded,
+  onLocalCaptured,
+  initialPath,
   label,
   wide,
   autoOpen,
@@ -456,6 +459,8 @@ function PhotoSlot({
   slotId?: string;
   done: boolean;
   onUploaded: (path?: string) => void;
+  onLocalCaptured?: (path: string) => void;
+  initialPath?: string | null;
   label: string;
   wide?: boolean;
   autoOpen?: boolean;
@@ -464,8 +469,16 @@ function PhotoSlot({
 }) {
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [queuedPath, setQueuedPath] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { return window.localStorage.getItem(`uw_photo_path:${serviceId}:${slotId ?? `${stage}_${angle}`}`); } catch { return null; }
+  });
+  const retryingRef = useRef(false);
   const slot = slotId ?? `${stage}_${angle}`;
+  const queueKey = `${serviceId}:${slot}`;
+  const pathKey = `uw_photo_path:${serviceId}:${slot}`;
   const busy = capturing || uploading;
+  const visuallyDone = done || Boolean(initialPath) || Boolean(queuedPath);
   const tag =
     workflow === "unavailable_vehicle"
       ? "[SVC][UNAVAILABLE]"
@@ -482,33 +495,53 @@ function PhotoSlot({
   // The only difference between workflows is the stage value written to service_photos
   // and the submit RPC called by the parent dialog. Camera, storage upload, DB write,
   // and slot-completion logic are identical.
-  const uploadCapturedFile = async (file: File, startedAt = Date.now()) => {
+  const uploadCapturedFile = async (file: File, startedAt = Date.now(), existingPath?: string | null) => {
+    if (retryingRef.current) return;
+    retryingRef.current = true;
     setUploading(true);
     console.log(`${tag} Upload started · svc=${serviceId} · slot=${slot} · size=${file.size}b`);
+    let path = existingPath ?? queuedPath;
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Please sign in again");
       const pos = await getPosition();
-      const path = `${u.user.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
-      const { error } = await supabase.storage
-        .from("service-photos")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { console.error(`${errTag} Storage fail · slot=${slot} · ${error.message}`); toast.error(error.message); return; }
-      const { error: e2 } = await supabase
-        .from("service_photos")
-        .upsert(
-          {
-            service_id: serviceId,
-            partner_id: u.user.id,
-            stage: stage as any,
-            angle: angle as any,
-            storage_path: path,
-            lat: pos?.lat ?? null,
-            lng: pos?.lng ?? null,
-          },
-          { onConflict: "service_id,stage,angle" },
-        );
-      if (e2) { console.error(`${errTag} Row fail · slot=${slot} · ${e2.message}`); toast.error(e2.message); return; }
+      path = path || `${u.user.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
+      setQueuedPath(path);
+      try { window.localStorage.setItem(pathKey, path); } catch { /* keep going */ }
+      onLocalCaptured?.(path);
+      await saveQueuedPhoto(queueKey, file);
+
+      let lastError: unknown = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("Offline");
+          const { error } = await supabase.storage
+            .from("service-photos")
+            .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+          if (error) throw error;
+          const { error: e2 } = await supabase
+            .from("service_photos")
+            .upsert(
+              {
+                service_id: serviceId,
+                partner_id: u.user.id,
+                stage: stage as any,
+                angle: angle as any,
+                storage_path: path,
+                lat: pos?.lat ?? null,
+                lng: pos?.lng ?? null,
+              },
+              { onConflict: "service_id,stage,angle" },
+            );
+          if (e2) throw e2;
+          lastError = null;
+          break;
+        } catch (attemptError) {
+          lastError = attemptError;
+          if (attempt < 3) await new Promise((resolve) => window.setTimeout(resolve, attempt * 700));
+        }
+      }
+      if (lastError) throw lastError;
       console.log(`${tag} Upload finished · svc=${serviceId} · slot=${slot} · path=${path} · gps=${pos ? `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` : "MISSING"} · Δ${Date.now()-startedAt}ms`);
       await logApkEvidence({
         eventType: workflowEventName(workflow, "photo_upload_result"),
@@ -518,6 +551,9 @@ function PhotoSlot({
         status: "success",
         payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt },
       });
+      await deleteQueuedPhoto(queueKey);
+      try { window.localStorage.removeItem(pathKey); } catch { /* noop */ }
+      setQueuedPath(null);
       onUploaded(path);
       console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
     } catch (err) {
@@ -529,9 +565,10 @@ function PhotoSlot({
         payload: { slot, angle, ...evidenceError(err) },
       });
       console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
-      toast.error((err as any)?.message ?? "Could not save photo");
+      toast.error(typeof navigator !== "undefined" && navigator.onLine === false ? "Photo saved offline. It will retry automatically." : ((err as any)?.message ?? "Photo saved locally. Upload will retry."));
     } finally {
       setUploading(false);
+      retryingRef.current = false;
     }
   };
 
@@ -539,9 +576,17 @@ function PhotoSlot({
     if (disabled || busy) return;
     const t0 = Date.now();
     console.log(`${tag} Capture requested (${slot}) · svc=${serviceId}`);
-    const capturePromise = captureFromCamera({ serviceId, assignmentId, workflow, stage: stage === "unavailable" || stage === "dirty" ? "report" : stage, angle, slot });
     setCapturing(true);
-    const file = await capturePromise.finally(() => setCapturing(false));
+    let file: File | null = null;
+    try {
+      file = await captureFromCamera({ serviceId, assignmentId, workflow, stage: stage === "unavailable" || stage === "dirty" ? "report" : stage, angle, slot });
+    } catch (err) {
+      console.error(`${errTag} Camera failed · slot=${slot} · ${(err as any)?.message ?? err}`);
+      toast.error(CAMERA_UNAVAILABLE_MESSAGE);
+      return;
+    } finally {
+      setCapturing(false);
+    }
     console.log(`${tag} Camera returned · svc=${serviceId} · slot=${slot} · file=${file ? `${file.size}b` : "null"}`);
     void logApkEvidence({
       eventType: workflowEventName(workflow, "camera_attempt"),
@@ -558,6 +603,33 @@ function PhotoSlot({
     await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
     await uploadCapturedFile(file, t0);
   };
+
+  useEffect(() => {
+    if (done) {
+      void deleteQueuedPhoto(queueKey);
+      try { window.localStorage.removeItem(pathKey); } catch { /* noop */ }
+      setQueuedPath(null);
+      return;
+    }
+    let cancelled = false;
+    const retryQueued = async () => {
+      if (cancelled || retryingRef.current) return;
+      let path: string | null = queuedPath;
+      if (!path) {
+        try { path = window.localStorage.getItem(pathKey); } catch { path = null; }
+      }
+      if (!path) return;
+      const file = await loadQueuedPhoto(queueKey);
+      if (cancelled || !file) return;
+      await uploadCapturedFile(file, Date.now(), path);
+    };
+    void retryQueued();
+    window.addEventListener("online", retryQueued);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", retryQueued);
+    };
+  }, [done, queueKey, pathKey, queuedPath]);
 
   useEffect(() => {
     if (done || busy) return;
@@ -583,13 +655,13 @@ function PhotoSlot({
       onClick={openCamera}
       disabled={disabled || busy}
       className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
-        done
+        visuallyDone
           ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
           : "border-border text-muted-foreground hover:border-primary hover:text-primary"
       }`}
     >
-      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : done ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-      {done ? "✓ Captured" : label}
+      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : visuallyDone ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+      {busy ? "Uploading…" : visuallyDone ? "✓ Captured" : label}
     </button>
   );
 }
@@ -614,6 +686,32 @@ function pickPhotoPaths(photos: ServicePhotoRow[], stage: string, angles: readon
   return angles
     .map((a) => photos.find((p) => p.stage === stage && p.angle === a)?.storage_path)
     .filter((p): p is string => Boolean(p));
+}
+
+function reportDraftKey(serviceId: string, workflow: "dirty" | "unavailable") {
+  return `uw_report_draft:${workflow}:${serviceId}`;
+}
+
+function readReportDraft(serviceId: string, workflow: "dirty" | "unavailable") {
+  if (typeof window === "undefined") return { reason: "", notes: "", paths: {} as Record<string, string> };
+  try {
+    const raw = window.localStorage.getItem(reportDraftKey(serviceId, workflow));
+    if (!raw) return { reason: "", notes: "", paths: {} as Record<string, string> };
+    const parsed = JSON.parse(raw) as { reason?: string; notes?: string; paths?: Record<string, string> };
+    return { reason: parsed.reason ?? "", notes: parsed.notes ?? "", paths: parsed.paths ?? {} };
+  } catch {
+    return { reason: "", notes: "", paths: {} as Record<string, string> };
+  }
+}
+
+function writeReportDraft(serviceId: string, workflow: "dirty" | "unavailable", draft: { reason: string; notes: string; paths: Record<string, string> }) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(reportDraftKey(serviceId, workflow), JSON.stringify({ ...draft, savedAt: Date.now() })); } catch { /* noop */ }
+}
+
+function clearReportDraft(serviceId: string, workflow: "dirty" | "unavailable") {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.removeItem(reportDraftKey(serviceId, workflow)); } catch { /* noop */ }
 }
 
 // ------------------------------------------------------------------
@@ -643,9 +741,11 @@ function UnavailableSection({
   refetch: () => void;
   onDone: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [reason, setReason] = useState<string>("");
-  const [notes, setNotes] = useState("");
+  const initialDraftRef = useRef(readReportDraft(serviceId, "unavailable"));
+  const [expanded, setExpanded] = useState(() => Boolean(initialDraftRef.current.reason || initialDraftRef.current.notes || Object.keys(initialDraftRef.current.paths).length));
+  const [reason, setReason] = useState<string>(() => initialDraftRef.current.reason);
+  const [notes, setNotes] = useState(() => initialDraftRef.current.notes);
+  const [draftPaths, setDraftPaths] = useState<Record<string, string>>(() => initialDraftRef.current.paths);
   const [saving, setSaving] = useState(false);
   const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
@@ -653,15 +753,20 @@ function UnavailableSection({
   const needsRemarks = reason === "other";
   const capturedPaths = pickPhotoPaths(photos, "unavailable", UNAVAILABLE_ANGLES);
   const capturedCount = capturedPaths.length;
+  const visibleCount = new Set([...capturedPaths, ...Object.values(draftPaths)]).size;
   const canSubmit = !!reason && capturedCount >= UNAVAILABLE_REQUIRED && (!needsRemarks || notes.trim().length > 0);
+
+  useEffect(() => {
+    writeReportDraft(serviceId, "unavailable", { reason, notes, paths: draftPaths });
+  }, [serviceId, reason, notes, draftPaths]);
 
   // Auto-expand as soon as a captured photo lands (covers the case where
   // Android killed the WebView during camera and remounted this page —
   // the restored capture writes a row via PhotoSlot's mount effect, and
   // we re-open the panel so the partner sees the ✓ + Submit button).
   useEffect(() => {
-    if (capturedCount > 0 && !expanded) setExpanded(true);
-  }, [capturedCount, expanded]);
+    if (visibleCount > 0 && !expanded) setExpanded(true);
+  }, [visibleCount, expanded]);
 
   // debug flow-version instrumentation removed for trial release
 
@@ -714,6 +819,7 @@ function UnavailableSection({
       const creditedAmount = Number(r.credit_amount ?? COMPENSATION);
       console.log(`[SVC][UNAVAILABLE] Wallet updated (+₹${creditedAmount}) · svc=${serviceId}`);
       toast.success(`Marked unavailable · ₹${creditedAmount} credited`);
+      qc.setQueryData(["service", serviceId], (current: any) => current ? { ...current, status: "unavailable", unavailable_reason: reason, unavailable_notes: notes || null } : current);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -724,6 +830,8 @@ function UnavailableSection({
       console.log(`[SVC][UNAVAILABLE] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
+      setDraftPaths({});
+      clearReportDraft(serviceId, "unavailable");
       onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -748,7 +856,7 @@ function UnavailableSection({
       >
         <span className="inline-flex items-center gap-2 text-sm font-semibold">
           <XCircle className="h-4 w-4" /> Mark unavailable
-          {capturedCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{UNAVAILABLE_REQUIRED} photos</span>}
+          {visibleCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{UNAVAILABLE_REQUIRED} uploaded</span>}
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
@@ -768,7 +876,7 @@ function UnavailableSection({
 
         <div className="mt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Live evidence photos ({capturedCount}/{UNAVAILABLE_REQUIRED} required)
+            Live evidence photos ({capturedCount}/{UNAVAILABLE_REQUIRED} uploaded)
           </p>
           <div className="grid grid-cols-2 gap-2">
             {UNAVAILABLE_ANGLES.map((angle, index) => {
@@ -783,7 +891,16 @@ function UnavailableSection({
                   angle={angle}
                   slotId={`unavailable_${angle}`}
                   done={done}
-                  onUploaded={() => refetch()}
+                  initialPath={draftPaths[angle]}
+                  onLocalCaptured={(path) => setDraftPaths((current) => ({ ...current, [angle]: path }))}
+                  onUploaded={() => {
+                    setDraftPaths((current) => {
+                      const next = { ...current };
+                      delete next[angle];
+                      return next;
+                    });
+                    refetch();
+                  }}
                   label={`Photo ${index + 1}`}
                   disabled={saving}
                 />
@@ -819,21 +936,28 @@ function DirtyVehicleSection({
   refetch: () => void;
   onDone?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
+  const initialDraftRef = useRef(readReportDraft(serviceId, "dirty"));
+  const [expanded, setExpanded] = useState(() => Boolean(initialDraftRef.current.reason || initialDraftRef.current.notes || Object.keys(initialDraftRef.current.paths).length));
+  const [reason, setReason] = useState(() => initialDraftRef.current.reason);
+  const [notes, setNotes] = useState(() => initialDraftRef.current.notes);
+  const [draftPaths, setDraftPaths] = useState<Record<string, string>>(() => initialDraftRef.current.paths);
   const [saving, setSaving] = useState(false);
   const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
 
   const capturedPaths = pickPhotoPaths(photos, "dirty", DIRTY_ANGLES);
   const capturedCount = capturedPaths.length;
+  const visibleCount = new Set([...capturedPaths, ...Object.values(draftPaths)]).size;
   const allDone = capturedCount === DIRTY_ANGLES.length;
   const dirtyCanSubmit = !!reason && allDone && !(reason === "Other" && !notes.trim());
 
   useEffect(() => {
-    if (capturedCount > 0 && !expanded) setExpanded(true);
-  }, [capturedCount, expanded]);
+    writeReportDraft(serviceId, "dirty", { reason, notes, paths: draftPaths });
+  }, [serviceId, reason, notes, draftPaths]);
+
+  useEffect(() => {
+    if (visibleCount > 0 && !expanded) setExpanded(true);
+  }, [visibleCount, expanded]);
 
   // debug flow-version instrumentation removed for trial release
 
@@ -886,6 +1010,7 @@ function DirtyVehicleSection({
       const creditedAmount = Number(r.credit_amount ?? COMPENSATION);
       console.log(`[SVC][DIRTY] Wallet updated (+₹${creditedAmount}) · svc=${serviceId}`);
       toast.success(`Dirty vehicle reported · ₹${creditedAmount} credited`);
+      qc.setQueryData(["service", serviceId], (current: any) => current ? { ...current, status: "unavailable", unavailable_reason: "dirty_vehicle", unavailable_notes: `${reason}${notes ? ` · ${notes}` : ""}` } : current);
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -896,6 +1021,8 @@ function DirtyVehicleSection({
       console.log(`[SVC][DIRTY] Route advanced · queries invalidated · svc=${serviceId}`);
       setReason("");
       setNotes("");
+      setDraftPaths({});
+      clearReportDraft(serviceId, "dirty");
       void onDone?.();
     } catch (error: any) {
       await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -920,7 +1047,7 @@ function DirtyVehicleSection({
       >
         <span className="inline-flex items-center gap-2 text-sm font-semibold">
           <AlertTriangle className="h-4 w-4" /> Report dirty vehicle
-          {capturedCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{DIRTY_ANGLES.length} photos</span>}
+          {visibleCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{DIRTY_ANGLES.length} uploaded</span>}
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
