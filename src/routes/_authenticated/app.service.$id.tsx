@@ -929,11 +929,6 @@ function UnavailableSection({
                   initialPath={draftPaths[angle]}
                   onLocalCaptured={(path) => setDraftPaths((current) => ({ ...current, [angle]: path }))}
                   onUploaded={() => {
-                    setDraftPaths((current) => {
-                      const next = { ...current };
-                      delete next[angle];
-                      return next;
-                    });
                     refetch();
                   }}
                   label={`Photo ${index + 1}`}
@@ -1123,11 +1118,6 @@ function DirtyVehicleSection({
                 initialPath={draftPaths[angle]}
                 onLocalCaptured={(path) => setDraftPaths((current) => ({ ...current, [angle]: path }))}
                 onUploaded={() => {
-                  setDraftPaths((current) => {
-                    const next = { ...current };
-                    delete next[angle];
-                    return next;
-                  });
                   refetch();
                 }}
                 label={angle}
