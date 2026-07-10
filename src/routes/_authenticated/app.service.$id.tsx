@@ -509,7 +509,7 @@ function PhotoSlot({
         userId = u.user?.id ?? null;
       }
       if (!userId) throw new Error("Please sign in again");
-      path = path || `${u.user.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
+      path = path || `${userId}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
       setQueuedPath(path);
       try { window.localStorage.setItem(pathKey, path); } catch { /* keep going */ }
       onLocalCaptured?.(path);
