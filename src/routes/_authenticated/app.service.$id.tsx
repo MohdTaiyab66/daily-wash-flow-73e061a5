@@ -977,6 +977,7 @@ function DirtyVehicleSection({
   const [notes, setNotes] = useState(() => initialDraftRef.current.notes);
   const [draftPaths, setDraftPaths] = useState<Record<string, string>>(() => initialDraftRef.current.paths);
   const [saving, setSaving] = useState(false);
+  const [submitQueued, setSubmitQueued] = useState(() => readSubmitQueued(serviceId, "dirty"));
   const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
 
@@ -1005,7 +1006,11 @@ function DirtyVehicleSection({
     if (submitInFlightRef.current) return;
     if (!reason) return toast.error("Pick a reason");
     if (reason === "Other" && !notes.trim()) return toast.error("Remarks are required for 'Other'");
-    if (!allDone) return toast.error("All 4 photos required");
+    if (!allDone) {
+      writeSubmitQueued(serviceId, "dirty", true);
+      setSubmitQueued(true);
+      return toast.message("Report queued. It will submit after photos finish uploading.");
+    }
     console.log(`[SVC][DIRTY] Submit pressed · svc=${serviceId} · photos=4 · reason=${reason}`);
     submitInFlightRef.current = true;
     setSaving(true);
@@ -1058,6 +1063,8 @@ function DirtyVehicleSection({
       setNotes("");
       setDraftPaths({});
       clearReportDraft(serviceId, "dirty");
+      writeSubmitQueued(serviceId, "dirty", false);
+      setSubmitQueued(false);
       void onDone?.();
     } catch (error: any) {
       await logApkEvidence({ eventType: "dirty_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -1068,6 +1075,11 @@ function DirtyVehicleSection({
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!submitQueued || saving || !dirtyCanSubmit) return;
+    void submit();
+  }, [submitQueued, saving, dirtyCanSubmit]);
 
   return (
     <Card className="overflow-hidden">
@@ -1125,8 +1137,8 @@ function DirtyVehicleSection({
           })}
         </div>
         <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3" />
-        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !dirtyCanSubmit}>
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit report
+        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !reason || (reason === "Other" && !notes.trim())}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{submitQueued && !dirtyCanSubmit ? "Queued until uploads finish" : "Submit report"}
         </Button>
       </div>
     </Card>
