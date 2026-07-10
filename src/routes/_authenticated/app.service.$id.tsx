@@ -493,69 +493,151 @@ function ServiceDetail() {
       )}
 
 
-      {(service?.status === "in_progress" || service?.status === "completed") && (
-        <>
-          {/* Before — single photo */}
-          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Before service</h2>
-          <p className="mt-1 text-xs text-muted-foreground">One photo. Camera only.</p>
-          <div className="mt-3">
-            <PhotoSlot
-              serviceId={id}
-              assignmentId={(service as any)?.assignment_id ?? null}
-              stage="before"
-              angle="front"
-              slotId="before"
-              done={beforeDone}
-              onUploaded={() => refetchPhotos()}
-              label="Before photo"
-              wide
-              autoOpen={autoOpenBefore && !beforeDone}
-              onAutoOpenConsumed={() => setAutoOpenBefore(false)}
-            />
-          </div>
+      {(service?.status === "in_progress" || service?.status === "completed") && (() => {
+        const photoRows = (photos ?? []) as ServicePhotoRow[];
+        const stepDefs: Array<{ key: string; label: string; stage: "before" | "after"; angle: Angle | "front"; hint: string }> = [
+          { key: "before", label: "Before", stage: "before", angle: "front", hint: "Whole car, before you start" },
+          { key: "front", label: "Front", stage: "after", angle: "front", hint: "Bonnet + headlights visible" },
+          { key: "rear", label: "Rear", stage: "after", angle: "rear", hint: "Boot + tail lights visible" },
+          { key: "left", label: "Left side", stage: "after", angle: "left", hint: "Full left side, mirror included" },
+          { key: "right", label: "Right side", stage: "after", angle: "right", hint: "Full right side, mirror included" },
+        ];
+        const stepStatus = stepDefs.map((s) => {
+          if (s.stage === "before") return { ...s, done: beforeDone };
+          return { ...s, done: afterDone.has(s.angle as Angle) };
+        });
+        const doneCount = stepStatus.filter((s) => s.done).length;
+        const activeIdx = stepStatus.findIndex((s) => !s.done);
+        const pctPhotos = Math.round((doneCount / stepStatus.length) * 100);
+        const pathFor = (stage: string, angle: string) =>
+          photoRows.find((p) => p.stage === stage && p.angle === angle)?.storage_path ?? null;
+        const allDone = doneCount === stepStatus.length;
 
-          {/* After — 4 photos */}
-          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">After service</h2>
-          <p className="mt-1 text-xs text-muted-foreground">4 angles. Camera only.</p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {AFTER_ANGLES.map((a) => (
-              <PhotoSlot key={a} serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} stage="after" angle={a} slotId={a} done={afterDone.has(a)} onUploaded={() => refetchPhotos()} label={a} />
-            ))}
-          </div>
-
-          {/* Reports — inline sections (never modals) so PhotoSlots remain mounted
-              across Android process kills, matching Before/After lifecycle. */}
-          {service.status === "in_progress" && (
-            <div className="mt-5 space-y-3">
-              <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
-              <DirtyVehicleSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+        return (
+          <>
+            {/* Service checklist header */}
+            <div className="mt-5 flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider">Service checklist</h2>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground">
+                {doneCount}/{stepStatus.length}
+              </span>
             </div>
-          )}
-
-          <Card className="mt-5 p-4">
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span className="inline-flex items-center gap-2"><Clock className="h-4 w-4" /> Service timer</span>
-              <span className="tabular-nums">{elapsedLabel}</span>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full rounded-full transition-all ${allDone ? "bg-[color:var(--success)]" : "bg-primary"}`}
+                style={{ width: `${pctPhotos}%` }}
+              />
             </div>
-            <Textarea
-              placeholder="Add service notes for admin/customer record…"
-              value={serviceNotes}
-              onChange={(e) => setServiceNotes(e.target.value)}
-              className="mt-3"
-            />
-          </Card>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {allDone ? "All photos captured — ready to complete" : `${stepStatus.length - doneCount} photo${stepStatus.length - doneCount === 1 ? "" : "s"} remaining · camera only`}
+            </p>
 
+            {/* Guided steps */}
+            {service.status === "in_progress" && (
+              <div className="mt-3 space-y-2.5">
+                {stepStatus.map((s, i) => {
+                  const isActive = i === activeIdx;
+                  const isLocked = !s.done && !isActive;
+                  const variant = s.done
+                    ? "guided-done"
+                    : isActive
+                      ? "guided-active"
+                      : "guided-locked";
+                  return (
+                    <PhotoSlot
+                      key={s.key}
+                      serviceId={id}
+                      assignmentId={(service as any)?.assignment_id ?? null}
+                      stage={s.stage}
+                      angle={s.angle}
+                      slotId={s.key === "before" ? "before" : s.angle}
+                      done={s.done}
+                      onUploaded={() => refetchPhotos()}
+                      label={s.label}
+                      variant={variant as any}
+                      stepNumber={i + 1}
+                      thumbPath={pathFor(s.stage, s.angle)}
+                      hint={s.hint}
+                      autoOpen={s.key === "before" && autoOpenBefore && !s.done}
+                      onAutoOpenConsumed={() => setAutoOpenBefore(false)}
+                      disabled={isLocked}
+                    />
+                  );
+                })}
+              </div>
+            )}
 
-          {service.status === "in_progress" && (
-            <Button size="lg" className="mt-5 w-full" disabled={!beforeDone || !allAfter || complete.isPending} onClick={() => complete.mutate()}>
-              {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {beforeDone && allAfter
-                ? "Mark complete · earn ₹17"
-                : `${(beforeDone ? 1 : 0) + afterDone.size}/5 photos uploaded`}
-            </Button>
-          )}
-        </>
-      )}
+            {/* Completed view — grid summary of thumbnails */}
+            {service.status === "completed" && (
+              <div className="mt-3 grid grid-cols-2 gap-2.5">
+                {stepStatus.map((s, i) => (
+                  <PhotoSlot
+                    key={s.key}
+                    serviceId={id}
+                    assignmentId={(service as any)?.assignment_id ?? null}
+                    stage={s.stage}
+                    angle={s.angle}
+                    slotId={s.key === "before" ? "before" : s.angle}
+                    done={s.done}
+                    onUploaded={() => refetchPhotos()}
+                    label={s.label}
+                    variant="guided-done"
+                    stepNumber={i + 1}
+                    thumbPath={pathFor(s.stage, s.angle)}
+                    disabled
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Timer + notes — compact */}
+            <Card className="mt-4 p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" /> Service time
+                </span>
+                <span className="text-lg font-bold tabular-nums">{elapsedLabel}</span>
+              </div>
+              {service.status === "in_progress" && (
+                <Textarea
+                  placeholder="Optional notes for admin/customer…"
+                  value={serviceNotes}
+                  onChange={(e) => setServiceNotes(e.target.value)}
+                  className="mt-2.5 min-h-[60px] text-sm"
+                />
+              )}
+            </Card>
+
+            {/* Reports — inline sections (never modals) */}
+            {service.status === "in_progress" && (
+              <div className="mt-4 space-y-3">
+                <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+                <DirtyVehicleSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+              </div>
+            )}
+
+            {/* Sticky Complete Service bar */}
+            {service.status === "in_progress" && (
+              <div className="fixed inset-x-0 bottom-16 z-40 pointer-events-none px-5">
+                <div className="pointer-events-auto mx-auto max-w-md">
+                  <div className="rounded-2xl border border-border bg-background/95 p-2 shadow-[0_18px_44px_-18px_rgba(0,0,0,0.35)] backdrop-blur">
+                    <Button
+                      size="lg"
+                      className={`h-14 w-full text-base font-semibold ${allDone ? "shadow-[0_14px_36px_-12px_hsl(var(--primary)/0.7)]" : ""}`}
+                      disabled={!allDone || complete.isPending}
+                      onClick={() => complete.mutate()}
+                    >
+                      {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {allDone ? "Complete service · ₹17" : `${doneCount}/${stepStatus.length} photos captured`}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
+
 
       {(service?.status === "completed" || service?.status === "unavailable") && (
         <div className="mt-5 space-y-3">
