@@ -502,14 +502,20 @@ function PhotoSlot({
     console.log(`${tag} Upload started · svc=${serviceId} · slot=${slot} · size=${file.size}b`);
     let path = existingPath ?? queuedPath;
     try {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("Please sign in again");
-      const pos = await getPosition();
+      const { data: sessionData } = await supabase.auth.getSession();
+      let userId = sessionData.session?.user.id ?? null;
+      if (!userId) {
+        const { data: u } = await supabase.auth.getUser();
+        userId = u.user?.id ?? null;
+      }
+      if (!userId) throw new Error("Please sign in again");
       path = path || `${u.user.id}/${serviceId}/${stage}-${angle}-${Date.now()}.jpg`;
       setQueuedPath(path);
       try { window.localStorage.setItem(pathKey, path); } catch { /* keep going */ }
       onLocalCaptured?.(path);
       await saveQueuedPhoto(queueKey, file);
+
+      const pos = await getPosition();
 
       let lastError: unknown = null;
       for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -524,7 +530,7 @@ function PhotoSlot({
             .upsert(
               {
                 service_id: serviceId,
-                partner_id: u.user.id,
+                partner_id: userId,
                 stage: stage as any,
                 angle: angle as any,
                 storage_path: path,
