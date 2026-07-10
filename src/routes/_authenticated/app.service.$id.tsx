@@ -1073,7 +1073,16 @@ function DirtyVehicleSection({
                 angle={angle}
                 slotId={`dirty_${angle}`}
                 done={done}
-                onUploaded={() => refetch()}
+                initialPath={draftPaths[angle]}
+                onLocalCaptured={(path) => setDraftPaths((current) => ({ ...current, [angle]: path }))}
+                onUploaded={() => {
+                  setDraftPaths((current) => {
+                    const next = { ...current };
+                    delete next[angle];
+                    return next;
+                  });
+                  refetch();
+                }}
                 label={angle}
                 disabled={saving}
               />
