@@ -136,7 +136,7 @@ function RoutePage() {
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const estFinishClock = mapStats?.mins
-    ? new Date(nowTs + mapStats.mins * 60_000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+    ? new Date(nowTs + mapStats.mins * 60_000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
     : null;
 
   const currentStop = pending[0] ?? null;
