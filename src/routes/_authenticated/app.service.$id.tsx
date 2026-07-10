@@ -770,6 +770,7 @@ function UnavailableSection({
   const [notes, setNotes] = useState(() => initialDraftRef.current.notes);
   const [draftPaths, setDraftPaths] = useState<Record<string, string>>(() => initialDraftRef.current.paths);
   const [saving, setSaving] = useState(false);
+  const [submitQueued, setSubmitQueued] = useState(() => readSubmitQueued(serviceId, "unavailable"));
   const submitInFlightRef = useRef(false);
   const qc = useQueryClient();
 
@@ -801,7 +802,11 @@ function UnavailableSection({
   const submit = async () => {
     if (submitInFlightRef.current) return;
     if (!reason) return toast.error("Pick a reason");
-    if (capturedPaths.length < UNAVAILABLE_REQUIRED) return toast.error(`Capture ${UNAVAILABLE_REQUIRED} photos`);
+    if (capturedPaths.length < UNAVAILABLE_REQUIRED) {
+      writeSubmitQueued(serviceId, "unavailable", true);
+      setSubmitQueued(true);
+      return toast.message("Report queued. It will submit after photos finish uploading.");
+    }
     if (needsRemarks && !notes.trim()) return toast.error("Remarks are required for 'Other'");
     console.log(`[SVC][UNAVAILABLE] Submit pressed · svc=${serviceId} · photos=${capturedPaths.length} · reason=${reason}`);
     submitInFlightRef.current = true;
@@ -855,6 +860,8 @@ function UnavailableSection({
       setNotes("");
       setDraftPaths({});
       clearReportDraft(serviceId, "unavailable");
+      writeSubmitQueued(serviceId, "unavailable", false);
+      setSubmitQueued(false);
       onDone();
     } catch (error: any) {
       await logApkEvidence({ eventType: "unavailable_submit_result", serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
@@ -865,6 +872,11 @@ function UnavailableSection({
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!submitQueued || saving || !canSubmit) return;
+    void submit();
+  }, [submitQueued, saving, canSubmit]);
 
   return (
     <Card className="overflow-hidden">
@@ -939,7 +951,7 @@ function UnavailableSection({
           className="mt-3"
         />
         <Button className="mt-3 w-full" onClick={submit} disabled={saving || !canSubmit}>
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit · ₹{COMPENSATION}
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {submitQueued && !canSubmit ? "Queued until uploads finish" : `Submit · ₹${COMPENSATION}`}
         </Button>
       </div>
     </Card>
