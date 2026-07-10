@@ -950,7 +950,7 @@ function UnavailableSection({
           onChange={(e) => setNotes(e.target.value)}
           className="mt-3"
         />
-        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !canSubmit}>
+        <Button className="mt-3 w-full" onClick={submit} disabled={saving || !reason || (needsRemarks && !notes.trim())}>
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {submitQueued && !canSubmit ? "Queued until uploads finish" : `Submit · ₹${COMPENSATION}`}
         </Button>
       </div>
