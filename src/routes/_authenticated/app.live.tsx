@@ -188,19 +188,19 @@ function RoutePage() {
       {/* Today's Progress */}
       {total > 0 && (
         <Card className="mt-4 p-4">
-          <div className="flex items-baseline justify-between">
-            <p className="text-sm font-semibold">Today's progress</p>
-            <p className="text-xs font-medium text-muted-foreground">{done} of {total} completed</p>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's progress</p>
+            <p className="text-base font-semibold tabular-nums">{done} <span className="text-sm font-medium text-muted-foreground">of {total} completed</span></p>
           </div>
           <Progress value={progressPct} className="mt-3 h-2" />
           <div className="mt-4 grid grid-cols-2 gap-3">
             <MiniStat icon={<Car className="h-4 w-4" />} label="Remaining" value={`${remaining}`} />
             <MiniStat icon={<IndianRupee className="h-4 w-4" />} label="Earned" value={`₹${earnedSoFar.toLocaleString("en-IN")}`} />
             <MiniStat icon={<MapPin className="h-4 w-4" />} label="Distance left" value={mapStats ? `${mapStats.km} km` : "—"} />
-            <MiniStat icon={<Clock className="h-4 w-4" />} label="Est. finish" value={estFinishClock ?? (mapStats ? `~${mapStats.mins}m` : "—")} />
+            <MiniStat icon={<Clock className="h-4 w-4" />} label="Finish by" value={estFinishClock ?? (mapStats ? `~${mapStats.mins}m` : "—")} />
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Expected today · ₹{expectedEarnings.toLocaleString("en-IN")}
+            Today's target · ₹{expectedEarnings.toLocaleString("en-IN")}
           </p>
         </Card>
       )}
