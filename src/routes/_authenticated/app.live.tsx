@@ -482,55 +482,6 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
   );
 }
 
-function HeroAction({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-border/60 bg-background px-2 py-2.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-50"
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function HeroCallAction({ serviceId }: { serviceId: string }) {
-  const call = useServerFn(initiateMaskedCall);
-  const [loading, setLoading] = useState(false);
-  const onClick = async () => {
-    setLoading(true);
-    try {
-      const r = await call({ data: { service_id: serviceId } });
-      toast.success(r.message ?? "Connecting...");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not place call");
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <HeroAction
-      icon={loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
-      label="Call"
-      onClick={onClick}
-    />
-  );
-}
-
-function HeroStartAction({ serviceId, inProgress }: { serviceId: string; inProgress: boolean }) {
-  return (
-    <Link
-      to="/app/service/$id"
-      params={{ id: serviceId }}
-      className="flex flex-col items-center justify-center gap-1 rounded-lg bg-primary px-2 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-    >
-      <Play className="h-5 w-5" />
-      <span>{inProgress ? "Resume" : "Start"}</span>
-    </Link>
-  );
-}
 
 function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
