@@ -360,8 +360,8 @@ function RoutePage() {
               const c = s.customers as any;
               const v = s.vehicles as any;
               return (
-                <Card key={s.id} className="flex items-center gap-3 border-l-4 border-l-[color:var(--success)] bg-[color:var(--success)]/5 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+                <Card key={s.id} className="flex items-center gap-3 border-l-4 border-l-[color:var(--success)] bg-[color:var(--success)]/5 p-2.5">
+                  <VehicleImage path={v?.front_image_path} className="h-11 w-11 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{c?.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
