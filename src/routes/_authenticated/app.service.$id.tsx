@@ -179,7 +179,7 @@ function ServiceDetail() {
   // before = single photo (stored as stage='before', angle='front' to satisfy enum)
   const beforeDone = (photos ?? []).some((p) => p.stage === "before");
   const afterDone = new Set((photos ?? []).filter((p) => p.stage === "after").map((p) => p.angle as Angle));
-  const allAfter = AFTER_ANGLES.every((a) => afterDone.has(a));
+
 
   const complete = useMutation({
     mutationFn: async () => {
