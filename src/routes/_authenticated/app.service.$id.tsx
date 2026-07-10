@@ -103,6 +103,30 @@ function ServiceDetail() {
     },
   });
 
+  const { data: routeProgress } = useQuery({
+    queryKey: ["service-route-progress", id],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: u } = await supabase.auth.getUser();
+      const { data } = await supabase
+        .from("services")
+        .select("id,status,manual_sequence_no,sequence_no,eta_at,customers(full_name)")
+        .eq("partner_id", u.user!.id)
+        .eq("scheduled_date", today)
+        .order("manual_sequence_no", { ascending: true, nullsFirst: false })
+        .order("sequence_no", { ascending: true, nullsFirst: false })
+        .order("eta_at", { ascending: true, nullsFirst: false });
+      const rows = data ?? [];
+      const total = rows.length;
+      const completed = rows.filter((r: any) => r.status === "completed" || r.status === "unavailable").length;
+      const idx = rows.findIndex((r: any) => r.id === id);
+      const position = idx >= 0 ? idx + 1 : Math.min(completed + 1, total || 1);
+      const nextRow = idx >= 0 ? rows.slice(idx + 1).find((r: any) => r.status === "pending" || r.status === "in_progress") : null;
+      const nextName = (nextRow as any)?.customers?.full_name ?? null;
+      return { total: total || 1, position, completed, nextName };
+    },
+  });
+
   const { data: photos, refetch: refetchPhotos } = useQuery({
     queryKey: ["service-photos", id],
     queryFn: async () => {
