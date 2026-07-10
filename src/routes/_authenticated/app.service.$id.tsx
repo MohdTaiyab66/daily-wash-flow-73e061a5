@@ -822,6 +822,78 @@ function PhotoSlot({
     return () => window.clearTimeout(timer);
   }, [autoOpen, done, busy]);
 
+  // Guided-done: compact green row with thumbnail + retake affordance
+  if (variant === "guided-done") {
+    return (
+      <button
+        type="button"
+        onClick={openCamera}
+        disabled={disabled || busy}
+        className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--success)]/40 bg-[color:var(--success)]/10 p-2.5 pr-4 text-left transition hover:bg-[color:var(--success)]/15"
+      >
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-black/5">
+          {thumbUrl ? (
+            <img src={thumbUrl} alt={label} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center"><Camera className="h-5 w-5 text-muted-foreground" /></div>
+          )}
+          <span className="absolute inset-0 grid place-items-center bg-black/25 opacity-0 transition-opacity group-hover:opacity-100">
+            <Camera className="h-4 w-4 text-white" />
+          </span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {stepNumber != null && (
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--success)] text-[10px] font-bold text-white">✓</span>
+            )}
+            <p className="truncate text-sm font-semibold capitalize text-[color:var(--success)]">{label}</p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Tap to retake</p>
+        </div>
+        {busy && <Loader2 className="h-4 w-4 animate-spin text-[color:var(--success)]" />}
+      </button>
+    );
+  }
+
+  // Guided-active: large primary capture card, current step
+  if (variant === "guided-active") {
+    return (
+      <button
+        type="button"
+        onClick={openCamera}
+        disabled={disabled || busy}
+        className="relative flex w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-primary bg-primary/5 px-4 py-8 text-center transition active:scale-[0.99] disabled:opacity-70"
+      >
+        {stepNumber != null && (
+          <span className="absolute left-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-md">
+            {stepNumber}
+          </span>
+        )}
+        <div className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg">
+          {busy ? <Loader2 className="h-7 w-7 animate-spin" /> : <Camera className="h-7 w-7" />}
+        </div>
+        <p className="mt-1 text-base font-bold capitalize">
+          {busy ? "Uploading…" : `Take ${label} photo`}
+        </p>
+        {hint && !busy && (
+          <p className="text-[11px] text-muted-foreground">{hint}</p>
+        )}
+      </button>
+    );
+  }
+
+  // Guided-locked: muted collapsed row for future steps
+  if (variant === "guided-locked") {
+    return (
+      <div className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 px-3 py-2.5 opacity-70">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border bg-background text-[11px] font-semibold text-muted-foreground">
+          {stepNumber ?? "•"}
+        </span>
+        <p className="text-sm font-medium capitalize text-muted-foreground">{label}</p>
+      </div>
+    );
+  }
+
   return (
     <button
       onClick={openCamera}
