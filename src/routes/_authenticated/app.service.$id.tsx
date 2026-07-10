@@ -720,6 +720,23 @@ function clearReportDraft(serviceId: string, workflow: "dirty" | "unavailable") 
   try { window.localStorage.removeItem(reportDraftKey(serviceId, workflow)); } catch { /* noop */ }
 }
 
+function submitQueueKey(serviceId: string, workflow: "dirty" | "unavailable") {
+  return `uw_report_submit_queued:${workflow}:${serviceId}`;
+}
+
+function readSubmitQueued(serviceId: string, workflow: "dirty" | "unavailable") {
+  if (typeof window === "undefined") return false;
+  try { return window.localStorage.getItem(submitQueueKey(serviceId, workflow)) === "1"; } catch { return false; }
+}
+
+function writeSubmitQueued(serviceId: string, workflow: "dirty" | "unavailable", queued: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (queued) window.localStorage.setItem(submitQueueKey(serviceId, workflow), "1");
+    else window.localStorage.removeItem(submitQueueKey(serviceId, workflow));
+  } catch { /* noop */ }
+}
+
 // ------------------------------------------------------------------
 // Inline sections (NOT modals). Rendered directly into the service
 // screen so their PhotoSlots remain mounted for the entire in_progress
