@@ -333,16 +333,24 @@ function ServiceDetail() {
   const remainingAfter = Math.max(0, total - position);
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5 pb-24">
+    <div className="mx-auto max-w-md px-5 pt-5 pb-32">
       <div className="flex items-center justify-between">
         <button onClick={() => navigate({ to: "/app/live" })} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Route
         </button>
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${statusStyle}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${statusStyle}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${status === "completed" ? "bg-emerald-500" : status === "in_progress" ? "bg-blue-500" : status === "unavailable" ? "bg-destructive" : "bg-primary"} ${status === "pending" || status === "in_progress" ? "animate-pulse" : ""}`} />
           {statusLabel}
         </span>
       </div>
-      <h1 className="mt-2 text-xl font-bold tracking-tight">Service details</h1>
+      <div className="mt-2 flex items-end justify-between gap-3">
+        <h1 className="text-xl font-bold tracking-tight">Service details</h1>
+        {c?.area && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <MapPin className="h-3 w-3" /> {c.area}
+          </span>
+        )}
+      </div>
 
       {/* Route progress */}
       <div className="mt-3 rounded-2xl border border-border bg-card p-3">
@@ -366,43 +374,55 @@ function ServiceDetail() {
           aria-label="View vehicle photo full screen"
         >
           <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
-          <span className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
-            <ZoomIn className="h-3 w-3" /> Tap to zoom
-          </span>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-2 pt-8">
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-white/90">
+              <Camera className="h-3 w-3" /> Reference photo
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <ZoomIn className="h-3 w-3" /> Tap to zoom
+            </span>
+          </div>
         </button>
 
-        {/* Customer summary */}
+        {/* Customer summary — stronger hierarchy */}
         <div className="p-5">
-          <ul className="space-y-2.5 text-sm">
-            <li className="flex items-center gap-3">
-              <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="font-semibold">{c?.full_name ?? "—"}</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Car className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate">{v?.make} {v?.model}</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <IdCard className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex items-start gap-3">
+            <User className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-bold leading-tight tracking-tight">{c?.full_name ?? "—"}</p>
               {v?.registration_number ? (
-                <span className="inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[13px] font-bold tracking-wider text-foreground">
+                <span className="mt-1.5 inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[13px] font-bold tracking-wider text-foreground">
                   {v.registration_number}
                 </span>
               ) : (
-                <span className="text-muted-foreground">No plate on file</span>
+                <span className="mt-1.5 block text-xs text-muted-foreground">No plate on file</span>
               )}
-            </li>
+              {(v?.make || v?.model) && (
+                <p className="mt-1.5 truncate text-xs uppercase tracking-wide text-muted-foreground">{v?.make} {v?.model}</p>
+              )}
+            </div>
+          </div>
+
+          <ul className="mt-4 space-y-2 border-t border-border pt-3 text-sm">
             <li className="flex items-center gap-3">
               <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span>{timeLabel ? `Before ${timeLabel}` : "Flexible timing"}</span>
             </li>
-            {c?.area && (
-              <li className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 truncate">{c.area}</span>
+            {c?.address_line && (
+              <li className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 text-muted-foreground">{c.address_line}</span>
               </li>
             )}
           </ul>
+
+          {/* Customer notes / instructions */}
+          {(c?.notes || c?.special_instructions) && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Customer instructions</p>
+              <p className="mt-1 whitespace-pre-line text-sm text-foreground">{c.special_instructions || c.notes}</p>
+            </div>
+          )}
 
           {/* Primary actions */}
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -445,16 +465,30 @@ function ServiceDetail() {
 
       {service?.status === "pending" && (
         <div className="mt-5 space-y-3">
-          <Button size="lg" className="h-14 w-full text-base font-semibold shadow-[0_10px_28px_-12px_hsl(var(--primary)/0.6)]" onClick={() => start.mutate()} disabled={start.isPending}>
-            {start.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Play className="mr-2 h-5 w-5 fill-current" />}
-            Start service
-          </Button>
           {routeProgress?.nextName && (
-            <p className="text-center text-xs text-muted-foreground">
-              Next customer: <span className="font-medium text-foreground">{routeProgress.nextName}</span>
-            </p>
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Next after this</p>
+              <p className="mt-0.5 truncate text-sm font-medium">{routeProgress.nextName}</p>
+            </div>
           )}
           <UnavailableSection serviceId={id} assignmentId={(service as any)?.assignment_id ?? null} photos={photos ?? []} refetch={refetchPhotos} onDone={refreshAfterReport} />
+          {/* Sticky Start service button — sits above bottom nav */}
+          <div className="fixed inset-x-0 bottom-16 z-40 pointer-events-none px-5">
+            <div className="mx-auto max-w-md pointer-events-auto">
+              <Button
+                size="lg"
+                className="h-14 w-full text-base font-semibold shadow-[0_14px_36px_-12px_hsl(var(--primary)/0.7)]"
+                onClick={() => start.mutate()}
+                disabled={start.isPending}
+              >
+                {start.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Play className="mr-2 h-5 w-5 fill-current" />}
+                {start.isPending ? "Starting…" : "Start service"}
+              </Button>
+              <p className="mt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+                Average service · 5–7 min
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
