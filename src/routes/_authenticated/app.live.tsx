@@ -161,6 +161,9 @@ function RoutePage() {
     });
   }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeUnlocked, currentStop?.id]);
 
+  const nextStop = pending[0] ?? null;
+  const queueStops = pending.slice(1);
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
@@ -174,38 +177,93 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
-      {/* Map — reduced height (~20%) */}
+      {/* Map */}
       <div className="mt-5">
         <LiveMap
           stops={stops}
           showCustomers={pending.length > 0}
-          heightClass="h-44"
+          heightClass="h-40"
           hideStats
           onStats={setMapStats}
         />
       </div>
 
-      {/* Today's Progress */}
-      {total > 0 && (
-        <Card className="mt-4 p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's progress</p>
-            <p className="text-base font-semibold tabular-nums">{done} <span className="text-sm font-medium text-muted-foreground">of {total} completed</span></p>
-          </div>
-          <Progress value={progressPct} className="mt-3 h-2" />
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <MiniStat icon={<Car className="h-4 w-4" />} label="Remaining" value={`${remaining}`} />
-            <MiniStat icon={<IndianRupee className="h-4 w-4" />} label="Earned" value={`₹${earnedSoFar.toLocaleString("en-IN")}`} />
-            <MiniStat icon={<MapPin className="h-4 w-4" />} label="Distance left" value={mapStats ? `${mapStats.km} km` : "—"} />
-            <MiniStat icon={<Clock className="h-4 w-4" />} label="Finish by" value={estFinishClock ?? (mapStats ? `~${mapStats.mins}m` : "—")} />
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            Today's target · ₹{expectedEarnings.toLocaleString("en-IN")}
+      {/* NEXT CUSTOMER — hero */}
+      {!isEndOfDay && routeUnlocked && nextStop && (
+        <NextCustomerHero
+          stop={nextStop}
+          seqNo={currentSeq ?? 1}
+          total={total}
+        />
+      )}
+
+      {/* Locked / empty states */}
+      {!routeUnlocked && (
+        <Card className="mt-5 p-6 text-center">
+          <p className="text-sm font-medium">
+            {overrideMode === "hide"
+              ? "Route hidden by admin"
+              : unlockClock
+              ? `Today's route will be available at ${unlockClock}.`
+              : "Today's route unlocks soon"}
           </p>
+          {shiftClock && <p className="mt-1 text-xs text-muted-foreground">Your work starts at {shiftClock}.</p>}
+          {overrideMode !== "hide" && visibilityUnlockAt && unlockMsRemaining > 0 && (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold tabular-nums text-primary">
+              Unlocks in {countdownLabel}
+            </p>
+          )}
+          {overrideMode === "hide" && <p className="mt-1 text-xs text-muted-foreground">Contact admin if you need access.</p>}
         </Card>
       )}
 
-      {/* End of day success state */}
+      {routeUnlocked && !isEndOfDay && pending.length === 0 && (
+        <Card className="mt-5 p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
+      )}
+
+      {/* Today's Progress */}
+      {total > 0 && !isEndOfDay && (
+        <Card className="mt-5 p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's progress</p>
+            <p className="text-base font-semibold tabular-nums">
+              {done}<span className="text-sm font-medium text-muted-foreground"> / {total} done</span>
+            </p>
+          </div>
+          <Progress value={progressPct} className="mt-3 h-2" />
+          <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-sm font-semibold tabular-nums">₹{earnedSoFar.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earned</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold tabular-nums">{mapStats ? `${mapStats.km} km` : "—"}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Left</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Finish by</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Queue — compact rows */}
+      {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
+        <section className="mt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Queue</h2>
+            <span className="text-[11px] text-muted-foreground">{queueStops.length} after next</span>
+          </div>
+          <div className="space-y-2">
+            {queueStops.map((s, idx) => (
+              <QueueRow key={s.id} stop={s} seqNo={(currentSeq ?? 1) + idx + 1} total={total} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* End of day success */}
       {isEndOfDay && (
         <Card className="mt-5 border-[color:var(--success)]/30 bg-[color:var(--success)]/5 p-5 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--success)]/15">
@@ -232,201 +290,273 @@ function RoutePage() {
         </Card>
       )}
 
-      {/* Pending stops */}
-      {!isEndOfDay && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold tracking-tight">
-            Remaining customers {routeUnlocked && pending.length > 0 && <span className="text-muted-foreground">({pending.length})</span>}
-          </h2>
-          <div className="mt-3 space-y-4">
-            {!routeUnlocked && (
-              <Card className="p-6 text-center">
-                <p className="text-sm font-medium">
-                  {overrideMode === "hide"
-                    ? "Route hidden by admin"
-                    : unlockClock
-                    ? `Today's route will be available at ${unlockClock}.`
-                    : "Today's route unlocks soon"}
-                </p>
-                {shiftClock && <p className="mt-1 text-xs text-muted-foreground">Your work starts at {shiftClock}.</p>}
-                {overrideMode !== "hide" && visibilityUnlockAt && unlockMsRemaining > 0 && (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold tabular-nums text-primary">
-                    Unlocks in {countdownLabel}
-                  </p>
-                )}
-                {overrideMode === "hide" && <p className="mt-1 text-xs text-muted-foreground">Contact admin if you need access.</p>}
-              </Card>
-            )}
-            {routeUnlocked && pending.length === 0 && (
-              <Card className="p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
-            )}
-            {routeUnlocked && pending.map((s, idx) => {
-              const isNext = idx === 0;
-              const c = s.customers as any;
-              const v = s.vehicles as any;
-              const gps = { lat: (s as any).lat, lng: (s as any).lng };
-              const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
-              const inProgress = s.status === "in_progress";
-              const seqNo = currentSeq ? currentSeq + idx : (s as any).routeIndex;
-              return (
-                <Card
-                  key={s.id}
-                  className={`overflow-hidden p-0 ${isNext ? "border-2 border-primary bg-[hsl(28_100%_97%)] shadow-[0_14px_36px_-14px_hsl(var(--primary)/0.55)]" : ""}`}
-                >
-                  <ZoomableVehicleImage
-                    path={v?.front_image_path}
-                    className={`${isNext ? "h-28" : "h-24"} w-full`}
-                    alt={`${v?.make} ${v?.model}`}
-                  />
-                  <div className={isNext ? "p-4" : "p-3"}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {isNext && (
-                            <Badge className="bg-primary uppercase tracking-wider text-primary-foreground hover:bg-primary">Next customer</Badge>
-                          )}
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            {seqNo} of {total}
-                          </span>
-                        </div>
-                        <p className={`mt-1.5 truncate font-semibold ${isNext ? "text-lg" : "text-base"}`}>
-                          {c?.full_name ?? "Customer"}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          <Car className="mr-1 inline h-3 w-3" />{v?.make} {v?.model}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">{v?.registration_number}</p>
-                        {(c?.service_required_before || c?.preferred_time) && (
-                          <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                            <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className={`mt-3 grid gap-2 ${isNext ? "grid-cols-[1fr_1fr_1.4fr]" : "grid-cols-3"}`}>
-                      <Button
-                        type="button"
-                        size={isNext ? "default" : "sm"}
-                        variant="outline"
-                        disabled={!navUrl}
-                        onClick={async () => {
-                          await logApkEvidence({
-                            eventType: "navigation_open_attempt",
-                            serviceId: s.id,
-                            assignmentId: (s as any).assignment_id ?? null,
-                            status: navUrl ? "info" : "blocked",
-                            payload: {
-                              destination_lat: gps.lat,
-                              destination_lng: gps.lng,
-                              destination_source: (s as any).destination_source ?? null,
-                              customer_name: c?.full_name ?? null,
-                            },
-                          });
-                          const opened = await openGoogleMapsDirections(gps.lat, gps.lng);
-                          await logApkEvidence({
-                            eventType: "navigation_open_result",
-                            serviceId: s.id,
-                            assignmentId: (s as any).assignment_id ?? null,
-                            status: opened ? "success" : "error",
-                            payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
-                          });
-                        }}
-                        aria-label={navUrl ? "Open Maps" : "Location unavailable"}
-                      >
-                        <Navigation className="mr-1.5 h-4 w-4" />Open Maps
-                      </Button>
-                      <MaskedCallButton serviceId={s.id} size={isNext ? "default" : "sm"} />
-                      <Button asChild size={isNext ? "default" : "sm"} className={isNext ? "bg-primary shadow-sm" : ""}>
-                        <Link to="/app/service/$id" params={{ id: s.id }}>
-                          <Play className="mr-1.5 h-4 w-4" />
-                          {inProgress ? "Resume" : "Start service"}
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Completed today */}
+      {/* Completed — collapsed */}
       {completed.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Completed today</h2>
-          <div className="mt-3 space-y-2">
+        <CollapsibleSection title="Completed" count={completed.length} accent="success" defaultOpen={false}>
+          <div className="space-y-1">
             {completed.map((s) => {
               const c = s.customers as any;
-              const v = s.vehicles as any;
               return (
-                <Card key={s.id} className="flex items-center gap-3 border-l-4 border-l-[color:var(--success)] bg-[color:var(--success)]/5 p-2.5">
-                  <VehicleImage path={v?.front_image_path} className="h-11 w-11 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[color:var(--success)]">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Completed {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                    </p>
+                <div key={s.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-[color:var(--success)]" />
+                    <p className="truncate text-sm">{c?.full_name}</p>
                   </div>
-                </Card>
+                  <p className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                    {s.completed_at && new Date(s.completed_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  </p>
+                </div>
               );
             })}
           </div>
-        </section>
+        </CollapsibleSection>
       )}
 
-      {/* Dirty vehicles today */}
-      {dirty.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Dirty vehicles today</h2>
-          <div className="mt-3 space-y-2">
+      {/* Issues — merged dirty + unavailable, collapsed */}
+      {(dirty.length + unavailable.length) > 0 && (
+        <CollapsibleSection
+          title="Today's issues"
+          count={dirty.length + unavailable.length}
+          accent="warning"
+          defaultOpen={false}
+          subtitle={
+            <span className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              {dirty.length > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-primary" /> Dirty ({dirty.length})
+                </span>
+              )}
+              {unavailable.length > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/60" /> Unavailable ({unavailable.length})
+                </span>
+              )}
+            </span>
+          }
+        >
+          <div className="space-y-1">
             {dirty.map((s) => {
               const c = s.customers as any;
               const v = s.vehicles as any;
               return (
-                <Card key={s.id} className="flex items-center gap-3 border-l-4 border-l-primary bg-primary/5 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary">
-                      <AlertTriangle className="h-3 w-3" /> Dirty · ₹12 credited
-                    </p>
+                <div key={s.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-primary" />
+                    <p className="truncate text-sm">{c?.full_name} <span className="text-muted-foreground">· {v?.make} {v?.model}</span></p>
                   </div>
-                </Card>
+                  <p className="shrink-0 text-[11px] font-medium text-primary">Dirty</p>
+                </div>
               );
             })}
-          </div>
-        </section>
-      )}
-
-      {/* Unavailable today */}
-      {unavailable.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Unavailable today</h2>
-          <div className="mt-3 space-y-2">
             {unavailable.map((s) => {
               const c = s.customers as any;
               const v = s.vehicles as any;
               return (
-                <Card key={s.id} className="flex items-center gap-3 border-l-4 border-l-muted-foreground/40 bg-muted/40 p-3">
-                  <VehicleImage path={v?.front_image_path} className="h-12 w-12 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{c?.full_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{v?.make} {v?.model} · {v?.registration_number}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                      <AlertTriangle className="h-3 w-3" /> Unavailable · ₹12 credited
-                    </p>
+                <div key={s.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <p className="truncate text-sm">{c?.full_name} <span className="text-muted-foreground">· {v?.make} {v?.model}</span></p>
                   </div>
-                </Card>
+                  <p className="shrink-0 text-[11px] font-medium text-muted-foreground">Unavailable</p>
+                </div>
               );
             })}
           </div>
-        </section>
+        </CollapsibleSection>
       )}
     </div>
+  );
+}
+
+function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+  const c = stop.customers as any;
+  const v = stop.vehicles as any;
+  const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
+  const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
+  const inProgress = stop.status === "in_progress";
+  return (
+    <Card className="mt-5 overflow-hidden border-2 border-primary bg-[hsl(28_100%_97%)] p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.6)]">
+      <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Next customer</span>
+        <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
+      </div>
+      <div className="flex items-start gap-3 p-4">
+        <VehicleImage path={v?.front_image_path} className="h-20 w-20 shrink-0 rounded-xl" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
+          <p className="mt-1 truncate text-sm text-foreground/80">
+            <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{v?.registration_number}</p>
+          {(c?.service_required_before || c?.preferred_time) && (
+            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+              <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 border-t border-primary/20 bg-background/60 p-3">
+        <HeroAction
+          icon={<Navigation className="h-5 w-5" />}
+          label="Maps"
+          disabled={!navUrl}
+          onClick={async () => {
+            await logApkEvidence({
+              eventType: "navigation_open_attempt",
+              serviceId: stop.id,
+              assignmentId: stop.assignment_id ?? null,
+              status: navUrl ? "info" : "blocked",
+              payload: { destination_lat: gps.lat, destination_lng: gps.lng, destination_source: stop.destination_source ?? null, customer_name: c?.full_name ?? null },
+            });
+            const opened = await openGoogleMapsDirections(gps.lat, gps.lng);
+            await logApkEvidence({
+              eventType: "navigation_open_result",
+              serviceId: stop.id,
+              assignmentId: stop.assignment_id ?? null,
+              status: opened ? "success" : "error",
+              payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
+            });
+          }}
+        />
+        <HeroCallAction serviceId={stop.id} />
+        <HeroStartAction serviceId={stop.id} inProgress={inProgress} />
+      </div>
+    </Card>
+  );
+}
+
+function HeroAction({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex flex-col items-center justify-center gap-1 rounded-lg border border-border/60 bg-background px-2 py-2.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-50"
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function HeroCallAction({ serviceId }: { serviceId: string }) {
+  const call = useServerFn(initiateMaskedCall);
+  const [loading, setLoading] = useState(false);
+  const onClick = async () => {
+    setLoading(true);
+    try {
+      const r = await call({ data: { service_id: serviceId } });
+      toast.success(r.message ?? "Connecting...");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not place call");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <HeroAction
+      icon={loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
+      label="Call"
+      onClick={onClick}
+    />
+  );
+}
+
+function HeroStartAction({ serviceId, inProgress }: { serviceId: string; inProgress: boolean }) {
+  return (
+    <Link
+      to="/app/service/$id"
+      params={{ id: serviceId }}
+      className="flex flex-col items-center justify-center gap-1 rounded-lg bg-primary px-2 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+    >
+      <Play className="h-5 w-5" />
+      <span>{inProgress ? "Resume" : "Start"}</span>
+    </Link>
+  );
+}
+
+function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+  const c = stop.customers as any;
+  const v = stop.vehicles as any;
+  const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
+  const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
+  const inProgress = stop.status === "in_progress";
+  return (
+    <Card className="flex items-center gap-3 p-2.5">
+      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-xs font-bold tabular-nums text-muted-foreground">
+        {seqNo}
+      </div>
+      <VehicleImage path={v?.front_image_path} className="h-11 w-11 shrink-0 rounded-md" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{c?.full_name ?? "Customer"}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
+          {v?.make} {v?.model} · {v?.registration_number}
+        </p>
+        {(c?.service_required_before || c?.preferred_time) && (
+          <p className="mt-0.5 truncate text-[10px] text-primary">
+            Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
+          </p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          disabled={!navUrl}
+          onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
+          className="grid h-9 w-9 place-items-center rounded-md border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
+          aria-label="Open maps"
+        >
+          <Navigation className="h-4 w-4" />
+        </button>
+        <Link
+          to="/app/service/$id"
+          params={{ id: stop.id }}
+          className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          aria-label={inProgress ? "Resume service" : "Start service"}
+        >
+          <Play className="h-4 w-4" />
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  count,
+  children,
+  defaultOpen,
+  accent,
+  subtitle,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  accent?: "success" | "warning";
+  subtitle?: React.ReactNode;
+}) {
+  const dot =
+    accent === "success"
+      ? "bg-[color:var(--success)]"
+      : accent === "warning"
+      ? "bg-primary"
+      : "bg-muted-foreground";
+  return (
+    <details className="group mt-4 rounded-lg border border-border/60 bg-background" open={defaultOpen}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+          <p className="text-sm font-semibold">{title}</p>
+          <span className="text-xs text-muted-foreground">({count})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {subtitle}
+          <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">▾</span>
+        </div>
+      </summary>
+      <div className="border-t border-border/60 px-2 py-2">{children}</div>
+    </details>
   );
 }
 
