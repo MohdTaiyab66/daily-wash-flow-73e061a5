@@ -381,27 +381,34 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   return (
-    <Card className="mt-5 overflow-hidden border-2 border-primary bg-[hsl(28_100%_97%)] p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.6)]">
+    <Card className="mt-5 overflow-hidden border border-border bg-background p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.35)]">
       <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Serve next</span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
       <div className="flex items-start gap-3 p-4">
-        <TappableVehicleImage
-          path={v?.front_image_path}
-          className="h-[80px] w-[80px] shrink-0 rounded-xl"
-          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
-          customerName={c?.full_name}
-          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
-          registration={v?.registration_number}
-        />
+        <div className="relative shrink-0">
+          <TappableVehicleImage
+            path={v?.front_image_path}
+            className="h-[80px] w-[80px] rounded-xl"
+            alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+            customerName={c?.full_name}
+            vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+            registration={v?.registration_number}
+          />
+          {v?.front_image_path && (
+            <span className="pointer-events-none absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-white shadow">
+              <ZoomIn className="h-3 w-3" />
+            </span>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
           <p className="mt-1 truncate text-sm text-foreground/80">
             <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
           </p>
           {v?.registration_number && (
-            <span className="mt-1 inline-block rounded-md border-2 border-foreground/80 bg-yellow-50 px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-foreground">
+            <span className="mt-1 inline-block rounded-md border border-foreground/70 bg-yellow-50 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-foreground">
               {v.registration_number}
             </span>
           )}
@@ -412,7 +419,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-primary/20 bg-background/60 p-3">
+      <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-border/60 bg-muted/20 p-3">
         <IconAction
           icon={<Navigation className="h-5 w-5" />}
           ariaLabel="Open maps"
