@@ -47,7 +47,7 @@ function loadGoogleMaps(): Promise<void> {
   return window.__lovableMapReady;
 }
 
-export function LiveMap({ stops, showCustomers }: { stops: Stop[]; showCustomers: boolean }) {
+export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
