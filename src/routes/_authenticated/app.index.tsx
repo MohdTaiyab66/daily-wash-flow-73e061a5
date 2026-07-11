@@ -144,7 +144,7 @@ function HomePage() {
           {firstName}
         </h1>
         {!assignment && total === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">Ready to start earning today?</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ready to build your first route?</p>
         ) : null}
       </header>
 
