@@ -379,7 +379,7 @@ function HomePage() {
 
           {/* Benefits chips */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {["Flexible Hours", "Weekly Payout", "Daily Earnings", "No Fixed Shift"].map((b) => (
+            {["Flexible Hours", "Weekly Payout", "Daily Income", "No Fixed Schedule"].map((b) => (
               <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
                 ✓ {b}
               </span>
