@@ -326,18 +326,124 @@ function HomePage() {
           </div>
         </Card>
       ) : (
-        <Card className="mt-6 flex flex-col items-center gap-3 p-8 text-center">
-          <Briefcase className="h-6 w-6 text-muted-foreground" />
-          <div>
-            <p className="font-medium">No active assignment</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Build your own assignment — choose cars and duration.
+        <>
+          {/* Hero onboarding card */}
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground p-6 text-background">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 text-primary">
+              <RouteIcon className="h-8 w-8" />
+            </div>
+            <p className="mt-3 text-center text-xl font-bold">No Assignment Yet</p>
+            <p className="mt-1 text-center text-sm text-background/70">
+              Let's create your first route. We'll calculate customers, earnings and route based on your availability.
             </p>
+
+            <Button
+              asChild
+              size="lg"
+              className="mt-5 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+            >
+              <Link to="/app/assignments">
+                <Car className="mr-2 h-5 w-5" />
+                Create Today's Route
+              </Link>
+            </Button>
+
+            {/* Today's Potential */}
+            <div className="mt-5 rounded-2xl bg-background/5 p-4">
+              <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
+                Today's Potential
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="flex items-center justify-center text-lg font-bold text-primary">
+                    <IndianRupee className="h-4 w-4" />
+                    350–600
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-background/60">Earnings</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">20–35</p>
+                  <p className="mt-0.5 text-[10px] text-background/60">Cars</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">3–5h</p>
+                  <p className="mt-0.5 text-[10px] text-background/60">Hours</p>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[10px] text-background/50">
+                ≈ ₹17 per vehicle · varies by area
+              </p>
+            </div>
+          </Card>
+
+          {/* Benefits chips */}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {["Flexible Hours", "Weekly Payout", "Daily Earnings", "No Fixed Shift"].map((b) => (
+              <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                ✓ {b}
+              </span>
+            ))}
           </div>
-          <Button asChild>
-            <Link to="/app/assignments">Build assignment</Link>
-          </Button>
-        </Card>
+
+          {/* Journey timeline */}
+          <Card className="mt-4 p-4">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Your Journey Today
+            </p>
+            <ol className="mt-3 space-y-2.5">
+              {[
+                { n: 1, label: "Create Assignment", icon: RouteIcon },
+                { n: 2, label: "Receive Customers", icon: Car },
+                { n: 3, label: "Complete Services", icon: CheckCircle2 },
+                { n: 4, label: "Get Paid", icon: Wallet },
+              ].map((s) => {
+                const Icon = s.icon;
+                return (
+                  <li key={s.n} className="flex items-center gap-3">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {s.n}
+                    </span>
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">{s.label}</p>
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+
+          {/* Help card */}
+          <Card className="mt-4 p-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">Need help?</p>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <a
+                href="tel:+919999999999"
+                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
+              >
+                <Phone className="h-4 w-4 text-primary" />
+                <span className="text-[11px] font-medium">Support</span>
+              </a>
+              <a
+                href="https://wa.me/919999999999"
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
+              >
+                <MessageCircle className="h-4 w-4 text-primary" />
+                <span className="text-[11px] font-medium">WhatsApp</span>
+              </a>
+              <Link
+                to="/app/training"
+                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
+              >
+                <BookOpen className="h-4 w-4 text-primary" />
+                <span className="text-[11px] font-medium">Training</span>
+              </Link>
+            </div>
+          </Card>
+        </>
       )}
 
       {/* Today's Stats — the 3 that matter each morning */}
