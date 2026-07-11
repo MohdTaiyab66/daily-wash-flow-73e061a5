@@ -582,37 +582,62 @@ function AssignmentsPage() {
         </Card>
       </button>
 
-      {/* Sticky CTA — dynamic */}
+      {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
-          <Button
-            size="lg"
-            className="h-auto w-full py-3"
-            variant={fullyAvailable ? "default" : "secondary"}
-            disabled={accept.isPending || !fullyAvailable}
-            onClick={() => fullyAvailable && accept.mutate(cars)}
-          >
-            {accept.isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…</>
-            ) : isFetching && !preview ? (
-              "Checking customers…"
-            ) : noneAvailable ? (
+          {accept.isPending ? (
+            <Button size="lg" className="h-auto w-full py-3" disabled>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
+            </Button>
+          ) : isFetching && !preview ? (
+            <Button size="lg" className="h-auto w-full py-3" variant="secondary" disabled>
+              Checking customers…
+            </Button>
+          ) : noneAvailable ? (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              disabled={toggleNotify.isPending || partner.notify_when_customers_added}
+              onClick={() => toggleNotify.mutate(true)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">Searching nearby…</span>
-                <span className="text-[11px] font-normal opacity-80">We'll notify you when routes appear</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <BellRing className="h-4 w-4" />
+                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
+                </span>
+                <span className="text-[11px] font-normal opacity-90">Searching nearby in {partner.home_area}</span>
               </span>
-            ) : partialAvailable ? (
+            </Button>
+          ) : partialAvailable ? (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              onClick={() => accept.mutate(availableInArea)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">{availableInArea} of {cars} available</span>
-                <span className="text-[11px] font-normal opacity-80">See options above</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+                <span className="text-[11px] font-normal opacity-90">More customers may join as the morning starts</span>
               </span>
-            ) : (
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              onClick={() => accept.mutate(cars)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">{cars} Customers Found · Create Route</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4" />
+                  Start Route · {cars} Customers
+                  <ArrowRight className="h-4 w-4" />
+                </span>
                 <span className="text-[11px] font-normal opacity-90">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")} take-home · {formatTime12(startTime)}</span>
               </span>
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </div>
