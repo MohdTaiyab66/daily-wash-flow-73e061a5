@@ -9,13 +9,48 @@ import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
   AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
+  ArrowRight, Sparkles, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+
+// Small tween hook so estimates animate as sliders move — feels premium.
+function useAnimatedNumber(value: number, duration = 380) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+  const startRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = display;
+    fromRef.current = from;
+    startRef.current = null;
+    let raf = 0;
+    const step = (t: number) => {
+      if (startRef.current == null) startRef.current = t;
+      const p = Math.min(1, (t - startRef.current) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (value - from) * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return display;
+}
+
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
+  const span = max - min;
+  const recoLo = min + span * 0.28;
+  const recoHi = min + span * 0.52;
+  if (days <= min + span * 0.15) return { label: "Flexible", tone: "flex" };
+  if (days >= min + span * 0.75) return { label: "Maximum Priority", tone: "max" };
+  if (days >= recoLo && days <= recoHi) return { label: "⭐ Recommended", tone: "reco" };
+  return { label: "Consistent", tone: "reco" };
+}
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
@@ -285,6 +320,10 @@ function AssignmentsPage() {
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
+  const avgMinPerCustomer = Math.max(1, Math.round((hours * 60) / Math.max(1, cars)));
+  const animCars = useAnimatedNumber(cars);
+  const animEarn = useAnimatedNumber(dailyEarn);
+  const commitment = commitmentLabel(duration, minDays, maxDays);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
@@ -310,23 +349,34 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-3">
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. customers</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums">{cars}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums">{animCars}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums">~{estKm}<span className="ml-0.5 text-xs font-normal text-muted-foreground">km</span></p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. earnings</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{dailyEarn.toLocaleString("en-IN")}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">Based on today's demand in your area.</p>
+        <p className="mt-2 text-[10px] text-muted-foreground">Live estimate based on current bookings.</p>
       </Card>
 
       {/* Duration slider — Commitment framing */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
+            <p className={`mt-1 text-[11px] font-medium ${
+              commitment.tone === "max" ? "text-primary"
+              : commitment.tone === "reco" ? "text-[color:var(--success)]"
+              : "text-muted-foreground"
+            }`}>{commitment.label}</p>
+          </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -349,6 +399,7 @@ function AssignmentsPage() {
           <SummaryRow icon={<Clock className="h-4 w-4" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
           <SummaryRow icon={<CheckCircle2 className="h-4 w-4" />} label="Customers" value={`${cars}`} />
           <SummaryRow icon={<RouteIcon className="h-4 w-4" />} label="Distance" value={`~${estKm} km`} />
+          <SummaryRow icon={<Timer className="h-4 w-4" />} label="Per customer" value={`~${avgMinPerCustomer} min`} />
         </div>
         <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
           <div className="flex items-center justify-between">
@@ -392,7 +443,7 @@ function AssignmentsPage() {
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Your route is growing 🚀</p>
+                  <p className="text-sm font-semibold">More customers are coming 🚀</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {availableInArea} of your target {cars} customers available today.
                   </p>
@@ -444,19 +495,25 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Monthly forecast — simplified */}
+      {/* Monthly forecast — number-forward layout */}
       <Card className="mt-3 p-5">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly estimate</p>
         </div>
-        <div className="mt-3 space-y-1.5 text-sm">
-          <div className="flex items-center justify-between"><span className="text-muted-foreground">Working days</span><span className="font-medium tabular-nums">{monthlyWorkingDays}</span></div>
-          <div className="flex items-center justify-between"><span className="text-muted-foreground">Services</span><span className="font-medium tabular-nums">{monthlyCars.toLocaleString("en-IN")}</span></div>
-          <div className="mt-2 flex items-end justify-between border-t border-border pt-2">
-            <span className="text-sm font-semibold">Earnings</span>
-            <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-2xl font-bold tabular-nums">{monthlyWorkingDays}</p>
+            <p className="text-[11px] text-muted-foreground">Working days</p>
           </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums">{monthlyCars.toLocaleString("en-IN")}</p>
+            <p className="text-[11px] text-muted-foreground">Services</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
+          <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
         </div>
       </Card>
 
@@ -497,52 +554,90 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — info card */}
-      <Card className="mt-3 p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
-            <IndianRupee className="h-4 w-4 text-primary" />
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">First payout</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Your first week's earnings are securely held and released after your first 15 active service days.
-            </p>
+      {/* First payout — tappable info card */}
+      <button
+        type="button"
+        onClick={() => toast.message("First payout", {
+          description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
+        })}
+        className="mt-3 block w-full text-left"
+      >
+        <Card className="p-4 transition-colors hover:bg-accent/40">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
+              <IndianRupee className="h-4 w-4 text-primary" />
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">First payout</p>
+                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary">
+                  Learn more <ArrowRight className="h-3 w-3" />
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your first week's earnings are securely held and released after your first 15 active service days.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </button>
 
-      {/* Sticky CTA — dynamic */}
+      {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
-          <Button
-            size="lg"
-            className="h-auto w-full py-3"
-            variant={fullyAvailable ? "default" : "secondary"}
-            disabled={accept.isPending || !fullyAvailable}
-            onClick={() => fullyAvailable && accept.mutate(cars)}
-          >
-            {accept.isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…</>
-            ) : isFetching && !preview ? (
-              "Checking customers…"
-            ) : noneAvailable ? (
+          {accept.isPending ? (
+            <Button size="lg" className="h-auto w-full py-3" disabled>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
+            </Button>
+          ) : isFetching && !preview ? (
+            <Button size="lg" className="h-auto w-full py-3" variant="secondary" disabled>
+              Checking customers…
+            </Button>
+          ) : noneAvailable ? (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              disabled={toggleNotify.isPending || partner.notify_when_customers_added}
+              onClick={() => toggleNotify.mutate(true)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">Searching nearby…</span>
-                <span className="text-[11px] font-normal opacity-80">We'll notify you when routes appear</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <BellRing className="h-4 w-4" />
+                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
+                </span>
+                <span className="text-[11px] font-normal opacity-90">Searching nearby in {partner.home_area}</span>
               </span>
-            ) : partialAvailable ? (
+            </Button>
+          ) : partialAvailable ? (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              onClick={() => accept.mutate(availableInArea)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">{availableInArea} of {cars} available</span>
-                <span className="text-[11px] font-normal opacity-80">See options above</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+                <span className="text-[11px] font-normal opacity-90">More customers may join as the morning starts</span>
               </span>
-            ) : (
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="h-auto w-full py-3"
+              onClick={() => accept.mutate(cars)}
+            >
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">{cars} Customers Found · Create Route</span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4" />
+                  Start Route · {cars} Customers
+                  <ArrowRight className="h-4 w-4" />
+                </span>
                 <span className="text-[11px] font-normal opacity-90">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")} take-home · {formatTime12(startTime)}</span>
               </span>
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </div>
