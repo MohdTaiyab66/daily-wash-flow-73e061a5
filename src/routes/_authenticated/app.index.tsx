@@ -378,16 +378,16 @@ function HomePage() {
           </Card>
 
           {/* Benefits chips */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-5 grid grid-cols-2 gap-1.5">
             {["Flexible Hours", "Weekly Payout", "Daily Income", "No Fixed Schedule"].map((b) => (
-              <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+              <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-center text-[11px] font-medium text-muted-foreground">
                 ✓ {b}
               </span>
             ))}
           </div>
 
           {/* Journey timeline */}
-          <Card className="mt-4 p-4">
+          <Card className="mt-5 p-4">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Your Journey Today
             </p>
@@ -395,7 +395,7 @@ function HomePage() {
               {/* connecting vertical line */}
               <span
                 aria-hidden
-                className="absolute left-[13px] top-3 bottom-3 w-px bg-border"
+                className="absolute left-[11px] top-3 bottom-3 w-px bg-border/60"
               />
               {[
                 { n: 1, label: "Create Assignment", icon: RouteIcon },
@@ -406,7 +406,7 @@ function HomePage() {
                 const Icon = s.icon;
                 return (
                   <li key={s.n} className="relative flex items-center gap-3">
-                    <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-4 ring-card">
+                    <span className="relative z-10 grid h-[22px] w-[22px] place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary ring-4 ring-card">
                       {s.n}
                     </span>
                     <Icon className="h-4 w-4 text-muted-foreground" />
@@ -418,7 +418,7 @@ function HomePage() {
           </Card>
 
           {/* Help card */}
-          <Card className="mt-4 p-4">
+          <Card className="mt-5 p-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold">Need help?</p>
@@ -428,7 +428,9 @@ function HomePage() {
                 href="tel:+919999999999"
                 className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
               >
-                <Phone className="h-4 w-4 text-primary" />
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10">
+                  <Phone className="h-4 w-4 text-primary" />
+                </span>
                 <span className="text-[11px] font-medium">Support</span>
                 <span className="text-[10px] text-muted-foreground">Call our team</span>
               </a>
@@ -438,7 +440,9 @@ function HomePage() {
                 rel="noreferrer"
                 className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
               >
-                <MessageCircle className="h-4 w-4 text-primary" />
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--success)]/15">
+                  <MessageCircle className="h-4 w-4 text-[color:var(--success)]" />
+                </span>
                 <span className="text-[11px] font-medium">WhatsApp</span>
                 <span className="text-[10px] text-muted-foreground">Quick chat</span>
               </a>
@@ -446,10 +450,25 @@ function HomePage() {
                 to="/app/training"
                 className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
               >
-                <BookOpen className="h-4 w-4 text-primary" />
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/15">
+                  <BookOpen className="h-4 w-4 text-sky-500" />
+                </span>
                 <span className="text-[11px] font-medium">Training</span>
                 <span className="text-[10px] text-muted-foreground">Learn the app</span>
               </Link>
+            </div>
+          </Card>
+
+          {/* Community trust card */}
+          <Card className="mt-5 flex items-center gap-3 p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10">
+              <Star className="h-5 w-5 text-primary" fill="currentColor" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold">Urban Wash Community</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground">4.9 ★</span> avg rating · <span className="font-semibold text-foreground">12,483</span> services this week
+              </p>
             </div>
           </Card>
         </>
