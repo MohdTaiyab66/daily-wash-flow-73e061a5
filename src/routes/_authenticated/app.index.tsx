@@ -371,7 +371,7 @@ function HomePage() {
                   <p className="mt-0.5 text-[10px] text-background/60">Hours</p>
                 </div>
               </div>
-              <p className="mt-2 text-center text-[10px] text-background/50">
+              <p className="mt-2 text-center text-[9px] text-background/50">
                 ≈ ₹17 per vehicle · varies by area
               </p>
             </div>
