@@ -320,6 +320,10 @@ function AssignmentsPage() {
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
+  const avgMinPerCustomer = Math.max(1, Math.round((hours * 60) / Math.max(1, cars)));
+  const animCars = useAnimatedNumber(cars);
+  const animEarn = useAnimatedNumber(dailyEarn);
+  const commitment = commitmentLabel(duration, minDays, maxDays);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
