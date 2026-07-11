@@ -332,9 +332,9 @@ function HomePage() {
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary">
               <RouteIcon className="h-7 w-7" />
             </div>
-            <p className="mt-3 text-center text-xl font-bold">No Assignment Yet</p>
+            <p className="mt-3 text-center text-xl font-bold">Ready for today's route?</p>
             <p className="mt-1 text-center text-sm text-background/70">
-              Let's create your first route. We'll calculate customers, earnings and route based on your availability.
+              Let's build it together. We'll calculate customers, earnings and route based on your availability.
             </p>
 
             <Button
@@ -345,7 +345,7 @@ function HomePage() {
               <Link to="/app/assignments">
                 <Car className="mr-2 h-5 w-5" />
                 Create Today's Route
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-4 h-4 w-4" />
               </Link>
             </Button>
 
