@@ -460,10 +460,11 @@ function HomePage() {
           value={Number(partner?.rating ?? 5).toFixed(2)}
         />
         <MiniStat
-          icon={<Clock className="h-4 w-4" />}
-          label="Hours"
-          value={`${hours}h`}
+          icon={<Car className="h-4 w-4" />}
+          label="Today's Cars"
+          value={String(completed)}
         />
+
       </div>
     </div>
   );
