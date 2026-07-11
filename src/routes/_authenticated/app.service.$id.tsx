@@ -375,9 +375,12 @@ function ServiceDetail() {
         >
           <VehicleImage path={v?.front_image_path} className="h-56 w-full" alt={`${v?.make ?? ""} ${v?.model ?? ""}`} />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-2 pt-8">
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-white/90">
-              <Camera className="h-3 w-3" /> Reference photo
-            </span>
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/95">
+                <Camera className="h-3 w-3" /> Reference photo
+              </span>
+              <p className="text-[10px] leading-tight text-white/75">Uploaded by customer</p>
+            </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
               <ZoomIn className="h-3 w-3" /> Tap to zoom
             </span>
