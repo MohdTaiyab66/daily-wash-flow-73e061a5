@@ -1262,7 +1262,7 @@ function UnavailableSection({
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
       >
         <span className="inline-flex items-center gap-2 text-sm font-semibold">
-          <XCircle className="h-4 w-4" /> Can't complete this service
+          <XCircle className="h-4 w-4" /> Need help?
           {visibleCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{UNAVAILABLE_REQUIRED} uploaded</span>}
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -1460,7 +1460,7 @@ function DirtyVehicleSection({
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
       >
         <span className="inline-flex items-center gap-2 text-sm font-semibold">
-          <AlertTriangle className="h-4 w-4" /> Report dirty vehicle
+          <AlertTriangle className="h-4 w-4" /> Vehicle needs attention
           {visibleCount > 0 && <span className="text-xs text-muted-foreground">· {capturedCount}/{DIRTY_ANGLES.length} uploaded</span>}
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
