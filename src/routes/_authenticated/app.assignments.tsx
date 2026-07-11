@@ -345,23 +345,34 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-3">
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. customers</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums">{cars}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums">{animCars}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums">~{estKm}<span className="ml-0.5 text-xs font-normal text-muted-foreground">km</span></p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. earnings</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{dailyEarn.toLocaleString("en-IN")}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">Based on today's demand in your area.</p>
+        <p className="mt-2 text-[10px] text-muted-foreground">Live estimate based on current bookings.</p>
       </Card>
 
       {/* Duration slider — Commitment framing */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
+            <p className={`mt-1 text-[11px] font-medium ${
+              commitment.tone === "max" ? "text-primary"
+              : commitment.tone === "reco" ? "text-[color:var(--success)]"
+              : "text-muted-foreground"
+            }`}>{commitment.label}</p>
+          </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -384,6 +395,7 @@ function AssignmentsPage() {
           <SummaryRow icon={<Clock className="h-4 w-4" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
           <SummaryRow icon={<CheckCircle2 className="h-4 w-4" />} label="Customers" value={`${cars}`} />
           <SummaryRow icon={<RouteIcon className="h-4 w-4" />} label="Distance" value={`~${estKm} km`} />
+          <SummaryRow icon={<Timer className="h-4 w-4" />} label="Per customer" value={`~${avgMinPerCustomer} min`} />
         </div>
         <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
           <div className="flex items-center justify-between">
