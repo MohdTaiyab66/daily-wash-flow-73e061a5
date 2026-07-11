@@ -519,7 +519,7 @@ function ServiceDetail() {
         return (
           <>
             {/* Service checklist header */}
-            <div className="mt-5 flex items-center justify-between">
+            <div className="mt-6 flex items-center justify-between">
               <h2 className="text-sm font-bold uppercase tracking-wider">Service checklist</h2>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground">
                 {doneCount}/{stepStatus.length}
@@ -535,6 +535,13 @@ function ServiceDetail() {
               {allDone ? "All photos captured — ready to complete" : `${stepStatus.length - doneCount} photo${stepStatus.length - doneCount === 1 ? "" : "s"} remaining · camera only`}
             </p>
 
+            {/* Photo guidance tip */}
+            {service.status === "in_progress" && !allDone && (
+              <p className="mt-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+                💡 Capture clear, well-lit photos. Keep the full vehicle visible.
+              </p>
+            )}
+
             {/* Guided steps */}
             {service.status === "in_progress" && (
               <div className="mt-3 space-y-2.5">
@@ -547,24 +554,25 @@ function ServiceDetail() {
                       ? "guided-active"
                       : "guided-locked";
                   return (
-                    <PhotoSlot
-                      key={s.key}
-                      serviceId={id}
-                      assignmentId={(service as any)?.assignment_id ?? null}
-                      stage={s.stage}
-                      angle={s.angle}
-                      slotId={s.key === "before" ? "before" : s.angle}
-                      done={s.done}
-                      onUploaded={() => refetchPhotos()}
-                      label={s.label}
-                      variant={variant as any}
-                      stepNumber={i + 1}
-                      thumbPath={pathFor(s.stage, s.angle)}
-                      hint={s.hint}
-                      autoOpen={s.key === "before" && autoOpenBefore && !s.done}
-                      onAutoOpenConsumed={() => setAutoOpenBefore(false)}
-                      disabled={isLocked}
-                    />
+                    <div key={s.key} ref={isActive ? activeStepRef : undefined}>
+                      <PhotoSlot
+                        serviceId={id}
+                        assignmentId={(service as any)?.assignment_id ?? null}
+                        stage={s.stage}
+                        angle={s.angle}
+                        slotId={s.key === "before" ? "before" : s.angle}
+                        done={s.done}
+                        onUploaded={() => refetchPhotos()}
+                        label={s.label}
+                        variant={variant as any}
+                        stepNumber={i + 1}
+                        thumbPath={pathFor(s.stage, s.angle)}
+                        hint={s.hint}
+                        autoOpen={s.key === "before" && autoOpenBefore && !s.done}
+                        onAutoOpenConsumed={() => setAutoOpenBefore(false)}
+                        disabled={isLocked}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -593,20 +601,20 @@ function ServiceDetail() {
               </div>
             )}
 
-            {/* Timer + notes — compact */}
-            <Card className="mt-4 p-3.5">
+            {/* Timer + notes — bolder */}
+            <Card className="mt-4 p-4">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" /> Service time
+                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Clock className="h-4 w-4" /> Service time
                 </span>
-                <span className="text-lg font-bold tabular-nums">{elapsedLabel}</span>
+                <span className="text-2xl font-extrabold tabular-nums tracking-tight">{elapsedLabel}</span>
               </div>
               {service.status === "in_progress" && (
                 <Textarea
-                  placeholder="Optional notes for admin/customer…"
+                  placeholder="Customer requested… · Parking issue… · Scratches noticed…"
                   value={serviceNotes}
                   onChange={(e) => setServiceNotes(e.target.value)}
-                  className="mt-2.5 min-h-[60px] text-sm"
+                  className="mt-3 min-h-[60px] text-sm"
                 />
               )}
             </Card>
@@ -619,11 +627,31 @@ function ServiceDetail() {
               </div>
             )}
 
-            {/* Sticky Complete Service bar */}
+            {/* Sticky Complete Service progress-button */}
             {service.status === "in_progress" && (
               <div className="fixed inset-x-0 bottom-16 z-40 pointer-events-none px-5">
                 <div className="pointer-events-auto mx-auto max-w-md">
-                  <div className="rounded-2xl border border-border bg-background/95 p-2 shadow-[0_18px_44px_-18px_rgba(0,0,0,0.35)] backdrop-blur">
+                  <div className="rounded-2xl border border-border bg-background/95 p-2.5 shadow-[0_18px_44px_-18px_rgba(0,0,0,0.35)] backdrop-blur">
+                    {/* Pip progress row */}
+                    <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                      <div className="flex items-center gap-1">
+                        {stepStatus.map((s, i) => (
+                          <span
+                            key={s.key}
+                            className={`h-2 w-6 rounded-full transition-colors ${
+                              s.done
+                                ? "bg-[color:var(--success)]"
+                                : i === activeIdx
+                                  ? "bg-primary/60 animate-pulse"
+                                  : "bg-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+                        {allDone ? "✓ Ready" : `${doneCount} / ${stepStatus.length} photos`}
+                      </span>
+                    </div>
                     <Button
                       size="lg"
                       className={`h-14 w-full text-base font-semibold ${allDone ? "shadow-[0_14px_36px_-12px_hsl(var(--primary)/0.7)]" : ""}`}
@@ -631,7 +659,7 @@ function ServiceDetail() {
                       onClick={() => complete.mutate()}
                     >
                       {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {allDone ? "Complete service · ₹17" : `${doneCount}/${stepStatus.length} photos captured`}
+                      {allDone ? "Complete service · ₹17" : "Complete service"}
                     </Button>
                   </div>
                 </div>
