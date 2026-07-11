@@ -7,8 +7,8 @@ import { Slider } from "@/components/ui/slider";
 // Checkbox no longer used after Working Days removal.
 import { Progress } from "@/components/ui/progress";
 import {
-  Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon, Star,
+  Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
@@ -284,63 +284,91 @@ function AssignmentsPage() {
   const noneAvailable = preview && availableInArea === 0;
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
 
+  const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Choose how many hours you'd like to work each day. We'll automatically calculate your customers, route and earnings.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Build Today's Route</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Choose your working hours. We'll build the best route automatically.
+          </p>
         </div>
-        <Link to="/app/area" className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
+        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
           <MapPin className="h-3 w-3" />{partner.home_area}
         </Link>
       </div>
 
-      {/* Hours slider */}
+      {/* Hours slider — with live estimates */}
       <Card className="mt-5 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Hours per day</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Work today</p>
           <p className="text-3xl font-semibold tracking-tight">{hours}<span className="ml-1 text-base text-muted-foreground">Hours</span></p>
         </div>
         <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-          <span>{minHours} Hours</span><span>{maxHours} Hours</span>
+          <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. customers</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums">{cars}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Est. earnings</p>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{dailyEarn.toLocaleString("en-IN")}</p>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">Based on today's demand in your area.</p>
       </Card>
 
-      {/* Duration slider — working days (Mondays are the weekly off) */}
+      {/* Duration slider — Commitment framing */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Assignment duration</p>
-          <p className="text-3xl font-semibold tracking-tight">{duration} <span className="text-base text-muted-foreground">Working Days</span></p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
+          <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Weekly payout</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Priority customers</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Consistent route</span>
         </div>
         <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} Working Days</span><span>{maxDays} Working Days</span></div>
-        <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s are the weekly off. Duration counts only actual service days.</p>
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
+        <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s off. Duration counts only actual service days.</p>
       </Card>
 
-      {/* Today's plan */}
+      {/* Today's Route — clean summary card */}
       <Card className="mt-4 border-0 bg-foreground p-5 text-background">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-wider text-background/60">Today's plan</p>
+          <p className="text-[10px] uppercase tracking-wider text-background/60">Today's Route</p>
           {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          <Stat icon={<Clock className="h-3 w-3" />} label="Working hours" value={`${hours} Hours`} />
-          <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Cars" value={String(cars)} />
-          <Stat icon={<Sun className="h-3 w-3" />} label="Start" value={formatTime12(startTime)} />
-          <Stat icon={<Clock className="h-3 w-3" />} label="Finish" value={formatTime12(finishTime)} />
+        <div className="mt-3 space-y-2.5 text-sm">
+          <SummaryRow icon={<Clock className="h-4 w-4" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
+          <SummaryRow icon={<CheckCircle2 className="h-4 w-4" />} label="Customers" value={`${cars}`} />
+          <SummaryRow icon={<RouteIcon className="h-4 w-4" />} label="Distance" value={`~${estKm} km`} />
         </div>
         <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
-          <Row label="Estimated earnings" value={`₹${dailyEarn.toLocaleString("en-IN")}`} />
+          <div className="flex items-center justify-between">
+            <span className="text-background/70">+ Earnings</span>
+            <span className="tabular-nums text-[color:var(--success)]">₹{dailyEarn.toLocaleString("en-IN")}</span>
+          </div>
           {fuelEnabled && (
-            <>
-              <Row label="Estimated fuel cost" value={`− ₹${dailyFuel.toLocaleString("en-IN")}`} muted />
-              <Row label="Estimated net earnings" value={`₹${dailyNet.toLocaleString("en-IN")}`} bold />
-              <p className="pt-1 text-[10px] italic text-background/50">
-                *Fuel estimate based on {avgMileage} km/L average bike mileage.
-              </p>
-            </>
+            <div className="flex items-center justify-between">
+              <span className="text-background/70">− Fuel</span>
+              <span className="tabular-nums text-background/60">₹{dailyFuel.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+          <div className="mt-2 flex items-end justify-between border-t border-background/10 pt-2">
+            <span className="text-xs uppercase tracking-wider text-background/60">You'll take home</span>
+            <span className="text-3xl font-bold tabular-nums text-primary">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")}</span>
+          </div>
+          {fuelEnabled && (
+            <p className="pt-1 text-[10px] italic text-background/50">
+              *Fuel estimate based on {avgMileage} km/L average bike mileage.
+            </p>
           )}
         </div>
       </Card>
@@ -351,29 +379,24 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Capacity awareness */}
+      {/* Availability — optimistic framing */}
       {preview && (
-        <Card className={`mt-3 p-5 ${fullyAvailable ? "border-success/40 bg-success/5" : noneAvailable ? "border-destructive/40 bg-destructive/5" : "border-warning/40 bg-warning/5"}`}>
+        <Card className={`mt-3 p-5 ${fullyAvailable ? "border-success/40 bg-success/5" : "border-warning/40 bg-warning/5"}`}>
           {fullyAvailable ? (
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="h-4 w-4 text-success" />
-              <p><span className="font-semibold">Available today</span> · {cars} cars ready in {partner.home_area}</p>
+              <p><span className="font-semibold">{cars} customers found</span> in {partner.home_area}</p>
             </div>
           ) : partialAvailable ? (
             <div>
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Your Route is Growing 🚀</p>
+                  <p className="text-sm font-semibold">Your route is growing 🚀</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of your target {cars} Daily Shine customers are available today.
+                    {availableInArea} of your target {cars} customers available today.
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                <MiniStat label="Today" value={`${availableInArea}`} />
-                <MiniStat label="Target" value={`${cars}`} />
-                <MiniStat label="Today ₹" value={`₹${acceptableEarn.toLocaleString("en-IN")}`} />
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
@@ -381,127 +404,91 @@ function AssignmentsPage() {
                 </div>
                 <Progress value={growthPct} className="mt-1.5 h-2" />
               </div>
-              <p className="mt-3 rounded-lg bg-background/50 p-3 text-xs text-muted-foreground">
-                We'll automatically add more customers as your area grows — keep your schedule active.
-              </p>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2">
-              <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
-              <div>
-                <p className="text-sm font-semibold">Today's Route</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  No Daily Shine customers are available in {partner.home_area} yet. We'll automatically add customers as your area grows.
-                </p>
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Working days card removed — Urban Wash schedules 6 days/week with Monday as a fixed weekly off. */}
-
-      {/* Monthly forecast */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly forecast</p>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-y-2 text-sm">
-          <span className="text-muted-foreground">Working days</span><span className="text-right font-medium">{monthlyWorkingDays}</span>
-          <span className="text-muted-foreground">Hours per day</span><span className="text-right font-medium">{hours} Hours</span>
-          <span className="text-muted-foreground">Cars per day</span><span className="text-right font-medium">{cars}</span>
-          <span className="text-muted-foreground">Monthly cars</span><span className="text-right font-medium">{monthlyCars}</span>
-          <span className="text-foreground font-semibold">Estimated earnings</span><span className="text-right text-lg font-semibold">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-        </div>
-      </Card>
-
-      {/* Booking requests */}
-      <Card className="mt-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer bookings</p>
-            <h2 className="mt-1 text-base font-semibold">Ready to add to your route</h2>
-          </div>
-          <Inbox className="h-5 w-5 text-primary" />
-        </div>
-        <div className="mt-3 space-y-2">
-          {loadingBookings && <p className="py-3 text-sm text-muted-foreground">Checking new bookings…</p>}
-          {!loadingBookings && bookingRequests.length === 0 && (
-            <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">No customer bookings waiting in {partner.home_area} right now.</p>
-          )}
-          {bookingRequests.slice(0, 4).map((b: any) => (
-            <div key={b.booking_id} className="rounded-xl border border-border p-3">
-              <div className="flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><UserRound className="h-4 w-4" /></span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{b.service_name}</p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{b.customer_name} · {b.vehicle_label || "Vehicle"} {b.registration_number ? `· ${b.registration_number}` : ""}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{b.scheduled_date} · {b.scheduled_time || "Flexible"} · ₹{b.total_amount}</p>
-                </div>
-              </div>
-              <Button size="sm" className="mt-3 w-full" disabled={claimBooking.isPending} onClick={() => claimBooking.mutate(b.booking_id)}>
-                {claimBooking.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                Accept booking
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Partial / none flows */}
-      {preview && partialAvailable && (
-        <Card className="mt-3 border-warning/40 bg-warning/10 p-4">
-          <div className="flex items-start gap-2">
-            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">Today's Route</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {availableInArea} Daily Shine customer{availableInArea === 1 ? " is" : "s are"} available. We'll automatically add more customers as your area grows.
-              </p>
               <div className="mt-3 grid gap-2">
                 <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
                   {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  <span className="flex flex-col items-center leading-tight">
-                    <span>Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"}</span>
-                    <span className="text-[10px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} Today</span>
-                  </span>
+                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
                 </Button>
                 <Button asChild size="sm" variant="outline">
+                  <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-start gap-2">
+                <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Looking for customers…</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    We'll notify you instantly when routes become available in {partner.home_area}.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
+                </Button>
+                <Button asChild size="sm" variant="ghost">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
                 </Button>
                 <Button size="sm" variant="ghost"
                   disabled={toggleNotify.isPending || partner.notify_when_customers_added}
                   onClick={() => toggleNotify.mutate(true)}>
                   <BellRing className="mr-2 h-4 w-4" />
-                  {partner.notify_when_customers_added
-                    ? "We'll notify you when new customers arrive"
-                    : "Notify me when customers become available"}
+                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me"}
                 </Button>
               </div>
             </div>
-          </div>
+          )}
         </Card>
       )}
 
-      {preview && noneAvailable && (
-        <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">No customers currently available in {partner.home_area}.</p>
-              <div className="mt-3 grid gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
-                </Button>
-                <Button size="sm" variant="ghost"
-                  disabled={toggleNotify.isPending || partner.notify_when_customers_added}
-                  onClick={() => toggleNotify.mutate(true)}>
-                  <BellRing className="mr-2 h-4 w-4" />
-                  {partner.notify_when_customers_added ? "We'll ping you" : "Notify me"}
+      {/* Monthly forecast — simplified */}
+      <Card className="mt-3 p-5">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly estimate</p>
+        </div>
+        <div className="mt-3 space-y-1.5 text-sm">
+          <div className="flex items-center justify-between"><span className="text-muted-foreground">Working days</span><span className="font-medium tabular-nums">{monthlyWorkingDays}</span></div>
+          <div className="flex items-center justify-between"><span className="text-muted-foreground">Services</span><span className="font-medium tabular-nums">{monthlyCars.toLocaleString("en-IN")}</span></div>
+          <div className="mt-2 flex items-end justify-between border-t border-border pt-2">
+            <span className="text-sm font-semibold">Earnings</span>
+            <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Nearby requests — only when relevant */}
+      {(loadingBookings || bookingRequests.length > 0) && (
+        <Card className="mt-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nearby requests</p>
+              <h2 className="mt-1 text-base font-semibold">
+                {bookingRequests.length > 0 ? `${bookingRequests.length} pending booking${bookingRequests.length === 1 ? "" : "s"}` : "Checking…"}
+              </h2>
+            </div>
+            <Inbox className="h-5 w-5 text-primary" />
+          </div>
+          <div className="mt-3 space-y-2">
+            {bookingRequests.slice(0, 4).map((b: any) => (
+              <div key={b.booking_id} className="rounded-xl border border-border p-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><UserRound className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{b.service_name}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{b.customer_name} · {b.vehicle_label || "Vehicle"} {b.registration_number ? `· ${b.registration_number}` : ""}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{b.scheduled_date} · {b.scheduled_time || "Flexible"} · ₹{b.total_amount}</p>
+                  </div>
+                </div>
+                <Button size="sm" className="mt-3 w-full" disabled={claimBooking.isPending} onClick={() => claimBooking.mutate(b.booking_id)}>
+                  {claimBooking.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                  Accept booking
                 </Button>
               </div>
-            </div>
+            ))}
           </div>
         </Card>
       )}
@@ -510,71 +497,49 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      <Card className="mt-3 flex items-start gap-3 border-dashed p-4 text-xs">
-        <IndianRupee className="mt-0.5 h-4 w-4 text-primary" />
-        <div>
-          <p className="font-semibold">First payout</p>
-          <p className="mt-1 text-muted-foreground">First week's earnings are held as a security reserve and released after your first 15 active days.</p>
+      {/* First payout — info card */}
+      <Card className="mt-3 p-4">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
+            <IndianRupee className="h-4 w-4 text-primary" />
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold">First payout</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your first week's earnings are securely held and released after your first 15 active service days.
+            </p>
+          </div>
         </div>
       </Card>
 
-      {/* Assignment Preview — gives partners confidence about what they're
-          committing to before accepting. Only shown when a full route is
-          available; partial / none flows have their own CTAs above. */}
-      {preview && fullyAvailable && (() => {
-        const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
-        const carsPerHr = cars / Math.max(1, hours);
-        const difficulty = carsPerHr <= 5
-          ? { label: "Easy route", stars: 2 }
-          : carsPerHr <= 6.5
-            ? { label: "Balanced route", stars: 3 }
-            : { label: "Fast-paced route", stars: 4 };
-        return (
-          <Card className="mt-4 overflow-hidden border-primary/30 p-0">
-            <div className="flex items-center justify-between bg-primary/10 px-5 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Today's Assignment</p>
-              <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {Array.from({ length: difficulty.stars }).map((_, i) => (
-                  <Star key={i} className="h-3 w-3 fill-primary text-primary" />
-                ))}
-                <span className="ml-1">{difficulty.label}</span>
-              </span>
-            </div>
-            <div className="divide-y divide-border">
-              <PreviewRow icon={<MapPin className="h-4 w-4 text-primary" />} label="Area" value={partner.home_area ?? "Your area"} />
-              <PreviewRow icon={<CheckCircle2 className="h-4 w-4 text-primary" />} label="Cars" value={`${cars} cars`} />
-              <PreviewRow icon={<RouteIcon className="h-4 w-4 text-primary" />} label="Route" value={`~${estKm} km`} />
-              <PreviewRow icon={<Clock className="h-4 w-4 text-primary" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
-              <PreviewRow icon={<IndianRupee className="h-4 w-4 text-primary" />} label="Estimated" value={`₹${dailyEarn.toLocaleString("en-IN")}`} bold />
-            </div>
-            <p className="border-t border-border bg-muted/30 px-5 py-2 text-[10px] text-muted-foreground">
-              Distance is an estimate based on stops. Actual route optimised after accepting.
-            </p>
-          </Card>
-        );
-      })()}
-
-
-      {/* Sticky CTA */}
+      {/* Sticky CTA — dynamic */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
           <Button
             size="lg"
             className="h-auto w-full py-3"
+            variant={fullyAvailable ? "default" : "secondary"}
             disabled={accept.isPending || !fullyAvailable}
-            onClick={() => accept.mutate(cars)}
+            onClick={() => fullyAvailable && accept.mutate(cars)}
           >
-            {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {isFetching && !preview ? (
+            {accept.isPending ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…</>
+            ) : isFetching && !preview ? (
               "Checking customers…"
             ) : noneAvailable ? (
-              "No customers available — see options above"
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-sm font-semibold">Searching nearby…</span>
+                <span className="text-[11px] font-normal opacity-80">We'll notify you when routes appear</span>
+              </span>
             ) : partialAvailable ? (
-              `Only ${availableInArea} available — see options above`
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-sm font-semibold">{availableInArea} of {cars} available</span>
+                <span className="text-[11px] font-normal opacity-80">See options above</span>
+              </span>
             ) : (
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold">Accept Current Route</span>
-                <span className="text-[11px] font-normal opacity-90">{cars} Customers · ₹{dailyEarn.toLocaleString("en-IN")} Estimated Earnings</span>
+                <span className="text-sm font-semibold">{cars} Customers Found · Create Route</span>
+                <span className="text-[11px] font-normal opacity-90">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")} take-home · {formatTime12(startTime)}</span>
               </span>
             )}
           </Button>
@@ -584,38 +549,11 @@ function AssignmentsPage() {
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-background/60">{icon}<span>{label}</span></div>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
+function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className={`text-background/${muted ? "50" : "70"} text-sm`}>{label}</span>
-      <span className={`tabular-nums ${bold ? "text-lg font-semibold" : "text-sm"}`}>{value}</span>
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-background/80 p-2">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-function PreviewRow({ icon, label, value, bold }: { icon: React.ReactNode; label: string; value: string; bold?: boolean }) {
-  return (
-    <div className="flex items-center justify-between px-5 py-2.5">
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">{icon}{label}</span>
-      <span className={`tabular-nums ${bold ? "text-base font-semibold text-foreground" : "text-sm font-medium text-foreground"}`}>{value}</span>
+      <span className="flex items-center gap-2 text-background/70">{icon}{label}</span>
+      <span className="font-semibold tabular-nums">{value}</span>
     </div>
   );
 }
