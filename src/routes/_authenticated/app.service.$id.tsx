@@ -500,8 +500,8 @@ function ServiceDetail() {
         const photoRows = (photos ?? []) as ServicePhotoRow[];
         const stepDefs: Array<{ key: string; label: string; stage: "before" | "after"; angle: Angle | "front"; hint: string }> = [
           { key: "before", label: "Before", stage: "before", angle: "front", hint: "Whole car, before you start" },
-          { key: "front", label: "Front", stage: "after", angle: "front", hint: "Bonnet + headlights visible" },
-          { key: "rear", label: "Rear", stage: "after", angle: "rear", hint: "Boot + tail lights visible" },
+          { key: "front", label: "Front view", stage: "after", angle: "front", hint: "Bonnet + headlights visible" },
+          { key: "rear", label: "Rear view", stage: "after", angle: "rear", hint: "Boot + tail lights visible" },
           { key: "left", label: "Left side", stage: "after", angle: "left", hint: "Full left side, mirror included" },
           { key: "right", label: "Right side", stage: "after", angle: "right", hint: "Full right side, mirror included" },
         ];
