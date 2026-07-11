@@ -9,13 +9,48 @@ import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
   AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
+  ArrowRight, Sparkles, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+
+// Small tween hook so estimates animate as sliders move — feels premium.
+function useAnimatedNumber(value: number, duration = 380) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+  const startRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = display;
+    fromRef.current = from;
+    startRef.current = null;
+    let raf = 0;
+    const step = (t: number) => {
+      if (startRef.current == null) startRef.current = t;
+      const p = Math.min(1, (t - startRef.current) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (value - from) * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return display;
+}
+
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
+  const span = max - min;
+  const recoLo = min + span * 0.28;
+  const recoHi = min + span * 0.52;
+  if (days <= min + span * 0.15) return { label: "Flexible", tone: "flex" };
+  if (days >= min + span * 0.75) return { label: "Maximum Priority", tone: "max" };
+  if (days >= recoLo && days <= recoHi) return { label: "⭐ Recommended", tone: "reco" };
+  return { label: "Consistent", tone: "reco" };
+}
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
