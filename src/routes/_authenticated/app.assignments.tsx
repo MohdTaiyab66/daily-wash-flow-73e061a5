@@ -558,39 +558,3 @@ function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: stri
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-background/60">{icon}<span>{label}</span></div>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className={`text-background/${muted ? "50" : "70"} text-sm`}>{label}</span>
-      <span className={`tabular-nums ${bold ? "text-lg font-semibold" : "text-sm"}`}>{value}</span>
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-background/80 p-2">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-function PreviewRow({ icon, label, value, bold }: { icon: React.ReactNode; label: string; value: string; bold?: boolean }) {
-  return (
-    <div className="flex items-center justify-between px-5 py-2.5">
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">{icon}{label}</span>
-      <span className={`tabular-nums ${bold ? "text-base font-semibold text-foreground" : "text-sm font-medium text-foreground"}`}>{value}</span>
-    </div>
-  );
-}
-
