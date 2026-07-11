@@ -541,7 +541,7 @@ function AssignmentsPage() {
               </span>
             </div>
             <div className="divide-y divide-border">
-              <PreviewRow icon={<MapPin className="h-4 w-4 text-primary" />} label="Area" value={partner.home_area} />
+              <PreviewRow icon={<MapPin className="h-4 w-4 text-primary" />} label="Area" value={partner.home_area ?? "Your area"} />
               <PreviewRow icon={<CheckCircle2 className="h-4 w-4 text-primary" />} label="Cars" value={`${cars} cars`} />
               <PreviewRow icon={<RouteIcon className="h-4 w-4 text-primary" />} label="Route" value={`~${estKm} km`} />
               <PreviewRow icon={<Clock className="h-4 w-4 text-primary" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
