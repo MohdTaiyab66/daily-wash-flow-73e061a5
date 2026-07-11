@@ -443,7 +443,7 @@ function AssignmentsPage() {
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">Your route is growing 🚀</p>
+                  <p className="text-sm font-semibold">More customers are coming 🚀</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {availableInArea} of your target {cars} customers available today.
                   </p>
