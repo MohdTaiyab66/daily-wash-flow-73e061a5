@@ -464,14 +464,14 @@ function HomePage() {
           accent
         />
         <MiniStat
+          icon={<Car className="h-4 w-4" />}
+          label="Today's Customers"
+          value={String(completed)}
+        />
+        <MiniStat
           icon={<Star className="h-4 w-4" />}
           label="Rating"
           value={Number(partner?.rating ?? 5).toFixed(2)}
-        />
-        <MiniStat
-          icon={<Car className="h-4 w-4" />}
-          label="Today's Cars"
-          value={String(completed)}
         />
 
       </div>
