@@ -495,19 +495,25 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Monthly forecast — simplified */}
+      {/* Monthly forecast — number-forward layout */}
       <Card className="mt-3 p-5">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly estimate</p>
         </div>
-        <div className="mt-3 space-y-1.5 text-sm">
-          <div className="flex items-center justify-between"><span className="text-muted-foreground">Working days</span><span className="font-medium tabular-nums">{monthlyWorkingDays}</span></div>
-          <div className="flex items-center justify-between"><span className="text-muted-foreground">Services</span><span className="font-medium tabular-nums">{monthlyCars.toLocaleString("en-IN")}</span></div>
-          <div className="mt-2 flex items-end justify-between border-t border-border pt-2">
-            <span className="text-sm font-semibold">Earnings</span>
-            <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-2xl font-bold tabular-nums">{monthlyWorkingDays}</p>
+            <p className="text-[11px] text-muted-foreground">Working days</p>
           </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums">{monthlyCars.toLocaleString("en-IN")}</p>
+            <p className="text-[11px] text-muted-foreground">Services</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
+          <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
         </div>
       </Card>
 
@@ -548,20 +554,33 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — info card */}
-      <Card className="mt-3 p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
-            <IndianRupee className="h-4 w-4 text-primary" />
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">First payout</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Your first week's earnings are securely held and released after your first 15 active service days.
-            </p>
+      {/* First payout — tappable info card */}
+      <button
+        type="button"
+        onClick={() => toast.message("First payout", {
+          description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
+        })}
+        className="mt-3 block w-full text-left"
+      >
+        <Card className="p-4 transition-colors hover:bg-accent/40">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
+              <IndianRupee className="h-4 w-4 text-primary" />
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">First payout</p>
+                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary">
+                  Learn more <ArrowRight className="h-3 w-3" />
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your first week's earnings are securely held and released after your first 15 active service days.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </button>
 
       {/* Sticky CTA — dynamic */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
