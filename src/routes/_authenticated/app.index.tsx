@@ -159,7 +159,7 @@ function HomePage() {
             <span
               className={`h-2.5 w-2.5 rounded-full ${
                 online ? "bg-[color:var(--success)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
-              } ${online ? "animate-pulse" : ""}`}
+              } ${online ? "animate-pulse [animation-duration:2.4s]" : ""}`}
             />
           </span>
           <div className="leading-tight">
