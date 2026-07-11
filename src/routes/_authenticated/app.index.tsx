@@ -391,7 +391,12 @@ function HomePage() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Your Journey Today
             </p>
-            <ol className="mt-3 space-y-2.5">
+            <ol className="relative mt-3 space-y-3">
+              {/* connecting vertical line */}
+              <span
+                aria-hidden
+                className="absolute left-[13px] top-3 bottom-3 w-px bg-border"
+              />
               {[
                 { n: 1, label: "Create Assignment", icon: RouteIcon },
                 { n: 2, label: "Receive Customers", icon: Car },
@@ -400,8 +405,8 @@ function HomePage() {
               ].map((s) => {
                 const Icon = s.icon;
                 return (
-                  <li key={s.n} className="flex items-center gap-3">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  <li key={s.n} className="relative flex items-center gap-3">
+                    <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-4 ring-card">
                       {s.n}
                     </span>
                     <Icon className="h-4 w-4 text-muted-foreground" />
@@ -425,6 +430,7 @@ function HomePage() {
               >
                 <Phone className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">Support</span>
+                <span className="text-[10px] text-muted-foreground">Call our team</span>
               </a>
               <a
                 href="https://wa.me/919999999999"
@@ -434,6 +440,7 @@ function HomePage() {
               >
                 <MessageCircle className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">WhatsApp</span>
+                <span className="text-[10px] text-muted-foreground">Quick chat</span>
               </a>
               <Link
                 to="/app/training"
@@ -441,6 +448,7 @@ function HomePage() {
               >
                 <BookOpen className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">Training</span>
+                <span className="text-[10px] text-muted-foreground">Learn the app</span>
               </Link>
             </div>
           </Card>
