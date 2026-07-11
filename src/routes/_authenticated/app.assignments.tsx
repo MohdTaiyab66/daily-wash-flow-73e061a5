@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon, Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
@@ -518,6 +518,43 @@ function AssignmentsPage() {
         </div>
       </Card>
 
+      {/* Assignment Preview — gives partners confidence about what they're
+          committing to before accepting. Only shown when a full route is
+          available; partial / none flows have their own CTAs above. */}
+      {preview && fullyAvailable && (() => {
+        const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
+        const carsPerHr = cars / Math.max(1, hours);
+        const difficulty = carsPerHr <= 5
+          ? { label: "Easy route", stars: 2 }
+          : carsPerHr <= 6.5
+            ? { label: "Balanced route", stars: 3 }
+            : { label: "Fast-paced route", stars: 4 };
+        return (
+          <Card className="mt-4 overflow-hidden border-primary/30 p-0">
+            <div className="flex items-center justify-between bg-primary/10 px-5 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Today's Assignment</p>
+              <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {Array.from({ length: difficulty.stars }).map((_, i) => (
+                  <Star key={i} className="h-3 w-3 fill-primary text-primary" />
+                ))}
+                <span className="ml-1">{difficulty.label}</span>
+              </span>
+            </div>
+            <div className="divide-y divide-border">
+              <PreviewRow icon={<MapPin className="h-4 w-4 text-primary" />} label="Area" value={partner.home_area ?? "Your area"} />
+              <PreviewRow icon={<CheckCircle2 className="h-4 w-4 text-primary" />} label="Cars" value={`${cars} cars`} />
+              <PreviewRow icon={<RouteIcon className="h-4 w-4 text-primary" />} label="Route" value={`~${estKm} km`} />
+              <PreviewRow icon={<Clock className="h-4 w-4 text-primary" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
+              <PreviewRow icon={<IndianRupee className="h-4 w-4 text-primary" />} label="Estimated" value={`₹${dailyEarn.toLocaleString("en-IN")}`} bold />
+            </div>
+            <p className="border-t border-border bg-muted/30 px-5 py-2 text-[10px] text-muted-foreground">
+              Distance is an estimate based on stops. Actual route optimised after accepting.
+            </p>
+          </Card>
+        );
+      })()}
+
+
       {/* Sticky CTA */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
@@ -573,3 +610,13 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function PreviewRow({ icon, label, value, bold }: { icon: React.ReactNode; label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-2.5">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">{icon}{label}</span>
+      <span className={`tabular-nums ${bold ? "text-base font-semibold text-foreground" : "text-sm font-medium text-foreground"}`}>{value}</span>
+    </div>
+  );
+}
+
