@@ -855,6 +855,9 @@ function PhotoSlot({
       try { window.localStorage.removeItem(pathKey); } catch { /* noop */ }
       setQueuedPath(null);
       onUploaded(path);
+      if (workflow === "service_photo") {
+        toast.success(`✓ ${label} saved`, { duration: 1200 });
+      }
       console.log(`${tag} Photo attached (${slot}) · svc=${serviceId}`);
     } catch (err) {
       await logApkEvidence({
