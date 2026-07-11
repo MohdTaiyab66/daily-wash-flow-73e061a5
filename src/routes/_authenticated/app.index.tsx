@@ -12,9 +12,15 @@ import {
   MapPin,
   Star,
   Navigation,
-  Briefcase,
   PartyPopper,
   IndianRupee,
+  MessageCircle,
+  Phone,
+  BookOpen,
+  ArrowRight,
+  Sparkles,
+  Route as RouteIcon,
+  Wallet,
 } from "lucide-react";
 
 /**
