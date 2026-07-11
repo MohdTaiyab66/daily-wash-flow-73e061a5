@@ -180,6 +180,20 @@ function ServiceDetail() {
   // before = single photo (stored as stage='before', angle='front' to satisfy enum)
   const beforeDone = (photos ?? []).some((p) => p.stage === "before");
   const afterDone = new Set((photos ?? []).filter((p) => p.stage === "after").map((p) => p.angle as Angle));
+  const totalDone = (beforeDone ? 1 : 0) + afterDone.size;
+
+  // Auto-scroll active step into view whenever progress changes.
+  useEffect(() => {
+    if (service?.status !== "in_progress") return;
+    const el = activeStepRef.current;
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { /* noop */ }
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [totalDone, service?.status]);
+
+
 
 
   const complete = useMutation({
