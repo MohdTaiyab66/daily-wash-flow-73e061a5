@@ -60,6 +60,7 @@ function ServiceDetail() {
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [autoOpenBefore, setAutoOpenBefore] = useState(false);
+  const activeStepRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const iv = window.setInterval(() => setNowTick(Date.now()), 1000);
