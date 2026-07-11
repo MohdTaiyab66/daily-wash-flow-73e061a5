@@ -167,7 +167,7 @@ function HomePage() {
               {online ? "Online" : "Offline"}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              {online ? "Available for assignments" : "Go online to receive work"}
+              {online ? "Available for assignments" : "You're not receiving assignments"}
             </p>
           </div>
         </div>
