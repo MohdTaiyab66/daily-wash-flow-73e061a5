@@ -7,8 +7,8 @@ import { Slider } from "@/components/ui/slider";
 // Checkbox no longer used after Working Days removal.
 import { Progress } from "@/components/ui/progress";
 import {
-  Loader2, MapPin, IndianRupee, CheckCircle2, Sun, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon, Star,
+  Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
