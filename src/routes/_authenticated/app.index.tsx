@@ -328,9 +328,9 @@ function HomePage() {
       ) : (
         <>
           {/* Hero onboarding card */}
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground p-6 text-background">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 text-primary">
-              <RouteIcon className="h-8 w-8" />
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary">
+              <RouteIcon className="h-7 w-7" />
             </div>
             <p className="mt-3 text-center text-xl font-bold">No Assignment Yet</p>
             <p className="mt-1 text-center text-sm text-background/70">
@@ -340,16 +340,17 @@ function HomePage() {
             <Button
               asChild
               size="lg"
-              className="mt-5 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+              className="mt-4 h-12 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Link to="/app/assignments">
                 <Car className="mr-2 h-5 w-5" />
                 Create Today's Route
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
 
             {/* Today's Potential */}
-            <div className="mt-5 rounded-2xl bg-background/5 p-4">
+            <div className="mt-4 rounded-2xl bg-background/5 p-4">
               <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
                 Today's Potential
               </p>
@@ -363,7 +364,7 @@ function HomePage() {
                 </div>
                 <div>
                   <p className="text-lg font-bold">20–35</p>
-                  <p className="mt-0.5 text-[10px] text-background/60">Cars</p>
+                  <p className="mt-0.5 text-[10px] text-background/60">Customers</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold">3–5h</p>
