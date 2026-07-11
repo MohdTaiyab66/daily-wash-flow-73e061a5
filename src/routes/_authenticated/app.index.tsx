@@ -144,7 +144,7 @@ function HomePage() {
           {firstName}
         </h1>
         {!assignment && total === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">Ready to start earning today?</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ready to build your first route?</p>
         ) : null}
       </header>
 
@@ -167,7 +167,7 @@ function HomePage() {
               {online ? "Online" : "Offline"}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              {online ? "Available for assignments" : "Go online to receive work"}
+              {online ? "Available for assignments" : "You're not receiving assignments"}
             </p>
           </div>
         </div>
@@ -328,9 +328,9 @@ function HomePage() {
       ) : (
         <>
           {/* Hero onboarding card */}
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground p-6 text-background">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 text-primary">
-              <RouteIcon className="h-8 w-8" />
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary">
+              <RouteIcon className="h-7 w-7" />
             </div>
             <p className="mt-3 text-center text-xl font-bold">No Assignment Yet</p>
             <p className="mt-1 text-center text-sm text-background/70">
@@ -340,16 +340,17 @@ function HomePage() {
             <Button
               asChild
               size="lg"
-              className="mt-5 h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
+              className="mt-4 h-12 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Link to="/app/assignments">
                 <Car className="mr-2 h-5 w-5" />
                 Create Today's Route
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
 
             {/* Today's Potential */}
-            <div className="mt-5 rounded-2xl bg-background/5 p-4">
+            <div className="mt-4 rounded-2xl bg-background/5 p-4">
               <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
                 Today's Potential
               </p>
@@ -363,7 +364,7 @@ function HomePage() {
                 </div>
                 <div>
                   <p className="text-lg font-bold">20–35</p>
-                  <p className="mt-0.5 text-[10px] text-background/60">Cars</p>
+                  <p className="mt-0.5 text-[10px] text-background/60">Customers</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold">3–5h</p>
@@ -378,7 +379,7 @@ function HomePage() {
 
           {/* Benefits chips */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {["Flexible Hours", "Weekly Payout", "Daily Earnings", "No Fixed Shift"].map((b) => (
+            {["Flexible Hours", "Weekly Payout", "Daily Income", "No Fixed Schedule"].map((b) => (
               <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
                 ✓ {b}
               </span>
@@ -390,7 +391,12 @@ function HomePage() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Your Journey Today
             </p>
-            <ol className="mt-3 space-y-2.5">
+            <ol className="relative mt-3 space-y-3">
+              {/* connecting vertical line */}
+              <span
+                aria-hidden
+                className="absolute left-[13px] top-3 bottom-3 w-px bg-border"
+              />
               {[
                 { n: 1, label: "Create Assignment", icon: RouteIcon },
                 { n: 2, label: "Receive Customers", icon: Car },
@@ -399,8 +405,8 @@ function HomePage() {
               ].map((s) => {
                 const Icon = s.icon;
                 return (
-                  <li key={s.n} className="flex items-center gap-3">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  <li key={s.n} className="relative flex items-center gap-3">
+                    <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-4 ring-card">
                       {s.n}
                     </span>
                     <Icon className="h-4 w-4 text-muted-foreground" />
@@ -424,6 +430,7 @@ function HomePage() {
               >
                 <Phone className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">Support</span>
+                <span className="text-[10px] text-muted-foreground">Call our team</span>
               </a>
               <a
                 href="https://wa.me/919999999999"
@@ -433,6 +440,7 @@ function HomePage() {
               >
                 <MessageCircle className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">WhatsApp</span>
+                <span className="text-[10px] text-muted-foreground">Quick chat</span>
               </a>
               <Link
                 to="/app/training"
@@ -440,6 +448,7 @@ function HomePage() {
               >
                 <BookOpen className="h-4 w-4 text-primary" />
                 <span className="text-[11px] font-medium">Training</span>
+                <span className="text-[10px] text-muted-foreground">Learn the app</span>
               </Link>
             </div>
           </Card>
@@ -455,14 +464,14 @@ function HomePage() {
           accent
         />
         <MiniStat
+          icon={<Car className="h-4 w-4" />}
+          label="Today's Customers"
+          value={String(completed)}
+        />
+        <MiniStat
           icon={<Star className="h-4 w-4" />}
           label="Rating"
           value={Number(partner?.rating ?? 5).toFixed(2)}
-        />
-        <MiniStat
-          icon={<Car className="h-4 w-4" />}
-          label="Today's Cars"
-          value={String(completed)}
         />
 
       </div>
