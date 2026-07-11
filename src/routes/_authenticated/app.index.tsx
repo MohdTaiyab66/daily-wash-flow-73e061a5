@@ -127,21 +127,32 @@ function HomePage() {
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
   return (
     <div className="mx-auto max-w-md px-5 pb-6 pt-3">
       {/* Greeting */}
       <header>
-        <p className="text-sm text-muted-foreground">Hello,</p>
-        <h1 className="text-3xl font-bold uppercase tracking-tight leading-tight">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{greeting} 👋</p>
+          <p className="text-[11px] text-muted-foreground">{dateStr}</p>
+        </div>
+        <h1 className="mt-0.5 text-3xl font-bold uppercase tracking-tight leading-tight">
           {firstName}
         </h1>
+        {!assignment && total === 0 ? (
+          <p className="mt-1 text-sm text-muted-foreground">Ready to start earning today?</p>
+        ) : null}
       </header>
 
-      {/* Online status card */}
-      <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2.5">
-        <div className="flex items-center gap-3">
+      {/* Online status card — compact */}
+      <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2">
+        <div className="flex items-center gap-2.5">
           <span
-            className={`grid h-8 w-8 place-items-center rounded-full ${
+            className={`grid h-7 w-7 place-items-center rounded-full ${
               online ? "bg-[color:var(--success)]/15" : "bg-muted"
             }`}
           >
@@ -151,22 +162,16 @@ function HomePage() {
               } ${online ? "animate-pulse" : ""}`}
             />
           </span>
-          <div>
+          <div className="leading-tight">
             <p className="text-sm font-semibold">
-              {online ? "You're Online" : "You're Offline"}
+              {online ? "Online" : "Offline"}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              {online
-                ? "Ready to receive new customers"
-                : "Go online to receive work"}
+              {online ? "Available for assignments" : "Go online to receive work"}
             </p>
           </div>
         </div>
-        <Switch
-          checked={online}
-          onCheckedChange={handleToggle}
-          className="scale-110"
-        />
+        <Switch checked={online} onCheckedChange={handleToggle} />
       </Card>
 
       <div className="mt-5">
