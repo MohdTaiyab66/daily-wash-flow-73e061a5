@@ -610,3 +610,13 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function PreviewRow({ icon, label, value, bold }: { icon: React.ReactNode; label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-2.5">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">{icon}{label}</span>
+      <span className={`tabular-nums ${bold ? "text-base font-semibold text-foreground" : "text-sm font-medium text-foreground"}`}>{value}</span>
+    </div>
+  );
+}
+
