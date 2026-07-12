@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock, User, Car, IdCard, MapPin, ZoomIn, Play } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock, User, Car, IdCard, MapPin, ZoomIn, Play, CarFront, PhoneOff, SkipForward, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -27,17 +27,25 @@ type Angle = (typeof AFTER_ANGLES)[number];
 const REPORT_ANGLES = ["front", "rear", "left", "right"] as const;
 
 const UNAVAILABLE_REASONS = [
-  { value: "vehicle_not_available", label: "Vehicle not available" },
-  { value: "customer_not_responding", label: "Customer not responding" },
-  { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "other", label: "Other (remarks required)" },
+  { value: "vehicle_not_available", label: "Vehicle unavailable", icon: CarFront },
+  { value: "customer_not_responding", label: "Customer not responding", icon: PhoneOff },
+  { value: "customer_asked_to_skip", label: "Skip requested", icon: SkipForward },
+  { value: "other", label: "Other (remarks required)", icon: Pencil },
 ] as const;
 
 const DIRTY_REASONS = [
   "Heavy Mud",
   "Heavy Dust",
   "Bird Droppings",
+  "Tree Sap",
   "Other",
+];
+
+const NOTE_CHIPS = [
+  "Parking issue",
+  "Customer unavailable",
+  "Scratch found",
+  "Extra dirty",
 ];
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
@@ -370,17 +378,15 @@ function ServiceDetail() {
       {/* Route progress */}
       <div className="mt-3 rounded-2xl border border-border bg-card p-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold">Customer {position} of {total}</span>
+          <span className="font-semibold">Stop {position} / {total}</span>
           <span className="text-muted-foreground">
-            {remainingAfter === 0 ? "Last stop today" : `${remainingAfter} after this`}
+            {remainingAfter === 0 ? "Last stop today" : `${remainingAfter} Remaining`}
           </span>
         </div>
         <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
         </div>
       </div>
-
-      {/* Vehicle photo — tappable */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
         <button
           type="button"
@@ -392,31 +398,33 @@ function ServiceDetail() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-2 pt-8">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/95">
-                <Camera className="h-3 w-3" /> Reference photo
+                <Camera className="h-3 w-3" /> Customer reference
               </span>
-              <p className="text-[10px] leading-tight text-white/75">Uploaded by customer</p>
+              <p className="text-[10px] leading-tight text-white/75">
+                {(service as any)?.created_at ? `Uploaded ${new Date((service as any).created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "Uploaded by customer"}
+              </p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-              <ZoomIn className="h-3 w-3" /> Tap to zoom
+              <ZoomIn className="h-3 w-3" /> Pinch to zoom
             </span>
           </div>
         </button>
 
-        {/* Customer summary — stronger hierarchy */}
+        {/* Customer summary — name / vehicle / plate then meta */}
         <div className="p-5">
           <div className="flex items-start gap-3">
             <User className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold leading-tight tracking-tight">{c?.full_name ?? "—"}</p>
+              {(v?.make || v?.model) && (
+                <p className="mt-1 truncate text-sm font-medium text-foreground">{v?.make} {v?.model}</p>
+              )}
               {v?.registration_number ? (
-                <span className="mt-1.5 inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[13px] font-bold tracking-wider text-foreground">
+                <span className="mt-1.5 inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[12px] font-bold tracking-wider text-foreground">
                   {v.registration_number}
                 </span>
               ) : (
                 <span className="mt-1.5 block text-xs text-muted-foreground">No plate on file</span>
-              )}
-              {(v?.make || v?.model) && (
-                <p className="mt-1.5 truncate text-xs uppercase tracking-wide text-muted-foreground">{v?.make} {v?.model}</p>
               )}
             </div>
           </div>
@@ -619,18 +627,40 @@ function ServiceDetail() {
             {/* Timer + notes — bolder */}
             <Card className="mt-4 p-4">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-4 w-4" /> Service time
-                </span>
+                <div>
+                  <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Clock className="h-4 w-4" /> Service time
+                  </span>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">Average 5–7 min</p>
+                </div>
                 <span className="text-2xl font-extrabold tabular-nums tracking-tight">{elapsedLabel}</span>
               </div>
               {service.status === "in_progress" && (
-                <Textarea
-                  placeholder="Customer requested… · Parking issue… · Scratches noticed…"
-                  value={serviceNotes}
-                  onChange={(e) => setServiceNotes(e.target.value)}
-                  className="mt-3 min-h-[60px] text-sm"
-                />
+                <>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {NOTE_CHIPS.map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          setServiceNotes((current) => {
+                            if (current.includes(chip)) return current;
+                            return current ? `${current.trim()} · ${chip}` : chip;
+                          });
+                        }}
+                        className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    placeholder="Add notes for the customer or admin…"
+                    value={serviceNotes}
+                    onChange={(e) => setServiceNotes(e.target.value)}
+                    className="mt-2 min-h-[60px] text-sm"
+                  />
+                </>
               )}
             </Card>
 
@@ -670,11 +700,21 @@ function ServiceDetail() {
                     <Button
                       size="lg"
                       className={`h-14 w-full text-base font-semibold ${allDone ? "shadow-[0_14px_36px_-12px_hsl(var(--primary)/0.7)]" : ""}`}
-                      disabled={!allDone || complete.isPending}
-                      onClick={() => complete.mutate()}
+                      disabled={complete.isPending}
+                      onClick={() => {
+                        if (allDone) {
+                          complete.mutate();
+                          return;
+                        }
+                        activeStepRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
                     >
                       {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {allDone ? "Complete service · ₹17" : "Complete service"}
+                      {allDone
+                        ? "✓ Complete service · ₹17"
+                        : activeIdx >= 0
+                          ? `Take ${stepStatus[activeIdx].label} photo`
+                          : "Complete service"}
                     </Button>
                   </div>
                 </div>
@@ -1276,12 +1316,22 @@ function UnavailableSection({
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
         <p className="mt-1 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
-          {UNAVAILABLE_REASONS.map((r) => (
-            <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
-              <RadioGroupItem value={r.value} />
-              {r.label}
-            </Label>
-          ))}
+          {UNAVAILABLE_REASONS.map((r) => {
+            const Icon = r.icon;
+            const selected = reason === r.value;
+            return (
+              <Label
+                key={r.value}
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
+                  selected ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <RadioGroupItem value={r.value} />
+                <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                <span className="flex-1">{r.label}</span>
+              </Label>
+            );
+          })}
         </RadioGroup>
 
         <div className="mt-3">
@@ -1470,13 +1520,26 @@ function DirtyVehicleSection({
       </button>
 
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-1 space-y-1">
-          {DIRTY_REASONS.map((r) => (
-            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
-              <RadioGroupItem value={r} />{r}
-            </Label>
-          ))}
-        </RadioGroup>
+        <p className="mt-1 text-xs text-muted-foreground">Pick what you see and capture all 4 side photos.</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {DIRTY_REASONS.map((r) => {
+            const selected = reason === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setReason(r)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  selected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-muted/40 text-muted-foreground hover:border-primary hover:text-primary"
+                }`}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {DIRTY_ANGLES.map((angle) => {
             const done = photos.some((p) => p.stage === "dirty" && p.angle === angle);
