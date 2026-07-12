@@ -30,6 +30,16 @@ function RewardsPage() {
   const monthDone = Math.min(partner?.total_cars_completed ?? 0, monthGoal);
   const monthPct = Math.round((monthDone / monthGoal) * 100);
 
+  // Bonus progress: what the partner has already earned vs total available across all bonuses.
+  const streakEarned = 0; // wired to real ledger later
+  const ratingEarned = 0;
+  const challengeEarned = monthPct >= 100 ? 2000 : 0;
+  const bonusEarned = streakEarned + ratingEarned + challengeEarned;
+  const bonusPool = 2000 + 150 * 4 + 50 * 20; // monthly challenge + 4 weekly streaks + estimated 5-star pool
+  const bonusRemaining = Math.max(0, bonusPool - bonusEarned);
+  const bonusPct = Math.round((bonusEarned / bonusPool) * 100);
+
+
   const copy = () => {
     navigator.clipboard?.writeText(code);
     toast.success("Code copied");
