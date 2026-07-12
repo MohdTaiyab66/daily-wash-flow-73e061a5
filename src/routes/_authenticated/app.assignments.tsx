@@ -566,25 +566,8 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — slim info banner */}
-      <button
-        type="button"
-        onClick={() => toast.message("First payout", {
-          description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
-        })}
-        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-[11px] text-muted-foreground transition-colors hover:bg-accent/40"
-      >
-        <IndianRupee className="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span className="flex-1">First payout releases after your first 15 active service days.</span>
-        <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
-      </button>
+      {/* First-payout details and motivation tips moved to the Learn More page — kept out of the daily flow. */}
 
-      {/* Motivation banner — rotates daily */}
-      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">{tipOfDay.emoji}</span>
-        <span className="font-medium">{tipOfDay.head}</span>
-        <span className="text-muted-foreground"> {tipOfDay.tail}</span>
-      </div>
 
 
 
