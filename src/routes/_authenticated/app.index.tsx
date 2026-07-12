@@ -466,22 +466,22 @@ function HomePage() {
       <div className="mt-6 grid grid-cols-3 gap-3">
         <MiniStat
           icon={<IndianRupee className="h-4 w-4 text-primary" />}
-          label="Today's Earnings"
+          label="Earn Today"
           value={`₹${earnedSoFar}`}
           accent
         />
         <MiniStat
-          icon={<Car className="h-4 w-4" />}
-          label="Today's Customers"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          label="Completed"
           value={String(completed)}
         />
         <MiniStat
-          icon={<Star className="h-4 w-4" />}
-          label="Rating"
-          value={Number(partner?.rating ?? 5).toFixed(2)}
+          icon={<Sparkles className="h-4 w-4" />}
+          label="Reliability"
+          value={`${Math.round(Number((partner as any)?.reliability_score ?? 100))}%`}
         />
-
       </div>
+
     </div>
   );
 }
