@@ -8,9 +8,10 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
-  ArrowRight, Sparkles, Timer,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp,
+  ArrowRight,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
