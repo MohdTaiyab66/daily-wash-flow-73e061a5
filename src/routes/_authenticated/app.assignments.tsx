@@ -464,24 +464,20 @@ function AssignmentsPage() {
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">More customers are coming 🚀</p>
+                  <p className="text-sm font-semibold">Your route is still filling up</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of your target {cars} customers available today.
+                    {availableInArea} of {cars} customers ready in {partner.home_area}. More usually join as the morning starts.
                   </p>
                 </div>
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Route growth</span><span>{availableInArea} / {cars} · {growthPct}%</span>
+                  <span>Route filled</span><span>{availableInArea} / {cars} · {growthPct}%</span>
                 </div>
                 <Progress value={growthPct} className="mt-1.5 h-2" />
               </div>
-              <div className="mt-3 grid gap-2">
-                <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
-                  {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
-                </Button>
-                <Button asChild size="sm" variant="outline">
+              <div className="mt-3">
+                <Button asChild size="sm" variant="outline" className="w-full">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
                 </Button>
               </div>
