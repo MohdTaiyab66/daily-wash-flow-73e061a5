@@ -271,28 +271,32 @@ function ServiceDetail() {
     onSuccess: (data: any) => {
       if (data?.already) {
         toast.message("Service was already completed");
-      } else {
-        const bal = data?.wallet_balance != null ? ` · wallet ₹${Number(data.wallet_balance).toFixed(0)}` : "";
-        toast.success(`Complete · ₹${data?.amount ?? 17} earned${bal}`, {
-          description: `Customer ${data?.customer_notified ? "✓" : "✗"} · Admin ${data?.admin_notified ? "✓" : "✗"} · ${data?.photo_count ?? 0} photos · GPS ${data?.gps_flag ?? "n/a"}${data?.distance_m != null ? ` (${data.distance_m}m)` : ""}`,
-          duration: 6000,
-        });
+        qc.invalidateQueries({ queryKey: ["service", id] });
+        qc.invalidateQueries({ queryKey: ["route-today"] });
+        void goNext();
+        return;
       }
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-      window.setTimeout(() => {
-        void logApkEvidence({
-          eventType: "route_auto_advance_after_completion",
-          serviceId: id,
-          assignmentId: (service as any)?.assignment_id ?? null,
-          status: "success",
-          payload: { next_service_id: nextServiceId ?? null, rpc: data },
-        });
-        void goNext();
-      }, 900);
+      const completedNow = (routeProgress?.completed ?? 0) + 1;
+      const totalNow = routeProgress?.total ?? 1;
+      setCelebration({
+        amount: Number(data?.amount ?? 17),
+        completed: completedNow,
+        total: totalNow,
+        walletBalance: data?.wallet_balance ?? null,
+        nextName: routeProgress?.nextName ?? null,
+      });
+      void logApkEvidence({
+        eventType: "route_auto_advance_after_completion",
+        serviceId: id,
+        assignmentId: (service as any)?.assignment_id ?? null,
+        status: "success",
+        payload: { next_service_id: nextServiceId ?? null, rpc: data },
+      });
     },
     onError: (e: any) => toast.error(e.message),
   });
