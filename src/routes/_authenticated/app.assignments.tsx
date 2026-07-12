@@ -152,22 +152,23 @@ function AssignmentsPage() {
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
-  const minDays = settings?.minDays ?? 7;
-  const maxDays = settings?.maxDays ?? 90;
-  const defaultDays = settings?.defaultDays ?? 30;
+  // Commitment window is fixed to a partner-friendly 7–30 range so the slider
+  // stays legible and consistent regardless of admin envelope.
+  const minDays = Math.max(7, settings?.minDays ?? 7);
+  const maxDays = Math.min(30, settings?.maxDays ?? 30);
+  const defaultDays = Math.min(maxDays, Math.max(minDays, settings?.defaultDays ?? 15));
 
   const [hours, setHours] = useState(4);
   const [duration, setDuration] = useState(defaultDays);
+  const [durationTouched, setDurationTouched] = useState(false);
 
-  // Keep hours + duration within admin bounds when settings change
   useEffect(() => {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
   useEffect(() => {
     setDuration((d) => {
-      // If user hasn't nudged the slider, snap to admin default; otherwise clamp.
-      if (d === 15 || d < minDays || d > maxDays) return Math.min(maxDays, Math.max(minDays, defaultDays));
-      return d;
+      if (!durationTouched) return defaultDays;
+      return Math.min(maxDays, Math.max(minDays, d));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDays, maxDays, defaultDays]);
