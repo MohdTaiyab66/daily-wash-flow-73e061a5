@@ -85,10 +85,16 @@ function EarningsPage() {
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
         <Mini icon={<Car className="h-3 w-3" />} label={t("cars")} value={String(n)} />
         <Mini icon={<Clock className="h-3 w-3" />} label={t("avg_day")} value={n ? `₹${Math.round(total / Math.max(1, stats?.daysActive ?? 1))}` : "₹0"} />
-        <Mini icon={<MapPin className="h-3 w-3" />} label={t("rate")} value={`₹${RATE}`} />
+        <Mini icon={<MapPin className="h-3 w-3" />} label="Per car" value={`₹${RATE}`} />
       </div>
     </Card>
   );
+
+  // Motivational milestone for today.
+  const todayEarn = stats?.today ?? 0;
+  const MILESTONES = [100, 250, 500, 750, 1000];
+  const nextMilestone = MILESTONES.find((m) => m > todayEarn);
+  const milestoneGap = nextMilestone ? nextMilestone - todayEarn : 0;
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5">
@@ -102,11 +108,21 @@ function EarningsPage() {
           <TabsTrigger value="month">{t("month")}</TabsTrigger>
           <TabsTrigger value="lifetime">{t("all")}</TabsTrigger>
         </TabsList>
+        {nextMilestone && tab === "today" && (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/8 px-3.5 py-2.5 text-[13px]">
+            <span>🔥</span>
+            <p className="flex-1 leading-tight">
+              <span className="font-semibold">Earn ₹{milestoneGap} more today</span>
+              <span className="text-muted-foreground"> to cross ₹{nextMilestone}</span>
+            </p>
+          </div>
+        )}
         <TabsContent value="today" className="mt-4">{view(t("today"), stats?.today ?? 0, stats?.todayN ?? 0)}</TabsContent>
         <TabsContent value="week" className="mt-4">{view(t("this_week"), stats?.week ?? 0, stats?.weekN ?? 0)}</TabsContent>
         <TabsContent value="month" className="mt-4">{view(t("this_month"), stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
         <TabsContent value="lifetime" className="mt-4">{view(t("lifetime"), stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
       </Tabs>
+
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("next_payout")}</h2>
       <Card className="mt-3 p-5">

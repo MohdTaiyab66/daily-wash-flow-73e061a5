@@ -233,7 +233,7 @@ function AssignmentsPage() {
 
   const hasArea = !!partner?.home_area;
 
-  const { data: preview, isFetching, error: previewError } = useQuery({
+  const { data: preview, isFetching, error: previewError, dataUpdatedAt } = useQuery({
     queryKey: ["preview", cars, duration],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("preview_assignment", { p_cars: cars, p_duration: duration });
@@ -243,6 +243,16 @@ function AssignmentsPage() {
     enabled: !active && hasArea,
     retry: 1,
   });
+
+  // Live "updated Xs ago" ticker for the estimates trust line.
+  const [nowTs, setNowTs] = useState(Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 5000);
+    return () => window.clearInterval(id);
+  }, []);
+  const updatedAgo = dataUpdatedAt ? Math.max(0, Math.round((nowTs - dataUpdatedAt) / 1000)) : null;
+  const updatedAgoLabel = updatedAgo == null ? "" : updatedAgo < 5 ? "just now" : updatedAgo < 60 ? `${updatedAgo}s ago` : `${Math.floor(updatedAgo / 60)}m ago`;
+
 
   const friendlyError = (raw: any): string => {
     const msg = String(raw?.message ?? raw ?? "").toLowerCase();
@@ -417,10 +427,16 @@ function AssignmentsPage() {
       </Card>
 
       {/* Trust indicator */}
-      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-        Live estimates based on current bookings in your area.
-      </p>
+      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground/70">
+        <p className="flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+          Live estimates based on current bookings in your area.
+        </p>
+        {updatedAgoLabel && !isFetching ? (
+          <span className="shrink-0 tabular-nums">Updated {updatedAgoLabel}</span>
+        ) : null}
+      </div>
+
 
       {/* Commitment — compact */}
       <Card className="mt-3 p-5">
@@ -446,18 +462,21 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — earnings dominate, meta underneath */}
-        <div className="mt-3 rounded-lg bg-muted/60 px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-          <p className="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-          <div className="mt-2 flex items-center gap-3 border-t border-border/50 pt-2 text-[11px] tabular-nums text-muted-foreground">
-            <span><span className="font-semibold text-foreground">{workingDays}</span> Working Days</span>
-            <span className="opacity-40">·</span>
-            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> Services</span>
-            <span className="opacity-40">·</span>
-            <span>₹{animPerDay.toLocaleString("en-IN")}/day</span>
+        {/* Merged monthly estimate — premium: earnings dominate, meta stacked underneath */}
+        <div className="mt-3 rounded-xl bg-muted/60 px-4 py-4">
+          <p className="text-3xl font-semibold tracking-tight tabular-nums text-primary">
+            ₹{animMonthly.toLocaleString("en-IN")}
+          </p>
+          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Estimated this month
+          </p>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] tabular-nums text-muted-foreground">
+            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> services</span>
+            <span><span className="font-semibold text-foreground">{workingDays}</span> days</span>
+            <span><span className="font-semibold text-foreground">₹{animPerDay.toLocaleString("en-IN")}</span>/day</span>
           </div>
         </div>
+
       </Card>
 
       {previewError && (
@@ -563,25 +582,8 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — slim info banner */}
-      <button
-        type="button"
-        onClick={() => toast.message("First payout", {
-          description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
-        })}
-        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-[11px] text-muted-foreground transition-colors hover:bg-accent/40"
-      >
-        <IndianRupee className="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span className="flex-1">First payout releases after your first 15 active service days.</span>
-        <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
-      </button>
+      {/* First-payout details and motivation tips moved to the Learn More page — kept out of the daily flow. */}
 
-      {/* Motivation banner — rotates daily */}
-      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">{tipOfDay.emoji}</span>
-        <span className="font-medium">{tipOfDay.head}</span>
-        <span className="text-muted-foreground"> {tipOfDay.tail}</span>
-      </div>
 
 
 

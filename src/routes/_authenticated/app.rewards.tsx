@@ -30,6 +30,16 @@ function RewardsPage() {
   const monthDone = Math.min(partner?.total_cars_completed ?? 0, monthGoal);
   const monthPct = Math.round((monthDone / monthGoal) * 100);
 
+  // Bonus progress: what the partner has already earned vs total available across all bonuses.
+  const streakEarned = 0; // wired to real ledger later
+  const ratingEarned = 0;
+  const challengeEarned = monthPct >= 100 ? 2000 : 0;
+  const bonusEarned = streakEarned + ratingEarned + challengeEarned;
+  const bonusPool = 2000 + 150 * 4 + 50 * 20; // monthly challenge + 4 weekly streaks + estimated 5-star pool
+  const bonusRemaining = Math.max(0, bonusPool - bonusEarned);
+  const bonusPct = Math.round((bonusEarned / bonusPool) * 100);
+
+
   const copy = () => {
     navigator.clipboard?.writeText(code);
     toast.success("Code copied");
@@ -68,7 +78,28 @@ function RewardsPage() {
         <Button variant="outline" size="sm" className="mt-3 w-full">Share with customers</Button>
       </Card>
 
-      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Monthly challenge</h2>
+      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Your Bonus Progress</h2>
+      <Card className="mt-3 p-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <div>
+            <p className="text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{bonusEarned.toLocaleString("en-IN")}</p>
+            <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">Earned</p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-semibold tabular-nums">₹{bonusRemaining.toLocaleString("en-IN")}</p>
+            <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">Remaining</p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out" style={{ width: `${bonusPct}%` }} />
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Across referrals, monthly challenge, weekly streaks and 5-star bonuses.
+        </p>
+      </Card>
+
+      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Monthly Challenge</h2>
+
       <Card className="mt-3 p-5">
         <div className="flex items-start justify-between">
           <div>

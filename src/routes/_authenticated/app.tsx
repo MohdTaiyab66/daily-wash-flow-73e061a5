@@ -142,13 +142,23 @@ function BottomNav() {
             <Link
               key={t.to}
               to={t.to}
-              className={`flex flex-col items-center gap-1 py-3 text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${active ? "text-primary" : "text-muted-foreground"}`}
             >
-              <Icon className="h-5 w-5" />
+              <span
+                className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
+                  active ? "bg-primary/12 scale-105" : "bg-transparent"
+                }`}
+              >
+                <Icon
+                  className="h-5 w-5"
+                  {...(active ? { fill: "currentColor", strokeWidth: 1.5 } : {})}
+                />
+              </span>
               {t.label}
             </Link>
           );
         })}
+
       </div>
     </nav>
   );

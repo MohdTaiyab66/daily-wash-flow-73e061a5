@@ -223,7 +223,7 @@ function RoutePage() {
       {total > 0 && !isEndOfDay && (
         <Card className="mt-5 p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's progress</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's Progress</p>
             <p className="text-base font-semibold tabular-nums">
               {done}<span className="text-sm font-medium text-muted-foreground"> / {total} done</span>
             </p>
@@ -255,7 +255,7 @@ function RoutePage() {
       {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
         <section className="mt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up next</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up Next</h2>
             <span className="text-[11px] text-muted-foreground">
               {queueStops.length} customer{queueStops.length === 1 ? "" : "s"} waiting
             </span>
@@ -380,17 +380,18 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
+  const rate = Number((stop as any).rate_per_car ?? 17);
   return (
     <Card className="mt-5 overflow-hidden border border-border bg-background p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.35)]">
       <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Serve next</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Next customer</span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
-      <div className="flex items-start gap-3 p-4">
+      <div className="flex items-start gap-3.5 p-4">
         <div className="relative shrink-0">
           <TappableVehicleImage
             path={v?.front_image_path}
-            className="h-[80px] w-[80px] rounded-xl"
+            className="h-[104px] w-[104px] rounded-xl"
             alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
             customerName={c?.full_name}
             vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
@@ -403,7 +404,12 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate text-xl font-bold leading-tight">{c?.full_name ?? "Customer"}</p>
+            <span className="shrink-0 rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-bold tabular-nums text-primary">
+              +₹{rate}
+            </span>
+          </div>
           <p className="mt-1 truncate text-sm text-foreground/80">
             <Car className="mr-1 inline h-3.5 w-3.5" />{v?.make} {v?.model}
           </p>
@@ -419,6 +425,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
           )}
         </div>
       </div>
+
       <div className="grid grid-cols-[1fr_1fr_2.2fr] gap-2 border-t border-border/60 bg-muted/20 p-3">
         <IconAction
           icon={<Navigation className="h-5 w-5" />}
@@ -494,27 +501,31 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
 }
 
 
-function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+function QueueRow({ stop, seqNo, total: _total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
+  const rate = Number((stop as any).rate_per_car ?? 17);
   return (
-    <Card className="flex items-center gap-2.5 p-2">
-      <div className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground w-7 text-center">
+    <Card className="flex items-center gap-2.5 p-2.5">
+      <div className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
         #{seqNo}
       </div>
       <TappableVehicleImage
         path={v?.front_image_path}
-        className="h-10 w-10 shrink-0 rounded-md"
+        className="h-12 w-12 shrink-0 rounded-lg"
         alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
         customerName={c?.full_name}
         vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
         registration={v?.registration_number}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+          <span className="shrink-0 text-[11px] font-bold tabular-nums text-primary">+₹{rate}</span>
+        </div>
         <p className="truncate text-[11px] text-muted-foreground">
           {v?.make} {v?.model} · {v?.registration_number}
         </p>
@@ -547,6 +558,7 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
     </Card>
   );
 }
+
 
 function CollapsibleSection({
   title,
