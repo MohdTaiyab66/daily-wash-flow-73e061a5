@@ -22,6 +22,7 @@ import {
   Route as RouteIcon,
   Wallet,
 } from "lucide-react";
+import { AnimatedNumber } from "@/components/partner/AnimatedNumber";
 
 /**
  * Rough per-partner finish estimate: start time + service time per remaining
