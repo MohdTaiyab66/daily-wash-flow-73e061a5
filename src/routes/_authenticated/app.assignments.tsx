@@ -446,18 +446,21 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — earnings dominate, meta underneath */}
-        <div className="mt-3 rounded-lg bg-muted/60 px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-          <p className="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-          <div className="mt-2 flex items-center gap-3 border-t border-border/50 pt-2 text-[11px] tabular-nums text-muted-foreground">
-            <span><span className="font-semibold text-foreground">{workingDays}</span> Working Days</span>
-            <span className="opacity-40">·</span>
-            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> Services</span>
-            <span className="opacity-40">·</span>
-            <span>₹{animPerDay.toLocaleString("en-IN")}/day</span>
+        {/* Merged monthly estimate — premium: earnings dominate, meta stacked underneath */}
+        <div className="mt-3 rounded-xl bg-muted/60 px-4 py-4">
+          <p className="text-3xl font-semibold tracking-tight tabular-nums text-primary">
+            ₹{animMonthly.toLocaleString("en-IN")}
+          </p>
+          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Estimated this month
+          </p>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] tabular-nums text-muted-foreground">
+            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> services</span>
+            <span><span className="font-semibold text-foreground">{workingDays}</span> days</span>
+            <span><span className="font-semibold text-foreground">₹{animPerDay.toLocaleString("en-IN")}</span>/day</span>
           </div>
         </div>
+
       </Card>
 
       {previewError && (
