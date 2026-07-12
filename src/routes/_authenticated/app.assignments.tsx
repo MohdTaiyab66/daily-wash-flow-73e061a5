@@ -569,11 +569,11 @@ function AssignmentsPage() {
         <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
 
-      {/* Motivation banner — just above sticky CTA */}
+      {/* Motivation banner — rotates daily */}
       <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">🚀</span>
-        <span className="font-medium">High-performing partners</span>
-        <span className="text-muted-foreground"> receive more recurring customers over time in {partner.home_area}.</span>
+        <span className="mr-1">{tipOfDay.emoji}</span>
+        <span className="font-medium">{tipOfDay.head}</span>
+        <span className="text-muted-foreground"> {tipOfDay.tail}</span>
       </div>
 
 
