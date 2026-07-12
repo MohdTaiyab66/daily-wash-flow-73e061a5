@@ -152,22 +152,23 @@ function AssignmentsPage() {
   const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
   const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
 
-  const minDays = settings?.minDays ?? 7;
-  const maxDays = settings?.maxDays ?? 90;
-  const defaultDays = settings?.defaultDays ?? 30;
+  // Commitment window is fixed to a partner-friendly 7–30 range so the slider
+  // stays legible and consistent regardless of admin envelope.
+  const minDays = Math.max(7, settings?.minDays ?? 7);
+  const maxDays = Math.min(30, settings?.maxDays ?? 30);
+  const defaultDays = Math.min(maxDays, Math.max(minDays, settings?.defaultDays ?? 15));
 
   const [hours, setHours] = useState(4);
   const [duration, setDuration] = useState(defaultDays);
+  const [durationTouched, setDurationTouched] = useState(false);
 
-  // Keep hours + duration within admin bounds when settings change
   useEffect(() => {
     setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
   }, [minHours, maxHours]);
   useEffect(() => {
     setDuration((d) => {
-      // If user hasn't nudged the slider, snap to admin default; otherwise clamp.
-      if (d === 15 || d < minDays || d > maxDays) return Math.min(maxDays, Math.max(minDays, defaultDays));
-      return d;
+      if (!durationTouched) return defaultDays;
+      return Math.min(maxDays, Math.max(minDays, d));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDays, maxDays, defaultDays]);
@@ -231,6 +232,22 @@ function AssignmentsPage() {
     retry: 1,
   });
 
+  const friendlyError = (raw: any): string => {
+    const msg = String(raw?.message ?? raw ?? "").toLowerCase();
+    if (!msg) return "Something went wrong. Please try again.";
+    if (msg.includes("already have an active assignment")) return "You already have an active route today.";
+    if (msg.includes("select your work area")) return "Please choose your work area first.";
+    if (msg.includes("no customers available")) return "No customers available in your area right now. Try a different area or come back soon.";
+    if (msg.includes("cars must be at most")) return "That's more customers than allowed. Reduce your working hours and try again.";
+    if (msg.includes("first assignment must be") || msg.includes("duration must be")) return "Please pick a commitment between 7 and 30 days.";
+    if (msg.includes("not authenticated")) return "Please sign in again to continue.";
+    // Never expose column/schema/DB errors to partners.
+    if (msg.includes("column") || msg.includes("relation") || msg.includes("permission") || msg.includes("violates")) {
+      return "We couldn't create your route right now. Please try again in a moment.";
+    }
+    return raw?.message ?? "Something went wrong. Please try again.";
+  };
+
   const accept = useMutation({
     mutationFn: async (acceptCars: number) => {
       const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: acceptCars, p_duration: duration });
@@ -238,11 +255,11 @@ function AssignmentsPage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("Assignment accepted · route optimised");
+      toast.success("Route created · heading to your live route");
       qc.invalidateQueries();
-      navigate({ to: "/app/my-assignment" });
+      navigate({ to: "/app/live" });
     },
-    onError: (e: any) => toast.error(e.message ?? "Could not accept"),
+    onError: (e: any) => toast.error(friendlyError(e)),
   });
 
   const claimBooking = useMutation({
@@ -310,9 +327,13 @@ function AssignmentsPage() {
 
   // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
   // fixed weekly off). Over a 30-day window that averages ~26 working days.
-  const monthlyWorkingDays = Math.round((6 / 7) * 30);
-  const monthlyCars = monthlyWorkingDays * cars;
-  const monthlyEarn = monthlyCars * rate; // gross, no deductions
+  // Commitment-driven totals — duration is the number of working days, so
+  // everything scales with both hours (via `cars`) and the selected commitment.
+  const planWorkingDays = duration;
+  const planServices = planWorkingDays * cars;
+  const planGrossEarn = planServices * rate;
+  const planFuel = fuelEnabled ? Math.round(planServices * fuelPerCar) : 0;
+  const planNetEarn = planGrossEarn - planFuel;
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
@@ -384,7 +405,7 @@ function AssignmentsPage() {
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Priority customers</span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Consistent route</span>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s off. Duration counts only actual service days.</p>
       </Card>
@@ -426,7 +447,7 @@ function AssignmentsPage() {
 
       {previewError && (
         <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{(previewError as Error).message}</span></div>
+          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{friendlyError(previewError)}</span></div>
         </Card>
       )}
 
@@ -443,24 +464,20 @@ function AssignmentsPage() {
               <div className="flex items-start gap-2">
                 <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">More customers are coming 🚀</p>
+                  <p className="text-sm font-semibold">Your route is still filling up</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of your target {cars} customers available today.
+                    {availableInArea} of {cars} customers ready in {partner.home_area}. More usually join as the morning starts.
                   </p>
                 </div>
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Route growth</span><span>{availableInArea} / {cars} · {growthPct}%</span>
+                  <span>Route filled</span><span>{availableInArea} / {cars} · {growthPct}%</span>
                 </div>
                 <Progress value={growthPct} className="mt-1.5 h-2" />
               </div>
-              <div className="mt-3 grid gap-2">
-                <Button size="sm" onClick={() => accept.mutate(availableInArea)} disabled={accept.isPending}>
-                  {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
-                </Button>
-                <Button asChild size="sm" variant="outline">
+              <div className="mt-3">
+                <Button asChild size="sm" variant="outline" className="w-full">
                   <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
                 </Button>
               </div>
@@ -495,27 +512,42 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Monthly forecast — number-forward layout */}
+      {/* Commitment total — live-updates with hours + duration */}
       <Card className="mt-3 p-5">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly estimate</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Over your {duration}-day commitment
+          </p>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div>
-            <p className="text-2xl font-bold tabular-nums">{monthlyWorkingDays}</p>
+            <p className="text-2xl font-bold tabular-nums">{planWorkingDays}</p>
             <p className="text-[11px] text-muted-foreground">Working days</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold tabular-nums">{monthlyCars.toLocaleString("en-IN")}</p>
+            <p className="text-2xl font-bold tabular-nums">{planServices.toLocaleString("en-IN")}</p>
             <p className="text-[11px] text-muted-foreground">Services</p>
           </div>
         </div>
-        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
-          <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+        <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">+ Earnings</span>
+            <span className="tabular-nums">₹{planGrossEarn.toLocaleString("en-IN")}</span>
+          </div>
+          {fuelEnabled && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">− Fuel</span>
+              <span className="tabular-nums text-muted-foreground">₹{planFuel.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+          <div className="mt-1 flex items-end justify-between border-t border-border pt-2">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated take-home</span>
+            <span className="text-2xl font-bold tabular-nums text-primary">₹{planNetEarn.toLocaleString("en-IN")}</span>
+          </div>
         </div>
       </Card>
+
 
       {/* Nearby requests — only when relevant */}
       {(loadingBookings || bookingRequests.length > 0) && (
