@@ -468,7 +468,7 @@ function HomePage() {
         <MiniStat
           icon={<IndianRupee className="h-4 w-4 text-primary" />}
           label="Earn Today"
-          value={`₹${earnedSoFar}`}
+          value={<><AnimatedNumber value={earnedSoFar} format={(n) => `₹${n}`} /></>}
           accent
         />
         <MiniStat
