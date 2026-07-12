@@ -516,27 +516,42 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Monthly forecast — number-forward layout */}
+      {/* Commitment total — live-updates with hours + duration */}
       <Card className="mt-3 p-5">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly estimate</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Over your {duration}-day commitment
+          </p>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div>
-            <p className="text-2xl font-bold tabular-nums">{monthlyWorkingDays}</p>
+            <p className="text-2xl font-bold tabular-nums">{planWorkingDays}</p>
             <p className="text-[11px] text-muted-foreground">Working days</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold tabular-nums">{monthlyCars.toLocaleString("en-IN")}</p>
+            <p className="text-2xl font-bold tabular-nums">{planServices.toLocaleString("en-IN")}</p>
             <p className="text-[11px] text-muted-foreground">Services</p>
           </div>
         </div>
-        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
-          <span className="text-2xl font-bold tabular-nums text-primary">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+        <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">+ Earnings</span>
+            <span className="tabular-nums">₹{planGrossEarn.toLocaleString("en-IN")}</span>
+          </div>
+          {fuelEnabled && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">− Fuel</span>
+              <span className="tabular-nums text-muted-foreground">₹{planFuel.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+          <div className="mt-1 flex items-end justify-between border-t border-border pt-2">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated take-home</span>
+            <span className="text-2xl font-bold tabular-nums text-primary">₹{planNetEarn.toLocaleString("en-IN")}</span>
+          </div>
         </div>
       </Card>
+
 
       {/* Nearby requests — only when relevant */}
       {(loadingBookings || bookingRequests.length > 0) && (
