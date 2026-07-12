@@ -1316,12 +1316,22 @@ function UnavailableSection({
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
         <p className="mt-1 text-xs text-muted-foreground">Pick a reason and capture {UNAVAILABLE_REQUIRED} live proof photos.</p>
         <RadioGroup value={reason} onValueChange={setReason} className="mt-2 space-y-2">
-          {UNAVAILABLE_REASONS.map((r) => (
-            <Label key={r.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm">
-              <RadioGroupItem value={r.value} />
-              {r.label}
-            </Label>
-          ))}
+          {UNAVAILABLE_REASONS.map((r) => {
+            const Icon = r.icon;
+            const selected = reason === r.value;
+            return (
+              <Label
+                key={r.value}
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
+                  selected ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <RadioGroupItem value={r.value} />
+                <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                <span className="flex-1">{r.label}</span>
+              </Label>
+            );
+          })}
         </RadioGroup>
 
         <div className="mt-3">
