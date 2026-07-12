@@ -398,31 +398,33 @@ function ServiceDetail() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-2 pt-8">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-white/95">
-                <Camera className="h-3 w-3" /> Reference photo
+                <Camera className="h-3 w-3" /> Customer reference
               </span>
-              <p className="text-[10px] leading-tight text-white/75">Uploaded by customer</p>
+              <p className="text-[10px] leading-tight text-white/75">
+                {(service as any)?.created_at ? `Uploaded ${new Date((service as any).created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "Uploaded by customer"}
+              </p>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-              <ZoomIn className="h-3 w-3" /> Tap to zoom
+              <ZoomIn className="h-3 w-3" /> Pinch to zoom
             </span>
           </div>
         </button>
 
-        {/* Customer summary — stronger hierarchy */}
+        {/* Customer summary — name / vehicle / plate then meta */}
         <div className="p-5">
           <div className="flex items-start gap-3">
             <User className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold leading-tight tracking-tight">{c?.full_name ?? "—"}</p>
+              {(v?.make || v?.model) && (
+                <p className="mt-1 truncate text-sm font-medium text-foreground">{v?.make} {v?.model}</p>
+              )}
               {v?.registration_number ? (
-                <span className="mt-1.5 inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[13px] font-bold tracking-wider text-foreground">
+                <span className="mt-1.5 inline-block rounded-md border border-foreground/30 bg-yellow-50 px-2 py-0.5 font-mono text-[12px] font-bold tracking-wider text-foreground">
                   {v.registration_number}
                 </span>
               ) : (
                 <span className="mt-1.5 block text-xs text-muted-foreground">No plate on file</span>
-              )}
-              {(v?.make || v?.model) && (
-                <p className="mt-1.5 truncate text-xs uppercase tracking-wide text-muted-foreground">{v?.make} {v?.model}</p>
               )}
             </div>
           </div>
