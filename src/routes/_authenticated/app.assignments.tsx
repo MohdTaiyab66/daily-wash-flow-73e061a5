@@ -571,7 +571,7 @@ function AssignmentsPage() {
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
           {accept.isPending ? (
-            <Button size="lg" className="h-auto w-full py-3" disabled>
+            <Button size="lg" className="h-auto w-full py-3 shadow-lg shadow-primary/25" disabled>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
             </Button>
           ) : isFetching && !preview ? (
@@ -581,7 +581,7 @@ function AssignmentsPage() {
           ) : noneAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               disabled={toggleNotify.isPending || partner.notify_when_customers_added}
               onClick={() => toggleNotify.mutate(true)}
             >
@@ -596,21 +596,21 @@ function AssignmentsPage() {
           ) : partialAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               onClick={() => accept.mutate(availableInArea)}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start Route <ArrowRight className="h-4 w-4" />
+                  Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">{availableInArea} customer{availableInArea === 1 ? "" : "s"} ready · ₹{acceptableEarn.toLocaleString("en-IN")}</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
               </span>
             </Button>
 
           ) : (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               onClick={() => accept.mutate(cars)}
             >
               <span className="flex flex-col items-center leading-tight">
