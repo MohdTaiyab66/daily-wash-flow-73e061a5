@@ -1520,13 +1520,26 @@ function DirtyVehicleSection({
       </button>
 
       <div className={expanded ? "border-t border-border p-4" : "hidden"}>
-        <RadioGroup value={reason} onValueChange={setReason} className="mt-1 space-y-1">
-          {DIRTY_REASONS.map((r) => (
-            <Label key={r} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2.5 text-sm">
-              <RadioGroupItem value={r} />{r}
-            </Label>
-          ))}
-        </RadioGroup>
+        <p className="mt-1 text-xs text-muted-foreground">Pick what you see and capture all 4 side photos.</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {DIRTY_REASONS.map((r) => {
+            const selected = reason === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setReason(r)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  selected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-muted/40 text-muted-foreground hover:border-primary hover:text-primary"
+                }`}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {DIRTY_ANGLES.map((angle) => {
             const done = photos.some((p) => p.stage === "dirty" && p.angle === angle);
