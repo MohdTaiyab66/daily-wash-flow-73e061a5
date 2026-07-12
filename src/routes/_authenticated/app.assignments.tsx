@@ -362,7 +362,7 @@ function AssignmentsPage() {
           </p>
         </div>
         <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
-          <MapPin className="h-3 w-3" />{partner.home_area}
+          <MapPin className="h-3 w-3" />{partner.home_area}<ChevronDown className="h-3 w-3 opacity-70" />
         </Link>
       </div>
 
@@ -376,26 +376,32 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4">
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
           <div>
             <p className="text-2xl font-bold tabular-nums">{animCars}</p>
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
           </div>
-          <div className="text-center">
+          <div>
             <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Today's Earnings</p>
           </div>
-          <div className="text-right">
+          <div>
             <p className="text-2xl font-bold tabular-nums">~{estKm}<span className="ml-0.5 text-sm font-normal text-muted-foreground">km</span></p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Travel Distance</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold tabular-nums">{formatTime12(startTime).replace(/:00 /, " ")}<span className="text-sm font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Working Time</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Clock className="h-3.5 w-3.5" />Working time</span>
-          <span className="font-semibold tabular-nums">{formatTime12(startTime)} – {formatTime12(finishTime)}</span>
-        </div>
-        {isFetching && <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
+        {isFetching && <p className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
       </Card>
+
+      {/* Trust indicator */}
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+        Live estimates based on current bookings in your area.
+      </p>
 
       {/* Commitment — compact */}
       <Card className="mt-3 p-5">
