@@ -405,7 +405,7 @@ function AssignmentsPage() {
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Priority customers</span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Consistent route</span>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => setDuration(v[0])} className="mt-4" />
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s off. Duration counts only actual service days.</p>
       </Card>
