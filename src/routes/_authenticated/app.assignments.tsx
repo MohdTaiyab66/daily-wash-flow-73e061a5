@@ -43,14 +43,13 @@ function useAnimatedNumber(value: number, duration = 380) {
   return display;
 }
 
-function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
-  const span = max - min;
-  const recoLo = min + span * 0.28;
-  const recoHi = min + span * 0.52;
-  if (days <= min + span * 0.15) return { label: "Flexible", tone: "flex" };
-  if (days >= min + span * 0.75) return { label: "Maximum Priority", tone: "max" };
-  if (days >= recoLo && days <= recoHi) return { label: "⭐ Recommended", tone: "reco" };
-  return { label: "Consistent", tone: "reco" };
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max"; stars: number } {
+  const span = Math.max(1, max - min);
+  const ratio = (days - min) / span;
+  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max", stars: 5 };
+  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco", stars: 4 };
+  if (ratio >= 0.15) return { label: "Consistent", tone: "reco", stars: 3 };
+  return { label: "Starter", tone: "flex", stars: 2 };
 }
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
