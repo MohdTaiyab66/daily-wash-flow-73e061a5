@@ -427,10 +427,16 @@ function AssignmentsPage() {
       </Card>
 
       {/* Trust indicator */}
-      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-        Live estimates based on current bookings in your area.
-      </p>
+      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground/70">
+        <p className="flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+          Live estimates based on current bookings in your area.
+        </p>
+        {updatedAgoLabel && !isFetching ? (
+          <span className="shrink-0 tabular-nums">Updated {updatedAgoLabel}</span>
+        ) : null}
+      </div>
+
 
       {/* Commitment — compact */}
       <Card className="mt-3 p-5">
