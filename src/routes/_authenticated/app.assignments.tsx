@@ -390,7 +390,7 @@ function AssignmentsPage() {
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Travel Distance</p>
           </div>
           <div>
-            <p className="text-2xl font-bold tabular-nums">{formatTime12(startTime).replace(/:00 /, " ")}<span className="text-sm font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
+            <p className="text-lg font-bold tabular-nums leading-7">{formatTime12(startTime).replace(/:00 /, " ")}<span className="mx-0.5 font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Working Time</p>
           </div>
         </div>
