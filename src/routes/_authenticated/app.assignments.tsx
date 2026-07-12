@@ -330,8 +330,27 @@ function AssignmentsPage() {
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
 
+  // Working days across the commitment window, excluding the weekly-off day.
+  const workingDays = useMemo(() => {
+    const start = new Date();
+    let count = 0;
+    for (let i = 0; i < duration; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      if (d.getDay() !== offDayKey) count++;
+    }
+    return count;
+  }, [duration, offDayKey]);
+
+  const monthlyServices = workingDays * cars;
+  const monthlyEarn = workingDays * dailyEarn;
+  const perDayEarn = workingDays > 0 ? Math.round(monthlyEarn / workingDays) : 0;
+
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
+  const animMonthly = useAnimatedNumber(monthlyEarn);
+  const animMonthlyServices = useAnimatedNumber(monthlyServices);
+  const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
 
   return (
@@ -395,6 +414,18 @@ function AssignmentsPage() {
         <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
+
+        {/* Merged monthly estimate — updates live with hours + commitment */}
+        <div className="mt-4 rounded-xl bg-muted/60 p-4">
+          <div className="flex items-baseline justify-between">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+            <p className="text-[10px] tabular-nums text-muted-foreground">≈ ₹{animPerDay.toLocaleString("en-IN")}/day</p>
+          </div>
+          <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+            {animMonthlyServices.toLocaleString("en-IN")} services · {workingDays} working day{workingDays === 1 ? "" : "s"}
+          </p>
+        </div>
       </Card>
 
       {previewError && (
@@ -511,6 +542,15 @@ function AssignmentsPage() {
         <span className="flex-1">First payout releases after your first 15 active service days.</span>
         <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
+
+      {/* Motivation banner — just above sticky CTA */}
+      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
+        <span className="mr-1">🔥</span>
+        <span className="font-medium">Complete today's route</span>
+        <span className="text-muted-foreground"> to unlock more regular customers in {partner.home_area}.</span>
+      </div>
+
+
 
 
       {/* Sticky CTA — always primary, action varies with availability */}
