@@ -18,6 +18,10 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Small tween hook so estimates animate as sliders move — feels premium.
 function useAnimatedNumber(value: number, duration = 380) {
