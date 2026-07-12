@@ -22,6 +22,7 @@ import {
   Route as RouteIcon,
   Wallet,
 } from "lucide-react";
+import { AnimatedNumber } from "@/components/partner/AnimatedNumber";
 
 /**
  * Rough per-partner finish estimate: start time + service time per remaining
@@ -467,7 +468,7 @@ function HomePage() {
         <MiniStat
           icon={<IndianRupee className="h-4 w-4 text-primary" />}
           label="Earn Today"
-          value={`₹${earnedSoFar}`}
+          value={<><AnimatedNumber value={earnedSoFar} format={(n) => `₹${n}`} /></>}
           accent
         />
         <MiniStat
@@ -516,7 +517,7 @@ function MiniStat({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   accent?: boolean;
 }) {
   return (
