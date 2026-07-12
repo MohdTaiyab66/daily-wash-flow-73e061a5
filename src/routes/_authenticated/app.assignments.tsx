@@ -543,6 +543,15 @@ function AssignmentsPage() {
         <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
 
+      {/* Motivation banner — just above sticky CTA */}
+      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
+        <span className="mr-1">🔥</span>
+        <span className="font-medium">Complete today's route</span>
+        <span className="text-muted-foreground"> to unlock more regular customers in {partner.home_area}.</span>
+      </div>
+
+
+
 
       {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
