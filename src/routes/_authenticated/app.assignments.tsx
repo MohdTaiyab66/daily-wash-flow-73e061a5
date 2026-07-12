@@ -330,8 +330,27 @@ function AssignmentsPage() {
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
 
+  // Working days across the commitment window, excluding the weekly-off day.
+  const workingDays = useMemo(() => {
+    const start = new Date();
+    let count = 0;
+    for (let i = 0; i < duration; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      if (d.getDay() !== offDayKey) count++;
+    }
+    return count;
+  }, [duration, offDayKey]);
+
+  const monthlyServices = workingDays * cars;
+  const monthlyEarn = workingDays * dailyEarn;
+  const perDayEarn = workingDays > 0 ? Math.round(monthlyEarn / workingDays) : 0;
+
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
+  const animMonthly = useAnimatedNumber(monthlyEarn);
+  const animMonthlyServices = useAnimatedNumber(monthlyServices);
+  const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
 
   return (
