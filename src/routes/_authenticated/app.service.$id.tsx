@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock, User, Car, IdCard, MapPin, ZoomIn, Play } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, XCircle, AlertTriangle, Clock, User, Car, IdCard, MapPin, ZoomIn, Play, CarFront, PhoneOff, SkipForward, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OfflineGuard } from "@/components/OfflineGuard";
