@@ -18,6 +18,10 @@ import { OfflineGuard } from "@/components/OfflineGuard";
 import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Small tween hook so estimates animate as sliders move — feels premium.
 function useAnimatedNumber(value: number, duration = 380) {
@@ -43,14 +47,22 @@ function useAnimatedNumber(value: number, duration = 380) {
   return display;
 }
 
-function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max"; stars: number } {
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
   const span = Math.max(1, max - min);
   const ratio = (days - min) / span;
-  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max", stars: 5 };
-  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco", stars: 4 };
-  if (ratio >= 0.15) return { label: "Consistent", tone: "reco", stars: 3 };
-  return { label: "Starter", tone: "flex", stars: 2 };
+  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max" };
+  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco" };
+  if (ratio >= 0.15) return { label: "Consistent", tone: "reco" };
+  return { label: "Starter", tone: "flex" };
 }
+
+const MOTIVATION_TIPS = [
+  { emoji: "🚀", head: "High-performing partners", tail: "receive more recurring customers over time." },
+  { emoji: "🔥", head: "Complete today's route", tail: "to unlock more regular customers." },
+  { emoji: "⭐", head: "Partners with high ratings", tail: "receive priority customers." },
+  { emoji: "💰", head: "Longer commitments", tail: "increase monthly earnings." },
+  { emoji: "🏆", head: "Consistent partners", tail: "get better routes and premium areas." },
+];
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
@@ -351,6 +363,9 @@ function AssignmentsPage() {
   const animMonthlyServices = useAnimatedNumber(monthlyServices);
   const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
+  const tipOfDay = MOTIVATION_TIPS[new Date().getDate() % MOTIVATION_TIPS.length];
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmCars, setConfirmCars] = useState(0);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
@@ -398,7 +413,7 @@ function AssignmentsPage() {
       </Card>
 
       {/* Trust indicator */}
-      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
         Live estimates based on current bookings in your area.
       </p>
@@ -408,35 +423,35 @@ function AssignmentsPage() {
         <div className="flex items-baseline justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <p className={`mt-1 flex items-center gap-1.5 text-[11px] font-medium ${
-              commitment.tone === "max" ? "text-primary"
-              : commitment.tone === "reco" ? "text-[color:var(--success)]"
-              : "text-muted-foreground"
+            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+              commitment.tone === "max" ? "bg-primary/15 text-primary"
+              : commitment.tone === "reco" ? "bg-success/15 text-[color:var(--success)]"
+              : "bg-muted text-muted-foreground"
             }`}>
-              <span aria-hidden className="tracking-tighter">{"★".repeat(commitment.stars)}<span className="opacity-25">{"★".repeat(5 - commitment.stars)}</span></span>
-              <span>{commitment.label}</span>
-            </p>
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                commitment.tone === "max" ? "bg-primary"
+                : commitment.tone === "reco" ? "bg-success"
+                : "bg-muted-foreground"
+              }`} />
+              {commitment.label}
+            </span>
           </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4 opacity-90" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — compact, live */}
-        <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] text-muted-foreground tabular-nums">Daily average ₹{animPerDay.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-sm font-semibold tabular-nums">{animMonthlyServices.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Services</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums">{workingDays}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Working Days</p>
-            </div>
+        {/* Merged monthly estimate — earnings dominate, meta underneath */}
+        <div className="mt-3 rounded-lg bg-muted/60 px-4 py-3">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+          <p className="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          <div className="mt-2 flex items-center gap-3 border-t border-border/50 pt-2 text-[11px] tabular-nums text-muted-foreground">
+            <span><span className="font-semibold text-foreground">{workingDays}</span> Working Days</span>
+            <span className="opacity-40">·</span>
+            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> Services</span>
+            <span className="opacity-40">·</span>
+            <span>₹{animPerDay.toLocaleString("en-IN")}/day</span>
           </div>
         </div>
       </Card>
@@ -469,7 +484,7 @@ function AssignmentsPage() {
                 </div>
               </div>
               <Progress value={growthPct} className="mt-3 h-2" />
-              <p className="mt-2 text-[11px] text-muted-foreground">Customers keep joining until morning.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">More customers are added automatically until your route starts.</p>
               <Button asChild size="sm" variant="outline" className="mt-3 w-full">
                 <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
               </Button>
@@ -557,15 +572,34 @@ function AssignmentsPage() {
         <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
 
-      {/* Motivation banner — just above sticky CTA */}
+      {/* Motivation banner — rotates daily */}
       <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">🚀</span>
-        <span className="font-medium">High-performing partners</span>
-        <span className="text-muted-foreground"> receive more recurring customers over time in {partner.home_area}.</span>
+        <span className="mr-1">{tipOfDay.emoji}</span>
+        <span className="font-medium">{tipOfDay.head}</span>
+        <span className="text-muted-foreground"> {tipOfDay.tail}</span>
       </div>
 
 
 
+
+      {/* Today's Goal — becomes an emotional anchor above the CTA */}
+      {preview && (fullyAvailable || partialAvailable) && (
+        <Card className="mt-3 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Goal</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">
+                0 <span className="text-base font-normal text-muted-foreground">/ {acceptableCars} Completed</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Potential</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+          <Progress value={0} className="mt-3 h-1.5" />
+        </Card>
+      )}
 
       {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
@@ -590,20 +624,20 @@ function AssignmentsPage() {
                   <BellRing className="h-4 w-4" />
                   {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
                 </span>
-                <span className="text-[11px] font-normal opacity-90">Searching nearby in {partner.home_area}</span>
+                <span className="text-[11px] font-normal opacity-70">Searching nearby in {partner.home_area}</span>
               </span>
             </Button>
           ) : partialAvailable ? (
             <Button
               size="lg"
               className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => accept.mutate(availableInArea)}
+              onClick={() => { setConfirmCars(availableInArea); setConfirmOpen(true); }}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
                   Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
+                <span className="mt-0.5 text-[10px] font-normal opacity-70">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
               </span>
             </Button>
 
@@ -611,18 +645,40 @@ function AssignmentsPage() {
             <Button
               size="lg"
               className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => accept.mutate(cars)}
+              onClick={() => { setConfirmCars(cars); setConfirmOpen(true); }}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
                   Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
+                <span className="mt-0.5 text-[10px] font-normal opacity-70">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
               </span>
             </Button>
           )}
         </div>
       </div>
+
+      {/* Confirmation — prevents accidental starts, reinforces confidence */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ready to start?</AlertDialogTitle>
+            <AlertDialogDescription>
+              More customers will be added automatically during your route.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-2 space-y-2 rounded-lg bg-muted/60 p-4 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Area</span><span className="font-medium">{partner.home_area}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Customers ready</span><span className="font-medium tabular-nums">{confirmCars}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Estimated today</span><span className="font-medium tabular-nums text-primary">₹{(confirmCars * rate).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Start time</span><span className="font-medium">{formatTime12(startTime)}</span></div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => accept.mutate(confirmCars)}>Start Route</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
