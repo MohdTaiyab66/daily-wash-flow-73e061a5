@@ -205,34 +205,29 @@ function HomePage() {
               Active Assignment
             </div>
 
-            {/* Big trio */}
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <HeroStat
-                icon={<Car className="h-4 w-4" />}
-                label="Today's Customers"
-                value={total}
-              />
-              <HeroStat
-                icon={<CheckCircle2 className="h-4 w-4" />}
-                label="Completed"
-                value={done}
-              />
-              <HeroStat
-                icon={<MapPin className="h-4 w-4" />}
-                label="Remaining"
-                value={remaining}
-              />
+            {/* Compact one-line summary */}
+            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
+              <p className="text-base font-semibold tracking-tight">
+                {total} Customer{total === 1 ? "" : "s"}
+              </p>
+              <p className="mt-0.5 text-xs text-background/60">
+                {done} Completed · {remaining} Remaining
+              </p>
             </div>
 
             {/* Progress */}
             <div className="mt-4">
-              <p className="text-sm font-medium text-background/80">
-                <span className="text-base font-semibold text-background">{done} / {total}</span>{" "}
-                Customers Completed
-              </p>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-background/15">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+                  Today's Progress
+                </p>
+                <p className="text-xs font-medium text-background/80">
+                  {done} of {total} Completed
+                </p>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -241,7 +236,7 @@ function HomePage() {
             {/* Earnings + start-before */}
             <div className="mt-4 border-t border-background/10 pt-3">
               <p className="text-[11px] uppercase tracking-wider text-background/60">
-                Today's Earnings
+                Earn Today
               </p>
               <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
                 <IndianRupee className="h-5 w-5" />
@@ -258,6 +253,7 @@ function HomePage() {
                 </p>
               ) : null}
             </div>
+
 
             {/* Primary action */}
             <Button
