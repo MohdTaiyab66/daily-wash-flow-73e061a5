@@ -422,27 +422,11 @@ function AssignmentsPage() {
           <SummaryRow icon={<RouteIcon className="h-4 w-4" />} label="Distance" value={`~${estKm} km`} />
           <SummaryRow icon={<Timer className="h-4 w-4" />} label="Per customer" value={`~${avgMinPerCustomer} min`} />
         </div>
-        <div className="mt-4 space-y-1.5 border-t border-background/10 pt-4 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-background/70">+ Earnings</span>
-            <span className="tabular-nums text-[color:var(--success)]">₹{dailyEarn.toLocaleString("en-IN")}</span>
-          </div>
-          {fuelEnabled && (
-            <div className="flex items-center justify-between">
-              <span className="text-background/70">− Fuel</span>
-              <span className="tabular-nums text-background/60">₹{dailyFuel.toLocaleString("en-IN")}</span>
-            </div>
-          )}
-          <div className="mt-2 flex items-end justify-between border-t border-background/10 pt-2">
-            <span className="text-xs uppercase tracking-wider text-background/60">You'll take home</span>
-            <span className="text-3xl font-bold tabular-nums text-primary">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")}</span>
-          </div>
-          {fuelEnabled && (
-            <p className="pt-1 text-[10px] italic text-background/50">
-              *Fuel estimate based on {avgMileage} km/L average bike mileage.
-            </p>
-          )}
+        <div className="mt-4 flex items-end justify-between border-t border-background/10 pt-4">
+          <span className="text-xs uppercase tracking-wider text-background/60">You'll earn</span>
+          <span className="text-3xl font-bold tabular-nums text-primary">₹{dailyEarn.toLocaleString("en-IN")}</span>
         </div>
+
       </Card>
 
       {previewError && (
