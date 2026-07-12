@@ -69,6 +69,13 @@ function ServiceDetail() {
   const [serviceNotes, setServiceNotes] = useState("");
   const [nowTick, setNowTick] = useState(Date.now());
   const [autoOpenBefore, setAutoOpenBefore] = useState(false);
+  const [celebration, setCelebration] = useState<null | {
+    amount: number;
+    completed: number;
+    total: number;
+    walletBalance?: number | null;
+    nextName?: string | null;
+  }>(null);
   const activeStepRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
