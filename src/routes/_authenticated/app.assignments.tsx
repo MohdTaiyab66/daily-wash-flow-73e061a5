@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
   AlertTriangle, Inbox, UserRound, Clock, TrendingUp,
-  ArrowRight,
+  ArrowRight, ChevronDown,
 } from "lucide-react";
 
 import { toast } from "sonner";
