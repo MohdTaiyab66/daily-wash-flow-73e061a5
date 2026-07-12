@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp,
+  AlertTriangle, Inbox, UserRound, TrendingUp,
   ArrowRight, ChevronDown,
 } from "lucide-react";
 
