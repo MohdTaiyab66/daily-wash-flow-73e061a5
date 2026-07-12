@@ -420,35 +420,35 @@ function AssignmentsPage() {
         <div className="flex items-baseline justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <p className={`mt-1 flex items-center gap-1.5 text-[11px] font-medium ${
-              commitment.tone === "max" ? "text-primary"
-              : commitment.tone === "reco" ? "text-[color:var(--success)]"
-              : "text-muted-foreground"
+            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+              commitment.tone === "max" ? "bg-primary/15 text-primary"
+              : commitment.tone === "reco" ? "bg-success/15 text-[color:var(--success)]"
+              : "bg-muted text-muted-foreground"
             }`}>
-              <span aria-hidden className="tracking-tighter">{"★".repeat(commitment.stars)}<span className="opacity-25">{"★".repeat(5 - commitment.stars)}</span></span>
-              <span>{commitment.label}</span>
-            </p>
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                commitment.tone === "max" ? "bg-primary"
+                : commitment.tone === "reco" ? "bg-success"
+                : "bg-muted-foreground"
+              }`} />
+              {commitment.label}
+            </span>
           </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4 opacity-90" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — compact, live */}
-        <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] text-muted-foreground tabular-nums">Daily average ₹{animPerDay.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-sm font-semibold tabular-nums">{animMonthlyServices.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Services</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums">{workingDays}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Working Days</p>
-            </div>
+        {/* Merged monthly estimate — earnings dominate, meta underneath */}
+        <div className="mt-3 rounded-lg bg-muted/60 px-4 py-3">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+          <p className="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          <div className="mt-2 flex items-center gap-3 border-t border-border/50 pt-2 text-[11px] tabular-nums text-muted-foreground">
+            <span><span className="font-semibold text-foreground">{workingDays}</span> Working Days</span>
+            <span className="opacity-40">·</span>
+            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> Services</span>
+            <span className="opacity-40">·</span>
+            <span>₹{animPerDay.toLocaleString("en-IN")}/day</span>
           </div>
         </div>
       </Card>
