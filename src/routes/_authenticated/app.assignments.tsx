@@ -559,9 +559,9 @@ function AssignmentsPage() {
 
       {/* Motivation banner — just above sticky CTA */}
       <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">🔥</span>
-        <span className="font-medium">Complete today's route</span>
-        <span className="text-muted-foreground"> to unlock more regular customers in {partner.home_area}.</span>
+        <span className="mr-1">🚀</span>
+        <span className="font-medium">High-performing partners</span>
+        <span className="text-muted-foreground"> receive more recurring customers over time in {partner.home_area}.</span>
       </div>
 
 
