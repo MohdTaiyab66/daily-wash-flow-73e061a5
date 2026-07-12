@@ -582,6 +582,25 @@ function AssignmentsPage() {
 
 
 
+      {/* Today's Goal — becomes an emotional anchor above the CTA */}
+      {preview && (fullyAvailable || partialAvailable) && (
+        <Card className="mt-3 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Goal</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">
+                0 <span className="text-base font-normal text-muted-foreground">/ {acceptableCars} Completed</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Potential</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+          <Progress value={0} className="mt-3 h-1.5" />
+        </Card>
+      )}
+
       {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
@@ -605,20 +624,20 @@ function AssignmentsPage() {
                   <BellRing className="h-4 w-4" />
                   {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
                 </span>
-                <span className="text-[11px] font-normal opacity-90">Searching nearby in {partner.home_area}</span>
+                <span className="text-[11px] font-normal opacity-70">Searching nearby in {partner.home_area}</span>
               </span>
             </Button>
           ) : partialAvailable ? (
             <Button
               size="lg"
               className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => accept.mutate(availableInArea)}
+              onClick={() => { setConfirmCars(availableInArea); setConfirmOpen(true); }}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
                   Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
+                <span className="mt-0.5 text-[10px] font-normal opacity-70">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
               </span>
             </Button>
 
@@ -626,18 +645,40 @@ function AssignmentsPage() {
             <Button
               size="lg"
               className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => accept.mutate(cars)}
+              onClick={() => { setConfirmCars(cars); setConfirmOpen(true); }}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
                   Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
+                <span className="mt-0.5 text-[10px] font-normal opacity-70">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
               </span>
             </Button>
           )}
         </div>
       </div>
+
+      {/* Confirmation — prevents accidental starts, reinforces confidence */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ready to start?</AlertDialogTitle>
+            <AlertDialogDescription>
+              More customers will be added automatically during your route.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-2 space-y-2 rounded-lg bg-muted/60 p-4 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Area</span><span className="font-medium">{partner.home_area}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Customers ready</span><span className="font-medium tabular-nums">{confirmCars}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Estimated today</span><span className="font-medium tabular-nums text-primary">₹{(confirmCars * rate).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Start time</span><span className="font-medium">{formatTime12(startTime)}</span></div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => accept.mutate(confirmCars)}>Start Route</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
