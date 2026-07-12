@@ -8,8 +8,8 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp,
-  ArrowRight,
+  AlertTriangle, Inbox, UserRound, TrendingUp,
+  ArrowRight, ChevronDown,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -43,14 +43,13 @@ function useAnimatedNumber(value: number, duration = 380) {
   return display;
 }
 
-function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
-  const span = max - min;
-  const recoLo = min + span * 0.28;
-  const recoHi = min + span * 0.52;
-  if (days <= min + span * 0.15) return { label: "Flexible", tone: "flex" };
-  if (days >= min + span * 0.75) return { label: "Maximum Priority", tone: "max" };
-  if (days >= recoLo && days <= recoHi) return { label: "⭐ Recommended", tone: "reco" };
-  return { label: "Consistent", tone: "reco" };
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max"; stars: number } {
+  const span = Math.max(1, max - min);
+  const ratio = (days - min) / span;
+  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max", stars: 5 };
+  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco", stars: 4 };
+  if (ratio >= 0.15) return { label: "Consistent", tone: "reco", stars: 3 };
+  return { label: "Starter", tone: "flex", stars: 2 };
 }
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
@@ -363,7 +362,7 @@ function AssignmentsPage() {
           </p>
         </div>
         <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
-          <MapPin className="h-3 w-3" />{partner.home_area}
+          <MapPin className="h-3 w-3" />{partner.home_area}<ChevronDown className="h-3 w-3 opacity-70" />
         </Link>
       </div>
 
@@ -377,37 +376,46 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4">
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
           <div>
             <p className="text-2xl font-bold tabular-nums">{animCars}</p>
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
           </div>
-          <div className="text-center">
+          <div>
             <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Today's Earnings</p>
           </div>
-          <div className="text-right">
+          <div>
             <p className="text-2xl font-bold tabular-nums">~{estKm}<span className="ml-0.5 text-sm font-normal text-muted-foreground">km</span></p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Travel Distance</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold tabular-nums leading-7">{formatTime12(startTime).replace(/:00 /, " ")}<span className="mx-0.5 font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Working Time</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Clock className="h-3.5 w-3.5" />Working time</span>
-          <span className="font-semibold tabular-nums">{formatTime12(startTime)} – {formatTime12(finishTime)}</span>
-        </div>
-        {isFetching && <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
+        {isFetching && <p className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
       </Card>
+
+      {/* Trust indicator */}
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+        Live estimates based on current bookings in your area.
+      </p>
 
       {/* Commitment — compact */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <p className={`mt-1 text-[11px] font-medium ${
+            <p className={`mt-1 flex items-center gap-1.5 text-[11px] font-medium ${
               commitment.tone === "max" ? "text-primary"
               : commitment.tone === "reco" ? "text-[color:var(--success)]"
               : "text-muted-foreground"
-            }`}>{commitment.label}</p>
+            }`}>
+              <span aria-hidden className="tracking-tighter">{"★".repeat(commitment.stars)}<span className="opacity-25">{"★".repeat(5 - commitment.stars)}</span></span>
+              <span>{commitment.label}</span>
+            </p>
           </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
@@ -415,16 +423,21 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — updates live with hours + commitment */}
-        <div className="mt-4 rounded-xl bg-muted/60 p-4">
-          <div className="flex items-baseline justify-between">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-            <p className="text-[10px] tabular-nums text-muted-foreground">≈ ₹{animPerDay.toLocaleString("en-IN")}/day</p>
+        {/* Merged monthly estimate — compact, live */}
+        <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] text-muted-foreground tabular-nums">Daily average ₹{animPerDay.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-semibold tabular-nums">{animMonthlyServices.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Services</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums">{workingDays}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Working Days</p>
+            </div>
           </div>
-          <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
-            {animMonthlyServices.toLocaleString("en-IN")} services · {workingDays} working day{workingDays === 1 ? "" : "s"}
-          </p>
         </div>
       </Card>
 
@@ -451,7 +464,8 @@ function AssignmentsPage() {
                   <p className="text-[11px] text-muted-foreground">Customers ready</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold tabular-nums text-muted-foreground">Expected {cars}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Today's target</p>
+                  <p className="text-lg font-semibold tabular-nums">{cars} Customers</p>
                 </div>
               </div>
               <Progress value={growthPct} className="mt-3 h-2" />
@@ -545,9 +559,9 @@ function AssignmentsPage() {
 
       {/* Motivation banner — just above sticky CTA */}
       <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[12px]">
-        <span className="mr-1">🔥</span>
-        <span className="font-medium">Complete today's route</span>
-        <span className="text-muted-foreground"> to unlock more regular customers in {partner.home_area}.</span>
+        <span className="mr-1">🚀</span>
+        <span className="font-medium">High-performing partners</span>
+        <span className="text-muted-foreground"> receive more recurring customers over time in {partner.home_area}.</span>
       </div>
 
 
@@ -557,7 +571,7 @@ function AssignmentsPage() {
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md p-4">
           {accept.isPending ? (
-            <Button size="lg" className="h-auto w-full py-3" disabled>
+            <Button size="lg" className="h-auto w-full py-3 shadow-lg shadow-primary/25" disabled>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
             </Button>
           ) : isFetching && !preview ? (
@@ -567,7 +581,7 @@ function AssignmentsPage() {
           ) : noneAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               disabled={toggleNotify.isPending || partner.notify_when_customers_added}
               onClick={() => toggleNotify.mutate(true)}
             >
@@ -582,21 +596,21 @@ function AssignmentsPage() {
           ) : partialAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               onClick={() => accept.mutate(availableInArea)}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start Route <ArrowRight className="h-4 w-4" />
+                  Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="mt-0.5 text-[11px] font-normal opacity-90">{availableInArea} customer{availableInArea === 1 ? "" : "s"} ready · ₹{acceptableEarn.toLocaleString("en-IN")}</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
               </span>
             </Button>
 
           ) : (
             <Button
               size="lg"
-              className="h-auto w-full py-3"
+              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
               onClick={() => accept.mutate(cars)}
             >
               <span className="flex flex-col items-center leading-tight">
