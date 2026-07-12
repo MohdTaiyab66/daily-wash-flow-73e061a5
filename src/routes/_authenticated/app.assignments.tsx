@@ -514,22 +514,11 @@ function AssignmentsPage() {
             <p className="text-[11px] text-muted-foreground">Services</p>
           </div>
         </div>
-        <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">+ Earnings</span>
-            <span className="tabular-nums">₹{planGrossEarn.toLocaleString("en-IN")}</span>
-          </div>
-          {fuelEnabled && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">− Fuel</span>
-              <span className="tabular-nums text-muted-foreground">₹{planFuel.toLocaleString("en-IN")}</span>
-            </div>
-          )}
-          <div className="mt-1 flex items-end justify-between border-t border-border pt-2">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated take-home</span>
-            <span className="text-2xl font-bold tabular-nums text-primary">₹{planNetEarn.toLocaleString("en-IN")}</span>
-          </div>
+        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
+          <span className="text-2xl font-bold tabular-nums text-primary">₹{planGrossEarn.toLocaleString("en-IN")}</span>
         </div>
+
       </Card>
 
 
