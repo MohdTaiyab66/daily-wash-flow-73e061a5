@@ -481,7 +481,7 @@ function AssignmentsPage() {
                 </div>
               </div>
               <Progress value={growthPct} className="mt-3 h-2" />
-              <p className="mt-2 text-[11px] text-muted-foreground">Customers keep joining until morning.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">More customers are added automatically until your route starts.</p>
               <Button asChild size="sm" variant="outline" className="mt-3 w-full">
                 <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
               </Button>
