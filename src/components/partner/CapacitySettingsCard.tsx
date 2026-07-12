@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 
-const OPTIONS = [15, 20, 25, 30, 35];
+const MIN_CAP = 15;
+const MAX_CAP = 35;
+const STEP = 5;
 
 export function CapacitySettingsCard({ partnerId }: { partnerId: string | null }) {
   const qc = useQueryClient();
@@ -38,22 +41,38 @@ export function CapacitySettingsCard({ partnerId }: { partnerId: string | null }
     onError: (e: any) => toast.error(e?.message ?? "Save failed"),
   });
 
-  return (
-    <Card className="mt-4 p-4">
-      <p className="text-sm font-semibold">Daily Shine capacity</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">We never offer beyond your cap.</p>
+  // Debounce so dragging the slider doesn't spam the DB.
+  const debounceRef = useRef<number | null>(null);
+  const persistCap = (next: number) => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => {
+      save.mutate({ max_daily_cars: next, accepting_new: accepting });
+    }, 500);
+  };
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {OPTIONS.map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => { setCap(n); save.mutate({ max_daily_cars: n, accepting_new: accepting }); }}
-            className={`rounded-full border px-3 py-1 text-xs ${cap === n ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
-          >
-            {n} cars
-          </button>
-        ))}
+  return (
+    <Card className="mt-4 p-5">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <p className="text-sm font-semibold">Daily Capacity</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">We never offer beyond your cap.</p>
+        </div>
+        <p className="text-2xl font-semibold tabular-nums">
+          {cap}<span className="ml-1 text-sm text-muted-foreground">Cars</span>
+        </p>
+      </div>
+
+      <Slider
+        className="mt-4"
+        value={[cap]}
+        min={MIN_CAP}
+        max={MAX_CAP}
+        step={STEP}
+        onValueChange={(v) => { setCap(v[0]); persistCap(v[0]); }}
+      />
+      <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
+        <span>{MIN_CAP}</span>
+        <span>{MAX_CAP}</span>
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
