@@ -558,13 +558,13 @@ function AssignmentsPage() {
               onClick={() => accept.mutate(availableInArea)}
             >
               <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
-                  <ArrowRight className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-base font-semibold">
+                  Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="text-[11px] font-normal opacity-90">More customers may join as the morning starts</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">{availableInArea} customer{availableInArea === 1 ? "" : "s"} ready · ₹{acceptableEarn.toLocaleString("en-IN")}</span>
               </span>
             </Button>
+
           ) : (
             <Button
               size="lg"
