@@ -572,12 +572,10 @@ function AssignmentsPage() {
               onClick={() => accept.mutate(cars)}
             >
               <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4" />
-                  Start Route · {cars} Customers
-                  <ArrowRight className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-base font-semibold">
+                  Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="text-[11px] font-normal opacity-90">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")} take-home · {formatTime12(startTime)}</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
               </span>
             </Button>
           )}
@@ -587,12 +585,4 @@ function AssignmentsPage() {
   );
 }
 
-function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="flex items-center gap-2 text-background/70">{icon}{label}</span>
-      <span className="font-semibold tabular-nums">{value}</span>
-    </div>
-  );
-}
 
