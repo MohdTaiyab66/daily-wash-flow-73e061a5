@@ -8,9 +8,10 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, Clock, TrendingUp, CalendarDays, Route as RouteIcon,
-  ArrowRight, Sparkles, Timer,
+  AlertTriangle, Inbox, UserRound, Clock, TrendingUp,
+  ArrowRight,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -320,20 +321,7 @@ function AssignmentsPage() {
   const finishTime = addHours(startTime, hours);
 
   const dailyEarn = cars * rate;
-  const dailyFuel = Math.round(cars * fuelPerCar);
-  const dailyNet = dailyEarn - dailyFuel;
-
   const acceptableEarn = acceptableCars * rate;
-
-  // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
-  // fixed weekly off). Over a 30-day window that averages ~26 working days.
-  // Commitment-driven totals — duration is the number of working days, so
-  // everything scales with both hours (via `cars`) and the selected commitment.
-  const planWorkingDays = duration;
-  const planServices = planWorkingDays * cars;
-  const planGrossEarn = planServices * rate;
-  const planFuel = fuelEnabled ? Math.round(planServices * fuelPerCar) : 0;
-  const planNetEarn = planGrossEarn - planFuel;
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
@@ -341,7 +329,7 @@ function AssignmentsPage() {
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
-  const avgMinPerCustomer = Math.max(1, Math.round((hours * 60) / Math.max(1, cars)));
+
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
@@ -360,7 +348,7 @@ function AssignmentsPage() {
         </Link>
       </div>
 
-      {/* Hours slider — with live estimates */}
+      {/* Work today — single consolidated card */}
       <Card className="mt-5 p-5">
         <div className="flex items-baseline justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Work today</p>
@@ -370,24 +358,28 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
           <span>{minHours}h</span><span>{maxHours}h</span>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
+        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums">{animCars}</p>
+            <p className="text-2xl font-bold tabular-nums">{animCars}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums">~{estKm}<span className="ml-0.5 text-xs font-normal text-muted-foreground">km</span></p>
+            <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earnings</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
+            <p className="text-2xl font-bold tabular-nums">~{estKm}<span className="ml-0.5 text-sm font-normal text-muted-foreground">km</span></p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Distance</p>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">Live estimate based on current bookings.</p>
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Clock className="h-3.5 w-3.5" />Working time</span>
+          <span className="font-semibold tabular-nums">{formatTime12(startTime)} – {formatTime12(finishTime)}</span>
+        </div>
+        {isFetching && <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
       </Card>
 
-      {/* Duration slider — Commitment framing */}
+      {/* Commitment — compact */}
       <Card className="mt-3 p-5">
         <div className="flex items-baseline justify-between">
           <div>
@@ -400,33 +392,9 @@ function AssignmentsPage() {
           </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Weekly payout</span>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Priority customers</span>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Consistent route</span>
-        </div>
         <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
-        <p className="mt-2 text-[10px] text-muted-foreground">{offDayFull}s off. Duration counts only actual service days.</p>
-      </Card>
-
-      {/* Today's Route — clean summary card */}
-      <Card className="mt-4 border-0 bg-foreground p-5 text-background">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-wider text-background/60">Today's Route</p>
-          {isFetching && <Loader2 className="h-4 w-4 animate-spin text-background/60" />}
-        </div>
-        <div className="mt-3 space-y-2.5 text-sm">
-          <SummaryRow icon={<Clock className="h-4 w-4" />} label="Timing" value={`${formatTime12(startTime)} – ${formatTime12(finishTime)}`} />
-          <SummaryRow icon={<CheckCircle2 className="h-4 w-4" />} label="Customers" value={`${cars}`} />
-          <SummaryRow icon={<RouteIcon className="h-4 w-4" />} label="Distance" value={`~${estKm} km`} />
-          <SummaryRow icon={<Timer className="h-4 w-4" />} label="Per customer" value={`~${avgMinPerCustomer} min`} />
-        </div>
-        <div className="mt-4 flex items-end justify-between border-t border-background/10 pt-4">
-          <span className="text-xs uppercase tracking-wider text-background/60">You'll earn</span>
-          <span className="text-3xl font-bold tabular-nums text-primary">₹{dailyEarn.toLocaleString("en-IN")}</span>
-        </div>
-
+        <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
       </Card>
 
       {previewError && (
@@ -435,36 +403,31 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Availability — optimistic framing */}
+      {/* Today's availability — simplified */}
       {preview && (
         <Card className={`mt-3 p-5 ${fullyAvailable ? "border-success/40 bg-success/5" : "border-warning/40 bg-warning/5"}`}>
           {fullyAvailable ? (
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="h-4 w-4 text-success" />
-              <p><span className="font-semibold">{cars} customers found</span> in {partner.home_area}</p>
+              <p><span className="font-semibold">{cars} customers ready</span> in {partner.home_area}</p>
             </div>
           ) : partialAvailable ? (
             <div>
-              <div className="flex items-start gap-2">
-                <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Your route is still filling up</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {availableInArea} of {cars} customers ready in {partner.home_area}. More usually join as the morning starts.
-                  </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's availability</p>
+              <div className="mt-2 flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-bold tabular-nums">{availableInArea}</p>
+                  <p className="text-[11px] text-muted-foreground">Customers ready</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold tabular-nums text-muted-foreground">Expected {cars}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Route filled</span><span>{availableInArea} / {cars} · {growthPct}%</span>
-                </div>
-                <Progress value={growthPct} className="mt-1.5 h-2" />
-              </div>
-              <div className="mt-3">
-                <Button asChild size="sm" variant="outline" className="w-full">
-                  <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
-                </Button>
-              </div>
+              <Progress value={growthPct} className="mt-3 h-2" />
+              <p className="mt-2 text-[11px] text-muted-foreground">Customers keep joining until morning.</p>
+              <Button asChild size="sm" variant="outline" className="mt-3 w-full">
+                <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
+              </Button>
             </div>
           ) : (
             <div>
@@ -496,30 +459,7 @@ function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Commitment total — live-updates with hours + duration */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Over your {duration}-day commitment
-          </p>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-2xl font-bold tabular-nums">{planWorkingDays}</p>
-            <p className="text-[11px] text-muted-foreground">Working days</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold tabular-nums">{planServices.toLocaleString("en-IN")}</p>
-            <p className="text-[11px] text-muted-foreground">Services</p>
-          </div>
-        </div>
-        <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Estimated earnings</span>
-          <span className="text-2xl font-bold tabular-nums text-primary">₹{planGrossEarn.toLocaleString("en-IN")}</span>
-        </div>
 
-      </Card>
 
 
       {/* Nearby requests — only when relevant */}
@@ -559,33 +499,19 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — tappable info card */}
+      {/* First payout — slim info banner */}
       <button
         type="button"
         onClick={() => toast.message("First payout", {
           description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
         })}
-        className="mt-3 block w-full text-left"
+        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-[11px] text-muted-foreground transition-colors hover:bg-accent/40"
       >
-        <Card className="p-4 transition-colors hover:bg-accent/40">
-          <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
-              <IndianRupee className="h-4 w-4 text-primary" />
-            </span>
-            <div className="flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">First payout</p>
-                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary">
-                  Learn more <ArrowRight className="h-3 w-3" />
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Your first week's earnings are securely held and released after your first 15 active service days.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <IndianRupee className="h-3.5 w-3.5 shrink-0 text-primary" />
+        <span className="flex-1">First payout releases after your first 15 active service days.</span>
+        <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
+
 
       {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
@@ -620,13 +546,13 @@ function AssignmentsPage() {
               onClick={() => accept.mutate(availableInArea)}
             >
               <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  Start with {availableInArea} · Earn ₹{acceptableEarn.toLocaleString("en-IN")}
-                  <ArrowRight className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-base font-semibold">
+                  Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="text-[11px] font-normal opacity-90">More customers may join as the morning starts</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">{availableInArea} customer{availableInArea === 1 ? "" : "s"} ready · ₹{acceptableEarn.toLocaleString("en-IN")}</span>
               </span>
             </Button>
+
           ) : (
             <Button
               size="lg"
@@ -634,12 +560,10 @@ function AssignmentsPage() {
               onClick={() => accept.mutate(cars)}
             >
               <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4" />
-                  Start Route · {cars} Customers
-                  <ArrowRight className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-base font-semibold">
+                  Start Route <ArrowRight className="h-4 w-4" />
                 </span>
-                <span className="text-[11px] font-normal opacity-90">₹{(fuelEnabled ? dailyNet : dailyEarn).toLocaleString("en-IN")} take-home · {formatTime12(startTime)}</span>
+                <span className="mt-0.5 text-[11px] font-normal opacity-90">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
               </span>
             </Button>
           )}
@@ -649,12 +573,4 @@ function AssignmentsPage() {
   );
 }
 
-function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="flex items-center gap-2 text-background/70">{icon}{label}</span>
-      <span className="font-semibold tabular-nums">{value}</span>
-    </div>
-  );
-}
 
