@@ -363,6 +363,9 @@ function AssignmentsPage() {
   const animMonthlyServices = useAnimatedNumber(monthlyServices);
   const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
+  const tipOfDay = MOTIVATION_TIPS[new Date().getDate() % MOTIVATION_TIPS.length];
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmCars, setConfirmCars] = useState(0);
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
