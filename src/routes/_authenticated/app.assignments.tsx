@@ -327,9 +327,13 @@ function AssignmentsPage() {
 
   // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
   // fixed weekly off). Over a 30-day window that averages ~26 working days.
-  const monthlyWorkingDays = Math.round((6 / 7) * 30);
-  const monthlyCars = monthlyWorkingDays * cars;
-  const monthlyEarn = monthlyCars * rate; // gross, no deductions
+  // Commitment-driven totals — duration is the number of working days, so
+  // everything scales with both hours (via `cars`) and the selected commitment.
+  const planWorkingDays = duration;
+  const planServices = planWorkingDays * cars;
+  const planGrossEarn = planServices * rate;
+  const planFuel = fuelEnabled ? Math.round(planServices * fuelPerCar) : 0;
+  const planNetEarn = planGrossEarn - planFuel;
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
