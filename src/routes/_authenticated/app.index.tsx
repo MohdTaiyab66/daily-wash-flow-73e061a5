@@ -285,23 +285,15 @@ function HomePage() {
             {total} customer{total === 1 ? "" : "s"} today
           </h2>
 
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            <HeroStat
-              icon={<Car className="h-4 w-4" />}
-              label="Today's Customers"
-              value={total}
-            />
-            <HeroStat
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              label="Completed"
-              value={done}
-            />
-            <HeroStat
-              icon={<MapPin className="h-4 w-4" />}
-              label="Remaining"
-              value={remaining}
-            />
+          <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
+            <p className="text-base font-semibold tracking-tight">
+              {total} Customer{total === 1 ? "" : "s"}
+            </p>
+            <p className="mt-0.5 text-xs text-background/60">
+              {done} Completed · {remaining} Remaining
+            </p>
           </div>
+
 
           <Button
             asChild
