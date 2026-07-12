@@ -233,7 +233,7 @@ function AssignmentsPage() {
 
   const hasArea = !!partner?.home_area;
 
-  const { data: preview, isFetching, error: previewError } = useQuery({
+  const { data: preview, isFetching, error: previewError, dataUpdatedAt } = useQuery({
     queryKey: ["preview", cars, duration],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("preview_assignment", { p_cars: cars, p_duration: duration });
@@ -243,6 +243,16 @@ function AssignmentsPage() {
     enabled: !active && hasArea,
     retry: 1,
   });
+
+  // Live "updated Xs ago" ticker for the estimates trust line.
+  const [nowTs, setNowTs] = useState(Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 5000);
+    return () => window.clearInterval(id);
+  }, []);
+  const updatedAgo = dataUpdatedAt ? Math.max(0, Math.round((nowTs - dataUpdatedAt) / 1000)) : null;
+  const updatedAgoLabel = updatedAgo == null ? "" : updatedAgo < 5 ? "just now" : updatedAgo < 60 ? `${updatedAgo}s ago` : `${Math.floor(updatedAgo / 60)}m ago`;
+
 
   const friendlyError = (raw: any): string => {
     const msg = String(raw?.message ?? raw ?? "").toLowerCase();
