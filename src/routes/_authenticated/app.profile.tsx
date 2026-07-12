@@ -105,17 +105,22 @@ function ProfilePage() {
       <CapacitySettingsCard partnerId={partner?.id ?? null} />
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("verifications")}</h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         {verifications.map((v) => (
-          <Card key={v.label} className={`p-3 ${v.ok ? "" : "border-dashed"}`}>
-            <div className={`flex items-center gap-1.5 ${v.ok ? "text-[color:var(--success)]" : "text-muted-foreground"}`}>
-              {v.ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-              <span className="text-[11px] font-medium">{v.ok ? t("verified") : t("pending")}</span>
-            </div>
-            <p className="mt-1 text-sm font-semibold">{v.label}</p>
-          </Card>
+          <span
+            key={v.label}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+              v.ok
+                ? "bg-[color:var(--success)]/12 text-[color:var(--success)]"
+                : "bg-primary/12 text-primary"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${v.ok ? "bg-[color:var(--success)]" : "bg-primary"}`} />
+            {v.label} {v.ok ? t("verified") : t("pending")}
+          </span>
         ))}
       </div>
+
 
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("more")}</h2>
       <div className="mt-3 space-y-2">
