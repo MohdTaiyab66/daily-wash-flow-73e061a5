@@ -321,20 +321,7 @@ function AssignmentsPage() {
   const finishTime = addHours(startTime, hours);
 
   const dailyEarn = cars * rate;
-  const dailyFuel = Math.round(cars * fuelPerCar);
-  const dailyNet = dailyEarn - dailyFuel;
-
   const acceptableEarn = acceptableCars * rate;
-
-  // Monthly forecast: Urban Wash schedules 6 days/week (Monday is the platform's
-  // fixed weekly off). Over a 30-day window that averages ~26 working days.
-  // Commitment-driven totals — duration is the number of working days, so
-  // everything scales with both hours (via `cars`) and the selected commitment.
-  const planWorkingDays = duration;
-  const planServices = planWorkingDays * cars;
-  const planGrossEarn = planServices * rate;
-  const planFuel = fuelEnabled ? Math.round(planServices * fuelPerCar) : 0;
-  const planNetEarn = planGrossEarn - planFuel;
 
   const fullyAvailable = preview && availableInArea >= cars;
   const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
@@ -342,7 +329,7 @@ function AssignmentsPage() {
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
 
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
-  const avgMinPerCustomer = Math.max(1, Math.round((hours * 60) / Math.max(1, cars)));
+
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
