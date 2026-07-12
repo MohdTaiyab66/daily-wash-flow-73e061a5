@@ -517,7 +517,7 @@ function MiniStat({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   accent?: boolean;
 }) {
   return (
