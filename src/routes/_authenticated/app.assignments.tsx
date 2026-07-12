@@ -47,14 +47,22 @@ function useAnimatedNumber(value: number, duration = 380) {
   return display;
 }
 
-function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max"; stars: number } {
+function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
   const span = Math.max(1, max - min);
   const ratio = (days - min) / span;
-  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max", stars: 5 };
-  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco", stars: 4 };
-  if (ratio >= 0.15) return { label: "Consistent", tone: "reco", stars: 3 };
-  return { label: "Starter", tone: "flex", stars: 2 };
+  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max" };
+  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco" };
+  if (ratio >= 0.15) return { label: "Consistent", tone: "reco" };
+  return { label: "Starter", tone: "flex" };
 }
+
+const MOTIVATION_TIPS = [
+  { emoji: "🚀", head: "High-performing partners", tail: "receive more recurring customers over time." },
+  { emoji: "🔥", head: "Complete today's route", tail: "to unlock more regular customers." },
+  { emoji: "⭐", head: "Partners with high ratings", tail: "receive priority customers." },
+  { emoji: "💰", head: "Longer commitments", tail: "increase monthly earnings." },
+  { emoji: "🏆", head: "Consistent partners", tail: "get better routes and premium areas." },
+];
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
