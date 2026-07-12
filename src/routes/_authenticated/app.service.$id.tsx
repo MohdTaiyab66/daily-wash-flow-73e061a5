@@ -627,18 +627,40 @@ function ServiceDetail() {
             {/* Timer + notes — bolder */}
             <Card className="mt-4 p-4">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-4 w-4" /> Service time
-                </span>
+                <div>
+                  <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Clock className="h-4 w-4" /> Service time
+                  </span>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">Average 5–7 min</p>
+                </div>
                 <span className="text-2xl font-extrabold tabular-nums tracking-tight">{elapsedLabel}</span>
               </div>
               {service.status === "in_progress" && (
-                <Textarea
-                  placeholder="Customer requested… · Parking issue… · Scratches noticed…"
-                  value={serviceNotes}
-                  onChange={(e) => setServiceNotes(e.target.value)}
-                  className="mt-3 min-h-[60px] text-sm"
-                />
+                <>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {NOTE_CHIPS.map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          setServiceNotes((current) => {
+                            if (current.includes(chip)) return current;
+                            return current ? `${current.trim()} · ${chip}` : chip;
+                          });
+                        }}
+                        className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    placeholder="Add notes for the customer or admin…"
+                    value={serviceNotes}
+                    onChange={(e) => setServiceNotes(e.target.value)}
+                    className="mt-2 min-h-[60px] text-sm"
+                  />
+                </>
               )}
             </Card>
 
