@@ -501,27 +501,31 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
 }
 
 
-function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+function QueueRow({ stop, seqNo, total: _total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
+  const rate = Number((stop as any).rate_per_car ?? 17);
   return (
-    <Card className="flex items-center gap-2.5 p-2">
-      <div className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground w-7 text-center">
+    <Card className="flex items-center gap-2.5 p-2.5">
+      <div className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
         #{seqNo}
       </div>
       <TappableVehicleImage
         path={v?.front_image_path}
-        className="h-10 w-10 shrink-0 rounded-md"
+        className="h-12 w-12 shrink-0 rounded-lg"
         alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
         customerName={c?.full_name}
         vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
         registration={v?.registration_number}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+          <span className="shrink-0 text-[11px] font-bold tabular-nums text-primary">+₹{rate}</span>
+        </div>
         <p className="truncate text-[11px] text-muted-foreground">
           {v?.make} {v?.model} · {v?.registration_number}
         </p>
@@ -554,6 +558,7 @@ function QueueRow({ stop, seqNo, total }: { stop: any; seqNo: number; total: num
     </Card>
   );
 }
+
 
 function CollapsibleSection({
   title,
