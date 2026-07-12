@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  LogOut, BookOpen, Headphones, Share2, ChevronRight, CheckCircle2, AlertCircle,
+  LogOut, BookOpen, Headphones, Share2, ChevronRight,
   Award, History, FileText, Shield, MapPin, Lock, Languages,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
