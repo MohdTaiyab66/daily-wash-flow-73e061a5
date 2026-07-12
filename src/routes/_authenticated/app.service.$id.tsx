@@ -20,6 +20,7 @@ import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCap
 import { getCurrentGps } from "@/lib/native";
 import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
 import { deleteQueuedPhoto, loadQueuedPhoto, saveQueuedPhoto } from "@/lib/photo-upload-queue";
+import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
