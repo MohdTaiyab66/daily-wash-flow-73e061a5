@@ -511,33 +511,19 @@ function AssignmentsPage() {
         <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
       )}
 
-      {/* First payout — tappable info card */}
+      {/* First payout — slim info banner */}
       <button
         type="button"
         onClick={() => toast.message("First payout", {
           description: "We hold your first week's earnings to protect against chargebacks. Once you've completed 15 active service days, all held earnings are released to your account. From then on, payouts continue on your chosen weekly schedule.",
         })}
-        className="mt-3 block w-full text-left"
+        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-[11px] text-muted-foreground transition-colors hover:bg-accent/40"
       >
-        <Card className="p-4 transition-colors hover:bg-accent/40">
-          <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
-              <IndianRupee className="h-4 w-4 text-primary" />
-            </span>
-            <div className="flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">First payout</p>
-                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary">
-                  Learn more <ArrowRight className="h-3 w-3" />
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Your first week's earnings are securely held and released after your first 15 active service days.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <IndianRupee className="h-3.5 w-3.5 shrink-0 text-primary" />
+        <span className="flex-1">First payout releases after your first 15 active service days.</span>
+        <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary">Learn more <ArrowRight className="h-3 w-3" /></span>
       </button>
+
 
       {/* Sticky CTA — always primary, action varies with availability */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
