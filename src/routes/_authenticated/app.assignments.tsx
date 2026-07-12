@@ -414,6 +414,18 @@ function AssignmentsPage() {
         <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4" />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
+
+        {/* Merged monthly estimate — updates live with hours + commitment */}
+        <div className="mt-4 rounded-xl bg-muted/60 p-4">
+          <div className="flex items-baseline justify-between">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+            <p className="text-[10px] tabular-nums text-muted-foreground">≈ ₹{animPerDay.toLocaleString("en-IN")}/day</p>
+          </div>
+          <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+            {animMonthlyServices.toLocaleString("en-IN")} services · {workingDays} working day{workingDays === 1 ? "" : "s"}
+          </p>
+        </div>
       </Card>
 
       {previewError && (
