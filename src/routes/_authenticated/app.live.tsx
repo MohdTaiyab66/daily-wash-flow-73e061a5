@@ -223,7 +223,7 @@ function RoutePage() {
       {total > 0 && !isEndOfDay && (
         <Card className="mt-5 p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's progress</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's Progress</p>
             <p className="text-base font-semibold tabular-nums">
               {done}<span className="text-sm font-medium text-muted-foreground"> / {total} done</span>
             </p>
@@ -255,7 +255,7 @@ function RoutePage() {
       {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
         <section className="mt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up next</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up Next</h2>
             <span className="text-[11px] text-muted-foreground">
               {queueStops.length} customer{queueStops.length === 1 ? "" : "s"} waiting
             </span>
