@@ -464,7 +464,8 @@ function AssignmentsPage() {
                   <p className="text-[11px] text-muted-foreground">Customers ready</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold tabular-nums text-muted-foreground">Expected {cars}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Today's target</p>
+                  <p className="text-lg font-semibold tabular-nums">{cars} Customers</p>
                 </div>
               </div>
               <Progress value={growthPct} className="mt-3 h-2" />
