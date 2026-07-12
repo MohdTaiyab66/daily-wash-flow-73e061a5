@@ -301,45 +301,20 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message ?? "Could not update"),
   });
 
-  if (loadingActive || loadingPartner || active) {
-    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
-  }
-
-  if (!hasArea) {
-    return (
-      <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
-        <Card className="mt-5 p-6 text-center">
-          <MapPin className="mx-auto h-10 w-10 text-primary" />
-          <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We need to know where you'll service customers before we can show you available cars and earnings.
-          </p>
-          <Button asChild size="lg" className="mt-5 w-full">
-            <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Select work area / use current location</Link>
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
-  const previewMessage = preview ? String((preview as any).message ?? "") : "";
-  const availableInArea = preview ? Number((preview as any).available_customers ?? 0) : 0;
+  // ---- All hooks below must run on every render (no early returns above this) ----
+  const previewSafe = preview as any;
+  const availableInArea = previewSafe ? Number(previewSafe.available_customers ?? 0) : 0;
   const acceptableCars = Math.min(cars, availableInArea);
-
   const startTime = computeStartTime(cars, startRules);
   const finishTime = addHours(startTime, hours);
-
   const dailyEarn = cars * rate;
   const acceptableEarn = acceptableCars * rate;
-
-  const fullyAvailable = preview && availableInArea >= cars;
-  const partialAvailable = preview && availableInArea > 0 && availableInArea < cars;
-  const noneAvailable = preview && availableInArea === 0;
+  const fullyAvailable = !!previewSafe && availableInArea >= cars;
+  const partialAvailable = !!previewSafe && availableInArea > 0 && availableInArea < cars;
+  const noneAvailable = !!previewSafe && availableInArea === 0;
   const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
-
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
+  const previewMessage = previewSafe ? String(previewSafe.message ?? "") : "";
 
   // Working days across the commitment window, excluding the weekly-off day.
   const workingDays = useMemo(() => {
@@ -366,6 +341,32 @@ function AssignmentsPage() {
   const tipOfDay = MOTIVATION_TIPS[new Date().getDate() % MOTIVATION_TIPS.length];
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmCars, setConfirmCars] = useState(0);
+
+  // ---- Conditional early returns AFTER all hooks ----
+  if (loadingActive || loadingPartner || active) {
+    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
+  }
+
+  if (!hasArea) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
+        <Card className="mt-5 p-6 text-center">
+          <MapPin className="mx-auto h-10 w-10 text-primary" />
+          <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We need to know where you'll service customers before we can show you available cars and earnings.
+          </p>
+          <Button asChild size="lg" className="mt-5 w-full">
+            <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Select work area / use current location</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
