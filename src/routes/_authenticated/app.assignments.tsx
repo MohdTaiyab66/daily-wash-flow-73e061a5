@@ -232,6 +232,22 @@ function AssignmentsPage() {
     retry: 1,
   });
 
+  const friendlyError = (raw: any): string => {
+    const msg = String(raw?.message ?? raw ?? "").toLowerCase();
+    if (!msg) return "Something went wrong. Please try again.";
+    if (msg.includes("already have an active assignment")) return "You already have an active route today.";
+    if (msg.includes("select your work area")) return "Please choose your work area first.";
+    if (msg.includes("no customers available")) return "No customers available in your area right now. Try a different area or come back soon.";
+    if (msg.includes("cars must be at most")) return "That's more customers than allowed. Reduce your working hours and try again.";
+    if (msg.includes("first assignment must be") || msg.includes("duration must be")) return "Please pick a commitment between 7 and 30 days.";
+    if (msg.includes("not authenticated")) return "Please sign in again to continue.";
+    // Never expose column/schema/DB errors to partners.
+    if (msg.includes("column") || msg.includes("relation") || msg.includes("permission") || msg.includes("violates")) {
+      return "We couldn't create your route right now. Please try again in a moment.";
+    }
+    return raw?.message ?? "Something went wrong. Please try again.";
+  };
+
   const accept = useMutation({
     mutationFn: async (acceptCars: number) => {
       const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: acceptCars, p_duration: duration });
@@ -239,11 +255,11 @@ function AssignmentsPage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("Assignment accepted · route optimised");
+      toast.success("Route created · heading to your live route");
       qc.invalidateQueries();
-      navigate({ to: "/app/my-assignment" });
+      navigate({ to: "/app/live" });
     },
-    onError: (e: any) => toast.error(e.message ?? "Could not accept"),
+    onError: (e: any) => toast.error(friendlyError(e)),
   });
 
   const claimBooking = useMutation({
