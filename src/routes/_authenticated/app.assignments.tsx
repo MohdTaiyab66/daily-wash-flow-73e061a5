@@ -447,7 +447,7 @@ function AssignmentsPage() {
 
       {previewError && (
         <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{(previewError as Error).message}</span></div>
+          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{friendlyError(previewError)}</span></div>
         </Card>
       )}
 
