@@ -27,17 +27,25 @@ type Angle = (typeof AFTER_ANGLES)[number];
 const REPORT_ANGLES = ["front", "rear", "left", "right"] as const;
 
 const UNAVAILABLE_REASONS = [
-  { value: "vehicle_not_available", label: "Vehicle not available" },
-  { value: "customer_not_responding", label: "Customer not responding" },
-  { value: "customer_asked_to_skip", label: "Customer requested skip" },
-  { value: "other", label: "Other (remarks required)" },
+  { value: "vehicle_not_available", label: "Vehicle unavailable", icon: CarFront },
+  { value: "customer_not_responding", label: "Customer not responding", icon: PhoneOff },
+  { value: "customer_asked_to_skip", label: "Skip requested", icon: SkipForward },
+  { value: "other", label: "Other (remarks required)", icon: Pencil },
 ] as const;
 
 const DIRTY_REASONS = [
   "Heavy Mud",
   "Heavy Dust",
   "Bird Droppings",
+  "Tree Sap",
   "Other",
+];
+
+const NOTE_CHIPS = [
+  "Parking issue",
+  "Customer unavailable",
+  "Scratch found",
+  "Extra dirty",
 ];
 const COMPENSATION = 12;
 const UNAVAILABLE_SLOTS = ["proof_1", "proof_2", "proof_3", "proof_4"] as const;
