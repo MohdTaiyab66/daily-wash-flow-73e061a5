@@ -369,6 +369,20 @@ function ServiceDetail() {
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+      {celebration && (
+        <ServiceCelebration
+          open
+          amount={celebration.amount}
+          completed={celebration.completed}
+          total={celebration.total}
+          walletBalance={celebration.walletBalance ?? null}
+          nextCustomerName={celebration.nextName ?? null}
+          onDone={() => {
+            setCelebration(null);
+            void goNext();
+          }}
+        />
+      )}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate({ to: "/app/live" })} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Route
