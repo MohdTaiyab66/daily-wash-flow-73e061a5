@@ -408,11 +408,14 @@ function AssignmentsPage() {
         <div className="flex items-baseline justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <p className={`mt-1 text-[11px] font-medium ${
+            <p className={`mt-1 flex items-center gap-1.5 text-[11px] font-medium ${
               commitment.tone === "max" ? "text-primary"
               : commitment.tone === "reco" ? "text-[color:var(--success)]"
               : "text-muted-foreground"
-            }`}>{commitment.label}</p>
+            }`}>
+              <span aria-hidden className="tracking-tighter">{"★".repeat(commitment.stars)}<span className="opacity-25">{"★".repeat(5 - commitment.stars)}</span></span>
+              <span>{commitment.label}</span>
+            </p>
           </div>
           <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
         </div>
@@ -420,16 +423,21 @@ function AssignmentsPage() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
         <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
 
-        {/* Merged monthly estimate — updates live with hours + commitment */}
-        <div className="mt-4 rounded-xl bg-muted/60 p-4">
-          <div className="flex items-baseline justify-between">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
-            <p className="text-[10px] tabular-nums text-muted-foreground">≈ ₹{animPerDay.toLocaleString("en-IN")}/day</p>
+        {/* Merged monthly estimate — compact, live */}
+        <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Estimated Monthly</p>
+              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] text-muted-foreground tabular-nums">Daily average ₹{animPerDay.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-semibold tabular-nums">{animMonthlyServices.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Services</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums">{workingDays}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Working Days</p>
+            </div>
           </div>
-          <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
-            {animMonthlyServices.toLocaleString("en-IN")} services · {workingDays} working day{workingDays === 1 ? "" : "s"}
-          </p>
         </div>
       </Card>
 
