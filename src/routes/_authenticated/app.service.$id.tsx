@@ -378,17 +378,15 @@ function ServiceDetail() {
       {/* Route progress */}
       <div className="mt-3 rounded-2xl border border-border bg-card p-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold">Customer {position} of {total}</span>
+          <span className="font-semibold">Stop {position} / {total}</span>
           <span className="text-muted-foreground">
-            {remainingAfter === 0 ? "Last stop today" : `${remainingAfter} after this`}
+            {remainingAfter === 0 ? "Last stop today" : `${remainingAfter} Remaining`}
           </span>
         </div>
         <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
         </div>
       </div>
-
-      {/* Vehicle photo — tappable */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
         <button
           type="button"
