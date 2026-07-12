@@ -271,7 +271,10 @@ function AssignmentsPage() {
       qc.invalidateQueries();
       navigate({ to: "/app/live" });
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => {
+      console.error("[accept_assignment_v2] raw error:", e);
+      toast.error(friendlyError(e));
+    },
   });
 
   const claimBooking = useMutation({
