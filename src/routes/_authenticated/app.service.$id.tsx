@@ -700,11 +700,21 @@ function ServiceDetail() {
                     <Button
                       size="lg"
                       className={`h-14 w-full text-base font-semibold ${allDone ? "shadow-[0_14px_36px_-12px_hsl(var(--primary)/0.7)]" : ""}`}
-                      disabled={!allDone || complete.isPending}
-                      onClick={() => complete.mutate()}
+                      disabled={complete.isPending}
+                      onClick={() => {
+                        if (allDone) {
+                          complete.mutate();
+                          return;
+                        }
+                        activeStepRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
                     >
                       {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {allDone ? "Complete service · ₹17" : "Complete service"}
+                      {allDone
+                        ? "✓ Complete service · ₹17"
+                        : activeIdx >= 0
+                          ? `Take ${stepStatus[activeIdx].label} photo`
+                          : "Complete service"}
                     </Button>
                   </div>
                 </div>
