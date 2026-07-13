@@ -617,7 +617,7 @@ function RoutePage() {
 }
 
 
-function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel }: { stop: any; seqNo: number; total: number; locked?: boolean; previewDayLabel?: string }) {
+function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockCountdown }: { stop: any; seqNo: number; total: number; locked?: boolean; previewDayLabel?: string; unlockCountdown?: string }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
