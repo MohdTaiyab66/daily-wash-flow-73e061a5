@@ -186,7 +186,14 @@ function HomePage() {
 
       {/* Hero: Today's Route */}
       {assignment ? (
-        restDay ? (
+        restDay ? (() => {
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const workingDaysRemaining = new Set(
+            assignmentAll
+              .map((s: any) => s.scheduled_date as string)
+              .filter((d) => d && d > todayStr),
+          ).size;
+          return (
           <Card className="mt-6 border-0 bg-foreground p-6 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Rest Day
@@ -196,25 +203,39 @@ function HomePage() {
               <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
             </div>
             <p className="mt-2 text-sm text-background/75">
-              No services scheduled today. Your assignment is still active.
+              Enjoy your day off. Your assignment remains active.
             </p>
+
             <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-              <p className="text-base font-semibold tracking-tight">
-                {assignmentTotalCustomers} Customer{assignmentTotalCustomers === 1 ? "" : "s"} in this route
+              <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
+                Current Assignment
               </p>
-              <p className="mt-0.5 text-xs text-background/60">
-                {assignmentCompleted} Completed overall
-              </p>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xl font-semibold tracking-tight">
+                    {assignment.target_cars}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-background/60">customers/day</p>
+                </div>
+                <div>
+                  <p className="text-xl font-semibold tracking-tight">
+                    {workingDaysRemaining}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-background/60">working days left</p>
+                </div>
+              </div>
             </div>
+
             {nextDate ? (
               <p className="mt-3 flex items-center gap-1.5 text-sm text-background/80">
                 <Clock className="h-4 w-4 text-background/60" />
-                Next service on{" "}
+                Next service:{" "}
                 {new Date(nextDate).toLocaleDateString("en-IN", {
                   weekday: "long",
                   day: "numeric",
                   month: "short",
                 })}
+                {assignment.expected_start_time ? ` • ${formatTime12(assignment.expected_start_time)}` : ""}
               </p>
             ) : null}
             <Button
@@ -223,10 +244,11 @@ function HomePage() {
               size="lg"
               className="mt-4 h-12 w-full rounded-2xl bg-background/10 text-background hover:bg-background/15"
             >
-              <Link to="/app/my-assignment">View Assignment</Link>
+              <Link to="/app/my-assignment">Assignment Details</Link>
             </Button>
           </Card>
-        ) : allDone ? (
+          );
+        })() : allDone ? (
           <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
             <PartyPopper className="h-8 w-8 text-primary" />
             <p className="text-xl font-semibold">Great Job!</p>
