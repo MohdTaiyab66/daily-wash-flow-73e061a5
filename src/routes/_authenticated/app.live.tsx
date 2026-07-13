@@ -273,17 +273,9 @@ function RoutePage() {
 
   // Unified data source — same layout whether it's a working day or a
   // rest-day preview. Only interaction state (locked vs actionable) changes.
-  // Per-stop unlock: a stop becomes actionable 1 hour before its scheduled time.
-  const decorateUnlock = (list: any[], dateStr: string | null) =>
-    list.map((s: any) => {
-      const c = s.customers as any;
-      const scheduled = c?.service_required_before ?? c?.preferred_time ?? s.time_slot;
-      const u = computeUnlockState(scheduled, dateStr, nowTs);
-      return { ...s, _unlocked: u.unlocked, _unlockAt: u.unlockAt, _unlockCountdown: formatCountdown(u.countdownMs) };
-    });
-  const activeList = isPreviewMode
-    ? decorateUnlock(previewList, null) // preview: always locked
-    : decorateUnlock(pending, todayDateStr);
+  // Shift-wide unlock (1h before shift start) is handled by `routeUnlocked`
+  // above; individual customers are not gated further by their own time.
+  const activeList = isPreviewMode ? previewList : pending;
   const activeStops = isPreviewMode ? previewStops : stops;
   const activeNext = activeList[0] ?? null;
   const activeQueue = activeList.slice(1);
