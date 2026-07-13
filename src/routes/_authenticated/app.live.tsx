@@ -702,15 +702,16 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
 }
 
 
-function QueueRow({ stop, seqNo, total: _total }: { stop: any; seqNo: number; total: number }) {
+function QueueRow({ stop, seqNo, total: _total, locked }: { stop: any; seqNo: number; total: number; locked?: boolean }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   const rate = Number((stop as any).rate_per_car ?? 17);
-  return (
-    <Card className="flex items-center gap-2.5 p-2.5">
+  const scheduledTime = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
+  const inner = (
+    <Card className={`flex items-center gap-2.5 p-2.5 ${locked ? "opacity-95" : ""}`}>
       <div className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
         #{seqNo}
       </div>
@@ -728,37 +729,62 @@ function QueueRow({ stop, seqNo, total: _total }: { stop: any; seqNo: number; to
           <span className="shrink-0 text-[11px] font-bold tabular-nums text-primary">+₹{rate}</span>
         </div>
         <p className="truncate text-[11px] text-muted-foreground">
-          {v?.make} {v?.model} · {v?.registration_number}
+          {v?.make} {v?.model}{v?.registration_number ? ` · ${v.registration_number}` : ""}
         </p>
-        {(c?.service_required_before || c?.preferred_time) && (
-          <p className="truncate text-[10px] text-primary">
-            Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
-          </p>
+        {locked ? (
+          <div className="mt-0.5 flex items-center gap-1.5">
+            {scheduledTime && (
+              <span className="text-[10px] font-medium text-foreground/80">
+                {formatTime12(scheduledTime)}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              <Lock className="h-2.5 w-2.5" /> Locked
+            </span>
+          </div>
+        ) : (
+          (c?.service_required_before || c?.preferred_time) && (
+            <p className="truncate text-[10px] text-primary">
+              Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
+            </p>
+          )
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          disabled={!navUrl}
-          onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
-          className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
-          aria-label="Open maps"
-        >
-          <Navigation className="h-4 w-4" />
-        </button>
-        <Link
-          to="/app/service/$id"
-          params={{ id: stop.id }}
-          className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-          aria-label={inProgress ? "Resume service" : "Start service"}
-        >
-          <Play className="h-3.5 w-3.5 fill-current" />
-          {inProgress ? "Resume" : "Start"}
-        </Link>
-      </div>
+      {!locked && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            disabled={!navUrl}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); openGoogleMapsDirections(gps.lat, gps.lng); }}
+            className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-background text-foreground/80 shadow-sm transition-colors hover:bg-muted/40 disabled:opacity-40"
+            aria-label="Open maps"
+          >
+            <Navigation className="h-4 w-4" />
+          </button>
+          <Link
+            to="/app/service/$id"
+            params={{ id: stop.id }}
+            className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            aria-label={inProgress ? "Resume service" : "Start service"}
+          >
+            <Play className="h-3.5 w-3.5 fill-current" />
+            {inProgress ? "Resume" : "Start"}
+          </Link>
+        </div>
+      )}
     </Card>
   );
+  // In locked/preview mode the whole row opens a read-only service detail.
+  if (locked) {
+    return (
+      <Link to="/app/service/$id" params={{ id: stop.id }} className="block">
+        {inner}
+      </Link>
+    );
+  }
+  return inner;
 }
+
 
 
 function CollapsibleSection({
