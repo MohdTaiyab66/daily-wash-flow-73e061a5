@@ -46,6 +46,14 @@ import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { formatTime12 } from "@/lib/format";
 import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { cancelMyAssignment, getAssignmentCancellability } from "@/lib/assignment.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
