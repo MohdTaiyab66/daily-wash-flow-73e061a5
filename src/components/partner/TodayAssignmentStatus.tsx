@@ -1,11 +1,33 @@
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { TodayAssignmentMetrics } from "@/hooks/use-today-assignment";
+
+function timeAgo(ts: number | null): string {
+  if (!ts) return "never";
+  const s = Math.max(1, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
+function MetricsLine({ metrics, lastSuccessAt }: { metrics?: TodayAssignmentMetrics; lastSuccessAt?: number | null }) {
+  if (!metrics) return null;
+  const pct = Math.round(metrics.successRate * 100);
+  return (
+    <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/80">
+      Last update {timeAgo(lastSuccessAt ?? metrics.lastSuccessAt)} · retries {metrics.retryAttempts} · {pct}% success
+      {metrics.failures > 0 ? ` · ${metrics.failures} failed` : ""}
+    </p>
+  );
+}
 
 /**
  * Non-blocking status banner shown at the top of partner screens when the
- * unified `today-assignment` query is retrying or has failed. Its job is to
- * make sure the partner never sees a silent "0 customers" state while the
- * API is retrying or the network is briefly down.
+ * unified `today-assignment` query is retrying or has failed. Never lets
+ * the user see silent "0 customers" while the API is retrying.
  */
 export function TodayAssignmentStatus({
   isError,
@@ -13,12 +35,16 @@ export function TodayAssignmentStatus({
   isRefetching,
   hasData,
   onRetry,
+  metrics,
+  lastSuccessAt,
 }: {
   isError: boolean;
   isFetching: boolean;
   isRefetching: boolean;
   hasData: boolean;
   onRetry: () => void;
+  metrics?: TodayAssignmentMetrics;
+  lastSuccessAt?: number | null;
 }) {
   if (isError) {
     return (
@@ -28,9 +54,10 @@ export function TodayAssignmentStatus({
           <p className="text-sm font-semibold text-foreground">Can't load today's route</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {hasData
-              ? "Showing your last known route. We'll keep retrying automatically."
+              ? `Showing your last known route from ${timeAgo(lastSuccessAt ?? metrics?.lastSuccessAt ?? null)}. We'll keep retrying.`
               : "Check your connection and try again."}
           </p>
+          <MetricsLine metrics={metrics} lastSuccessAt={lastSuccessAt} />
         </div>
         <Button size="sm" variant="outline" onClick={onRetry} className="h-8 gap-1.5">
           <RefreshCw className="h-3.5 w-3.5" />
@@ -41,9 +68,12 @@ export function TodayAssignmentStatus({
   }
   if (isRefetching && hasData) {
     return (
-      <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        Refreshing today's route…
+      <div className="mt-3 rounded-2xl border border-border bg-muted/40 px-4 py-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Refreshing today's route… showing last update from {timeAgo(lastSuccessAt ?? metrics?.lastSuccessAt ?? null)}
+        </div>
+        <MetricsLine metrics={metrics} lastSuccessAt={lastSuccessAt} />
       </div>
     );
   }
@@ -59,8 +89,8 @@ export function TodayAssignmentStatus({
 }
 
 /**
- * Full-screen blocking skeleton used while today-assignment is loading for
- * the first time. Never renders "0 customers" — better a shimmer than a lie.
+ * Blocking skeleton used while today-assignment is loading for the very
+ * first time (no last-good cache). Never renders "0 customers".
  */
 export function TodayAssignmentSkeleton() {
   return (
