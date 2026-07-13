@@ -627,7 +627,7 @@ function PreviewRow({ stop, seqNo, dayLabel }: { stop: any; seqNo: number; dayLa
   );
 }
 
-
+function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
