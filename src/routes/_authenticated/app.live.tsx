@@ -542,17 +542,20 @@ function RoutePage() {
 }
 
 
-function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel }: { stop: any; seqNo: number; total: number; locked?: boolean; previewDayLabel?: string }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
   const navUrl = googleMapsDirectionsUrl(gps.lat, gps.lng);
   const inProgress = stop.status === "in_progress";
   const rate = Number((stop as any).rate_per_car ?? 17);
+  const scheduledTime = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
   return (
     <Card className="mt-5 overflow-hidden border border-border bg-background p-0 shadow-[0_18px_44px_-18px_hsl(var(--primary)/0.35)]">
-      <div className="flex items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Next customer</span>
+      <div className={`flex items-center justify-between gap-2 px-4 py-2 ${locked ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"}`}>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+          {locked ? "Next service" : "Next customer"}
+        </span>
         <span className="text-[11px] font-medium tabular-nums opacity-90">{seqNo} of {total}</span>
       </div>
       <div className="flex items-start gap-3.5 p-4">
@@ -586,10 +589,23 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
               {v.registration_number}
             </span>
           )}
-          {(c?.service_required_before || c?.preferred_time) && (
-            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
-              <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
-            </p>
+          {locked ? (
+            <div className="mt-1.5 space-y-1">
+              {scheduledTime && (
+                <p className="text-[11px] text-muted-foreground">
+                  Scheduled <span className="font-semibold text-foreground">{previewDayLabel ?? "Tomorrow"} · {formatTime12(scheduledTime)}</span>
+                </p>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                <Lock className="h-3 w-3" /> Service Locked
+              </span>
+            </div>
+          ) : (
+            (c?.service_required_before || c?.preferred_time) && (
+              <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <Clock className="h-3 w-3" /> Before {formatTime12(c?.service_required_before ?? c?.preferred_time)}
+              </p>
+            )
           )}
         </div>
       </div>
@@ -598,8 +614,9 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
         <IconAction
           icon={<Navigation className="h-5 w-5" />}
           ariaLabel="Open maps"
-          disabled={!navUrl}
+          disabled={!navUrl || locked}
           onClick={async () => {
+            if (locked) return;
             await logApkEvidence({
               eventType: "navigation_open_attempt",
               serviceId: stop.id,
@@ -617,19 +634,35 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
             });
           }}
         />
-        <HeroCallIconAction serviceId={stop.id} />
-        <Link
-          to="/app/service/$id"
-          params={{ id: stop.id }}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-md transition-colors hover:bg-primary/90"
-        >
-          <Play className="h-5 w-5 fill-current" />
-          <span>{inProgress ? "Resume" : "Start"}</span>
-        </Link>
+        {locked ? (
+          <IconAction icon={<Phone className="h-5 w-5" />} ariaLabel="Call customer" disabled onClick={() => {}} />
+        ) : (
+          <HeroCallIconAction serviceId={stop.id} />
+        )}
+        {locked ? (
+          <button
+            type="button"
+            disabled
+            className="flex items-center justify-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-muted-foreground shadow-sm"
+          >
+            <Lock className="h-4 w-4" />
+            <span>Available {previewDayLabel ?? "Tomorrow"}</span>
+          </button>
+        ) : (
+          <Link
+            to="/app/service/$id"
+            params={{ id: stop.id }}
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-md transition-colors hover:bg-primary/90"
+          >
+            <Play className="h-5 w-5 fill-current" />
+            <span>{inProgress ? "Resume" : "Start"}</span>
+          </Link>
+        )}
       </div>
     </Card>
   );
 }
+
 
 function IconAction({ icon, ariaLabel, onClick, disabled }: { icon: React.ReactNode; ariaLabel: string; onClick: () => void; disabled?: boolean }) {
   return (
