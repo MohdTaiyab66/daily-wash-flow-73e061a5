@@ -144,6 +144,14 @@ function HomePage() {
         ) : null}
       </header>
 
+      <TodayAssignmentStatus
+        isError={todayQuery.isError}
+        isFetching={todayQuery.isFetching}
+        isRefetching={todayQuery.isRefetching}
+        hasData={hasData}
+        onRetry={() => todayQuery.refetch()}
+      />
+
       {/* Online status card — compact */}
       <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2">
         <div className="flex items-center gap-2.5">
