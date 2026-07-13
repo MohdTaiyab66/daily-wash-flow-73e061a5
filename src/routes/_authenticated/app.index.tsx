@@ -767,3 +767,34 @@ function MiniStat({
     </Card>
   );
 }
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function QuickAction({
+  to, href, icon, label,
+}: {
+  to?: string;
+  href?: string;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  const inner = (
+    <>
+      <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <span className="text-[10px] font-medium">{label}</span>
+    </>
+  );
+  const className =
+    "flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary";
+  if (to) return <Link to={to} className={className}>{inner}</Link>;
+  return <a href={href} className={className}>{inner}</a>;
+}
