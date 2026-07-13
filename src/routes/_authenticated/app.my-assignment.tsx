@@ -239,6 +239,7 @@ function MyAssignmentPage() {
         routeStarted={!!cancelInfo?.route_started}
         pending={cancelMut.isPending}
         onCancel={() => setConfirmOpen(true)}
+        isRestDay={todayState === "rest"}
       />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
