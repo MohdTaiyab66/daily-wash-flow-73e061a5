@@ -404,9 +404,8 @@ function RoutePage() {
           stop={activeNext}
           seqNo={activeSeqStart}
           total={activeTotal}
-          locked={isPreviewMode || activeNext._unlocked === false}
+          locked={isPreviewMode}
           previewDayLabel={isPreviewMode ? previewDayLabel : undefined}
-          unlockCountdown={!isPreviewMode && activeNext._unlocked === false ? activeNext._unlockCountdown : undefined}
         />
       )}
 
