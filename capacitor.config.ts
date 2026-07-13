@@ -4,8 +4,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Capacitor config for Urban Wash.
  *
  * Two binaries share this codebase. Switch the variant at build time with:
- *   URBANWASH_APP=customer npx cap sync android   → Customer APK
- *   URBANWASH_APP=partner  npx cap sync android   → Partner APK   (default)
+ *   URBANWASH_APP=customer node node_modules/@capacitor/cli/bin/capacitor sync android   → Customer APK
+ *   URBANWASH_APP=partner  node node_modules/@capacitor/cli/bin/capacitor sync android   → Partner APK (default)
  *
  * The variant flag controls: appId, appName, splash background color, and
  * the runtime app shell (see src/lib/platform.ts → appVariant()).
