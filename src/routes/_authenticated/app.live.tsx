@@ -672,7 +672,8 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockC
                 </p>
               )}
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                <Lock className="h-3 w-3" /> Service Locked
+                <Lock className="h-3 w-3" />
+                {unlockCountdown ? `Unlocks in ${unlockCountdown}` : "Service Locked"}
               </span>
             </div>
           ) : (
