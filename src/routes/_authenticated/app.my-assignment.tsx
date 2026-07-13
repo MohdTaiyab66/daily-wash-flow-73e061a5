@@ -185,6 +185,7 @@ function MyAssignmentPage() {
         completedToday={completedToday}
         expectedToday={expectedToday}
         earnedToday={earnedToday}
+        nextDate={todayQuery.data?.nextDate ?? null}
       />
 
       {/* Modifications — simplified */}
