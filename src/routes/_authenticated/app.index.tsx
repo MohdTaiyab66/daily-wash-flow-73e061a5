@@ -113,7 +113,7 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const restDay = !!assignment && total === 0;
   const nextDate = todayData?.nextDate ?? null;
-  const assignmentAll = todayData?.all ?? [];
+  
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
@@ -180,69 +180,67 @@ function HomePage() {
 
       {/* Hero: Today's Route */}
       {assignment ? (
-        restDay ? (() => {
-          const todayStr = new Date().toISOString().slice(0, 10);
-          const workingDaysRemaining = new Set(
-            assignmentAll
-              .map((s: any) => s.scheduled_date as string)
-              .filter((d) => d && d > todayStr),
-          ).size;
-          return (
-          <Card className="mt-6 border-0 bg-foreground p-6 text-background">
+        restDay ? (
+          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-              Rest Day
+              Today's Route
             </p>
+
             <div className="mt-1.5 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
               <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
             </div>
-            <p className="mt-2 text-sm text-background/75">
-              Enjoy your day off. Your assignment remains active.
-            </p>
 
-            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-              <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
-                Current Assignment
-              </p>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xl font-semibold tracking-tight">
-                    {assignment.target_cars}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-background/60">customers/day</p>
-                </div>
-                <div>
-                  <p className="text-xl font-semibold tracking-tight">
-                    {workingDaysRemaining}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-background/60">working days left</p>
-                </div>
-              </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-background/60">
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
+              Active Assignment
             </div>
 
-            {nextDate ? (
-              <p className="mt-3 flex items-center gap-1.5 text-sm text-background/80">
-                <Clock className="h-4 w-4 text-background/60" />
-                Next service:{" "}
-                {new Date(nextDate).toLocaleDateString("en-IN", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "short",
-                })}
-                {assignment.expected_start_time ? ` • ${formatTime12(assignment.expected_start_time)}` : ""}
+            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
+              <p className="text-base font-semibold tracking-tight">0 Customers</p>
+              <p className="mt-0.5 text-xs text-background/60">0 Completed · 0 Remaining</p>
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+                  Today's Progress
+                </p>
+                <p className="text-xs font-medium text-background/80">No service scheduled today</p>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15" />
+            </div>
+
+            <div className="mt-4 border-t border-background/10 pt-3">
+              <p className="text-[11px] uppercase tracking-wider text-background/60">Today's Earnings</p>
+              <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
+                <IndianRupee className="h-5 w-5" />0
               </p>
-            ) : null}
+              <p className="mt-2 text-sm text-background/80">• Monday is a weekly rest day.</p>
+              {nextDate ? (
+                <p className="mt-1 text-sm text-background/80">
+                  • Services resume {new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" })}
+                  {assignment.expected_start_time ? ` at ${formatTime12(assignment.expected_start_time)}` : ""}.
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-background/80">• Services resume tomorrow.</p>
+              )}
+            </div>
+
             <Button
-              asChild
-              variant="secondary"
+              disabled
               size="lg"
-              className="mt-4 h-12 w-full rounded-2xl bg-background/10 text-background hover:bg-background/15"
+              className="mt-4 h-16 w-full rounded-2xl bg-background/10 text-background/60 text-lg font-semibold cursor-not-allowed hover:bg-background/10"
             >
-              <Link to="/app/my-assignment">Assignment Details</Link>
+              No Service Today (Monday Rest Day)
             </Button>
+
+            <p className="mt-3 text-center text-xs text-background/60">
+              Services are unavailable on Mondays.<br />
+              Your assignment will automatically resume tomorrow.
+            </p>
           </Card>
-          );
-        })() : allDone ? (
+        ) : allDone ? (
           <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
             <PartyPopper className="h-8 w-8 text-primary" />
             <p className="text-xl font-semibold">Great Job!</p>
