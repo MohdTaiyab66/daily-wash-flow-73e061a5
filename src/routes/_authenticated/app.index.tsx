@@ -113,7 +113,7 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const restDay = !!assignment && total === 0;
   const nextDate = todayData?.nextDate ?? null;
-  const assignmentAll = todayData?.all ?? [];
+  void todayData?.all;
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
