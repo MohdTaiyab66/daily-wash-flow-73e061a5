@@ -273,13 +273,29 @@ function RoutePage() {
 
   // Unified data source — same layout whether it's a working day or a
   // rest-day preview. Only interaction state (locked vs actionable) changes.
-  const activeList = isPreviewMode ? previewList : pending;
+  // Per-stop unlock: a stop becomes actionable 1 hour before its scheduled time.
+  const decorateUnlock = (list: any[], dateStr: string | null) =>
+    list.map((s: any) => {
+      const c = s.customers as any;
+      const scheduled = c?.service_required_before ?? c?.preferred_time ?? s.time_slot;
+      const u = computeUnlockState(scheduled, dateStr, nowTs);
+      return { ...s, _unlocked: u.unlocked, _unlockAt: u.unlockAt, _unlockCountdown: formatCountdown(u.countdownMs) };
+    });
+  const activeList = isPreviewMode
+    ? decorateUnlock(previewList, null) // preview: always locked
+    : decorateUnlock(pending, todayDateStr);
   const activeStops = isPreviewMode ? previewStops : stops;
   const activeNext = activeList[0] ?? null;
   const activeQueue = activeList.slice(1);
   const activeTotal = isPreviewMode ? previewList.length : total;
   const activeMapStats = isPreviewMode ? previewMapStats : mapStats;
   const activeSeqStart = isPreviewMode ? 1 : (currentSeq ?? 1);
+
+  // Rough add-on potential: partners see ~₹15 average add-on uplift per stop
+  // when previewing tomorrow's route. Kept intentionally conservative.
+  const ADDON_PER_STOP = 15;
+  const previewAddonPotential = previewList.length * ADDON_PER_STOP;
+  const netOnline = isOnline();
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
