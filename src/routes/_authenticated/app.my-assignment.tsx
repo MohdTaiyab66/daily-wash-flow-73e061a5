@@ -156,13 +156,76 @@ function MyAssignmentPage() {
         <Button asChild variant="outline"><Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Today's route</Link></Button>
         <Button asChild variant="outline"><Link to="/app/earnings"><Wallet className="mr-2 h-4 w-4" />Wallet</Link></Button>
       </div>
-      <Button className="mt-3 w-full" variant="outline" disabled={cancelMut.isPending} onClick={() => confirm("Cancel this assignment and release pending customers?") && cancelMut.mutate(a.id)}>
-        {cancelMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-        Cancel assignment
-      </Button>
+      <CancelSection
+        canCancel={!!cancelInfo?.can_cancel}
+        reason={cancelInfo?.reason}
+        deadlineAt={cancelInfo?.deadline_at ?? null}
+        routeStarted={!!cancelInfo?.route_started}
+        pending={cancelMut.isPending}
+        onCancel={() => setConfirmOpen(true)}
+      />
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel today's assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your reserved customers will be released and assigned to another partner.
+              You can create a new assignment later if routes are still available.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelMut.isPending}>Keep assignment</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelMut.isPending}
+              onClick={(e) => { e.preventDefault(); if (assignmentId) cancelMut.mutate(assignmentId); }}
+            >
+              {cancelMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Cancel assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
+function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, onCancel }: {
+  canCancel: boolean; reason?: string; deadlineAt: string | null; routeStarted: boolean; pending: boolean; onCancel: () => void;
+}) {
+  if (routeStarted || reason === "ROUTE_STARTED") {
+    return (
+      <Card className="mt-3 p-4">
+        <p className="text-sm font-medium">Need to stop working today?</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Assignment already started. Once your route has started, it cannot be cancelled from the app.
+          Please contact Partner Support if you need assistance.
+        </p>
+        <Button asChild className="mt-3 w-full" variant="outline">
+          <a href={`tel:${SUPPORT_TEL}`}><Phone className="mr-2 h-4 w-4" />Call Partner Support</a>
+        </Button>
+      </Card>
+    );
+  }
+  if (!canCancel) {
+    const label = reason === "CUTOFF_PASSED"
+      ? "Assignment is locked because route planning has started. Cancellation closed 8 hours before your shift."
+      : "This assignment can no longer be cancelled from the app.";
+    return (
+      <Card className="mt-3 flex items-start gap-2 p-3 text-xs text-muted-foreground">
+        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>{label}{deadlineAt ? ` (Cutoff: ${new Date(deadlineAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })})` : ""}</span>
+      </Card>
+    );
+  }
+  return (
+    <Button className="mt-3 w-full" variant="outline" disabled={pending} onClick={onCancel}>
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+      Cancel assignment
+    </Button>
+  );
+}
+
 
 function MiniLight({ label, value }: { label: string; value: string }) {
   return (
