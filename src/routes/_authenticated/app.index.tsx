@@ -55,6 +55,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const SUPPORT_TEL_HOME = "+911800000000";
+
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
 });
