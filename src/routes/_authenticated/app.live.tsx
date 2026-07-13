@@ -190,6 +190,14 @@ function RoutePage() {
           : "Your route will unlock before your shift starts."}
       </p>
 
+      <TodayAssignmentStatus
+        isError={todayQuery.isError}
+        isFetching={todayQuery.isFetching}
+        isRefetching={todayQuery.isRefetching}
+        hasData={todayQuery.data !== undefined}
+        onRetry={() => todayQuery.refetch()}
+      />
+
       <div className="mt-4"><DarOfferCard /></div>
 
       {/* Map */}
