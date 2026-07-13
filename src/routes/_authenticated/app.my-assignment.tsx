@@ -439,8 +439,7 @@ function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, o
     </Wrap>
   );
 }
-  );
-}
+
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
