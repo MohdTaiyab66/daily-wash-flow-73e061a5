@@ -153,8 +153,8 @@ The script:
 2. Confirms `android-config\customer\google-services.json` exists.
 3. Sets `URBANWASH_APP=customer` and `VITE_URBANWASH_APP=customer`.
 4. Runs `bun install` (only if `node_modules` is missing), `bun run build`,
-   `npx cap sync android`.
-5. Opens Android Studio.
+   and the local Capacitor CLI via `node node_modules\@capacitor\cli\bin\capacitor sync android`.
+5. Builds the debug APK with Gradle.
 
 In Android Studio: **Build → Build App Bundle(s) / APK(s) → Build APK(s)**.
 Grab the artifact at:
