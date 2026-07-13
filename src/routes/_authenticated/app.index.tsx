@@ -21,6 +21,10 @@ import {
   Sparkles,
   Route as RouteIcon,
   Wallet,
+  Gift,
+  LifeBuoy,
+  Briefcase,
+  CalendarClock,
 } from "lucide-react";
 import { AnimatedNumber } from "@/components/partner/AnimatedNumber";
 
