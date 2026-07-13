@@ -568,7 +568,66 @@ function RoutePage() {
   );
 }
 
-function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+function PreviewStat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background p-2.5">
+      <div className="flex items-center gap-1.5 text-primary">
+        {icon}
+        <span className="text-base font-bold tabular-nums text-foreground">{value}</span>
+      </div>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function PreviewRow({ stop, seqNo, dayLabel }: { stop: any; seqNo: number; dayLabel: string }) {
+  const c = stop.customers as any;
+  const v = stop.vehicles as any;
+  const rate = Number(stop.rate_per_car ?? 17);
+  const timeAt = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
+  return (
+    <Link
+      to="/app/service/$id"
+      params={{ id: stop.id }}
+      className="block"
+    >
+      <Card className="flex items-center gap-2.5 p-2.5 opacity-95 transition-opacity hover:opacity-100">
+        <div className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
+          #{seqNo}
+        </div>
+        <TappableVehicleImage
+          path={v?.front_image_path}
+          className="h-12 w-12 shrink-0 rounded-lg"
+          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+          customerName={c?.full_name}
+          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+          registration={v?.registration_number}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+            <span className="shrink-0 text-[11px] font-bold tabular-nums text-primary">+₹{rate}</span>
+          </div>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {v?.make} {v?.model}{v?.registration_number ? ` · ${v.registration_number}` : ""}
+          </p>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            {timeAt && (
+              <span className="text-[10px] font-medium text-foreground/80">
+                {formatTime12(timeAt)}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              <Lock className="h-2.5 w-2.5" /> Scheduled {dayLabel}
+            </span>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+}
+
+
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
