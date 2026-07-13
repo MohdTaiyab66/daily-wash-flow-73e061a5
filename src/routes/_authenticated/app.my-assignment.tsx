@@ -267,7 +267,7 @@ function MyAssignmentPage() {
 }
 
 function TodayStatusCard({
-  state, shiftStart, unlockDiffMin, totalToday, completedToday, expectedToday, earnedToday,
+  state, shiftStart, unlockDiffMin, totalToday, completedToday, expectedToday, earnedToday, nextDate,
 }: {
   state: "rest" | "before" | "ready" | "in_progress" | "done";
   shiftStart?: string | null;
@@ -276,13 +276,24 @@ function TodayStatusCard({
   completedToday: number;
   expectedToday: number;
   earnedToday: number;
+  nextDate?: string | null;
 }) {
   if (state === "rest") {
     return (
       <Card className="mt-4 p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today</p>
-        <p className="mt-2 text-lg font-semibold">Rest day 🌿</p>
-        <p className="mt-1 text-sm text-muted-foreground">No services scheduled today. Enjoy your day off.</p>
+        <p className="mt-2 text-lg font-semibold">🍃 Monday</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          No services are scheduled on Mondays. Your assignment remains active.
+        </p>
+        <div className="mt-3 rounded-lg bg-muted p-3">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Next Service</p>
+          <p className="mt-1 text-base font-semibold tracking-tight">
+            {nextDate
+              ? `${new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" })}${shiftStart ? ` • ${formatTime12(shiftStart)}` : ""}`
+              : shiftStart ? `Tomorrow • ${formatTime12(shiftStart)}` : "Tomorrow"}
+          </p>
+        </div>
       </Card>
     );
   }
