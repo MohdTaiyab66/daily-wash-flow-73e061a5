@@ -56,52 +56,22 @@ function HomePage() {
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
 
-  // Single source of truth: read the partner's active assignment and its
-  // services in one query, then derive today's counts from it. Never show
-  // "0 customers" when an active assignment exists — instead surface the
-  // assignment total and a rest-day state when today has no scheduled work.
-  const { data: todayData } = useQuery({
-    queryKey: ["today-assignment"],
-    queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const today = new Date().toISOString().slice(0, 10);
-      const { data: a } = await supabase
-        .from("assignments")
-        .select("*")
-        .eq("partner_id", u.user.id)
-        .eq("status", "active")
-        .gte("end_date", today)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!a) {
-        // No active assignment — fall back to any loose services scheduled
-        // today for this partner (legacy/manual assignments).
-        const { data: loose } = await supabase
-          .from("services")
-          .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
-          .eq("partner_id", u.user.id)
-          .eq("scheduled_date", today);
-          return { assignment: null, all: [] as any[], today: loose ?? [], nextDate: null as string | null };
-      }
-      const { data: services } = await supabase
-        .from("services")
-        .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
-        .eq("assignment_id", a.id);
-      const all = services ?? [];
-      const todays = all.filter((s: any) => s.scheduled_date === today);
-      const nextDate =
-        all
-          .map((s: any) => s.scheduled_date as string)
-          .filter((d) => d && d > today)
-          .sort()[0] ?? null;
-      return { assignment: a, all, today: todays, nextDate };
-    },
-  });
+  // Single source of truth: shared today-assignment query. Every partner
+  // screen (Home / Live / My Assignment) reads from the same cache so the
+  // "customers today" number cannot drift between screens.
+  const todayQuery = useTodayAssignment();
+  const todayData = todayQuery.data;
+  const hasData = todayData !== undefined;
+
+  // Blocking loader on first load — never render "0 customers" while the
+  // API is still fetching or retrying.
+  if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
+    return <TodayAssignmentSkeleton />;
+  }
 
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
+
 
 
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
