@@ -27,8 +27,15 @@ function MyAssignmentPage() {
   const canFn = useServerFn(getAssignmentCancellability);
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"], ["cancellability"]]);
-  const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
+  useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"], ["cancellability"], ["today-assignment"]]);
+  const myQuery = useQuery({
+    queryKey: ["my-assignment"],
+    queryFn: () => fn(),
+    refetchInterval: 30000,
+    retry: 4,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+  });
+  const data = myQuery.data;
   const assignmentId = (data && (data as any).assignment?.id) as string | undefined;
   const { data: cancelInfo } = useQuery({
     queryKey: ["cancellability", assignmentId],
