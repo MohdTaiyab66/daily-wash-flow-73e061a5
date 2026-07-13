@@ -376,39 +376,69 @@ function TodayStatusCard({
   );
 }
 
-function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, onCancel }: {
-  canCancel: boolean; reason?: string; deadlineAt: string | null; routeStarted: boolean; pending: boolean; onCancel: () => void;
+function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, onCancel, isRestDay }: {
+  canCancel: boolean; reason?: string; deadlineAt: string | null; routeStarted: boolean; pending: boolean; onCancel: () => void; isRestDay?: boolean;
 }) {
+  const Wrap = ({ children }: { children: React.ReactNode }) => (
+    <Card className="mt-4 p-4">
+      <p className="text-sm font-semibold">Assignment Management</p>
+      {children}
+    </Card>
+  );
+
   if (routeStarted || reason === "ROUTE_STARTED") {
     return (
-      <Card className="mt-4 p-4">
-        <p className="text-sm font-medium">Need to stop working today?</p>
+      <Wrap>
         <p className="mt-1 text-xs text-muted-foreground">
-          Assignment already started. Once your route has started, it cannot be cancelled from the app.
-          Please contact Partner Support if you need assistance.
+          Today's route is already in progress. Assignment cancellation is only available through Partner Support.
         </p>
         <Button asChild className="mt-3 w-full" variant="outline">
           <a href={`tel:${SUPPORT_TEL}`}><Phone className="mr-2 h-4 w-4" />Call Partner Support</a>
         </Button>
-      </Card>
+      </Wrap>
     );
   }
+
+  if (isRestDay && canCancel) {
+    return (
+      <Wrap>
+        <p className="mt-1 text-xs text-muted-foreground">
+          No services are scheduled today. You can cancel your assignment if you no longer wish to continue.
+        </p>
+        <Button className="mt-3 w-full" variant="outline" disabled={pending} onClick={onCancel}>
+          {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+          Cancel Assignment
+        </Button>
+      </Wrap>
+    );
+  }
+
   if (!canCancel) {
     const label = reason === "CUTOFF_PASSED"
       ? "Cancellation closed 8 hours before your shift."
       : "This assignment can no longer be cancelled from the app.";
     return (
-      <Card className="mt-4 flex items-start gap-2 p-3 text-xs text-muted-foreground">
-        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>{label}{deadlineAt ? ` (Cutoff: ${new Date(deadlineAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })})` : ""}</span>
-      </Card>
+      <Wrap>
+        <p className="mt-1 flex items-start gap-2 text-xs text-muted-foreground">
+          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{label}{deadlineAt ? ` (Cutoff: ${new Date(deadlineAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })})` : ""}</span>
+        </p>
+      </Wrap>
     );
   }
+
   return (
-    <Button className="mt-4 w-full" variant="outline" disabled={pending} onClick={onCancel}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-      Cancel assignment
-    </Button>
+    <Wrap>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Need to cancel your assignment? You can cancel before today's first service begins.
+      </p>
+      <Button className="mt-3 w-full" variant="outline" disabled={pending} onClick={onCancel}>
+        {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+        Cancel Assignment
+      </Button>
+    </Wrap>
+  );
+}
   );
 }
 
