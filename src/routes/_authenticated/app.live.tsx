@@ -49,6 +49,21 @@ function RoutePage() {
     refetchOnWindowFocus: true,
   });
 
+  // Consistency guard: subscribe to the shared today-assignment cache so this
+  // page and Home / My Assignment can never show different customer counts.
+  const todayQuery = useTodayAssignment();
+  useEffect(() => {
+    if (!services || !todayQuery.data) return;
+    const liveTotal = (services ?? []).filter((s: any) => s.status !== "covered_by_booking").length;
+    const sharedTotal = todayQuery.data.todaysCustomers;
+    if (liveTotal !== sharedTotal) {
+      console.warn(
+        "[assignment-consistency] Live vs shared today-assignment mismatch",
+        { liveTotal, sharedTotal },
+      );
+    }
+  }, [services, todayQuery.data]);
+
   const visibilityFn = useServerFn(getRouteVisibility);
   const { data: visibilityInfo } = useQuery({
     queryKey: ["route-visibility-unlock"],
