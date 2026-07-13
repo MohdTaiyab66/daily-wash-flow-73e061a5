@@ -260,6 +260,16 @@ function RoutePage() {
     ? "Route in Progress"
     : "Today's Route";
 
+  // Unified data source — same layout whether it's a working day or a
+  // rest-day preview. Only interaction state (locked vs actionable) changes.
+  const activeList = isPreviewMode ? previewList : pending;
+  const activeStops = isPreviewMode ? previewStops : stops;
+  const activeNext = activeList[0] ?? null;
+  const activeQueue = activeList.slice(1);
+  const activeTotal = isPreviewMode ? previewList.length : total;
+  const activeMapStats = isPreviewMode ? previewMapStats : mapStats;
+  const activeSeqStart = isPreviewMode ? 1 : (currentSeq ?? 1);
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
       <h1 className="text-2xl font-semibold tracking-tight">Route</h1>
@@ -277,14 +287,13 @@ function RoutePage() {
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {isPreviewMode
-          ? `Your route for ${previewDayLabel} is ready. Preview your customers and route — services unlock on the day.`
+          ? `Your route for ${previewDayLabel} is ready. Services unlock 1 hour before each customer's scheduled time.`
           : routeUnlocked
           ? "Your daily plan, in order."
           : shiftClock
           ? `Your work starts at ${shiftClock}.`
           : "Your route will unlock before your shift starts."}
       </p>
-
 
       <TodayAssignmentStatus
         isError={todayQuery.isError}
@@ -298,93 +307,41 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
-      {/* Rest-day preview summary — shown above the map on non-service days */}
+      {/* Preview banner — communicates "you're looking at tomorrow" without changing layout */}
       {isPreviewMode && (
-        <Card className="mt-5 overflow-hidden border-primary/25 bg-gradient-to-br from-primary/5 to-transparent p-0">
-          <div className="flex items-center justify-between gap-2 border-b border-primary/15 bg-primary/8 px-4 py-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> Route Optimized
-            </span>
-            <span className="text-[11px] font-medium text-primary/80">Ready for {previewDayLabel}</span>
-          </div>
-          <div className="p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {previewDayLabel}'s Assignment
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              {previewDayLabel}'s Route Preview
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{previewDateLabel}</p>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <PreviewStat
-                icon={<Users className="h-4 w-4" />}
-                value={String(previewList.length)}
-                label="Customers"
-              />
-              <PreviewStat
-                icon={<IndianRupee className="h-4 w-4" />}
-                value={`₹${previewEarnings.toLocaleString("en-IN")}`}
-                label="Est. Earnings"
-              />
-              <PreviewStat
-                icon={<MapPin className="h-4 w-4" />}
-                value={previewMapStats ? `${previewMapStats.km} km` : "—"}
-                label="Route Distance"
-              />
-              <PreviewStat
-                icon={<Clock className="h-4 w-4" />}
-                value={previewStartTime ? formatTime12(previewStartTime) : "—"}
-                label="First Service"
-              />
-            </div>
-            {previewMapStats?.mins && (
-              <p className="mt-3 text-center text-[11px] text-muted-foreground">
-                Estimated duration · {Math.floor(previewMapStats.mins / 60)}h {previewMapStats.mins % 60}m
-              </p>
-            )}
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Your route is ready. Services unlock 1 hour before each customer's scheduled time.
+            </p>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Map — reused on both working and preview days */}
       <div className="mt-5">
         <LiveMap
-          stops={isPreviewMode ? previewStops : stops}
-          showCustomers={isPreviewMode ? previewStops.length > 0 : pending.length > 0}
+          stops={activeStops}
+          showCustomers={activeStops.length > 0}
           heightClass="h-40"
           hideStats
           onStats={isPreviewMode ? setPreviewMapStats : setMapStats}
         />
       </div>
 
-      {/* NEXT CUSTOMER — hero (working days only) */}
-      {!isPreviewMode && !isEndOfDay && routeUnlocked && nextStop && (
+      {/* NEXT CUSTOMER — hero (working days and preview both) */}
+      {!isEndOfDay && routeUnlocked && activeNext && (
         <NextCustomerHero
-          stop={nextStop}
-          seqNo={currentSeq ?? 1}
-          total={total}
+          stop={activeNext}
+          seqNo={activeSeqStart}
+          total={activeTotal}
+          locked={isPreviewMode}
+          previewDayLabel={isPreviewMode ? previewDayLabel : undefined}
         />
-      )}
-
-      {/* Rest-day locked customer list */}
-      {isPreviewMode && (
-        <section className="mt-6">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {previewDayLabel}'s Customers
-            </h2>
-            <span className="text-[11px] text-muted-foreground">
-              {previewList.length} scheduled
-            </span>
-          </div>
-          <div className="space-y-2">
-            {previewList.map((s: any) => (
-              <PreviewRow key={s.id} stop={s} seqNo={s.routeIndex} dayLabel={previewDayLabel} />
-            ))}
-            {previewList.length === 0 && (
-              <Card className="p-5 text-center text-sm text-muted-foreground">
-                Route is being prepared for {previewDayLabel}.
-              </Card>
-            )}
-          </div>
-        </section>
       )}
 
       {/* Locked / empty states */}
@@ -411,52 +368,68 @@ function RoutePage() {
         <Card className="mt-5 p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
       )}
 
-
-
-      {/* Today's Progress */}
-      {total > 0 && !isEndOfDay && (
+      {/* Today's Progress — same card on working & preview days */}
+      {activeTotal > 0 && !isEndOfDay && (
         <Card className="mt-5 p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today's Progress</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {isPreviewMode ? `${previewDayLabel}'s Progress` : "Today's Progress"}
+            </p>
             <p className="text-base font-semibold tabular-nums">
-              {done}<span className="text-sm font-medium text-muted-foreground"> / {total} done</span>
+              {isPreviewMode ? 0 : done}<span className="text-sm font-medium text-muted-foreground"> / {activeTotal} done</span>
             </p>
           </div>
-          <Progress value={progressPct} className="mt-3 h-2" />
+          <Progress value={isPreviewMode ? 0 : progressPct} className="mt-3 h-2" />
           <div className="mt-3 grid grid-cols-3 gap-3 text-center">
             <div className="flex flex-col items-center gap-0.5">
               <Wallet className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold tabular-nums">₹{earnedSoFar.toLocaleString("en-IN")}</p>
+              <p className="text-sm font-semibold tabular-nums">
+                ₹{(isPreviewMode ? 0 : earnedSoFar).toLocaleString("en-IN")}
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earned</p>
             </div>
             <div className="flex flex-col items-center gap-0.5">
               <MapPin className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold tabular-nums">{mapStats ? `${mapStats.km} km` : "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Left</p>
+              <p className="text-sm font-semibold tabular-nums">{activeMapStats ? `${activeMapStats.km} km` : "—"}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route</p>
             </div>
             <div className="flex flex-col items-center gap-0.5">
               <Clock className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold tabular-nums">{estFinishClock ?? "—"}</p>
+              <p className="text-sm font-semibold tabular-nums">
+                {isPreviewMode
+                  ? (previewStartTime ? formatTime12(previewStartTime) : "—")
+                  : (estFinishClock ?? "—")}
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {mapStats?.mins ? `${mapStats.mins} min left` : "ETA"}
+                {isPreviewMode
+                  ? `Starts ${previewDayLabel}`
+                  : (mapStats?.mins ? `${mapStats.mins} min left` : "ETA")}
               </p>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Queue — compact rows */}
-      {!isEndOfDay && routeUnlocked && queueStops.length > 0 && (
+      {/* Queue — compact rows (working & preview) */}
+      {!isEndOfDay && routeUnlocked && activeQueue.length > 0 && (
         <section className="mt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Up Next</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {isPreviewMode ? "Queue" : "Up Next"}
+            </h2>
             <span className="text-[11px] text-muted-foreground">
-              {queueStops.length} customer{queueStops.length === 1 ? "" : "s"} waiting
+              {activeQueue.length} customer{activeQueue.length === 1 ? "" : "s"} {isPreviewMode ? "scheduled" : "waiting"}
             </span>
           </div>
           <div className="space-y-2">
-            {queueStops.map((s, idx) => (
-              <QueueRow key={s.id} stop={s} seqNo={(currentSeq ?? 1) + idx + 1} total={total} />
+            {activeQueue.map((s, idx) => (
+              <QueueRow
+                key={s.id}
+                stop={s}
+                seqNo={activeSeqStart + idx + 1}
+                total={activeTotal}
+                locked={isPreviewMode}
+              />
             ))}
           </div>
         </section>
