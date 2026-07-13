@@ -17,6 +17,8 @@ import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { TappableVehicleImage } from "@/components/VehiclePhotoViewer";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
+import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { logApkEvidence } from "@/lib/apkEvidence";
 
