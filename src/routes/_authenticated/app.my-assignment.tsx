@@ -65,7 +65,24 @@ function MyAssignmentPage() {
   });
 
 
-  if (data === undefined) return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
+  // Blocking loading state: never render "no assignment" while still fetching
+  // or retrying so a transient network blip can't collapse the UI to zero.
+  if (data === undefined && !myQuery.isError) {
+    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading today's assignment…</div>;
+  }
+  if (myQuery.isError && data === undefined) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-5">
+        <TodayAssignmentStatus
+          isError
+          isFetching={myQuery.isFetching}
+          isRefetching={false}
+          hasData={false}
+          onRetry={() => myQuery.refetch()}
+        />
+      </div>
+    );
+  }
   if (data === null) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5">
