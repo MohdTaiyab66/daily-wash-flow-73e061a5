@@ -21,6 +21,8 @@ import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { logApkEvidence } from "@/lib/apkEvidence";
+import { computeUnlockState, formatCountdown } from "@/lib/unlock-time";
+import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -31,19 +33,28 @@ function RoutePage() {
     ["services", "assignments", "customers", "vehicles", "dirty_vehicle_reports", "unavailability_reports", "wallet_ledger", "customer_notifications", "admin_alerts"],
     [["route-today"], ["today-assignment"], ["today-assignment"], ["earnings-v3"], ["wallet-balance"]],
   );
+  const todayDateStr = new Date().toISOString().slice(0, 10);
   const { data: services } = useQuery({
     queryKey: ["route-today"],
     queryFn: async () => {
-      const d = new Date().toISOString().slice(0, 10);
+      const d = todayDateStr;
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase
+      if (!u.user) return loadRouteSnapshot<any[]>("today", d) ?? [];
+      const { data, error } = await supabase
         .from("services")
         .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
-      return data ?? [];
+      if (error) {
+        // Network / transient failure — fall back to last-known snapshot.
+        const cached = loadRouteSnapshot<any[]>("today", d);
+        if (cached) return cached;
+        throw error;
+      }
+      const rows = data ?? [];
+      saveRouteSnapshot("today", d, rows);
+      return rows;
     },
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
@@ -262,13 +273,29 @@ function RoutePage() {
 
   // Unified data source — same layout whether it's a working day or a
   // rest-day preview. Only interaction state (locked vs actionable) changes.
-  const activeList = isPreviewMode ? previewList : pending;
+  // Per-stop unlock: a stop becomes actionable 1 hour before its scheduled time.
+  const decorateUnlock = (list: any[], dateStr: string | null) =>
+    list.map((s: any) => {
+      const c = s.customers as any;
+      const scheduled = c?.service_required_before ?? c?.preferred_time ?? s.time_slot;
+      const u = computeUnlockState(scheduled, dateStr, nowTs);
+      return { ...s, _unlocked: u.unlocked, _unlockAt: u.unlockAt, _unlockCountdown: formatCountdown(u.countdownMs) };
+    });
+  const activeList = isPreviewMode
+    ? decorateUnlock(previewList, null) // preview: always locked
+    : decorateUnlock(pending, todayDateStr);
   const activeStops = isPreviewMode ? previewStops : stops;
   const activeNext = activeList[0] ?? null;
   const activeQueue = activeList.slice(1);
   const activeTotal = isPreviewMode ? previewList.length : total;
   const activeMapStats = isPreviewMode ? previewMapStats : mapStats;
   const activeSeqStart = isPreviewMode ? 1 : (currentSeq ?? 1);
+
+  // Rough add-on potential: partners see ~₹15 average add-on uplift per stop
+  // when previewing tomorrow's route. Kept intentionally conservative.
+  const ADDON_PER_STOP = 15;
+  const previewAddonPotential = previewList.length * ADDON_PER_STOP;
+  const netOnline = isOnline();
 
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
@@ -307,6 +334,19 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
+      {/* Offline banner — reads survive short outages via the last-known snapshot. */}
+      {!netOnline && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">You're offline</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Showing your last-known route. Updates will sync automatically when you're back online.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Preview banner — communicates "you're looking at tomorrow" without changing layout */}
       {isPreviewMode && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5">
@@ -320,6 +360,39 @@ function RoutePage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Estimated earnings breakdown — preview only. Read-only, no service actions. */}
+      {isPreviewMode && previewList.length > 0 && (
+        <Card className="mt-4 p-4">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel} Earnings Estimate
+            </p>
+            <p className="text-lg font-bold tabular-nums text-primary">
+              ₹{(previewEarnings + previewAddonPotential).toLocaleString("en-IN")}
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">₹{previewEarnings.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Base ({previewList.length} cars)</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">+₹{previewAddonPotential.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Add-on potential</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">
+                {previewMapStats ? `${previewMapStats.km} km` : "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route distance</p>
+            </div>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Add-on potential is an estimate based on typical customer upgrades (extras, interior, polish).
+          </p>
+        </Card>
       )}
 
       {/* Map — reused on both working and preview days */}
@@ -339,8 +412,9 @@ function RoutePage() {
           stop={activeNext}
           seqNo={activeSeqStart}
           total={activeTotal}
-          locked={isPreviewMode}
+          locked={isPreviewMode || activeNext._unlocked === false}
           previewDayLabel={isPreviewMode ? previewDayLabel : undefined}
+          unlockCountdown={!isPreviewMode && activeNext._unlocked === false ? activeNext._unlockCountdown : undefined}
         />
       )}
 
@@ -428,7 +502,8 @@ function RoutePage() {
                 stop={s}
                 seqNo={activeSeqStart + idx + 1}
                 total={activeTotal}
-                locked={isPreviewMode}
+                locked={isPreviewMode || s._unlocked === false}
+                unlockCountdown={!isPreviewMode && s._unlocked === false ? s._unlockCountdown : undefined}
               />
             ))}
           </div>
@@ -542,7 +617,7 @@ function RoutePage() {
 }
 
 
-function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel }: { stop: any; seqNo: number; total: number; locked?: boolean; previewDayLabel?: string }) {
+function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockCountdown }: { stop: any; seqNo: number; total: number; locked?: boolean; previewDayLabel?: string; unlockCountdown?: string }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
@@ -597,7 +672,8 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel }: { sto
                 </p>
               )}
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                <Lock className="h-3 w-3" /> Service Locked
+                <Lock className="h-3 w-3" />
+                {unlockCountdown ? `Unlocks in ${unlockCountdown}` : "Service Locked"}
               </span>
             </div>
           ) : (
@@ -646,7 +722,7 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel }: { sto
             className="flex items-center justify-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-muted-foreground shadow-sm"
           >
             <Lock className="h-4 w-4" />
-            <span>Available {previewDayLabel ?? "Tomorrow"}</span>
+            <span>{unlockCountdown ? `Unlocks in ${unlockCountdown}` : `Available ${previewDayLabel ?? "Tomorrow"}`}</span>
           </button>
         ) : (
           <Link
@@ -702,7 +778,7 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
 }
 
 
-function QueueRow({ stop, seqNo, total: _total, locked }: { stop: any; seqNo: number; total: number; locked?: boolean }) {
+function QueueRow({ stop, seqNo, total: _total, locked, unlockCountdown }: { stop: any; seqNo: number; total: number; locked?: boolean; unlockCountdown?: string }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
@@ -739,7 +815,7 @@ function QueueRow({ stop, seqNo, total: _total, locked }: { stop: any; seqNo: nu
               </span>
             )}
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-              <Lock className="h-2.5 w-2.5" /> Locked
+              <Lock className="h-2.5 w-2.5" /> {unlockCountdown ? `in ${unlockCountdown}` : "Locked"}
             </span>
           </div>
         ) : (
