@@ -40,6 +40,7 @@ import { Route as AdminMarketplaceLiveRouteImport } from './routes/admin.marketp
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
 import { Route as AdminLiveRouteImport } from './routes/admin.live'
+import { Route as AdminIntegrityAuditRouteImport } from './routes/admin.integrity-audit'
 import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
@@ -247,6 +248,11 @@ const AdminManualAssignmentRoute = AdminManualAssignmentRouteImport.update({
 const AdminLiveRoute = AdminLiveRouteImport.update({
   id: '/live',
   path: '/live',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminIntegrityAuditRoute = AdminIntegrityAuditRouteImport.update({
+  id: '/integrity-audit',
+  path: '/integrity-audit',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminImportRoute = AdminImportRouteImport.update({
@@ -552,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/integrity-audit': typeof AdminIntegrityAuditRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
@@ -635,6 +642,7 @@ export interface FileRoutesByTo {
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/integrity-audit': typeof AdminIntegrityAuditRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
@@ -721,6 +729,7 @@ export interface FileRoutesById {
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
   '/admin/import': typeof AdminImportRoute
+  '/admin/integrity-audit': typeof AdminIntegrityAuditRoute
   '/admin/live': typeof AdminLiveRoute
   '/admin/manual-assignment': typeof AdminManualAssignmentRoute
   '/admin/marketplace': typeof AdminMarketplaceRouteWithChildren
@@ -808,6 +817,7 @@ export interface FileRouteTypes {
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
+    | '/admin/integrity-audit'
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
@@ -891,6 +901,7 @@ export interface FileRouteTypes {
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
+    | '/admin/integrity-audit'
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
@@ -976,6 +987,7 @@ export interface FileRouteTypes {
     | '/admin/expansion-requests'
     | '/admin/fraud'
     | '/admin/import'
+    | '/admin/integrity-audit'
     | '/admin/live'
     | '/admin/manual-assignment'
     | '/admin/marketplace'
@@ -1287,6 +1299,13 @@ declare module '@tanstack/react-router' {
       path: '/live'
       fullPath: '/admin/live'
       preLoaderRoute: typeof AdminLiveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/integrity-audit': {
+      id: '/admin/integrity-audit'
+      path: '/integrity-audit'
+      fullPath: '/admin/integrity-audit'
+      preLoaderRoute: typeof AdminIntegrityAuditRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/import': {
@@ -1743,6 +1762,7 @@ interface AdminRouteChildren {
   AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
   AdminFraudRoute: typeof AdminFraudRoute
   AdminImportRoute: typeof AdminImportRoute
+  AdminIntegrityAuditRoute: typeof AdminIntegrityAuditRoute
   AdminLiveRoute: typeof AdminLiveRoute
   AdminManualAssignmentRoute: typeof AdminManualAssignmentRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRouteWithChildren
@@ -1782,6 +1802,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,
   AdminFraudRoute: AdminFraudRoute,
   AdminImportRoute: AdminImportRoute,
+  AdminIntegrityAuditRoute: AdminIntegrityAuditRoute,
   AdminLiveRoute: AdminLiveRoute,
   AdminManualAssignmentRoute: AdminManualAssignmentRoute,
   AdminMarketplaceRoute: AdminMarketplaceRouteWithChildren,
