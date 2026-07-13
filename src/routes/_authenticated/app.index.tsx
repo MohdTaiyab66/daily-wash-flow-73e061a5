@@ -177,7 +177,23 @@ function HomePage() {
   });
   const routeStarted = !!cancelInfo?.route_started;
 
-  
+  // Assignment summary math (used on rest days). Mirrors getMyAssignment.
+  const allServices = todayData?.all ?? [];
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const distinctScheduled = Array.from(
+    new Set(allServices.map((s: any) => s.scheduled_date)),
+  ).filter(Boolean) as string[];
+  const workingDaysTotal = Number(assignment?.working_days ?? 0);
+  const workingDaysCompleted = distinctScheduled.filter((d) => d < todayStr).length;
+  const workingDaysRemaining = Math.max(0, workingDaysTotal - workingDaysCompleted);
+  const ratePerCar = Number(assignment?.rate_per_car ?? 17);
+  const expectedTotal = allServices.length * ratePerCar;
+  const nextDateLabel = nextDate
+    ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" })
+    : "Tomorrow";
+  const nextTimeLabel = assignment?.expected_start_time
+    ? formatTime12(assignment.expected_start_time)
+    : "6:30 AM";
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
