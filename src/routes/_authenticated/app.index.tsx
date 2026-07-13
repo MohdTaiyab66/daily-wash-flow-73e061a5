@@ -114,12 +114,6 @@ function HomePage() {
   const restDay = !!assignment && total === 0;
   const nextDate = todayData?.nextDate ?? null;
   const assignmentAll = todayData?.all ?? [];
-  const assignmentTotalCustomers = new Set(
-    assignmentAll.map((s: any) => s.customer_id).filter(Boolean),
-  ).size;
-  const assignmentCompleted = assignmentAll.filter(
-    (s: any) => s.status === "completed",
-  ).length;
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
