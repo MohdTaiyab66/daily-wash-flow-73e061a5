@@ -134,12 +134,49 @@ export const modifyAssignment = createServerFn({ method: "POST" })
     return result;
   });
 
-export const cancelMyAssignment = createServerFn({ method: "POST" })
+export const getAssignmentCancellability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { assignment_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
+    const { data: rows, error } = await (context.supabase as any).rpc(
+      "get_assignment_cancellability",
+      { p_assignment_id: data.assignment_id },
+    );
     if (error) throw new Error(error.message);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return {
+      can_cancel: !!row?.can_cancel,
+      reason: (row?.reason as string) ?? "UNKNOWN",
+      deadline_at: (row?.deadline_at as string | null) ?? null,
+      shift_start_at: (row?.shift_start_at as string | null) ?? null,
+      route_started: !!row?.route_started,
+      status: (row?.status as string | null) ?? null,
+    };
+  });
+
+type CancelError = { code: string; message: string };
+
+export const cancelMyAssignment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { assignment_id: string }) => d)
+  .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; code: string; message: string }> => {
+    const { userId } = context;
+    const { error } = await context.supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
+    if (error) {
+      const msg = error.message || "";
+      const err: CancelError = { code: "ASSIGNMENT_CANNOT_BE_CANCELLED", message: msg };
+      if (/ROUTE_STARTED|route already started/i.test(msg)) err.code = "ROUTE_STARTED";
+      else if (/CUTOFF_PASSED|cutoff passed/i.test(msg)) err.code = "CUTOFF_PASSED";
+      else if (/ASSIGNMENT_ALREADY_(CANCELLED|COMPLETED|EXPIRED)/i.test(msg)) {
+        err.code = msg.match(/ASSIGNMENT_ALREADY_(\w+)/i)?.[0]?.toUpperCase() ?? "ASSIGNMENT_ALREADY_MODIFIED";
+      } else if (/ASSIGNMENT_NOT_FOUND/i.test(msg)) err.code = "ASSIGNMENT_NOT_FOUND";
+      else if (/disabled by admin/i.test(msg)) err.code = "CANCELLATION_DISABLED";
+      console.error("[cancelMyAssignment] partner=%s assignment=%s code=%s msg=%s", userId, data.assignment_id, err.code, msg);
+      const e = new Error(err.message) as Error & CancelError;
+      e.code = err.code;
+      throw e;
+    }
+    console.info("[cancelMyAssignment] partner=%s assignment=%s cancelled ok", userId, data.assignment_id);
     return { ok: true };
   });
 
