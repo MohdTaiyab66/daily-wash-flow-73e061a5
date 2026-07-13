@@ -722,7 +722,7 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockC
             className="flex items-center justify-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-muted-foreground shadow-sm"
           >
             <Lock className="h-4 w-4" />
-            <span>Available {previewDayLabel ?? "Tomorrow"}</span>
+            <span>{unlockCountdown ? `Unlocks in ${unlockCountdown}` : `Available ${previewDayLabel ?? "Tomorrow"}`}</span>
           </button>
         ) : (
           <Link
