@@ -298,24 +298,93 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
-      {/* Map */}
+      {/* Rest-day preview summary — shown above the map on non-service days */}
+      {isPreviewMode && (
+        <Card className="mt-5 overflow-hidden border-primary/25 bg-gradient-to-br from-primary/5 to-transparent p-0">
+          <div className="flex items-center justify-between gap-2 border-b border-primary/15 bg-primary/8 px-4 py-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> Route Optimized
+            </span>
+            <span className="text-[11px] font-medium text-primary/80">Ready for {previewDayLabel}</span>
+          </div>
+          <div className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel}'s Assignment
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{previewDateLabel}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <PreviewStat
+                icon={<Users className="h-4 w-4" />}
+                value={String(previewList.length)}
+                label="Customers"
+              />
+              <PreviewStat
+                icon={<IndianRupee className="h-4 w-4" />}
+                value={`₹${previewEarnings.toLocaleString("en-IN")}`}
+                label="Est. Earnings"
+              />
+              <PreviewStat
+                icon={<MapPin className="h-4 w-4" />}
+                value={previewMapStats ? `${previewMapStats.km} km` : "—"}
+                label="Route Distance"
+              />
+              <PreviewStat
+                icon={<Clock className="h-4 w-4" />}
+                value={previewStartTime ? formatTime12(previewStartTime) : "—"}
+                label="First Service"
+              />
+            </div>
+            {previewMapStats?.mins && (
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                Estimated duration · {Math.floor(previewMapStats.mins / 60)}h {previewMapStats.mins % 60}m
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Map — reused on both working and preview days */}
       <div className="mt-5">
         <LiveMap
-          stops={stops}
-          showCustomers={pending.length > 0}
+          stops={isPreviewMode ? previewStops : stops}
+          showCustomers={isPreviewMode ? previewStops.length > 0 : pending.length > 0}
           heightClass="h-40"
           hideStats
-          onStats={setMapStats}
+          onStats={isPreviewMode ? setPreviewMapStats : setMapStats}
         />
       </div>
 
-      {/* NEXT CUSTOMER — hero */}
-      {!isEndOfDay && routeUnlocked && nextStop && (
+      {/* NEXT CUSTOMER — hero (working days only) */}
+      {!isPreviewMode && !isEndOfDay && routeUnlocked && nextStop && (
         <NextCustomerHero
           stop={nextStop}
           seqNo={currentSeq ?? 1}
           total={total}
         />
+      )}
+
+      {/* Rest-day locked customer list */}
+      {isPreviewMode && (
+        <section className="mt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel}'s Customers
+            </h2>
+            <span className="text-[11px] text-muted-foreground">
+              {previewList.length} scheduled
+            </span>
+          </div>
+          <div className="space-y-2">
+            {previewList.map((s: any) => (
+              <PreviewRow key={s.id} stop={s} seqNo={s.routeIndex} dayLabel={previewDayLabel} />
+            ))}
+            {previewList.length === 0 && (
+              <Card className="p-5 text-center text-sm text-muted-foreground">
+                Route is being prepared for {previewDayLabel}.
+              </Card>
+            )}
+          </div>
+        </section>
       )}
 
       {/* Locked / empty states */}
@@ -338,9 +407,11 @@ function RoutePage() {
         </Card>
       )}
 
-      {routeUnlocked && !isEndOfDay && pending.length === 0 && (
+      {routeUnlocked && !isPreviewMode && !isEndOfDay && pending.length === 0 && (
         <Card className="mt-5 p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
       )}
+
+
 
       {/* Today's Progress */}
       {total > 0 && !isEndOfDay && (
