@@ -14,6 +14,7 @@ import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { toast } from "sonner";
 import { useState } from "react";
+import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 
 const SUPPORT_TEL = "+911800000000";
 
@@ -27,8 +28,15 @@ function MyAssignmentPage() {
   const canFn = useServerFn(getAssignmentCancellability);
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"], ["cancellability"]]);
-  const { data } = useQuery({ queryKey: ["my-assignment"], queryFn: () => fn(), refetchInterval: 30000 });
+  useRealtimeInvalidation(["assignments", "services", "customers", "vehicles", "wallet_ledger"], [["my-assignment"], ["cancellability"], ["today-assignment"]]);
+  const myQuery = useQuery({
+    queryKey: ["my-assignment"],
+    queryFn: () => fn(),
+    refetchInterval: 30000,
+    retry: 4,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+  });
+  const data = myQuery.data;
   const assignmentId = (data && (data as any).assignment?.id) as string | undefined;
   const { data: cancelInfo } = useQuery({
     queryKey: ["cancellability", assignmentId],
@@ -58,7 +66,24 @@ function MyAssignmentPage() {
   });
 
 
-  if (data === undefined) return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
+  // Blocking loading state: never render "no assignment" while still fetching
+  // or retrying so a transient network blip can't collapse the UI to zero.
+  if (data === undefined && !myQuery.isError) {
+    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading today's assignment…</div>;
+  }
+  if (myQuery.isError && data === undefined) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-5">
+        <TodayAssignmentStatus
+          isError
+          isFetching={myQuery.isFetching}
+          isRefetching={false}
+          hasData={false}
+          onRetry={() => myQuery.refetch()}
+        />
+      </div>
+    );
+  }
   if (data === null) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5">
@@ -71,6 +96,7 @@ function MyAssignmentPage() {
       </div>
     );
   }
+  if (data === undefined) return null;
 
   const a = data.assignment as any;
   const workingDaysLabel = (n: number) => `${n} Working Day${n === 1 ? "" : "s"}`;

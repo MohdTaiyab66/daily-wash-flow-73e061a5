@@ -17,6 +17,8 @@ import { EndOfDayCard } from "@/components/EndOfDayCard";
 import { TappableVehicleImage } from "@/components/VehiclePhotoViewer";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
+import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { logApkEvidence } from "@/lib/apkEvidence";
 
@@ -46,6 +48,21 @@ function RoutePage() {
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+
+  // Consistency guard: subscribe to the shared today-assignment cache so this
+  // page and Home / My Assignment can never show different customer counts.
+  const todayQuery = useTodayAssignment();
+  useEffect(() => {
+    if (!services || !todayQuery.data) return;
+    const liveTotal = (services ?? []).filter((s: any) => s.status !== "covered_by_booking").length;
+    const sharedTotal = todayQuery.data.todaysCustomers;
+    if (liveTotal !== sharedTotal) {
+      console.warn(
+        "[assignment-consistency] Live vs shared today-assignment mismatch",
+        { liveTotal, sharedTotal },
+      );
+    }
+  }, [services, todayQuery.data]);
 
   const visibilityFn = useServerFn(getRouteVisibility);
   const { data: visibilityInfo } = useQuery({
@@ -172,6 +189,14 @@ function RoutePage() {
           ? `Your work starts at ${shiftClock}.`
           : "Your route will unlock before your shift starts."}
       </p>
+
+      <TodayAssignmentStatus
+        isError={todayQuery.isError}
+        isFetching={todayQuery.isFetching}
+        isRefetching={todayQuery.isRefetching}
+        hasData={todayQuery.data !== undefined}
+        onRetry={() => todayQuery.refetch()}
+      />
 
       <div className="mt-4"><DarOfferCard /></div>
 
