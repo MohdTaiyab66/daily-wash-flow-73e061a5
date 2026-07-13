@@ -256,15 +256,7 @@ function HomePage() {
             </p>
           </Card>
         ) : (
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-              Today's Route
-            </p>
 
-            <div className="mt-1.5 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
-            </div>
 
           <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
