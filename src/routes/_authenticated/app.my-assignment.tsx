@@ -95,7 +95,7 @@ function MyAssignmentPage() {
         </Card>
       </div>
     );
-  }
+  if (data === undefined) return null;
 
   const a = data.assignment as any;
   const workingDaysLabel = (n: number) => `${n} Working Day${n === 1 ? "" : "s"}`;
