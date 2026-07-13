@@ -5091,6 +5091,17 @@ export type Database = {
           rating: number
         }[]
       }
+      get_assignment_cancellability: {
+        Args: { p_assignment_id: string }
+        Returns: {
+          can_cancel: boolean
+          deadline_at: string
+          reason: string
+          route_started: boolean
+          shift_start_at: string
+          status: string
+        }[]
+      }
       get_coverage_at: {
         Args: { p_lat: number; p_lng: number }
         Returns: {
