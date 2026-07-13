@@ -56,37 +56,53 @@ function HomePage() {
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
 
-  const { data: assignment } = useQuery({
-    queryKey: ["active-assignment-summary"],
+  // Single source of truth: read the partner's active assignment and its
+  // services in one query, then derive today's counts from it. Never show
+  // "0 customers" when an active assignment exists — instead surface the
+  // assignment total and a rest-day state when today has no scheduled work.
+  const { data: todayData, isLoading: loadingToday } = useQuery({
+    queryKey: ["today-assignment"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      const { data } = await supabase
+      if (!u.user) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: a } = await supabase
         .from("assignments")
         .select("*")
-        .eq("partner_id", u.user!.id)
+        .eq("partner_id", u.user.id)
         .eq("status", "active")
-        .gte("end_date", new Date().toISOString().slice(0, 10))
+        .gte("end_date", today)
         .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return data;
+      if (!a) {
+        // No active assignment — fall back to any loose services scheduled
+        // today for this partner (legacy/manual assignments).
+        const { data: loose } = await supabase
+          .from("services")
+          .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+          .eq("partner_id", u.user.id)
+          .eq("scheduled_date", today);
+          return { assignment: null, all: [] as any[], today: loose ?? [], nextDate: null as string | null };
+      }
+      const { data: services } = await supabase
+        .from("services")
+        .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+        .eq("assignment_id", a.id);
+      const all = services ?? [];
+      const todays = all.filter((s: any) => s.scheduled_date === today);
+      const nextDate =
+        all
+          .map((s: any) => s.scheduled_date as string)
+          .filter((d) => d && d > today)
+          .sort()[0] ?? null;
+      return { assignment: a, all, today: todays, nextDate };
     },
   });
 
-  const { data: today } = useQuery({
-    queryKey: ["today-services-mini"],
-    queryFn: async () => {
-      const d = new Date().toISOString().slice(0, 10);
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase
-        .from("services")
-        .select("id,status,started_at,completed_at,rate_per_car")
-        .eq("partner_id", u.user.id)
-        .eq("scheduled_date", d);
-      return data ?? [];
-    },
-  });
+  const assignment = todayData?.assignment ?? null;
+  const today = todayData?.today ?? [];
+
 
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
   const done = (today ?? []).filter(
