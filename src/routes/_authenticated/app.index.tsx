@@ -121,6 +121,56 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const restDay = !!assignment && total === 0;
   const nextDate = todayData?.nextDate ?? null;
+
+  // Daily customer capacity — used on rest days when today's list is empty.
+  const nextDayCustomers = nextDate
+    ? new Set(
+        (todayData?.all ?? [])
+          .filter((s: any) => s.scheduled_date === nextDate)
+          .map((s: any) => s.customer_id)
+          .filter(Boolean),
+      ).size
+    : 0;
+  const dailyCustomers =
+    nextDayCustomers ||
+    (assignment
+      ? Math.max(
+          1,
+          Math.round(
+            Number(assignment.target_cars || 0) /
+              Math.max(1, Number(assignment.working_days || 1)),
+          ),
+        )
+      : 0);
+
+  // Cancellability + cancel mutation (rest-day quick cancel).
+  const qc = useQueryClient();
+  const canFn = useServerFn(getAssignmentCancellability);
+  const cancelFn = useServerFn(cancelMyAssignment);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const { data: cancelInfo } = useQuery({
+    queryKey: ["cancellability", assignment?.id],
+    queryFn: () => canFn({ data: { assignment_id: assignment!.id } }),
+    enabled: !!assignment?.id,
+    refetchInterval: 60000,
+  });
+  const cancelMut = useMutation({
+    mutationFn: (id: string) => cancelFn({ data: { assignment_id: id } }),
+    onSuccess: () => {
+      toast.success("Assignment cancelled.");
+      setConfirmCancelOpen(false);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => {
+      const code = e?.code as string | undefined;
+      if (code === "ROUTE_STARTED") toast.error("Route already started. Please contact Partner Support.");
+      else if (code === "CUTOFF_PASSED") toast.error("Cancellation window closed.");
+      else toast.error(e?.message ?? "Cancel failed");
+      setConfirmCancelOpen(false);
+    },
+  });
+  const routeStarted = !!cancelInfo?.route_started;
+
   
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
