@@ -50,8 +50,8 @@ export function useToggleOnline() {
         const { reclaimReleasedRouteToday } = await import("@/lib/assignment.functions");
         const res = await reclaimReleasedRouteToday();
         if (res?.reclaimed) {
-          qc.invalidateQueries({ queryKey: ["today-services-mini"] });
-          qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
+          qc.invalidateQueries({ queryKey: ["today-assignment"] });
+          qc.invalidateQueries({ queryKey: ["today-assignment"] });
           qc.invalidateQueries({ queryKey: ["partner-services"] });
           qc.invalidateQueries({ queryKey: ["partner-route"] });
           qc.invalidateQueries({ queryKey: ["partner-today"] });

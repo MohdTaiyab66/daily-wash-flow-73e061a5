@@ -56,37 +56,53 @@ function HomePage() {
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
 
-  const { data: assignment } = useQuery({
-    queryKey: ["active-assignment-summary"],
+  // Single source of truth: read the partner's active assignment and its
+  // services in one query, then derive today's counts from it. Never show
+  // "0 customers" when an active assignment exists — instead surface the
+  // assignment total and a rest-day state when today has no scheduled work.
+  const { data: todayData } = useQuery({
+    queryKey: ["today-assignment"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      const { data } = await supabase
+      if (!u.user) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: a } = await supabase
         .from("assignments")
         .select("*")
-        .eq("partner_id", u.user!.id)
+        .eq("partner_id", u.user.id)
         .eq("status", "active")
-        .gte("end_date", new Date().toISOString().slice(0, 10))
+        .gte("end_date", today)
         .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return data;
+      if (!a) {
+        // No active assignment — fall back to any loose services scheduled
+        // today for this partner (legacy/manual assignments).
+        const { data: loose } = await supabase
+          .from("services")
+          .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+          .eq("partner_id", u.user.id)
+          .eq("scheduled_date", today);
+          return { assignment: null, all: [] as any[], today: loose ?? [], nextDate: null as string | null };
+      }
+      const { data: services } = await supabase
+        .from("services")
+        .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+        .eq("assignment_id", a.id);
+      const all = services ?? [];
+      const todays = all.filter((s: any) => s.scheduled_date === today);
+      const nextDate =
+        all
+          .map((s: any) => s.scheduled_date as string)
+          .filter((d) => d && d > today)
+          .sort()[0] ?? null;
+      return { assignment: a, all, today: todays, nextDate };
     },
   });
 
-  const { data: today } = useQuery({
-    queryKey: ["today-services-mini"],
-    queryFn: async () => {
-      const d = new Date().toISOString().slice(0, 10);
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase
-        .from("services")
-        .select("id,status,started_at,completed_at,rate_per_car")
-        .eq("partner_id", u.user.id)
-        .eq("scheduled_date", d);
-      return data ?? [];
-    },
-  });
+  const assignment = todayData?.assignment ?? null;
+  const today = todayData?.today ?? [];
+
 
   const completed = (today ?? []).filter((s) => s.status === "completed").length;
   const done = (today ?? []).filter(
@@ -125,6 +141,15 @@ function HomePage() {
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const progressPct = total ? (done / total) * 100 : 0;
   const allDone = total > 0 && remaining === 0;
+  const restDay = !!assignment && total === 0;
+  const nextDate = todayData?.nextDate ?? null;
+  const assignmentAll = todayData?.all ?? [];
+  const assignmentTotalCustomers = new Set(
+    assignmentAll.map((s: any) => s.customer_id).filter(Boolean),
+  ).size;
+  const assignmentCompleted = assignmentAll.filter(
+    (s: any) => s.status === "completed",
+  ).length;
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
 
@@ -181,7 +206,47 @@ function HomePage() {
 
       {/* Hero: Today's Route */}
       {assignment ? (
-        allDone ? (
+        restDay ? (
+          <Card className="mt-6 border-0 bg-foreground p-6 text-background">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+              Rest Day
+            </p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
+            </div>
+            <p className="mt-2 text-sm text-background/75">
+              No services scheduled today. Your assignment is still active.
+            </p>
+            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
+              <p className="text-base font-semibold tracking-tight">
+                {assignmentTotalCustomers} Customer{assignmentTotalCustomers === 1 ? "" : "s"} in this route
+              </p>
+              <p className="mt-0.5 text-xs text-background/60">
+                {assignmentCompleted} Completed overall
+              </p>
+            </div>
+            {nextDate ? (
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-background/80">
+                <Clock className="h-4 w-4 text-background/60" />
+                Next service on{" "}
+                {new Date(nextDate).toLocaleDateString("en-IN", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "short",
+                })}
+              </p>
+            ) : null}
+            <Button
+              asChild
+              variant="secondary"
+              size="lg"
+              className="mt-4 h-12 w-full rounded-2xl bg-background/10 text-background hover:bg-background/15"
+            >
+              <Link to="/app/my-assignment">View Assignment</Link>
+            </Button>
+          </Card>
+        ) : allDone ? (
           <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
             <PartyPopper className="h-8 w-8 text-primary" />
             <p className="text-xl font-semibold">Great Job!</p>
@@ -191,6 +256,8 @@ function HomePage() {
             </p>
           </Card>
         ) : (
+
+
           <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Today's Route

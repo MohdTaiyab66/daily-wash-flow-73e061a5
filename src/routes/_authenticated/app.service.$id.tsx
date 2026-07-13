@@ -329,8 +329,8 @@ function ServiceDetail() {
     void qc.invalidateQueries({ queryKey: ["service", id] });
     void qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
     void qc.invalidateQueries({ queryKey: ["route-today"] });
-    void qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
-    void qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+    void qc.invalidateQueries({ queryKey: ["today-assignment"] });
+    void qc.invalidateQueries({ queryKey: ["today-assignment"] });
     void qc.invalidateQueries({ queryKey: ["earnings-v3"] });
     void qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     window.setTimeout(() => void goNext(), 900);
@@ -1292,8 +1292,8 @@ function UnavailableSection({
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
-      qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
       console.log(`[SVC][UNAVAILABLE] Route advanced · queries invalidated · svc=${serviceId}`);
@@ -1500,8 +1500,8 @@ function DirtyVehicleSection({
       qc.invalidateQueries({ queryKey: ["service", serviceId] });
       qc.invalidateQueries({ queryKey: ["service-photos", serviceId] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["active-assignment-summary"] });
-      qc.invalidateQueries({ queryKey: ["today-services-mini"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
       console.log(`[SVC][DIRTY] Route advanced · queries invalidated · svc=${serviceId}`);
