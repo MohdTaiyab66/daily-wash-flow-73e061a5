@@ -146,8 +146,17 @@ if not exist "android" (
 echo   Copying Firebase config into android\app\google-services.json
 copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
 
-echo   Syncing Capacitor...
-call node "%CAP_CLI%" sync android || goto :fail
+echo   Syncing Capacitor with local CLI (no npx/npm)...
+echo     node "%CAP_CLI%" sync android
+call node "%CAP_CLI%" sync android
+if errorlevel 1 (
+  echo.
+  echo   [X] Capacitor sync failed.
+  echo       If the message above says "npm error could not determine executable to run",
+  echo       your local build-partner.bat is still using npx. Replace that line with:
+  echo         call node "%%CAP_CLI%%" sync android ^|^| goto :fail
+  goto :fail
+)
 
 if not exist "android\app\src\main\assets\capacitor.config.json" (
   echo   [X] Missing synced Android Capacitor config.
