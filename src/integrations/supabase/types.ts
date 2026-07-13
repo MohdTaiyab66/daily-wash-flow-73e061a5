@@ -5620,6 +5620,7 @@ export type Database = {
         }
         Returns: Json
       }
+      validate_today_assignment: { Args: { p_partner: string }; Returns: Json }
       working_days_end_date: {
         Args: { p_off_dow?: number; p_start: string; p_working: number }
         Returns: string
