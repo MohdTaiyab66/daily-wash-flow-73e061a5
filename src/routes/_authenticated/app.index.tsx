@@ -175,7 +175,7 @@ function HomePage() {
       setConfirmCancelOpen(false);
     },
   });
-  const routeStarted = !!cancelInfo?.route_started;
+  void cancelInfo?.route_started;
 
   // Assignment summary math (used on rest days). Mirrors getMyAssignment.
   const allServices = todayData?.all ?? [];
