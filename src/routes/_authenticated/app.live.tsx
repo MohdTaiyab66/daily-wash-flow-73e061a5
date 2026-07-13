@@ -179,16 +179,112 @@ function RoutePage() {
   const nextStop = pending[0] ?? null;
   const queueStops = pending.slice(1);
 
+  // ─────────────────────────────────────────────────────────────────
+  // Rest-day / non-service-day PREVIEW mode.
+  // When the partner has an active assignment but no services scheduled
+  // today (e.g. weekly Monday rest), show a rich preview of the next
+  // service day: same map, customer list, and stats — but with every
+  // operational action locked. This keeps the app feeling "alive" and
+  // gives partners a shareable, recruitment-friendly view of their work.
+  const activeAssignment = todayQuery.data?.assignment ?? null;
+  const previewDate: string | null = total === 0 && activeAssignment && todayQuery.data?.nextDate
+    ? todayQuery.data.nextDate
+    : null;
+  const isPreviewMode = !!previewDate && routeUnlocked;
+
+  const { data: previewServicesRaw } = useQuery({
+    enabled: isPreviewMode,
+    queryKey: ["route-preview", previewDate],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user || !previewDate) return [];
+      const { data } = await supabase
+        .from("services")
+        .select("id,assignment_id,status,time_slot,sequence_no,manual_sequence_no,eta_at,travel_min,distance_km,destination_lat,destination_lng,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path)")
+        .eq("partner_id", u.user.id)
+        .eq("scheduled_date", previewDate)
+        .order("sequence_no", { ascending: true });
+      return data ?? [];
+    },
+    refetchInterval: 60000,
+  });
+
+  const previewList = (previewServicesRaw ?? [])
+    .filter((s: any) => s.status !== "covered_by_booking")
+    .map((s: any, i: number) => {
+      const snap = validateExactGps(s.destination_lat, s.destination_lng);
+      return { ...s, lat: snap?.latitude ?? null, lng: snap?.longitude ?? null, routeIndex: i + 1 };
+    });
+
+  const previewStops = previewList
+    .filter((s: any) => s.lat != null && s.lng != null)
+    .map((s: any, i: number) => {
+      const c = s.customers as any;
+      return {
+        id: s.id,
+        sequence_no: s.routeIndex ?? i + 1,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+        label: c?.full_name ?? "Customer",
+        eta: s.eta_at ?? null,
+        distanceKm: s.distance_km ?? null,
+      };
+    });
+
+  const previewStartTime = previewList
+    .map((s: any) => s.customers?.service_required_before ?? s.customers?.preferred_time ?? s.time_slot)
+    .filter(Boolean)
+    .sort()[0] as string | undefined;
+  const previewEarnings = previewList.reduce(
+    (sum: number, s: any) => sum + Number(s.rate_per_car ?? ratePerCar),
+    0,
+  );
+  const [previewMapStats, setPreviewMapStats] = useState<{ km: number; mins: number } | null>(null);
+  const previewDateObj = previewDate ? new Date(previewDate + "T00:00:00") : null;
+  const previewDayLabel = previewDateObj
+    ? previewDateObj.toLocaleDateString("en-IN", { weekday: "long" })
+    : "";
+  const previewDateLabel = previewDateObj
+    ? previewDateObj.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })
+    : "";
+  const todayIsRestDay = isPreviewMode;
+  const restDayName = new Date().toLocaleDateString("en-IN", { weekday: "long" });
+
+  const chipLabel = isPreviewMode
+    ? `Tomorrow's Route • ${restDayName} Preview`
+    : !routeUnlocked
+    ? "Route Locked"
+    : isEndOfDay
+    ? "Route Completed"
+    : done > 0
+    ? "Route in Progress"
+    : "Today's Route";
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {routeUnlocked
+      <h1 className="text-2xl font-semibold tracking-tight">Route</h1>
+      <div className="mt-1 flex items-center gap-2">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+          isPreviewMode ? "bg-primary/10 text-primary"
+          : isEndOfDay ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+          : done > 0 ? "bg-primary/12 text-primary"
+          : !routeUnlocked ? "bg-muted text-muted-foreground"
+          : "bg-muted text-foreground"
+        }`}>
+          {isPreviewMode && <Sparkles className="h-3 w-3" />}
+          {chipLabel}
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {isPreviewMode
+          ? `Your route for ${previewDayLabel} is ready. Preview your customers and route — services unlock on the day.`
+          : routeUnlocked
           ? "Your daily plan, in order."
           : shiftClock
           ? `Your work starts at ${shiftClock}.`
           : "Your route will unlock before your shift starts."}
       </p>
+
 
       <TodayAssignmentStatus
         isError={todayQuery.isError}
