@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn } from "lucide-react";
+import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn, Lock, Sparkles, Users, IndianRupee } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
@@ -179,16 +179,112 @@ function RoutePage() {
   const nextStop = pending[0] ?? null;
   const queueStops = pending.slice(1);
 
+  // ─────────────────────────────────────────────────────────────────
+  // Rest-day / non-service-day PREVIEW mode.
+  // When the partner has an active assignment but no services scheduled
+  // today (e.g. weekly Monday rest), show a rich preview of the next
+  // service day: same map, customer list, and stats — but with every
+  // operational action locked. This keeps the app feeling "alive" and
+  // gives partners a shareable, recruitment-friendly view of their work.
+  const activeAssignment = todayQuery.data?.assignment ?? null;
+  const previewDate: string | null = total === 0 && activeAssignment && todayQuery.data?.nextDate
+    ? todayQuery.data.nextDate
+    : null;
+  const isPreviewMode = !!previewDate && routeUnlocked;
+
+  const { data: previewServicesRaw } = useQuery({
+    enabled: isPreviewMode,
+    queryKey: ["route-preview", previewDate],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user || !previewDate) return [];
+      const { data } = await supabase
+        .from("services")
+        .select("id,assignment_id,status,time_slot,sequence_no,manual_sequence_no,eta_at,travel_min,distance_km,destination_lat,destination_lng,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path)")
+        .eq("partner_id", u.user.id)
+        .eq("scheduled_date", previewDate)
+        .order("sequence_no", { ascending: true });
+      return data ?? [];
+    },
+    refetchInterval: 60000,
+  });
+
+  const previewList = (previewServicesRaw ?? [])
+    .filter((s: any) => s.status !== "covered_by_booking")
+    .map((s: any, i: number) => {
+      const snap = validateExactGps(s.destination_lat, s.destination_lng);
+      return { ...s, lat: snap?.latitude ?? null, lng: snap?.longitude ?? null, routeIndex: i + 1 };
+    });
+
+  const previewStops = previewList
+    .filter((s: any) => s.lat != null && s.lng != null)
+    .map((s: any, i: number) => {
+      const c = s.customers as any;
+      return {
+        id: s.id,
+        sequence_no: s.routeIndex ?? i + 1,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+        label: c?.full_name ?? "Customer",
+        eta: s.eta_at ?? null,
+        distanceKm: s.distance_km ?? null,
+      };
+    });
+
+  const previewStartTime = previewList
+    .map((s: any) => s.customers?.service_required_before ?? s.customers?.preferred_time ?? s.time_slot)
+    .filter(Boolean)
+    .sort()[0] as string | undefined;
+  const previewEarnings = previewList.reduce(
+    (sum: number, s: any) => sum + Number(s.rate_per_car ?? ratePerCar),
+    0,
+  );
+  const [previewMapStats, setPreviewMapStats] = useState<{ km: number; mins: number } | null>(null);
+  const previewDateObj = previewDate ? new Date(previewDate + "T00:00:00") : null;
+  const previewDayLabel = previewDateObj
+    ? previewDateObj.toLocaleDateString("en-IN", { weekday: "long" })
+    : "";
+  const previewDateLabel = previewDateObj
+    ? previewDateObj.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })
+    : "";
+  
+  const restDayName = new Date().toLocaleDateString("en-IN", { weekday: "long" });
+
+  const chipLabel = isPreviewMode
+    ? `Tomorrow's Route • ${restDayName} Preview`
+    : !routeUnlocked
+    ? "Route Locked"
+    : isEndOfDay
+    ? "Route Completed"
+    : done > 0
+    ? "Route in Progress"
+    : "Today's Route";
+
   return (
     <div className="mx-auto max-w-md px-5 pt-5 pb-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Today's route</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {routeUnlocked
+      <h1 className="text-2xl font-semibold tracking-tight">Route</h1>
+      <div className="mt-1 flex items-center gap-2">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+          isPreviewMode ? "bg-primary/10 text-primary"
+          : isEndOfDay ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+          : done > 0 ? "bg-primary/12 text-primary"
+          : !routeUnlocked ? "bg-muted text-muted-foreground"
+          : "bg-muted text-foreground"
+        }`}>
+          {isPreviewMode && <Sparkles className="h-3 w-3" />}
+          {chipLabel}
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {isPreviewMode
+          ? `Your route for ${previewDayLabel} is ready. Preview your customers and route — services unlock on the day.`
+          : routeUnlocked
           ? "Your daily plan, in order."
           : shiftClock
           ? `Your work starts at ${shiftClock}.`
           : "Your route will unlock before your shift starts."}
       </p>
+
 
       <TodayAssignmentStatus
         isError={todayQuery.isError}
@@ -202,24 +298,93 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
-      {/* Map */}
+      {/* Rest-day preview summary — shown above the map on non-service days */}
+      {isPreviewMode && (
+        <Card className="mt-5 overflow-hidden border-primary/25 bg-gradient-to-br from-primary/5 to-transparent p-0">
+          <div className="flex items-center justify-between gap-2 border-b border-primary/15 bg-primary/8 px-4 py-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> Route Optimized
+            </span>
+            <span className="text-[11px] font-medium text-primary/80">Ready for {previewDayLabel}</span>
+          </div>
+          <div className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel}'s Assignment
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{previewDateLabel}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <PreviewStat
+                icon={<Users className="h-4 w-4" />}
+                value={String(previewList.length)}
+                label="Customers"
+              />
+              <PreviewStat
+                icon={<IndianRupee className="h-4 w-4" />}
+                value={`₹${previewEarnings.toLocaleString("en-IN")}`}
+                label="Est. Earnings"
+              />
+              <PreviewStat
+                icon={<MapPin className="h-4 w-4" />}
+                value={previewMapStats ? `${previewMapStats.km} km` : "—"}
+                label="Route Distance"
+              />
+              <PreviewStat
+                icon={<Clock className="h-4 w-4" />}
+                value={previewStartTime ? formatTime12(previewStartTime) : "—"}
+                label="First Service"
+              />
+            </div>
+            {previewMapStats?.mins && (
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                Estimated duration · {Math.floor(previewMapStats.mins / 60)}h {previewMapStats.mins % 60}m
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Map — reused on both working and preview days */}
       <div className="mt-5">
         <LiveMap
-          stops={stops}
-          showCustomers={pending.length > 0}
+          stops={isPreviewMode ? previewStops : stops}
+          showCustomers={isPreviewMode ? previewStops.length > 0 : pending.length > 0}
           heightClass="h-40"
           hideStats
-          onStats={setMapStats}
+          onStats={isPreviewMode ? setPreviewMapStats : setMapStats}
         />
       </div>
 
-      {/* NEXT CUSTOMER — hero */}
-      {!isEndOfDay && routeUnlocked && nextStop && (
+      {/* NEXT CUSTOMER — hero (working days only) */}
+      {!isPreviewMode && !isEndOfDay && routeUnlocked && nextStop && (
         <NextCustomerHero
           stop={nextStop}
           seqNo={currentSeq ?? 1}
           total={total}
         />
+      )}
+
+      {/* Rest-day locked customer list */}
+      {isPreviewMode && (
+        <section className="mt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel}'s Customers
+            </h2>
+            <span className="text-[11px] text-muted-foreground">
+              {previewList.length} scheduled
+            </span>
+          </div>
+          <div className="space-y-2">
+            {previewList.map((s: any) => (
+              <PreviewRow key={s.id} stop={s} seqNo={s.routeIndex} dayLabel={previewDayLabel} />
+            ))}
+            {previewList.length === 0 && (
+              <Card className="p-5 text-center text-sm text-muted-foreground">
+                Route is being prepared for {previewDayLabel}.
+              </Card>
+            )}
+          </div>
+        </section>
       )}
 
       {/* Locked / empty states */}
@@ -242,9 +407,11 @@ function RoutePage() {
         </Card>
       )}
 
-      {routeUnlocked && !isEndOfDay && pending.length === 0 && (
+      {routeUnlocked && !isPreviewMode && !isEndOfDay && pending.length === 0 && (
         <Card className="mt-5 p-6 text-center text-sm text-muted-foreground">No pending stops.</Card>
       )}
+
+
 
       {/* Today's Progress */}
       {total > 0 && !isEndOfDay && (
@@ -398,6 +565,65 @@ function RoutePage() {
       )}
 
     </div>
+  );
+}
+
+function PreviewStat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background p-2.5">
+      <div className="flex items-center gap-1.5 text-primary">
+        {icon}
+        <span className="text-base font-bold tabular-nums text-foreground">{value}</span>
+      </div>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function PreviewRow({ stop, seqNo, dayLabel }: { stop: any; seqNo: number; dayLabel: string }) {
+  const c = stop.customers as any;
+  const v = stop.vehicles as any;
+  const rate = Number(stop.rate_per_car ?? 17);
+  const timeAt = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
+  return (
+    <Link
+      to="/app/service/$id"
+      params={{ id: stop.id }}
+      className="block"
+    >
+      <Card className="flex items-center gap-2.5 p-2.5 opacity-95 transition-opacity hover:opacity-100">
+        <div className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
+          #{seqNo}
+        </div>
+        <TappableVehicleImage
+          path={v?.front_image_path}
+          className="h-12 w-12 shrink-0 rounded-lg"
+          alt={`${v?.make ?? ""} ${v?.model ?? ""}`}
+          customerName={c?.full_name}
+          vehicleLabel={`${v?.make ?? ""} ${v?.model ?? ""}`.trim()}
+          registration={v?.registration_number}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-semibold leading-tight">{c?.full_name ?? "Customer"}</p>
+            <span className="shrink-0 text-[11px] font-bold tabular-nums text-primary">+₹{rate}</span>
+          </div>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {v?.make} {v?.model}{v?.registration_number ? ` · ${v.registration_number}` : ""}
+          </p>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            {timeAt && (
+              <span className="text-[10px] font-medium text-foreground/80">
+                {formatTime12(timeAt)}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              <Lock className="h-2.5 w-2.5" /> Scheduled {dayLabel}
+            </span>
+          </div>
+        </div>
+      </Card>
+    </Link>
   );
 }
 
