@@ -284,30 +284,36 @@ function HomePage() {
               <HeroStat icon={<Clock className="h-4 w-4" />} label="Remaining" value={dailyCustomers} />
             </div>
 
+            {/* Today's Status — reassuring, replaces progress bar on rest day */}
             <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-                  Today's Progress
-                </p>
-                <p className="text-xs font-medium text-background/80">Monday is a weekly non-service day.</p>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15" />
+              <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+                Today's Status
+              </p>
+              <p className="mt-1.5 text-lg font-semibold">🍃 Weekly Rest Day</p>
+              <p className="mt-0.5 text-sm text-background/70">
+                Your assignment remains active.
+              </p>
             </div>
 
+            {/* Next Service block */}
+            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
+                Next Service
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight">
+                {nextDateLabel} • {nextTimeLabel}
+              </p>
+              <p className="mt-0.5 text-xs text-background/60">
+                {dailyCustomers} Customer{dailyCustomers === 1 ? "" : "s"} Scheduled
+              </p>
+            </div>
+
+            {/* Today's Earnings — compact */}
             <div className="mt-4 border-t border-background/10 pt-3">
               <p className="text-[11px] uppercase tracking-wider text-background/60">Today's Earnings</p>
               <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
                 <IndianRupee className="h-5 w-5" />0
               </p>
-              <p className="mt-2 text-sm text-background/80">• Monday is a weekly rest day.</p>
-              {nextDate ? (
-                <p className="mt-1 text-sm text-background/80">
-                  • Services resume {new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" })}
-                  {assignment.expected_start_time ? ` at ${formatTime12(assignment.expected_start_time)}` : ""}.
-                </p>
-              ) : (
-                <p className="mt-1 text-sm text-background/80">• Services resume tomorrow at 6:30 AM.</p>
-              )}
             </div>
 
             <Button
@@ -317,49 +323,68 @@ function HomePage() {
             >
               Service Unavailable Today
             </Button>
-
-            <p className="mt-3 text-center text-xs text-background/60">
-              Monday is the weekly rest day.
-            </p>
           </Card>
 
-          {/* Assignment Management — cancel on rest day is always allowed */}
+          {/* Current Assignment summary — Monday is the perfect day to review progress */}
+          <Card className="mt-4 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Current Assignment
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <SummaryStat label="Working Days" value={String(workingDaysTotal)} />
+              <SummaryStat label="Completed" value={String(workingDaysCompleted)} />
+              <SummaryStat label="Remaining" value={String(workingDaysRemaining)} />
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-muted p-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Estimated Earnings
+                </p>
+                <p className="mt-0.5 flex items-center text-lg font-semibold">
+                  <IndianRupee className="h-4 w-4" />
+                  {expectedTotal.toLocaleString("en-IN")}
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm" className="rounded-full">
+                <Link to="/app/my-assignment">Assignment Details</Link>
+              </Button>
+            </div>
+          </Card>
+
+          {/* Assignment Management — cancellation is easiest on rest day */}
           <Card className="mt-4 border border-border bg-card p-5">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Assignment Management
             </p>
             <p className="mt-2 text-sm font-semibold">Your assignment is active.</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              No services are scheduled today.
+              No services are scheduled on {new Date().toLocaleDateString("en-IN", { weekday: "long" })}s.
+              You can continue your assignment {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }).toLowerCase() : "tomorrow"},
+              or cancel it before {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }) : "the next"}'s first service.
             </p>
-            {routeStarted ? (
-              <>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Your route is currently active. To stop today's assignment, please contact Partner Support.
-                </p>
-                <Button asChild variant="outline" className="mt-4 h-11 w-full rounded-xl border-primary text-primary hover:bg-primary/10">
-                  <a href={`tel:${SUPPORT_TEL_HOME}`}>
-                    <Phone className="mr-2 h-4 w-4" />
-                    Call Partner Support
-                  </a>
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You may cancel your assignment before {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }) : "the next"}'s route begins.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setConfirmCancelOpen(true)}
-                  disabled={cancelMut.isPending}
-                  className="mt-4 h-11 w-full rounded-xl border-[color:var(--warning,theme(colors.orange.500))] text-[color:var(--warning,theme(colors.orange.500))] hover:bg-orange-500/10"
-                >
-                  Cancel Assignment
-                </Button>
-              </>
-            )}
+            <Button
+              variant="outline"
+              onClick={() => setConfirmCancelOpen(true)}
+              disabled={cancelMut.isPending}
+              className="mt-4 h-11 w-full rounded-xl border-[color:var(--warning,theme(colors.orange.500))] text-[color:var(--warning,theme(colors.orange.500))] hover:bg-orange-500/10"
+            >
+              Cancel Assignment
+            </Button>
           </Card>
+
+          {/* Quick Actions — Monday is when partners have free time */}
+          <Card className="mt-4 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Quick Actions
+            </p>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              <QuickAction to="/app/my-assignment" icon={<Briefcase className="h-4 w-4" />} label="Assignment" />
+              <QuickAction to="/app/earnings" icon={<Wallet className="h-4 w-4" />} label="Wallet" />
+              <QuickAction to="/app/rewards" icon={<Gift className="h-4 w-4" />} label="Rewards" />
+              <QuickAction href={`tel:${SUPPORT_TEL_HOME}`} icon={<LifeBuoy className="h-4 w-4" />} label="Support" />
+            </div>
+          </Card>
+
 
           <AlertDialog open={confirmCancelOpen} onOpenChange={setConfirmCancelOpen}>
             <AlertDialogContent>
