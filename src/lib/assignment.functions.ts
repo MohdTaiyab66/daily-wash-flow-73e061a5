@@ -280,3 +280,78 @@ export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   });
 
 
+
+// ============== Validate Active Assignment Integrity ==============
+// Server-side guard: when an ACTIVE assignment exists we must NEVER report
+// "0 customers" simply because of a data-quality glitch. This function runs
+// consistency checks and returns a structured mismatch report so the UI can
+// surface a clear error banner instead of a silent zero.
+export type AssignmentIntegrityReport = {
+  ok: boolean;
+  has_active_assignment: boolean;
+  assignment_id: string | null;
+  todays_services: number;
+  todays_customers: number;
+  total_services: number;
+  services_missing_customer: number;
+  services_wrong_partner: number;
+  mismatches: string[];
+};
+
+export const validateTodayAssignment = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {
+    const { supabase, userId } = context;
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: a } = await supabase
+      .from("assignments")
+      .select("id,partner_id,status,end_date")
+      .eq("partner_id", userId)
+      .eq("status", "active")
+      .gte("end_date", today)
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const report: AssignmentIntegrityReport = {
+      ok: true,
+      has_active_assignment: !!a,
+      assignment_id: a?.id ?? null,
+      todays_services: 0,
+      todays_customers: 0,
+      total_services: 0,
+      services_missing_customer: 0,
+      services_wrong_partner: 0,
+      mismatches: [],
+    };
+    if (!a) return report;
+
+    const { data: services } = await supabase
+      .from("services")
+      .select("id,customer_id,partner_id,scheduled_date,status")
+      .eq("assignment_id", a.id);
+    const rows = services ?? [];
+    report.total_services = rows.length;
+    const todays = rows.filter((s: any) => s.scheduled_date === today);
+    report.todays_services = todays.length;
+    report.todays_customers = new Set(todays.map((s: any) => s.customer_id).filter(Boolean)).size;
+    report.services_missing_customer = rows.filter((s: any) => !s.customer_id).length;
+    report.services_wrong_partner = rows.filter(
+      (s: any) => s.partner_id && s.partner_id !== userId,
+    ).length;
+
+    if (report.total_services === 0) {
+      report.mismatches.push("ACTIVE_ASSIGNMENT_HAS_NO_SERVICES");
+    }
+    if (report.services_missing_customer > 0) {
+      report.mismatches.push("SERVICES_MISSING_CUSTOMER_ID");
+    }
+    if (report.services_wrong_partner > 0) {
+      report.mismatches.push("SERVICES_ASSIGNED_TO_DIFFERENT_PARTNER");
+    }
+    if (report.todays_services > 0 && report.todays_customers !== report.todays_services) {
+      report.mismatches.push("TODAYS_SERVICES_CUSTOMER_COUNT_MISMATCH");
+    }
+    report.ok = report.mismatches.length === 0;
+    return report;
+  });
