@@ -38,10 +38,23 @@ for /f "delims=" %%v in ('bun -v') do echo   [OK] Bun %%v
 
 where java >nul 2>&1
 if errorlevel 1 (
-  echo   [X] Java JDK not found. Install JDK 17 from https://adoptium.net
+  echo   [X] Java JDK not found. Install JDK 21 from https://adoptium.net
   goto :fail
 )
 java -version 2>&1 | findstr /R "version" >nul && echo   [OK] Java present
+
+for /f "tokens=3 delims= \"" %%v in ('java -version 2^>^&1 ^| findstr /I "version"') do set "JAVA_VERSION=%%v"
+for /f "tokens=1 delims=." %%m in ("%JAVA_VERSION%") do set "JAVA_MAJOR=%%m"
+if not defined JAVA_MAJOR (
+  echo   [X] Could not detect Java version. Install JDK 21 from https://adoptium.net
+  goto :fail
+)
+if %JAVA_MAJOR% LSS 21 (
+  echo   [X] Java %JAVA_VERSION% found, but Android build requires JDK 21+.
+  echo       Install Temurin JDK 21, then set JAVA_HOME to the JDK 21 folder.
+  goto :fail
+)
+echo   [OK] Java JDK %JAVA_VERSION%
 
 if not defined ANDROID_HOME if not defined ANDROID_SDK_ROOT (
   echo   [X] ANDROID_HOME / ANDROID_SDK_ROOT not set.

@@ -35,7 +35,7 @@ Install on Windows:
 
 1. **Node.js 20+** — <https://nodejs.org/en/download>
 2. **Bun** — `powershell -c "irm bun.sh/install.ps1 | iex"`
-3. **Java JDK 17** — <https://adoptium.net/temurin/releases/?version=17>
+3. **Java JDK 21** — <https://adoptium.net/temurin/releases/?version=21>
 4. **Android Studio** (includes Android SDK) — <https://developer.android.com/studio>
    - First launch → accept all SDK licenses
    - SDK Manager → install **Android SDK Platform 34** and **Build-Tools 34.x**

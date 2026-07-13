@@ -84,7 +84,7 @@ files and swap them before each build (or use Gradle product flavors).
 
 ## 4. Building Android
 
-Prerequisites: Android Studio + JDK 17.
+Prerequisites: Android Studio + JDK 21.
 
 ```bash
 # Debug APK (sideload to a test device)

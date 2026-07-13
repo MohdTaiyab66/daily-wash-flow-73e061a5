@@ -29,7 +29,7 @@ Install once:
    ```powershell
    powershell -c "irm bun.sh/install.ps1 | iex"
    ```
-3. **Java JDK 17** — <https://adoptium.net/temurin/releases/?version=17>
+3. **Java JDK 21** — <https://adoptium.net/temurin/releases/?version=21>
 4. **Android Studio** (includes the Android SDK & build tools) — <https://developer.android.com/studio>
    - On first launch, accept all SDK licenses when prompted.
    - In **More Actions → SDK Manager**, install **Android SDK Platform 34** and **Android SDK Build-Tools 34.x**.
@@ -42,7 +42,7 @@ bun -v
 java -version
 ```
 
-You should see Node ≥ 20, Bun ≥ 1.0, and Java 17.
+You should see Node ≥ 20, Bun ≥ 1.0, and Java 21.
 
 ---
 
@@ -181,6 +181,7 @@ Repeat for each variant by switching `URBANWASH_APP` and re-syncing.
 - **The wrong app opens after install** → check `android\app\build.gradle` shows the right `applicationId` (must match the variant) and re-run `npx cap sync android`.
 - **Push notifications don't arrive** → verify `google-services.json` package name matches the APK's package id exactly, and that the Firebase service-account secrets are set in the Lovable backend.
 - **Gradle sync fails on first open** → in Android Studio: **File → Sync Project with Gradle Files**, then **Build → Clean Project**, then **Rebuild Project**.
+- **`invalid source release: 21`** → your `java -version` is older than JDK 21. Install JDK 21, set `JAVA_HOME` to that JDK folder, open a fresh Command Prompt, then rerun the build script.
 - **Need a fresh slate** → delete the `android\` folder and re-run the build commands; Capacitor will scaffold it again.
 
 For deeper FCM / publishing notes see `docs/MOBILE.md`.
