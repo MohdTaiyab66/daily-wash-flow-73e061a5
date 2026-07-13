@@ -46,6 +46,16 @@ import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
 import { formatTime12 } from "@/lib/format";
 import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { cancelMyAssignment, getAssignmentCancellability } from "@/lib/assignment.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const SUPPORT_TEL_HOME = "+911800000000";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
@@ -113,6 +123,56 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const restDay = !!assignment && total === 0;
   const nextDate = todayData?.nextDate ?? null;
+
+  // Daily customer capacity — used on rest days when today's list is empty.
+  const nextDayCustomers = nextDate
+    ? new Set(
+        (todayData?.all ?? [])
+          .filter((s: any) => s.scheduled_date === nextDate)
+          .map((s: any) => s.customer_id)
+          .filter(Boolean),
+      ).size
+    : 0;
+  const dailyCustomers =
+    nextDayCustomers ||
+    (assignment
+      ? Math.max(
+          1,
+          Math.round(
+            Number(assignment.target_cars || 0) /
+              Math.max(1, Number(assignment.working_days || 1)),
+          ),
+        )
+      : 0);
+
+  // Cancellability + cancel mutation (rest-day quick cancel).
+  const qc = useQueryClient();
+  const canFn = useServerFn(getAssignmentCancellability);
+  const cancelFn = useServerFn(cancelMyAssignment);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const { data: cancelInfo } = useQuery({
+    queryKey: ["cancellability", assignment?.id],
+    queryFn: () => canFn({ data: { assignment_id: assignment!.id } }),
+    enabled: !!assignment?.id,
+    refetchInterval: 60000,
+  });
+  const cancelMut = useMutation({
+    mutationFn: (id: string) => cancelFn({ data: { assignment_id: id } }),
+    onSuccess: () => {
+      toast.success("Assignment cancelled.");
+      setConfirmCancelOpen(false);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => {
+      const code = e?.code as string | undefined;
+      if (code === "ROUTE_STARTED") toast.error("Route already started. Please contact Partner Support.");
+      else if (code === "CUTOFF_PASSED") toast.error("Cancellation window closed.");
+      else toast.error(e?.message ?? "Cancel failed");
+      setConfirmCancelOpen(false);
+    },
+  });
+  const routeStarted = !!cancelInfo?.route_started;
+
   
 
   const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
@@ -181,6 +241,7 @@ function HomePage() {
       {/* Hero: Today's Route */}
       {assignment ? (
         restDay ? (
+          <>
           <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
             <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
               Today's Route
@@ -196,9 +257,11 @@ function HomePage() {
               Active Assignment
             </div>
 
-            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-              <p className="text-base font-semibold tracking-tight">0 Customers</p>
-              <p className="mt-0.5 text-xs text-background/60">0 Completed · 0 Remaining</p>
+            {/* Three-card row — consistent with working days */}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <HeroStat icon={<Car className="h-4 w-4" />} label="Today's Customers" value={dailyCustomers} />
+              <HeroStat icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={0} />
+              <HeroStat icon={<Clock className="h-4 w-4" />} label="Remaining" value={dailyCustomers} />
             </div>
 
             <div className="mt-4">
@@ -206,7 +269,7 @@ function HomePage() {
                 <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
                   Today's Progress
                 </p>
-                <p className="text-xs font-medium text-background/80">No service scheduled today</p>
+                <p className="text-xs font-medium text-background/80">Monday is a weekly non-service day.</p>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15" />
             </div>
@@ -223,7 +286,7 @@ function HomePage() {
                   {assignment.expected_start_time ? ` at ${formatTime12(assignment.expected_start_time)}` : ""}.
                 </p>
               ) : (
-                <p className="mt-1 text-sm text-background/80">• Services resume tomorrow.</p>
+                <p className="mt-1 text-sm text-background/80">• Services resume tomorrow at 6:30 AM.</p>
               )}
             </div>
 
@@ -232,14 +295,74 @@ function HomePage() {
               size="lg"
               className="mt-4 h-16 w-full rounded-2xl bg-background/10 text-background/60 text-lg font-semibold cursor-not-allowed hover:bg-background/10"
             >
-              No Service Today (Monday Rest Day)
+              Service Unavailable Today
             </Button>
 
             <p className="mt-3 text-center text-xs text-background/60">
-              Services are unavailable on Mondays.<br />
-              Your assignment will automatically resume tomorrow.
+              Monday is the weekly rest day.
             </p>
           </Card>
+
+          {/* Assignment Management — cancel on rest day is always allowed */}
+          <Card className="mt-4 border border-border bg-card p-5">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Assignment Management
+            </p>
+            <p className="mt-2 text-sm font-semibold">Your assignment is active.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              No services are scheduled today.
+            </p>
+            {routeStarted ? (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your route is currently active. To stop today's assignment, please contact Partner Support.
+                </p>
+                <Button asChild variant="outline" className="mt-4 h-11 w-full rounded-xl border-primary text-primary hover:bg-primary/10">
+                  <a href={`tel:${SUPPORT_TEL_HOME}`}>
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call Partner Support
+                  </a>
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You may cancel your assignment before {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }) : "the next"}'s route begins.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmCancelOpen(true)}
+                  disabled={cancelMut.isPending}
+                  className="mt-4 h-11 w-full rounded-xl border-[color:var(--warning,theme(colors.orange.500))] text-[color:var(--warning,theme(colors.orange.500))] hover:bg-orange-500/10"
+                >
+                  Cancel Assignment
+                </Button>
+              </>
+            )}
+          </Card>
+
+          <AlertDialog open={confirmCancelOpen} onOpenChange={setConfirmCancelOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Assignment?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your current assignment will end. You may receive a new assignment depending on availability.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep Assignment</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => assignment?.id && cancelMut.mutate(assignment.id)}
+                  disabled={cancelMut.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Cancel Assignment
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          </>
+
         ) : allDone ? (
           <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
             <PartyPopper className="h-8 w-8 text-primary" />
