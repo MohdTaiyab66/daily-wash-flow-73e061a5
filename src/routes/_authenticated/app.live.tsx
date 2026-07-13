@@ -815,7 +815,7 @@ function QueueRow({ stop, seqNo, total: _total, locked, unlockCountdown }: { sto
               </span>
             )}
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-              <Lock className="h-2.5 w-2.5" /> Locked
+              <Lock className="h-2.5 w-2.5" /> {unlockCountdown ? `in ${unlockCountdown}` : "Locked"}
             </span>
           </div>
         ) : (
