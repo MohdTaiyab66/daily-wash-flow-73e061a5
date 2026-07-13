@@ -353,5 +353,25 @@ export const validateTodayAssignment = createServerFn({ method: "GET" })
       report.mismatches.push("TODAYS_SERVICES_CUSTOMER_COUNT_MISMATCH");
     }
     report.ok = report.mismatches.length === 0;
+
+    // Persist mismatches so admins can diagnose partner-side data drift.
+    if (!report.ok) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("assignment_integrity_audit").insert({
+          partner_id: userId,
+          assignment_id: report.assignment_id,
+          mismatches: report.mismatches,
+          todays_services: report.todays_services,
+          todays_customers: report.todays_customers,
+          total_services: report.total_services,
+          services_missing_customer: report.services_missing_customer,
+          services_wrong_partner: report.services_wrong_partner,
+          source: "validateTodayAssignment",
+        });
+      } catch (e) {
+        console.error("[integrity-audit] failed to persist", e);
+      }
+    }
     return report;
   });

@@ -196,6 +196,8 @@ function RoutePage() {
         isRefetching={todayQuery.isRefetching}
         hasData={todayQuery.data !== undefined}
         onRetry={() => todayQuery.refetch()}
+        metrics={todayQuery.metrics}
+        lastSuccessAt={todayQuery.data?.fetchedAt ?? todayQuery.lastGood?.fetchedAt ?? null}
       />
 
       <div className="mt-4"><DarOfferCard /></div>

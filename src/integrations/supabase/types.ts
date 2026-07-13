@@ -205,6 +205,51 @@ export type Database = {
           },
         ]
       }
+      assignment_integrity_audit: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          id: string
+          mismatches: string[]
+          partner_id: string | null
+          services_missing_customer: number
+          services_wrong_partner: number
+          source: string | null
+          todays_customers: number
+          todays_services: number
+          total_services: number
+          user_agent: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          mismatches?: string[]
+          partner_id?: string | null
+          services_missing_customer?: number
+          services_wrong_partner?: number
+          source?: string | null
+          todays_customers?: number
+          todays_services?: number
+          total_services?: number
+          user_agent?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          mismatches?: string[]
+          partner_id?: string | null
+          services_missing_customer?: number
+          services_wrong_partner?: number
+          source?: string | null
+          todays_customers?: number
+          todays_services?: number
+          total_services?: number
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       assignments: {
         Row: {
           accepted_at: string

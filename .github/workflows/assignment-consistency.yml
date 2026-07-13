@@ -1,0 +1,91 @@
+name: Assignment Consistency
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Start preview server
+        run: |
+          bun run preview --port 8080 > /tmp/preview.log 2>&1 &
+          echo $! > /tmp/preview.pid
+          # Wait for readiness (up to 60s)
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then break; fi
+            sleep 1
+          done
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Run assignment consistency test
+        id: run_test
+        run: node scripts/test-assignment-consistency.mjs 2>&1 | tee /tmp/consistency.log
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TEST_PARTNER_EMAIL: ${{ secrets.TEST_PARTNER_EMAIL }}
+          TEST_PARTNER_PASSWORD: ${{ secrets.TEST_PARTNER_PASSWORD }}
+          BASE_URL: http://localhost:8080
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assignment-consistency-logs
+          path: |
+            /tmp/consistency.log
+            /tmp/preview.log
+
+      - name: Comment on PR on failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let log = '';
+            try { log = fs.readFileSync('/tmp/consistency.log', 'utf8').slice(-4000); } catch {}
+            const body = [
+              '❌ **Assignment consistency test failed**',
+              '',
+              'Home / My Assignment / Live Route disagree on today\'s customer count, or the DB reports mismatches.',
+              '',
+              '<details><summary>Log tail</summary>',
+              '',
+              '```',
+              log || '(no log captured)',
+              '```',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+      - name: Stop preview server
+        if: always()
+        run: kill $(cat /tmp/preview.pid) 2>/dev/null || true

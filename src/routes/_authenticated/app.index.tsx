@@ -150,6 +150,8 @@ function HomePage() {
         isRefetching={todayQuery.isRefetching}
         hasData={hasData}
         onRetry={() => todayQuery.refetch()}
+        metrics={todayQuery.metrics}
+        lastSuccessAt={todayQuery.data?.fetchedAt ?? todayQuery.lastGood?.fetchedAt ?? null}
       />
 
       {/* Online status card — compact */}
