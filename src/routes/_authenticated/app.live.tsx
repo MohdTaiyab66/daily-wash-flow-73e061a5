@@ -493,8 +493,7 @@ function RoutePage() {
                 stop={s}
                 seqNo={activeSeqStart + idx + 1}
                 total={activeTotal}
-                locked={isPreviewMode || s._unlocked === false}
-                unlockCountdown={!isPreviewMode && s._unlocked === false ? s._unlockCountdown : undefined}
+                locked={isPreviewMode}
               />
             ))}
           </div>
