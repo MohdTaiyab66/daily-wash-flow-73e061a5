@@ -33,19 +33,28 @@ function RoutePage() {
     ["services", "assignments", "customers", "vehicles", "dirty_vehicle_reports", "unavailability_reports", "wallet_ledger", "customer_notifications", "admin_alerts"],
     [["route-today"], ["today-assignment"], ["today-assignment"], ["earnings-v3"], ["wallet-balance"]],
   );
+  const todayDateStr = new Date().toISOString().slice(0, 10);
   const { data: services } = useQuery({
     queryKey: ["route-today"],
     queryFn: async () => {
-      const d = new Date().toISOString().slice(0, 10);
+      const d = todayDateStr;
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
-      const { data } = await supabase
+      if (!u.user) return loadRouteSnapshot<any[]>("today", d) ?? [];
+      const { data, error } = await supabase
         .from("services")
         .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
         .eq("partner_id", u.user.id)
         .eq("scheduled_date", d)
         .order("sequence_no", { ascending: true });
-      return data ?? [];
+      if (error) {
+        // Network / transient failure — fall back to last-known snapshot.
+        const cached = loadRouteSnapshot<any[]>("today", d);
+        if (cached) return cached;
+        throw error;
+      }
+      const rows = data ?? [];
+      saveRouteSnapshot("today", d, rows);
+      return rows;
     },
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
