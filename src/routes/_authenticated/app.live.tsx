@@ -21,7 +21,7 @@ import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { logApkEvidence } from "@/lib/apkEvidence";
-import { computeUnlockState, formatCountdown } from "@/lib/unlock-time";
+
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
@@ -273,17 +273,9 @@ function RoutePage() {
 
   // Unified data source — same layout whether it's a working day or a
   // rest-day preview. Only interaction state (locked vs actionable) changes.
-  // Per-stop unlock: a stop becomes actionable 1 hour before its scheduled time.
-  const decorateUnlock = (list: any[], dateStr: string | null) =>
-    list.map((s: any) => {
-      const c = s.customers as any;
-      const scheduled = c?.service_required_before ?? c?.preferred_time ?? s.time_slot;
-      const u = computeUnlockState(scheduled, dateStr, nowTs);
-      return { ...s, _unlocked: u.unlocked, _unlockAt: u.unlockAt, _unlockCountdown: formatCountdown(u.countdownMs) };
-    });
-  const activeList = isPreviewMode
-    ? decorateUnlock(previewList, null) // preview: always locked
-    : decorateUnlock(pending, todayDateStr);
+  // Shift-wide unlock (1h before shift start) is handled by `routeUnlocked`
+  // above; individual customers are not gated further by their own time.
+  const activeList = isPreviewMode ? previewList : pending;
   const activeStops = isPreviewMode ? previewStops : stops;
   const activeNext = activeList[0] ?? null;
   const activeQueue = activeList.slice(1);
@@ -412,9 +404,8 @@ function RoutePage() {
           stop={activeNext}
           seqNo={activeSeqStart}
           total={activeTotal}
-          locked={isPreviewMode || activeNext._unlocked === false}
+          locked={isPreviewMode}
           previewDayLabel={isPreviewMode ? previewDayLabel : undefined}
-          unlockCountdown={!isPreviewMode && activeNext._unlocked === false ? activeNext._unlockCountdown : undefined}
         />
       )}
 
@@ -502,8 +493,7 @@ function RoutePage() {
                 stop={s}
                 seqNo={activeSeqStart + idx + 1}
                 total={activeTotal}
-                locked={isPreviewMode || s._unlocked === false}
-                unlockCountdown={!isPreviewMode && s._unlocked === false ? s._unlockCountdown : undefined}
+                locked={isPreviewMode}
               />
             ))}
           </div>
