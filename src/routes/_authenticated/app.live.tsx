@@ -247,7 +247,7 @@ function RoutePage() {
   const previewDateLabel = previewDateObj
     ? previewDateObj.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })
     : "";
-  const todayIsRestDay = isPreviewMode;
+  
   const restDayName = new Date().toLocaleDateString("en-IN", { weekday: "long" });
 
   const chipLabel = isPreviewMode
