@@ -95,6 +95,7 @@ function MyAssignmentPage() {
         </Card>
       </div>
     );
+  }
   if (data === undefined) return null;
 
   const a = data.assignment as any;
