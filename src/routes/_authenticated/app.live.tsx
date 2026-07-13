@@ -778,7 +778,7 @@ function HeroCallIconAction({ serviceId }: { serviceId: string }) {
 }
 
 
-function QueueRow({ stop, seqNo, total: _total, locked }: { stop: any; seqNo: number; total: number; locked?: boolean }) {
+function QueueRow({ stop, seqNo, total: _total, locked, unlockCountdown }: { stop: any; seqNo: number; total: number; locked?: boolean; unlockCountdown?: string }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
