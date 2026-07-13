@@ -60,7 +60,7 @@ function HomePage() {
   // services in one query, then derive today's counts from it. Never show
   // "0 customers" when an active assignment exists — instead surface the
   // assignment total and a rest-day state when today has no scheduled work.
-  const { data: todayData, isLoading: loadingToday } = useQuery({
+  const { data: todayData } = useQuery({
     queryKey: ["today-assignment"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
