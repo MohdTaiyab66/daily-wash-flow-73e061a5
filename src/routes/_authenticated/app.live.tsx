@@ -334,6 +334,19 @@ function RoutePage() {
 
       <div className="mt-4"><DarOfferCard /></div>
 
+      {/* Offline banner — reads survive short outages via the last-known snapshot. */}
+      {!netOnline && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">You're offline</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Showing your last-known route. Updates will sync automatically when you're back online.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Preview banner — communicates "you're looking at tomorrow" without changing layout */}
       {isPreviewMode && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5">
@@ -347,6 +360,39 @@ function RoutePage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Estimated earnings breakdown — preview only. Read-only, no service actions. */}
+      {isPreviewMode && previewList.length > 0 && (
+        <Card className="mt-4 p-4">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {previewDayLabel} Earnings Estimate
+            </p>
+            <p className="text-lg font-bold tabular-nums text-primary">
+              ₹{(previewEarnings + previewAddonPotential).toLocaleString("en-IN")}
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">₹{previewEarnings.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Base ({previewList.length} cars)</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">+₹{previewAddonPotential.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Add-on potential</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-2.5">
+              <p className="text-sm font-bold tabular-nums">
+                {previewMapStats ? `${previewMapStats.km} km` : "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route distance</p>
+            </div>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Add-on potential is an estimate based on typical customer upgrades (extras, interior, polish).
+          </p>
+        </Card>
       )}
 
       {/* Map — reused on both working and preview days */}
@@ -366,8 +412,9 @@ function RoutePage() {
           stop={activeNext}
           seqNo={activeSeqStart}
           total={activeTotal}
-          locked={isPreviewMode}
+          locked={isPreviewMode || activeNext._unlocked === false}
           previewDayLabel={isPreviewMode ? previewDayLabel : undefined}
+          unlockCountdown={!isPreviewMode && activeNext._unlocked === false ? activeNext._unlockCountdown : undefined}
         />
       )}
 
