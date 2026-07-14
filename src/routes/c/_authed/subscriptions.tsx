@@ -224,6 +224,28 @@ function MyPlanPage() {
   const hasVehicles = (vehiclesQ.data?.length ?? 0) > 0;
   const activePlanSlug = activeSub?.service_catalog?.slug ?? null;
 
+  // Fetch the real subscription row for this vehicle so we can show
+  // cancel-at-period-end state and drive the Cancel/Undo actions.
+  const fetchActiveSub = useServerFn(getActiveSubscriptionForVehicle);
+  const activeSubRowQ = useQuery({
+    queryKey: ["active-subscription", selectedVehicleId],
+    enabled: !!selectedVehicleId && !!activeSub,
+    queryFn: () => fetchActiveSub({ data: { vehicleId: selectedVehicleId! } }),
+  });
+  const subRow = activeSubRowQ.data ?? null;
+  const cancelScheduled = !!subRow?.cancel_at_period_end;
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  const undoFn = useServerFn(undoCancellation);
+  const undoMut = useMutation({
+    mutationFn: () => undoFn({ data: { subscriptionId: subRow!.id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-subscription", selectedVehicleId] });
+      toast.success("Cancellation reverted — your plan will keep renewing.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not undo. Try again."),
+  });
+
   return (
     <div className="px-5 pt-6 pb-12">
       <div className="flex items-center justify-between gap-3">
