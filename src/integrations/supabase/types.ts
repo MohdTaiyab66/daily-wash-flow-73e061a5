@@ -3909,6 +3909,56 @@ export type Database = {
           },
         ]
       }
+      subscription_monthly_addons: {
+        Row: {
+          added_at: string
+          addon_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          monthly_price: number
+          quantity: number
+          removed_at: string | null
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          addon_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          monthly_price?: number
+          quantity?: number
+          removed_at?: string | null
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          addon_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          monthly_price?: number
+          quantity?: number
+          removed_at?: string | null
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_monthly_addons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_offers: {
         Row: {
           created_at: string
