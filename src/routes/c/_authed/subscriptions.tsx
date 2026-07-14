@@ -53,6 +53,7 @@ function MyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
+  const [bookOpen, setBookOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
