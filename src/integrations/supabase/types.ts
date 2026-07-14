@@ -1075,6 +1075,42 @@ export type Database = {
           },
         ]
       }
+      customer_saved_packages: {
+        Row: {
+          addons: Json
+          base_plan_price: number
+          base_plan_slug: string
+          created_at: string
+          id: string
+          name: string
+          total_monthly: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          addons?: Json
+          base_plan_price?: number
+          base_plan_slug: string
+          created_at?: string
+          id?: string
+          name: string
+          total_monthly?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          addons?: Json
+          base_plan_price?: number
+          base_plan_slug?: string
+          created_at?: string
+          id?: string
+          name?: string
+          total_monthly?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_vehicles: {
         Row: {
           category: string
