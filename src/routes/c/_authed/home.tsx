@@ -289,7 +289,12 @@ function CustomerHome() {
                       <Sparkles className="h-3 w-3" /> Daily plan
                     </span>
                     <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
-                    <p className="mt-1 text-xs text-muted-foreground">{subscription.description}</p>
+                    <ul className="mt-2 space-y-1 text-xs text-foreground/80">
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Daily Exterior Cleaning</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> 1 Interior &amp; Exterior Wash every month</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Doorstep Service</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Monday Weekly Rest</li>
+                    </ul>
                     {!dsAllowed && <p className="mt-2 text-[11px] font-semibold text-amber-700">Daily Shine subscription is not yet available in your area.</p>}
                   </div>
                   <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
