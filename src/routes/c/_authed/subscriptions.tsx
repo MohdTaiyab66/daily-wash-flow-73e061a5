@@ -430,52 +430,33 @@ function MyPlanPage() {
             </div>
           </div>
 
-          {/* Schedule a wash */}
+          {/* Book a wash — gated flow (Phase 3) */}
           <div className="mt-5 rounded-3xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold tracking-tight">Schedule your wash</h3>
+                <h3 className="text-sm font-semibold tracking-tight">Book a wash</h3>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  Pick interior, exterior or both — partner arrives in your slot.
+                  Only what's left on your plan is shown.
                 </p>
               </div>
               <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              <button
-                onClick={() => openSchedule("exterior")}
-                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
-              >
-                <Droplets className="h-4 w-4 text-primary" />
-                <div className="mt-1.5 text-[11px] font-semibold">Exterior</div>
-                <div className="text-[10px] text-muted-foreground">Quick rinse</div>
-              </button>
-              <button
-                onClick={() => openSchedule("interior")}
-                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
-              >
-                <Wrench className="h-4 w-4 text-primary" />
-                <div className="mt-1.5 text-[11px] font-semibold">Interior</div>
-                <div className="text-[10px] text-muted-foreground">Vacuum & wipe</div>
-              </button>
-              <button
-                onClick={() => openSchedule("dusting")}
-                className="rounded-xl border border-border bg-card p-2.5 text-left transition-colors hover:border-primary/40"
-              >
-                <Sparkles className="h-4 w-4 text-primary" />
-                <div className="mt-1.5 text-[11px] font-semibold">Dusting</div>
-                <div className="text-[10px] text-muted-foreground">Daily touch-up</div>
-              </button>
-              <button
-                onClick={() => openSchedule("any")}
-                className="rounded-xl border border-primary bg-primary/10 p-2.5 text-left"
-              >
-                <Sparkles className="h-4 w-4 text-primary" />
-                <div className="mt-1.5 text-[11px] font-semibold">Custom</div>
-                <div className="text-[10px] text-muted-foreground">Choose service</div>
-              </button>
-            </div>
+            <Button
+              onClick={() => setBookOpen(true)}
+              className="mt-3 h-11 w-full rounded-2xl text-sm font-semibold"
+            >
+              <Sparkles className="mr-1.5 h-4 w-4" />
+              Book a wash
+            </Button>
+            <button
+              type="button"
+              onClick={() => openSchedule("any")}
+              className="mt-2 inline-flex w-full items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Need something else? Book a one-time premium service
+            </button>
           </div>
+
 
           {/* Recent service feed with photos + complaint window */}
           <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
