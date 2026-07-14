@@ -255,6 +255,7 @@ function CustomerHome() {
               <Plus className="h-3.5 w-3.5" /> Add another
             </Link>
           </div>
+        </div>
       ) : (
         <Link
           to="/c/vehicles/add"
