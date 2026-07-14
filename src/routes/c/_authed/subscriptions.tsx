@@ -562,6 +562,14 @@ function MyPlanPage() {
         vehicleId={selectedVehicleId}
         userId={userId}
       />
+
+      <PackageBuilderSheet
+        open={builderOpen}
+        onOpenChange={setBuilderOpen}
+        basePlanSlug={activePlanSlug ?? activeSub?.service_catalog?.slug ?? "daily_shine_monthly"}
+        basePlanPrice={Number(activeSub?.total_amount ?? subRow?.amount ?? 1199)}
+        basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
+      />
     </div>
   );
 }
