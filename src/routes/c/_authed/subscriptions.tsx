@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +15,10 @@ import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/c
 import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
 import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
+import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -221,6 +224,28 @@ function MyPlanPage() {
   const hasVehicles = (vehiclesQ.data?.length ?? 0) > 0;
   const activePlanSlug = activeSub?.service_catalog?.slug ?? null;
 
+  // Fetch the real subscription row for this vehicle so we can show
+  // cancel-at-period-end state and drive the Cancel/Undo actions.
+  const fetchActiveSub = useServerFn(getActiveSubscriptionForVehicle);
+  const activeSubRowQ = useQuery({
+    queryKey: ["active-subscription", selectedVehicleId],
+    enabled: !!selectedVehicleId && !!activeSub,
+    queryFn: () => fetchActiveSub({ data: { vehicleId: selectedVehicleId! } }),
+  });
+  const subRow = activeSubRowQ.data ?? null;
+  const cancelScheduled = !!subRow?.cancel_at_period_end;
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  const undoFn = useServerFn(undoCancellation);
+  const undoMut = useMutation({
+    mutationFn: () => undoFn({ data: { subscriptionId: subRow!.id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["active-subscription", selectedVehicleId] });
+      toast.success("Cancellation reverted — your plan will keep renewing.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not undo. Try again."),
+  });
+
   return (
     <div className="px-5 pt-6 pb-12">
       <div className="flex items-center justify-between gap-3">
@@ -309,21 +334,67 @@ function MyPlanPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-              <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs">
-                  <Pause className="h-3.5 w-3.5" /> Pause
-                </Button>
-                {expiringSoon && (
+            <div className="mt-4 border-t border-border pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
+                {expiringSoon && !cancelScheduled && (
                   <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
                     <RefreshCw className="h-3.5 w-3.5" /> Renew
                   </Button>
                 )}
-
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
+                  <Settings2 className="h-3.5 w-3.5" /> Modify
+                </Button>
+                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
+                  <Pause className="h-3.5 w-3.5" /> Pause
+                </Button>
+                {cancelScheduled ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 gap-1 text-xs"
+                    onClick={() => undoMut.mutate()}
+                    disabled={undoMut.isPending}
+                  >
+                    <Undo2 className="h-3.5 w-3.5" /> Undo
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 gap-1 border-destructive/40 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setCancelDialogOpen(true)}
+                    disabled={!subRow}
+                  >
+                    <XCircle className="h-3.5 w-3.5" /> Cancel
+                  </Button>
+                )}
               </div>
             </div>
           </div>
+
+          {cancelScheduled && subRow?.renewal_date && (
+            <div className="mt-3 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <div className="min-w-0 flex-1 text-xs">
+                <p className="font-semibold text-amber-900">
+                  Ending on {new Date(subRow.renewal_date).toLocaleDateString(undefined, { day: "numeric", month: "long" })}
+                </p>
+                <p className="mt-0.5 text-amber-900/80">
+                  Your plan stays active until then. No more renewals after that.
+                </p>
+              </div>
+              <button
+                onClick={() => undoMut.mutate()}
+                disabled={undoMut.isPending}
+                className="shrink-0 text-xs font-semibold text-amber-900 underline underline-offset-2 disabled:opacity-50"
+              >
+                Undo
+              </button>
+            </div>
+          )}
 
           {/* Plan inclusions (dynamic, admin-editable) */}
           <PlanInclusionsCard planSlug={activePlanSlug} />
@@ -494,6 +565,14 @@ function MyPlanPage() {
         userId={userId}
         initialVehicleId={selectedVehicleId}
         kind={scheduleKind}
+      />
+
+      <CancelPlanDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        subscriptionId={subRow?.id ?? null}
+        renewalDate={subRow?.renewal_date ?? planEnd ?? null}
+        planName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
     </div>
   );

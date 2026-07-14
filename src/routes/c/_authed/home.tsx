@@ -14,6 +14,8 @@ import {
   BellRing,
   Check,
   Clock,
+  Pencil,
+  Camera,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -233,12 +235,26 @@ function CustomerHome() {
               className="h-16 w-24 rounded-2xl bg-card"
             />
           </div>
-          <Link
-            to="/c/vehicles/add"
-            className="mt-3 inline-flex items-center gap-1 text-xs text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add another vehicle
-          </Link>
+          <div className="mt-3 flex items-center gap-4 text-xs">
+            <Link
+              to="/c/vehicles/add"
+              className="inline-flex items-center gap-1 font-medium text-primary"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit vehicle
+            </Link>
+            <Link
+              to="/c/vehicles/add"
+              className="inline-flex items-center gap-1 font-medium text-primary"
+            >
+              <Camera className="h-3.5 w-3.5" /> Change photo
+            </Link>
+            <Link
+              to="/c/vehicles/add"
+              className="ml-auto inline-flex items-center gap-1 text-muted-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add another
+            </Link>
+          </div>
         </div>
       ) : (
         <Link
@@ -273,7 +289,12 @@ function CustomerHome() {
                       <Sparkles className="h-3 w-3" /> Daily plan
                     </span>
                     <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
-                    <p className="mt-1 text-xs text-muted-foreground">{subscription.description}</p>
+                    <ul className="mt-2 space-y-1 text-xs text-foreground/80">
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Daily Exterior Cleaning</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> 1 Interior &amp; Exterior Wash every month</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Doorstep Service</li>
+                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Monday Weekly Rest</li>
+                    </ul>
                     {!dsAllowed && <p className="mt-2 text-[11px] font-semibold text-amber-700">Daily Shine subscription is not yet available in your area.</p>}
                   </div>
                   <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
