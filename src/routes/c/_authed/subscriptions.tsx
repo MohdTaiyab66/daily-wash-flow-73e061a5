@@ -566,6 +566,14 @@ function MyPlanPage() {
         initialVehicleId={selectedVehicleId}
         kind={scheduleKind}
       />
+
+      <CancelPlanDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        subscriptionId={subRow?.id ?? null}
+        renewalDate={subRow?.renewal_date ?? planEnd ?? null}
+        planName={activeSub?.service_catalog?.name ?? "Daily Shine"}
+      />
     </div>
   );
 }
