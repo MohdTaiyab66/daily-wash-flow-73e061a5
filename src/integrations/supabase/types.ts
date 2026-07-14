@@ -5487,6 +5487,7 @@ export type Database = {
         }
         Returns: string
       }
+      materialize_monthly_addons: { Args: never; Returns: number }
       modify_assignment: {
         Args: { p_assignment_id: string; p_delta: number }
         Returns: Json
