@@ -492,6 +492,11 @@ function MyPlanPage() {
             </div>
           )}
 
+          {/* Package builder + saved packages */}
+          <SavedPackagesCard onBuild={() => setBuilderOpen(true)} />
+
+
+
 
 
           {/* Recent services */}
