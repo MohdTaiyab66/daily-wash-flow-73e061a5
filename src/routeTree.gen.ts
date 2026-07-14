@@ -84,6 +84,7 @@ import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookin
 import { Route as ApiPublicMarketplaceOfferActionRouteImport } from './routes/api/public/marketplace/offer-action'
 import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
+import { Route as ApiPublicCronMonthlyAddonsMaterializeRouteImport } from './routes/api/public/cron/monthly-addons-materialize'
 import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
 import { Route as ApiPublicCronMarketplacePushDispatchRouteImport } from './routes/api/public/cron/marketplace-push-dispatch'
 import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
@@ -481,6 +482,12 @@ const ApiPublicCronOfferPushDispatchRoute =
     path: '/api/public/cron/offer-push-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronMonthlyAddonsMaterializeRoute =
+  ApiPublicCronMonthlyAddonsMaterializeRouteImport.update({
+    id: '/api/public/cron/monthly-addons-materialize',
+    path: '/api/public/cron/monthly-addons-materialize',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronMarketplaceTickRoute =
   ApiPublicCronMarketplaceTickRouteImport.update({
     id: '/api/public/cron/marketplace-tick',
@@ -620,6 +627,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
+  '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
@@ -703,6 +711,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
+  '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
@@ -791,6 +800,7 @@ export interface FileRoutesById {
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
+  '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
   '/api/public/hooks/notification-push': typeof ApiPublicHooksNotificationPushRoute
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
@@ -879,6 +889,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
     | '/api/public/cron/marketplace-tick'
+    | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/api/public/marketplace/offer-action'
@@ -962,6 +973,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
     | '/api/public/cron/marketplace-tick'
+    | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/api/public/marketplace/offer-action'
@@ -1049,6 +1061,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
     | '/api/public/cron/marketplace-tick'
+    | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
     | '/api/public/hooks/notification-push'
     | '/api/public/marketplace/offer-action'
@@ -1077,6 +1090,7 @@ export interface RootRouteChildren {
   ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
   ApiPublicCronMarketplacePushDispatchRoute: typeof ApiPublicCronMarketplacePushDispatchRoute
   ApiPublicCronMarketplaceTickRoute: typeof ApiPublicCronMarketplaceTickRoute
+  ApiPublicCronMonthlyAddonsMaterializeRoute: typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
   ApiPublicHooksNotificationPushRoute: typeof ApiPublicHooksNotificationPushRoute
   ApiPublicMarketplaceOfferActionRoute: typeof ApiPublicMarketplaceOfferActionRoute
@@ -1609,6 +1623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/monthly-addons-materialize': {
+      id: '/api/public/cron/monthly-addons-materialize'
+      path: '/api/public/cron/monthly-addons-materialize'
+      fullPath: '/api/public/cron/monthly-addons-materialize'
+      preLoaderRoute: typeof ApiPublicCronMonthlyAddonsMaterializeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/marketplace-tick': {
       id: '/api/public/cron/marketplace-tick'
       path: '/api/public/cron/marketplace-tick'
@@ -1904,6 +1925,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronMarketplacePushDispatchRoute:
     ApiPublicCronMarketplacePushDispatchRoute,
   ApiPublicCronMarketplaceTickRoute: ApiPublicCronMarketplaceTickRoute,
+  ApiPublicCronMonthlyAddonsMaterializeRoute:
+    ApiPublicCronMonthlyAddonsMaterializeRoute,
   ApiPublicCronOfferPushDispatchRoute: ApiPublicCronOfferPushDispatchRoute,
   ApiPublicHooksNotificationPushRoute: ApiPublicHooksNotificationPushRoute,
   ApiPublicMarketplaceOfferActionRoute: ApiPublicMarketplaceOfferActionRoute,
