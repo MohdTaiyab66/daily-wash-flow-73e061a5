@@ -342,7 +342,7 @@ function MyPlanPage() {
 
             <div className="mt-4 border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">₹{activeSub.total_amount}/mo</span>
+                <span className="text-sm font-semibold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
                 {expiringSoon && !cancelScheduled && (
                   <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
                     <RefreshCw className="h-3.5 w-3.5" /> Renew
@@ -567,7 +567,7 @@ function MyPlanPage() {
         open={builderOpen}
         onOpenChange={setBuilderOpen}
         basePlanSlug={activePlanSlug ?? activeSub?.service_catalog?.slug ?? "daily_shine_monthly"}
-        basePlanPrice={Number(activeSub?.total_amount ?? subRow?.amount ?? 1199)}
+        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? 1199)}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
     </div>
