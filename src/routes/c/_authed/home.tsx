@@ -235,13 +235,26 @@ function CustomerHome() {
               className="h-16 w-24 rounded-2xl bg-card"
             />
           </div>
-          <Link
-            to="/c/vehicles/add"
-            className="mt-3 inline-flex items-center gap-1 text-xs text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add another vehicle
-          </Link>
-        </div>
+          <div className="mt-3 flex items-center gap-4 text-xs">
+            <Link
+              to="/c/vehicles/add"
+              className="inline-flex items-center gap-1 font-medium text-primary"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit vehicle
+            </Link>
+            <Link
+              to="/c/vehicles/add"
+              className="inline-flex items-center gap-1 font-medium text-primary"
+            >
+              <Camera className="h-3.5 w-3.5" /> Change photo
+            </Link>
+            <Link
+              to="/c/vehicles/add"
+              className="ml-auto inline-flex items-center gap-1 text-muted-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add another
+            </Link>
+          </div>
       ) : (
         <Link
           to="/c/vehicles/add"
