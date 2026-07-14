@@ -4047,6 +4047,8 @@ export type Database = {
           assigned_at: string | null
           assigned_partner_id: string | null
           booking_id: string
+          cancel_at_period_end: boolean
+          cancelled_at: string | null
           created_at: string
           currency: string
           customer_id: string
@@ -4065,6 +4067,8 @@ export type Database = {
           assigned_at?: string | null
           assigned_partner_id?: string | null
           booking_id: string
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
           created_at?: string
           currency?: string
           customer_id: string
@@ -4083,6 +4087,8 @@ export type Database = {
           assigned_at?: string | null
           assigned_partner_id?: string | null
           booking_id?: string
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
           created_at?: string
           currency?: string
           customer_id?: string
