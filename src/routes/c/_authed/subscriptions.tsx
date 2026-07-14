@@ -17,6 +17,7 @@ import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
+import { MonthlyAddonsSection } from "@/components/customer/MonthlyAddonsSection";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
@@ -471,34 +472,23 @@ function MyPlanPage() {
 
 
 
-          {/* Add-ons */}
-          <div className="mt-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-tight">Available add-ons</h3>
-              <Link to="/c/service/$slug" params={{ slug: "daily-shine" }} className="inline-flex items-center gap-1 text-xs text-primary">
-                <Plus className="h-3.5 w-3.5" /> Add all
-              </Link>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <RecommendedAddon name="Exterior Polish" price={49} icon={Sparkles} />
-              <RecommendedAddon name="Dusting" price={25} icon={Droplets} />
-              <RecommendedAddon name="Extra Interior" price={149} icon={Wrench} />
-              <RecommendedAddon name="Extra Exterior" price={149} icon={Droplets} />
-            </div>
-            {(addonsQ.data ?? []).length > 0 && (
-              <div className="mt-3 space-y-2">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Your purchased add-ons
-                </div>
-                {(addonsQ.data ?? []).map((a) => (
-                  <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
-                    <span className="font-medium">{a.addon_name}</span>
-                    <span className="text-xs text-muted-foreground">₹{a.price}</span>
-                  </div>
-                ))}
+          {/* Add-ons — monthly (recurring) + one-time */}
+          <MonthlyAddonsSection subscriptionId={subRow?.id ?? null} userId={userId} />
+
+          {(addonsQ.data ?? []).length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Your purchased add-ons
               </div>
-            )}
-          </div>
+              {(addonsQ.data ?? []).map((a) => (
+                <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+                  <span className="font-medium">{a.addon_name}</span>
+                  <span className="text-xs text-muted-foreground">₹{a.price}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
 
 
           {/* Recent services */}
