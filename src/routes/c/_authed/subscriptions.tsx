@@ -557,6 +557,13 @@ function MyPlanPage() {
         renewalDate={subRow?.renewal_date ?? planEnd ?? null}
         planName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
+
+      <BookAWashSheet
+        open={bookOpen}
+        onOpenChange={setBookOpen}
+        vehicleId={selectedVehicleId}
+        userId={userId}
+      />
     </div>
   );
 }
