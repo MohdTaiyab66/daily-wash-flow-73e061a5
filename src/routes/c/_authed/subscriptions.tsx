@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
@@ -14,8 +13,10 @@ import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/c
 import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
 import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
+import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
