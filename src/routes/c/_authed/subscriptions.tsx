@@ -18,6 +18,8 @@ import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { MonthlyAddonsSection } from "@/components/customer/MonthlyAddonsSection";
+import { PackageBuilderSheet } from "@/components/customer/PackageBuilderSheet";
+import { SavedPackagesCard } from "@/components/customer/SavedPackagesCard";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
