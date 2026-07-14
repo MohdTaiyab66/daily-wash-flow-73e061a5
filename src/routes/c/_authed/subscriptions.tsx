@@ -18,6 +18,8 @@ import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { MonthlyAddonsSection } from "@/components/customer/MonthlyAddonsSection";
+import { PackageBuilderSheet } from "@/components/customer/PackageBuilderSheet";
+import { SavedPackagesCard } from "@/components/customer/SavedPackagesCard";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
@@ -55,6 +57,7 @@ function MyPlanPage() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   const [bookOpen, setBookOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
@@ -489,6 +492,11 @@ function MyPlanPage() {
             </div>
           )}
 
+          {/* Package builder + saved packages */}
+          <SavedPackagesCard onBuild={() => setBuilderOpen(true)} />
+
+
+
 
 
           {/* Recent services */}
@@ -553,6 +561,14 @@ function MyPlanPage() {
         onOpenChange={setBookOpen}
         vehicleId={selectedVehicleId}
         userId={userId}
+      />
+
+      <PackageBuilderSheet
+        open={builderOpen}
+        onOpenChange={setBuilderOpen}
+        basePlanSlug={activePlanSlug ?? activeSub?.service_catalog?.slug ?? "daily_shine_monthly"}
+        basePlanPrice={Number(activeSub?.total_amount ?? subRow?.amount ?? 1199)}
+        basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
     </div>
   );
