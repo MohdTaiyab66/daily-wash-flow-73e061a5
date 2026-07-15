@@ -410,9 +410,48 @@ function ServiceDetail() {
           name: "Urban Wash",
           description: service.name,
           order_id: order.orderId,
-          prefill: { email: currentUser.user.email ?? "" },
+          prefill: {
+            email: currentUser.user.email ?? "",
+            contact: (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string,
+          },
           notes: { booking_id: String(bookingId) },
-          modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
+          // Force UPI to appear first and expanded on Razorpay Standard Checkout.
+          // `preferences.show_default_blocks: false` hides Razorpay's default
+          // ordering so our custom sequence wins; `hide` removes EMI (rarely
+          // relevant for small subscription amounts and adds noise).
+          config: {
+            display: {
+              blocks: {
+                upi_first: {
+                  name: "Pay using UPI",
+                  instruments: [
+                    // Google Pay / PhonePe / Paytm / BHIM app intents (Android web)
+                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
+                    // Manual UPI ID entry (Collect)
+                    { method: "upi", flows: ["collect"] },
+                    // QR fallback (desktop)
+                    { method: "upi", flows: ["qr"] },
+                  ],
+                },
+                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
+                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
+                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
+              },
+              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
+              preferences: { show_default_blocks: false },
+              hide: [{ method: "emi" }, { method: "paylater" }],
+            },
+          },
+          // Explicit method allowlist so nothing surprising slips in.
+          method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
+          // Session timeout — keeps stuck payments from hanging forever.
+          timeout: 600,
+          // Let the user retry the same order after a failure.
+          retry: { enabled: true, max_count: 3 },
+          modal: {
+            escape: true,
+            ondismiss: () => reject(new Error("Payment cancelled")),
+          },
           handler: async (response: any) => {
             try {
               await verifyPayment({
@@ -428,6 +467,12 @@ function ServiceDetail() {
               reject(error);
             }
           },
+        });
+        // Payment-state hooks: any failure surfaces to the user; success is
+        // handled by `handler` above (server-side signature verify + activate).
+        (checkout as any).on?.("payment.failed", (resp: any) => {
+          const desc = resp?.error?.description || "Payment failed. Please try again.";
+          reject(new Error(desc));
         });
         checkout.open();
       });
