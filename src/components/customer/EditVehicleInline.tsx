@@ -717,12 +717,47 @@ export function ChangePhotoDialog({
           <div className="space-y-3">
             <div className="overflow-hidden rounded-2xl border border-border bg-muted">
               <img
+                data-testid="photo-preview-image"
                 src={previewUrl}
                 alt={`Preview of new photo for ${vehicle?.make ?? ""} ${vehicle?.model ?? ""}`.trim()}
                 className="mx-auto block max-h-72 w-full object-cover"
               />
             </div>
-            {uploadError && (
+
+            {upload.isPending && (
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label={`Uploading photo, ${Math.round(uploadProgress * 100)} percent`}
+                data-testid="upload-progress"
+                className="space-y-2 rounded-xl border border-border bg-card p-3"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Uploading photo…</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {Math.round(uploadProgress * 100)}%
+                  </span>
+                </div>
+                <Progress value={Math.round(uploadProgress * 100)} aria-hidden />
+                {uploadStalled && (
+                  <p className="text-[11px] text-amber-600">
+                    Upload seems slow. You can wait or cancel and retry.
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={cancelUpload}
+                  data-testid="cancel-upload"
+                >
+                  <X className="mr-2 h-3.5 w-3.5" aria-hidden /> Cancel upload
+                </Button>
+              </div>
+            )}
+
+            {uploadError && !upload.isPending && (
               <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <div className="flex-1">
@@ -750,7 +785,11 @@ export function ChangePhotoDialog({
                 ) : (
                   <Upload className="mr-2 h-4 w-4" aria-hidden />
                 )}
-                {uploadError ? "Retry upload" : "Use photo"}
+                {upload.isPending
+                  ? `Uploading ${Math.round(uploadProgress * 100)}%`
+                  : uploadError
+                    ? "Retry upload"
+                    : "Use photo"}
               </Button>
             </div>
           </div>
