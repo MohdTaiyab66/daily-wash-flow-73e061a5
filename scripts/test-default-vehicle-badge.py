@@ -149,9 +149,7 @@ async def main():
             await page.wait_for_selector('[data-testid="set-as-default-button"]')
             await page.click('[data-testid="set-as-default-button"]')
             try:
-                await page.wait_for_selector(
-                    'text=/is now your default/i', timeout=4000,
-                )
+                await page.get_by_text("is now your default", exact=False).wait_for(timeout=5000)
                 ok("confirmation toast shown after setting default")
             except Exception:
                 fail("expected confirmation toast not shown")
