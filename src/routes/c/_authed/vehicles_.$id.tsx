@@ -105,9 +105,8 @@ function EditVehiclePage() {
 
   const setDefault = useMutation({
     mutationFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("Not signed in");
       // Trigger tg_customer_vehicles_single_default unsets siblings.
+      // RLS restricts to auth.uid()'s rows; no need to fetch the user here.
       const { error } = await (supabase as any)
         .from("customer_vehicles")
         .update({ is_default: true })
@@ -116,7 +115,10 @@ function EditVehiclePage() {
     },
     onSuccess: () => {
       setIsDefault(true);
-      toast.success("Set as default vehicle");
+      const label = q.data?.nickname?.trim() || `${q.data?.make ?? ""} ${q.data?.model ?? ""}`.trim() || "This vehicle";
+      toast.success(`${label} is now your default`, {
+        description: "It will be selected first on Home & Bookings.",
+      });
       qc.invalidateQueries({ queryKey: ["customer-vehicle", id] });
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
     },
