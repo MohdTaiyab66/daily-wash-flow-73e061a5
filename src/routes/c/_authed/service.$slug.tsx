@@ -955,6 +955,50 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {paymentError ? (
+            <div
+              role="alert"
+              data-testid="payment-error-banner"
+              className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-snug text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Payment couldn’t complete</div>
+                <div className="mt-0.5 text-[11px] text-destructive/90">{paymentError.message}</div>
+                {pendingCheckout ? (
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    Attempt {pendingCheckout.attemptNo} · Order {pendingCheckout.orderId.slice(-6)}
+                  </div>
+                ) : null}
+                <div className="mt-2 flex items-center gap-2">
+                  {paymentError.canRetry && pendingCheckout ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={onRetryPayment}
+                      disabled={paying}
+                      data-testid="payment-retry-btn"
+                      className="h-7 rounded-full px-3 text-[11px]"
+                    >
+                      {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                      Retry checkout
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onDismissPaymentError}
+                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                    data-testid="payment-error-dismiss"
+                  >
+                    <X className="mr-1 h-3 w-3" /> Dismiss
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
@@ -972,15 +1016,17 @@ function ServiceDetail() {
             <Button
               type="button"
               onClick={confirm}
-              disabled={submitting || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
+              disabled={submitting || paying || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
+              data-testid="pay-button"
             >
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
 
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
