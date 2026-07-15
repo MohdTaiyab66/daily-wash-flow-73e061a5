@@ -148,11 +148,20 @@ async def main():
             await page.goto(f"{BASE_URL}/c/vehicles/{alt['id']}", wait_until="domcontentloaded")
             await page.wait_for_selector('[data-testid="set-as-default-button"]')
             await page.click('[data-testid="set-as-default-button"]')
+            await page.screenshot(path=str(OUT / "5a_after_click.png"))
             try:
-                await page.get_by_text("is now your default", exact=False).wait_for(timeout=5000)
+                # sonner renders <li data-sonner-toast> with the message inside
+                toast_locator = page.locator('[data-sonner-toast]', has_text="is now your default")
+                await toast_locator.first.wait_for(timeout=6000)
                 ok("confirmation toast shown after setting default")
             except Exception:
-                fail("expected confirmation toast not shown")
+                # Fallback: any toast text mentioning default
+                try:
+                    await page.locator('[data-sonner-toast]').first.wait_for(timeout=2000)
+                    body = await page.locator('[data-sonner-toast]').first.text_content()
+                    fail(f"toast appeared but wrong text: {body!r}")
+                except Exception:
+                    fail("expected confirmation toast not shown")
             await page.screenshot(path=str(OUT / "5_toast.png"))
             # Now `alt` is the current default; `target` is not.
             current_default_id = alt["id"]
