@@ -103,6 +103,26 @@ function EditVehiclePage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
+  const setDefault = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      // Trigger tg_customer_vehicles_single_default unsets siblings.
+      const { error } = await (supabase as any)
+        .from("customer_vehicles")
+        .update({ is_default: true })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setIsDefault(true);
+      toast.success("Set as default vehicle");
+      qc.invalidateQueries({ queryKey: ["customer-vehicle", id] });
+      qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not set default"),
+  });
+
   const del = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("customer_vehicles").delete().eq("id", id);
@@ -206,10 +226,10 @@ function EditVehiclePage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsDefault((v) => !v)}
-          className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition ${
+        <div
+          data-testid="default-vehicle-card"
+          data-is-default={isDefault ? "true" : "false"}
+          className={`flex items-center justify-between rounded-2xl border p-4 transition ${
             isDefault ? "border-primary bg-primary/5" : "border-border bg-card"
           }`}
         >
@@ -218,14 +238,36 @@ function EditVehiclePage() {
               <Star className="h-4 w-4" />
             </span>
             <div>
-              <div className="text-sm font-semibold">Default vehicle</div>
-              <div className="text-[11px] text-muted-foreground">Selected first on Home & Bookings.</div>
+              <div className="text-sm font-semibold">
+                {isDefault ? "Default vehicle" : "Not your default"}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {isDefault ? "Selected first on Home & Bookings." : "Tap to make this your default."}
+              </div>
             </div>
           </div>
-          <span className={`h-5 w-9 rounded-full transition ${isDefault ? "bg-primary" : "bg-muted"}`}>
-            <span className={`block h-5 w-5 rounded-full bg-card shadow transition ${isDefault ? "translate-x-4" : ""}`} />
-          </span>
-        </button>
+          {isDefault ? (
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+              Current
+            </span>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="set-as-default-button"
+              onClick={() => setDefault.mutate()}
+              disabled={setDefault.isPending}
+            >
+              {setDefault.isPending ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Star className="mr-1 h-3.5 w-3.5" />
+              )}
+              Set as default
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 space-y-3">

@@ -84,6 +84,9 @@ function VehicleRow({ v }: { v: Vehicle }) {
     <Link
       to="/c/vehicles/$id"
       params={{ id: v.id }}
+      data-testid="vehicle-row"
+      data-vehicle-id={v.id}
+      data-is-default={v.is_default ? "true" : "false"}
       className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-accent/40"
     >
       <VehicleAvatar
@@ -98,7 +101,10 @@ function VehicleRow({ v }: { v: Vehicle }) {
         <div className="flex items-center gap-2">
           <span className="truncate font-semibold">{primary}</span>
           {v.is_default && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+            <span
+              data-testid="default-badge"
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+            >
               <Star className="h-2.5 w-2.5" /> Default
             </span>
           )}
