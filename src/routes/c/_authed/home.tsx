@@ -74,6 +74,8 @@ function CustomerHome() {
   const [area, setArea] = useState<string>("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
