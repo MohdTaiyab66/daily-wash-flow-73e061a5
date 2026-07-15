@@ -102,7 +102,7 @@ async function renewalReminder(sb: any) {
   const { data: subs } = await sb
     .from("subscriptions")
     .select("id,user_id,vehicle_id,renewal_date,cancel_at_period_end")
-    .eq("status", "active")
+    .in("status", ["active", "assigned", "awaiting_partner_assignment"])
     .gte("renewal_date", tStart)
     .lt("renewal_date", tEnd)
     .limit(5000);
