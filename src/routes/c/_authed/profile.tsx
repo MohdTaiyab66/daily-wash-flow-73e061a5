@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LogOut,
   ChevronRight,
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/c/_authed/profile")({
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const q = useQuery({
     queryKey: ["customer-profile-self"],
     queryFn: async () => {
@@ -35,6 +36,7 @@ function ProfilePage() {
   const signOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("uw_customer_vehicle");
+    queryClient.clear();
     navigate({ to: "/c" });
   };
 
