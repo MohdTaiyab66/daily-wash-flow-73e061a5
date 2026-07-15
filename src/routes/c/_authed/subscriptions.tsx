@@ -602,7 +602,44 @@ function MyPlanPage() {
   );
 }
 
-function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
+function PendingPaymentCard({ booking }: { booking: Booking }) {
+  const slug = booking.service_catalog?.slug ?? "daily-shine";
+  const planName = booking.service_catalog?.name ?? "Daily Shine";
+  const statusLabel = booking.status === "cancelled"
+    ? "Payment cancelled"
+    : booking.status === "failed" || booking.payment_status === "failed"
+      ? "Payment failed"
+      : "Payment pending";
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-5 overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">{statusLabel}</p>
+          <h2 className="mt-1 truncate text-lg font-semibold">{planName}</h2>
+          <p className="mt-2 text-xs text-amber-900/80">
+            Your subscription has not been activated because payment has not been completed.
+            Complete payment to activate {planName}.
+          </p>
+        </div>
+        <ShieldAlert className="h-6 w-6 shrink-0 text-amber-700" />
+      </div>
+      <div className="mt-4">
+        <Button asChild className="h-11 w-full rounded-2xl text-sm font-semibold">
+          <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+        </Button>
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          No service, credits or partner assignment will start until payment succeeds.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
   if (!notice) return null;
   const isDirty = notice.type === "vehicle_dirty";
   return (
