@@ -164,5 +164,8 @@ No blocking bugs found in Turn 8. NOTE-H1 (missing rating UI) flagged for UI-pol
 | BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 (fixed) |
 | BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 (fixed) |
 | BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (not live — auto-confirm on) |
-| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home → switcher disagreed across screens & didn't persist across tab close | Turn 2 (fixed) |
-| BUG-P1 | Payments | **Critical** | Razorpay webhook activated bookings on any payment event including `payment.failed` — prepaid invariant could be violated by a failed-payment webhook | Turn 3 (fixed) |
+| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home | Turn 2 (fixed) |
+| BUG-P1 | Payments | **Critical** | Razorpay webhook activated on any payment event including `payment.failed` | Turn 3 (fixed) |
+| BUG-R1 | Reminders | **High** | Weekly wash reminder filtered on non-existent `included_wash` benefit type — never fired | Turn 9 (fixed) |
+| BUG-R2 | Reminders | Medium | `daily-reminders` cron had no `x-cron-secret` gate — public spam surface | Turn 9 (fixed) |
+| BUG-R3 | Reminders | Low | Renewal reminder only checked `status=active`, skipping `assigned`/`awaiting_partner_assignment` | Turn 9 (fixed) |
