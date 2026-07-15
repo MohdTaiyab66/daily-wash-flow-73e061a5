@@ -147,21 +147,18 @@ async def main():
         if alt:
             await page.goto(f"{BASE_URL}/c/vehicles/{alt['id']}", wait_until="domcontentloaded")
             await page.wait_for_selector('[data-testid="set-as-default-button"]')
+            page.on("console", lambda m: print(f"[console.{m.type}]", m.text) if m.type in ("error", "warning") else None)
             await page.click('[data-testid="set-as-default-button"]')
+            await page.wait_for_timeout(1500)
             await page.screenshot(path=str(OUT / "5a_after_click.png"))
+            dom_dump = await page.evaluate("() => Array.from(document.querySelectorAll('[data-sonner-toast], li[data-sonner-toast], ol[data-sonner-toaster]')).map(el => el.outerHTML.slice(0, 300))")
+            print("toast DOM:", dom_dump)
             try:
-                # sonner renders <li data-sonner-toast> with the message inside
                 toast_locator = page.locator('[data-sonner-toast]', has_text="is now your default")
-                await toast_locator.first.wait_for(timeout=6000)
+                await toast_locator.first.wait_for(timeout=5000)
                 ok("confirmation toast shown after setting default")
             except Exception:
-                # Fallback: any toast text mentioning default
-                try:
-                    await page.locator('[data-sonner-toast]').first.wait_for(timeout=2000)
-                    body = await page.locator('[data-sonner-toast]').first.text_content()
-                    fail(f"toast appeared but wrong text: {body!r}")
-                except Exception:
-                    fail("expected confirmation toast not shown")
+                fail(f"expected confirmation toast not shown; dom={dom_dump}")
             await page.screenshot(path=str(OUT / "5_toast.png"))
             # Now `alt` is the current default; `target` is not.
             current_default_id = alt["id"]
