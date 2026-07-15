@@ -10,6 +10,22 @@ const verifyInput = z.object({
   razorpaySignature: z.string().min(1),
 });
 
+const logAttemptInput = z.object({
+  bookingId: z.string().uuid(),
+  channel: z.enum(["native", "web", "unknown"]),
+  outcome: z.enum(["started", "success", "failure", "cancelled", "retry", "timeout"]),
+  attemptNo: z.number().int().min(1).max(50).optional(),
+  errorCode: z.string().max(120).optional(),
+  errorMessage: z.string().max(1000).optional(),
+  providerOrderId: z.string().max(120).optional(),
+  providerPaymentId: z.string().max(120).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const statusInput = z.object({ bookingId: z.string().uuid() });
+const userAttemptsInput = z.object({ userId: z.string().uuid(), limit: z.number().int().min(1).max(100).optional() });
+
+
 function requireRazorpayConfig() {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
