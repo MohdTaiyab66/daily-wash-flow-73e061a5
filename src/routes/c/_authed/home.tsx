@@ -422,6 +422,17 @@ function CustomerHome() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <EditVehicleDialog
+        vehicle={activeVehicle ?? null}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <ChangePhotoDialog
+        vehicle={activeVehicle ?? null}
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+      />
     </div>
   );
 }
