@@ -54,6 +54,24 @@ const SLOT_OPTIONS = [
   "Before 12 PM",
 ];
 
+/**
+ * Daily Shine skips Mondays. Pick tomorrow, or the next non-Monday if tomorrow is Monday.
+ * The customer never sees a "Monday is off" error — the picker simply cannot land on one.
+ */
+function nextServiceableDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  if (d.getDay() === 1) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function bumpOffMonday(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  if (d.getDay() === 1) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 type BookableKey = "interior" | "exterior_daily" | "extra_exterior" | "extra_interior";
 
 const BOOKABLE_ORDER: BookableKey[] = [
