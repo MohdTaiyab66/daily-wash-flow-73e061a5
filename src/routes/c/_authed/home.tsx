@@ -140,10 +140,13 @@ function CustomerHome() {
   // `customer_vehicles.image_path`) takes priority over the catalog stock
   // image. Change photo dialog invalidates ["vehicle-image-url", ...] on
   // success so Home reflects the new picture instantly.
+  // Ask Storage for a compact server-resized thumbnail so Home is fast on
+  // mobile — the stored original is untouched, but delivery is downscaled.
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
     model: activeVehicle?.model,
     imagePath: activeVehicle?.image_path,
+    transform: { width: 480, height: 360, quality: 72, resize: "cover" },
   });
 
   const pickVehicle = (id: string) => {

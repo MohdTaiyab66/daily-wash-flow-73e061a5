@@ -305,5 +305,132 @@ if (await photoBtn.count()) {
   console.log("[ok] Cropped preview matches saved image immediately and after reload");
 }
 
-console.log("[ok] E2E: vehicle edit + change-photo (a11y, failure retry, preview persistence)");
+// ---------------------------------------------------------------------
+// 4) Cancel in-progress upload → previous Home photo + crop state kept
+// ---------------------------------------------------------------------
+{
+  const homeImg = page.getByTestId("vehicle-avatar-image").first();
+  const priorHomeHash = (await homeImg.count()) ? await aHash(page, '[data-testid="vehicle-avatar-image"]') : null;
+
+  const photoBtn2 = page.getByRole("button", { name: /change photo/i });
+  if (await photoBtn2.count()) {
+    await photoBtn2.first().click();
+    await page.getByRole("dialog").waitFor({ state: "visible" });
+    const jpegBase64 =
+      "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z";
+    const buf = Buffer.from(jpegBase64, "base64");
+    await page.locator('input[type="file"][accept^="image"]').last()
+      .setInputFiles({ name: "car2.jpg", mimeType: "image/jpeg", buffer: buf });
+    await page.getByRole("button", { name: /^next$/i }).click();
+    const preview2 = page.getByTestId("photo-preview-image");
+    await preview2.waitFor({ state: "visible" });
+    const previewHash2 = await aHash(page, '[data-testid="photo-preview-image"]');
+
+    // Stall the upload indefinitely so we can hit Cancel mid-flight.
+    let stallControllerResolve;
+    const stallPromise = new Promise((res) => { stallControllerResolve = res; });
+    await page.route("**/storage/v1/object/vehicle-images/**", async (route) => {
+      await stallPromise;
+      await route.abort("failed");
+    });
+
+    await page.getByRole("button", { name: /use photo/i }).click();
+    await page.getByTestId("upload-progress").waitFor({ state: "visible" });
+    await page.getByTestId("cancel-upload").click();
+    await page.getByRole("alert").filter({ hasText: /cancelled/i }).first()
+      .waitFor({ timeout: 5000 });
+    stallControllerResolve();
+    await page.unroute("**/storage/v1/object/vehicle-images/**");
+
+    // Preview + crop state unchanged.
+    const previewHashAfterCancel = await aHash(page, '[data-testid="photo-preview-image"]');
+    if (previewHashAfterCancel !== previewHash2) {
+      throw new Error("Cropped preview changed after cancel — crop state was lost");
+    }
+    await page.screenshot({ path: join(OUT, "9_photo_upload_cancelled.png") });
+    console.log("[ok] Upload cancel keeps cropped preview intact");
+
+    // Close dialog with Escape; Home avatar must still be the previous image.
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" }).catch(() => {});
+    if (priorHomeHash) {
+      await page.waitForTimeout(300);
+      const homeHashAfterCancel = await aHash(page, '[data-testid="vehicle-avatar-image"]');
+      if (homeHashAfterCancel !== priorHomeHash) {
+        throw new Error("Home avatar changed after cancelling upload — previous photo was replaced");
+      }
+      console.log("[ok] Home avatar unchanged after cancelled upload");
+    }
+  }
+}
+
+// ---------------------------------------------------------------------
+// 5) Cache invalidation: edit vehicle → Home updates without reload
+// ---------------------------------------------------------------------
+{
+  const editBtn2 = page.getByRole("button", { name: /edit vehicle/i });
+  if (await editBtn2.count()) {
+    // Listen for the app's post-save broadcast event.
+    await page.evaluate(() => {
+      window.__uwVehicleUpdated = 0;
+      window.addEventListener("uw:vehicle-updated", () => { window.__uwVehicleUpdated++; });
+    });
+
+    await editBtn2.first().click();
+    await page.getByRole("dialog").waitFor({ state: "visible" });
+    const nickname = page.getByLabel(/nickname/i);
+    const unique = `QA-${Date.now().toString().slice(-6)}`;
+    await nickname.fill(unique);
+    await page.getByRole("button", { name: /save changes/i }).click();
+    await page.getByRole("dialog").waitFor({ state: "hidden", timeout: 8000 });
+
+    // Broadcast fired (proxy for realtime/cache sync) AND Home text reflects
+    // the new nickname without a manual reload.
+    const evCount = await page.evaluate(() => window.__uwVehicleUpdated || 0);
+    if (evCount < 1) throw new Error("uw:vehicle-updated event did not fire on save");
+    await page.getByText(unique, { exact: false }).first()
+      .waitFor({ timeout: 5000 })
+      .catch(() => { throw new Error("Home did not update after edit — TanStack cache not invalidated"); });
+    console.log("[ok] Edit save invalidated queries + Home reflected update without reload");
+  }
+}
+
+// ---------------------------------------------------------------------
+// 6) Draft preservation: close dialog with unsaved edits → reopen restores
+// ---------------------------------------------------------------------
+{
+  const editBtn3 = page.getByRole("button", { name: /edit vehicle/i });
+  if (await editBtn3.count()) {
+    await editBtn3.first().click();
+    await page.getByRole("dialog").waitFor({ state: "visible" });
+    const draftValue = `Draft-${Date.now().toString().slice(-5)}`;
+    await page.getByLabel(/nickname/i).fill(draftValue);
+    await page.getByLabel(/parking instructions/i).fill("Slot 42 — do not lose me");
+
+    // Close without saving — no confirm() any more; draft is persisted.
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+
+    // Reopen and verify inputs were restored.
+    await page.getByRole("button", { name: /edit vehicle/i }).first().click();
+    await page.getByRole("dialog").waitFor({ state: "visible" });
+    await page.getByTestId("restored-draft-banner").waitFor({ state: "visible", timeout: 3000 });
+    const restoredNick = await page.getByLabel(/nickname/i).inputValue();
+    const restoredNotes = await page.getByLabel(/parking instructions/i).inputValue();
+    if (restoredNick !== draftValue) throw new Error(`Nickname draft lost: got "${restoredNick}"`);
+    if (!restoredNotes.includes("Slot 42")) throw new Error(`Parking notes draft lost: got "${restoredNotes}"`);
+    await page.screenshot({ path: join(OUT, "10_draft_restored.png") });
+    console.log("[ok] Unsaved edits restored after close+reopen");
+
+    // Discard button clears the draft cleanly.
+    await page.getByTestId("discard-draft").click();
+    const clearedNick = await page.getByLabel(/nickname/i).inputValue();
+    if (clearedNick === draftValue) throw new Error("Discard did not clear the draft");
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    console.log("[ok] Discard clears the saved draft");
+  }
+}
+
+console.log("[ok] E2E: vehicle edit + change-photo (a11y, failure retry, cancel, cache sync, draft)");
 await browser.close();

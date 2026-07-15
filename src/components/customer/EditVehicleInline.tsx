@@ -85,24 +85,60 @@ export function EditVehicleDialog({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [restoredDraft, setRestoredDraft] = useState(false);
 
+  const draftKey = vehicle ? `uw:edit-veh-draft:${vehicle.id}` : null;
+
+  // On open: restore any unsaved draft from sessionStorage; otherwise seed
+  // from the vehicle. Drafts survive dialog close/reopen so a slip of the
+  // finger on Cancel doesn't wipe minutes of typing.
   useEffect(() => {
     if (!vehicle || !open) return;
-    setForm({
-      registration_number: vehicle.registration_number ?? "",
-      nickname: vehicle.nickname ?? "",
-      color: vehicle.color ?? "",
-      parking_notes: vehicle.parking_notes ?? "",
-      is_default: !!vehicle.is_default,
-    });
+    let restored = false;
+    if (draftKey) {
+      try {
+        const raw = sessionStorage.getItem(draftKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as EditForm;
+          setForm({
+            registration_number: parsed.registration_number ?? "",
+            nickname: parsed.nickname ?? "",
+            color: parsed.color ?? "",
+            parking_notes: parsed.parking_notes ?? "",
+            is_default: !!parsed.is_default,
+          });
+          setDirty(true);
+          restored = true;
+        }
+      } catch { /* ignore corrupt draft */ }
+    }
+    if (!restored) {
+      setForm({
+        registration_number: vehicle.registration_number ?? "",
+        nickname: vehicle.nickname ?? "",
+        color: vehicle.color ?? "",
+        parking_notes: vehicle.parking_notes ?? "",
+        is_default: !!vehicle.is_default,
+      });
+      setDirty(false);
+    }
+    setRestoredDraft(restored);
     setErrors({});
     setSaveError(null);
-    setDirty(false);
   }, [vehicle?.id, open]);
+
+  // Persist the working draft while the dialog is open and dirty.
+  useEffect(() => {
+    if (!open || !dirty || !draftKey) return;
+    try { sessionStorage.setItem(draftKey, JSON.stringify(form)); } catch { /* quota */ }
+  }, [form, dirty, open, draftKey]);
+
+  const clearDraft = () => { if (draftKey) { try { sessionStorage.removeItem(draftKey); } catch { /* noop */ } } };
 
   const setField = <K extends keyof EditForm>(key: K, val: EditForm[K]) => {
     setForm((f) => ({ ...f, [key]: val }));
     setDirty(true);
+    setRestoredDraft(false);
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
     if (saveError) setSaveError(null);
   };
@@ -125,6 +161,7 @@ export function EditVehicleDialog({
     },
     onSuccess: () => {
       toast.success("Vehicle updated");
+      clearDraft();
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
       qc.invalidateQueries({ queryKey: ["customer-vehicle", vehicle?.id] });
       qc.invalidateQueries({ queryKey: ["vehicle-image-url"] });
@@ -136,7 +173,6 @@ export function EditVehicleDialog({
       onOpenChange(false);
     },
     onError: (e: unknown) => {
-      // Preserve form state — user can retry without re-entering.
       setSaveError(e instanceof Error ? e.message : "Could not save. Check your connection and retry.");
     },
   });
@@ -150,7 +186,6 @@ export function EditVehicleDialog({
         if (!next[k]) next[k] = issue.message;
       }
       setErrors(next);
-      // Move focus to first invalid field on next tick.
       queueMicrotask(() => {
         const firstKey = Object.keys(next)[0];
         if (firstKey) {
@@ -163,12 +198,28 @@ export function EditVehicleDialog({
     save.mutate(result.data);
   };
 
+  // Close without confirm(): unsaved edits are saved as a draft and
+  // restored the next time the dialog opens. An explicit "Discard draft"
+  // button gives the user an escape hatch.
   const attemptClose = (nextOpen: boolean) => {
     if (save.isPending) return;
-    if (!nextOpen && dirty) {
-      if (!confirm("Discard unsaved changes?")) return;
-    }
     onOpenChange(nextOpen);
+  };
+
+  const discardDraft = () => {
+    if (!vehicle) return;
+    clearDraft();
+    setForm({
+      registration_number: vehicle.registration_number ?? "",
+      nickname: vehicle.nickname ?? "",
+      color: vehicle.color ?? "",
+      parking_notes: vehicle.parking_notes ?? "",
+      is_default: !!vehicle.is_default,
+    });
+    setDirty(false);
+    setRestoredDraft(false);
+    setErrors({});
+    setSaveError(null);
   };
 
   if (!vehicle) return null;
@@ -182,6 +233,28 @@ export function EditVehicleDialog({
             Update registration, nickname, colour and parking notes. Press Escape to cancel.
           </DialogDescription>
         </DialogHeader>
+
+        {restoredDraft && (
+          <div
+            role="status"
+            data-testid="restored-draft-banner"
+            className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-primary"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <div className="flex-1">
+              <p className="font-medium">Unsaved changes restored</p>
+              <p className="mt-0.5 opacity-90">We kept your edits from last time.</p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 underline underline-offset-2 hover:opacity-80"
+              onClick={discardDraft}
+              data-testid="discard-draft"
+            >
+              Discard
+            </button>
+          </div>
+        )}
 
         <form
           onSubmit={(e) => { e.preventDefault(); handleSave(); }}
