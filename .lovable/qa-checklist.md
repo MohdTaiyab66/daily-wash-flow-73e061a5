@@ -34,18 +34,19 @@ Updated each turn. See `.lovable/plan.md` for stage order.
 - [x] Refresh preserves default (backfill migration ran; localStorage now persists across reloads)
 - [ ] Logout → login preserves default (revisit in Turn 10 alongside multi-vehicle persistence)
 
-## 3. Payments (Turn 3)
+## 3. Payments (Turn 3 — complete)
 
-- [ ] UPI shown first in web Razorpay checkout
-- [ ] Native APK uses `capacitor-razorpay` (real device only)
-- [ ] Payment cancelled → no subscription, no credits, no booking, no assignment
-- [ ] Payment failed → toast surfaces reason, retry works, no side effects
-- [ ] Payment pending (timeout) → no activation until verified
-- [ ] Duplicate payment prevented (idempotency by order_id)
-- [ ] Refresh during payment → recovery via `verifyRazorpayPayment` or webhook
-- [ ] Webhook signature verified before activation
-- [ ] `activate_paid_booking` is idempotent
-- [ ] Success toast copy matches business rule ("Subscription activated · Waiting for area assignment")
+- [x] UPI shown first + expanded in web Razorpay checkout (`display.blocks.upi_first`, sequence starts with UPI)
+- [x] Native APK path uses `capacitor-razorpay` (shipped previous turn; real-device sign-off still owned by you)
+- [x] Payment cancelled → `ondismiss` rejects → no activation → booking stays `pending`, no subscription/credits/assignment created (prepaid invariant preserved)
+- [x] Payment failed → `payment.failed` handler rejects with reason surfaced via toast; Razorpay in-modal retry enabled (max 3)
+- [x] Pending UPI collect → webhook path activates only after `payment.captured` fires (see BUG-P1 fix below)
+- [x] Duplicate payment prevented at both order-creation time (open-subscription guard in `createRazorpayOrder`) AND activation time (`activate_paid_booking` sets `v_refund_required` and inserts a `refund_processing` customer notification instead of creating a second subscription)
+- [x] Refresh during payment → same `razorpay_order_id` reused via `existingOrderId` short-circuit in `createRazorpayOrder`; verify path still runs via customer callback OR webhook
+- [x] Webhook signature verified via HMAC-SHA256 + `timingSafeEqual` before any DB work
+- [x] `activate_paid_booking` idempotent via `ON CONFLICT(booking_id) DO UPDATE` on subscriptions and `ON CONFLICT (booking_id, provider)` on payments
+- [x] Success toast copy correct ("Subscription activated · Waiting for area assignment" / "Payment successful · Booking confirmed")
+- [!] **BUG-P1 FIXED (Critical)**: Razorpay webhook processed **any** event carrying `payload.payment.entity` — including `payment.failed` and `payment.authorized` — and fed it straight into `activate_paid_booking`. A failed payment would therefore have marked the booking `paid` and created a subscription. Gated activation on `event === 'payment.captured' | 'order.paid'` AND `entity.status === 'captured'`; all other events return `{ok:true, ignored:true, reason:'not_captured'}` so Razorpay stops retrying without side effects.
 
 ## 4. Subscription + Credits + Daily Shine (Turn 4)
 
