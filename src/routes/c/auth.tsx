@@ -64,7 +64,19 @@ function CustomerAuth() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (data.session) { goAfterAuth(); return; }
-    if (error) setStep("name");
+    // Only treat "user does not exist" as a signup path. Surface other errors
+    // (rate-limit, network, unconfirmed email) so users aren't silently sent
+    // to the name step and told to sign up again.
+    const msg = (error?.message ?? "").toLowerCase();
+    const isNewUser =
+      msg.includes("invalid login credentials") ||
+      msg.includes("invalid_credentials") ||
+      msg.includes("user not found");
+    if (isNewUser) {
+      setStep("name");
+    } else if (error) {
+      toast.error(error.message || "Could not sign in. Please try again.");
+    }
   };
 
   const signUp = async () => {
@@ -99,7 +111,7 @@ function CustomerAuth() {
       <div className="relative bg-primary text-primary-foreground rounded-b-[36px] px-5 pt-8 pb-10">
         {step !== "phone" && (
           <button
-            onClick={() => setStep("phone")}
+            onClick={() => { setOtp(""); setName(""); setStep("phone"); }}
             className="absolute left-5 top-6 inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-sm font-semibold backdrop-blur"
           >
             <ArrowLeft className="h-4 w-4" /> Back
