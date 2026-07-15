@@ -10,6 +10,7 @@ import {
   Star,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 
