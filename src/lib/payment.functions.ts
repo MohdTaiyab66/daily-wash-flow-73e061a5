@@ -172,5 +172,16 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       },
     });
     if (error) throw new Error(error.message);
+
+    // Instant partner dispatch: sweep pending offers immediately so the newly
+    // paid subscription reaches partners without waiting for the cron tick.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await (supabaseAdmin as any).rpc("sweep_subscription_offers");
+    } catch (e) {
+      console.warn("[payment] sweep_subscription_offers failed (non-fatal)", e);
+    }
+
     return result as { ok: boolean; booking_id: string; payment_id: string; subscription_id?: string; queue_id?: string };
   });
+
