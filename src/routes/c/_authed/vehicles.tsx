@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Car } from "lucide-react";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Car, ChevronRight, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { useVehicleImageUrl } from "@/lib/vehicle-image";
 
 export const Route = createFileRoute("/c/_authed/vehicles")({
   ssr: false,
@@ -20,56 +20,37 @@ type Vehicle = {
   category: string;
   registration_number: string;
   color: string | null;
-  image_url?: string | null;
+  image_path: string | null;
+  is_default: boolean | null;
+  nickname: string | null;
 };
 
 function VehiclesPage() {
-  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async (): Promise<Vehicle[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("customer_vehicles")
-        .select("*")
+        .select("id, make, model, category, registration_number, color, image_path, is_default, nickname, created_at")
+        .order("is_default", { ascending: false })
         .order("created_at");
       if (error) throw error;
-      const rows = (data ?? []) as Vehicle[];
-      const catalogImages = await Promise.all(
-        rows.map(async (v) => {
-          const { data: img } = await supabase
-            .from("vehicle_catalog")
-            .select("image_url")
-            .ilike("make", v.make)
-            .ilike("model", v.model)
-            .limit(1)
-            .maybeSingle();
-          return { ...v, image_url: img?.image_url ?? null };
-        }),
-      );
-      return catalogImages;
+      return (data ?? []) as Vehicle[];
     },
-  });
-
-  const del = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("customer_vehicles").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Vehicle removed");
-      qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to remove"),
   });
 
   return (
-    <div className="px-5 pt-6">
+    <div className="px-5 pt-6 pb-24">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">My vehicles</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">My vehicles</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tap a vehicle to edit its details or change photo.
+          </p>
+        </div>
         <Button asChild size="sm">
           <Link to="/c/vehicles/add">
-            <Plus className="mr-1 h-4 w-4" />
-            Add
+            <Plus className="mr-1 h-4 w-4" /> Add
           </Link>
         </Button>
       </div>
@@ -89,37 +70,45 @@ function VehiclesPage() {
           </div>
         )}
         {(q.data ?? []).map((v) => (
-          <div
-            key={v.id}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
-          >
-            <VehicleAvatar
-              imageUrl={v.image_url}
-              make={v.make}
-              model={v.model}
-              color={v.color}
-              className="h-14 w-16 rounded-2xl"
-            />
-            <div className="min-w-0">
-              <div className="font-semibold">
-                {v.make} {v.model}
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {v.registration_number}
-                {v.color ? ` · ${v.color}` : ""} · {v.model.toUpperCase()} —{" "}
-                {vehicleBodyLabel(v.make, v.model, v.category)}
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => confirm(`Remove ${v.make} ${v.model}?`) && del.mutate(v.id)}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
+          <VehicleRow key={v.id} v={v} />
         ))}
       </div>
     </div>
+  );
+}
+
+function VehicleRow({ v }: { v: Vehicle }) {
+  const imgQ = useVehicleImageUrl({ make: v.make, model: v.model, imagePath: v.image_path });
+  const primary = v.nickname?.trim() || `${v.make} ${v.model}`;
+  return (
+    <Link
+      to="/c/vehicles/$id"
+      params={{ id: v.id }}
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-accent/40"
+    >
+      <VehicleAvatar
+        imageUrl={imgQ.data}
+        make={v.make}
+        model={v.model}
+        color={v.color}
+        category={v.category}
+        className="h-14 w-16 rounded-2xl"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-semibold">{primary}</span>
+          {v.is_default && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+              <Star className="h-2.5 w-2.5" /> Default
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+          {v.nickname ? `${v.make} ${v.model} · ` : ""}
+          {v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
