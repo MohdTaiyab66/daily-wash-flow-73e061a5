@@ -79,7 +79,7 @@ async function weeklyIncludedWashReminder(sb: any) {
       {
         user_id: a.user_id,
         vehicle_id: a.vehicle_id,
-        type: "weekly_wash_reminder",
+        type: "weekly_included_reminder",
         title: "Washes still available",
         body: `You have ${a.remaining} included wash${a.remaining === 1 ? "" : "es"} remaining this cycle.`,
         link: "/c/subscriptions",
@@ -117,7 +117,7 @@ async function renewalReminder(sb: any) {
         ? {
             user_id: s.user_id,
             vehicle_id: s.vehicle_id ?? null,
-            type: "subscription_expiring_soon",
+            type: "expiry_reminder",
             title: "Your plan ends in 3 days",
             body: "Your plan won't auto-renew. Tap to reactivate before it ends.",
             link: "/c/subscriptions",
@@ -126,7 +126,7 @@ async function renewalReminder(sb: any) {
         : {
             user_id: s.user_id,
             vehicle_id: s.vehicle_id ?? null,
-            type: "subscription_renewing_soon",
+            type: "renewal_reminder",
             title: "Your plan renews in 3 days",
             body: "Your Urban Wash plan will auto-renew in 3 days. Manage from My Plan.",
             link: "/c/subscriptions",
