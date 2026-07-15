@@ -10,6 +10,7 @@ import {
   Star,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -381,6 +383,12 @@ export function ChangePhotoDialog({
   const [chooserError, setChooserError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Upload progress + cancel state
+  const [uploadProgress, setUploadProgress] = useState(0); // 0..1
+  const [uploadStalled, setUploadStalled] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const stalledTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Crop state
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -400,6 +408,8 @@ export function ChangePhotoDialog({
     setCroppedArea(null);
     setChooserError(null);
     setUploadError(null);
+    setUploadProgress(0);
+    setUploadStalled(false);
   }, [cleanupUrls]);
 
   useEffect(() => {
@@ -452,13 +462,58 @@ export function ChangePhotoDialog({
     mutationFn: async () => {
       if (!vehicle) throw new Error("No vehicle selected");
       if (!processedBlob) throw new Error("Choose a photo first");
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("You're signed out — sign in again to save the photo");
-      const path = `${u.user.id}/${vehicle.id}/${Date.now()}.jpg`;
-      const { error: upErr } = await supabase.storage
-        .from("vehicle-images")
-        .upload(path, processedBlob, { upsert: false, contentType: OUTPUT_MIME });
-      if (upErr) throw upErr;
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      const userId = sess.session?.user?.id;
+      if (!accessToken || !userId) throw new Error("You're signed out — sign in again to save the photo");
+
+      const path = `${userId}/${vehicle.id}/${Date.now()}.jpg`;
+      const supaUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const publishable = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const endpoint = `${supaUrl}/storage/v1/object/vehicle-images/${path}`;
+
+      // Reset progress + arm stalled-detector.
+      setUploadProgress(0);
+      setUploadStalled(false);
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const armStalledTimer = () => {
+        if (stalledTimerRef.current) clearTimeout(stalledTimerRef.current);
+        stalledTimerRef.current = setTimeout(() => setUploadStalled(true), 20_000);
+      };
+      armStalledTimer();
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", endpoint);
+        xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+        xhr.setRequestHeader("apikey", publishable);
+        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("Content-Type", OUTPUT_MIME);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadProgress(e.loaded / e.total);
+          setUploadStalled(false);
+          armStalledTimer();
+        };
+        xhr.onload = () => {
+          if (stalledTimerRef.current) clearTimeout(stalledTimerRef.current);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploadProgress(1);
+            resolve();
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onabort = () => {
+          const err = new Error("Upload cancelled");
+          (err as any).name = "AbortError";
+          reject(err);
+        };
+        controller.signal.addEventListener("abort", () => xhr.abort());
+        xhr.send(processedBlob);
+      });
+
       const previous = vehicle.image_path;
       const { error: dbErr } = await (supabase as any)
         .from("customer_vehicles")
@@ -487,9 +542,19 @@ export function ChangePhotoDialog({
     },
     onError: (e: unknown) => {
       // Keep the crop/preview so the user can retry without re-picking.
-      setUploadError(e instanceof Error ? e.message : "Upload failed. Check your connection and retry.");
+      const isAbort = e instanceof Error && (e.name === "AbortError" || /cancelled/i.test(e.message));
+      setUploadError(isAbort ? "Upload cancelled. You can try again anytime." : (e instanceof Error ? e.message : "Upload failed. Check your connection and retry."));
+    },
+    onSettled: () => {
+      abortRef.current = null;
+      if (stalledTimerRef.current) { clearTimeout(stalledTimerRef.current); stalledTimerRef.current = null; }
+      setUploadStalled(false);
     },
   });
+
+  const cancelUpload = () => {
+    if (abortRef.current) abortRef.current.abort();
+  };
 
   const remove = useMutation({
     mutationFn: async () => {
@@ -652,12 +717,47 @@ export function ChangePhotoDialog({
           <div className="space-y-3">
             <div className="overflow-hidden rounded-2xl border border-border bg-muted">
               <img
+                data-testid="photo-preview-image"
                 src={previewUrl}
                 alt={`Preview of new photo for ${vehicle?.make ?? ""} ${vehicle?.model ?? ""}`.trim()}
                 className="mx-auto block max-h-72 w-full object-cover"
               />
             </div>
-            {uploadError && (
+
+            {upload.isPending && (
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label={`Uploading photo, ${Math.round(uploadProgress * 100)} percent`}
+                data-testid="upload-progress"
+                className="space-y-2 rounded-xl border border-border bg-card p-3"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Uploading photo…</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {Math.round(uploadProgress * 100)}%
+                  </span>
+                </div>
+                <Progress value={Math.round(uploadProgress * 100)} aria-hidden />
+                {uploadStalled && (
+                  <p className="text-[11px] text-amber-600">
+                    Upload seems slow. You can wait or cancel and retry.
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={cancelUpload}
+                  data-testid="cancel-upload"
+                >
+                  <X className="mr-2 h-3.5 w-3.5" aria-hidden /> Cancel upload
+                </Button>
+              </div>
+            )}
+
+            {uploadError && !upload.isPending && (
               <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <div className="flex-1">
@@ -685,7 +785,11 @@ export function ChangePhotoDialog({
                 ) : (
                   <Upload className="mr-2 h-4 w-4" aria-hidden />
                 )}
-                {uploadError ? "Retry upload" : "Use photo"}
+                {upload.isPending
+                  ? `Uploading ${Math.round(uploadProgress * 100)}%`
+                  : uploadError
+                    ? "Retry upload"
+                    : "Use photo"}
               </Button>
             </div>
           </div>

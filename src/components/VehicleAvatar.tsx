@@ -68,7 +68,7 @@ export function VehicleAvatar({
           className,
         )}
       >
-        <img src={imageUrl} alt={alt} className="h-full w-full object-cover" loading="lazy" />
+        <img data-testid="vehicle-avatar-image" src={imageUrl} alt={alt} className="h-full w-full object-cover" loading="lazy" />
         {color ? (
           <span
             aria-label={`${color} colour`}
