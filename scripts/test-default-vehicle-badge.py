@@ -151,14 +151,14 @@ async def main():
             await page.click('[data-testid="set-as-default-button"]')
             await page.wait_for_timeout(1500)
             await page.screenshot(path=str(OUT / "5a_after_click.png"))
-            dom_dump = await page.evaluate("() => Array.from(document.querySelectorAll('[data-sonner-toast], li[data-sonner-toast], ol[data-sonner-toaster]')).map(el => el.outerHTML.slice(0, 300))")
-            print("toast DOM:", dom_dump)
-            try:
-                toast_locator = page.locator('[data-sonner-toast]', has_text="is now your default")
-                await toast_locator.first.wait_for(timeout=5000)
+            toast_texts = await page.evaluate(
+                "() => Array.from(document.querySelectorAll('[data-sonner-toast]')).map(el => (el.textContent||'').trim())"
+            )
+            print("toast texts:", toast_texts)
+            if any("is now your default" in t for t in toast_texts):
                 ok("confirmation toast shown after setting default")
-            except Exception:
-                fail(f"expected confirmation toast not shown; dom={dom_dump}")
+            else:
+                fail(f"expected confirmation toast not shown; texts={toast_texts}")
             await page.screenshot(path=str(OUT / "5_toast.png"))
             # Now `alt` is the current default; `target` is not.
             current_default_id = alt["id"]
