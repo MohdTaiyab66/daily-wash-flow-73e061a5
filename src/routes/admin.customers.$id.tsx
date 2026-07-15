@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { adminDeleteCustomer, getCustomerProfile, adminSetCustomerPayment, adminSetVehicleDiscountApproval } from "@/lib/admin.functions";
+import { getUserPaymentAttempts } from "@/lib/payment.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { MonthlyWashTracker } from "@/components/MonthlyWashTracker";
 import { ArrowLeft, Car, Phone, MapPin, Calendar, Clock, User as UserIcon, AlertTriangle, ParkingCircle, XCircle, Trash2, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { VehicleImage } from "@/components/VehicleImage";
+
 
 
 
@@ -312,9 +314,71 @@ function CustomerProfilePage() {
           </Card>
         )}
       </Section>
+
+      <PaymentAttemptsSection phone={c.phone} />
     </div>
   );
 }
+
+function PaymentAttemptsSection({ phone }: { phone: string | null | undefined }) {
+  const fn = useServerFn(getUserPaymentAttempts);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-payment-attempts", phone],
+    enabled: !!phone,
+    queryFn: () => fn({ data: { phone: phone as string, limit: 20 } }),
+  });
+  const attempts = data?.attempts ?? [];
+  const outcomeVariant = (o: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (o === "success") return "default";
+    if (o === "failure" || o === "timeout") return "destructive";
+    return "secondary";
+  };
+  return (
+    <Section title={`Payment attempts (${attempts.length})`}>
+      {!phone ? (
+        <p className="text-sm text-muted-foreground">No phone on file — cannot look up attempts.</p>
+      ) : isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : attempts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No payment attempts recorded.</p>
+      ) : (
+        <Card className="divide-y divide-border">
+          {attempts.map((a: any) => (
+            <div key={a.id} className="flex items-start justify-between gap-3 p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={outcomeVariant(a.outcome)}>{a.outcome}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Attempt #{a.attempt_no} · {a.channel}
+                  </span>
+                  <Link
+                    to="/admin/service/$id"
+                    params={{ id: a.booking_id }}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Booking {String(a.booking_id).slice(0, 8)}…
+                  </Link>
+                </div>
+                {a.error_message ? (
+                  <p className="mt-1 text-xs text-destructive/90 break-words">
+                    {a.error_code ? `[${a.error_code}] ` : ""}{a.error_message}
+                  </p>
+                ) : null}
+                {a.provider_payment_id ? (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">Payment id: {a.provider_payment_id}</p>
+                ) : null}
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {new Date(a.created_at).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
+    </Section>
+  );
+}
+
 
 function Stat({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (

@@ -1,10 +1,15 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Minus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  logPaymentAttempt,
+  getBookingPaymentStatus,
+} from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +19,7 @@ import { toast } from "sonner";
 import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -89,6 +95,8 @@ function ServiceDetail() {
   const qc = useQueryClient();
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
+  const logAttemptFn = useServerFn(logPaymentAttempt);
+  const getStatusFn = useServerFn(getBookingPaymentStatus);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
   const [date, setDate] = useState<string>(() => nextBookableDateIso());
@@ -99,6 +107,25 @@ function ServiceDetail() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+  // Payment-specific state: inline retry banner + pending checkout context.
+  type PendingCheckout = {
+    bookingId: string;
+    keyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    serviceName: string;
+    isSubscription: boolean;
+    prefillEmail: string;
+    prefillContact: string;
+    attemptNo: number;
+  };
+  const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
+  const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  const [paying, setPaying] = useState(false);
+  const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
+  useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
+
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
@@ -404,84 +431,162 @@ function ServiceDetail() {
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
-      // Native Android APK → try Razorpay's native SDK first. Fall back to the
-      // web checkout inside the WebView when the native plugin isn't available
-      // in the installed APK (e.g. "Checkout plugin is not implemented on android").
-      const { isNative } = await import("@/lib/platform");
-      const runWebCheckout = async () => {
-        await loadRazorpayCheckout();
-        await new Promise<void>((resolve, reject) => {
-          const checkout = new window.Razorpay!({
-            key: order.keyId,
-            amount: order.amount,
-            currency: order.currency,
-            name: "Urban Wash",
-            description: service.name,
-            order_id: order.orderId,
-            prefill: { email: prefillEmail, contact: prefillContact },
-            notes: { booking_id: String(bookingId) },
-            config: {
-              display: {
-                blocks: {
-                  upi_first: {
-                    name: "Pay using UPI",
-                    instruments: [
-                      { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
-                      { method: "upi", flows: ["collect"] },
-                      { method: "upi", flows: ["qr"] },
-                    ],
-                  },
-                  cards_block: { name: "Cards", instruments: [{ method: "card" }] },
-                  netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
-                  wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
+      const checkoutCtx: PendingCheckout = {
+        bookingId: String(bookingId),
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        serviceName: service.name,
+        isSubscription: service.service_type === "subscription",
+        prefillEmail,
+        prefillContact,
+        attemptNo: 1,
+      };
+      setPendingCheckout(checkoutCtx);
+      await runPayment(checkoutCtx, { isRetry: false });
+    } catch (err: any) {
+      fail(err?.message || "Could not confirm booking");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const safeLog = useCallback(async (row: {
+    bookingId: string;
+    channel: "native" | "web" | "unknown";
+    outcome: "started" | "success" | "failure" | "cancelled" | "retry" | "timeout";
+    attemptNo?: number;
+    errorCode?: string;
+    errorMessage?: string;
+    providerOrderId?: string;
+    providerPaymentId?: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    try {
+      await logAttemptFn({ data: row });
+    } catch (e) {
+      console.warn("[payment] attempt log failed (non-fatal)", e);
+    }
+  }, [logAttemptFn]);
+
+  /**
+   * Poll the server for payment reconciliation. Razorpay may finalize the
+   * payment via webhook even if the checkout window failed to return a
+   * response to the client. Polls every 2s up to ~60s, returns true if
+   * the booking flips to `paid` (or a subscription is created).
+   */
+  const pollForSuccess = useCallback(async (bookingId: string): Promise<boolean> => {
+    const abort = { cancelled: false };
+    pollAbortRef.current = abort;
+    const deadline = Date.now() + 60_000;
+    while (!abort.cancelled && Date.now() < deadline) {
+      try {
+        const s = await getStatusFn({ data: { bookingId } });
+        if (s.paymentStatus === "paid" || s.subscriptionId) return true;
+        if (s.latestAttempt?.outcome === "success") return true;
+      } catch (e) {
+        console.warn("[payment] status poll error (will retry)", e);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return false;
+  }, [getStatusFn]);
+
+  const runWebCheckout = useCallback((ctx: PendingCheckout) => {
+    return new Promise<void>((resolve, reject) => {
+      loadRazorpayCheckout().then(() => {
+        const checkout = new window.Razorpay!({
+          key: ctx.keyId,
+          amount: ctx.amount,
+          currency: ctx.currency,
+          name: "Urban Wash",
+          description: ctx.serviceName,
+          order_id: ctx.orderId,
+          prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
+          notes: { booking_id: ctx.bookingId },
+          config: {
+            display: {
+              blocks: {
+                upi_first: {
+                  name: "Pay using UPI",
+                  instruments: [
+                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
+                    { method: "upi", flows: ["collect"] },
+                    { method: "upi", flows: ["qr"] },
+                  ],
                 },
-                sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
-                preferences: { show_default_blocks: false },
-                hide: [{ method: "emi" }, { method: "paylater" }],
+                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
+                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
+                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
               },
+              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
+              preferences: { show_default_blocks: false },
+              hide: [{ method: "emi" }, { method: "paylater" }],
             },
-            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-            timeout: 600,
-            retry: { enabled: true, max_count: 3 },
-            modal: {
-              escape: true,
-              ondismiss: () => reject(new Error("Payment cancelled")),
-            },
-            handler: async (response: any) => {
-              try {
-                await verifyPayment({
-                  data: {
-                    bookingId: String(bookingId),
-                    razorpayOrderId: response.razorpay_order_id,
-                    razorpayPaymentId: response.razorpay_payment_id,
-                    razorpaySignature: response.razorpay_signature,
-                  },
-                });
-                resolve();
-              } catch (error) {
-                reject(error);
-              }
-            },
-          });
-          (checkout as any).on?.("payment.failed", (resp: any) => {
-            const desc = resp?.error?.description || "Payment failed. Please try again.";
-            reject(new Error(desc));
-          });
-          checkout.open();
+          },
+          method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
+          timeout: 600,
+          retry: { enabled: true, max_count: 3 },
+          modal: {
+            escape: true,
+            ondismiss: () => reject(new Error("Payment cancelled")),
+          },
+          handler: async (response: any) => {
+            try {
+              await verifyPayment({
+                data: {
+                  bookingId: ctx.bookingId,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
         });
-      };
+        (checkout as any).on?.("payment.failed", (resp: any) => {
+          const desc = resp?.error?.description || "Payment failed. Please try again.";
+          reject(new Error(desc));
+        });
+        checkout.open();
+      }).catch(reject);
+    });
+  }, [verifyPayment]);
 
-      const isPluginUnavailable = (err: any) => {
-        const msg = String(err?.message || err?.description || err || "").toLowerCase();
-        return (
-          msg.includes("not implemented") ||
-          msg.includes("not available") ||
-          msg.includes("unimplemented") ||
-          err?.code === "UNIMPLEMENTED"
-        );
-      };
+  const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
+    setPaymentError(null);
+    setPaying(true);
+    // Cancel any prior polling loop.
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
 
-      if (isNative()) {
+    const { isNative } = await import("@/lib/platform");
+    const nativeMode = isNative();
+    let channel: "native" | "web" | "unknown" = nativeMode ? "native" : "web";
+
+    await safeLog({
+      bookingId: ctx.bookingId,
+      channel,
+      outcome: opts.isRetry ? "retry" : "started",
+      attemptNo: ctx.attemptNo,
+      providerOrderId: ctx.orderId,
+    });
+
+    const isPluginUnavailable = (err: any) => {
+      const msg = String(err?.message || err?.description || err || "").toLowerCase();
+      return (
+        msg.includes("not implemented") ||
+        msg.includes("not available") ||
+        msg.includes("unimplemented") ||
+        err?.code === "UNIMPLEMENTED"
+      );
+    };
+
+    try {
+      if (nativeMode) {
         let nativeUnavailable = false;
         let nativeResp: any = null;
         try {
@@ -495,68 +600,130 @@ function ServiceDetail() {
             throw new Error("Native Razorpay plugin not available");
           }
           const result: any = await Checkout.open({
-            key: order.keyId,
-            amount: order.amount,
-            currency: order.currency,
+            key: ctx.keyId,
+            amount: ctx.amount,
+            currency: ctx.currency,
             name: "Urban Wash",
-            description: service.name,
-            order_id: order.orderId,
-            prefill: { email: prefillEmail, contact: prefillContact },
-            notes: { booking_id: String(bookingId) },
+            description: ctx.serviceName,
+            order_id: ctx.orderId,
+            prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
+            notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
           });
           nativeResp = result?.response ?? result;
         } catch (err: any) {
           if (nativeUnavailable || isPluginUnavailable(err)) {
             // Fall back to Razorpay Standard Checkout in the WebView.
-            await runWebCheckout();
+            await safeLog({
+              bookingId: ctx.bookingId,
+              channel: "native",
+              outcome: "failure",
+              attemptNo: ctx.attemptNo,
+              errorCode: "plugin_unimplemented",
+              errorMessage: String(err?.message ?? "Native Razorpay plugin not available"),
+            });
+            channel = "web";
+            await runWebCheckout(ctx);
           } else {
-            const desc = err?.message || err?.description || "Payment cancelled";
-            throw new Error(desc);
+            throw err;
           }
         }
         if (nativeResp) {
           if (!nativeResp.razorpay_payment_id) throw new Error("Payment cancelled");
           await verifyPayment({
             data: {
-              bookingId: String(bookingId),
-              razorpayOrderId: nativeResp.razorpay_order_id ?? order.orderId,
+              bookingId: ctx.bookingId,
+              razorpayOrderId: nativeResp.razorpay_order_id ?? ctx.orderId,
               razorpayPaymentId: nativeResp.razorpay_payment_id,
               razorpaySignature: nativeResp.razorpay_signature,
             },
           });
         }
       } else {
-        await runWebCheckout();
+        await runWebCheckout(ctx);
       }
 
-
-
-      if (service.service_type === "subscription") {
-        toast.success("Subscription activated · Waiting for area assignment", {
-          description: "We'll notify you once your first service is completed.",
-          duration: 6000,
-        });
-      } else {
-        toast.success("Payment successful · Booking confirmed", {
-          description: "We'll notify you when the service is completed.",
-          duration: 6000,
-        });
-      }
-      qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-      qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-      qc.invalidateQueries({ queryKey: ["sub-queue", currentUser.user.id] });
-      if (service.service_type === "subscription") {
-        await navigate({ to: "/c/subscriptions" });
-      } else {
-        await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
-      }
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: "success",
+        attemptNo: ctx.attemptNo,
+        providerOrderId: ctx.orderId,
+      });
+      await finalizeSuccess(ctx);
     } catch (err: any) {
-      fail(err?.message || "Could not confirm booking");
+      const cancelled = /cancelled/i.test(String(err?.message ?? ""));
+      // Even on cancel/failure, poll the server briefly — the webhook may
+      // have already reconciled the payment out-of-band.
+      const reconciled = await pollForSuccess(ctx.bookingId);
+      if (reconciled) {
+        await safeLog({
+          bookingId: ctx.bookingId,
+          channel,
+          outcome: "success",
+          attemptNo: ctx.attemptNo,
+          providerOrderId: ctx.orderId,
+          metadata: { reconciled_via: "polling" },
+        });
+        await finalizeSuccess(ctx);
+        return;
+      }
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: cancelled ? "cancelled" : "failure",
+        attemptNo: ctx.attemptNo,
+        errorCode: cancelled ? "user_cancelled" : "checkout_failed",
+        errorMessage: String(err?.message ?? err).slice(0, 500),
+      });
+      setPaymentError({
+        message: cancelled
+          ? "Checkout was cancelled. You can retry when you're ready."
+          : (err?.message || "Payment failed. Please try again."),
+        canRetry: true,
+      });
     } finally {
-      setSubmitting(false);
+      setPaying(false);
     }
-  };
+  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess]);
+
+  const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
+    if (ctx.isSubscription) {
+      toast.success("Subscription activated · Waiting for area assignment", {
+        description: "We'll notify you once your first service is completed.",
+        duration: 6000,
+      });
+    } else {
+      toast.success("Payment successful · Booking confirmed", {
+        description: "We'll notify you when the service is completed.",
+        duration: 6000,
+      });
+    }
+    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+    qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
+    setPendingCheckout(null);
+    setPaymentError(null);
+    if (ctx.isSubscription) {
+      await navigate({ to: "/c/subscriptions" });
+    } else {
+      await navigate({ to: "/c/bookings/$id", params: { id: ctx.bookingId } });
+    }
+  }, [navigate, qc]);
+
+  const onRetryPayment = useCallback(async () => {
+    if (!pendingCheckout || paying) return;
+    const next: PendingCheckout = { ...pendingCheckout, attemptNo: pendingCheckout.attemptNo + 1 };
+    setPendingCheckout(next);
+    await runPayment(next, { isRetry: true });
+  }, [pendingCheckout, paying, runPayment]);
+
+  const onDismissPaymentError = useCallback(() => {
+    setPaymentError(null);
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+  }, []);
+
 
 
   if (serviceQ.isLoading) {
@@ -788,6 +955,50 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {paymentError ? (
+            <div
+              role="alert"
+              data-testid="payment-error-banner"
+              className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-snug text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Payment couldn’t complete</div>
+                <div className="mt-0.5 text-[11px] text-destructive/90">{paymentError.message}</div>
+                {pendingCheckout ? (
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    Attempt {pendingCheckout.attemptNo} · Order {pendingCheckout.orderId.slice(-6)}
+                  </div>
+                ) : null}
+                <div className="mt-2 flex items-center gap-2">
+                  {paymentError.canRetry && pendingCheckout ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={onRetryPayment}
+                      disabled={paying}
+                      data-testid="payment-retry-btn"
+                      className="h-7 rounded-full px-3 text-[11px]"
+                    >
+                      {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                      Retry checkout
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onDismissPaymentError}
+                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                    data-testid="payment-error-dismiss"
+                  >
+                    <X className="mr-1 h-3 w-3" /> Dismiss
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
@@ -805,15 +1016,17 @@ function ServiceDetail() {
             <Button
               type="button"
               onClick={confirm}
-              disabled={submitting || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
+              disabled={submitting || paying || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
+              data-testid="pay-button"
             >
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
 
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />

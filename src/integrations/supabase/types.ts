@@ -2494,6 +2494,69 @@ export type Database = {
           },
         ]
       }
+      payment_attempts: {
+        Row: {
+          attempt_no: number
+          booking_id: string
+          channel: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          outcome: string
+          provider: string
+          provider_order_id: string | null
+          provider_payment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_no?: number
+          booking_id: string
+          channel: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          outcome: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_no?: number
+          booking_id?: string
+          channel?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          outcome?: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_vehicle_audit"
+            referencedColumns: ["booking_id"]
+          },
+        ]
+      }
       payment_transactions: {
         Row: {
           amount: number | null

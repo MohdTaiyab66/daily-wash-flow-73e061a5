@@ -5,12 +5,21 @@
 import { Capacitor } from "@capacitor/core";
 
 export function isNative(): boolean {
+  // Dev/E2E override — lets Playwright exercise both native and web checkout
+  // branches without booting an Android emulator. Gated by import.meta.env.DEV
+  // so it can never affect a production build.
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const w = window as unknown as { __UW_FORCE_NATIVE?: boolean; __UW_FORCE_WEB?: boolean };
+    if (w.__UW_FORCE_NATIVE) return true;
+    if (w.__UW_FORCE_WEB) return false;
+  }
   try {
     return Capacitor.isNativePlatform();
   } catch {
     return false;
   }
 }
+
 
 export function nativePlatform(): "android" | "ios" | "web" {
   try {
