@@ -448,7 +448,7 @@ export function BookAWashSheet({
           </div>
         )}
 
-        {!nothingLeft && (
+        {!nothingLeft && !noActivePlan && (
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
