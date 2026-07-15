@@ -236,9 +236,13 @@ function MyPlanPage() {
     },
   });
 
-  const recent = all.slice(0, 8);
-  const completedCount = all.filter((b) => b.status === "completed").length;
-  const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
+  // Recent service list must only reflect paid activity. Never surface
+  // service/booking cards for unpaid subscription attempts.
+  const paidAll = all.filter((b) => b.payment_status === "paid");
+  const recent = paidAll.slice(0, 8);
+  const completedCount = paidAll.filter((b) => b.status === "completed").length;
+  const pendingCount = paidAll.filter((b) => b.status === "pending" || b.status === "scheduled").length;
+
 
   const selectedVehicle = vehiclesQ.data?.find((v) => v.id === selectedVehicleId) ?? null;
   const vehicleLabel = selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : null;
