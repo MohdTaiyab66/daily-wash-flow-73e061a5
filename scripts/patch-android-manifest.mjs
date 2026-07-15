@@ -44,10 +44,33 @@ xml = xml.replace(
   },
 );
 
-if (!xml.includes("com.google.android.apps.maps")) {
+// <queries> block — required on Android 11+ (API 30+) so the Razorpay
+// native SDK can detect installed UPI apps (Google Pay, PhonePe, Paytm,
+// BHIM, etc.) via PackageManager. Without an explicit UPI intent query
+// here, Android returns an empty list of UPI handlers and the Razorpay
+// checkout hides the UPI payment option entirely inside the APK.
+if (!xml.includes("<!-- urbanwash-queries -->")) {
+  // Remove any legacy maps-only <queries> block so we can replace it with
+  // the expanded version below.
+  xml = xml.replace(/\n?\s*<queries>[\s\S]*?<\/queries>\n?/, "\n");
   const queries = `
+    <!-- urbanwash-queries -->
     <queries>
         <package android:name="com.google.android.apps.maps" />
+        <!-- UPI apps (Android 11+ package visibility) -->
+        <package android:name="com.google.android.apps.nbu.paisa.user" />
+        <package android:name="com.phonepe.app" />
+        <package android:name="net.one97.paytm" />
+        <package android:name="in.org.npci.upiapp" />
+        <package android:name="in.amazon.mShop.android.shopping" />
+        <package android:name="com.myairtelapp" />
+        <package android:name="com.mobikwik_new" />
+        <package android:name="com.freecharge.android" />
+        <package android:name="com.csam.icici.bank.imobile" />
+        <package android:name="com.axis.mobile" />
+        <package android:name="com.sbi.upi" />
+        <package android:name="com.enstage.wibmo.hdfc" />
+        <package android:name="com.msf.kbank.mobile" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
@@ -55,6 +78,14 @@ if (!xml.includes("com.google.android.apps.maps")) {
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="google.navigation" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" android:host="pay" />
         </intent>
     </queries>
 `;
