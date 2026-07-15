@@ -24,6 +24,7 @@ import { useAreaAvailability, isServiceAllowed } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
+import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
