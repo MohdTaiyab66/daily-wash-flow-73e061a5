@@ -158,7 +158,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            by {service.partner_name ?? "your partner"} · {service.vehicle_label}
+            {service.vehicle_label}
           </p>
           <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {completed.toLocaleDateString()} · {completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
