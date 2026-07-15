@@ -275,9 +275,6 @@ function BookingDetail() {
                 </span>
               )}
             </div>
-            {completion.data?.partner_name && (
-              <p className="mt-1 text-xs text-muted-foreground">By {completion.data.partner_name}</p>
-            )}
             {photosVisible ? (
               <div className="mt-3">
                 {completion.data && completion.data.photos.length > 0 ? (
