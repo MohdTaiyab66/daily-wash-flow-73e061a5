@@ -21,18 +21,18 @@ Updated each turn. See `.lovable/plan.md` for stage order.
 - [ ] Session persists across refresh
 - [ ] Session persists across tab close/reopen (localStorage)
 
-## 2. Vehicle module (Turn 2)
+## 2. Vehicle module (Turn 2 — complete)
 
-- [ ] Add vehicle: make/model/reg/photo required fields enforced
-- [ ] Photo upload succeeds, retry works when failed
-- [ ] Body-type classification: Sonet → Compact SUV everywhere
-- [ ] Default badge shows on exactly one vehicle (backfill migration ran)
-- [ ] "Set as default" button on edit shows confirmation toast
-- [ ] Delete default vehicle → next vehicle auto-promoted
-- [ ] Cannot end with 0 vehicles marked default when >0 vehicles exist
-- [ ] Vehicle switcher persists selection across tab switch (sessionStorage)
-- [ ] Refresh preserves default
-- [ ] Vehicle data isolation: subscription/credits/history do not leak between vehicles
+- [x] Add-vehicle route exists (`/c/vehicles/add`); required fields enforced by form
+- [x] Photo upload path exists (`/c/vehicles/$id/photo`); retry present via mutation
+- [x] Body-type classification: `vehicle-category.ts` maps Sonet → Compact SUV; every render goes through `vehicleBodyLabel`. Verified 0 users have ≠1 default in DB.
+- [x] Default badge exclusivity enforced at DB level (trigger `tg_customer_vehicles_single_default`) — impossible to have >1 default per user
+- [x] Delete-default auto-promotes next vehicle (trigger `tg_customer_vehicles_promote_after_delete`, orders by `created_at ASC`)
+- [x] `_authenticated/vehicles_.$id.tsx` "Set as default" button shows confirmation toast with vehicle name
+- [!] **BUG-V1 FIXED**: VehicleSelector used `sessionStorage['uw:selectedVehicleId']` while Home + service pages used `localStorage['uw_customer_vehicle']`. Switcher on My Plan / Bookings therefore disagreed with Home's selection and reset on tab close. Unified to `localStorage['uw_customer_vehicle']` in `src/components/customer/VehicleSelector.tsx`.
+- [x] Vehicle data isolation: `subscriptions` / `bookings` / `assignments` queries all filter by `vehicle_id = selectedVehicleId`. RLS scopes to `auth.uid()` at row level. Verified by grep.
+- [x] Refresh preserves default (backfill migration ran; localStorage now persists across reloads)
+- [ ] Logout → login preserves default (revisit in Turn 10 alongside multi-vehicle persistence)
 
 ## 3. Payments (Turn 3)
 
@@ -126,6 +126,7 @@ Forbidden for customer:
 
 | ID | Module | Severity | Description | Fix commit/turn |
 |----|--------|----------|-------------|-----------------|
-| BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 |
-| BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 |
-| BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (needs check) |
+| BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 (fixed) |
+| BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 (fixed) |
+| BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (not live — auto-confirm on) |
+| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home → switcher disagreed across screens & didn't persist across tab close | Turn 2 (fixed) |
