@@ -85,7 +85,7 @@ export function RecentServiceFeed({
       );
       if (fresh.length > 0) {
         fresh.forEach((s) =>
-          toast.success(`${s.service_name ?? "Wash"} completed by ${s.partner_name ?? "your partner"}`, {
+          toast.success(`${s.service_name ?? "Wash"} completed`, {
             description: `Tap My Plan to see photos. Report any issue within 2 hours.`,
           }),
         );
