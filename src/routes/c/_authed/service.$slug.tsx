@@ -400,82 +400,104 @@ function ServiceDetail() {
       }
 
 
-      await loadRazorpayCheckout();
       const order = await createOrder({ data: { bookingId: String(bookingId) } });
-      await new Promise<void>((resolve, reject) => {
-        const checkout = new window.Razorpay!({
+      const prefillEmail = currentUser.user.email ?? "";
+      const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
+
+      // Native Android APK → use Razorpay's native SDK. The SDK renders native
+      // UPI app tiles (GPay / PhonePe / Paytm / BHIM) directly from installed
+      // apps on the device, which the web checkout cannot do.
+      const { isNative } = await import("@/lib/platform");
+      if (isNative()) {
+        const { Checkout } = await import("capacitor-razorpay");
+        const result: any = await (Checkout as any).open({
           key: order.keyId,
           amount: order.amount,
           currency: order.currency,
           name: "Urban Wash",
           description: service.name,
           order_id: order.orderId,
-          prefill: {
-            email: currentUser.user.email ?? "",
-            contact: (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string,
-          },
+          prefill: { email: prefillEmail, contact: prefillContact },
           notes: { booking_id: String(bookingId) },
-          // Force UPI to appear first and expanded on Razorpay Standard Checkout.
-          // `preferences.show_default_blocks: false` hides Razorpay's default
-          // ordering so our custom sequence wins; `hide` removes EMI (rarely
-          // relevant for small subscription amounts and adds noise).
-          config: {
-            display: {
-              blocks: {
-                upi_first: {
-                  name: "Pay using UPI",
-                  instruments: [
-                    // Google Pay / PhonePe / Paytm / BHIM app intents (Android web)
-                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
-                    // Manual UPI ID entry (Collect)
-                    { method: "upi", flows: ["collect"] },
-                    // QR fallback (desktop)
-                    { method: "upi", flows: ["qr"] },
-                  ],
+          theme: { color: "#FF6B1A" },
+        }).catch((err: any) => {
+          const desc = err?.message || err?.description || "Payment cancelled";
+          throw new Error(desc);
+        });
+        const resp = result?.response ?? result;
+        if (!resp?.razorpay_payment_id) throw new Error("Payment cancelled");
+        await verifyPayment({
+          data: {
+            bookingId: String(bookingId),
+            razorpayOrderId: resp.razorpay_order_id ?? order.orderId,
+            razorpayPaymentId: resp.razorpay_payment_id,
+            razorpaySignature: resp.razorpay_signature,
+          },
+        });
+      } else {
+        await loadRazorpayCheckout();
+        await new Promise<void>((resolve, reject) => {
+          const checkout = new window.Razorpay!({
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "Urban Wash",
+            description: service.name,
+            order_id: order.orderId,
+            prefill: { email: prefillEmail, contact: prefillContact },
+            notes: { booking_id: String(bookingId) },
+            // Force UPI to appear first and expanded on Razorpay Standard Checkout.
+            config: {
+              display: {
+                blocks: {
+                  upi_first: {
+                    name: "Pay using UPI",
+                    instruments: [
+                      { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
+                      { method: "upi", flows: ["collect"] },
+                      { method: "upi", flows: ["qr"] },
+                    ],
+                  },
+                  cards_block: { name: "Cards", instruments: [{ method: "card" }] },
+                  netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
+                  wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
                 },
-                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
-                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
-                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
+                sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
+                preferences: { show_default_blocks: false },
+                hide: [{ method: "emi" }, { method: "paylater" }],
               },
-              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
-              preferences: { show_default_blocks: false },
-              hide: [{ method: "emi" }, { method: "paylater" }],
             },
-          },
-          // Explicit method allowlist so nothing surprising slips in.
-          method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-          // Session timeout — keeps stuck payments from hanging forever.
-          timeout: 600,
-          // Let the user retry the same order after a failure.
-          retry: { enabled: true, max_count: 3 },
-          modal: {
-            escape: true,
-            ondismiss: () => reject(new Error("Payment cancelled")),
-          },
-          handler: async (response: any) => {
-            try {
-              await verifyPayment({
-                data: {
-                  bookingId: String(bookingId),
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature,
-                },
-              });
-              resolve();
-            } catch (error) {
-              reject(error);
-            }
-          },
+            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
+            timeout: 600,
+            retry: { enabled: true, max_count: 3 },
+            modal: {
+              escape: true,
+              ondismiss: () => reject(new Error("Payment cancelled")),
+            },
+            handler: async (response: any) => {
+              try {
+                await verifyPayment({
+                  data: {
+                    bookingId: String(bookingId),
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpaySignature: response.razorpay_signature,
+                  },
+                });
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+          });
+          (checkout as any).on?.("payment.failed", (resp: any) => {
+            const desc = resp?.error?.description || "Payment failed. Please try again.";
+            reject(new Error(desc));
+          });
+          checkout.open();
         });
-        // Payment-state hooks: any failure surfaces to the user; success is
-        // handled by `handler` above (server-side signature verify + activate).
-        (checkout as any).on?.("payment.failed", (resp: any) => {
-          const desc = resp?.error?.description || "Payment failed. Please try again.";
-          reject(new Error(desc));
-        });
-        checkout.open();
-      });
+      }
+
 
       toast.success("Payment complete. Assigning your partner now.");
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
