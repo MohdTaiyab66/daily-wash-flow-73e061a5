@@ -11,7 +11,12 @@ export type SelectorVehicle = {
   is_default?: boolean | null;
 };
 
-const STORAGE_KEY = "uw:selectedVehicleId";
+// Unified with Home + service pages. Was sessionStorage — that caused the
+// vehicle switcher on My Plan / Bookings to disagree with Home's selection.
+const STORAGE_KEY = "uw_customer_vehicle";
+const store = () => {
+  try { return window.localStorage; } catch { return null; }
+};
 
 /**
  * Vehicle selector rendered in the top-right of My Plan / Bookings.
