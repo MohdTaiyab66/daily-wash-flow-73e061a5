@@ -330,7 +330,7 @@ export function BookAWashSheet({
           </div>
         )}
 
-        {!entQ.isLoading && available.length > 0 && (
+        {!entQ.isLoading && !noActivePlan && available.length > 0 && (
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Choose service</Label>
