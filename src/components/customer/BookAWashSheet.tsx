@@ -224,8 +224,8 @@ export function BookAWashSheet({
   const nothingLeft = !entQ.isLoading && available.length === 0;
 
   const picked = pickedKey ? CONFIG[pickedKey] : null;
-  const isMonday = new Date(date).getDay() === 1;
   const today = new Date().toISOString().slice(0, 10);
+  const noActivePlan = !subQ.isLoading && !subQ.data && !entQ.isLoading;
 
   const confirm = async () => {
     if (!pickedKey || !picked) {
@@ -238,10 +238,6 @@ export function BookAWashSheet({
     }
     if (!addressId) {
       toast.error("Add a service address first.");
-      return;
-    }
-    if (isMonday) {
-      toast.error("Daily Shine does not run on Mondays. Pick another date.");
       return;
     }
     const service = (svcQ.data ?? []).find((s) => s.slug === picked.slug);
