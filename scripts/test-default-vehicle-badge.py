@@ -110,6 +110,92 @@ async def main():
         if d and d[0]["id"] == target["id"]: ok("default moved to selected vehicle")
         else: fail("default did not move to target")
 
+        # --- Persistence after full reload ---
+        await page.reload(wait_until="domcontentloaded")
+        await page.wait_for_selector('[data-testid="vehicle-row"]')
+        reloaded = await read_state(page)
+        rd = [r for r in reloaded if r["isDefault"]]
+        rb = [r for r in reloaded if r["hasBadge"]]
+        if len(rd) == 1 and len(rb) == 1 and rd[0]["id"] == target["id"]:
+            ok("badge persists after list reload")
+        else:
+            fail(f"reload lost badge: defaults={len(rd)} badges={len(rb)}")
+
+        # Navigate list → edit → list; badge must still be correct
+        await page.goto(f"{BASE_URL}/c/vehicles/{target['id']}", wait_until="domcontentloaded")
+        await page.wait_for_selector('[data-testid="default-vehicle-card"]')
+        state = await page.get_attribute('[data-testid="default-vehicle-card"]', "data-is-default")
+        if state == "true": ok("edit screen still shows target as default after navigation")
+        else: fail("edit screen lost default flag after navigation")
+
+        await page.reload(wait_until="domcontentloaded")
+        await page.wait_for_selector('[data-testid="default-vehicle-card"]')
+        state = await page.get_attribute('[data-testid="default-vehicle-card"]', "data-is-default")
+        if state == "true": ok("edit screen still default after hard refresh")
+        else: fail("edit screen lost default after hard refresh")
+
+        await page.goto(f"{BASE_URL}/c/vehicles", wait_until="domcontentloaded")
+        await page.wait_for_selector('[data-testid="vehicle-row"]')
+        nav = await read_state(page)
+        if len([r for r in nav if r["hasBadge"]]) == 1 and next((r for r in nav if r["isDefault"]), {}).get("id") == target["id"]:
+            ok("badge still correct after list→edit→list navigation")
+        else:
+            fail("badge drifted after navigation")
+
+        # --- Toast: re-click Set as default on a different vehicle, capture toast ---
+        alt = next((r for r in reloaded if r["id"] != target["id"]), None)
+        if alt:
+            await page.goto(f"{BASE_URL}/c/vehicles/{alt['id']}", wait_until="domcontentloaded")
+            await page.wait_for_selector('[data-testid="set-as-default-button"]')
+            await page.click('[data-testid="set-as-default-button"]')
+            try:
+                await page.wait_for_selector(
+                    'text=/is now your default/i', timeout=4000,
+                )
+                ok("confirmation toast shown after setting default")
+            except Exception:
+                fail("expected confirmation toast not shown")
+            await page.screenshot(path=str(OUT / "5_toast.png"))
+            # Now `alt` is the current default; `target` is not.
+            current_default_id = alt["id"]
+        else:
+            current_default_id = target["id"]
+
+        # --- Delete current default → auto-promote another ---
+        pre_delete = await (await context.new_page()).close() or None  # noop; below uses page
+        await page.goto(f"{BASE_URL}/c/vehicles", wait_until="domcontentloaded")
+        await page.wait_for_selector('[data-testid="vehicle-row"]')
+        before_delete = await read_state(page)
+        if len(before_delete) < 2:
+            fail("need ≥2 vehicles to test delete-reassignment")
+        else:
+            await page.goto(f"{BASE_URL}/c/vehicles/{current_default_id}", wait_until="domcontentloaded")
+            await page.wait_for_selector('[data-testid="default-vehicle-card"]')
+            page.once("dialog", lambda d: asyncio.create_task(d.accept()))
+            # Remove button uses text; click by role
+            await page.get_by_role("button", name=lambda n: bool(n) and "Remove vehicle" in n).click()
+            # Wait for navigation back to list
+            await page.wait_for_url("**/c/vehicles", timeout=8000)
+            await page.wait_for_selector('[data-testid="vehicle-row"]')
+            await page.screenshot(path=str(OUT / "6_list_after_delete.png"))
+            after_delete = await read_state(page)
+            if len(after_delete) == len(before_delete) - 1:
+                ok(f"vehicle deleted (count {len(before_delete)} → {len(after_delete)})")
+            else:
+                fail(f"delete count mismatch: {len(before_delete)} → {len(after_delete)}")
+            if not any(r["id"] == current_default_id for r in after_delete):
+                ok("deleted vehicle removed from list")
+            else:
+                fail("deleted vehicle still present")
+            new_defaults = [r for r in after_delete if r["isDefault"]]
+            new_badges = [r for r in after_delete if r["hasBadge"]]
+            if len(after_delete) == 0:
+                ok("no remaining vehicles — no default expected")
+            elif len(new_defaults) == 1 and len(new_badges) == 1 and new_defaults[0]["id"] == new_badges[0]["id"]:
+                ok("Default badge auto-reassigned to a remaining vehicle")
+            else:
+                fail(f"badge not correctly reassigned: defaults={len(new_defaults)} badges={len(new_badges)}")
+
         await browser.close()
 
 asyncio.run(main())
