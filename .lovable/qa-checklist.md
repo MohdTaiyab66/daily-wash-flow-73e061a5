@@ -130,14 +130,20 @@ No blocking bugs found in Turn 7. NOTE-N1 flagged for spec-doc reconciliation.
 
 No blocking bugs found in Turn 8. NOTE-H1 (missing rating UI) flagged for UI-polish phase.
 
-## 9. Reminders + renewals + Monday logic (Turn 9)
+## 9. Reminders + renewals + Monday logic (Turn 9 — complete)
 
-- [ ] Weekly included-wash reminder cron fires
-- [ ] Renewal reminder cron fires N days before expiry
-- [ ] Expiry reminder cron fires day of / after
-- [ ] Reminders stop after booking that satisfies the reminder
-- [ ] Monday: weekly rest day handled — no errors, bookings shifted
-- [ ] Sunday count / cycle rules honored
+- [!] **BUG-R1 FIXED (High)**: `weeklyIncludedWashReminder` filtered `benefit_type = 'included_wash'`, but that value does not exist in the `benefit_type` enum (`interior`, `exterior_daily`, `exterior_hydrophobic`, `dusting`, `tyre_polish`, `paper_mats`, `fragrance`). The cron always returned 0 → **weekly reminder never fired in production**. Rewrote to `IN ('interior','exterior_daily')`, aggregate remaining per subscription, skip unlimited benefits, and emit one row per sub (dedupe key `weekly:<date>:<subscription_id>`).
+- [!] **BUG-R2 FIXED (Medium)**: `/api/public/cron/daily-reminders` had no `x-cron-secret` gate — any caller could trigger reminders (spam surface + notification-fatigue vector). Added the same 401-on-missing/mismatched-secret guard used by `monthly-addons-materialize`.
+- [!] **BUG-R3 FIXED (Low)**: `renewalReminder` filtered `.eq("status", "active")` — subs in `assigned` or `awaiting_partner_assignment` were skipped, so their customers received no renewal warning. Widened to `.in("status", ["active","assigned","awaiting_partner_assignment"])` (same status set used by `try_consume_entitlement` and `get_vehicle_entitlements` for consistency).
+- [x] Renewal reminder cron fires 3 days before `renewal_date` with dedupe key `renew:<sub_id>:<renewal_date>` — will not double-send within a cycle
+- [x] Expiry reminder: same cron branches on `cancel_at_period_end` → emits `subscription_expiring_soon` instead of `subscription_renewing_soon` (dedupe key `expire:<sub_id>:<renewal_date>`)
+- [x] Reminders stop after satisfying event: weekly reminder aggregates *current* remaining at cron-time — once `try_consume_entitlement` drives `remaining` to 0, the next Sunday's dedup key would skip anyway, but the aggregation itself excludes exhausted subs. Renewal reminders naturally stop when `renewal_date` rolls forward on renewal.
+- [x] Monday guard on customer booking flow: `BookAWashSheet.nextServiceableDate()` + `bumpOffMonday()` skip Monday; `service.$slug.tsx.isMondayIso()` blocks Monday selection at the plan-signup date picker; copy "Mondays are our weekly rest day, so they're skipped" shown inline — customer never sees a Monday-off error.
+- [x] Sunday cycle: weekly reminder gated on `new Date().getUTCDay() === 0` (Sunday) so it fires once per week regardless of cron cadence.
+
+3 bugs fixed in Turn 9.
+
+
 
 ## 10. Multi-vehicle persistence + edge cases + perf (Turn 10)
 
@@ -158,5 +164,8 @@ No blocking bugs found in Turn 8. NOTE-H1 (missing rating UI) flagged for UI-pol
 | BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 (fixed) |
 | BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 (fixed) |
 | BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (not live — auto-confirm on) |
-| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home → switcher disagreed across screens & didn't persist across tab close | Turn 2 (fixed) |
-| BUG-P1 | Payments | **Critical** | Razorpay webhook activated bookings on any payment event including `payment.failed` — prepaid invariant could be violated by a failed-payment webhook | Turn 3 (fixed) |
+| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home | Turn 2 (fixed) |
+| BUG-P1 | Payments | **Critical** | Razorpay webhook activated on any payment event including `payment.failed` | Turn 3 (fixed) |
+| BUG-R1 | Reminders | **High** | Weekly wash reminder filtered on non-existent `included_wash` benefit type — never fired | Turn 9 (fixed) |
+| BUG-R2 | Reminders | Medium | `daily-reminders` cron had no `x-cron-secret` gate — public spam surface | Turn 9 (fixed) |
+| BUG-R3 | Reminders | Low | Renewal reminder only checked `status=active`, skipping `assigned`/`awaiting_partner_assignment` | Turn 9 (fixed) |
