@@ -404,37 +404,11 @@ function ServiceDetail() {
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
-      // Native Android APK → use Razorpay's native SDK. The SDK renders native
-      // UPI app tiles (GPay / PhonePe / Paytm / BHIM) directly from installed
-      // apps on the device, which the web checkout cannot do.
+      // Native Android APK → try Razorpay's native SDK first. Fall back to the
+      // web checkout inside the WebView when the native plugin isn't available
+      // in the installed APK (e.g. "Checkout plugin is not implemented on android").
       const { isNative } = await import("@/lib/platform");
-      if (isNative()) {
-        const { Checkout } = await import("capacitor-razorpay");
-        const result: any = await (Checkout as any).open({
-          key: order.keyId,
-          amount: order.amount,
-          currency: order.currency,
-          name: "Urban Wash",
-          description: service.name,
-          order_id: order.orderId,
-          prefill: { email: prefillEmail, contact: prefillContact },
-          notes: { booking_id: String(bookingId) },
-          theme: { color: "#FF6B1A" },
-        }).catch((err: any) => {
-          const desc = err?.message || err?.description || "Payment cancelled";
-          throw new Error(desc);
-        });
-        const resp = result?.response ?? result;
-        if (!resp?.razorpay_payment_id) throw new Error("Payment cancelled");
-        await verifyPayment({
-          data: {
-            bookingId: String(bookingId),
-            razorpayOrderId: resp.razorpay_order_id ?? order.orderId,
-            razorpayPaymentId: resp.razorpay_payment_id,
-            razorpaySignature: resp.razorpay_signature,
-          },
-        });
-      } else {
+      const runWebCheckout = async () => {
         await loadRazorpayCheckout();
         await new Promise<void>((resolve, reject) => {
           const checkout = new window.Razorpay!({
@@ -446,7 +420,6 @@ function ServiceDetail() {
             order_id: order.orderId,
             prefill: { email: prefillEmail, contact: prefillContact },
             notes: { booking_id: String(bookingId) },
-            // Force UPI to appear first and expanded on Razorpay Standard Checkout.
             config: {
               display: {
                 blocks: {
@@ -496,7 +469,67 @@ function ServiceDetail() {
           });
           checkout.open();
         });
+      };
+
+      const isPluginUnavailable = (err: any) => {
+        const msg = String(err?.message || err?.description || err || "").toLowerCase();
+        return (
+          msg.includes("not implemented") ||
+          msg.includes("not available") ||
+          msg.includes("unimplemented") ||
+          err?.code === "UNIMPLEMENTED"
+        );
+      };
+
+      if (isNative()) {
+        let nativeUnavailable = false;
+        let nativeResp: any = null;
+        try {
+          const mod = await import("capacitor-razorpay").catch((e) => {
+            nativeUnavailable = true;
+            throw e;
+          });
+          const Checkout = (mod as any).Checkout;
+          if (!Checkout) {
+            nativeUnavailable = true;
+            throw new Error("Native Razorpay plugin not available");
+          }
+          const result: any = await Checkout.open({
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "Urban Wash",
+            description: service.name,
+            order_id: order.orderId,
+            prefill: { email: prefillEmail, contact: prefillContact },
+            notes: { booking_id: String(bookingId) },
+            theme: { color: "#FF6B1A" },
+          });
+          nativeResp = result?.response ?? result;
+        } catch (err: any) {
+          if (nativeUnavailable || isPluginUnavailable(err)) {
+            // Fall back to Razorpay Standard Checkout in the WebView.
+            await runWebCheckout();
+          } else {
+            const desc = err?.message || err?.description || "Payment cancelled";
+            throw new Error(desc);
+          }
+        }
+        if (nativeResp) {
+          if (!nativeResp.razorpay_payment_id) throw new Error("Payment cancelled");
+          await verifyPayment({
+            data: {
+              bookingId: String(bookingId),
+              razorpayOrderId: nativeResp.razorpay_order_id ?? order.orderId,
+              razorpayPaymentId: nativeResp.razorpay_payment_id,
+              razorpaySignature: nativeResp.razorpay_signature,
+            },
+          });
+        }
+      } else {
+        await runWebCheckout();
       }
+
 
 
       if (service.service_type === "subscription") {
