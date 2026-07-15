@@ -23,7 +23,11 @@ const logAttemptInput = z.object({
 });
 
 const statusInput = z.object({ bookingId: z.string().uuid() });
-const userAttemptsInput = z.object({ userId: z.string().uuid(), limit: z.number().int().min(1).max(100).optional() });
+const userAttemptsInput = z.object({
+  userId: z.string().uuid().optional(),
+  phone: z.string().min(6).max(20).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+}).refine((v) => !!v.userId || !!v.phone, { message: "userId or phone is required" });
 
 
 function requireRazorpayConfig() {
