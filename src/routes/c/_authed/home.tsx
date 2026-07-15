@@ -239,18 +239,20 @@ function CustomerHome() {
             />
           </div>
           <div className="mt-3 flex items-center gap-4 text-xs">
-            <Link
-              to="/c/vehicles/add"
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
               <Pencil className="h-3.5 w-3.5" /> Edit vehicle
-            </Link>
-            <Link
-              to="/c/vehicles/add"
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhotoOpen(true)}
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
               <Camera className="h-3.5 w-3.5" /> Change photo
-            </Link>
+            </button>
             <Link
               to="/c/vehicles/add"
               className="ml-auto inline-flex items-center gap-1 text-muted-foreground"
