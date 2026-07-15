@@ -153,7 +153,21 @@ function MyPlanPage() {
   });
 
   const all = bookingsQ.data ?? [];
-  const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
+  // NO PAYMENT = NO SERVICE. Only paid subscription bookings may power the
+  // active-plan hero, progress bar, renewal date, credits, and history. Any
+  // unpaid subscription booking (pending / cancelled / failed / timeout)
+  // surfaces the Payment Pending card only, with a Retry action.
+  const subs = all.filter(
+    (b) => b.service_catalog?.service_type === "subscription" && b.payment_status === "paid",
+  );
+  const pendingSub = all.find(
+    (b) =>
+      b.service_catalog?.service_type === "subscription" &&
+      b.payment_status !== "paid" &&
+      b.status !== "cancelled" &&
+      b.status !== "expired" &&
+      b.status !== "refunded",
+  ) ?? null;
   const activeSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
@@ -166,6 +180,7 @@ function MyPlanPage() {
   const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+
 
   // Wash status — track interior + exterior for current sub
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
