@@ -376,9 +376,12 @@ export function BookAWashSheet({
                   type="date"
                   min={today}
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => setDate(bumpOffMonday(e.target.value))}
                   className="mt-1"
                 />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Mondays are our weekly rest day, so they're skipped.
+                </p>
               </div>
               <div>
                 <Label className="text-xs">Address</Label>
@@ -395,12 +398,6 @@ export function BookAWashSheet({
                 </select>
               </div>
             </div>
-
-            {isMonday && (
-              <p className="text-[11px] text-destructive">
-                Mondays are off-days for Daily Shine. Pick another date.
-              </p>
-            )}
 
             <div>
               <Label className="text-xs">Time slot</Label>
