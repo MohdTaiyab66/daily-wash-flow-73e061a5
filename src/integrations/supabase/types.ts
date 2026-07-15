@@ -1124,6 +1124,7 @@ export type Database = {
           is_default: boolean
           make: string
           model: string
+          nickname: string | null
           parking_notes: string | null
           registration_number: string
           updated_at: string
@@ -1141,6 +1142,7 @@ export type Database = {
           is_default?: boolean
           make: string
           model: string
+          nickname?: string | null
           parking_notes?: string | null
           registration_number: string
           updated_at?: string
@@ -1158,6 +1160,7 @@ export type Database = {
           is_default?: boolean
           make?: string
           model?: string
+          nickname?: string | null
           parking_notes?: string | null
           registration_number?: string
           updated_at?: string
