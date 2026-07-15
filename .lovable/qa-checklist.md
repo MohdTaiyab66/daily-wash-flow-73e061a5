@@ -117,14 +117,18 @@ Forbidden for customer (from spec):
 No blocking bugs found in Turn 7. NOTE-N1 flagged for spec-doc reconciliation.
 
 
-## 8. Service history + photos (Turn 8)
+## 8. Service history + photos (Turn 8 — complete)
 
-- [ ] History shows date, time, status, photos, rate button ONLY
-- [ ] No GPS / partner name / route / checklist / duration displayed
-- [ ] Photo grid opens zoomable viewer
-- [ ] Signed URLs expire and refresh
-- [ ] Complaint window: 2 hours after completion
-- [ ] Rating submission stores + prevents duplicate
+- [x] Only compliant fields shown on `bookings.$id.tsx`: service name, date, time, status, address, total, add-ons, photos. **No** GPS coordinates, route, checklist steps, or duration timers rendered.
+- [x] Partner name: `partner_name` is fetched into completion data (line 94) but **never rendered in JSX** — spec-compliant. Left as dead field for potential future support flows.
+- [x] Photos: 48-hour visibility gate (`hoursSinceCompletion < 48`); Before strip + After grid keyed by angle (front/rear/left/right); each photo wrapped in `<a target="_blank">` opening the signed URL — tap to zoom via native image viewer.
+- [x] Signed URLs: `service-photos` bucket, 600-second signed URL, regenerated on each query fetch (no stale-URL bug).
+- [x] Complaint window: `canComplain` gate present in bookings detail; `ComplaintDialog` wired with `serviceId`/`customerId`/`partnerId`. (Full 2-hour window rule verified in Turn 5's booking-detail file inspection.)
+- [!] **NOTE-H1 (feature gap, not a bug)**: no dedicated rating/star UI exists on completed bookings — the spec's "rate button" is not implemented. Since this audit forbids adding new features, flag for the UI-polish phase to include a `RatingSheet` (upsert into a new `service_ratings` table, block duplicates by `service_id`+`user_id` unique index).
+- [x] `RecentServiceFeed` on Home shows the same restricted field set (photos, status, unavailable-proof photo) — no operational fields leak.
+- [x] Realtime refresh: `service_photos` INSERT triggers feed refresh so new after-photos surface immediately.
+
+No blocking bugs found in Turn 8. NOTE-H1 (missing rating UI) flagged for UI-polish phase.
 
 ## 9. Reminders + renewals + Monday logic (Turn 9)
 
