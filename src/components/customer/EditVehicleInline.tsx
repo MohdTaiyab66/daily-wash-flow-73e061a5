@@ -542,9 +542,19 @@ export function ChangePhotoDialog({
     },
     onError: (e: unknown) => {
       // Keep the crop/preview so the user can retry without re-picking.
-      setUploadError(e instanceof Error ? e.message : "Upload failed. Check your connection and retry.");
+      const isAbort = e instanceof Error && (e.name === "AbortError" || /cancelled/i.test(e.message));
+      setUploadError(isAbort ? "Upload cancelled. You can try again anytime." : (e instanceof Error ? e.message : "Upload failed. Check your connection and retry."));
+    },
+    onSettled: () => {
+      abortRef.current = null;
+      if (stalledTimerRef.current) { clearTimeout(stalledTimerRef.current); stalledTimerRef.current = null; }
+      setUploadStalled(false);
     },
   });
+
+  const cancelUpload = () => {
+    if (abortRef.current) abortRef.current.abort();
+  };
 
   const remove = useMutation({
     mutationFn: async () => {
