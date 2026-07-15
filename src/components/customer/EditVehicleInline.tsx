@@ -462,13 +462,58 @@ export function ChangePhotoDialog({
     mutationFn: async () => {
       if (!vehicle) throw new Error("No vehicle selected");
       if (!processedBlob) throw new Error("Choose a photo first");
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("You're signed out — sign in again to save the photo");
-      const path = `${u.user.id}/${vehicle.id}/${Date.now()}.jpg`;
-      const { error: upErr } = await supabase.storage
-        .from("vehicle-images")
-        .upload(path, processedBlob, { upsert: false, contentType: OUTPUT_MIME });
-      if (upErr) throw upErr;
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      const userId = sess.session?.user?.id;
+      if (!accessToken || !userId) throw new Error("You're signed out — sign in again to save the photo");
+
+      const path = `${userId}/${vehicle.id}/${Date.now()}.jpg`;
+      const supaUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const publishable = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const endpoint = `${supaUrl}/storage/v1/object/vehicle-images/${path}`;
+
+      // Reset progress + arm stalled-detector.
+      setUploadProgress(0);
+      setUploadStalled(false);
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const armStalledTimer = () => {
+        if (stalledTimerRef.current) clearTimeout(stalledTimerRef.current);
+        stalledTimerRef.current = setTimeout(() => setUploadStalled(true), 20_000);
+      };
+      armStalledTimer();
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", endpoint);
+        xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+        xhr.setRequestHeader("apikey", publishable);
+        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("Content-Type", OUTPUT_MIME);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadProgress(e.loaded / e.total);
+          setUploadStalled(false);
+          armStalledTimer();
+        };
+        xhr.onload = () => {
+          if (stalledTimerRef.current) clearTimeout(stalledTimerRef.current);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploadProgress(1);
+            resolve();
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onabort = () => {
+          const err = new Error("Upload cancelled");
+          (err as any).name = "AbortError";
+          reject(err);
+        };
+        controller.signal.addEventListener("abort", () => xhr.abort());
+        xhr.send(processedBlob);
+      });
+
       const previous = vehicle.image_path;
       const { error: dbErr } = await (supabase as any)
         .from("customer_vehicles")
