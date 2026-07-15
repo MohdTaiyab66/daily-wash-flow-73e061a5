@@ -229,13 +229,13 @@ export function AwaitingPartnerBanner({
       : "border-primary/30 bg-primary/5";
 
   const titleMap: Record<Exclude<State, "unassignable">, string> = {
-    searching: "Searching for a partner",
+    searching: "Subscription activated · Waiting for area assignment",
     assigned: "Today's service is scheduled",
     in_progress: "Your Daily Shine service is in progress",
     completed: "Service completed",
   };
   const copyMap: Record<Exclude<State, "unassignable">, string> = {
-    searching: "We're finding the right partner for your area. We'll let you know as soon as it's confirmed.",
+    searching: "You're all set. We'll notify you once your first service is completed — no need to wait for updates in between.",
     assigned: "Your vehicle will be serviced before your selected time.",
     in_progress: "Your partner is taking care of your vehicle now.",
     completed: completedAt

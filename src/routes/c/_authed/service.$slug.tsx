@@ -499,7 +499,17 @@ function ServiceDetail() {
       }
 
 
-      toast.success("Payment complete. Assigning your partner now.");
+      if (service.service_type === "subscription") {
+        toast.success("Subscription activated · Waiting for area assignment", {
+          description: "We'll notify you once your first service is completed.",
+          duration: 6000,
+        });
+      } else {
+        toast.success("Payment successful · Booking confirmed", {
+          description: "We'll notify you when the service is completed.",
+          duration: 6000,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["sub-queue", currentUser.user.id] });
