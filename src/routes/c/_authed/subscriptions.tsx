@@ -210,7 +210,7 @@ function MyPlanPage() {
         .from("customer_notifications")
         .select("id,type,title,body,link,metadata,created_at,read_at")
         .eq("user_id", userId)
-        .in("type", ["service_unavailable", "dirty_vehicle"])
+        .in("type", ["vehicle_unavailable", "vehicle_dirty"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -576,7 +576,7 @@ function MyPlanPage() {
 
 function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
   if (!notice) return null;
-  const isDirty = notice.type === "dirty_vehicle";
+  const isDirty = notice.type === "vehicle_dirty";
   return (
     <div className={`mt-5 rounded-3xl border p-4 ${isDirty ? "border-orange-500/30 bg-orange-500/10" : "border-amber-500/30 bg-amber-500/10"}`}>
       <div className="flex items-start gap-3">

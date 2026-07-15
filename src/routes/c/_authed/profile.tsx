@@ -34,9 +34,29 @@ function ProfilePage() {
   });
 
   const signOut = async () => {
+    // 1. Tear down realtime channels while the auth token is still valid so
+    //    unsubscribe frames reach the server (prevents ghost subscriptions
+    //    from continuing to receive the previous user's rows after sign-out).
+    try {
+      await supabase.removeAllChannels();
+    } catch {
+      /* non-fatal — proceed with sign-out */
+    }
+    // 2. End the Supabase session (clears auth storage + broadcasts SIGNED_OUT).
     await supabase.auth.signOut();
+    // 3. Clear per-device UI state and the TanStack Query cache so no
+    //    previously-signed-in user's data can flash on next sign-in.
     localStorage.removeItem("uw_customer_vehicle");
+    queryClient.cancelQueries();
+    queryClient.removeQueries();
     queryClient.clear();
+    // 4. Verify: any leftover channel or cached query is a bug — log so QA
+    //    catches regressions; user still lands on the public entry.
+    const leakedChannels = supabase.getChannels().length;
+    const leakedQueries = queryClient.getQueryCache().getAll().length;
+    if (leakedChannels > 0 || leakedQueries > 0) {
+      console.warn("[signOut] cleanup incomplete", { leakedChannels, leakedQueries });
+    }
     navigate({ to: "/c" });
   };
 
