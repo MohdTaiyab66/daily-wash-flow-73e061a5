@@ -116,7 +116,10 @@ function EditVehiclePage() {
     },
     onSuccess: () => {
       setIsDefault(true);
-      toast.success("Set as default vehicle");
+      const label = q.data?.nickname?.trim() || `${q.data?.make ?? ""} ${q.data?.model ?? ""}`.trim() || "This vehicle";
+      toast.success(`${label} is now your default`, {
+        description: "It will be selected first on Home & Bookings.",
+      });
       qc.invalidateQueries({ queryKey: ["customer-vehicle", id] });
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
     },
