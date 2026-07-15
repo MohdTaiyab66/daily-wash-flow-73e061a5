@@ -84,6 +84,9 @@ function VehicleRow({ v }: { v: Vehicle }) {
     <Link
       to="/c/vehicles/$id"
       params={{ id: v.id }}
+      data-testid="vehicle-row"
+      data-vehicle-id={v.id}
+      data-is-default={v.is_default ? "true" : "false"}
       className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-accent/40"
     >
       <VehicleAvatar
