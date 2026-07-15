@@ -22,7 +22,7 @@ const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM",
 
 const TIMELINE = [
   { key: "pending_payment", label: "Booking confirmed", desc: "We've received your booking" },
-  { key: "paid", label: "Partner assigned", desc: "Your service is scheduled within your selected window" },
+  { key: "paid", label: "Scheduled", desc: "Your service is scheduled within your selected window" },
   { key: "completed", label: "Service completed", desc: "Hope your car sparkles!" },
 ] as const;
 
