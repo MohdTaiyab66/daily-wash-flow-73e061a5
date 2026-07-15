@@ -23,10 +23,29 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         }
 
         const event = JSON.parse(body) as any;
+        const eventType = event?.event as string | undefined;
         const payment = event?.payload?.payment?.entity;
         const orderId = payment?.order_id as string | undefined;
         const paymentId = payment?.id as string | undefined;
         if (!orderId || !paymentId) return Response.json({ ok: true, ignored: true });
+
+        // Gate activation strictly on captured payments. Razorpay also fires
+        // `payment.authorized`, `payment.failed`, `refund.*`, etc. — without
+        // this gate a failed-payment webhook would still activate the
+        // booking. Only `payment.captured` (or `order.paid`, which implies
+        // captured) may trigger activation. Everything else is logged and
+        // acknowledged so Razorpay stops retrying.
+        const isCaptureEvent = eventType === "payment.captured" || eventType === "order.paid";
+        const isCapturedStatus = payment?.status === "captured";
+        if (!isCaptureEvent || !isCapturedStatus) {
+          return Response.json({
+            ok: true,
+            ignored: true,
+            reason: "not_captured",
+            event: eventType,
+            payment_status: payment?.status,
+          });
+        }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: booking, error: bookingError } = await supabaseAdmin
