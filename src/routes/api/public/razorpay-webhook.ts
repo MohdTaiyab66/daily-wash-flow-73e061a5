@@ -45,6 +45,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           p_raw_payload: event,
         });
         if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
+        // Instant partner dispatch: don't wait for the cron tick.
+        try { await (supabaseAdmin as any).rpc("sweep_subscription_offers"); } catch {}
         return Response.json({ ok: true, result: data });
       },
     },
