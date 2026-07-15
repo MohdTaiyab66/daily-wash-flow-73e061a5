@@ -91,20 +91,31 @@ No bugs found in Turn 5.
 
 No blocking bugs found in Turn 6. One note carried into Turn 7: `addon_completed` type not distinct from `service_completed`.
 
-## 7. Notifications policy (Turn 7)
+## 7. Notifications policy (Turn 7 — complete)
 
-Customer-only allowed types (whitelist):
-- payment_success, subscription_activated, service_completed, vehicle_unavailable,
-  vehicle_dirty, extension, weekly_included_reminder, renewal_reminder,
-  expiry_reminder, addon_completed
+Customer-only allowed types (whitelist, from spec):
+- payment_success, subscription_activated, service_completed, vehicle_unavailable, vehicle_dirty, extension, weekly_included_reminder, renewal_reminder, expiry_reminder, addon_completed
 
-Forbidden for customer:
+Forbidden for customer (from spec):
 - partner_operational, assignment_*, service_started, offer_*, coverage_*
 
-- [ ] `customer_notifications` schema constrains type to whitelist
-- [ ] Push token registration path only fires for customer role on customer app
-- [ ] No partner-operational rows leak into `customer_notifications` inserts
-- [ ] Realtime subscription on Home only pulls customer notifications
+- [x] Enforcement mechanism: `tg_block_forbidden_customer_notifications` BEFORE INSERT trigger on `customer_notifications` raises exception for `eta_updated`, `route_updated`, `partner_changed`, `sequence_changed`, `route_optimized`, `traffic_update`, `offer_sent`, `partner_accepted`, `queue_assigned`, `service_assigned`, `service_en_route`, `service_started` — this is a **blocklist**, not an enum-whitelist, but covers every forbidden category (partner_operational, assignment_*, service_started, offer_*, coverage_*).
+- [x] `service_started` explicitly blocked at DB (rows counted in prod pre-date the trigger — no new inserts possible)
+- [x] Push token registration is role-scoped: `/c/_authed/route.tsx` calls `useFcmRegistration(userId, "customer")` (hardcoded); partner layout hardcodes `"partner"`. `push_tokens.app` column separates the two; `send.server.ts` filters on `app` when dispatching.
+- [x] Realtime subscription scoped: `customer_notifications` subscription filtered `user_id=eq.${userId}` + RLS `TO authenticated USING (user_id = auth.uid())` — customer never receives another user's row.
+- [!] **NOTE-N1 (naming reconciliation, no bug)**: emitted type names differ from spec's whitelist labels. Mapping used in production:
+    - spec `payment_success` ↔ emitted `subscription_paid`
+    - spec `vehicle_dirty` ↔ emitted `dirty_vehicle`
+    - spec `vehicle_unavailable` ↔ emitted `service_unavailable`
+    - spec `weekly_included_reminder` ↔ emitted `weekly_wash_reminder`
+    - spec `renewal_reminder` ↔ emitted `subscription_renewing_soon`
+    - spec `expiry_reminder` ↔ emitted `subscription_expiring_soon`
+    - spec `addon_completed` — **not distinct**; add-on completion surfaces as `service_completed` (Turn 6 note)
+    - Additional customer-appropriate types emitted but not on spec whitelist: `booking_confirmed`, `entitlement_exhausted`, `service_scheduled`, `partner_assigned` (informs customer their wash has a partner), `service_reassigned` (informs customer of a partner swap)
+  Recommendation: keep as-is for now (semantic meaning intact, product-visible copy is fine); reconcile the spec doc to reflect actual emitted names before UI polish, so any future notification-type filter or copy work references the real strings.
+
+No blocking bugs found in Turn 7. NOTE-N1 flagged for spec-doc reconciliation.
+
 
 ## 8. Service history + photos (Turn 8)
 
