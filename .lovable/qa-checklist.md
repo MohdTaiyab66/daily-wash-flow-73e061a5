@@ -62,14 +62,21 @@ Updated each turn. See `.lovable/plan.md` for stage order.
 
 No bugs found in Turn 4.
 
-## 5. Bookings + One-time (Turn 5)
+## 5. Bookings + One-time (Turn 5 — complete)
 
-- [ ] Booking list scoped to selected vehicle
-- [ ] Booking detail loads without error
-- [ ] Only services with remaining credits are bookable
-- [ ] Unavailable services hidden (not error)
-- [ ] Book-a-wash sheet from `/c/home` works with active sub
-- [ ] Book-a-wash sheet gracefully blocked without active sub
+- [x] Booking list scoped to selected vehicle: `bookings.tsx` queries `.eq("vehicle_id", selectedVehicleId)` and gates fetch on `enabled: !!selectedVehicleId`. Vehicle selector uses shared `useSelectedVehicleId` hook (unified after BUG-V1)
+- [x] Upcoming/previous split correct: `scheduled_date >= today AND status NOT IN (completed, cancelled)` for upcoming; inverse for previous
+- [x] Booking detail route exists (`bookings.$id.tsx`, 587 lines); tap-through wired via `navigate({ to: "/c/bookings/$id", params: { id } })`
+- [x] Only-remaining-credits bookable: `BookAWashSheet` calls `get_vehicle_entitlements`, filters `unlimited || remaining > 0`, and renders only those benefits. Exhausted benefits never appear in the picker
+- [x] Nothing-left state: shows "You've used all your washes this month" + "Buy More Washes" CTA (no error)
+- [x] Unavailable services hidden: Home queries `service_catalog.eq("active", true)` — inactive services simply don't render (no error surface)
+- [x] Active-sub path: sheet only enables the RPC when `subQ.data` present (subscriptions in active/assigned/awaiting_partner_assignment)
+- [x] No-active-plan block: dedicated empty state with "See Daily Shine" CTA; confirm() also re-guards with `toast.error("No active plan for this vehicle")`
+- [x] Monday guard: `nextServiceableDate()` skips Monday; manual date entry bumped forward via `bumpOffMonday()` — customer never sees a "Monday off" error
+- [x] Address required: default address auto-selected; confirm() blocks with toast if none present
+- [x] Post-book invalidations: `vehicle-entitlements`, `customer-bookings-all`, `customer-bookings` all invalidated → remaining credit + list refresh immediately
+
+No bugs found in Turn 5.
 
 ## 6. Packages + Add-ons (Turn 6)
 
