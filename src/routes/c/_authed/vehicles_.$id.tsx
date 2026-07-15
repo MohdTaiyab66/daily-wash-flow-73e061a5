@@ -103,6 +103,26 @@ function EditVehiclePage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
+  const setDefault = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      // Trigger tg_customer_vehicles_single_default unsets siblings.
+      const { error } = await (supabase as any)
+        .from("customer_vehicles")
+        .update({ is_default: true })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setIsDefault(true);
+      toast.success("Set as default vehicle");
+      qc.invalidateQueries({ queryKey: ["customer-vehicle", id] });
+      qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not set default"),
+  });
+
   const del = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("customer_vehicles").delete().eq("id", id);
