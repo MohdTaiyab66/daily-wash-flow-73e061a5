@@ -1,10 +1,15 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, Sparkles, Minus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  logPaymentAttempt,
+  getBookingPaymentStatus,
+} from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +19,7 @@ import { toast } from "sonner";
 import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
