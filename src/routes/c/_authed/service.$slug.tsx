@@ -95,6 +95,8 @@ function ServiceDetail() {
   const qc = useQueryClient();
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
+  const logAttemptFn = useServerFn(logPaymentAttempt);
+  const getStatusFn = useServerFn(getBookingPaymentStatus);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
   const [date, setDate] = useState<string>(() => nextBookableDateIso());
@@ -105,6 +107,25 @@ function ServiceDetail() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+  // Payment-specific state: inline retry banner + pending checkout context.
+  type PendingCheckout = {
+    bookingId: string;
+    keyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    serviceName: string;
+    isSubscription: boolean;
+    prefillEmail: string;
+    prefillContact: string;
+    attemptNo: number;
+  };
+  const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
+  const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  const [paying, setPaying] = useState(false);
+  const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
+  useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
+
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
