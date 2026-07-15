@@ -424,12 +424,12 @@ function CustomerHome() {
       </Dialog>
 
       <EditVehicleDialog
-        vehicle={activeVehicle ?? null}
+        vehicle={(activeVehicle ?? null) as any}
         open={editOpen}
         onOpenChange={setEditOpen}
       />
       <ChangePhotoDialog
-        vehicle={activeVehicle ?? null}
+        vehicle={(activeVehicle ?? null) as any}
         open={photoOpen}
         onOpenChange={setPhotoOpen}
       />
