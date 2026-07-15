@@ -383,6 +383,12 @@ export function ChangePhotoDialog({
   const [chooserError, setChooserError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Upload progress + cancel state
+  const [uploadProgress, setUploadProgress] = useState(0); // 0..1
+  const [uploadStalled, setUploadStalled] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const stalledTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Crop state
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -402,6 +408,8 @@ export function ChangePhotoDialog({
     setCroppedArea(null);
     setChooserError(null);
     setUploadError(null);
+    setUploadProgress(0);
+    setUploadStalled(false);
   }, [cleanupUrls]);
 
   useEffect(() => {
