@@ -338,10 +338,24 @@ export const getUserPaymentAttempts = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let resolvedUserId = data.userId ?? null;
+    if (!resolvedUserId && data.phone) {
+      const normalized = data.phone.replace(/^\+?91/, "").replace(/\D/g, "");
+      const { data: profile } = await supabaseAdmin
+        .from("customer_profiles")
+        .select("user_id,phone")
+        .ilike("phone", `%${normalized}%`)
+        .limit(1)
+        .maybeSingle();
+      resolvedUserId = (profile as any)?.user_id ?? null;
+    }
+    if (!resolvedUserId) return { attempts: [] as any[] };
+
     const { data: rows, error } = await supabaseAdmin
       .from("payment_attempts")
       .select("id,booking_id,channel,outcome,attempt_no,error_code,error_message,provider_payment_id,created_at")
-      .eq("user_id", data.userId)
+      .eq("user_id", resolvedUserId)
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 20);
     if (error) throw new Error(error.message);
