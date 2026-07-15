@@ -87,10 +87,10 @@ async function renewalReminder(sb: any) {
 
   const { data: subs } = await sb
     .from("subscriptions")
-    .select("id,user_id,vehicle_id,current_period_end,cancel_at_period_end,service_id")
+    .select("id,user_id,vehicle_id,renewal_date,cancel_at_period_end")
     .eq("status", "active")
-    .gte("current_period_end", tStart)
-    .lt("current_period_end", tEnd)
+    .gte("renewal_date", tStart)
+    .lt("renewal_date", tEnd)
     .limit(5000);
 
   let n = 0;
@@ -107,7 +107,7 @@ async function renewalReminder(sb: any) {
             title: "Your plan ends in 3 days",
             body: "Your plan won't auto-renew. Tap to reactivate before it ends.",
             link: "/c/subscriptions",
-            metadata: { subscription_id: s.id, ends_on: s.current_period_end },
+            metadata: { subscription_id: s.id, ends_on: s.renewal_date },
           }
         : {
             user_id: s.user_id,
@@ -116,9 +116,9 @@ async function renewalReminder(sb: any) {
             title: "Your plan renews in 3 days",
             body: "Your Urban Wash plan will auto-renew in 3 days. Manage from My Plan.",
             link: "/c/subscriptions",
-            metadata: { subscription_id: s.id, renews_on: s.current_period_end },
+            metadata: { subscription_id: s.id, renews_on: s.renewal_date },
           },
-      `${isExpiring ? "expire" : "renew"}:${s.id}:${s.current_period_end}`,
+      `${isExpiring ? "expire" : "renew"}:${s.id}:${s.renewal_date}`,
     );
     if (inserted) n++;
   }
