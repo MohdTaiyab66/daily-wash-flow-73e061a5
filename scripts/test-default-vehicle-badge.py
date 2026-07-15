@@ -171,11 +171,9 @@ async def main():
         else:
             await page.goto(f"{BASE_URL}/c/vehicles/{current_default_id}", wait_until="domcontentloaded")
             await page.wait_for_selector('[data-testid="default-vehicle-card"]')
-            page.once("dialog", lambda d: asyncio.create_task(d.accept()))
-            # Remove button uses text; click by role
-            await page.get_by_role("button", name=lambda n: bool(n) and "Remove vehicle" in n).click()
-            # Wait for navigation back to list
-            await page.wait_for_url("**/c/vehicles", timeout=8000)
+            page.on("dialog", lambda d: asyncio.create_task(d.accept()))
+            await page.get_by_text("Remove vehicle", exact=False).click()
+            await page.wait_for_url("**/c/vehicles", timeout=10000)
             await page.wait_for_selector('[data-testid="vehicle-row"]')
             await page.screenshot(path=str(OUT / "6_list_after_delete.png"))
             after_delete = await read_state(page)
