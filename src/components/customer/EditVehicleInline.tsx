@@ -234,6 +234,28 @@ export function EditVehicleDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {restoredDraft && (
+          <div
+            role="status"
+            data-testid="restored-draft-banner"
+            className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-primary"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <div className="flex-1">
+              <p className="font-medium">Unsaved changes restored</p>
+              <p className="mt-0.5 opacity-90">We kept your edits from last time.</p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 underline underline-offset-2 hover:opacity-80"
+              onClick={discardDraft}
+              data-testid="discard-draft"
+            >
+              Discard
+            </button>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => { e.preventDefault(); handleSave(); }}
           className="space-y-4"
