@@ -142,7 +142,15 @@ async function renewalReminder(sb: any) {
 export const Route = createFileRoute("/api/public/cron/daily-reminders")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const expected = process.env.CRON_SECRET;
+        const got = request.headers.get("x-cron-secret");
+        if (!expected || !got || got !== expected) {
+          return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          });
+        }
         const sb = await admin();
         const [weekly, renewal] = await Promise.all([
           weeklyIncludedWashReminder(sb).catch(() => 0),
