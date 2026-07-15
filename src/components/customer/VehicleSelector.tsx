@@ -74,7 +74,7 @@ export function VehicleSelector({
                     type="button"
                     onClick={() => {
                       onChange(v.id);
-                      try { sessionStorage.setItem(STORAGE_KEY, v.id); } catch { /* noop */ }
+                      try { store()?.setItem(STORAGE_KEY, v.id); } catch { /* noop */ }
                       setOpen(false);
                     }}
                     className={cn(
@@ -122,7 +122,7 @@ export function useSelectedVehicleId(vehicles: SelectorVehicle[] | undefined, pr
       return;
     }
     const stored = (() => {
-      try { return sessionStorage.getItem(STORAGE_KEY); } catch { return null; }
+      try { return store()?.getItem(STORAGE_KEY) ?? null; } catch { return null; }
     })();
     const hasStored = stored && vehicles.some((v) => v.id === stored);
     const hasPreferred = preferredId && vehicles.some((v) => v.id === preferredId);
@@ -137,7 +137,7 @@ export function useSelectedVehicleId(vehicles: SelectorVehicle[] | undefined, pr
 
   const set = (id: string) => {
     setSelectedId(id);
-    try { sessionStorage.setItem(STORAGE_KEY, id); } catch { /* noop */ }
+    try { store()?.setItem(STORAGE_KEY, id); } catch { /* noop */ }
   };
   return [selectedId, set] as const;
 }
