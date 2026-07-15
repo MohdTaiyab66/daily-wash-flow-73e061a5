@@ -24,6 +24,7 @@ import { useAreaAvailability, isServiceAllowed } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
+import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -73,6 +74,8 @@ function CustomerHome() {
   const [area, setArea] = useState<string>("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -236,18 +239,20 @@ function CustomerHome() {
             />
           </div>
           <div className="mt-3 flex items-center gap-4 text-xs">
-            <Link
-              to="/c/vehicles/add"
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
               <Pencil className="h-3.5 w-3.5" /> Edit vehicle
-            </Link>
-            <Link
-              to="/c/vehicles/add"
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhotoOpen(true)}
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
               <Camera className="h-3.5 w-3.5" /> Change photo
-            </Link>
+            </button>
             <Link
               to="/c/vehicles/add"
               className="ml-auto inline-flex items-center gap-1 text-muted-foreground"
@@ -417,6 +422,17 @@ function CustomerHome() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <EditVehicleDialog
+        vehicle={(activeVehicle ?? null) as any}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <ChangePhotoDialog
+        vehicle={(activeVehicle ?? null) as any}
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+      />
     </div>
   );
 }
