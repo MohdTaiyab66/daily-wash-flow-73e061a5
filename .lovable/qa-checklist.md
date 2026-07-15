@@ -126,6 +126,7 @@ Forbidden for customer:
 
 | ID | Module | Severity | Description | Fix commit/turn |
 |----|--------|----------|-------------|-----------------|
-| BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 |
-| BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 |
-| BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (needs check) |
+| BUG-A1 | Auth | Medium | verifyOtp treats all errors as "new user" | Turn 1 (fixed) |
+| BUG-A2 | Auth | Low | otp state leaks between steps | Turn 1 (fixed) |
+| BUG-A3 | Auth | High | signUp → signIn failure strands user silently | Turn 1 (not live — auto-confirm on) |
+| BUG-V1 | Vehicle | Medium | VehicleSelector used a different storage key than Home → switcher disagreed across screens & didn't persist across tab close | Turn 2 (fixed) |
