@@ -111,11 +111,7 @@ export function BookAWashSheet({
 }) {
   const qc = useQueryClient();
   const [pickedKey, setPickedKey] = useState<BookableKey | null>(null);
-  const [date, setDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [date, setDate] = useState(() => nextServiceableDate());
   const [slot, setSlot] = useState(SLOT_OPTIONS[3]);
   const [addressId, setAddressId] = useState<string>("");
   const [saving, setSaving] = useState(false);
