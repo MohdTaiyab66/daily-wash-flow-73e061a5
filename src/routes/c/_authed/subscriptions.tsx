@@ -639,7 +639,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
   );
 }
 
-
+function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
   if (!notice) return null;
   const isDirty = notice.type === "vehicle_dirty";
   return (
