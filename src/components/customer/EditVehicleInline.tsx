@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Image as ImageIcon, Loader2, RotateCcw, Star, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
