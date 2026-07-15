@@ -436,7 +436,7 @@ export function BookAWashSheet({
             </Button>
             <Button
               onClick={confirm}
-              disabled={saving || !pickedKey || isMonday || !addressId}
+              disabled={saving || !pickedKey || !addressId}
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Book wash
