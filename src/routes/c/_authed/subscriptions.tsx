@@ -153,7 +153,21 @@ function MyPlanPage() {
   });
 
   const all = bookingsQ.data ?? [];
-  const subs = all.filter((b) => b.service_catalog?.service_type === "subscription");
+  // NO PAYMENT = NO SERVICE. Only paid subscription bookings may power the
+  // active-plan hero, progress bar, renewal date, credits, and history. Any
+  // unpaid subscription booking (pending / cancelled / failed / timeout)
+  // surfaces the Payment Pending card only, with a Retry action.
+  const subs = all.filter(
+    (b) => b.service_catalog?.service_type === "subscription" && b.payment_status === "paid",
+  );
+  const pendingSub = all.find(
+    (b) =>
+      b.service_catalog?.service_type === "subscription" &&
+      b.payment_status !== "paid" &&
+      b.status !== "cancelled" &&
+      b.status !== "expired" &&
+      b.status !== "refunded",
+  ) ?? null;
   const activeSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
@@ -166,6 +180,7 @@ function MyPlanPage() {
   const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+
 
   // Wash status — track interior + exterior for current sub
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -221,9 +236,13 @@ function MyPlanPage() {
     },
   });
 
-  const recent = all.slice(0, 8);
-  const completedCount = all.filter((b) => b.status === "completed").length;
-  const pendingCount = all.filter((b) => b.status === "pending" || b.status === "scheduled").length;
+  // Recent service list must only reflect paid activity. Never surface
+  // service/booking cards for unpaid subscription attempts.
+  const paidAll = all.filter((b) => b.payment_status === "paid");
+  const recent = paidAll.slice(0, 8);
+  const completedCount = paidAll.filter((b) => b.status === "completed").length;
+  const pendingCount = paidAll.filter((b) => b.status === "pending" || b.status === "scheduled").length;
+
 
   const selectedVehicle = vehiclesQ.data?.find((v) => v.id === selectedVehicleId) ?? null;
   const vehicleLabel = selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : null;
@@ -283,9 +302,13 @@ function MyPlanPage() {
 
       {hasVehicles && (
         <>
-          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+          {activeSub && <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />}
 
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          {/* Service outcome notices (unavailable / dirty) only make sense
+              for an active, paid subscription. Never for pending payments. */}
+          {activeSub && (
+            <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          )}
 
           {bookingsQ.isLoading && (
             <div className="mt-6 space-y-3">
@@ -294,11 +317,16 @@ function MyPlanPage() {
             </div>
           )}
 
-          {!bookingsQ.isLoading && !activeSub && (
+          {!bookingsQ.isLoading && !activeSub && pendingSub && (
+            <PendingPaymentCard booking={pendingSub} />
+          )}
+
+          {!bookingsQ.isLoading && !activeSub && !pendingSub && (
             <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
           )}
         </>
       )}
+
 
 
       {hasVehicles && activeSub && (
@@ -570,6 +598,43 @@ function MyPlanPage() {
         basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? 1199)}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
+    </div>
+  );
+}
+
+function PendingPaymentCard({ booking }: { booking: Booking }) {
+  const slug = booking.service_catalog?.slug ?? "daily-shine";
+  const planName = booking.service_catalog?.name ?? "Daily Shine";
+  const statusLabel = booking.status === "cancelled"
+    ? "Payment cancelled"
+    : booking.status === "failed" || booking.payment_status === "failed"
+      ? "Payment failed"
+      : "Payment pending";
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-5 overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">{statusLabel}</p>
+          <h2 className="mt-1 truncate text-lg font-semibold">{planName}</h2>
+          <p className="mt-2 text-xs text-amber-900/80">
+            Your subscription has not been activated because payment has not been completed.
+            Complete payment to activate {planName}.
+          </p>
+        </div>
+        <ShieldAlert className="h-6 w-6 shrink-0 text-amber-700" />
+      </div>
+      <div className="mt-4">
+        <Button asChild className="h-11 w-full rounded-2xl text-sm font-semibold">
+          <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+        </Button>
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          No service, credits or partner assignment will start until payment succeeds.
+        </p>
+      </div>
     </div>
   );
 }
