@@ -90,6 +90,7 @@ import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/p
 import { Route as ApiPublicCronMarketplacePushDispatchRouteImport } from './routes/api/public/cron/marketplace-push-dispatch'
 import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
 import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
+import { Route as ApiPublicCronDailyRemindersRouteImport } from './routes/api/public/cron/daily-reminders'
 import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
 import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/public/admin/trial-verify'
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
@@ -519,6 +520,12 @@ const ApiPublicCronDarOfflinePartnersRoute =
     path: '/api/public/cron/dar-offline-partners',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronDailyRemindersRoute =
+  ApiPublicCronDailyRemindersRouteImport.update({
+    id: '/api/public/cron/daily-reminders',
+    path: '/api/public/cron/daily-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronAssignmentTickRoute =
   ApiPublicCronAssignmentTickRouteImport.update({
     id: '/api/public/cron/assignment-tick',
@@ -635,6 +642,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/daily-reminders': typeof ApiPublicCronDailyRemindersRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
@@ -721,6 +729,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/daily-reminders': typeof ApiPublicCronDailyRemindersRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
@@ -812,6 +821,7 @@ export interface FileRoutesById {
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
   '/api/public/admin/trial-verify': typeof ApiPublicAdminTrialVerifyRoute
   '/api/public/cron/assignment-tick': typeof ApiPublicCronAssignmentTickRoute
+  '/api/public/cron/daily-reminders': typeof ApiPublicCronDailyRemindersRoute
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
@@ -903,6 +913,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/daily-reminders'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
@@ -989,6 +1000,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/daily-reminders'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
@@ -1079,6 +1091,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/trial-seed'
     | '/api/public/admin/trial-verify'
     | '/api/public/cron/assignment-tick'
+    | '/api/public/cron/daily-reminders'
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
@@ -1110,6 +1123,7 @@ export interface RootRouteChildren {
   ApiPublicAdminTrialSeedRoute: typeof ApiPublicAdminTrialSeedRoute
   ApiPublicAdminTrialVerifyRoute: typeof ApiPublicAdminTrialVerifyRoute
   ApiPublicCronAssignmentTickRoute: typeof ApiPublicCronAssignmentTickRoute
+  ApiPublicCronDailyRemindersRoute: typeof ApiPublicCronDailyRemindersRoute
   ApiPublicCronDarOfflinePartnersRoute: typeof ApiPublicCronDarOfflinePartnersRoute
   ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
   ApiPublicCronMarketplacePushDispatchRoute: typeof ApiPublicCronMarketplacePushDispatchRoute
@@ -1689,6 +1703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDarOfflinePartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/daily-reminders': {
+      id: '/api/public/cron/daily-reminders'
+      path: '/api/public/cron/daily-reminders'
+      fullPath: '/api/public/cron/daily-reminders'
+      preLoaderRoute: typeof ApiPublicCronDailyRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/assignment-tick': {
       id: '/api/public/cron/assignment-tick'
       path: '/api/public/cron/assignment-tick'
@@ -1971,6 +1992,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminTrialSeedRoute: ApiPublicAdminTrialSeedRoute,
   ApiPublicAdminTrialVerifyRoute: ApiPublicAdminTrialVerifyRoute,
   ApiPublicCronAssignmentTickRoute: ApiPublicCronAssignmentTickRoute,
+  ApiPublicCronDailyRemindersRoute: ApiPublicCronDailyRemindersRoute,
   ApiPublicCronDarOfflinePartnersRoute: ApiPublicCronDarOfflinePartnersRoute,
   ApiPublicCronDarTimeoutsRoute: ApiPublicCronDarTimeoutsRoute,
   ApiPublicCronMarketplacePushDispatchRoute:
