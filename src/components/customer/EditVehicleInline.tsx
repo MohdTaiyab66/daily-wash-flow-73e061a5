@@ -1,13 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, Image as ImageIcon, Loader2, RotateCcw, Star, Trash2, Upload } from "lucide-react";
+import Cropper, { type Area } from "react-easy-crop";
+import {
+  AlertCircle,
+  Camera,
+  Image as ImageIcon,
+  Loader2,
+  RotateCcw,
+  Star,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 
 export type EditableVehicle = {
@@ -23,11 +34,10 @@ export type EditableVehicle = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Edit vehicle — inline dialog with zod validation                    */
+/* Edit vehicle — inline dialog with zod validation + retry            */
 /* ------------------------------------------------------------------ */
 
 // Indian plate format: XX00XX0000 (state + district + series + number).
-// Accept 1-2 digit district and 0-3 letter series to cover BH/temp series.
 const PLATE_RE = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{0,3}\s?\d{1,4}$/;
 
 const editSchema = z.object({
@@ -71,9 +81,9 @@ export function EditVehicleDialog({
     is_default: false,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
 
-  // Reset when the dialog opens for a new vehicle.
   useEffect(() => {
     if (!vehicle || !open) return;
     setForm({
@@ -84,6 +94,7 @@ export function EditVehicleDialog({
       is_default: !!vehicle.is_default,
     });
     setErrors({});
+    setSaveError(null);
     setDirty(false);
   }, [vehicle?.id, open]);
 
@@ -91,6 +102,7 @@ export function EditVehicleDialog({
     setForm((f) => ({ ...f, [key]: val }));
     setDirty(true);
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+    if (saveError) setSaveError(null);
   };
 
   const save = useMutation({
@@ -111,19 +123,20 @@ export function EditVehicleDialog({
     },
     onSuccess: () => {
       toast.success("Vehicle updated");
-      // Refresh everything that depends on customer vehicles.
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
       qc.invalidateQueries({ queryKey: ["customer-vehicle", vehicle?.id] });
       qc.invalidateQueries({ queryKey: ["vehicle-image-url"] });
       qc.invalidateQueries({ queryKey: ["vehicle-catalog-image"] });
       qc.invalidateQueries({ queryKey: ["home-vehicle"] });
-      // Fan-out signal for any listeners (realtime consumers, other tabs).
       try {
         window.dispatchEvent(new CustomEvent("uw:vehicle-updated", { detail: { id: vehicle?.id } }));
       } catch { /* noop */ }
       onOpenChange(false);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e: unknown) => {
+      // Preserve form state — user can retry without re-entering.
+      setSaveError(e instanceof Error ? e.message : "Could not save. Check your connection and retry.");
+    },
   });
 
   const handleSave = () => {
@@ -135,6 +148,14 @@ export function EditVehicleDialog({
         if (!next[k]) next[k] = issue.message;
       }
       setErrors(next);
+      // Move focus to first invalid field on next tick.
+      queueMicrotask(() => {
+        const firstKey = Object.keys(next)[0];
+        if (firstKey) {
+          const el = document.getElementById(`edit-veh-${firstKey}`);
+          el?.focus();
+        }
+      });
       return;
     }
     save.mutate(result.data);
@@ -152,14 +173,22 @@ export function EditVehicleDialog({
 
   return (
     <Dialog open={open} onOpenChange={attemptClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby="edit-veh-desc">
         <DialogHeader>
           <DialogTitle>Edit {vehicle.make} {vehicle.model}</DialogTitle>
+          <DialogDescription id="edit-veh-desc">
+            Update registration, nickname, colour and parking notes. Press Escape to cancel.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <Field label="Registration" error={errors.registration_number} required>
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+          className="space-y-4"
+          noValidate
+        >
+          <Field id="edit-veh-registration_number" label="Registration" error={errors.registration_number} required>
             <Input
+              id="edit-veh-registration_number"
               value={form.registration_number}
               onChange={(e) => setField("registration_number", e.target.value.toUpperCase())}
               placeholder="UP32TE1002"
@@ -168,33 +197,40 @@ export function EditVehicleDialog({
               autoCapitalize="characters"
               spellCheck={false}
               aria-invalid={!!errors.registration_number}
+              aria-describedby={errors.registration_number ? "err-registration_number" : undefined}
+              aria-required
             />
           </Field>
 
-          <Field label="Nickname" error={errors.nickname}>
+          <Field id="edit-veh-nickname" label="Nickname" error={errors.nickname}>
             <Input
+              id="edit-veh-nickname"
               value={form.nickname ?? ""}
               onChange={(e) => setField("nickname", e.target.value)}
               placeholder="Family car, Office car…"
               className="mt-1.5"
               maxLength={40}
               aria-invalid={!!errors.nickname}
+              aria-describedby={errors.nickname ? "err-nickname" : undefined}
             />
           </Field>
 
-          <Field label="Colour" error={errors.color}>
+          <Field id="edit-veh-color" label="Colour" error={errors.color}>
             <Input
+              id="edit-veh-color"
               value={form.color ?? ""}
               onChange={(e) => setField("color", e.target.value)}
               placeholder="White"
               className="mt-1.5"
               maxLength={20}
               aria-invalid={!!errors.color}
+              aria-describedby={errors.color ? "err-color" : undefined}
             />
           </Field>
 
-          <Field label="Parking instructions" error={errors.parking_notes}>
+          <Field id="edit-veh-parking_notes" label="Parking instructions" error={errors.parking_notes}>
             <Textarea
+              id="edit-veh-parking_notes"
               value={form.parking_notes ?? ""}
               onChange={(e) => setField("parking_notes", e.target.value)}
               placeholder="B-block basement, slot 14. Ask guard for key."
@@ -202,6 +238,7 @@ export function EditVehicleDialog({
               rows={3}
               maxLength={300}
               aria-invalid={!!errors.parking_notes}
+              aria-describedby={errors.parking_notes ? "err-parking_notes" : undefined}
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
               {(form.parking_notes ?? "").length}/300
@@ -215,32 +252,48 @@ export function EditVehicleDialog({
               checked={form.is_default}
               onChange={(e) => setField("is_default", e.target.checked)}
               disabled={save.isPending}
+              aria-label="Set as default vehicle"
             />
-            <Star className="h-4 w-4 text-primary" />
+            <Star className="h-4 w-4 text-primary" aria-hidden />
             <span>Set as default vehicle</span>
           </label>
-        </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => attemptClose(false)} disabled={save.isPending}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={save.isPending || !dirty}>
-            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save changes
-          </Button>
-        </DialogFooter>
+          {saveError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <div className="flex-1">
+                <p className="font-medium">Couldn't save changes</p>
+                <p className="mt-0.5 opacity-90">{saveError}</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => attemptClose(false)} disabled={save.isPending}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={save.isPending || (!dirty && !saveError)}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+              {saveError ? "Retry save" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
 }
 
 function Field({
+  id,
   label,
   error,
   required,
   children,
 }: {
+  id: string;
   label: string;
   error?: string;
   required?: boolean;
@@ -248,67 +301,64 @@ function Field({
 }) {
   return (
     <div>
-      <Label>
+      <Label htmlFor={id}>
         {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
+        {required && <span className="ml-0.5 text-destructive" aria-hidden>*</span>}
       </Label>
       {children}
-      {error && <p className="mt-1 text-[11px] font-medium text-destructive">{error}</p>}
+      {error && (
+        <p id={`err-${id.replace("edit-veh-", "")}`} role="alert" className="mt-1 text-[11px] font-medium text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Change photo — chooser + preview + downscaled upload                */
+/* Change photo — chooser + crop + preview + upload                    */
 /* ------------------------------------------------------------------ */
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const MAX_EDGE_PX = 1600;
+const OUTPUT_EDGE_PX = 1200; // final saved size
 const OUTPUT_MIME = "image/jpeg";
 const OUTPUT_QUALITY = 0.85;
+const CROP_ASPECT = 4 / 3; // matches vehicle avatar frames on Home
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error("Could not read this image"));
     img.src = url;
   });
 }
 
-/**
- * Downscales the picked image on a canvas so we don't upload 12 MP originals.
- * Preserves aspect ratio, longest edge = MAX_EDGE_PX, re-encodes to JPEG.
- */
-async function processImage(file: File): Promise<{ blob: Blob; previewUrl: string }> {
-  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file");
-  if (file.size > MAX_UPLOAD_BYTES) throw new Error("Image is too large (max 8 MB)");
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const img = await loadImage(objectUrl);
-    const longest = Math.max(img.naturalWidth, img.naturalHeight);
-    const scale = longest > MAX_EDGE_PX ? MAX_EDGE_PX / longest : 1;
-    const w = Math.max(1, Math.round(img.naturalWidth * scale));
-    const h = Math.max(1, Math.round(img.naturalHeight * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas not available");
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, 0, 0, w, h);
-    const blob: Blob = await new Promise((res, rej) =>
-      canvas.toBlob(
-        (b) => (b ? res(b) : rej(new Error("Could not encode image"))),
-        OUTPUT_MIME,
-        OUTPUT_QUALITY,
-      ),
-    );
-    return { blob, previewUrl: URL.createObjectURL(blob) };
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
+/** Crop the picked image at the user-selected area, then encode. */
+async function cropAndEncode(sourceUrl: string, area: Area): Promise<{ blob: Blob; previewUrl: string }> {
+  const img = await loadImage(sourceUrl);
+  // Target size preserves 4:3 aspect within OUTPUT_EDGE_PX.
+  const targetW = OUTPUT_EDGE_PX;
+  const targetH = Math.round(OUTPUT_EDGE_PX / CROP_ASPECT);
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not available");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, targetW, targetH);
+  const blob: Blob = await new Promise((res, rej) =>
+    canvas.toBlob(
+      (b) => (b ? res(b) : rej(new Error("Could not encode image"))),
+      OUTPUT_MIME,
+      OUTPUT_QUALITY,
+    ),
+  );
+  return { blob, previewUrl: URL.createObjectURL(blob) };
 }
+
+type Stage = "choose" | "crop" | "preview";
 
 export function ChangePhotoDialog({
   vehicle,
@@ -322,52 +372,92 @@ export function ChangePhotoDialog({
   const qc = useQueryClient();
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [processed, setProcessed] = useState<Blob | null>(null);
-  const [processing, setProcessing] = useState(false);
 
-  // Free any preview URL when the dialog closes / vehicle changes.
-  const cleanupPreview = () => {
-    setProcessed(null);
-    setPreviewUrl((u) => {
-      if (u) URL.revokeObjectURL(u);
-      return null;
-    });
-  };
+  const [stage, setStage] = useState<Stage>("choose");
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [processedBlob, setProcessedBlob] = useState<Blob | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [chooserError, setChooserError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Crop state
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
+
+  const cleanupUrls = useCallback(() => {
+    setSourceUrl((u) => { if (u) URL.revokeObjectURL(u); return null; });
+    setPreviewUrl((u) => { if (u) URL.revokeObjectURL(u); return null; });
+    setProcessedBlob(null);
+  }, []);
+
+  const resetAll = useCallback(() => {
+    cleanupUrls();
+    setStage("choose");
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedArea(null);
+    setChooserError(null);
+    setUploadError(null);
+  }, [cleanupUrls]);
+
   useEffect(() => {
-    if (!open) cleanupPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-  useEffect(() => () => cleanupPreview(), []);
+    if (!open) resetAll();
+  }, [open, resetAll]);
+  useEffect(() => () => cleanupUrls(), [cleanupUrls]);
 
   const onFile = async (f: File | null | undefined) => {
     if (!f) return;
+    setChooserError(null);
+    if (!f.type.startsWith("image/")) {
+      setChooserError("Please choose an image file (JPG or PNG).");
+      return;
+    }
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setChooserError("Image is too large. Please pick one under 8 MB.");
+      return;
+    }
     setProcessing(true);
     try {
-      cleanupPreview();
-      const { blob, previewUrl } = await processImage(f);
-      setProcessed(blob);
-      setPreviewUrl(previewUrl);
+      cleanupUrls();
+      const url = URL.createObjectURL(f);
+      setSourceUrl(url);
+      setStage("crop");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not read image");
+      setChooserError(e instanceof Error ? e.message : "Could not read image");
     } finally {
       setProcessing(false);
-      // Reset input so picking the same file again refires onChange.
       if (cameraRef.current) cameraRef.current.value = "";
       if (galleryRef.current) galleryRef.current.value = "";
+    }
+  };
+
+  const applyCrop = async () => {
+    if (!sourceUrl || !croppedArea) return;
+    setProcessing(true);
+    try {
+      const { blob, previewUrl: pv } = await cropAndEncode(sourceUrl, croppedArea);
+      setProcessedBlob(blob);
+      setPreviewUrl(pv);
+      setStage("preview");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not crop image");
+    } finally {
+      setProcessing(false);
     }
   };
 
   const upload = useMutation({
     mutationFn: async () => {
       if (!vehicle) throw new Error("No vehicle selected");
-      if (!processed) throw new Error("Choose a photo first");
+      if (!processedBlob) throw new Error("Choose a photo first");
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("You're signed out");
+      if (!u.user) throw new Error("You're signed out — sign in again to save the photo");
       const path = `${u.user.id}/${vehicle.id}/${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage
         .from("vehicle-images")
-        .upload(path, processed, { upsert: false, contentType: OUTPUT_MIME });
+        .upload(path, processedBlob, { upsert: false, contentType: OUTPUT_MIME });
       if (upErr) throw upErr;
       const previous = vehicle.image_path;
       const { error: dbErr } = await (supabase as any)
@@ -375,7 +465,6 @@ export function ChangePhotoDialog({
         .update({ image_path: path })
         .eq("id", vehicle.id);
       if (dbErr) {
-        // Roll back the orphaned upload so storage stays clean.
         await supabase.storage.from("vehicle-images").remove([path]);
         throw dbErr;
       }
@@ -393,10 +482,13 @@ export function ChangePhotoDialog({
       try {
         window.dispatchEvent(new CustomEvent("uw:vehicle-updated", { detail: { id: vehicle?.id } }));
       } catch { /* noop */ }
-      cleanupPreview();
+      resetAll();
       onOpenChange(false);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Upload failed"),
+    onError: (e: unknown) => {
+      // Keep the crop/preview so the user can retry without re-picking.
+      setUploadError(e instanceof Error ? e.message : "Upload failed. Check your connection and retry.");
+    },
   });
 
   const remove = useMutation({
@@ -426,18 +518,30 @@ export function ChangePhotoDialog({
 
   const busy = processing || upload.isPending || remove.isPending;
   const hasCustomPhoto = !!vehicle?.image_path;
-  const stage: "choose" | "preview" = previewUrl ? "preview" : "choose";
 
   const guardedClose = (v: boolean) => {
     if (busy) return;
+    if (!v && (stage !== "choose")) {
+      if (!confirm("Discard this photo?")) return;
+    }
     onOpenChange(v);
   };
 
+  const title =
+    stage === "preview" ? "Confirm photo" :
+    stage === "crop" ? "Crop photo" :
+    "Change photo";
+
   return (
     <Dialog open={open} onOpenChange={guardedClose}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" aria-describedby="change-photo-desc">
         <DialogHeader>
-          <DialogTitle>{stage === "preview" ? "Confirm photo" : "Change photo"}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription id="change-photo-desc">
+            {stage === "choose" && "Take a new photo or upload one from your gallery."}
+            {stage === "crop" && "Drag to reposition and use the slider to zoom. The 4:3 frame is what will be saved."}
+            {stage === "preview" && "Preview the cropped photo before saving."}
+          </DialogDescription>
         </DialogHeader>
 
         <input
@@ -447,6 +551,8 @@ export function ChangePhotoDialog({
           capture="environment"
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0])}
+          aria-hidden
+          tabIndex={-1}
         />
         <input
           ref={galleryRef}
@@ -454,17 +560,20 @@ export function ChangePhotoDialog({
           accept="image/*"
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0])}
+          aria-hidden
+          tabIndex={-1}
         />
 
-        {stage === "choose" ? (
+        {stage === "choose" && (
           <div className="space-y-3">
             <Button
               size="lg"
               className="w-full"
               disabled={busy}
               onClick={() => cameraRef.current?.click()}
+              autoFocus
             >
-              {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+              {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Camera className="mr-2 h-4 w-4" aria-hidden />}
               Take photo
             </Button>
             <Button
@@ -474,7 +583,7 @@ export function ChangePhotoDialog({
               disabled={busy}
               onClick={() => galleryRef.current?.click()}
             >
-              <ImageIcon className="mr-2 h-4 w-4" /> Upload from gallery
+              <ImageIcon className="mr-2 h-4 w-4" aria-hidden /> Upload from gallery
             </Button>
             {hasCustomPhoto && (
               <Button
@@ -485,43 +594,98 @@ export function ChangePhotoDialog({
                 onClick={() => remove.mutate()}
               >
                 {remove.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" aria-hidden />
                 )}
                 Remove photo
               </Button>
             )}
+            {chooserError && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <p>{chooserError}</p>
+              </div>
+            )}
           </div>
-        ) : (
+        )}
+
+        {stage === "crop" && sourceUrl && (
+          <div className="space-y-3">
+            <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border bg-black">
+              <Cropper
+                image={sourceUrl}
+                crop={crop}
+                zoom={zoom}
+                aspect={CROP_ASPECT}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_a, areaPx) => setCroppedArea(areaPx)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="crop-zoom" className="text-xs">Zoom</Label>
+              <Slider
+                id="crop-zoom"
+                min={1}
+                max={3}
+                step={0.01}
+                value={[zoom]}
+                onValueChange={(v) => setZoom(v[0] ?? 1)}
+                aria-label="Zoom level"
+                className="mt-2"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" size="lg" disabled={busy} onClick={resetAll}>
+                <RotateCcw className="mr-2 h-4 w-4" aria-hidden /> Start over
+              </Button>
+              <Button size="lg" disabled={busy || !croppedArea} onClick={applyCrop}>
+                {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {stage === "preview" && previewUrl && (
           <div className="space-y-3">
             <div className="overflow-hidden rounded-2xl border border-border bg-muted">
-              {/* eslint-disable-next-line jsx-a11y/img-redundant-alt */}
               <img
-                src={previewUrl!}
-                alt="Vehicle photo preview"
+                src={previewUrl}
+                alt={`Preview of new photo for ${vehicle?.make ?? ""} ${vehicle?.model ?? ""}`.trim()}
                 className="mx-auto block max-h-72 w-full object-cover"
               />
             </div>
+            {uploadError && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <div className="flex-1">
+                  <p className="font-medium">Couldn't upload photo</p>
+                  <p className="mt-0.5 opacity-90">{uploadError}</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
                 size="lg"
                 disabled={busy}
-                onClick={() => {
-                  cleanupPreview();
-                  galleryRef.current?.click();
-                }}
+                onClick={() => { setStage("crop"); setUploadError(null); }}
               >
-                <RotateCcw className="mr-2 h-4 w-4" /> Retake
+                <RotateCcw className="mr-2 h-4 w-4" aria-hidden /> Re-crop
               </Button>
-              <Button size="lg" disabled={busy || !processed} onClick={() => upload.mutate()}>
+              <Button
+                size="lg"
+                disabled={busy || !processedBlob}
+                onClick={() => { setUploadError(null); upload.mutate(); }}
+              >
                 {upload.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-2 h-4 w-4" aria-hidden />
                 )}
-                Use photo
+                {uploadError ? "Retry upload" : "Use photo"}
               </Button>
             </div>
           </div>
