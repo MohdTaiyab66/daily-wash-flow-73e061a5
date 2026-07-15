@@ -54,6 +54,24 @@ const SLOT_OPTIONS = [
   "Before 12 PM",
 ];
 
+/**
+ * Daily Shine skips Mondays. Pick tomorrow, or the next non-Monday if tomorrow is Monday.
+ * The customer never sees a "Monday is off" error — the picker simply cannot land on one.
+ */
+function nextServiceableDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  if (d.getDay() === 1) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function bumpOffMonday(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  if (d.getDay() === 1) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 type BookableKey = "interior" | "exterior_daily" | "extra_exterior" | "extra_interior";
 
 const BOOKABLE_ORDER: BookableKey[] = [
@@ -111,11 +129,7 @@ export function BookAWashSheet({
 }) {
   const qc = useQueryClient();
   const [pickedKey, setPickedKey] = useState<BookableKey | null>(null);
-  const [date, setDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [date, setDate] = useState(() => nextServiceableDate());
   const [slot, setSlot] = useState(SLOT_OPTIONS[3]);
   const [addressId, setAddressId] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -210,8 +224,8 @@ export function BookAWashSheet({
   const nothingLeft = !entQ.isLoading && available.length === 0;
 
   const picked = pickedKey ? CONFIG[pickedKey] : null;
-  const isMonday = new Date(date).getDay() === 1;
   const today = new Date().toISOString().slice(0, 10);
+  const noActivePlan = !subQ.isLoading && !subQ.data && !entQ.isLoading;
 
   const confirm = async () => {
     if (!pickedKey || !picked) {
@@ -224,10 +238,6 @@ export function BookAWashSheet({
     }
     if (!addressId) {
       toast.error("Add a service address first.");
-      return;
-    }
-    if (isMonday) {
-      toast.error("Daily Shine does not run on Mondays. Pick another date.");
       return;
     }
     const service = (svcQ.data ?? []).find((s) => s.slug === picked.slug);
@@ -286,22 +296,41 @@ export function BookAWashSheet({
           <div className="h-24 animate-pulse rounded-2xl bg-muted" />
         )}
 
-        {!entQ.isLoading && nothingLeft && (
+        {noActivePlan && (
           <div className="rounded-2xl border border-dashed border-border p-5 text-center">
-            <p className="text-sm font-semibold">You've used all your washes this month.</p>
+            <p className="text-sm font-semibold">No active plan on this vehicle.</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add more washes or book a one-time premium service.
+              Subscribe to Daily Shine to start booking washes.
             </p>
-            <Button asChild className="mt-4 rounded-full">
+            <Button asChild className="mt-4 rounded-full" onClick={() => onOpenChange(false)}>
               <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
-                <ShoppingBag className="mr-1.5 h-4 w-4" />
-                Buy More Washes
+                See Daily Shine
               </Link>
             </Button>
           </div>
         )}
 
-        {!entQ.isLoading && available.length > 0 && (
+        {!entQ.isLoading && !noActivePlan && nothingLeft && (
+          <div className="rounded-2xl border border-dashed border-border p-5 text-center">
+            <p className="text-sm font-semibold">You've used all your washes this month.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Add more washes or book a one-time premium service.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button asChild className="rounded-full" onClick={() => onOpenChange(false)}>
+                <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
+                  <ShoppingBag className="mr-1.5 h-4 w-4" />
+                  Buy more washes
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>
+                <Link to="/c/home">Browse one-time services</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!entQ.isLoading && !noActivePlan && available.length > 0 && (
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Choose service</Label>
@@ -366,9 +395,12 @@ export function BookAWashSheet({
                   type="date"
                   min={today}
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => setDate(bumpOffMonday(e.target.value))}
                   className="mt-1"
                 />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Mondays are our weekly rest day, so they're skipped.
+                </p>
               </div>
               <div>
                 <Label className="text-xs">Address</Label>
@@ -385,12 +417,6 @@ export function BookAWashSheet({
                 </select>
               </div>
             </div>
-
-            {isMonday && (
-              <p className="text-[11px] text-destructive">
-                Mondays are off-days for Daily Shine. Pick another date.
-              </p>
-            )}
 
             <div>
               <Label className="text-xs">Time slot</Label>
@@ -422,14 +448,14 @@ export function BookAWashSheet({
           </div>
         )}
 
-        {!nothingLeft && (
+        {!nothingLeft && !noActivePlan && (
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               onClick={confirm}
-              disabled={saving || !pickedKey || isMonday || !addressId}
+              disabled={saving || !pickedKey || !addressId}
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Book wash
