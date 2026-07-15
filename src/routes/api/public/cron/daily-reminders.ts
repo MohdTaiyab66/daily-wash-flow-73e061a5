@@ -44,30 +44,34 @@ async function upsertNotification(sb: any, n: Notif, key: string) {
 }
 
 async function weeklyIncludedWashReminder(sb: any) {
-  // Only run on Sundays (dow=0)
+  // Only run on Sundays
   if (new Date().getUTCDay() !== 0) return 0;
-  const { data: subs } = await sb
-    .from("subscriptions")
-    .select("id,user_id,vehicle_id,current_period_end,washes_remaining_this_month")
-    .eq("status", "active")
-    .gt("washes_remaining_this_month", 0)
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: ents } = await sb
+    .from("subscription_entitlements")
+    .select("id,user_id,vehicle_id,subscription_id,consumed,total_allocated,cycle_start,cycle_end,benefit_type")
+    .eq("benefit_type", "included_wash")
+    .lte("cycle_start", today)
+    .gte("cycle_end", today)
     .limit(5000);
-  const week = new Date().toISOString().slice(0, 10);
+  const week = today;
   let n = 0;
-  for (const s of subs ?? []) {
-    if (!s.user_id) continue;
+  for (const e of ents ?? []) {
+    const remaining = (e.total_allocated ?? 0) - (e.consumed ?? 0);
+    if (remaining <= 0) continue;
+    if (!e.user_id) continue;
     const inserted = await upsertNotification(
       sb,
       {
-        user_id: s.user_id,
-        vehicle_id: s.vehicle_id ?? null,
+        user_id: e.user_id,
+        vehicle_id: e.vehicle_id ?? null,
         type: "weekly_wash_reminder",
         title: "Washes still available",
-        body: `You have ${s.washes_remaining_this_month} included washes remaining this month.`,
+        body: `You have ${remaining} included wash${remaining === 1 ? "" : "es"} remaining this cycle.`,
         link: "/c/subscriptions",
-        metadata: { subscription_id: s.id },
+        metadata: { subscription_id: e.subscription_id, remaining },
       },
-      `weekly:${week}:${s.id}`,
+      `weekly:${week}:${e.id}`,
     );
     if (inserted) n++;
   }
