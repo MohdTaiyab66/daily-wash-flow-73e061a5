@@ -25,6 +25,7 @@ import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
+import { useVehicleImageUrl } from "@/lib/vehicle-image";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -135,19 +136,14 @@ function CustomerHome() {
     ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category)
     : "";
 
-  const catalogImageQ = useQuery({
-    queryKey: ["vehicle-catalog-image", activeVehicle?.make, activeVehicle?.model],
-    enabled: !!activeVehicle,
-    queryFn: async (): Promise<string | null> => {
-      const { data } = await supabase
-        .from("vehicle_catalog")
-        .select("image_url")
-        .ilike("make", activeVehicle!.make)
-        .ilike("model", activeVehicle!.model)
-        .limit(1)
-        .maybeSingle();
-      return data?.image_url ?? null;
-    },
+  // Uses useVehicleImageUrl so the customer's own uploaded photo (from
+  // `customer_vehicles.image_path`) takes priority over the catalog stock
+  // image. Change photo dialog invalidates ["vehicle-image-url", ...] on
+  // success so Home reflects the new picture instantly.
+  const catalogImageQ = useVehicleImageUrl({
+    make: activeVehicle?.make,
+    model: activeVehicle?.model,
+    imagePath: activeVehicle?.image_path,
   });
 
   const pickVehicle = (id: string) => {
