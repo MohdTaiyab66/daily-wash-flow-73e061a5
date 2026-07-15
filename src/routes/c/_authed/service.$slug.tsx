@@ -609,6 +609,11 @@ function ServiceDetail() {
             prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
             notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
+            // Explicitly enable UPI (intent + collect) alongside cards / netbanking /
+            // wallets. On the Android SDK, UPI intent apps only appear when the host
+            // APK also declares matching <queries> in AndroidManifest.xml — see
+            // scripts/patch-android-manifest.mjs.
+            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
           });
           nativeResp = result?.response ?? result;
         } catch (err: any) {
