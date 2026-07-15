@@ -302,9 +302,13 @@ function MyPlanPage() {
 
       {hasVehicles && (
         <>
-          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+          {activeSub && <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />}
 
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          {/* Service outcome notices (unavailable / dirty) only make sense
+              for an active, paid subscription. Never for pending payments. */}
+          {activeSub && (
+            <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          )}
 
           {bookingsQ.isLoading && (
             <div className="mt-6 space-y-3">
@@ -313,11 +317,16 @@ function MyPlanPage() {
             </div>
           )}
 
-          {!bookingsQ.isLoading && !activeSub && (
+          {!bookingsQ.isLoading && !activeSub && pendingSub && (
+            <PendingPaymentCard booking={pendingSub} />
+          )}
+
+          {!bookingsQ.isLoading && !activeSub && !pendingSub && (
             <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
           )}
         </>
       )}
+
 
 
       {hasVehicles && activeSub && (
