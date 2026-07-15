@@ -296,18 +296,37 @@ export function BookAWashSheet({
           <div className="h-24 animate-pulse rounded-2xl bg-muted" />
         )}
 
-        {!entQ.isLoading && nothingLeft && (
+        {noActivePlan && (
+          <div className="rounded-2xl border border-dashed border-border p-5 text-center">
+            <p className="text-sm font-semibold">No active plan on this vehicle.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Subscribe to Daily Shine to start booking washes.
+            </p>
+            <Button asChild className="mt-4 rounded-full" onClick={() => onOpenChange(false)}>
+              <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
+                See Daily Shine
+              </Link>
+            </Button>
+          </div>
+        )}
+
+        {!entQ.isLoading && !noActivePlan && nothingLeft && (
           <div className="rounded-2xl border border-dashed border-border p-5 text-center">
             <p className="text-sm font-semibold">You've used all your washes this month.</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Add more washes or book a one-time premium service.
             </p>
-            <Button asChild className="mt-4 rounded-full">
-              <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
-                <ShoppingBag className="mr-1.5 h-4 w-4" />
-                Buy More Washes
-              </Link>
-            </Button>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button asChild className="rounded-full" onClick={() => onOpenChange(false)}>
+                <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
+                  <ShoppingBag className="mr-1.5 h-4 w-4" />
+                  Buy more washes
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>
+                <Link to="/c/home">Browse one-time services</Link>
+              </Button>
+            </div>
           </div>
         )}
 
