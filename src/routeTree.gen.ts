@@ -79,6 +79,7 @@ import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
 import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
+import { Route as CAuthedVehiclesIdRouteImport } from './routes/c/_authed/vehicles_.$id'
 import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
 import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
 import { Route as ApiPublicMarketplaceOfferActionRouteImport } from './routes/api/public/marketplace/offer-action'
@@ -95,6 +96,7 @@ import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public
 import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 import { Route as AuthenticatedAppLeadsOfferIdRouteImport } from './routes/_authenticated/app.leads.$offerId'
+import { Route as CAuthedVehiclesIdPhotoRouteImport } from './routes/c/_authed/vehicles_.$id.photo'
 
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
@@ -454,6 +456,11 @@ const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
   path: '/vehicles/add',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const CAuthedVehiclesIdRoute = CAuthedVehiclesIdRouteImport.update({
+  id: '/vehicles_/$id',
+  path: '/vehicles/$id',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
 const CAuthedServiceSlugRoute = CAuthedServiceSlugRouteImport.update({
   id: '/service/$slug',
   path: '/service/$slug',
@@ -547,6 +554,11 @@ const AuthenticatedAppLeadsOfferIdRoute =
     path: '/leads/$offerId',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const CAuthedVehiclesIdPhotoRoute = CAuthedVehiclesIdPhotoRouteImport.update({
+  id: '/photo',
+  path: '/photo',
+  getParentRoute: () => CAuthedVehiclesIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -633,7 +645,9 @@ export interface FileRoutesByFullPath {
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
+  '/c/vehicles/$id': typeof CAuthedVehiclesIdRouteWithChildren
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
+  '/c/vehicles/$id/photo': typeof CAuthedVehiclesIdPhotoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -717,7 +731,9 @@ export interface FileRoutesByTo {
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/service/$slug': typeof CAuthedServiceSlugRoute
+  '/c/vehicles/$id': typeof CAuthedVehiclesIdRouteWithChildren
   '/c/vehicles/add': typeof CAuthedVehiclesAddRoute
+  '/c/vehicles/$id/photo': typeof CAuthedVehiclesIdPhotoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -806,7 +822,9 @@ export interface FileRoutesById {
   '/api/public/marketplace/offer-action': typeof ApiPublicMarketplaceOfferActionRoute
   '/c/_authed/bookings/$id': typeof CAuthedBookingsIdRoute
   '/c/_authed/service/$slug': typeof CAuthedServiceSlugRoute
+  '/c/_authed/vehicles_/$id': typeof CAuthedVehiclesIdRouteWithChildren
   '/c/_authed/vehicles_/add': typeof CAuthedVehiclesAddRoute
+  '/c/_authed/vehicles_/$id/photo': typeof CAuthedVehiclesIdPhotoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -895,7 +913,9 @@ export interface FileRouteTypes {
     | '/api/public/marketplace/offer-action'
     | '/c/bookings/$id'
     | '/c/service/$slug'
+    | '/c/vehicles/$id'
     | '/c/vehicles/add'
+    | '/c/vehicles/$id/photo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -979,7 +999,9 @@ export interface FileRouteTypes {
     | '/api/public/marketplace/offer-action'
     | '/c/bookings/$id'
     | '/c/service/$slug'
+    | '/c/vehicles/$id'
     | '/c/vehicles/add'
+    | '/c/vehicles/$id/photo'
   id:
     | '__root__'
     | '/'
@@ -1067,7 +1089,9 @@ export interface FileRouteTypes {
     | '/api/public/marketplace/offer-action'
     | '/c/_authed/bookings/$id'
     | '/c/_authed/service/$slug'
+    | '/c/_authed/vehicles_/$id'
     | '/c/_authed/vehicles_/add'
+    | '/c/_authed/vehicles_/$id/photo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1588,6 +1612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedVehiclesAddRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
+    '/c/_authed/vehicles_/$id': {
+      id: '/c/_authed/vehicles_/$id'
+      path: '/vehicles/$id'
+      fullPath: '/c/vehicles/$id'
+      preLoaderRoute: typeof CAuthedVehiclesIdRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
     '/c/_authed/service/$slug': {
       id: '/c/_authed/service/$slug'
       path: '/service/$slug'
@@ -1699,6 +1730,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/leads/$offerId'
       preLoaderRoute: typeof AuthenticatedAppLeadsOfferIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/c/_authed/vehicles_/$id/photo': {
+      id: '/c/_authed/vehicles_/$id/photo'
+      path: '/photo'
+      fullPath: '/c/vehicles/$id/photo'
+      preLoaderRoute: typeof CAuthedVehiclesIdPhotoRouteImport
+      parentRoute: typeof CAuthedVehiclesIdRoute
     }
   }
 }
@@ -1866,6 +1904,17 @@ const CAuthedBookingsRouteWithChildren = CAuthedBookingsRoute._addFileChildren(
   CAuthedBookingsRouteChildren,
 )
 
+interface CAuthedVehiclesIdRouteChildren {
+  CAuthedVehiclesIdPhotoRoute: typeof CAuthedVehiclesIdPhotoRoute
+}
+
+const CAuthedVehiclesIdRouteChildren: CAuthedVehiclesIdRouteChildren = {
+  CAuthedVehiclesIdPhotoRoute: CAuthedVehiclesIdPhotoRoute,
+}
+
+const CAuthedVehiclesIdRouteWithChildren =
+  CAuthedVehiclesIdRoute._addFileChildren(CAuthedVehiclesIdRouteChildren)
+
 interface CAuthedRouteRouteChildren {
   CAuthedBookingsRoute: typeof CAuthedBookingsRouteWithChildren
   CAuthedHomeRoute: typeof CAuthedHomeRoute
@@ -1874,6 +1923,7 @@ interface CAuthedRouteRouteChildren {
   CAuthedSubscriptionsRoute: typeof CAuthedSubscriptionsRoute
   CAuthedVehiclesRoute: typeof CAuthedVehiclesRoute
   CAuthedServiceSlugRoute: typeof CAuthedServiceSlugRoute
+  CAuthedVehiclesIdRoute: typeof CAuthedVehiclesIdRouteWithChildren
   CAuthedVehiclesAddRoute: typeof CAuthedVehiclesAddRoute
 }
 
@@ -1885,6 +1935,7 @@ const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
   CAuthedSubscriptionsRoute: CAuthedSubscriptionsRoute,
   CAuthedVehiclesRoute: CAuthedVehiclesRoute,
   CAuthedServiceSlugRoute: CAuthedServiceSlugRoute,
+  CAuthedVehiclesIdRoute: CAuthedVehiclesIdRouteWithChildren,
   CAuthedVehiclesAddRoute: CAuthedVehiclesAddRoute,
 }
 
@@ -1934,13 +1985,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
