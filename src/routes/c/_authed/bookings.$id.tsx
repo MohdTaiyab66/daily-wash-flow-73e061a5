@@ -22,7 +22,7 @@ const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM",
 
 const TIMELINE = [
   { key: "pending_payment", label: "Booking confirmed", desc: "We've received your booking" },
-  { key: "paid", label: "Partner assigned", desc: "Your service is scheduled within your selected window" },
+  { key: "paid", label: "Scheduled", desc: "Your service is scheduled within your selected window" },
   { key: "completed", label: "Service completed", desc: "Hope your car sparkles!" },
 ] as const;
 
@@ -275,9 +275,6 @@ function BookingDetail() {
                 </span>
               )}
             </div>
-            {completion.data?.partner_name && (
-              <p className="mt-1 text-xs text-muted-foreground">By {completion.data.partner_name}</p>
-            )}
             {photosVisible ? (
               <div className="mt-3">
                 {completion.data && completion.data.photos.length > 0 ? (
