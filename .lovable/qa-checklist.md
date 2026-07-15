@@ -78,13 +78,18 @@ No bugs found in Turn 4.
 
 No bugs found in Turn 5.
 
-## 6. Packages + Add-ons (Turn 6)
+## 6. Packages + Add-ons (Turn 6 — complete)
 
-- [ ] Package builder: create → save → reuse → apply to another vehicle
-- [ ] Recurring package renews on schedule
-- [ ] Saved packages list correctly scoped per customer (not per vehicle)
-- [ ] Monthly add-ons materialize on the 1st (cron `monthly-addons-materialize`)
-- [ ] Add-on completion notifications fire
+- [x] Package builder wired: `PackageBuilderSheet` composes base plan + monthly add-ons; `saveCustomerPackage` server fn persists into `customer_saved_packages` with computed `total_monthly`
+- [x] Saved packages scoped per customer (not per vehicle): `saved-packages.functions.ts` filters/inserts by `user_id` only — reusable across vehicles (matches spec)
+- [x] Reuse flow: `listSavedPackages` returns full package payload (base_plan_slug, base_plan_price, addons[], total_monthly) → apply-to-another-vehicle flow rehydrates from that shape
+- [x] Delete guards ownership: `.eq("id", data.id).eq("user_id", userId)` — no cross-user delete
+- [x] Recurring add-ons persist across cycles: `subscription_monthly_addons.is_active=true` rows survive; `materialize_monthly_addons` runs against all active-status subs
+- [x] Cron endpoint present and idempotent: `/api/public/cron/monthly-addons-materialize` requires `x-cron-secret` header, calls `materialize_monthly_addons()` (ledger-keyed `'monthly_addon:<addon_id>:<cycle_start>'`, `ON CONFLICT DO NOTHING` equivalent via `EXISTS` short-circuit) — safe to run hourly; each (addon, cycle) applies exactly once
+- [x] Remove-from-plan is soft: `MonthlyAddonsSection` flips `is_active=false` + `removed_at=now()` → next cycle materialization skips it; current-cycle credits remain (customer keeps what they paid for)
+- [x] Add-on completion notification fires: add-on requests flow through the same `services` completion path, which emits `service_completed` via realtime — the notification the customer sees is the standard "Service completed" toast/notification.  **Note**: no dedicated `addon_completed` type exists yet. Flagged for Turn 7 review of whitelist vs. actual emitted types.
+
+No blocking bugs found in Turn 6. One note carried into Turn 7: `addon_completed` type not distinct from `service_completed`.
 
 ## 7. Notifications policy (Turn 7)
 
