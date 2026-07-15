@@ -111,7 +111,7 @@ function CustomerAuth() {
       <div className="relative bg-primary text-primary-foreground rounded-b-[36px] px-5 pt-8 pb-10">
         {step !== "phone" && (
           <button
-            onClick={() => setStep("phone")}
+            onClick={() => { setOtp(""); setName(""); setStep("phone"); }}
             className="absolute left-5 top-6 inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-sm font-semibold backdrop-blur"
           >
             <ArrowLeft className="h-4 w-4" /> Back
