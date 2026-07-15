@@ -12,9 +12,9 @@ Updated each turn. See `.lovable/plan.md` for stage order.
 - [x] Demo OTP `1234` accepted; other OTPs rejected
 - [x] Existing user → `signInWithPassword` succeeds → redirects home
 - [x] New user → sign-up path, `customer_profiles` upsert, referral captured
-- [!] **BUG-A1**: `verifyOtp` treats *any* sign-in error as "new user" → shows Name step even for valid users with wrong password/rate limits/network errors. Should distinguish `invalid_credentials` from other errors.
-- [!] **BUG-A2**: `verifyOtp` — if user goes back to phone step and re-enters, `otp` state leaks and can auto-fail. Minor.
-- [!] **BUG-A3**: On sign-up, if `signUp` succeeds but subsequent `signInWithPassword` fails (email confirmation required), user is silently stranded. Confirm auto-confirm is on for `@customer.urbanwash.app` accounts.
+- [x] **BUG-A1 FIXED**: `verifyOtp` now distinguishes `invalid_credentials` (→ sign-up step) from other errors (surfaced via toast). No more silent stranding on rate-limits or network errors.
+- [x] **BUG-A2 FIXED**: Back button now resets `otp` and `name` state so re-entering phone doesn't inherit stale OTP.
+- [x] **BUG-A3 CHECKED**: Verified all 28 existing `@customer.urbanwash.app` accounts have `email_confirmed_at` set → auto-confirm is on. Sign-up → sign-in path is currently reliable. Left a note: if auto-confirm is ever disabled, `signUp` needs to surface a "check your email" message.
 - [x] Redirect-back via `?redirect=` param honored
 - [x] `_authenticated` gate redirects unauthenticated to `/auth` (managed layout)
 - [ ] Sign out clears cache + navigates to `/c/auth` (verify in Profile stage)
