@@ -48,18 +48,19 @@ Updated each turn. See `.lovable/plan.md` for stage order.
 - [x] Success toast copy correct ("Subscription activated · Waiting for area assignment" / "Payment successful · Booking confirmed")
 - [!] **BUG-P1 FIXED (Critical)**: Razorpay webhook processed **any** event carrying `payload.payment.entity` — including `payment.failed` and `payment.authorized` — and fed it straight into `activate_paid_booking`. A failed payment would therefore have marked the booking `paid` and created a subscription. Gated activation on `event === 'payment.captured' | 'order.paid'` AND `entity.status === 'captured'`; all other events return `{ok:true, ignored:true, reason:'not_captured'}` so Razorpay stops retrying without side effects.
 
-## 4. Subscription + Credits + Daily Shine (Turn 4)
+## 4. Subscription + Credits + Daily Shine (Turn 4 — complete)
 
-- [ ] Daily Shine plan inclusions match: Daily Exterior + 1 Interior&Exterior/month
-- [ ] Credits created on activation, not before
-- [ ] Included wash decrements after use
-- [ ] Customer cannot exceed credits
-- [ ] Recurring add-ons increase credits monthly (materialize cron)
-- [ ] One-time add-ons work once, no residual credit
-- [ ] Credits reset correctly on renewal
-- [ ] Cancelled subscription blocks new bookings
-- [ ] Expired subscription blocks new bookings
-- [ ] Pause + resume preserves remaining credits
+- [x] Daily Shine allocations correct per `plan_benefit_allocation('daily-shine',*)`: 26 exterior_daily, 1 interior, 1 hydrophobic, 1 tyre_polish, 1 paper_mats, 1 fragrance, NULL (unlimited) dusting — matches finalized business logic
+- [x] Credits created on activation only: `tg_subscription_ensure_entitlements` fires `ensure_entitlements_for_subscription` **only** when status ∈ (active, assigned, awaiting_partner_assignment). Pending/failed bookings never seed entitlements
+- [x] Included wash decrements via `try_consume_entitlement`: `UPDATE subscription_entitlements SET consumed = consumed + 1` with `FOR UPDATE OF se` row-lock preventing race conditions
+- [x] Exceed-credits guard: `try_consume_entitlement` returns `{consumed:false, reason:'exhausted'}` when `consumed >= total_allocated`; `entitlement_exhausted` notification fires on last-one usage
+- [x] Recurring add-ons: `materialize_monthly_addons()` iterates active `subscription_monthly_addons`, bumps `total_allocated` idempotently keyed on `'monthly_addon:'||addon_id||':'||cycle_start` (safe to re-run within a cycle)
+- [x] One-time add-ons: consumed via `try_consume_entitlement(..., p_addon_request_id)`; single ledger row (-1), no residual because they don't seed a persistent monthly row
+- [x] Credits reset on renewal: `ensure_entitlements_for_subscription` uses `service_start_date`/`renewal_date` as `cycle_start`/`cycle_end`, and `ON CONFLICT (subscription_id, benefit_type, cycle_start) DO NOTHING` — new dates create fresh rows with `consumed=0`
+- [x] Cancelled/expired subs block bookings: `try_consume_entitlement` and `get_vehicle_entitlements` both filter `s.status IN ('active','assigned','awaiting_partner_assignment')` — cancelled/expired subs have no visible entitlement, so booking flows see 0 remaining and block
+- [x] Pause + resume preserves credits: consumed values stay on the entitlement row; cycle window is preserved (no wipe on pause). Verified no code path resets `consumed` on pause/resume
+
+No bugs found in Turn 4.
 
 ## 5. Bookings + One-time (Turn 5)
 
