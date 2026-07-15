@@ -431,84 +431,162 @@ function ServiceDetail() {
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
-      // Native Android APK → try Razorpay's native SDK first. Fall back to the
-      // web checkout inside the WebView when the native plugin isn't available
-      // in the installed APK (e.g. "Checkout plugin is not implemented on android").
-      const { isNative } = await import("@/lib/platform");
-      const runWebCheckout = async () => {
-        await loadRazorpayCheckout();
-        await new Promise<void>((resolve, reject) => {
-          const checkout = new window.Razorpay!({
-            key: order.keyId,
-            amount: order.amount,
-            currency: order.currency,
-            name: "Urban Wash",
-            description: service.name,
-            order_id: order.orderId,
-            prefill: { email: prefillEmail, contact: prefillContact },
-            notes: { booking_id: String(bookingId) },
-            config: {
-              display: {
-                blocks: {
-                  upi_first: {
-                    name: "Pay using UPI",
-                    instruments: [
-                      { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
-                      { method: "upi", flows: ["collect"] },
-                      { method: "upi", flows: ["qr"] },
-                    ],
-                  },
-                  cards_block: { name: "Cards", instruments: [{ method: "card" }] },
-                  netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
-                  wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
+      const checkoutCtx: PendingCheckout = {
+        bookingId: String(bookingId),
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        serviceName: service.name,
+        isSubscription: service.service_type === "subscription",
+        prefillEmail,
+        prefillContact,
+        attemptNo: 1,
+      };
+      setPendingCheckout(checkoutCtx);
+      await runPayment(checkoutCtx, { isRetry: false });
+    } catch (err: any) {
+      fail(err?.message || "Could not confirm booking");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const safeLog = useCallback(async (row: {
+    bookingId: string;
+    channel: "native" | "web" | "unknown";
+    outcome: "started" | "success" | "failure" | "cancelled" | "retry" | "timeout";
+    attemptNo?: number;
+    errorCode?: string;
+    errorMessage?: string;
+    providerOrderId?: string;
+    providerPaymentId?: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    try {
+      await logAttemptFn({ data: row });
+    } catch (e) {
+      console.warn("[payment] attempt log failed (non-fatal)", e);
+    }
+  }, [logAttemptFn]);
+
+  /**
+   * Poll the server for payment reconciliation. Razorpay may finalize the
+   * payment via webhook even if the checkout window failed to return a
+   * response to the client. Polls every 2s up to ~60s, returns true if
+   * the booking flips to `paid` (or a subscription is created).
+   */
+  const pollForSuccess = useCallback(async (bookingId: string): Promise<boolean> => {
+    const abort = { cancelled: false };
+    pollAbortRef.current = abort;
+    const deadline = Date.now() + 60_000;
+    while (!abort.cancelled && Date.now() < deadline) {
+      try {
+        const s = await getStatusFn({ data: { bookingId } });
+        if (s.paymentStatus === "paid" || s.subscriptionId) return true;
+        if (s.latestAttempt?.outcome === "success") return true;
+      } catch (e) {
+        console.warn("[payment] status poll error (will retry)", e);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return false;
+  }, [getStatusFn]);
+
+  const runWebCheckout = useCallback((ctx: PendingCheckout) => {
+    return new Promise<void>((resolve, reject) => {
+      loadRazorpayCheckout().then(() => {
+        const checkout = new window.Razorpay!({
+          key: ctx.keyId,
+          amount: ctx.amount,
+          currency: ctx.currency,
+          name: "Urban Wash",
+          description: ctx.serviceName,
+          order_id: ctx.orderId,
+          prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
+          notes: { booking_id: ctx.bookingId },
+          config: {
+            display: {
+              blocks: {
+                upi_first: {
+                  name: "Pay using UPI",
+                  instruments: [
+                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
+                    { method: "upi", flows: ["collect"] },
+                    { method: "upi", flows: ["qr"] },
+                  ],
                 },
-                sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
-                preferences: { show_default_blocks: false },
-                hide: [{ method: "emi" }, { method: "paylater" }],
+                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
+                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
+                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
               },
+              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
+              preferences: { show_default_blocks: false },
+              hide: [{ method: "emi" }, { method: "paylater" }],
             },
-            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-            timeout: 600,
-            retry: { enabled: true, max_count: 3 },
-            modal: {
-              escape: true,
-              ondismiss: () => reject(new Error("Payment cancelled")),
-            },
-            handler: async (response: any) => {
-              try {
-                await verifyPayment({
-                  data: {
-                    bookingId: String(bookingId),
-                    razorpayOrderId: response.razorpay_order_id,
-                    razorpayPaymentId: response.razorpay_payment_id,
-                    razorpaySignature: response.razorpay_signature,
-                  },
-                });
-                resolve();
-              } catch (error) {
-                reject(error);
-              }
-            },
-          });
-          (checkout as any).on?.("payment.failed", (resp: any) => {
-            const desc = resp?.error?.description || "Payment failed. Please try again.";
-            reject(new Error(desc));
-          });
-          checkout.open();
+          },
+          method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
+          timeout: 600,
+          retry: { enabled: true, max_count: 3 },
+          modal: {
+            escape: true,
+            ondismiss: () => reject(new Error("Payment cancelled")),
+          },
+          handler: async (response: any) => {
+            try {
+              await verifyPayment({
+                data: {
+                  bookingId: ctx.bookingId,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
         });
-      };
+        (checkout as any).on?.("payment.failed", (resp: any) => {
+          const desc = resp?.error?.description || "Payment failed. Please try again.";
+          reject(new Error(desc));
+        });
+        checkout.open();
+      }).catch(reject);
+    });
+  }, [verifyPayment]);
 
-      const isPluginUnavailable = (err: any) => {
-        const msg = String(err?.message || err?.description || err || "").toLowerCase();
-        return (
-          msg.includes("not implemented") ||
-          msg.includes("not available") ||
-          msg.includes("unimplemented") ||
-          err?.code === "UNIMPLEMENTED"
-        );
-      };
+  const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
+    setPaymentError(null);
+    setPaying(true);
+    // Cancel any prior polling loop.
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
 
-      if (isNative()) {
+    const { isNative } = await import("@/lib/platform");
+    const nativeMode = isNative();
+    let channel: "native" | "web" | "unknown" = nativeMode ? "native" : "web";
+
+    await safeLog({
+      bookingId: ctx.bookingId,
+      channel,
+      outcome: opts.isRetry ? "retry" : "started",
+      attemptNo: ctx.attemptNo,
+      providerOrderId: ctx.orderId,
+    });
+
+    const isPluginUnavailable = (err: any) => {
+      const msg = String(err?.message || err?.description || err || "").toLowerCase();
+      return (
+        msg.includes("not implemented") ||
+        msg.includes("not available") ||
+        msg.includes("unimplemented") ||
+        err?.code === "UNIMPLEMENTED"
+      );
+    };
+
+    try {
+      if (nativeMode) {
         let nativeUnavailable = false;
         let nativeResp: any = null;
         try {
@@ -522,68 +600,130 @@ function ServiceDetail() {
             throw new Error("Native Razorpay plugin not available");
           }
           const result: any = await Checkout.open({
-            key: order.keyId,
-            amount: order.amount,
-            currency: order.currency,
+            key: ctx.keyId,
+            amount: ctx.amount,
+            currency: ctx.currency,
             name: "Urban Wash",
-            description: service.name,
-            order_id: order.orderId,
-            prefill: { email: prefillEmail, contact: prefillContact },
-            notes: { booking_id: String(bookingId) },
+            description: ctx.serviceName,
+            order_id: ctx.orderId,
+            prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
+            notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
           });
           nativeResp = result?.response ?? result;
         } catch (err: any) {
           if (nativeUnavailable || isPluginUnavailable(err)) {
             // Fall back to Razorpay Standard Checkout in the WebView.
-            await runWebCheckout();
+            await safeLog({
+              bookingId: ctx.bookingId,
+              channel: "native",
+              outcome: "failure",
+              attemptNo: ctx.attemptNo,
+              errorCode: "plugin_unimplemented",
+              errorMessage: String(err?.message ?? "Native Razorpay plugin not available"),
+            });
+            channel = "web";
+            await runWebCheckout(ctx);
           } else {
-            const desc = err?.message || err?.description || "Payment cancelled";
-            throw new Error(desc);
+            throw err;
           }
         }
         if (nativeResp) {
           if (!nativeResp.razorpay_payment_id) throw new Error("Payment cancelled");
           await verifyPayment({
             data: {
-              bookingId: String(bookingId),
-              razorpayOrderId: nativeResp.razorpay_order_id ?? order.orderId,
+              bookingId: ctx.bookingId,
+              razorpayOrderId: nativeResp.razorpay_order_id ?? ctx.orderId,
               razorpayPaymentId: nativeResp.razorpay_payment_id,
               razorpaySignature: nativeResp.razorpay_signature,
             },
           });
         }
       } else {
-        await runWebCheckout();
+        await runWebCheckout(ctx);
       }
 
-
-
-      if (service.service_type === "subscription") {
-        toast.success("Subscription activated · Waiting for area assignment", {
-          description: "We'll notify you once your first service is completed.",
-          duration: 6000,
-        });
-      } else {
-        toast.success("Payment successful · Booking confirmed", {
-          description: "We'll notify you when the service is completed.",
-          duration: 6000,
-        });
-      }
-      qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-      qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
-      qc.invalidateQueries({ queryKey: ["sub-queue", currentUser.user.id] });
-      if (service.service_type === "subscription") {
-        await navigate({ to: "/c/subscriptions" });
-      } else {
-        await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
-      }
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: "success",
+        attemptNo: ctx.attemptNo,
+        providerOrderId: ctx.orderId,
+      });
+      await finalizeSuccess(ctx);
     } catch (err: any) {
-      fail(err?.message || "Could not confirm booking");
+      const cancelled = /cancelled/i.test(String(err?.message ?? ""));
+      // Even on cancel/failure, poll the server briefly — the webhook may
+      // have already reconciled the payment out-of-band.
+      const reconciled = await pollForSuccess(ctx.bookingId);
+      if (reconciled) {
+        await safeLog({
+          bookingId: ctx.bookingId,
+          channel,
+          outcome: "success",
+          attemptNo: ctx.attemptNo,
+          providerOrderId: ctx.orderId,
+          metadata: { reconciled_via: "polling" },
+        });
+        await finalizeSuccess(ctx);
+        return;
+      }
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: cancelled ? "cancelled" : "failure",
+        attemptNo: ctx.attemptNo,
+        errorCode: cancelled ? "user_cancelled" : "checkout_failed",
+        errorMessage: String(err?.message ?? err).slice(0, 500),
+      });
+      setPaymentError({
+        message: cancelled
+          ? "Checkout was cancelled. You can retry when you're ready."
+          : (err?.message || "Payment failed. Please try again."),
+        canRetry: true,
+      });
     } finally {
-      setSubmitting(false);
+      setPaying(false);
     }
-  };
+  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess]);
+
+  const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
+    if (ctx.isSubscription) {
+      toast.success("Subscription activated · Waiting for area assignment", {
+        description: "We'll notify you once your first service is completed.",
+        duration: 6000,
+      });
+    } else {
+      toast.success("Payment successful · Booking confirmed", {
+        description: "We'll notify you when the service is completed.",
+        duration: 6000,
+      });
+    }
+    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+    qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
+    setPendingCheckout(null);
+    setPaymentError(null);
+    if (ctx.isSubscription) {
+      await navigate({ to: "/c/subscriptions" });
+    } else {
+      await navigate({ to: "/c/bookings/$id", params: { id: ctx.bookingId } });
+    }
+  }, [navigate, qc]);
+
+  const onRetryPayment = useCallback(async () => {
+    if (!pendingCheckout || paying) return;
+    const next: PendingCheckout = { ...pendingCheckout, attemptNo: pendingCheckout.attemptNo + 1 };
+    setPendingCheckout(next);
+    await runPayment(next, { isRetry: true });
+  }, [pendingCheckout, paying, runPayment]);
+
+  const onDismissPaymentError = useCallback(() => {
+    setPaymentError(null);
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+  }, []);
+
 
 
   if (serviceQ.isLoading) {
