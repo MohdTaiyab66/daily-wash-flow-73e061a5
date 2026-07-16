@@ -195,6 +195,49 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
     }
 
+    /**
+     * Unified partner assignment heads-up. Used for every backend push whose
+     * `data.type` appears in ASSIGNMENT_TYPES, regardless of the originating
+     * service (route dispatch, marketplace acceptance, DAR, add-ons, etc.).
+     *
+     * No accept/decline actions — assignments are already committed to the
+     * partner. Tap the notification to deep-link into the assignment.
+     */
+    private fun postAssignment(data: Map<String, String>) {
+        val ctx: Context = applicationContext
+        val title = data["title"] ?: "🚗 New assignment"
+        val body = data["body"] ?: "Tap to view your new customer"
+        val link = data["link"]?.takeIf { it.startsWith("/") } ?: "/app/assignments"
+        val notifKey = data["assignment_id"] ?: data["service_id"] ?: data["offer_id"] ?: link
+
+        val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("deep_link", link)
+        }
+        val contentPI = PendingIntent.getActivity(
+            ctx, notifKey.hashCode(), launch,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val iconRes = resources.getIdentifier(
+            "ic_stat_notify", "drawable", packageName
+        ).let { if (it != 0) it else applicationInfo.icon }
+
+        val builder = NotificationCompat.Builder(ctx, CHANNEL_ASSIGNMENTS)
+            .setSmallIcon(iconRes)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentPI)
+            .setFullScreenIntent(contentPI, true)
+
+        NotificationManagerCompat.from(ctx).notify(notifKey.hashCode(), builder.build())
+    }
+
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_GENERAL)
@@ -206,4 +249,5 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         NotificationManagerCompat.from(applicationContext)
             .notify(System.currentTimeMillis().toInt(), builder.build())
     }
+
 }
