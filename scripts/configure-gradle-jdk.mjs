@@ -5,7 +5,7 @@ import { join } from "node:path";
 const javaHome = process.env.JAVA_HOME;
 
 if (!javaHome) {
-  console.error("[android-build] JAVA_HOME is not set; Gradle cannot be pinned to JDK 21");
+  console.error("[android-build] JAVA_HOME is not set; Gradle cannot be pinned to the detected JDK");
   process.exit(1);
 }
 

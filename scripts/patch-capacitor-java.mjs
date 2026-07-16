@@ -9,9 +9,7 @@ if (!existsSync(capacitorGradleFile)) {
 }
 
 const source = await readFile(capacitorGradleFile, "utf8");
-const patched = source
-  .replace(/sourceCompatibility JavaVersion\.VERSION_21/g, "sourceCompatibility JavaVersion.VERSION_17")
-  .replace(/targetCompatibility JavaVersion\.VERSION_21/g, "targetCompatibility JavaVersion.VERSION_17");
+const patched = source.replace(/JavaVersion\.VERSION_21/g, "JavaVersion.VERSION_17");
 
 if (patched !== source) {
   await writeFile(capacitorGradleFile, patched, "utf8");
@@ -20,4 +18,10 @@ if (patched !== source) {
   console.log("[capacitor-java] @capacitor/android Java level already VERSION_17");
 } else {
   console.log("[capacitor-java] no Java 21 setting found in @capacitor/android");
+}
+
+const verified = await readFile(capacitorGradleFile, "utf8");
+if (verified.includes("JavaVersion.VERSION_21")) {
+  console.error(`[capacitor-java] failed: ${capacitorGradleFile} still contains JavaVersion.VERSION_21`);
+  process.exit(1);
 }
