@@ -185,6 +185,7 @@ export async function sendOfferPush(args: {
   data: Record<string, string>;
   channelId?: string;
   silent?: boolean;
+  dataOnly?: boolean;
   tag?: string;
 }): Promise<{ sent: number; failed: number; results: FcmSendResult[] }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -205,10 +206,12 @@ export async function sendOfferPush(args: {
         data: args.data,
         channelId: args.channelId,
         silent: args.silent,
+        dataOnly: args.dataOnly,
         tag: args.tag,
       }),
     ),
   );
+
 
   // Cleanup invalid tokens
   const invalidIds = tokens
