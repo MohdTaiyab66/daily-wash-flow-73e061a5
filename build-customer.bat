@@ -182,6 +182,9 @@ call node scripts\stamp-android-version.mjs || goto :fail
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
 
+echo   Repairing Capacitor Android Java compatibility...
+call fix-android-java.bat || goto :fail
+
 echo   Pinning Gradle to detected JDK 21...
 call node scripts\configure-gradle-jdk.mjs || goto :fail
 
