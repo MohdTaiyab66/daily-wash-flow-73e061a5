@@ -126,11 +126,12 @@ if (existsSync(kotlinSrc)) {
 
 // Copy custom sound if present.
 const soundSrc = "android-native/res/raw/uw_offer.mp3";
-if (existsSync(soundSrc)) {
-  const dst = "android/app/src/main/res/raw/uw_offer.mp3";
-  await mkdir(dirname(dst), { recursive: true });
-  await copyFile(soundSrc, dst);
-  console.log("[android-manifest] copied custom offer sound");
-} else {
-  console.log("[android-manifest] uw_offer.mp3 not found — channel will use default sound");
+const soundDst = "android/app/src/main/res/raw/uw_offer.mp3";
+if (!existsSync(soundSrc)) {
+  console.error(`[android-manifest] missing required custom offer sound: ${soundSrc}`);
+  process.exit(1);
 }
+
+await mkdir(dirname(soundDst), { recursive: true });
+await copyFile(soundSrc, soundDst);
+console.log(`[android-manifest] custom offer sound verified → ${soundDst}`);
