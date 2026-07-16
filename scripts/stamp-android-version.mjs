@@ -1,5 +1,5 @@
 import "./patch-capacitor-java.mjs";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
 const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
@@ -93,3 +93,8 @@ if (info.version !== versionName || info.build !== buildId) {
 }
 
 console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.version} / ${info.build}`);
+
+// Record which variant this android/ folder was last built for, so a later
+// switch (customer <-> partner) triggers a clean wipe via ensure-variant-clean.mjs.
+writeFileSync("android/.urbanwash-variant", variant);
+console.log(`[android-build] Variant marker written: android/.urbanwash-variant -> ${variant}`);
