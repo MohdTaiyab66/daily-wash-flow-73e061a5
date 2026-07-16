@@ -64,23 +64,31 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: return
-        when (type) {
-            "marketplace_offer" -> {
-                ensureOffersChannel()
+        when {
+            type == "marketplace_offer" -> {
+                ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
+                    "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = false)
             }
-            "marketplace_offer_update" -> {
-                ensureOffersChannel()
+            type == "marketplace_offer_update" -> {
+                ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
+                    "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = true)
+            }
+            ASSIGNMENT_TYPES.contains(type) -> {
+                ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
+                    "New customer assignments — wake screen with heads-up")
+                postAssignment(data)
             }
             else -> postGeneric(msg)
         }
     }
 
-    private fun ensureOffersChannel() {
+    private fun ensureUrgentChannel(id: String, name: String, desc: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
-        if (nm.getNotificationChannel(CHANNEL_OFFERS) != null) return
+        if (nm.getNotificationChannel(id) != null) return
+
 
         val soundUri: Uri = runCatching {
             val resId = resources.getIdentifier("uw_offer", "raw", packageName)
