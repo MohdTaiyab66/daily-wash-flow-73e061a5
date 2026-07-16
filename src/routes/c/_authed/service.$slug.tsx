@@ -590,15 +590,35 @@ function ServiceDetail() {
         let nativeUnavailable = false;
         let nativeResp: any = null;
         try {
+          console.log("[uw-pay] native mode: importing capacitor-razorpay");
           const mod = await import("capacitor-razorpay").catch((e) => {
             nativeUnavailable = true;
             throw e;
           });
           const Checkout = (mod as any).Checkout;
+          console.log("[uw-pay] plugin resolved:", {
+            hasCheckout: !!Checkout,
+            keys: Checkout ? Object.keys(Checkout) : [],
+          });
+          // Probe the native bridge directly — if the Android class isn't
+          // registered, this returns false and we know the APK shipped without
+          // the compiled plugin (usually a JDK/sourceCompatibility mismatch).
+          try {
+            const { Capacitor } = await import("@capacitor/core");
+            const isRegistered = (Capacitor as any).isPluginAvailable?.("Checkout");
+            console.log("[uw-pay] Capacitor.isPluginAvailable('Checkout') =", isRegistered);
+            if (isRegistered === false) {
+              nativeUnavailable = true;
+              throw new Error("Native Razorpay plugin not registered in this APK");
+            }
+          } catch (probeErr) {
+            console.warn("[uw-pay] plugin availability probe failed", probeErr);
+          }
           if (!Checkout) {
             nativeUnavailable = true;
             throw new Error("Native Razorpay plugin not available");
           }
+          console.log("[uw-pay] calling native Checkout.open", { orderId: ctx.orderId, amount: ctx.amount });
           const result: any = await Checkout.open({
             key: ctx.keyId,
             amount: ctx.amount,
@@ -615,10 +635,17 @@ function ServiceDetail() {
             // scripts/patch-android-manifest.mjs.
             method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
           });
+          console.log("[uw-pay] native Checkout.open returned", result);
           nativeResp = result?.response ?? result;
         } catch (err: any) {
+          console.warn("[uw-pay] native path error", {
+            nativeUnavailable,
+            code: err?.code,
+            message: err?.message,
+          });
           if (nativeUnavailable || isPluginUnavailable(err)) {
             // Fall back to Razorpay Standard Checkout in the WebView.
+            console.warn("[uw-pay] FALLING BACK to WebView checkout — UPI intent apps will be hidden by Razorpay");
             await safeLog({
               bookingId: ctx.bookingId,
               channel: "native",
