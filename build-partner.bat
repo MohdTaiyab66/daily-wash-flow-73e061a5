@@ -230,6 +230,9 @@ call node scripts\stamp-android-version.mjs || goto :fail
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
 
+echo   Pinning Gradle to detected JDK 21...
+call node scripts\configure-gradle-jdk.mjs || goto :fail
+
 REM -- 6. Build APK -------------------------------------------------------
 echo.
 echo [6/6] Building Android debug APK...
@@ -237,6 +240,8 @@ pushd android || goto :fail
 echo   Stopping stale Gradle daemons...
 call gradlew.bat --stop >nul 2>&1
 echo   Gradle project: %CD%
+echo   Gradle JVM check:
+call gradlew.bat -version || (popd & goto :fail)
 call gradlew.bat assembleDebug || (popd & goto :fail)
 popd
 
