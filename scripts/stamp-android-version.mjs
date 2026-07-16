@@ -1,5 +1,5 @@
 import "./patch-capacitor-java.mjs";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
 const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
