@@ -28,6 +28,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
         const val CHANNEL_OFFERS = "offers_v3"
+        const val CHANNEL_ASSIGNMENTS = "assignments_v3"
         const val CHANNEL_GENERAL = "general"
         const val NOTIF_ID_OFFER = 42001
         const val ACTION_ACCEPT = "com.urbanwash.push.ACCEPT"
@@ -35,7 +36,25 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         const val EXTRA_TOKEN = "action_token"
         const val EXTRA_BROADCAST = "broadcast_id"
         const val EXTRA_OFFER = "offer_id"
+
+        // Every partner-side assignment/offer push type must route through the
+        // unified heads-up path so foreground / background / killed all behave
+        // identically. Keep this list in sync with the backend dispatcher
+        // (src/routes/api/public/hooks/notification-push.ts).
+        val ASSIGNMENT_TYPES = setOf(
+            "new_assignment",
+            "new_assignments",
+            "assignment_created",
+            "assignment_updated",
+            "partner_assigned",
+            "daily_shine",
+            "daily_shine_offer",
+            "new_booking",
+            "new_customers",
+            "route_updated"
+        )
     }
+
 
     override fun onNewToken(token: String) {
         // The JS layer (fcm.ts → tokenReceived listener) upserts push_tokens.
