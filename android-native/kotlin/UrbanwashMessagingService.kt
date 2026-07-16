@@ -28,6 +28,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
         const val CHANNEL_OFFERS = "offers_v3"
+        const val CHANNEL_ASSIGNMENTS = "assignments_v3"
         const val CHANNEL_GENERAL = "general"
         const val NOTIF_ID_OFFER = 42001
         const val ACTION_ACCEPT = "com.urbanwash.push.ACCEPT"
@@ -35,7 +36,25 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         const val EXTRA_TOKEN = "action_token"
         const val EXTRA_BROADCAST = "broadcast_id"
         const val EXTRA_OFFER = "offer_id"
+
+        // Every partner-side assignment/offer push type must route through the
+        // unified heads-up path so foreground / background / killed all behave
+        // identically. Keep this list in sync with the backend dispatcher
+        // (src/routes/api/public/hooks/notification-push.ts).
+        val ASSIGNMENT_TYPES = setOf(
+            "new_assignment",
+            "new_assignments",
+            "assignment_created",
+            "assignment_updated",
+            "partner_assigned",
+            "daily_shine",
+            "daily_shine_offer",
+            "new_booking",
+            "new_customers",
+            "route_updated"
+        )
     }
+
 
     override fun onNewToken(token: String) {
         // The JS layer (fcm.ts → tokenReceived listener) upserts push_tokens.
@@ -45,23 +64,31 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: return
-        when (type) {
-            "marketplace_offer" -> {
-                ensureOffersChannel()
+        when {
+            type == "marketplace_offer" -> {
+                ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
+                    "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = false)
             }
-            "marketplace_offer_update" -> {
-                ensureOffersChannel()
+            type == "marketplace_offer_update" -> {
+                ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
+                    "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = true)
+            }
+            ASSIGNMENT_TYPES.contains(type) -> {
+                ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
+                    "New customer assignments — wake screen with heads-up")
+                postAssignment(data)
             }
             else -> postGeneric(msg)
         }
     }
 
-    private fun ensureOffersChannel() {
+    private fun ensureUrgentChannel(id: String, name: String, desc: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
-        if (nm.getNotificationChannel(CHANNEL_OFFERS) != null) return
+        if (nm.getNotificationChannel(id) != null) return
+
 
         val soundUri: Uri = runCatching {
             val resId = resources.getIdentifier("uw_offer", "raw", packageName)
@@ -75,11 +102,11 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .build()
 
         val ch = NotificationChannel(
-            CHANNEL_OFFERS,
-            "New customer offers",
+            id,
+            name,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Uber-style heads-up for new Daily Shine customers"
+            description = desc
             enableLights(true)
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 400, 200, 400, 200, 800)
@@ -90,6 +117,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         }
         nm.createNotificationChannel(ch)
     }
+
 
     private fun postOffer(data: Map<String, String>, isUpdate: Boolean) {
         val ctx: Context = applicationContext
@@ -167,6 +195,49 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
     }
 
+    /**
+     * Unified partner assignment heads-up. Used for every backend push whose
+     * `data.type` appears in ASSIGNMENT_TYPES, regardless of the originating
+     * service (route dispatch, marketplace acceptance, DAR, add-ons, etc.).
+     *
+     * No accept/decline actions — assignments are already committed to the
+     * partner. Tap the notification to deep-link into the assignment.
+     */
+    private fun postAssignment(data: Map<String, String>) {
+        val ctx: Context = applicationContext
+        val title = data["title"] ?: "🚗 New assignment"
+        val body = data["body"] ?: "Tap to view your new customer"
+        val link = data["link"]?.takeIf { it.startsWith("/") } ?: "/app/assignments"
+        val notifKey = data["assignment_id"] ?: data["service_id"] ?: data["offer_id"] ?: link
+
+        val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("deep_link", link)
+        }
+        val contentPI = PendingIntent.getActivity(
+            ctx, notifKey.hashCode(), launch,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val iconRes = resources.getIdentifier(
+            "ic_stat_notify", "drawable", packageName
+        ).let { if (it != 0) it else applicationInfo.icon }
+
+        val builder = NotificationCompat.Builder(ctx, CHANNEL_ASSIGNMENTS)
+            .setSmallIcon(iconRes)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(contentPI)
+            .setFullScreenIntent(contentPI, true)
+
+        NotificationManagerCompat.from(ctx).notify(notifKey.hashCode(), builder.build())
+    }
+
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_GENERAL)
@@ -178,4 +249,5 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         NotificationManagerCompat.from(applicationContext)
             .notify(System.currentTimeMillis().toInt(), builder.build())
     }
+
 }

@@ -17,6 +17,62 @@ async function admin() {
   return supabaseAdmin as any;
 }
 
+/**
+ * H-2: server-side allow-list of notification types the Customer App may
+ * receive. Anything else — partner lifecycle events, marketplace offers,
+ * assignment/dispatch internals — is silently dropped even if a future bug
+ * or manual insert accidentally lands in `customer_notifications`.
+ *
+ * Keep this list in sync with the product spec in docs/uw-release-audit.md.
+ */
+const CUSTOMER_ALLOWED_TYPES = new Set<string>([
+  // Payment lifecycle
+  "payment_success",
+  "payment_failed",
+  "payment_cancelled",
+  "payment_pending",
+  "subscription_paid",
+  "subscription_activated",
+  "booking_confirmed",
+  "refund_processing",
+  // Service lifecycle (customer-visible only)
+  "service_completed",
+  "completed",
+  "vehicle_unavailable",
+  "service_unavailable",
+  "vehicle_dirty",
+  "dirty_vehicle",
+  "extension_applied",
+  "addon_completed",
+  "entitlement_exhausted",
+  // Reminders
+  "weekly_wash_reminder",
+  "weekly_included_reminder",
+  "renewal_reminder",
+  "subscription_renewing_soon",
+  "expiry_reminder",
+  "subscription_expiring_soon",
+]);
+
+/**
+ * H-1: partner-side types that must render through the unified Kotlin
+ * heads-up path (assignments_v3 channel, uw_offer.mp3, full-screen intent,
+ * deep link on tap). MUST match `ASSIGNMENT_TYPES` in
+ * android-native/kotlin/UrbanwashMessagingService.kt.
+ */
+const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
+  "new_assignment",
+  "new_assignments",
+  "assignment_created",
+  "assignment_updated",
+  "partner_assigned",
+  "daily_shine",
+  "daily_shine_offer",
+  "new_booking",
+  "new_customers",
+  "route_updated",
+]);
+
 async function dispatchCustomer(sb: any) {
   const { data: rows } = await sb
     .from("customer_notifications")
@@ -25,12 +81,24 @@ async function dispatchCustomer(sb: any) {
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(50);
   for (const r of rows ?? []) {
+    const type = String(r.type ?? "");
+    if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
+      // Not a customer-facing type — mark as processed so we don't retry
+      // forever, but do NOT dispatch a push. This is the H-2 safety net.
+      await sb
+        .from("customer_notifications")
+        .update({ pushed_at: new Date().toISOString() })
+        .eq("id", r.id);
+      // eslint-disable-next-line no-console
+      console.warn(`[notification-push] blocked customer notification type="${type}" id=${r.id}`);
+      continue;
+    }
     try {
       await sendOfferPush({
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
-        data: { type: r.type ?? "notification", link: r.link ?? "" },
+        data: { type, link: r.link ?? "" },
         channelId: "general",
       });
     } catch {
@@ -44,20 +112,35 @@ async function dispatchCustomer(sb: any) {
 async function dispatchPartner(sb: any) {
   const { data: rows } = await sb
     .from("partner_notifications")
-    .select("id,partner_id,title,body,type,link")
+    .select("id,partner_id,title,body,type,link,metadata")
     .is("pushed_at", null)
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(50);
   for (const r of rows ?? []) {
+    const type = String(r.type ?? "");
+    const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(type);
     try {
       await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
         body: r.body ?? "",
-        data: { type: r.type ?? "notification", link: r.link ?? "" },
-        channelId: r.type === "new_assignments" ? "assignments" : "general",
+        data: {
+          type,
+          link: r.link ?? (isAssignment ? "/app/assignments" : ""),
+          // Kotlin uses these to key the notification and deep link.
+          ...(r.metadata?.assignment_id ? { assignment_id: String(r.metadata.assignment_id) } : {}),
+          ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
+        },
+        // Unified assignment channel; general otherwise.
+        channelId: isAssignment ? "assignments_v3" : "general",
+        // dataOnly so the Kotlin service always builds the heads-up (custom
+        // channel, uw_offer.mp3, full-screen intent) — even when the app is
+        // backgrounded or swiped away.
+        dataOnly: isAssignment,
+        tag: isAssignment ? `assignment:${r.id}` : undefined,
       });
     } catch {
+
       /* noop */
     }
     await sb.from("partner_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
