@@ -33,6 +33,12 @@ findstr /C:"JavaVersion.VERSION_17" "%CAP_GRADLE%" >nul || (
   exit /b 1
 )
 
+findstr /C:"JavaVersion.VERSION_21" "%CAP_GRADLE%" >nul && (
+  echo [X] Patch incomplete. %CAP_GRADLE% still contains VERSION_21.
+  endlocal
+  exit /b 1
+)
+
 echo [OK] Capacitor Android Java level is now VERSION_17
 echo.
 echo Next command:

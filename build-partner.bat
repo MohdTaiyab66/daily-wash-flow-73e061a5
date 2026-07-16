@@ -38,7 +38,7 @@ for /f "delims=" %%v in ('bun -v') do echo   [OK] Bun %%v
 
 where java >nul 2>&1
 if errorlevel 1 (
-  echo   [X] Java JDK not found. Install JDK 21 from https://adoptium.net
+  echo   [X] Java JDK not found. Install JDK 17+ from https://adoptium.net
   goto :fail
 )
 java -version 2>&1 | findstr /R "version" >nul && echo   [OK] Java present
@@ -49,32 +49,32 @@ for /f "tokens=1 delims=." %%m in ("%JAVA_VERSION%") do set "JAVA_MAJOR=%%m"
 for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.home"') do set "DETECTED_JAVA_HOME=%%v"
 for /f "tokens=*" %%v in ("%DETECTED_JAVA_HOME%") do set "DETECTED_JAVA_HOME=%%v"
 if not defined JAVA_MAJOR (
-  echo   [X] Could not detect Java version. Install JDK 21 from https://adoptium.net
+  echo   [X] Could not detect Java version. Install JDK 17+ from https://adoptium.net
   goto :fail
 )
-if %JAVA_MAJOR% LSS 21 (
-  echo   [X] Java %JAVA_VERSION% found, but Android build requires JDK 21+.
-  echo       Install Temurin JDK 21, then set JAVA_HOME to the JDK 21 folder.
+if %JAVA_MAJOR% LSS 17 (
+  echo   [X] Java %JAVA_VERSION% found, but Android build requires JDK 17+.
+  echo       Install Temurin JDK 17 or newer, then set JAVA_HOME to that JDK folder.
   goto :fail
 )
 echo   [OK] Java JDK %JAVA_VERSION%
 
 REM Gradle uses JAVA_HOME before PATH. If JAVA_HOME points at an older JDK,
-REM Gradle fails later with: "invalid source release: 21". Force this build
-REM to use the same JDK 21+ that the java command above resolved.
+REM Gradle fails later with Java source-release errors. Force this build to use
+REM the same JDK 17+ that the java command above resolved.
 if not defined DETECTED_JAVA_HOME (
-  echo   [X] Could not detect java.home for Gradle. Reinstall JDK 21 and retry.
+  echo   [X] Could not detect java.home for Gradle. Reinstall JDK 17+ and retry.
   goto :fail
 )
 if not exist "%DETECTED_JAVA_HOME%\bin\javac.exe" (
   echo   [X] Java on PATH is not a full JDK: %DETECTED_JAVA_HOME%
-  echo       Install Temurin JDK 21, then re-run this script.
+  echo       Install Temurin JDK 17 or newer, then re-run this script.
   goto :fail
 )
 if defined JAVA_HOME (
   if /I not "%JAVA_HOME%"=="%DETECTED_JAVA_HOME%" (
     echo   [!] JAVA_HOME was %JAVA_HOME%
-    echo       Using JDK 21 for this build: %DETECTED_JAVA_HOME%
+    echo       Using detected JDK for this build: %DETECTED_JAVA_HOME%
   )
 ) else (
   echo   [OK] JAVA_HOME not set - using detected JDK: %DETECTED_JAVA_HOME%
@@ -134,6 +134,9 @@ if not exist "%CAP_CLI%" (
   echo   Capacitor CLI missing from node_modules - refreshing dependencies...
   call bun install || goto :fail
 )
+
+echo   Patching Capacitor Android Java compatibility before build...
+call node scripts\patch-capacitor-java.mjs || goto :fail
 
 if not exist "%CAP_CLI%" (
   echo   [X] Capacitor CLI still missing after bun install.
@@ -233,7 +236,7 @@ call node scripts\patch-android-manifest.mjs || goto :fail
 echo   Repairing Capacitor Android Java compatibility...
 call fix-android-java.bat || goto :fail
 
-echo   Pinning Gradle to detected JDK 21...
+echo   Pinning Gradle to detected JDK...
 call node scripts\configure-gradle-jdk.mjs || goto :fail
 
 REM -- 6. Build APK -------------------------------------------------------
