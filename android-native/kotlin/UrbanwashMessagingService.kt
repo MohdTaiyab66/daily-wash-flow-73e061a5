@@ -102,11 +102,11 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .build()
 
         val ch = NotificationChannel(
-            CHANNEL_OFFERS,
-            "New customer offers",
+            id,
+            name,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Uber-style heads-up for new Daily Shine customers"
+            description = desc
             enableLights(true)
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 400, 200, 400, 200, 800)
@@ -117,6 +117,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         }
         nm.createNotificationChannel(ch)
     }
+
 
     private fun postOffer(data: Map<String, String>, isUpdate: Boolean) {
         val ctx: Context = applicationContext
