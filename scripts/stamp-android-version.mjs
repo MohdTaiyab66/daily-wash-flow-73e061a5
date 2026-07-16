@@ -32,8 +32,15 @@ if (/versionName\s+["'][^"']+["']/.test(gradle)) {
   gradle = gradle.replace(/defaultConfig\s*\{/, `defaultConfig {\n        versionName "${versionName}"`);
 }
 
+// Ensure applicationId / namespace match the current variant. Capacitor bakes
+// the first-run appId into android/app/build.gradle and never rewrites it on
+// subsequent `cap sync` calls, which causes google-services.json to mismatch
+// when the same android/ folder is reused across variants.
+gradle = gradle.replace(/applicationId\s+["'][^"']+["']/g, `applicationId "${appId}"`);
+gradle = gradle.replace(/namespace\s+["'][^"']+["']/g, `namespace "${appId}"`);
+
 await writeFile(gradleFile, gradle);
-console.log(`[partner-build] Android version stamped: ${versionName} (${versionCode})`);
+console.log(`[partner-build] Android version stamped: ${versionName} (${versionCode}) applicationId=${appId}`);
 
 const syncedBuildInfo = syncedBuildInfoCandidates.find((path) => existsSync(path));
 if (!syncedBuildInfo) {
