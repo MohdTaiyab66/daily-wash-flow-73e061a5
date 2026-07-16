@@ -20,11 +20,6 @@ const syncedBuildInfoCandidates = [
   "android/app/src/main/assets/public/build-info.json",
 ];
 
-if (!existsSync(gradleFile)) {
-  console.error(`[android-build] missing ${gradleFile}; run node_modules/.bin/cap add/sync android first`);
-  process.exit(1);
-}
-
 // Capacitor 8 sets its Android library module to Java 21. Some Windows
 // Android/Gradle setups still invoke a Java 17 compiler even when `java` on
 // PATH reports 21, causing :capacitor-android:compileDebugJavaWithJavac to fail
@@ -41,6 +36,11 @@ if (existsSync(capacitorGradleFile)) {
   }
 
   console.log("[android-build] Capacitor Android Java level verified: VERSION_17");
+}
+
+if (!existsSync(gradleFile)) {
+  console.error(`[android-build] missing ${gradleFile}; run node_modules/.bin/cap add/sync android first`);
+  process.exit(1);
 }
 
 let gradle = await readFile(gradleFile, "utf8");
