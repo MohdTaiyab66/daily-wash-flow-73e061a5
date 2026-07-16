@@ -39,7 +39,8 @@ if errorlevel 1 (
 )
 java -version 2>&1 | findstr /R "version" >nul && echo   [OK] Java present
 
-for /f "tokens=3 delims= \"" %%v in ('java -version 2^>^&1 ^| findstr /I "version"') do set "JAVA_VERSION=%%v"
+for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.specification.version"') do set "JAVA_VERSION=%%v"
+for /f "tokens=*" %%v in ("%JAVA_VERSION%") do set "JAVA_VERSION=%%v"
 for /f "tokens=1 delims=." %%m in ("%JAVA_VERSION%") do set "JAVA_MAJOR=%%m"
 if not defined JAVA_MAJOR (
   echo   [X] Could not detect Java version. Install JDK 21 from https://adoptium.net
