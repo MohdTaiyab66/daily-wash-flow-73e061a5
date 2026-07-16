@@ -150,6 +150,9 @@ if errorlevel 1 (
   goto :fail
 )
 
+echo   Stamping Android package id and verifying synced build marker...
+call node scripts\stamp-android-version.mjs || goto :fail
+
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
 
