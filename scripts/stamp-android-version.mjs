@@ -1,6 +1,9 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
+const variant = (process.env.URBANWASH_APP ?? "partner").toLowerCase();
+const isCustomer = variant === "customer";
+const appId = isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner";
 const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.28";
 const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "28");
 const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-02";
