@@ -46,6 +46,8 @@ java -version 2>&1 | findstr /R "version" >nul && echo   [OK] Java present
 for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.specification.version"') do set "JAVA_VERSION=%%v"
 for /f "tokens=*" %%v in ("%JAVA_VERSION%") do set "JAVA_VERSION=%%v"
 for /f "tokens=1 delims=." %%m in ("%JAVA_VERSION%") do set "JAVA_MAJOR=%%m"
+for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.home"') do set "DETECTED_JAVA_HOME=%%v"
+for /f "tokens=*" %%v in ("%DETECTED_JAVA_HOME%") do set "DETECTED_JAVA_HOME=%%v"
 if not defined JAVA_MAJOR (
   echo   [X] Could not detect Java version. Install JDK 21 from https://adoptium.net
   goto :fail
@@ -56,6 +58,29 @@ if %JAVA_MAJOR% LSS 21 (
   goto :fail
 )
 echo   [OK] Java JDK %JAVA_VERSION%
+
+REM Gradle uses JAVA_HOME before PATH. If JAVA_HOME points at an older JDK,
+REM Gradle fails later with: "invalid source release: 21". Force this build
+REM to use the same JDK 21+ that the java command above resolved.
+if not defined DETECTED_JAVA_HOME (
+  echo   [X] Could not detect java.home for Gradle. Reinstall JDK 21 and retry.
+  goto :fail
+)
+if not exist "%DETECTED_JAVA_HOME%\bin\javac.exe" (
+  echo   [X] Java on PATH is not a full JDK: %DETECTED_JAVA_HOME%
+  echo       Install Temurin JDK 21, then re-run this script.
+  goto :fail
+)
+if defined JAVA_HOME (
+  if /I not "%JAVA_HOME%"=="%DETECTED_JAVA_HOME%" (
+    echo   [!] JAVA_HOME was %JAVA_HOME%
+    echo       Using JDK 21 for this build: %DETECTED_JAVA_HOME%
+  )
+) else (
+  echo   [OK] JAVA_HOME not set - using detected JDK: %DETECTED_JAVA_HOME%
+)
+set "JAVA_HOME=%DETECTED_JAVA_HOME%"
+set "PATH=%JAVA_HOME%\bin;%PATH%"
 
 if not defined ANDROID_HOME if not defined ANDROID_SDK_ROOT (
   echo   [X] ANDROID_HOME / ANDROID_SDK_ROOT not set.
@@ -209,6 +234,8 @@ REM -- 6. Build APK -------------------------------------------------------
 echo.
 echo [6/6] Building Android debug APK...
 pushd android || goto :fail
+echo   Stopping stale Gradle daemons...
+call gradlew.bat --stop >nul 2>&1
 echo   Gradle project: %CD%
 call gradlew.bat assembleDebug || (popd & goto :fail)
 popd
