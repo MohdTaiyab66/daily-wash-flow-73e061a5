@@ -3,6 +3,27 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const manifest = "android/app/src/main/AndroidManifest.xml";
+
+// Capacitor 8 currently sets its Android library module to Java 21. On some
+// Windows/Android Studio installs, Gradle still invokes a Java 17 compiler even
+// when `java -version` reports 21, which fails at :capacitor-android with:
+// "invalid source release: 21". The Capacitor Android sources compile cleanly
+// with Java 17, so keep the generated dependency build file compatible with the
+// JDK Gradle actually uses.
+const capacitorGradleFile = "node_modules/@capacitor/android/capacitor/build.gradle";
+if (existsSync(capacitorGradleFile)) {
+  let gradle = await readFile(capacitorGradleFile, "utf8");
+  const nextGradle = gradle
+    .replace(/sourceCompatibility JavaVersion\.VERSION_21/g, "sourceCompatibility JavaVersion.VERSION_17")
+    .replace(/targetCompatibility JavaVersion\.VERSION_21/g, "targetCompatibility JavaVersion.VERSION_17");
+
+  if (nextGradle !== gradle) {
+    await writeFile(capacitorGradleFile, nextGradle);
+  }
+
+  console.log("[android-manifest] Capacitor Android Java level verified → VERSION_17");
+}
+
 if (!existsSync(manifest)) {
   console.log(`[android-manifest] skipped: ${manifest} not found`);
   process.exit(0);
@@ -135,23 +156,3 @@ if (!existsSync(soundSrc)) {
 await mkdir(dirname(soundDst), { recursive: true });
 await copyFile(soundSrc, soundDst);
 console.log(`[android-manifest] custom offer sound verified → ${soundDst}`);
-
-// Capacitor 8 currently sets its Android library module to Java 21. On some
-// Windows/Android Studio installs, Gradle still invokes a Java 17 compiler even
-// when `java -version` reports 21, which fails at :capacitor-android with:
-// "invalid source release: 21". The Capacitor Android sources compile cleanly
-// with Java 17, so keep the generated dependency build file compatible with the
-// JDK Gradle actually uses.
-const capacitorGradleFile = "node_modules/@capacitor/android/capacitor/build.gradle";
-if (existsSync(capacitorGradleFile)) {
-  let gradle = await readFile(capacitorGradleFile, "utf8");
-  const nextGradle = gradle
-    .replace(/sourceCompatibility JavaVersion\.VERSION_21/g, "sourceCompatibility JavaVersion.VERSION_17")
-    .replace(/targetCompatibility JavaVersion\.VERSION_21/g, "targetCompatibility JavaVersion.VERSION_17");
-
-  if (nextGradle !== gradle) {
-    await writeFile(capacitorGradleFile, nextGradle);
-  }
-
-  console.log("[android-manifest] Capacitor Android Java level verified → VERSION_17");
-}
