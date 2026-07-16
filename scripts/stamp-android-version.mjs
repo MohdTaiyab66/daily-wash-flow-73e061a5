@@ -1,3 +1,4 @@
+import "./patch-capacitor-java.mjs";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
@@ -13,30 +14,11 @@ const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.28";
 const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "28");
 const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-04-02";
 const gradleFile = "android/app/build.gradle";
-const capacitorGradleFile = "node_modules/@capacitor/android/capacitor/build.gradle";
 const googleServicesFile = "android/app/google-services.json";
 const syncedBuildInfoCandidates = [
   "android/app/src/main/assets/build-info.json",
   "android/app/src/main/assets/public/build-info.json",
 ];
-
-// Capacitor 8 sets its Android library module to Java 21. Some Windows
-// Android/Gradle setups still invoke a Java 17 compiler even when `java` on
-// PATH reports 21, causing :capacitor-android:compileDebugJavaWithJavac to fail
-// with "invalid source release: 21". The Capacitor Android library compiles
-// cleanly at Java 17, so patch the dependency Gradle file before APK build.
-if (existsSync(capacitorGradleFile)) {
-  const capacitorGradle = await readFile(capacitorGradleFile, "utf8");
-  const patchedCapacitorGradle = capacitorGradle
-    .replace(/sourceCompatibility JavaVersion\.VERSION_21/g, "sourceCompatibility JavaVersion.VERSION_17")
-    .replace(/targetCompatibility JavaVersion\.VERSION_21/g, "targetCompatibility JavaVersion.VERSION_17");
-
-  if (patchedCapacitorGradle !== capacitorGradle) {
-    await writeFile(capacitorGradleFile, patchedCapacitorGradle);
-  }
-
-  console.log("[android-build] Capacitor Android Java level verified: VERSION_17");
-}
 
 if (!existsSync(gradleFile)) {
   console.error(`[android-build] missing ${gradleFile}; run node_modules/.bin/cap add/sync android first`);
