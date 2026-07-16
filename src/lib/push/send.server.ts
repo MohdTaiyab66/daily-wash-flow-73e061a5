@@ -76,6 +76,12 @@ type SendInput = {
    * the native service uses this to update the existing heads-up in place
    * (incentive bumped, radius expanded) without firing a fresh alert. */
   silent?: boolean;
+  /** Data-only, HIGH priority. Suppresses the FCM `notification` block so the
+   * native `UrbanwashMessagingService.onMessageReceived` always runs, even
+   * when the app is backgrounded or killed. Used for assignment/offer types
+   * that must render through the unified Kotlin heads-up path (custom
+   * channel, custom sound, full-screen intent, deep-link on tap). */
+  dataOnly?: boolean;
   /** Optional Android collapse key. Marketplace passes the broadcast id so
    * successive updates replace the same notification. */
   tag?: string;
@@ -85,12 +91,13 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const accessToken = await getAccessToken();
 
+  const dataOnly = input.dataOnly === true;
   const androidBlock: Record<string, unknown> = {
-    priority: input.silent ? "NORMAL" : input.android?.priority ?? "HIGH",
+    priority: dataOnly ? "HIGH" : input.silent ? "NORMAL" : input.android?.priority ?? "HIGH",
     ttl: input.android?.ttl ?? "120s",
   };
   if (input.tag) androidBlock.collapse_key = input.tag;
-  if (!input.silent) {
+  if (!input.silent && !dataOnly) {
     androidBlock.notification = {
       title: input.title,
       body: input.body,
@@ -102,15 +109,25 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     };
   }
 
+  // Native Kotlin service reads these fields from `data`.
+  const dataPayload: Record<string, string> = { ...input.data };
+  if (dataOnly) {
+    if (input.title && dataPayload.title == null) dataPayload.title = input.title;
+    if (input.body && dataPayload.body == null) dataPayload.body = input.body;
+  }
+
   const message: Record<string, unknown> = {
     message: {
       token: input.token,
-      data: input.data,
+      data: dataPayload,
       android: androidBlock,
-      ...(input.silent
+      ...(input.silent || dataOnly
         ? {
             apns: {
-              headers: { "apns-priority": "5", "apns-push-type": "background" },
+              headers: {
+                "apns-priority": dataOnly ? "10" : "5",
+                "apns-push-type": "background",
+              },
               payload: { aps: { "content-available": 1 } },
             },
           }
@@ -125,6 +142,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
           }),
     },
   };
+
 
   let lastErr: { code?: string; message?: string } = {};
   for (let attempt = 0; attempt < 3; attempt++) {
