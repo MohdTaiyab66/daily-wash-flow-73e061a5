@@ -179,6 +179,8 @@ echo   [OK] Latest dist asset present: .output\public\build-info.json
 type .output\public\build-info.json || goto :fail
 echo   [OK] Capacitor webDir ready: mobile-shell\index.html
 
+echo   Ensuring android/ matches the current variant (%VARIANT%)...
+call node scripts\ensure-variant-clean.mjs || goto :fail
 
 if not exist "android" (
   echo   android/ folder missing - running: Capacitor add android
