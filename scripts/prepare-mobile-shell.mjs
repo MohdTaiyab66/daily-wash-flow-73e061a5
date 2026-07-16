@@ -9,10 +9,7 @@ const projectRoot = join(root, "..");
 const shellDir = join(projectRoot, "mobile-shell");
 const outDir = join(projectRoot, ".output", "public");
 
-if (!existsSync(shellDir)) {
-  console.error(`[prepare-mobile-shell] Missing ${shellDir}`);
-  process.exit(1);
-}
+mkdirSync(shellDir, { recursive: true });
 
 mkdirSync(outDir, { recursive: true });
 
