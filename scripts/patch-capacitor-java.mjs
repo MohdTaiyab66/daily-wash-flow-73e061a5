@@ -262,7 +262,7 @@ public class Checkout extends Plugin {
                     + " specificationVersion=" + specVer
                     + " configuredGradleVersion=" + CONFIGURED_RAZORPAY_CHECKOUT_VERSION);
         } catch (Throwable t) {
-            record("sdk version probe failure: " + t.getMessage()");
+            record("sdk version probe failure: " + t.getMessage());
         }
     }
 
