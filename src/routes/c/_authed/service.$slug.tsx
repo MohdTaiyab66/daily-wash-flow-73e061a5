@@ -19,6 +19,13 @@ import { toast } from "sonner";
 import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+import {
+  appendPaymentDiagnostic,
+  exportPaymentDiagnosticsFile,
+  formatUpiUnavailableMessage,
+  getNativePaymentDiagnostics,
+  sanitizePaymentDiagnostic,
+} from "@/lib/payment-diagnostics";
 
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
@@ -122,6 +129,7 @@ function ServiceDetail() {
   };
   const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
   const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  const [upiUnavailable, setUpiUnavailable] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
   useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
@@ -559,6 +567,7 @@ function ServiceDetail() {
 
   const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
     setPaymentError(null);
+    setUpiUnavailable(null);
     setPaying(true);
     // Cancel any prior polling loop.
     if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
@@ -566,6 +575,15 @@ function ServiceDetail() {
     const { isNative } = await import("@/lib/platform");
     const nativeMode = isNative();
     let channel: "native" | "web" | "unknown" = nativeMode ? "native" : "web";
+    await appendPaymentDiagnostic("payment attempt started", {
+      bookingId: ctx.bookingId,
+      channel,
+      attemptNo: ctx.attemptNo,
+      isRetry: opts.isRetry,
+      order: { id: ctx.orderId, amount: ctx.amount, currency: ctx.currency },
+      serviceName: ctx.serviceName,
+      isSubscription: ctx.isSubscription,
+    });
 
     await safeLog({
       bookingId: ctx.bookingId,
@@ -596,6 +614,10 @@ function ServiceDetail() {
             throw e;
           });
           const Checkout = (mod as any).Checkout;
+          await appendPaymentDiagnostic("native plugin resolved", {
+            hasCheckout: !!Checkout,
+            keys: Checkout ? Object.keys(Checkout) : [],
+          });
           console.log("[uw-pay] plugin resolved:", {
             hasCheckout: !!Checkout,
             keys: Checkout ? Object.keys(Checkout) : [],
@@ -607,6 +629,7 @@ function ServiceDetail() {
             const { Capacitor } = await import("@capacitor/core");
             const isRegistered = (Capacitor as any).isPluginAvailable?.("Checkout");
             console.log("[uw-pay] Capacitor.isPluginAvailable('Checkout') =", isRegistered);
+            await appendPaymentDiagnostic("Capacitor plugin availability", { plugin: "Checkout", isRegistered });
             if (isRegistered === false) {
               nativeUnavailable = true;
               throw new Error("Native Razorpay plugin not registered in this APK");
@@ -646,6 +669,16 @@ function ServiceDetail() {
             notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
           };
+          const nativeDiagnostics = await getNativePaymentDiagnostics();
+          await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
+          const upiPackages = (nativeDiagnostics?.upiPackages ?? {}) as Record<string, unknown>;
+          const detectedCount = Number(upiPackages.detectedCount ?? 0);
+          const handlerCount = Number(upiPackages.upiIntentHandlers ?? 0);
+          if (nativeDiagnostics && detectedCount === 0 && handlerCount === 0) {
+            const reason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
+            setUpiUnavailable(formatUpiUnavailableMessage(nativeDiagnostics, reason, ctx.keyId));
+            await appendPaymentDiagnostic("UPI unavailable pre-check", { reason, nativeDiagnostics });
+          }
           console.log("[uw-pay] calling native Checkout.open", {
             orderId: ctx.orderId,
             amount: ctx.amount,
@@ -654,10 +687,21 @@ function ServiceDetail() {
             keyIdLength: ctx.keyId?.length,
             payloadKeys: Object.keys(nativeOptions),
           });
+          await appendPaymentDiagnostic("final native checkout payload", {
+            ...nativeOptions,
+            key: ctx.keyId,
+          });
           const result: any = await Checkout.open(nativeOptions);
+          await appendPaymentDiagnostic("native Checkout.open returned", result);
           console.log("[uw-pay] native Checkout.open returned", result);
           nativeResp = result?.response ?? result;
         } catch (err: any) {
+          await appendPaymentDiagnostic("native path error", {
+            nativeUnavailable,
+            code: err?.code,
+            message: err?.message,
+            error: sanitizePaymentDiagnostic(err),
+          });
           console.warn("[uw-pay] native path error", {
             nativeUnavailable,
             code: err?.code,
@@ -666,6 +710,10 @@ function ServiceDetail() {
           if (nativeUnavailable || isPluginUnavailable(err)) {
             // Fall back to Razorpay Standard Checkout in the WebView.
             console.warn("[uw-pay] FALLING BACK to WebView checkout — UPI intent apps will be hidden by Razorpay");
+            const diag = await getNativePaymentDiagnostics();
+            const reason = `Native Razorpay plugin unavailable; app fell back to WebView checkout. ${String(err?.message ?? "")}`.trim();
+            setUpiUnavailable(formatUpiUnavailableMessage(diag, reason, ctx.keyId));
+            await appendPaymentDiagnostic("UPI unavailable fallback", { reason, diag });
             await safeLog({
               bookingId: ctx.bookingId,
               channel: "native",
@@ -682,6 +730,7 @@ function ServiceDetail() {
         }
         if (nativeResp) {
           if (!nativeResp.razorpay_payment_id) throw new Error("Payment cancelled");
+          await appendPaymentDiagnostic("native payment response for verification", nativeResp);
           await verifyPayment({
             data: {
               bookingId: ctx.bookingId,
@@ -704,6 +753,12 @@ function ServiceDetail() {
       });
       await finalizeSuccess(ctx);
     } catch (err: any) {
+      await appendPaymentDiagnostic("payment attempt failed", {
+        bookingId: ctx.bookingId,
+        channel,
+        message: err?.message ?? String(err),
+        code: err?.code,
+      });
       const cancelled = /cancelled/i.test(String(err?.message ?? ""));
       // Even on cancel/failure, poll the server briefly — the webhook may
       // have already reconciled the payment out-of-band.
@@ -774,6 +829,17 @@ function ServiceDetail() {
   const onDismissPaymentError = useCallback(() => {
     setPaymentError(null);
     if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+  }, []);
+
+  const onExportPaymentDiagnostics = useCallback(async () => {
+    try {
+      const result = await exportPaymentDiagnosticsFile();
+      toast.success("Payment diagnostics exported", {
+        description: String(result?.message ?? result?.filename ?? "payment-diagnostics.txt"),
+      });
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not export diagnostics");
+    }
   }, []);
 
 
@@ -1047,8 +1113,38 @@ function ServiceDetail() {
                   >
                     <X className="mr-1 h-3 w-3" /> Dismiss
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onExportPaymentDiagnostics}
+                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                    data-testid="payment-diagnostics-export"
+                  >
+                    Export diagnostics
+                  </Button>
                 </div>
               </div>
+            </div>
+          ) : null}
+          {upiUnavailable ? (
+            <div
+              role="status"
+              data-testid="upi-unavailable-banner"
+              className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-950 whitespace-pre-line"
+            >
+              <div className="font-semibold">UPI unavailable</div>
+              <div className="mt-1">{upiUnavailable}</div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onExportPaymentDiagnostics}
+                className="mt-2 h-7 rounded-full px-3 text-[11px]"
+                data-testid="upi-unavailable-export"
+              >
+                Export payment diagnostics
+              </Button>
             </div>
           ) : null}
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
