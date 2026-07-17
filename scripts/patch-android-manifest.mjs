@@ -141,10 +141,11 @@ if (!mainActivity) {
 }
 
 let activity = await readFile(mainActivity, "utf8");
-if (!activity.includes("com.ionicframework.capacitor.Checkout")) {
-  activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport android.os.Bundle;\nimport com.ionicframework.capacitor.Checkout;\n`);
-} else if (!activity.includes("import android.os.Bundle;")) {
-  activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport android.os.Bundle;\n`);
+const importsToEnsure = ["android.os.Bundle", "com.ionicframework.capacitor.Checkout"];
+for (const importName of importsToEnsure) {
+  if (!activity.includes(`import ${importName};`)) {
+    activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport ${importName};\n`);
+  }
 }
 
 // Register before super.onCreate(). In Capacitor 8, BridgeActivity creates the
