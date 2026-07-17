@@ -41,4 +41,21 @@ for (const file of targets) {
   }
 }
 
+const razorpayPluginFile = "node_modules/capacitor-razorpay/android/src/main/java/com/ionicframework/capacitor/Checkout.java";
+if (existsSync(razorpayPluginFile)) {
+  const source = await readFile(razorpayPluginFile, "utf8");
+  const patched = source
+    .replace("import com.getcapacitor.NativePlugin;", "import com.getcapacitor.annotation.CapacitorPlugin;")
+    .replace(/@NativePlugin\s*\(\s*requestCodes\s*=\s*\{com\.razorpay\.Checkout\.RZP_REQUEST_CODE\}\s*\)/, '@CapacitorPlugin(name = "Checkout")');
+  if (patched !== source) {
+    await writeFile(razorpayPluginFile, patched, "utf8");
+    console.log(`[capacitor-java] patched ${razorpayPluginFile}: NativePlugin → CapacitorPlugin`);
+  } else if (patched.includes('@CapacitorPlugin(name = "Checkout")')) {
+    console.log(`[capacitor-java] ${razorpayPluginFile} already uses CapacitorPlugin`);
+  } else {
+    console.error(`[capacitor-java] failed: could not patch Razorpay Checkout annotation in ${razorpayPluginFile}`);
+    fatal = true;
+  }
+}
+
 if (fatal) process.exit(1);
