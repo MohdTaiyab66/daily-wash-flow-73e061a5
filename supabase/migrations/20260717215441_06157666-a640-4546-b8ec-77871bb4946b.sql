@@ -1,0 +1,1 @@
+ALTER VIEW public.v_payment_pipeline_timeline SET (security_invoker = true);
