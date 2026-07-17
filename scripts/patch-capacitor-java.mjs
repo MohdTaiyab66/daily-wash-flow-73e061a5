@@ -321,7 +321,7 @@ public class Checkout extends Plugin {
     private static synchronized void record(String message) {
         String line = timestamp() + " " + message;
         Log.i(TAG, line);
-        DIAGNOSTICS.append(line).append("\n");
+        DIAGNOSTICS.append(line).append("\\n");
         if (DIAGNOSTICS.length() > MAX_DIAGNOSTIC_CHARS) {
             DIAGNOSTICS.delete(0, DIAGNOSTICS.length() - MAX_DIAGNOSTIC_CHARS);
         }
@@ -341,21 +341,21 @@ public class Checkout extends Plugin {
 
     private static synchronized String getDiagnosticsText(String webDiagnostics) {
         StringBuilder out = new StringBuilder();
-        out.append("Urban Wash payment diagnostics\n");
-        out.append("Exported: ").append(timestamp()).append("\n");
-        out.append("Plugin Version: capacitor-razorpay ").append(PLUGIN_VERSION).append("\n");
-        out.append("Plugin Source File: ").append(PLUGIN_SOURCE_FILE).append("\n");
-        out.append("Configured com.razorpay:checkout Version: ").append(CONFIGURED_RAZORPAY_CHECKOUT_VERSION).append("\n");
-        out.append("Who invokes checkout: JS Checkout.open -> capacitor-razorpay Checkout.open -> CheckoutActivity OPTIONS Intent\n");
-        out.append("\n--- Native Diagnostics ---\n").append(DIAGNOSTICS.toString());
+        out.append("Urban Wash payment diagnostics\\n");
+        out.append("Exported: ").append(timestamp()).append("\\n");
+        out.append("Plugin Version: capacitor-razorpay ").append(PLUGIN_VERSION).append("\\n");
+        out.append("Plugin Source File: ").append(PLUGIN_SOURCE_FILE).append("\\n");
+        out.append("Configured com.razorpay:checkout Version: ").append(CONFIGURED_RAZORPAY_CHECKOUT_VERSION).append("\\n");
+        out.append("Who invokes checkout: JS Checkout.open -> capacitor-razorpay Checkout.open -> CheckoutActivity OPTIONS Intent\\n");
+        out.append("\n--- Native Diagnostics ---\\n").append(DIAGNOSTICS.toString());
         if (webDiagnostics != null && webDiagnostics.length() > 0) {
-            out.append("\n--- Web Diagnostics ---\n").append(webDiagnostics).append("\n");
+            out.append("\n--- Web Diagnostics ---\\n").append(webDiagnostics).append("\\n");
         }
         return out.toString();
     }
 
     private static String buildText(JSObject snapshot, String webDiagnostics) {
-        return getDiagnosticsText(webDiagnostics) + "\n--- Snapshot JSON ---\n" + snapshot.toString() + "\n";
+        return getDiagnosticsText(webDiagnostics) + "\\n--- Snapshot JSON ---\\n" + snapshot.toString() + "\\n";
     }
 
     private String writeDiagnosticsFile(String filename, String text) throws Exception {
