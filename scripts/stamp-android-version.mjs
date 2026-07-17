@@ -10,9 +10,9 @@ if (!["customer", "partner"].includes(variant)) {
 
 const isCustomer = variant === "customer";
 const appId = isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner";
-const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.29";
-const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "29");
-const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-16-01";
+const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.30";
+const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "30");
+const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-17-01";
 const gradleFile = "android/app/build.gradle";
 const googleServicesFile = "android/app/google-services.json";
 const syncedBuildInfoCandidates = [

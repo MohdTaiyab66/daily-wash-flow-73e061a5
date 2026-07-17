@@ -619,6 +619,26 @@ function ServiceDetail() {
             throw new Error("Native Razorpay plugin not available");
           }
           console.log("[uw-pay] calling native Checkout.open", { orderId: ctx.orderId, amount: ctx.amount });
+          const upiDisplayConfig = {
+            display: {
+              blocks: {
+                upi_first: {
+                  name: "Pay using UPI",
+                  instruments: [
+                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
+                    { method: "upi", flows: ["collect"] },
+                    { method: "upi", flows: ["qr"] },
+                  ],
+                },
+                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
+                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
+                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
+              },
+              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
+              preferences: { show_default_blocks: false },
+              hide: [{ method: "emi" }, { method: "paylater" }],
+            },
+          };
           const result: any = await Checkout.open({
             key: ctx.keyId,
             amount: ctx.amount,
@@ -629,6 +649,7 @@ function ServiceDetail() {
             prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
             notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
+            config: upiDisplayConfig,
             // Explicitly enable UPI (intent + collect) alongside cards / netbanking /
             // wallets. On the Android SDK, UPI intent apps only appear when the host
             // APK also declares matching <queries> in AndroidManifest.xml — see
