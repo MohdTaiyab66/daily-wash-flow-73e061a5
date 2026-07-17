@@ -58,4 +58,59 @@ if (existsSync(razorpayPluginFile)) {
   }
 }
 
+// Inject UPI package-detection + final-options logging into the plugin's
+// open() method. Confirms whether Android's PackageManager sees any UPI apps
+// from inside the plugin process (post-manifest <queries>) and shows the
+// exact JSON handed to CheckoutActivity — so we can prove the wrapper is not
+// stripping fields (e.g. `method`, `config.display`).
+if (existsSync(razorpayPluginFile)) {
+  let source = await readFile(razorpayPluginFile, "utf8");
+  const MARK = "// [uw-upi-diag]";
+  if (!source.includes(MARK)) {
+    // Ensure PackageManager import.
+    if (!source.includes("import android.content.pm.PackageManager;")) {
+      source = source.replace(
+        "import android.content.Intent;",
+        "import android.content.Intent;\nimport android.content.pm.PackageManager;",
+      );
+    }
+    // Inject diagnostics right after `JSObject jsObject = call.getData();`.
+    const anchor = "JSObject jsObject = call.getData();";
+    const diag = `${anchor}
+            ${MARK}
+            try {
+                PackageManager pm = getContext().getPackageManager();
+                String[] upiPkgs = new String[] {
+                    "com.google.android.apps.nbu.paisa.user",
+                    "com.phonepe.app",
+                    "net.one97.paytm",
+                    "in.org.npci.upiapp",
+                    "com.amazon.mShop.android.shopping",
+                    "in.amazon.mShop.android.shopping"
+                };
+                StringBuilder sb = new StringBuilder();
+                for (String p : upiPkgs) {
+                    boolean present;
+                    try { pm.getPackageInfo(p, 0); present = true; }
+                    catch (PackageManager.NameNotFoundException nnf) { present = false; }
+                    sb.append(p).append("=").append(present).append(" ");
+                }
+                Log.i("UW_UPI_DIAG", "installed: " + sb.toString().trim());
+                Log.i("UW_UPI_DIAG", "checkout.open options: " + jsObject.toString());
+            } catch (Throwable t) {
+                Log.w("UW_UPI_DIAG", "diagnostic failure: " + t.getMessage());
+            }`;
+    if (source.includes(anchor)) {
+      source = source.replace(anchor, diag);
+      await writeFile(razorpayPluginFile, source, "utf8");
+      console.log(`[capacitor-java] injected UPI diagnostics into ${razorpayPluginFile}`);
+    } else {
+      console.warn(`[capacitor-java] could not find anchor for UPI diagnostics; skipping`);
+    }
+  } else {
+    console.log(`[capacitor-java] UPI diagnostics already present`);
+  }
+}
+
 if (fatal) process.exit(1);
+
