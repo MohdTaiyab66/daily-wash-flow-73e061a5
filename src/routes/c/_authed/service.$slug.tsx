@@ -436,6 +436,15 @@ function ServiceDetail() {
 
 
       const order = await createOrder({ data: { bookingId: String(bookingId) } });
+      await appendPaymentDiagnostic("Razorpay order created", {
+        bookingId: String(bookingId),
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: order.keyId,
+        service: service.name,
+        serviceType: service.service_type,
+      });
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
@@ -504,7 +513,7 @@ function ServiceDetail() {
   const runWebCheckout = useCallback((ctx: PendingCheckout) => {
     return new Promise<void>((resolve, reject) => {
       loadRazorpayCheckout().then(() => {
-        const checkout = new window.Razorpay!({
+        const webOptions = {
           key: ctx.keyId,
           amount: ctx.amount,
           currency: ctx.currency,
@@ -542,6 +551,7 @@ function ServiceDetail() {
           },
           handler: async (response: any) => {
             try {
+              await appendPaymentDiagnostic("web checkout handler response", response);
               await verifyPayment({
                 data: {
                   bookingId: ctx.bookingId,
@@ -555,8 +565,11 @@ function ServiceDetail() {
               reject(error);
             }
           },
-        });
+        };
+        void appendPaymentDiagnostic("final web checkout payload", webOptions);
+        const checkout = new window.Razorpay!(webOptions);
         (checkout as any).on?.("payment.failed", (resp: any) => {
+          void appendPaymentDiagnostic("web checkout payment.failed", resp);
           const desc = resp?.error?.description || "Payment failed. Please try again.";
           reject(new Error(desc));
         });
