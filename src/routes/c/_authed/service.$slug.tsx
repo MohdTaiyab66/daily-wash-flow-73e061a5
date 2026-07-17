@@ -618,28 +618,24 @@ function ServiceDetail() {
             nativeUnavailable = true;
             throw new Error("Native Razorpay plugin not available");
           }
-          console.log("[uw-pay] calling native Checkout.open", { orderId: ctx.orderId, amount: ctx.amount });
-          const upiDisplayConfig = {
-            display: {
-              blocks: {
-                upi_first: {
-                  name: "Pay using UPI",
-                  instruments: [
-                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
-                    { method: "upi", flows: ["collect"] },
-                    { method: "upi", flows: ["qr"] },
-                  ],
-                },
-                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
-                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
-                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
-              },
-              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
-              preferences: { show_default_blocks: false },
-              hide: [{ method: "emi" }, { method: "paylater" }],
-            },
-          };
-          const result: any = await Checkout.open({
+          // ROOT CAUSE FIX (UPI missing on Android APK):
+          // The Android Razorpay SDK (com.razorpay:checkout:1.6.x, bundled by
+          // capacitor-razorpay@1.3.0) does NOT fully implement Standard
+          // Checkout's `config.display.blocks` schema. Previously we passed the
+          // web-only `display.blocks` + `preferences.show_default_blocks:false`
+          // payload; on Android the UPI block silently failed to render while
+          // defaults were suppressed, leaving only Cards / Netbanking / Wallets
+          // visible — exactly the reported symptom.
+          //
+          // The native SDK must receive the MINIMAL supported options object
+          // and be allowed to render its own default method sheet. UPI intent
+          // apps then appear automatically provided:
+          //   1. The Razorpay account has UPI enabled for this key (same key
+          //      as web — verified: single RAZORPAY_KEY_ID env var, one code
+          //      path via createRazorpayOrder server fn).
+          //   2. AndroidManifest.xml declares <queries> for UPI packages and
+          //      the `upi` scheme (see scripts/patch-android-manifest.mjs).
+          const nativeOptions = {
             key: ctx.keyId,
             amount: ctx.amount,
             currency: ctx.currency,
@@ -649,13 +645,16 @@ function ServiceDetail() {
             prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
             notes: { booking_id: ctx.bookingId },
             theme: { color: "#FF6B1A" },
-            config: upiDisplayConfig,
-            // Explicitly enable UPI (intent + collect) alongside cards / netbanking /
-            // wallets. On the Android SDK, UPI intent apps only appear when the host
-            // APK also declares matching <queries> in AndroidManifest.xml — see
-            // scripts/patch-android-manifest.mjs.
-            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
+          };
+          console.log("[uw-pay] calling native Checkout.open", {
+            orderId: ctx.orderId,
+            amount: ctx.amount,
+            currency: ctx.currency,
+            keyIdPrefix: ctx.keyId?.slice(0, 8),
+            keyIdLength: ctx.keyId?.length,
+            payloadKeys: Object.keys(nativeOptions),
           });
+          const result: any = await Checkout.open(nativeOptions);
           console.log("[uw-pay] native Checkout.open returned", result);
           nativeResp = result?.response ?? result;
         } catch (err: any) {
