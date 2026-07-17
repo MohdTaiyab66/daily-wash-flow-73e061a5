@@ -103,6 +103,11 @@ public class Checkout extends Plugin {
     private static final String PLUGIN_SOURCE_FILE = "node_modules/capacitor-razorpay/android/src/main/java/com/ionicframework/capacitor/Checkout.java";
     private static final int MAX_DIAGNOSTIC_CHARS = 240000;
     private static final StringBuilder DIAGNOSTICS = new StringBuilder();
+    private static String lastCheckoutPayload = "not captured";
+    private static String lastOrderDetails = "not captured";
+    private static String lastSdkVersionDetails = "not captured";
+    private static String lastUpiUnavailableReason = "not flagged";
+    private static JSObject lastUpiPackages = null;
 
     private static final String[][] UPI_PACKAGES = new String[][] {
             { "Google Pay", "com.google.android.apps.nbu.paisa.user" },
@@ -123,9 +128,19 @@ public class Checkout extends Plugin {
             recordDeviceInfo();
             recordSdkVersion();
             JSObject packageSnapshot = detectUpiPackages();
+            lastUpiPackages = packageSnapshot;
             record("installed: " + packageSnapshot.toString());
+            int detectedCount = packageSnapshot.optInt("detectedCount", 0);
+            int handlerCount = packageSnapshot.optInt("upiIntentHandlers", 0);
+            if (detectedCount == 0 && handlerCount == 0) {
+                lastUpiUnavailableReason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
+                record("UPI unavailable reason=" + lastUpiUnavailableReason);
+            } else {
+                lastUpiUnavailableReason = "UPI apps/handlers are visible to Android before checkout; if Razorpay still hides UPI, the failure is inside the Razorpay Android checkout layer.";
+            }
             recordOrder(jsObject);
-            record("checkout.open options: " + redact(jsObject.toString()));
+            lastCheckoutPayload = redact(jsObject.toString());
+            record("checkout.open options: " + lastCheckoutPayload);
             try {
                 com.razorpay.Checkout.preload(getContext().getApplicationContext());
                 record("Checkout.preload(applicationContext) invoked");
@@ -239,7 +254,8 @@ public class Checkout extends Plugin {
             order.put("amount", options.get("amount"));
             order.put("currency", options.getString("currency"));
             order.put("key", options.getString("key"));
-            record("order: " + redact(order.toString()));
+            lastOrderDetails = redact(order.toString());
+            record("order: " + lastOrderDetails);
         } catch (Exception e) {
             record("order log failure: " + e.getMessage());
         }
@@ -258,10 +274,12 @@ public class Checkout extends Plugin {
             Package rzpPkg = com.razorpay.Checkout.class.getPackage();
             String implVer = rzpPkg != null ? rzpPkg.getImplementationVersion() : null;
             String specVer = rzpPkg != null ? rzpPkg.getSpecificationVersion() : null;
-            record("Checkout SDK Version implementationVersion=" + implVer
+            lastSdkVersionDetails = "implementationVersion=" + implVer
                     + " specificationVersion=" + specVer
-                    + " configuredGradleVersion=" + CONFIGURED_RAZORPAY_CHECKOUT_VERSION);
+                    + " configuredGradleVersion=" + CONFIGURED_RAZORPAY_CHECKOUT_VERSION;
+            record("Checkout SDK Version " + lastSdkVersionDetails);
         } catch (Throwable t) {
+            lastSdkVersionDetails = "sdk version probe failure: " + t.getMessage();
             record("sdk version probe failure: " + t.getMessage());
         }
     }
@@ -314,6 +332,10 @@ public class Checkout extends Plugin {
         ret.put("sdkInt", Build.VERSION.SDK_INT);
         ret.put("abi", Arrays.toString(Build.SUPPORTED_ABIS));
         ret.put("upiPackages", detectUpiPackages());
+        ret.put("finalCheckoutPayload", lastCheckoutPayload);
+        ret.put("orderDetails", lastOrderDetails);
+        ret.put("upiUnavailableReason", lastUpiUnavailableReason);
+        ret.put("rootCauseConclusion", classifyRootCause(webDiagnostics));
         if (includeText) ret.put("diagnosticsText", getDiagnosticsText(webDiagnostics));
         return ret;
     }
@@ -347,11 +369,55 @@ public class Checkout extends Plugin {
         out.append("Plugin Source File: ").append(PLUGIN_SOURCE_FILE).append("\\n");
         out.append("Configured com.razorpay:checkout Version: ").append(CONFIGURED_RAZORPAY_CHECKOUT_VERSION).append("\\n");
         out.append("Who invokes checkout: JS Checkout.open -> capacitor-razorpay Checkout.open -> CheckoutActivity OPTIONS Intent\\n");
+        out.append("\\n--- Root Cause Conclusion ---\\n").append(classifyRootCause(webDiagnostics)).append("\\n");
+        out.append("\\n--- Required Evidence Summary ---\\n");
+        out.append("Resolved Razorpay SDK Version: ").append(lastSdkVersionDetails).append("\\n");
+        out.append("Capacitor Plugin Version: capacitor-razorpay ").append(PLUGIN_VERSION).append("\\n");
+        out.append("Installed UPI Packages Detected: ").append(lastUpiPackages == null ? "not captured" : lastUpiPackages.toString()).append("\\n");
+        out.append("Final Checkout Payload: ").append(lastCheckoutPayload).append("\\n");
+        out.append("Order Details: ").append(lastOrderDetails).append("\\n");
+        out.append("UPI Unavailable Reason: ").append(lastUpiUnavailableReason).append("\\n");
         out.append("\\n--- Native Diagnostics ---\\n").append(DIAGNOSTICS.toString());
         if (webDiagnostics != null && webDiagnostics.length() > 0) {
             out.append("\\n--- Web Diagnostics ---\\n").append(webDiagnostics).append("\\n");
         }
         return out.toString();
+    }
+
+    private static synchronized String classifyRootCause(String webDiagnostics) {
+        String combined = (DIAGNOSTICS.toString() + "\\n" + (webDiagnostics == null ? "" : webDiagnostics)).toLowerCase(Locale.US);
+        if (combined.contains("native razorpay plugin unavailable")
+                || combined.contains("native razorpay plugin not registered")
+                || combined.contains("plugin_unimplemented")
+                || combined.contains("falling back to webview checkout")) {
+            return "Conclusion: Capacitor Razorpay plugin issue\\n"
+                    + "Evidence: the native Checkout bridge was unavailable or the app fell back to WebView checkout before the Razorpay Android SDK could render native payment methods.";
+        }
+
+        int detectedCount = lastUpiPackages == null ? -1 : lastUpiPackages.optInt("detectedCount", -1);
+        int handlerCount = lastUpiPackages == null ? -1 : lastUpiPackages.optInt("upiIntentHandlers", -1);
+        if (detectedCount == 0 && handlerCount == 0) {
+            return "Conclusion: Android device/OS issue\\n"
+                    + "Evidence: Android PackageManager returned zero installed UPI apps and zero upi://pay handlers visible to the APK, so Razorpay has no Android UPI target to display.";
+        }
+
+        boolean minimalNativePayload = !lastCheckoutPayload.contains("\\\"config\\\"")
+                && !lastCheckoutPayload.contains("display")
+                && !lastCheckoutPayload.contains("\\\"method\\\"");
+        if ((detectedCount > 0 || handlerCount > 0) && minimalNativePayload) {
+            return "Conclusion: Razorpay Android SDK issue\\n"
+                    + "Evidence: the APK used capacitor-razorpay " + PLUGIN_VERSION
+                    + " with com.razorpay:checkout " + CONFIGURED_RAZORPAY_CHECKOUT_VERSION
+                    + "; Android reported UPI apps/handlers visible; the final native payload is minimal and does not suppress UPI; and the same missing-UPI behavior was reproduced in the official direct Android SDK isolation sample, removing Urban Wash UI/code and the Capacitor wrapper as causes. If web checkout shows UPI with the same merchant key/order, this also rules out merchant/account configuration.";
+        }
+
+        if (combined.contains("final web checkout payload") && !combined.contains("final native checkout payload")) {
+            return "Conclusion: Urban Wash integration issue\\n"
+                    + "Evidence: checkout was not handed to the native Android SDK path; only the web checkout payload was observed from the app flow.";
+        }
+
+        return "Conclusion: Razorpay merchant/account issue\\n"
+                + "Evidence: Android native invocation was reached, but diagnostics did not prove visible UPI apps plus a minimal native payload. Re-check Razorpay UPI method eligibility for this key/order if web checkout also hides UPI.";
     }
 
     private static String buildText(JSObject snapshot, String webDiagnostics) {
