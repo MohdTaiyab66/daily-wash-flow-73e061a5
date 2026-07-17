@@ -58,71 +58,346 @@ if (existsSync(razorpayPluginFile)) {
   }
 }
 
-// Inject UPI package-detection + final-options logging into the plugin's
-// open() method. Confirms whether Android's PackageManager sees any UPI apps
-// from inside the plugin process (post-manifest <queries>) and shows the
-// exact JSON handed to CheckoutActivity — so we can prove the wrapper is not
-// stripping fields (e.g. `method`, `config.display`).
-if (existsSync(razorpayPluginFile)) {
-  let source = await readFile(razorpayPluginFile, "utf8");
-  const MARK = "// [uw-upi-diag]";
-  if (!source.includes(MARK)) {
-    // Ensure PackageManager import.
-    if (!source.includes("import android.content.pm.PackageManager;")) {
-      source = source.replace(
-        "import android.content.Intent;",
-        "import android.content.Intent;\nimport android.content.pm.PackageManager;",
-      );
-    }
-    // Inject diagnostics right after `JSObject jsObject = call.getData();`.
-    const anchor = "JSObject jsObject = call.getData();";
-    const diag = `${anchor}
-            ${MARK}
+function instrumentedRazorpayPluginSource() {
+  return `package com.ionicframework.capacitor;
+
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
+
+import androidx.activity.result.ActivityResult;
+
+import com.getcapacitor.JSObject;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
+import com.razorpay.CheckoutActivity;
+import com.razorpay.ExternalWalletListener;
+import com.razorpay.PaymentData;
+import com.razorpay.PaymentResultWithDataListener;
+
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
+
+@CapacitorPlugin(name = "Checkout")
+public class Checkout extends Plugin {
+    private static final String TAG = "UW_UPI_DIAG";
+    private static final String PLUGIN_VERSION = "1.3.0";
+    private static final String CONFIGURED_RAZORPAY_CHECKOUT_VERSION = "1.6.41";
+    private static final String PLUGIN_SOURCE_FILE = "node_modules/capacitor-razorpay/android/src/main/java/com/ionicframework/capacitor/Checkout.java";
+    private static final int MAX_DIAGNOSTIC_CHARS = 240000;
+    private static final StringBuilder DIAGNOSTICS = new StringBuilder();
+
+    private static final String[][] UPI_PACKAGES = new String[][] {
+            { "Google Pay", "com.google.android.apps.nbu.paisa.user" },
+            { "PhonePe", "com.phonepe.app" },
+            { "Paytm", "net.one97.paytm" },
+            { "BHIM", "in.org.npci.upiapp" },
+            { "Amazon Pay UPI", "in.amazon.mShop.android.shopping" },
+            { "Amazon Pay UPI", "com.amazon.mShop.android.shopping" }
+    };
+
+    @PluginMethod
+    public void open(PluginCall call) {
+        call.setKeepAlive(true);
+        try {
+            JSObject jsObject = call.getData();
+            record("plugin version=" + PLUGIN_VERSION + " source=" + PLUGIN_SOURCE_FILE);
+            record("invoker=JS Checkout.open -> capacitor-razorpay Checkout.open -> Intent CheckoutActivity OPTIONS");
+            recordDeviceInfo();
+            recordSdkVersion();
+            JSObject packageSnapshot = detectUpiPackages();
+            record("installed: " + packageSnapshot.toString());
+            recordOrder(jsObject);
+            record("checkout.open options: " + redact(jsObject.toString()));
             try {
-                PackageManager pm = getContext().getPackageManager();
-                String[] upiPkgs = new String[] {
-                    "com.google.android.apps.nbu.paisa.user",
-                    "com.phonepe.app",
-                    "net.one97.paytm",
-                    "in.org.npci.upiapp",
-                    "com.amazon.mShop.android.shopping",
-                    "in.amazon.mShop.android.shopping"
-                };
-                StringBuilder sb = new StringBuilder();
-                for (String p : upiPkgs) {
-                    boolean present;
-                    try { pm.getPackageInfo(p, 0); present = true; }
-                    catch (PackageManager.NameNotFoundException nnf) { present = false; }
-                    sb.append(p).append("=").append(present).append(" ");
-                }
-                Log.i("UW_UPI_DIAG", "installed: " + sb.toString().trim());
-                Log.i("UW_UPI_DIAG", "checkout.open options: " + jsObject.toString());
-                try {
-                    Package rzpPkg = com.razorpay.Checkout.class.getPackage();
-                    String implVer = rzpPkg != null ? rzpPkg.getImplementationVersion() : null;
-                    String specVer = rzpPkg != null ? rzpPkg.getSpecificationVersion() : null;
-                    Log.i("UW_UPI_DIAG", "Checkout SDK implementationVersion=" + implVer + " specificationVersion=" + specVer);
-                } catch (Throwable vt) {
-                    Log.w("UW_UPI_DIAG", "sdk version probe failure: " + vt.getMessage());
-                }
-                try {
-                    com.razorpay.Checkout.preload(getContext().getApplicationContext());
-                    Log.i("UW_UPI_DIAG", "Checkout.preload invoked from plugin diagnostics");
-                } catch (Throwable pt) {
-                    Log.w("UW_UPI_DIAG", "preload failure: " + pt.getMessage());
-                }
+                com.razorpay.Checkout.preload(getContext().getApplicationContext());
+                record("Checkout.preload(applicationContext) invoked");
             } catch (Throwable t) {
-                Log.w("UW_UPI_DIAG", "diagnostic failure: " + t.getMessage());
-            }`;
-    if (source.includes(anchor)) {
-      source = source.replace(anchor, diag);
-      await writeFile(razorpayPluginFile, source, "utf8");
-      console.log(`[capacitor-java] injected UPI diagnostics into ${razorpayPluginFile}`);
-    } else {
-      console.warn(`[capacitor-java] could not find anchor for UPI diagnostics; skipping`);
+                record("Checkout.preload failure: " + t.getMessage());
+            }
+
+            Intent intent = new Intent(getActivity(), CheckoutActivity.class);
+            intent.putExtra("OPTIONS", jsObject.toString());
+            intent.putExtra("FRAMEWORK", "capacitor");
+            startActivityForResult(call, intent, "handleOnActivityResult");
+        } catch (Exception e) {
+            record("open exception: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            call.reject(e.getMessage() == null ? "Razorpay checkout open failed" : e.getMessage());
+        }
     }
+
+    @PluginMethod
+    public void recordDiagnostics(PluginCall call) {
+        String line = call.getString("line", "");
+        if (line.length() > 0) record("web: " + line);
+        JSObject ret = new JSObject();
+        ret.put("ok", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getDiagnostics(PluginCall call) {
+        call.resolve(buildSnapshot(null, false));
+    }
+
+    @PluginMethod
+    public void exportDiagnostics(PluginCall call) {
+        try {
+            String webDiagnostics = call.getString("webDiagnostics", "");
+            JSObject snapshot = buildSnapshot(webDiagnostics, true);
+            String text = buildText(snapshot, webDiagnostics);
+            String filename = "payment-diagnostics.txt";
+            String uriOrPath = writeDiagnosticsFile(filename, text);
+            record("exported diagnostics file=" + uriOrPath);
+            JSObject ret = new JSObject();
+            ret.put("filename", filename);
+            ret.put("uri", uriOrPath);
+            ret.put("path", uriOrPath);
+            ret.put("shared", false);
+            ret.put("message", "Saved payment-diagnostics.txt to Downloads or app files.");
+            call.resolve(ret);
+        } catch (Exception e) {
+            record("export diagnostics failure: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            call.reject(e.getMessage() == null ? "Could not export diagnostics" : e.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void handleOnActivityResult(PluginCall call, ActivityResult result) {
+        final PluginCall lastSavedCall = call;
+        record("Razorpay SDK activityResult resultCode=" + result.getResultCode() + " hasData=" + (result.getData() != null));
+        com.razorpay.Checkout.handleActivityResult(getActivity(), com.razorpay.Checkout.RZP_REQUEST_CODE, result.getResultCode(), result.getData(), new PaymentResultWithDataListener() {
+            @Override
+            public void onPaymentSuccess(String paymentId, PaymentData paymentData) {
+                try {
+                    JSObject jsObject = new JSObject();
+                    try {
+                        JSONObject data = paymentData.getData();
+                        record("Razorpay callback payment success paymentId=" + paymentId + " data=" + redact(data.toString()));
+                        jsObject.put("response", data);
+                    } catch (Exception e) {
+                        record("Razorpay success callback data read failure: " + e.getMessage());
+                    }
+                    if (lastSavedCall == null) {
+                        record("Razorpay success callback dropped: no saved PluginCall");
+                        return;
+                    }
+                    lastSavedCall.resolve(jsObject);
+                } catch (Exception e) {
+                    record("Razorpay success callback exception: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onPaymentError(int code, String description, PaymentData paymentData) {
+                try {
+                    String raw = "";
+                    try { raw = paymentData == null ? "" : redact(paymentData.getData().toString()); } catch (Exception ignored) {}
+                    record("Razorpay callback payment error code=" + code + " description=" + description + " data=" + raw);
+                    if (lastSavedCall == null) return;
+                    JSObject error = new JSObject();
+                    error.put("code", code);
+                    error.put("description", description);
+                    error.put("data", raw);
+                    lastSavedCall.reject(description == null ? "Payment failed" : description, String.valueOf(code), error);
+                } catch (Exception e) {
+                    record("Razorpay error callback exception: " + e.getMessage());
+                }
+            }
+        }, new ExternalWalletListener() {
+            @Override
+            public void onExternalWalletSelected(String walletName, PaymentData paymentData) {
+                String raw = "";
+                try { raw = paymentData == null ? "" : redact(paymentData.getData().toString()); } catch (Exception ignored) {}
+                record("Razorpay callback external wallet selected wallet=" + walletName + " data=" + raw);
+                if (lastSavedCall != null) lastSavedCall.reject(walletName);
+            }
+        });
+    }
+
+    private void recordOrder(JSObject options) {
+        try {
+            JSObject order = new JSObject();
+            order.put("order_id", options.getString("order_id"));
+            order.put("amount", options.get("amount"));
+            order.put("currency", options.getString("currency"));
+            order.put("key", options.getString("key"));
+            record("order: " + redact(order.toString()));
+        } catch (Exception e) {
+            record("order log failure: " + e.getMessage());
+        }
+    }
+
+    private void recordDeviceInfo() {
+        record("android info: Manufacturer=" + Build.MANUFACTURER
+                + " Model=" + Build.MODEL
+                + " Android Version=" + Build.VERSION.RELEASE
+                + " SDK=" + Build.VERSION.SDK_INT
+                + " ABI=" + Arrays.toString(Build.SUPPORTED_ABIS));
+    }
+
+    private void recordSdkVersion() {
+        try {
+            Package rzpPkg = com.razorpay.Checkout.class.getPackage();
+            String implVer = rzpPkg != null ? rzpPkg.getImplementationVersion() : null;
+            String specVer = rzpPkg != null ? rzpPkg.getSpecificationVersion() : null;
+            record("Checkout SDK Version implementationVersion=" + implVer
+                    + " specificationVersion=" + specVer
+                    + " configuredGradleVersion=" + CONFIGURED_RAZORPAY_CHECKOUT_VERSION);
+        } catch (Throwable t) {
+            record("sdk version probe failure: " + t.getMessage());
+        }
+    }
+
+    private JSObject detectUpiPackages() {
+        JSObject packages = new JSObject();
+        JSObject byName = new JSObject();
+        PackageManager pm = getContext().getPackageManager();
+        int detected = 0;
+        for (String[] entry : UPI_PACKAGES) {
+            String label = entry[0];
+            String pkg = entry[1];
+            boolean present;
+            try {
+                pm.getPackageInfo(pkg, 0);
+                present = true;
+                detected++;
+            } catch (PackageManager.NameNotFoundException nnf) {
+                present = false;
+            }
+            packages.put(pkg, present);
+            if (present || !byName.has(label)) byName.put(label, present);
+            record(label + " (" + pkg + ")=" + present);
+        }
+        try {
+            Intent upiIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay"));
+            int handlers = pm.queryIntentActivities(upiIntent, 0).size();
+            packages.put("upiIntentHandlers", handlers);
+            record("upi://pay intent handlers=" + handlers);
+        } catch (Throwable t) {
+            record("upi intent query failure: " + t.getMessage());
+        }
+        packages.put("summary", byName);
+        packages.put("detectedCount", detected);
+        return packages;
+    }
+
+    private JSObject buildSnapshot(String webDiagnostics, boolean includeText) {
+        recordDeviceInfo();
+        recordSdkVersion();
+        JSObject ret = new JSObject();
+        ret.put("pluginVersion", "capacitor-razorpay " + PLUGIN_VERSION);
+        ret.put("pluginSourceFile", PLUGIN_SOURCE_FILE);
+        ret.put("checkoutInvoker", "JS Checkout.open from service.$slug.tsx calls capacitor-razorpay Checkout.open; native plugin starts com.razorpay.CheckoutActivity with OPTIONS JSON");
+        ret.put("configuredSdkVersion", CONFIGURED_RAZORPAY_CHECKOUT_VERSION);
+        ret.put("sdkVersion", CONFIGURED_RAZORPAY_CHECKOUT_VERSION);
+        ret.put("manufacturer", Build.MANUFACTURER);
+        ret.put("model", Build.MODEL);
+        ret.put("androidVersion", Build.VERSION.RELEASE);
+        ret.put("sdkInt", Build.VERSION.SDK_INT);
+        ret.put("abi", Arrays.toString(Build.SUPPORTED_ABIS));
+        ret.put("upiPackages", detectUpiPackages());
+        if (includeText) ret.put("diagnosticsText", getDiagnosticsText(webDiagnostics));
+        return ret;
+    }
+
+    private static synchronized void record(String message) {
+        String line = timestamp() + " " + message;
+        Log.i(TAG, line);
+        DIAGNOSTICS.append(line).append("\\n");
+        if (DIAGNOSTICS.length() > MAX_DIAGNOSTIC_CHARS) {
+            DIAGNOSTICS.delete(0, DIAGNOSTICS.length() - MAX_DIAGNOSTIC_CHARS);
+        }
+    }
+
+    private static String timestamp() {
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).format(new Date());
+    }
+
+    private static String redact(String raw) {
+        if (raw == null) return "";
+        return raw
+                .replaceAll("(\\\"(?:key_secret|secret|razorpay_signature|signature)\\\"\\\\s*:\\\\s*\\\")[^\\\"]*(\\\")", "$1[REDACTED]$2")
+                .replaceAll("(\\\"key\\\"\\\\s*:\\\\s*\\\")([^\\\"]{0,8})[^\\\"]*([^\\\"]{0,4})(\\\")", "$1$2…$3$4")
+                .replaceAll("((?:key_secret|secret|razorpay_signature|signature)=)[^,} ]+", "$1[REDACTED]");
+    }
+
+    private static synchronized String getDiagnosticsText(String webDiagnostics) {
+        StringBuilder out = new StringBuilder();
+        out.append("Urban Wash payment diagnostics\\n");
+        out.append("Exported: ").append(timestamp()).append("\\n");
+        out.append("Plugin Version: capacitor-razorpay ").append(PLUGIN_VERSION).append("\\n");
+        out.append("Plugin Source File: ").append(PLUGIN_SOURCE_FILE).append("\\n");
+        out.append("Configured com.razorpay:checkout Version: ").append(CONFIGURED_RAZORPAY_CHECKOUT_VERSION).append("\\n");
+        out.append("Who invokes checkout: JS Checkout.open -> capacitor-razorpay Checkout.open -> CheckoutActivity OPTIONS Intent\\n");
+        out.append("\\n--- Native Diagnostics ---\\n").append(DIAGNOSTICS.toString());
+        if (webDiagnostics != null && webDiagnostics.length() > 0) {
+            out.append("\\n--- Web Diagnostics ---\\n").append(webDiagnostics).append("\\n");
+        }
+        return out.toString();
+    }
+
+    private static String buildText(JSObject snapshot, String webDiagnostics) {
+        return getDiagnosticsText(webDiagnostics) + "\\n--- Snapshot JSON ---\\n" + snapshot.toString() + "\\n";
+    }
+
+    private String writeDiagnosticsFile(String filename, String text) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+            values.put(MediaStore.Downloads.MIME_TYPE, "text/plain");
+            values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+            Uri uri = getContext().getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            if (uri == null) throw new Exception("Could not create diagnostics file in Downloads");
+            try (OutputStream os = getContext().getContentResolver().openOutputStream(uri);
+                 OutputStreamWriter writer = new OutputStreamWriter(os)) {
+                writer.write(text);
+            }
+            return uri.toString();
+        }
+
+        File dir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        if (dir == null) dir = getContext().getFilesDir();
+        if (!dir.exists()) dir.mkdirs();
+        File file = new File(dir, filename);
+        try (FileOutputStream fos = new FileOutputStream(file);
+             OutputStreamWriter writer = new OutputStreamWriter(fos)) {
+            writer.write(text);
+        }
+        return file.getAbsolutePath();
+    }
+}
+`;
+}
+
+// Replace the old plugin wrapper with an instrumented equivalent. This does
+// not change payment verification, order creation, or subscription logic; it
+// only logs/export diagnostics around the native Razorpay handoff.
+if (existsSync(razorpayPluginFile)) {
+  const source = await readFile(razorpayPluginFile, "utf8");
+  const next = instrumentedRazorpayPluginSource();
+  if (source !== next) {
+    await writeFile(razorpayPluginFile, next, "utf8");
+    console.log(`[capacitor-java] installed full Razorpay payment diagnostics in ${razorpayPluginFile}`);
   } else {
-    console.log(`[capacitor-java] UPI diagnostics already present`);
+    console.log(`[capacitor-java] Razorpay payment diagnostics already installed`);
   }
 }
 
