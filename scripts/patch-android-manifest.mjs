@@ -22,6 +22,11 @@ const permissions = [
   "android.permission.VIBRATE",
   "android.permission.RECEIVE_BOOT_COMPLETED",
   "android.permission.INTERNET",
+  // Razorpay's Android SDK detects installed UPI apps through PackageManager.
+  // Some OEM Android 11+ builds still return an empty result even with scheme
+  // intent queries, causing Checkout to hide UPI completely. This keeps the APK
+  // fail-open for payment-app discovery on sideload/debug production builds.
+  "android.permission.QUERY_ALL_PACKAGES",
 ];
 
 for (const name of permissions) {
@@ -89,6 +94,9 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" android:host="pay" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+        </intent>
     </queries>
 `;
   xml = xml.replace("<application", `${queries}\n    <application`);
@@ -112,7 +120,55 @@ if (!xml.includes("com.urbanwash.push.UrbanwashMessagingService")) {
 }
 
 await writeFile(manifest, xml);
-console.log("[android-manifest] permissions, maps intents and offer service verified");
+console.log("[android-manifest] permissions, UPI package visibility, maps intents and offer service verified");
+
+// capacitor-razorpay is an old Capacitor plugin and does not reliably
+// auto-register on Capacitor 8. If Checkout is not registered, the JS import can
+// exist while the native bridge is missing, leading to WebView checkout fallback
+// where Razorpay hides UPI intents. Register it explicitly in MainActivity.
+async function collectFiles(dir, out = []) {
+  if (!existsSync(dir)) return out;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) await collectFiles(path, out);
+    else out.push(path);
+  }
+  return out;
+}
+
+const javaFiles = await collectFiles("android/app/src/main/java");
+const mainActivity = javaFiles.find((file) => file.endsWith("MainActivity.java"));
+if (!mainActivity) {
+  console.error("[android-manifest] missing MainActivity.java; cannot register Razorpay Checkout plugin");
+  process.exit(1);
+}
+
+let activity = await readFile(mainActivity, "utf8");
+const importsToEnsure = ["android.os.Bundle", "com.ionicframework.capacitor.Checkout"];
+for (const importName of importsToEnsure) {
+  if (!activity.includes(`import ${importName};`)) {
+    activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport ${importName};\n`);
+  }
+}
+
+// Register before super.onCreate(). In Capacitor 8, BridgeActivity creates the
+// bridge during super.onCreate(); registering after that is too late and leaves
+// Checkout unavailable at runtime.
+activity = activity.replace(/^\s*registerPlugin\(Checkout\.class\);\s*$/gm, "");
+const onCreateStart = /(void\s+onCreate\s*\(\s*Bundle\s+savedInstanceState\s*\)\s*\{)/s;
+if (onCreateStart.test(activity)) {
+  activity = activity.replace(onCreateStart, `$1\n        registerPlugin(Checkout.class);`);
+} else {
+  activity = activity.replace(/(public\s+class\s+MainActivity\s+extends\s+BridgeActivity\s*\{)/, `$1\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(Checkout.class);\n        super.onCreate(savedInstanceState);\n    }\n`);
+}
+
+if (!activity.includes("registerPlugin(Checkout.class)")) {
+  console.error(`[android-manifest] failed to register Razorpay Checkout plugin in ${mainActivity}`);
+  process.exit(1);
+}
+
+await writeFile(mainActivity, activity, "utf8");
+console.log(`[android-manifest] Razorpay Checkout plugin registered in ${mainActivity}`);
 
 // Copy Kotlin sources into the package directory.
 const pkgDir = "android/app/src/main/java/com/urbanwash/push";
