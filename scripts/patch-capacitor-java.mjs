@@ -97,6 +97,20 @@ if (existsSync(razorpayPluginFile)) {
                 }
                 Log.i("UW_UPI_DIAG", "installed: " + sb.toString().trim());
                 Log.i("UW_UPI_DIAG", "checkout.open options: " + jsObject.toString());
+                try {
+                    Package rzpPkg = com.razorpay.Checkout.class.getPackage();
+                    String implVer = rzpPkg != null ? rzpPkg.getImplementationVersion() : null;
+                    String specVer = rzpPkg != null ? rzpPkg.getSpecificationVersion() : null;
+                    Log.i("UW_UPI_DIAG", "Checkout SDK implementationVersion=" + implVer + " specificationVersion=" + specVer);
+                } catch (Throwable vt) {
+                    Log.w("UW_UPI_DIAG", "sdk version probe failure: " + vt.getMessage());
+                }
+                try {
+                    com.razorpay.Checkout.preload(getContext().getApplicationContext());
+                    Log.i("UW_UPI_DIAG", "Checkout.preload invoked from plugin diagnostics");
+                } catch (Throwable pt) {
+                    Log.w("UW_UPI_DIAG", "preload failure: " + pt.getMessage());
+                }
             } catch (Throwable t) {
                 Log.w("UW_UPI_DIAG", "diagnostic failure: " + t.getMessage());
             }`;

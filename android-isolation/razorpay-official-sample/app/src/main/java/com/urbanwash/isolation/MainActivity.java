@@ -48,6 +48,14 @@ public class MainActivity extends Activity implements PaymentResultWithDataListe
         buildUi();
         log("Official SDK isolation app started");
         log("com.razorpay:checkout pinned = " + RAZORPAY_CHECKOUT_VERSION);
+        try {
+            Package rzpPkg = Checkout.class.getPackage();
+            String implVer = rzpPkg != null ? rzpPkg.getImplementationVersion() : null;
+            String specVer = rzpPkg != null ? rzpPkg.getSpecificationVersion() : null;
+            log("Checkout SDK implementationVersion=" + implVer + " specificationVersion=" + specVer);
+        } catch (Throwable t) {
+            log("SDK version probe failure: " + t.getMessage());
+        }
         log("Capacitor = not present");
         log("Custom checkout config = not present");
     }
