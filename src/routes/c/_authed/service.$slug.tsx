@@ -796,6 +796,13 @@ function ServiceDetail() {
         errorCode: cancelled ? "user_cancelled" : "checkout_failed",
         errorMessage: String(err?.message ?? err).slice(0, 500),
       });
+      if (nativeMode) {
+        const diag = await getNativePaymentDiagnostics();
+        const reason = cancelled
+          ? "Native checkout closed without a verified payment. If UPI was not visible inside Razorpay, export diagnostics from this screen."
+          : String(err?.message ?? "Razorpay native checkout failed before verified payment.");
+        setUpiUnavailable(formatUpiUnavailableMessage(diag, reason, ctx.keyId));
+      }
       setPaymentError({
         message: cancelled
           ? "Checkout was cancelled. You can retry when you're ready."
