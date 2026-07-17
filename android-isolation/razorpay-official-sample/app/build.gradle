@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.urbanwash.isolation'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.urbanwash.isolation'
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0-isolation'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    // Latest official Razorpay Android Checkout SDK at investigation time.
+    // This is intentionally direct: no Capacitor, no plugin, no Urban Wash UI.
+    implementation 'com.razorpay:checkout:1.6.41'
+}

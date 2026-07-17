@@ -1,0 +1,1 @@
+# Empty on purpose. Debug isolation build does not minify.
