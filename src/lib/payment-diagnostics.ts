@@ -11,12 +11,28 @@ function isSensitiveKey(key: string) {
   return k === "secret" || k === "key_secret" || k.endsWith("_secret") || k.includes("signature");
 }
 
+function isPublicPaymentKey(key: string) {
+  const k = key.toLowerCase();
+  return k === "key" || k === "keyid" || k === "key_id";
+}
+
+function maskValue(value: unknown) {
+  const raw = String(value ?? "");
+  if (!raw) return "";
+  if (raw.length <= 8) return REDACTED;
+  return `${raw.slice(0, 8)}…${raw.slice(-4)}`;
+}
+
 export function sanitizePaymentDiagnostic(value: Jsonish): Jsonish {
   if (Array.isArray(value)) return value.map((item) => sanitizePaymentDiagnostic(item as Jsonish));
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      out[key] = isSensitiveKey(key) ? REDACTED : sanitizePaymentDiagnostic(nested as Jsonish);
+      out[key] = isSensitiveKey(key)
+        ? REDACTED
+        : isPublicPaymentKey(key)
+          ? maskValue(nested)
+          : sanitizePaymentDiagnostic(nested as Jsonish);
     }
     return out;
   }
@@ -122,7 +138,7 @@ export function formatUpiUnavailableMessage(diag: Record<string, unknown> | null
     "UPI unavailable.",
     `SDK Version: ${sdk}`,
     `Plugin Version: ${plugin}`,
-    `Merchant: ${merchantKey ?? "unknown"}`,
+    `Merchant: ${merchantKey ? maskValue(merchantKey) : "unknown"}`,
     `Packages Found: ${found}`,
     `Reason: ${reason || "Razorpay native checkout did not expose UPI on this device."}`,
   ].join("\n");
