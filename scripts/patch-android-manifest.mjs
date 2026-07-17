@@ -94,6 +94,9 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" android:host="pay" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+        </intent>
     </queries>
 `;
   xml = xml.replace("<application", `${queries}\n    <application`);
