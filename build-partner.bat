@@ -241,6 +241,9 @@ call fix-android-java.bat || goto :fail
 echo   Pinning Gradle to detected JDK...
 call node scripts\configure-gradle-jdk.mjs || goto :fail
 
+echo   Pinning Razorpay Checkout SDK to 1.6.41 in app build.gradle...
+call node scripts\patch-android-gradle.mjs || goto :fail
+
 REM -- 6. Build APK -------------------------------------------------------
 echo.
 echo [6/6] Building Android debug APK...
@@ -250,6 +253,10 @@ call gradlew.bat --stop >nul 2>&1
 echo   Gradle project: %CD%
 echo   Gradle JVM check:
 call gradlew.bat -version || (popd & goto :fail)
+echo   Resolved Razorpay dependency:
+call gradlew.bat -q :app:printRazorpayResolved || echo   [!] Razorpay resolution report failed (non-fatal)
+call gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath > ..\razorpay-partner-deps.txt 2>&1
+echo   Full dependency tree written to razorpay-partner-deps.txt
 call gradlew.bat assembleDebug || (popd & goto :fail)
 popd
 
