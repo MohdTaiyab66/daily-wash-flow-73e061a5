@@ -147,13 +147,15 @@ if (!activity.includes("com.ionicframework.capacitor.Checkout")) {
   activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport android.os.Bundle;\n`);
 }
 
-if (!activity.includes("registerPlugin(Checkout.class)")) {
-  const onCreateWithSuper = /(void\s+onCreate\s*\(\s*Bundle\s+savedInstanceState\s*\)\s*\{\s*super\.onCreate\(savedInstanceState\);)/s;
-  if (onCreateWithSuper.test(activity)) {
-    activity = activity.replace(onCreateWithSuper, `$1\n        registerPlugin(Checkout.class);`);
-  } else {
-    activity = activity.replace(/(public\s+class\s+MainActivity\s+extends\s+BridgeActivity\s*\{)/, `$1\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        registerPlugin(Checkout.class);\n    }\n`);
-  }
+// Register before super.onCreate(). In Capacitor 8, BridgeActivity creates the
+// bridge during super.onCreate(); registering after that is too late and leaves
+// Checkout unavailable at runtime.
+activity = activity.replace(/^\s*registerPlugin\(Checkout\.class\);\s*$/gm, "");
+const onCreateStart = /(void\s+onCreate\s*\(\s*Bundle\s+savedInstanceState\s*\)\s*\{)/s;
+if (onCreateStart.test(activity)) {
+  activity = activity.replace(onCreateStart, `$1\n        registerPlugin(Checkout.class);`);
+} else {
+  activity = activity.replace(/(public\s+class\s+MainActivity\s+extends\s+BridgeActivity\s*\{)/, `$1\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(Checkout.class);\n        super.onCreate(savedInstanceState);\n    }\n`);
 }
 
 if (!activity.includes("registerPlugin(Checkout.class)")) {
