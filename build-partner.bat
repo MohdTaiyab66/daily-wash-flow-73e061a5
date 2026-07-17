@@ -7,9 +7,9 @@ setlocal EnableDelayedExpansion
 set "VARIANT=partner"
 set "APP_ID=com.urbanwash.partner"
 set "GSJSON=android-config\partner\google-services.json"
-set "PARTNER_APP_VERSION=1.0.28"
-set "PARTNER_VERSION_CODE=28"
-set "PARTNER_BUILD_ID=2026-07-04-02"
+set "PARTNER_APP_VERSION=1.0.30"
+set "PARTNER_VERSION_CODE=30"
+set "PARTNER_BUILD_ID=2026-07-17-01"
 set "CAP_CLI=node_modules\@capacitor\cli\bin\capacitor"
 
 echo.
