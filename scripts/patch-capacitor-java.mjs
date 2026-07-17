@@ -347,9 +347,9 @@ public class Checkout extends Plugin {
         out.append("Plugin Source File: ").append(PLUGIN_SOURCE_FILE).append("\\n");
         out.append("Configured com.razorpay:checkout Version: ").append(CONFIGURED_RAZORPAY_CHECKOUT_VERSION).append("\\n");
         out.append("Who invokes checkout: JS Checkout.open -> capacitor-razorpay Checkout.open -> CheckoutActivity OPTIONS Intent\\n");
-        out.append("\n--- Native Diagnostics ---\\n").append(DIAGNOSTICS.toString());
+        out.append("\\n--- Native Diagnostics ---\\n").append(DIAGNOSTICS.toString());
         if (webDiagnostics != null && webDiagnostics.length() > 0) {
-            out.append("\n--- Web Diagnostics ---\\n").append(webDiagnostics).append("\\n");
+            out.append("\\n--- Web Diagnostics ---\\n").append(webDiagnostics).append("\\n");
         }
         return out.toString();
     }
