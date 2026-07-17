@@ -334,8 +334,8 @@ public class Checkout extends Plugin {
     private static String redact(String raw) {
         if (raw == null) return "";
         return raw
-                .replaceAll("(\\\"(?:key_secret|secret|razorpay_signature|signature)\\\"\\s*:\\s*\\\")[^\\\"]*(\\\")", "$1[REDACTED]$2")
-                .replaceAll("(\\\"key\\\"\\s*:\\s*\\\")([^\\\"]{0,8})[^\\\"]*([^\\\"]{0,4})(\\\")", "$1$2…$3$4")
+                .replaceAll("(\\\"(?:key_secret|secret|razorpay_signature|signature)\\\"\\\\s*:\\\\s*\\\")[^\\\"]*(\\\")", "$1[REDACTED]$2")
+                .replaceAll("(\\\"key\\\"\\\\s*:\\\\s*\\\")([^\\\"]{0,8})[^\\\"]*([^\\\"]{0,4})(\\\")", "$1$2…$3$4")
                 .replaceAll("((?:key_secret|secret|razorpay_signature|signature)=)[^,} ]+", "$1[REDACTED]");
     }
 
