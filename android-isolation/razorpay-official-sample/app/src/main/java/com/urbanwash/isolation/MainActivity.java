@@ -37,6 +37,8 @@ public class MainActivity extends Activity implements PaymentResultWithDataListe
     private EditText manualKeyInput;
     private EditText manualOrderInput;
     private EditText manualAmountInput;
+    private Button createAndPayButton;
+    private Button manualPayButton;
     private TextView logView;
 
     @Override
@@ -74,19 +76,19 @@ public class MainActivity extends Activity implements PaymentResultWithDataListe
         root.addView(bookingIdInput);
         root.addView(bearerTokenInput);
 
-        Button createAndPay = new Button(this);
-        createAndPay.setText("Create Order → Checkout.open");
-        createAndPay.setOnClickListener(v -> createOrderThenOpen());
-        root.addView(createAndPay);
+        createAndPayButton = new Button(this);
+        createAndPayButton.setText("Create Order → Checkout.open");
+        createAndPayButton.setOnClickListener(v -> createOrderThenOpen());
+        root.addView(createAndPayButton);
 
         root.addView(label("Manual official-SDK fallback"));
         root.addView(manualKeyInput);
         root.addView(manualOrderInput);
         root.addView(manualAmountInput);
-        Button manualPay = new Button(this);
-        manualPay.setText("Open Checkout with manual order");
-        manualPay.setOnClickListener(v -> openManual());
-        root.addView(manualPay);
+        manualPayButton = new Button(this);
+        manualPayButton.setText("Open Checkout with manual order");
+        manualPayButton.setOnClickListener(v -> openManual());
+        root.addView(manualPayButton);
 
         logView = text("", 12, false);
         logView.setTextIsSelectable(true);
@@ -327,10 +329,8 @@ public class MainActivity extends Activity implements PaymentResultWithDataListe
     }
 
     private void setBusy(boolean busy) {
-        for (int i = 0; i < ((LinearLayout) ((ScrollView) findViewById(android.R.id.content).getRootView()).getChildAt(0)).getChildCount(); i++) {
-            View child = ((LinearLayout) ((ScrollView) findViewById(android.R.id.content).getRootView()).getChildAt(0)).getChildAt(i);
-            if (child instanceof Button) child.setEnabled(!busy);
-        }
+        if (createAndPayButton != null) createAndPayButton.setEnabled(!busy);
+        if (manualPayButton != null) manualPayButton.setEnabled(!busy);
     }
 
     private void log(String line) {
