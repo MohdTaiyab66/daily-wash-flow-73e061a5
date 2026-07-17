@@ -4024,6 +4024,7 @@ export type Database = {
           lng: number | null
           lock_until: string | null
           locked_partner_id: string | null
+          next_retry_at: string | null
           offer_expires_at: string | null
           radius_km: number
           service_required_before: string | null
@@ -4045,6 +4046,7 @@ export type Database = {
           lng?: number | null
           lock_until?: string | null
           locked_partner_id?: string | null
+          next_retry_at?: string | null
           offer_expires_at?: string | null
           radius_km?: number
           service_required_before?: string | null
@@ -4066,6 +4068,7 @@ export type Database = {
           lng?: number | null
           lock_until?: string | null
           locked_partner_id?: string | null
+          next_retry_at?: string | null
           offer_expires_at?: string | null
           radius_km?: number
           service_required_before?: string | null
