@@ -27,7 +27,17 @@ type Diag = {
   channels: Array<{ id: string; importance: number; enabled?: boolean }>;
   lastPushAt: string;
   lastOpenAt: string;
+  currentTokenHash: string;
+  lastTokenRefreshAt: string;
+  lastTokenUploadAt: string;
+  tokenUploadedMatch: "match" | "mismatch" | "unknown";
+  serverTokenTail: string;
 };
+
+function tail(t: string | null | undefined, n = 12): string {
+  if (!t) return "—";
+  return t.length <= n ? t : `…${t.slice(-n)}`;
+}
 
 async function loadDiagnostics(userId: string | null): Promise<Diag> {
   const web = !isNative();
@@ -44,6 +54,11 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     channels: [],
     lastPushAt: "—",
     lastOpenAt: "—",
+    currentTokenHash: "—",
+    lastTokenRefreshAt: "—",
+    lastTokenUploadAt: "—",
+    tokenUploadedMatch: "unknown",
+    serverTokenTail: "—",
   };
   if (web) return empty;
 
@@ -65,10 +80,13 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     empty.permission = perm.receive;
   } catch { /* noop */ }
 
+  let currentToken: string | null = null;
   try {
     const { token } = await FirebaseMessaging.getToken();
     if (token) {
-      empty.fcmToken = `…${token.slice(-16)}`;
+      currentToken = token;
+      empty.fcmToken = tail(token, 16);
+      empty.currentTokenHash = tail(token, 12);
       empty.fcmTokenStatus = "registered";
     }
   } catch { /* noop */ }
@@ -86,24 +104,40 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     if (lp.value) empty.lastPushAt = new Date(lp.value).toLocaleString("en-IN");
     const lo = await Preferences.get({ key: "urbanwash.last_push_opened_at" });
     if (lo.value) empty.lastOpenAt = new Date(lo.value).toLocaleString("en-IN");
+    const lr = await Preferences.get({ key: "urbanwash.last_token_refresh_at" });
+    if (lr.value) empty.lastTokenRefreshAt = new Date(lr.value).toLocaleString("en-IN");
+    const lu = await Preferences.get({ key: "urbanwash.last_token_upload_at" });
+    if (lu.value) empty.lastTokenUploadAt = new Date(lu.value).toLocaleString("en-IN");
   } catch { /* noop */ }
 
-  // Cross-check server-side token registration
-  if (userId && empty.fcmTokenStatus === "registered") {
+  // Cross-check server: does the row in push_tokens match the current token?
+  if (userId && currentToken) {
     try {
       const { data } = await supabase
         .from("push_tokens")
-        .select("id, invalid_at")
+        .select("token, invalid_at, last_seen")
         .eq("user_id", userId)
         .is("invalid_at", null)
-        .limit(1)
-        .maybeSingle();
-      if (!data) empty.fcmTokenStatus = "missing";
+        .order("last_seen", { ascending: false })
+        .limit(5);
+      const rows = (data ?? []) as Array<{ token: string; last_seen: string | null }>;
+      const match = rows.find((r) => r.token === currentToken);
+      if (rows.length === 0) {
+        empty.fcmTokenStatus = "missing";
+        empty.tokenUploadedMatch = "mismatch";
+      } else if (match) {
+        empty.tokenUploadedMatch = "match";
+        empty.serverTokenTail = tail(match.token, 12);
+      } else {
+        empty.tokenUploadedMatch = "mismatch";
+        empty.serverTokenTail = tail(rows[0].token, 12);
+      }
     } catch { /* noop */ }
   }
 
   return empty;
 }
+
 
 function importanceLabel(v: number): string {
   return v >= 5 ? "MAX" : v === 4 ? "HIGH" : v === 3 ? "DEFAULT" : v === 2 ? "LOW" : v === 1 ? "MIN" : "NONE";
