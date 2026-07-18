@@ -594,13 +594,8 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
             <span>If you accept, this customer is automatically added to My Assignment and Today's Route.</span>
           </div>
 
-          <button
-            type="button"
-            className="mt-3 w-full text-center text-xs font-medium text-primary underline underline-offset-2"
-            onClick={() => navigate({ to: `/app/leads/${offer.id}` as any })}
-          >
-            View full lead details →
-          </button>
+          {/* Single-UI flow: no fullscreen lead route. Details live in this popup. */}
+
         </div>
 
         {/* Sticky action bar */}
