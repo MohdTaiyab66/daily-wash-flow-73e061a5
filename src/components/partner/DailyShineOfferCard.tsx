@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route } from "lucide-react";
 import { toast } from "sonner";
+import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen, traceStateCall } from "@/lib/offer-popup-debug";
 
 /**
  * Daily Shine offer card — rich pre-acceptance context for the partner.
@@ -13,10 +14,22 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
 
+  useEffect(() => {
+    traceComponentMount("DailyShineOfferCard", { partner_id: partnerId, route: "/app" });
+    return () => traceComponentUnmount("DailyShineOfferCard", { partner_id: partnerId, route: "/app" });
+  }, [partnerId]);
+
   const { data: offer } = useQuery({
     queryKey: ["ds-offer", partnerId],
     enabled: !!partnerId,
     queryFn: async () => {
+      popupDebug("Polling fired", {
+        component: "DailyShineOfferCard",
+        function: "subscription_offers direct query",
+        reason: "React Query fetch",
+        query_key: ["ds-offer", partnerId],
+        partner_id: partnerId,
+      });
       const { data } = await (supabase as any)
         .from("subscription_offers")
         .select(`
@@ -37,6 +50,17 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
         .order("offered_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      popupDebug("Polling result", {
+        component: "DailyShineOfferCard",
+        result_rows: data?.id ? 1 : 0,
+        offer_ids: data?.id ? [data.id] : [],
+        offer_id: data?.id ?? null,
+        partner_id: partnerId,
+        booking_id: data?.subscription_assignment_queue?.booking_id ?? null,
+        status: data?.response ?? null,
+        remaining_seconds: remainingSecondsFrom(data?.expires_at),
+        expires_at: data?.expires_at ?? null,
+      });
       return data as any;
     },
   });
@@ -48,7 +72,28 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscription_offers", filter: `partner_id=eq.${partnerId}` },
-        () => qc.invalidateQueries({ queryKey: ["ds-offer", partnerId] }),
+        (payload: any) => {
+          const row = (payload.new ?? payload.old ?? {}) as any;
+          popupDebug("subscription_offers event", {
+            component: "DailyShineOfferCard",
+            function: "supabase.channel(postgres_changes)",
+            reason: "realtime_event",
+            event_type: payload.eventType ?? null,
+            offer_id: row.id ?? null,
+            old_row: payload.old ?? null,
+            new_row: payload.new ?? null,
+            expires_at: row.expires_at ?? null,
+            remaining_seconds: remainingSecondsFrom(row.expires_at),
+          });
+          popupDebug("invalidateQueries", {
+            component: "DailyShineOfferCard",
+            function: "subscription_offers.realtime handler",
+            reason: "subscription_offers event",
+            query_key: ["ds-offer", partnerId],
+            timestamp: new Date().toISOString(),
+          });
+          qc.invalidateQueries({ queryKey: ["ds-offer", partnerId] });
+        },
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -56,7 +101,30 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
 
   useEffect(() => {
     if (!offer) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    tracePopupOpen({
+      component: "DailyShineOfferCard",
+      function: "render offer card",
+      reason: "offer query returned visible row",
+      opened_by: "DailyShineOfferCard query data",
+      offer_id: offer.id,
+      partner_id: partnerId,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? null,
+      status: offer.response ?? "pending",
+      remaining_seconds: remainingSecondsFrom(offer.expires_at),
+      server_now: null,
+      client_now: new Date().toISOString(),
+      expires_at: offer.expires_at ?? null,
+    });
+    const t = setInterval(() => {
+      traceStateCall("setState", {
+        component: "DailyShineOfferCard",
+        function: "timer interval setNow",
+        reason: "timer tick",
+        offer_id: offer.id,
+        remaining_seconds: remainingSecondsFrom(offer.expires_at),
+      });
+      setNow(Date.now());
+    }, 1000);
     return () => clearInterval(t);
   }, [offer]);
 
@@ -68,7 +136,23 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
     },
     onSuccess: (_d, accept) => {
       toast.success(accept ? "Customer added to your route" : "Declined");
+      popupDebug("invalidateQueries", {
+        component: "DailyShineOfferCard",
+        function: "respond.onSuccess",
+        reason: accept ? "accept_success" : "decline_success",
+        query_key: ["ds-offer", partnerId],
+        offer_id: offer?.id ?? null,
+        timestamp: new Date().toISOString(),
+      });
       qc.invalidateQueries({ queryKey: ["ds-offer", partnerId] });
+      popupDebug("invalidateQueries", {
+        component: "DailyShineOfferCard",
+        function: "respond.onSuccess",
+        reason: accept ? "accept_success" : "decline_success",
+        query_key: ["active-assignment-builder"],
+        offer_id: offer?.id ?? null,
+        timestamp: new Date().toISOString(),
+      });
       qc.invalidateQueries({ queryKey: ["active-assignment-builder"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not respond"),
@@ -78,6 +162,16 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
 
   const expiresAt = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
   const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
+  popupDebug("Timer", {
+    component: "DailyShineOfferCard",
+    offer_id: offer.id,
+    partner_id: partnerId,
+    booking_id: offer?.subscription_assignment_queue?.booking_id ?? null,
+    expires_at: offer.expires_at ?? null,
+    server_now: null,
+    client_now: new Date().toISOString(),
+    remaining_seconds: remaining,
+  });
   const queue = offer.subscription_assignment_queue ?? {};
   const booking = queue.bookings ?? {};
   const vehicle = booking.customer_vehicles ?? {};
