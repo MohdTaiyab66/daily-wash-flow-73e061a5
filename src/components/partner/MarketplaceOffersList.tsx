@@ -121,45 +121,26 @@ export function MarketplaceOffersList() {
     };
   }, [qc]);
 
-  // Tick every second so the memo below re-evaluates and drops expired offers
-  // even when no new query result / realtime event arrives.
-  const [tick, forceTick] = useState(0);
+  // Tick every second so components consuming `top` re-evaluate against
+  // wall-clock (used by the sheet's countdown). The list itself trusts the
+  // backend: `get_partner_open_offers` never returns expired / non-pending
+  // / non-current-round rows, and expires stragglers before responding.
+  const [, forceTick] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => forceTick((n) => (n + 1) % 1_000_000), 1000);
     return () => window.clearInterval(t);
   }, []);
 
   const offers = useMemo(() => {
-    const nowMs = Date.now();
-    const raw = ((q.data ?? []) as any[]).slice();
-    // SAFEGUARD: only show offers that are still pending AND have time left.
-    // Without this, a stale/expired/accepted offer sitting in the query cache
-    // (from a prior mount, realtime lag, or cooldown) keeps the sheet locked
-    // open at "0 SEC" and blocks the entire Partner App.
-    const list = raw.filter((o: any) => {
-      const status = o?.response ?? "pending";
-      if (status !== "pending") return false;
-      const exp = o?.broadcast?.round_expires_at;
-      if (!exp) return false;
-      const remaining = new Date(exp).getTime() - nowMs;
-      if (remaining <= 0) {
-        popupDebug("Offer filtered (expired)", {
-          component: "MarketplaceOffersList",
-          offer_id: o.id,
-          expires_at: exp,
-          status,
-        });
-        return false;
-      }
-      return true;
-    });
+    const list = ((q.data ?? []) as any[]).slice();
     list.sort((a, b) => {
       const di = Number(b.incentive) - Number(a.incentive);
       if (di !== 0) return di;
       return new Date(b.sent_at ?? 0).getTime() - new Date(a.sent_at ?? 0).getTime();
     });
     return list;
-  }, [q.data, tick]);
+  }, [q.data]);
+
 
   // Post-decline cooldown state.
   const cooldownRef = useRef<{ untilMs: number; broadcastId: string | null; incentive: number } | null>(null);

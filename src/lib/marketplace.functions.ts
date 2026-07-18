@@ -29,40 +29,61 @@ export const declineMarketplaceOffer = createServerFn({ method: "POST" })
 export const getPartnerOpenOffers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .from("marketplace_offers")
-      .select(
-        `id, broadcast_id, partner_id, round, incentive, distance_from_route_m, route_impact_m, sent_at, response,
-         broadcast:marketplace_broadcasts!inner (
-           id, status, current_round, current_incentive, current_radius_m,
-            round_expires_at, customer_lat, customer_lng, vehicle_id, subscription_id, booking_id,
-           service_area:coverage_zones ( name ),
-           subscription:subscriptions ( amount, start_date, renewal_date )
-         )`
-      )
-      .eq("partner_id", context.userId)
-      .eq("response", "pending")
-      .order("sent_at", { ascending: false });
+    // Server-authoritative: this RPC sweeps expired/superseded/closed offers
+    // first, then returns ONLY rows that are pending, current-round, and have
+    // round_expires_at > server-now. The client must not filter further.
+    const { data, error } = await (context.supabase as any).rpc("get_partner_open_offers", {
+      p_partner_id: context.userId,
+    });
     if (error) throw new Error(error.message);
-    const open = (data ?? []).filter((o: any) =>
-      o.broadcast?.status === "open" && o.broadcast?.current_round === o.round
-    );
-    // Hydrate vehicle info separately — no FK between marketplace_broadcasts.vehicle_id and customer_vehicles.
-    const vehicleIds = Array.from(
-      new Set(open.map((o: any) => o.broadcast?.vehicle_id).filter(Boolean))
-    ) as string[];
-    if (vehicleIds.length) {
-      const { data: vehicles } = await (context.supabase as any)
-        .from("customer_vehicles")
-        .select("id, make, model, registration_number")
-        .in("id", vehicleIds);
-      const byId = new Map<string, any>((vehicles ?? []).map((v: any) => [v.id, v]));
-      for (const o of open) {
-        if (o.broadcast) o.broadcast.vehicle = byId.get(o.broadcast.vehicle_id) ?? null;
-      }
-    }
-    return open;
+    const rows = (data ?? []) as any[];
+    if (rows.length === 0) return [];
+
+    // Hydrate coverage-zone + subscription + vehicle in bulk.
+    const subIds = Array.from(new Set(rows.map((r) => r.subscription_id).filter(Boolean))) as string[];
+    const vehIds = Array.from(new Set(rows.map((r) => r.vehicle_id).filter(Boolean))) as string[];
+    const [subsRes, vehRes] = await Promise.all([
+      subIds.length
+        ? (context.supabase as any).from("subscriptions")
+            .select("id, amount, start_date, renewal_date").in("id", subIds)
+        : Promise.resolve({ data: [] as any[] }),
+      vehIds.length
+        ? (context.supabase as any).from("customer_vehicles")
+            .select("id, make, model, registration_number").in("id", vehIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const subById = new Map<string, any>(((subsRes.data ?? []) as any[]).map((s: any) => [s.id, s]));
+    const vehById = new Map<string, any>(((vehRes.data ?? []) as any[]).map((v: any) => [v.id, v]));
+
+    return rows.map((r) => ({
+      id: r.id,
+      broadcast_id: r.broadcast_id,
+      partner_id: r.partner_id,
+      round: r.round,
+      incentive: r.incentive,
+      distance_from_route_m: r.distance_from_route_m,
+      route_impact_m: r.route_impact_m,
+      sent_at: r.sent_at,
+      response: r.response,
+      broadcast: {
+        id: r.broadcast_id,
+        status: r.broadcast_status,
+        current_round: r.current_round,
+        current_incentive: r.current_incentive,
+        current_radius_m: r.current_radius_m,
+        round_expires_at: r.round_expires_at,
+        customer_lat: r.customer_lat,
+        customer_lng: r.customer_lng,
+        vehicle_id: r.vehicle_id,
+        subscription_id: r.subscription_id,
+        booking_id: r.booking_id,
+        vehicle: r.vehicle_id ? vehById.get(r.vehicle_id) ?? null : null,
+        subscription: r.subscription_id ? subById.get(r.subscription_id) ?? null : null,
+      },
+      server_now: r.server_now,
+    }));
   });
+
 
 
 /**
