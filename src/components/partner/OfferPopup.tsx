@@ -128,7 +128,6 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         server_now: offer._server_now ?? null,
         server_remaining_seconds: offer._remaining_seconds ?? null,
       });
-      if (visibleOfferId !== offer.id) setVisibleOfferId(offer.id);
       return;
     }
 
