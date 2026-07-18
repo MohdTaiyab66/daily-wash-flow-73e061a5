@@ -15,6 +15,7 @@ import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard"
 import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
 import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 import { sendPushSelfTest } from "@/lib/push-selftest.functions";
+import { DeviceDiagnosticsCard } from "@/components/partner/DeviceDiagnosticsCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
