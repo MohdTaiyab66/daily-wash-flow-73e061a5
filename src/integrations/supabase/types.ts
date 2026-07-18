@@ -455,6 +455,13 @@ export type Database = {
             foreignKeyName: "booking_addons_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -1753,6 +1760,13 @@ export type Database = {
             foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -2706,6 +2720,13 @@ export type Database = {
             foreignKeyName: "payment_attempts_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -2791,6 +2812,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
             referencedColumns: ["booking_id"]
           },
           {
@@ -2895,6 +2923,13 @@ export type Database = {
             foreignKeyName: "payments_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -2987,42 +3022,57 @@ export type Database = {
       pipeline_events: {
         Row: {
           actor: string | null
+          assignment_id: string | null
           booking_id: string | null
           created_at: string
+          duration_ms: number | null
           error_message: string | null
           id: string
           occurred_at: string
+          partner_id: string | null
           payload: Json
           row_id: string | null
+          sequence_no: number | null
           source: string
           stage: string
           status: string
+          subscription_id: string | null
         }
         Insert: {
           actor?: string | null
+          assignment_id?: string | null
           booking_id?: string | null
           created_at?: string
+          duration_ms?: number | null
           error_message?: string | null
           id?: string
           occurred_at?: string
+          partner_id?: string | null
           payload?: Json
           row_id?: string | null
+          sequence_no?: number | null
           source: string
           stage: string
           status?: string
+          subscription_id?: string | null
         }
         Update: {
           actor?: string | null
+          assignment_id?: string | null
           booking_id?: string | null
           created_at?: string
+          duration_ms?: number | null
           error_message?: string | null
           id?: string
           occurred_at?: string
+          partner_id?: string | null
           payload?: Json
           row_id?: string | null
+          sequence_no?: number | null
           source?: string
           stage?: string
           status?: string
+          subscription_id?: string | null
         }
         Relationships: []
       }
@@ -3760,6 +3810,13 @@ export type Database = {
             foreignKeyName: "service_leads_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "service_leads_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -4261,6 +4318,13 @@ export type Database = {
             foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: true
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -4678,6 +4742,13 @@ export type Database = {
             foreignKeyName: "subscription_pauses_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_pauses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_vehicle_audit"
             referencedColumns: ["booking_id"]
           },
@@ -4785,6 +4856,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: true
             referencedRelation: "v_payment_pipeline_timeline"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_pipeline_metrics"
             referencedColumns: ["booking_id"]
           },
           {
@@ -5443,15 +5521,52 @@ export type Database = {
       }
       v_pipeline_comparison: {
         Row: {
+          any_error: boolean | null
           booking_id: string | null
+          delta_ms: number | null
           legacy_actor: string | null
           legacy_at: string | null
+          legacy_ms: number | null
           legacy_row_id: string | null
           new_actor: string | null
           new_at: string | null
+          new_ms: number | null
           new_row_id: string | null
           stage: string | null
           status: string | null
+        }
+        Relationships: []
+      }
+      v_pipeline_metrics: {
+        Row: {
+          booking_id: string | null
+          booking_status: string | null
+          created_at: string | null
+          divergence_detected: boolean | null
+          divergence_reason: string | null
+          error_message: string | null
+          failure_source: string | null
+          failure_stage: string | null
+          legacy_events: number | null
+          legacy_slowest_ms: number | null
+          legacy_slowest_stage: string | null
+          legacy_total_ms: number | null
+          new_events: number | null
+          new_slowest_ms: number | null
+          new_slowest_stage: string | null
+          new_total_ms: number | null
+          payment_status: string | null
+        }
+        Relationships: []
+      }
+      v_pipeline_validation_scorecard: {
+        Row: {
+          bookings_observed: number | null
+          diverged: number | null
+          fully_matched: number | null
+          legacy_only: number | null
+          match_rate_pct: number | null
+          new_only: number | null
         }
         Relationships: []
       }
@@ -5926,6 +6041,10 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
+      ds_check_divergence: {
+        Args: { p_booking_id: string; p_stage: string }
+        Returns: boolean
+      }
       ds_create_assignment: {
         Args: { p_booking_id: string; p_partner_id: string }
         Returns: undefined
@@ -5942,19 +6061,37 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
-      ds_log_event: {
-        Args: {
-          p_actor: string
-          p_booking_id: string
-          p_error?: string
-          p_payload?: Json
-          p_row_id?: string
-          p_source: string
-          p_stage: string
-          p_status?: string
-        }
-        Returns: string
-      }
+      ds_log_event:
+        | {
+            Args: {
+              p_actor: string
+              p_booking_id: string
+              p_error?: string
+              p_payload?: Json
+              p_row_id?: string
+              p_source: string
+              p_stage: string
+              p_status?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_actor: string
+              p_assignment_id?: string
+              p_booking_id: string
+              p_duration_ms?: number
+              p_error?: string
+              p_partner_id?: string
+              p_payload?: Json
+              p_row_id?: string
+              p_source: string
+              p_stage: string
+              p_status?: string
+              p_subscription_id?: string
+            }
+            Returns: string
+          }
       ds_notify: {
         Args: {
           p_booking_id: string

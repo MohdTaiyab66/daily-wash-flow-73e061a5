@@ -210,6 +210,14 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
 
+      // Phase 2 shadow: fire the new orchestrator in parallel with legacy.
+      // Never blocks or alters production activation.
+      try {
+        await (context.supabase as any).rpc("ds_on_payment_verified", { p_booking_id: data.bookingId });
+      } catch (e) {
+        console.warn("[ds-shadow] ds_on_payment_verified failed (non-fatal)", e);
+      }
+
       // Instant partner dispatch: sweep pending offers immediately so the newly
       // paid subscription reaches partners without waiting for the cron tick.
       try {
@@ -279,6 +287,32 @@ export const logPaymentAttempt = createServerFn({ method: "POST" })
       metadata: data.metadata ?? {},
     } as any);
     if (error) throw new Error(error.message);
+
+    // Phase 2 shadow: mirror the attempt into pipeline_events for the new
+    // orchestrator. Legacy remains authoritative — this only augments logs.
+    try {
+      const stageMap: Record<string, string> = {
+        started:   "payment_started",
+        cancelled: "payment_cancelled",
+        timeout:   "payment_timeout",
+        failure:   "payment_failed",
+        retry:     "payment_retry",
+        success:   "payment_verified",
+      };
+      const stage = stageMap[data.outcome] ?? `payment_${data.outcome}`;
+      await supabaseAdmin.rpc("ds_log_event" as any, {
+        p_booking_id: data.bookingId,
+        p_stage: stage,
+        p_source: "new",
+        p_actor: "logPaymentAttempt",
+        p_status: data.outcome === "success" ? "ok" : (data.outcome === "started" || data.outcome === "retry" ? "ok" : "error"),
+        p_payload: { channel: data.channel, attempt_no: attemptNo, error_code: data.errorCode ?? null } as any,
+        p_error: data.errorMessage ?? null,
+      });
+    } catch (e) {
+      console.warn("[ds-shadow] logPaymentAttempt shadow log failed (non-fatal)", e);
+    }
+
     return { attemptNo };
   });
 
