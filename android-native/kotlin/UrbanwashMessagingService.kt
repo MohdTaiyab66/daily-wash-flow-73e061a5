@@ -139,7 +139,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         // Tap → open app deep-link. Fires only if the user taps the body.
         val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("deep_link", "/app/leads/$offerId")
+            putExtra("deep_link", "/app")
         }
         val contentPI = PendingIntent.getActivity(
             ctx, broadcastId.hashCode(), launch,
