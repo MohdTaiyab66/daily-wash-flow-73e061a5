@@ -152,6 +152,9 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
   // 4) Foreground: incoming notification
   FirebaseMessaging.addListener("notificationReceived", async (event) => {
+    try {
+      await Preferences.set({ key: "urbanwash.last_push_at", value: new Date().toISOString() });
+    } catch { /* noop */ }
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
     if (isOffer(data)) {
       await recordEvent("push_delivered", data, { in_app: true });
