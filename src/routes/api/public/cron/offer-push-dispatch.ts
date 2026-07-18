@@ -49,8 +49,15 @@ async function dispatchPending() {
 
     const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
+    // NOTE: `type` must be in the Kotlin ASSIGNMENT_TYPES set so the native
+    // service routes this through `postAssignment` (high-importance channel,
+    // full-screen intent, custom sound, vibration, wake screen). "offer" is
+    // not in that set — it would fall through to `postGeneric` and get the
+    // default tray channel with no heads-up. `dataOnly: true` suppresses the
+    // FCM notification block so background/killed devices always dispatch
+    // through onMessageReceived instead of the system tray.
     const data = {
-      type: "offer",
+      type: "daily_shine_offer",
       offer_id: r.offer_id,
       queue_id: r.queue_id,
       partner_id: r.partner_id,
@@ -64,7 +71,9 @@ async function dispatchPending() {
         title,
         body,
         data,
-        channelId: "offers",
+        channelId: "assignments_v3",
+        dataOnly: true,
+        tag: r.offer_id,
       });
       await (supabaseAdmin as any).from("offer_delivery_events").insert({
         offer_id: r.offer_id,
