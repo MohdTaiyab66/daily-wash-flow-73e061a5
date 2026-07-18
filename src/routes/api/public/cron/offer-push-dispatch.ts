@@ -88,6 +88,11 @@ async function dispatchPending() {
         meta: { sent: result.sent, failed: result.failed, sample: result.results.slice(0, 3), claimed_event_id: claim.id },
       }).eq("id", claim.id);
       if (logError) throw logError;
+      await (supabaseAdmin as any)
+        .from("partner_notifications")
+        .update({ pushed_at: new Date().toISOString() })
+        .eq("type", "daily_shine_offer")
+        .eq("metadata->>offer_id", r.offer_id);
       if (result.sent > 0) dispatched++;
     } catch (e: any) {
       const { error: failLogError } = await (supabaseAdmin as any).from("offer_delivery_events").update({
