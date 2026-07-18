@@ -39,15 +39,21 @@ async function dispatchPending() {
 
   let dispatched = 0;
   for (const r of rows) {
-    // Skip if we already logged a terminal push result for this offer. One
-    // offer_id must produce at most one FCM attempt; retries belong to a new
-    // offer only after the old one has expired/declined.
-    const { count } = await (supabaseAdmin as any)
+    // Atomically claim first. The partial unique index on
+    // offer_delivery_events(offer_id) for push_claimed/push_sent/push_failed
+    // guarantees only one cron worker can send this offer to FCM.
+    const { data: claim, error: claimError } = await (supabaseAdmin as any)
       .from("offer_delivery_events")
-      .select("id", { count: "exact", head: true })
-      .eq("offer_id", r.offer_id)
-      .in("stage", ["push_sent", "push_failed"]);
-    if ((count ?? 0) > 0) continue;
+      .insert({
+        offer_id: r.offer_id,
+        queue_id: r.queue_id,
+        partner_id: r.partner_id,
+        stage: "push_claimed",
+        meta: { claimed_by: "offer-push-dispatch", claimed_at: new Date().toISOString() },
+      })
+      .select("id")
+      .single();
+    if (claimError || !claim?.id) continue;
 
     const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
@@ -77,24 +83,18 @@ async function dispatchPending() {
         dataOnly: true,
         tag: r.offer_id,
       });
-      const { error: logError } = await (supabaseAdmin as any).from("offer_delivery_events").insert({
-        offer_id: r.offer_id,
-        queue_id: r.queue_id,
-        partner_id: r.partner_id,
+      const { error: logError } = await (supabaseAdmin as any).from("offer_delivery_events").update({
         stage: result.sent > 0 ? "push_sent" : "push_failed",
-        meta: { sent: result.sent, failed: result.failed, sample: result.results.slice(0, 3) },
-      });
-      if (logError && !String(logError.message ?? "").includes("duplicate")) throw logError;
+        meta: { sent: result.sent, failed: result.failed, sample: result.results.slice(0, 3), claimed_event_id: claim.id },
+      }).eq("id", claim.id);
+      if (logError) throw logError;
       if (result.sent > 0) dispatched++;
     } catch (e: any) {
-      const { error: failLogError } = await (supabaseAdmin as any).from("offer_delivery_events").insert({
-        offer_id: r.offer_id,
-        queue_id: r.queue_id,
-        partner_id: r.partner_id,
+      const { error: failLogError } = await (supabaseAdmin as any).from("offer_delivery_events").update({
         stage: "push_failed",
-        meta: { error: e?.message ?? String(e) },
-      });
-      if (failLogError && !String(failLogError.message ?? "").includes("duplicate")) throw failLogError;
+        meta: { error: e?.message ?? String(e), claimed_event_id: claim.id },
+      }).eq("id", claim.id);
+      if (failLogError) throw failLogError;
     }
   }
   return dispatched;
