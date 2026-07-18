@@ -122,7 +122,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const upsertToken = async (token: string) => {
     if (!token) return;
     try {
-      await supabase.from("push_tokens").upsert(
+      await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
+      await Preferences.set({ key: "urbanwash.current_token", value: token });
+    } catch { /* noop */ }
+    try {
+      const { error } = await supabase.from("push_tokens").upsert(
         {
           user_id: userId,
           token,
@@ -134,6 +138,12 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         } as any,
         { onConflict: "user_id,device_id,app" } as any,
       );
+      if (!error) {
+        try {
+          await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
+          await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
+        } catch { /* noop */ }
+      }
     } catch {
       /* noop */
     }
