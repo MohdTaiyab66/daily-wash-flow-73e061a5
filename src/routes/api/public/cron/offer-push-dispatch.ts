@@ -70,7 +70,7 @@ async function dispatchPending() {
       queue_id: r.queue_id,
       partner_id: r.partner_id,
       category: "daily_shine",
-      link: `/app/leads/${r.offer_id}`,
+      link: `/app`,
     };
 
     try {

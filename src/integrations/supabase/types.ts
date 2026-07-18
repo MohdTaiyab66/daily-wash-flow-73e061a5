@@ -1422,6 +1422,30 @@ export type Database = {
           },
         ]
       }
+      deprecated_call_log: {
+        Row: {
+          args: Json
+          called_at: string
+          caller_user_id: string | null
+          fn_name: string
+          id: string
+        }
+        Insert: {
+          args?: Json
+          called_at?: string
+          caller_user_id?: string | null
+          fn_name: string
+          id?: string
+        }
+        Update: {
+          args?: Json
+          called_at?: string
+          caller_user_id?: string | null
+          fn_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
       dirty_vehicle_reports: {
         Row: {
           captured_at: string
@@ -6453,6 +6477,10 @@ export type Database = {
         Returns: Json
       }
       mp_accept_offer: { Args: { p_broadcast_id: string }; Returns: Json }
+      mp_accept_offer_legacy_impl: {
+        Args: { p_broadcast_id: string }
+        Returns: Json
+      }
       mp_admin_cancel_broadcast: {
         Args: { p_broadcast_id: string; p_reason?: string }
         Returns: Json
@@ -6476,6 +6504,10 @@ export type Database = {
       }
       mp_advance_round: { Args: { p_broadcast_id: string }; Returns: Json }
       mp_consume_action_token: {
+        Args: { p_action: string; p_token: string }
+        Returns: Json
+      }
+      mp_consume_action_token_legacy_impl: {
         Args: { p_action: string; p_token: string }
         Returns: Json
       }

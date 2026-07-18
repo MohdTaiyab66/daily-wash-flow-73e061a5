@@ -167,11 +167,15 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     if (isOffer(data)) {
       await recordEvent("opened", data, { action: event.actionId });
       pendingDeepLink = data;
-      // Offer_id → dedicated Lead Details route
-      pendingLink = `/app/leads/${data.offer_id}`;
+      // Single-UI flow: notification tap opens the app and refreshes offers;
+      // OfferPopup (globally mounted) then shows the pending offer. No
+      // dedicated fullscreen lead route.
+      pendingLink = "/app";
       window.dispatchEvent(new CustomEvent("urbanwash:offer-deeplink", { detail: data }));
+      window.dispatchEvent(new CustomEvent("urbanwash:offer-refresh"));
       window.dispatchEvent(new CustomEvent("urbanwash:deeplink", { detail: { link: pendingLink } }));
     } else if (link && link.startsWith("/")) {
+
       pendingLink = link;
       window.dispatchEvent(new CustomEvent("urbanwash:deeplink", { detail: { link } }));
     }

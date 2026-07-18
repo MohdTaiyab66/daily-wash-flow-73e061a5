@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUn
  */
 export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const [visibleOfferId, setVisibleOfferId] = useState<string | null>(null);
@@ -594,13 +594,8 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
             <span>If you accept, this customer is automatically added to My Assignment and Today's Route.</span>
           </div>
 
-          <button
-            type="button"
-            className="mt-3 w-full text-center text-xs font-medium text-primary underline underline-offset-2"
-            onClick={() => navigate({ to: `/app/leads/${offer.id}` as any })}
-          >
-            View full lead details →
-          </button>
+          {/* Single-UI flow: no fullscreen lead route. Details live in this popup. */}
+
         </div>
 
         {/* Sticky action bar */}
