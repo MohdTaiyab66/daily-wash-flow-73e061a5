@@ -210,6 +210,14 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
 
+      // Phase 2 shadow: fire the new orchestrator in parallel with legacy.
+      // Never blocks or alters production activation.
+      try {
+        await (context.supabase as any).rpc("ds_on_payment_verified", { p_booking_id: data.bookingId });
+      } catch (e) {
+        console.warn("[ds-shadow] ds_on_payment_verified failed (non-fatal)", e);
+      }
+
       // Instant partner dispatch: sweep pending offers immediately so the newly
       // paid subscription reaches partners without waiting for the cron tick.
       try {
