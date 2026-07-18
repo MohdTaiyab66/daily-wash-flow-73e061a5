@@ -15,6 +15,7 @@ import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard"
 import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
 import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 import { sendPushSelfTest } from "@/lib/push-selftest.functions";
+import { DeviceDiagnosticsCard } from "@/components/partner/DeviceDiagnosticsCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
@@ -144,7 +145,11 @@ function ProfilePage() {
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
+      <DeviceDiagnosticsCard userId={partner?.id ?? null} />
+
       <PushSelfTestCard />
+
+
 
       <Card className="mt-3 border-dashed p-3 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Partner Build</p>
@@ -172,41 +177,52 @@ function StatMini({ value, label }: { value: string; label: string }) {
 function PushSelfTestCard() {
   const run = useServerFn(sendPushSelfTest);
   const [busy, setBusy] = useState<null | "offer" | "assignment" | "generic">(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [last, setLast] = useState<null | {
     scenario: string;
     sent: number;
     failed: number;
     tokenCount: number;
+    channelId: string;
+    payloadType: string;
+    dataOnly: boolean;
     at: string;
-    errors: string[];
+    results: Array<{
+      ok: boolean;
+      httpStatus: string;
+      messageId: string | null;
+      errorCode: string | null;
+      errorMessage: string | null;
+      tokenTail: string | null;
+    }>;
   }>(null);
 
   const fire = async (scenario: "offer" | "assignment" | "generic") => {
     setBusy(scenario);
     try {
       const r: any = await run({ data: { scenario } });
-      const errors = (r?.results ?? [])
-        .filter((x: any) => !x.ok)
-        .map((x: any) => `${x.errorCode ?? "ERR"}: ${x.errorMessage ?? ""}`.trim());
       setLast({
         scenario,
         sent: r?.sent ?? 0,
         failed: r?.failed ?? 0,
         tokenCount: r?.tokenCount ?? 0,
+        channelId: r?.channelId ?? "—",
+        payloadType: r?.payloadType ?? "—",
+        dataOnly: !!r?.dataOnly,
         at: new Date().toLocaleTimeString("en-IN"),
-        errors,
+        results: r?.results ?? [],
       });
       if (r?.sent > 0) {
-        toast.success(`Test push sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
-          description: "Lock screen / background the app to see heads-up.",
+        toast.success(`Sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
+          description: "If heads-up doesn't appear, check the diagnostics card above.",
         });
       } else if (r?.tokenCount === 0) {
-        toast.error("No push tokens registered on this account", {
-          description: "Open the app once with notifications allowed, then retry.",
+        toast.error("No push tokens registered", {
+          description: "Reopen the app with notifications allowed, then retry.",
         });
       } else {
         toast.error("FCM rejected every token", {
-          description: errors[0] ?? "Check logs.",
+          description: r?.results?.[0]?.errorCode ?? "See detail below.",
         });
       }
     } catch (e: any) {
@@ -222,42 +238,84 @@ function PushSelfTestCard() {
         <BellRing className="h-4 w-4 text-primary" />
         <p className="text-sm font-semibold">Notification self-test</p>
       </div>
+      <ol className="mt-2 space-y-0.5 pl-4 text-[11px] leading-relaxed text-muted-foreground list-decimal">
+        <li>App foreground → tap Offer Test → expect heads-up + sound.</li>
+        <li>Home button (background) → tap Offer Test → expect heads-up.</li>
+        <li>Swipe app from Recents (killed) → tap Offer Test → expect lock-screen alert.</li>
+      </ol>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-        Sends a real FCM push to this device using the same code path as a live
-        offer. Lock the screen or background the app first to verify heads-up
-        works when killed.
+        Only test Assignment / Generic <b>after</b> Offer works in all three states.
       </p>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("offer")}>
-          {busy === "offer" ? "Sending…" : "Offer"}
-        </Button>
-        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("assignment")}>
-          {busy === "assignment" ? "Sending…" : "Assignment"}
-        </Button>
-        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("generic")}>
-          {busy === "generic" ? "Sending…" : "Generic"}
-        </Button>
-      </div>
+      <Button
+        className="mt-3 w-full"
+        disabled={busy !== null}
+        onClick={() => fire("offer")}
+      >
+        {busy === "offer" ? "Sending…" : "▶  Offer Test (start here)"}
+      </Button>
+      <button
+        type="button"
+        className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground underline"
+        onClick={() => setShowAdvanced((v) => !v)}
+      >
+        {showAdvanced ? "Hide advanced" : "Advanced scenarios"}
+      </button>
+      {showAdvanced && (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("assignment")}>
+            {busy === "assignment" ? "Sending…" : "Assignment"}
+          </Button>
+          <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("generic")}>
+            {busy === "generic" ? "Sending…" : "Generic"}
+          </Button>
+        </div>
+      )}
       {last && (
-        <div className="mt-3 rounded-md border border-dashed p-2 text-[11px] leading-relaxed">
-          <p>
-            <span className="font-mono">{last.at}</span> · <b>{last.scenario}</b> ·{" "}
-            <span className={last.sent > 0 ? "text-[color:var(--success)]" : "text-destructive"}>
+        <div className="mt-3 space-y-2 rounded-md border border-dashed p-2 text-[11px] leading-relaxed">
+          <div className="flex items-center justify-between">
+            <span className="font-mono">{last.at}</span>
+            <span
+              className={
+                last.sent > 0 ? "font-semibold text-[color:var(--success)]" : "font-semibold text-destructive"
+              }
+            >
               {last.sent}/{last.tokenCount} delivered
             </span>
-          </p>
-          {last.errors.length > 0 && (
-            <ul className="mt-1 list-disc pl-4 text-destructive">
-              {last.errors.slice(0, 3).map((e, i) => (
-                <li key={i} className="font-mono">{e}</li>
-              ))}
-            </ul>
+          </div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[10px]">
+            <span className="text-muted-foreground">Scenario</span><span>{last.scenario}</span>
+            <span className="text-muted-foreground">Payload type</span><span>{last.payloadType}</span>
+            <span className="text-muted-foreground">Channel</span><span>{last.channelId}</span>
+            <span className="text-muted-foreground">Data-only</span><span>{last.dataOnly ? "yes" : "no"}</span>
+          </div>
+          {last.results.map((r, i) => (
+            <div key={i} className="rounded border p-1.5 font-mono text-[10px]">
+              <div className="flex items-center justify-between">
+                <span>Token …{r.tokenTail ?? "?"}</span>
+                <span className={r.ok ? "text-[color:var(--success)]" : "text-destructive"}>
+                  FCM {r.httpStatus}
+                </span>
+              </div>
+              {r.messageId && (
+                <div className="mt-0.5 break-all text-muted-foreground">msg: {r.messageId}</div>
+              )}
+              {r.errorMessage && (
+                <div className="mt-0.5 break-all text-destructive">{r.errorMessage}</div>
+              )}
+            </div>
+          ))}
+          {last.sent > 0 && (
+            <p className="text-[10px] text-muted-foreground">
+              200 OK + no visible alert → issue is on Android (channel importance,
+              battery optimization, or OEM heads-up policy), not FCM.
+            </p>
           )}
         </div>
       )}
     </Card>
   );
 }
+
 
 function Row({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
