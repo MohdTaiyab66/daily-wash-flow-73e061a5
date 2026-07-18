@@ -114,6 +114,10 @@ async function dispatchPartner(sb: any) {
     .from("partner_notifications")
     .select("id,partner_id,title,body,type,link,metadata")
     .is("pushed_at", null)
+    // Daily Shine offer pushes are owned exclusively by
+    // /api/public/cron/offer-push-dispatch, keyed by offer_id and logged in
+    // offer_delivery_events. Sending them here creates a second FCM path.
+    .neq("type", "daily_shine_offer")
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(50);
   for (const r of rows ?? []) {
