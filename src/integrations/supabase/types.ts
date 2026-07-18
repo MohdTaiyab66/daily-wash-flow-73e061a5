@@ -2984,6 +2984,87 @@ export type Database = {
           },
         ]
       }
+      pipeline_events: {
+        Row: {
+          actor: string | null
+          booking_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          occurred_at: string
+          payload: Json
+          row_id: string | null
+          source: string
+          stage: string
+          status: string
+        }
+        Insert: {
+          actor?: string | null
+          booking_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          row_id?: string | null
+          source: string
+          stage: string
+          status?: string
+        }
+        Update: {
+          actor?: string | null
+          booking_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          row_id?: string | null
+          source?: string
+          stage?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      pipeline_state: {
+        Row: {
+          booking_id: string
+          created_at: string
+          current_stage: string
+          divergence_detected: boolean
+          divergence_reason: string | null
+          last_compared_at: string | null
+          legacy_snapshot: Json
+          new_snapshot: Json
+          reached_stages: string[]
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          current_stage?: string
+          divergence_detected?: boolean
+          divergence_reason?: string | null
+          last_compared_at?: string | null
+          legacy_snapshot?: Json
+          new_snapshot?: Json
+          reached_stages?: string[]
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          current_stage?: string
+          divergence_detected?: boolean
+          divergence_reason?: string | null
+          last_compared_at?: string | null
+          legacy_snapshot?: Json
+          new_snapshot?: Json
+          reached_stages?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plan_inclusions: {
         Row: {
           created_at: string
@@ -5360,6 +5441,20 @@ export type Database = {
           },
         ]
       }
+      v_pipeline_comparison: {
+        Row: {
+          booking_id: string | null
+          legacy_actor: string | null
+          legacy_at: string | null
+          legacy_row_id: string | null
+          new_actor: string | null
+          new_at: string | null
+          new_row_id: string | null
+          stage: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
       v_vehicle_audit: {
         Row: {
           booking_id: string | null
@@ -5826,6 +5921,58 @@ export type Database = {
       dar_trigger_recovery: {
         Args: { p_partner_id: string; p_reason: string }
         Returns: string
+      }
+      ds_activate_paid_booking: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      ds_create_assignment: {
+        Args: { p_booking_id: string; p_partner_id: string }
+        Returns: undefined
+      }
+      ds_create_offer: {
+        Args: { p_booking_id: string; p_partner_id: string }
+        Returns: undefined
+      }
+      ds_enqueue_assignment: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      ds_generate_today_service: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      ds_log_event: {
+        Args: {
+          p_actor: string
+          p_booking_id: string
+          p_error?: string
+          p_payload?: Json
+          p_row_id?: string
+          p_source: string
+          p_stage: string
+          p_status?: string
+        }
+        Returns: string
+      }
+      ds_notify: {
+        Args: {
+          p_booking_id: string
+          p_kind: string
+          p_partner_id?: string
+          p_payload?: Json
+          p_recipient: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      ds_on_payment_verified: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      ds_partner_accept: {
+        Args: { p_booking_id: string; p_partner_id: string }
+        Returns: undefined
       }
       enqueue_subscription_booking: {
         Args: { p_booking_id: string }
