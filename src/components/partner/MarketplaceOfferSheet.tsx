@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useEffect, useRef } from "react";
 import { MarketplaceOfferCard } from "./MarketplaceOfferCard";
-import { popupDebug, remainingSecondsFrom, tracePopupOpen } from "@/lib/offer-popup-debug";
+import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen } from "@/lib/offer-popup-debug";
 
 /**
  * Foreground bottom-sheet variant of the marketplace offer.
@@ -30,6 +30,13 @@ export function MarketplaceOfferSheet({
     : 0;
 
   useEffect(() => {
+    traceComponentMount("MarketplaceOfferSheet", {
+      offer_id: offer?.id ?? null,
+      partner_id: offer?.partner_id ?? null,
+      booking_id: offer?.broadcast?.booking_id ?? null,
+      status: offer?.response ?? null,
+      route: "/app",
+    });
     popupDebug("MarketplaceOfferSheet mounted", {
       component: "MarketplaceOfferSheet",
       offer_id: offer?.id ?? null,
@@ -37,6 +44,13 @@ export function MarketplaceOfferSheet({
       booking_id: offer?.broadcast?.booking_id ?? null,
     });
     return () => {
+      traceComponentUnmount("MarketplaceOfferSheet", {
+        offer_id: offer?.id ?? null,
+        partner_id: offer?.partner_id ?? null,
+        booking_id: offer?.broadcast?.booking_id ?? null,
+        status: offer?.response ?? null,
+        route: "/app",
+      });
       popupDebug("MarketplaceOfferSheet unmounted", {
         component: "MarketplaceOfferSheet",
         offer_id: offer?.id ?? null,

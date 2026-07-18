@@ -15,6 +15,7 @@ import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { installCameraRouteRestore } from "@/lib/cameraRestore";
+import { installPartnerRuntimeInstrumentation } from "@/lib/partner-runtime-instrumentation";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    installPartnerRuntimeInstrumentation(queryClient);
+  }, [queryClient]);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {

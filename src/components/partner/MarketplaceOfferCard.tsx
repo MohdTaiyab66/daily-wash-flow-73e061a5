@@ -20,7 +20,7 @@ import {
   declineMarketplaceOffer,
   getPartnerRoutePreview,
 } from "@/lib/marketplace.functions";
-import { popupDebug, remainingSecondsFrom } from "@/lib/offer-popup-debug";
+import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, traceStateCall } from "@/lib/offer-popup-debug";
 
 type OfferRow = {
   id: string;
@@ -126,6 +126,27 @@ export function MarketplaceOfferCard({
   const [total] = useState(() => Math.max(remaining, 30));
 
   useEffect(() => {
+    traceComponentMount("MarketplaceOfferCard", {
+      offer_id: offer.id,
+      booking_id: (offer as any).broadcast?.booking_id ?? null,
+      partner_id: (offer as any).partner_id ?? null,
+      status: (offer as any).response ?? null,
+      compact,
+      route: "/app",
+    });
+    return () => {
+      traceComponentUnmount("MarketplaceOfferCard", {
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+        partner_id: (offer as any).partner_id ?? null,
+        status: (offer as any).response ?? null,
+        compact,
+        route: "/app",
+      });
+    };
+  }, [offer.id, compact]);
+
+  useEffect(() => {
     popupDebug("Timer started", {
       component: "MarketplaceOfferCard",
       offer_id: offer.id,
@@ -147,6 +168,15 @@ export function MarketplaceOfferCard({
         server_remaining: null,
         client_remaining: nextRemaining,
         countdown: nextRemaining,
+      });
+      traceStateCall("setState", {
+        component: "MarketplaceOfferCard",
+        function: "timer interval setRemaining",
+        reason: "timer tick",
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+        partner_id: (offer as any).partner_id ?? null,
+        remaining_seconds: nextRemaining,
       });
       setRemaining(nextRemaining);
     }, 500);
@@ -187,6 +217,7 @@ export function MarketplaceOfferCard({
 
   const handleAccept = async () => {
     if (busy || accepted) return;
+    traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleAccept setBusy", reason: "accept clicked", offer_id: offer.id, next: true });
     setBusy(true);
     try {
       const res = await accept({ data: { broadcastId: offer.broadcast_id } });
@@ -197,6 +228,7 @@ export function MarketplaceOfferCard({
           toast.error("Could not accept offer");
         }
       } else {
+        traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleAccept setAccepted", reason: "accept success", offer_id: offer.id, next: true });
         setAccepted(true);
         toast.success(`Accepted — ₹${offer.incentive}/day added to your route`);
         onAccept?.();
@@ -240,12 +272,14 @@ export function MarketplaceOfferCard({
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to accept");
     } finally {
+      traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleAccept setBusy", reason: "accept completed", offer_id: offer.id, next: false });
       setBusy(false);
     }
   };
 
   const handleDecline = async () => {
     if (busy || accepted) return;
+    traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleDecline setBusy", reason: "decline clicked", offer_id: offer.id, next: true });
     setBusy(true);
     try {
       await decline({ data: { broadcastId: offer.broadcast_id } });
@@ -262,6 +296,7 @@ export function MarketplaceOfferCard({
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to decline");
     } finally {
+      traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleDecline setBusy", reason: "decline completed", offer_id: offer.id, next: false });
       setBusy(false);
     }
   };
@@ -352,7 +387,10 @@ export function MarketplaceOfferCard({
           <>
             <button
               type="button"
-              onClick={() => setExpanded((e) => !e)}
+              onClick={() => {
+                traceStateCall("setState", { component: "MarketplaceOfferCard", function: "details toggle setExpanded", reason: "details toggle clicked", offer_id: offer.id });
+                setExpanded((e) => !e);
+              }}
               className="mt-3 flex w-full items-center justify-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               {expanded ? (
