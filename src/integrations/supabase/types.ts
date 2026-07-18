@@ -6061,37 +6061,23 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
-      ds_log_event:
-        | {
-            Args: {
-              p_actor: string
-              p_booking_id: string
-              p_error?: string
-              p_payload?: Json
-              p_row_id?: string
-              p_source: string
-              p_stage: string
-              p_status?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_actor: string
-              p_assignment_id?: string
-              p_booking_id: string
-              p_duration_ms?: number
-              p_error?: string
-              p_partner_id?: string
-              p_payload?: Json
-              p_row_id?: string
-              p_source: string
-              p_stage: string
-              p_status?: string
-              p_subscription_id?: string
-            }
-            Returns: string
-          }
+      ds_log_event: {
+        Args: {
+          p_actor: string
+          p_assignment_id?: string
+          p_booking_id: string
+          p_duration_ms?: number
+          p_error?: string
+          p_partner_id?: string
+          p_payload?: Json
+          p_row_id?: string
+          p_source: string
+          p_stage: string
+          p_status?: string
+          p_subscription_id?: string
+        }
+        Returns: string
+      }
       ds_notify: {
         Args: {
           p_booking_id: string
