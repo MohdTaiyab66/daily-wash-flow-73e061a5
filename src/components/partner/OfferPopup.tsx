@@ -23,8 +23,8 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const [visibleOfferId, setVisibleOfferId] = useState<string | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const ringTimerRef = useRef<number | null>(null);
-  const displayedOfferStatusesRef = useRef<Map<string, string>>(new Map());
-  const dismissedExpiredOfferIdsRef = useRef<Set<string>>(new Set());
+  const displayedOfferStatusesRef = useRef<Map<string, string>>(loadStoredOfferStatusMap("uw_displayed_offer_statuses"));
+  const dismissedExpiredOfferIdsRef = useRef<Set<string>>(loadStoredOfferIdSet("uw_dismissed_offer_ids"));
   const lastRealtimeStatusRef = useRef<Map<string, string>>(new Map());
 
   const { data: offer } = useQuery({
@@ -110,6 +110,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
 
     if (clientRemainingSeconds <= 0 || dismissedExpiredOfferIdsRef.current.has(offer.id)) {
       dismissedExpiredOfferIdsRef.current.add(offer.id);
+      storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
       setVisibleOfferId((current) => (current === offer.id ? null : current));
       stopRing();
       void logOfferClientEvent(offer, "popup_timer_expired", "client_timer", {
@@ -132,6 +133,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     }
 
     displayedOfferStatusesRef.current.set(statusKey, new Date().toISOString());
+    storeOfferStatusMap("uw_displayed_offer_statuses", displayedOfferStatusesRef.current);
     setVisibleOfferId(offer.id);
     void logOfferClientEvent(offer, "popup_open", "OfferPopup.useEffect", {
       opened_by: "offer_query_data",
@@ -153,6 +155,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     const remainingSeconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
     if (remainingSeconds > 0) return;
     dismissedExpiredOfferIdsRef.current.add(offer.id);
+    storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
     setVisibleOfferId(null);
     stopRing();
     void logOfferClientEvent(offer, "popup_timer_expired", "client_timer_tick", {
@@ -227,6 +230,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       stopRing();
       if (offer?.id) {
         dismissedExpiredOfferIdsRef.current.add(offer.id);
+        storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
         setVisibleOfferId(null);
         void logOfferClientEvent(offer, "client_response_success", "OfferPopup.respond.onSuccess", {
           action: accept ? "accept" : "decline",
@@ -418,4 +422,40 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       </DialogContent>
     </Dialog>
   );
+}
+
+function loadStoredOfferStatusMap(key: string) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return new Map<string, string>();
+    return new Map<string, string>(JSON.parse(raw));
+  } catch {
+    return new Map<string, string>();
+  }
+}
+
+function storeOfferStatusMap(key: string, value: Map<string, string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.from(value.entries()).slice(-200)));
+  } catch {
+    /* noop */
+  }
+}
+
+function loadStoredOfferIdSet(key: string) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return new Set<string>();
+    return new Set<string>(JSON.parse(raw));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function storeOfferIdSet(key: string, value: Set<string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.from(value).slice(-200)));
+  } catch {
+    /* noop */
+  }
 }
