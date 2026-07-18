@@ -7,15 +7,18 @@ setlocal EnableDelayedExpansion
 set "VARIANT=partner"
 set "APP_ID=com.urbanwash.partner"
 set "GSJSON=android-config\partner\google-services.json"
-set "PARTNER_APP_VERSION=1.0.31"
-set "PARTNER_VERSION_CODE=31"
-set "PARTNER_BUILD_ID=2026-07-17-02"
+set "PARTNER_APP_VERSION=1.0.32"
+set "PARTNER_VERSION_CODE=32"
+set "PARTNER_BUILD_ID=2026-07-18-trace-01"
+set "PARTNER_BUILD_TIME=2026-07-18T18:40:10Z"
+set "PARTNER_GIT_SHA=unknown"
+where git >nul 2>&1 && for /f "delims=" %%g in ('git rev-parse --short HEAD 2^>nul') do set "PARTNER_GIT_SHA=%%g"
 set "CAP_CLI=node_modules\@capacitor\cli\bin\capacitor"
 
 echo.
 echo ============================================================
 echo  Urban Wash - Building %VARIANT% APK (%APP_ID%)
-echo  Partner version: %PARTNER_APP_VERSION% ^(%PARTNER_VERSION_CODE%^) / %PARTNER_BUILD_ID%
+echo  Partner version: %PARTNER_APP_VERSION% ^(%PARTNER_VERSION_CODE%^) / %PARTNER_BUILD_ID% / %PARTNER_GIT_SHA%
 echo ============================================================
 echo.
 
