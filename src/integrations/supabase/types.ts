@@ -441,6 +441,13 @@ export type Database = {
             foreignKeyName: "booking_addons_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["booking_id"]
           },
@@ -1732,6 +1739,13 @@ export type Database = {
             foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["booking_id"]
           },
@@ -2072,6 +2086,13 @@ export type Database = {
             foreignKeyName: "offer_delivery_events_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_delivery_events_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["first_offer_id"]
           },
@@ -2094,6 +2115,13 @@ export type Database = {
             columns: ["queue_id"]
             isOneToOne: false
             referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["queue_id"]
+          },
+          {
+            foreignKeyName: "offer_delivery_events_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
             referencedColumns: ["queue_id"]
           },
           {
@@ -2664,6 +2692,13 @@ export type Database = {
             foreignKeyName: "payment_attempts_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["booking_id"]
           },
@@ -2742,6 +2777,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
             referencedColumns: ["booking_id"]
           },
           {
@@ -2833,6 +2875,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
             referencedColumns: ["booking_id"]
           },
           {
@@ -3616,6 +3665,13 @@ export type Database = {
             foreignKeyName: "service_leads_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "service_leads_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["booking_id"]
           },
@@ -4110,6 +4166,13 @@ export type Database = {
             foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: true
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["booking_id"]
           },
@@ -4442,6 +4505,13 @@ export type Database = {
             foreignKeyName: "subscription_offers_queue_id_fkey"
             columns: ["queue_id"]
             isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["queue_id"]
+          },
+          {
+            foreignKeyName: "subscription_offers_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
             referencedRelation: "v_payment_pipeline_timeline"
             referencedColumns: ["queue_id"]
           },
@@ -4507,6 +4577,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_pauses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
             referencedColumns: ["booking_id"]
           },
           {
@@ -4613,6 +4690,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: true
             referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_offer_debug"
             referencedColumns: ["booking_id"]
           },
           {
@@ -5193,6 +5277,53 @@ export type Database = {
           unavailable_today: number | null
         }
         Relationships: []
+      }
+      v_offer_debug: {
+        Row: {
+          attempts_log: Json | null
+          booking_created_at: string | null
+          booking_id: string | null
+          booking_status: string | null
+          created_by: string | null
+          current_offer_partner_id: string | null
+          expires_at: string | null
+          next_retry_at: string | null
+          offer_created_at: string | null
+          offer_delivery_event_id: string | null
+          offer_id: string | null
+          offer_status: string | null
+          offered_at: string | null
+          partner_id: string | null
+          partner_notification_at: string | null
+          partner_notification_id: string | null
+          partner_notification_pushed_at: string | null
+          payment_status: string | null
+          push_event_at: string | null
+          push_meta: Json | null
+          push_stage: string | null
+          queue_created_at: string | null
+          queue_id: string | null
+          queue_status: string | null
+          responded_at: string | null
+          retry_count: number | null
+          rpc: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_assignment_queue_current_offer_partner_id_fkey"
+            columns: ["current_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_payment_pipeline_timeline: {
         Row: {
