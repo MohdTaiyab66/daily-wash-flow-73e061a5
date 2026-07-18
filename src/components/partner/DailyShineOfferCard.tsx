@@ -16,7 +16,9 @@ export function DailyShineOfferCard({ partnerId }: { partnerId: string | null })
 
   useEffect(() => {
     traceComponentMount("DailyShineOfferCard", { partner_id: partnerId, route: "/app" });
-    return () => traceComponentUnmount("DailyShineOfferCard", { partner_id: partnerId, route: "/app" });
+    return () => {
+      traceComponentUnmount("DailyShineOfferCard", { partner_id: partnerId, route: "/app" });
+    };
   }, [partnerId]);
 
   const { data: offer } = useQuery({
