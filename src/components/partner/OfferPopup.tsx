@@ -20,14 +20,18 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
+  const [visibleOfferId, setVisibleOfferId] = useState<string | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const ringTimerRef = useRef<number | null>(null);
-  const seenOfferRef = useRef<string | null>(null);
+  const displayedOfferStatusesRef = useRef<Map<string, string>>(loadStoredOfferStatusMap("uw_displayed_offer_statuses"));
+  const dismissedExpiredOfferIdsRef = useRef<Set<string>>(loadStoredOfferIdSet("uw_dismissed_offer_ids"));
+  const lastRealtimeStatusRef = useRef<Map<string, string>>(new Map());
 
   const { data: offer } = useQuery({
     queryKey: ["ds-offer-popup", partnerId],
     enabled: !!partnerId,
     refetchInterval: 15000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       // Partner role cannot read bookings/customer_vehicles/customer_addresses via RLS,
       // so use a SECURITY DEFINER RPC that bundles the joined payload.
@@ -35,7 +39,13 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         p_partner_id: partnerId,
       });
       if (error) throw error;
-      return (data as any) ?? null;
+      const nextOffer = (data as any) ?? null;
+      if (nextOffer?.id) {
+        void logOfferClientEvent(nextOffer, "polling_refetch", "useQuery.refetchInterval", {
+          server_remaining_seconds: nextOffer._remaining_seconds ?? null,
+        });
+      }
+      return nextOffer;
     },
   });
 
@@ -48,7 +58,29 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscription_offers", filter: `partner_id=eq.${partnerId}` },
-        () => qc.invalidateQueries({ queryKey: ["ds-offer-popup", partnerId] }),
+        (payload: any) => {
+          const row = (payload.new ?? payload.old ?? {}) as any;
+          const offerId = row.id as string | undefined;
+          const previousStatus = offerId ? lastRealtimeStatusRef.current.get(offerId) : undefined;
+          const nextStatus = row.response as string | undefined;
+          if (offerId && nextStatus) {
+            lastRealtimeStatusRef.current.set(offerId, nextStatus);
+            if (previousStatus === nextStatus) {
+              void logOfferClientEvent(row, "realtime_event", "subscription_offers.realtime.ignored_identical", {
+                event: payload.eventType ?? null,
+                previous_status: previousStatus,
+                new_status: nextStatus,
+              });
+              return;
+            }
+            void logOfferClientEvent(row, "realtime_event", "subscription_offers.realtime", {
+              event: payload.eventType ?? null,
+              previous_status: previousStatus ?? null,
+              new_status: nextStatus,
+            });
+          }
+          qc.invalidateQueries({ queryKey: ["ds-offer-popup", partnerId] });
+        },
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -61,20 +93,102 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     return () => window.clearInterval(t);
   }, [offer]);
 
-  // Ring + vibrate when a *new* offer appears
+  // Open, ring and vibrate exactly once per offer/status. Realtime, polling,
+  // focus refresh and transient null data must not re-open the same pending
+  // offer. Timer expiry is a client-only dismissal; backend owns actual retry.
   useEffect(() => {
     if (!offer) {
       stopRing();
-      seenOfferRef.current = null;
+      setVisibleOfferId(null);
       return;
     }
-    if (seenOfferRef.current === offer.id) return;
-    seenOfferRef.current = offer.id;
+
+    const status = String(offer.response ?? "pending");
+    const expiresAtMs = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
+    const clientRemainingSeconds = Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+    const statusKey = `${offer.id}:${status}`;
+
+    if (clientRemainingSeconds <= 0 || dismissedExpiredOfferIdsRef.current.has(offer.id)) {
+      dismissedExpiredOfferIdsRef.current.add(offer.id);
+      storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+      setVisibleOfferId((current) => (current === offer.id ? null : current));
+      stopRing();
+      void logOfferClientEvent(offer, "popup_timer_expired", "client_timer", {
+        client_now: new Date().toISOString(),
+        client_remaining_seconds: clientRemainingSeconds,
+        server_now: offer._server_now ?? null,
+        server_remaining_seconds: offer._remaining_seconds ?? null,
+      });
+      return;
+    }
+
+    if (displayedOfferStatusesRef.current.has(statusKey)) {
+      void logOfferClientEvent(offer, "popup_ignored_duplicate", "offer_query_refresh", {
+        client_now: new Date().toISOString(),
+        client_remaining_seconds: clientRemainingSeconds,
+        server_now: offer._server_now ?? null,
+        server_remaining_seconds: offer._remaining_seconds ?? null,
+      });
+      return;
+    }
+
+    displayedOfferStatusesRef.current.set(statusKey, new Date().toISOString());
+    storeOfferStatusMap("uw_displayed_offer_statuses", displayedOfferStatusesRef.current);
+    setVisibleOfferId(offer.id);
+    void logOfferClientEvent(offer, "popup_open", "OfferPopup.useEffect", {
+      opened_by: "offer_query_data",
+      client_now: new Date().toISOString(),
+      client_remaining_seconds: clientRemainingSeconds,
+      server_now: offer._server_now ?? null,
+      server_remaining_seconds: offer._remaining_seconds ?? null,
+      server_txid: offer._server_txid ?? null,
+    });
     startRing();
     try { navigator.vibrate?.([300, 150, 300, 150, 600]); } catch { /* noop */ }
     return () => stopRing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offer?.id]);
+  }, [offer?.id, offer?.response, offer?.expires_at]);
+
+  useEffect(() => {
+    if (!offer || visibleOfferId !== offer.id) return;
+    const expiresAtMs = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
+    const remainingSeconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
+    if (remainingSeconds > 0) return;
+    dismissedExpiredOfferIdsRef.current.add(offer.id);
+    storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+    setVisibleOfferId(null);
+    stopRing();
+    void logOfferClientEvent(offer, "popup_timer_expired", "client_timer_tick", {
+      client_now: new Date().toISOString(),
+      client_remaining_seconds: remainingSeconds,
+      server_now: offer._server_now ?? null,
+      server_remaining_seconds: offer._remaining_seconds ?? null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, offer?.id, offer?.expires_at, visibleOfferId]);
+
+  async function logOfferClientEvent(offerLike: any, stage: string, caller: string, meta: Record<string, unknown> = {}) {
+    const offerId = offerLike?.id ?? offerLike?.offer_id;
+    if (!offerId) return;
+    try {
+      // eslint-disable-next-line no-console
+      console.info("[uw-offer-popup]", stage, { offer_id: offerId, status: offerLike?.response, caller, ...meta });
+      await (supabase as any).rpc("log_offer_client_event", {
+        p_offer_id: offerId,
+        p_stage: stage,
+        p_meta: {
+          caller,
+          path: pathname,
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          stack: new Error().stack?.slice(0, 1500) ?? null,
+          offer_status: offerLike?.response ?? null,
+          ...meta,
+        },
+      });
+    } catch {
+      /* best-effort diagnostics only */
+    }
+  }
 
   function startRing() {
     stopRing();
@@ -104,21 +218,42 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
 
   const respond = useMutation({
     mutationFn: async (accept: boolean) => {
+      await logOfferClientEvent(offer, accept ? "accept_clicked" : "decline_clicked", "OfferPopup.respond", {
+        action: accept ? "accept" : "decline",
+        client_now: new Date().toISOString(),
+      });
       const { data, error } = await (supabase as any).rpc("respond_subscription_offer", { p_offer_id: offer.id, p_accept: accept });
       if (error) throw error;
       return data;
     },
     onSuccess: (_d, accept) => {
       stopRing();
+      if (offer?.id) {
+        dismissedExpiredOfferIdsRef.current.add(offer.id);
+        storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+        setVisibleOfferId(null);
+        void logOfferClientEvent(offer, "client_response_success", "OfferPopup.respond.onSuccess", {
+          action: accept ? "accept" : "decline",
+          client_now: new Date().toISOString(),
+        });
+      }
       toast.success(accept ? "Assignment accepted — added to Today's Route" : "Declined");
       qc.invalidateQueries({ queryKey: ["ds-offer-popup", partnerId] });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
       qc.invalidateQueries({ queryKey: ["active-assignment-builder"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Could not respond"),
+    onError: (e: any) => {
+      if (offer?.id) {
+        void logOfferClientEvent(offer, "client_response_error", "OfferPopup.respond.onError", {
+          error: e?.message ?? String(e),
+          client_now: new Date().toISOString(),
+        });
+      }
+      toast.error(e?.message ?? "Could not respond");
+    },
   });
 
-  if (!offer || pathname.startsWith("/app/service/")) return null;
+  if (!offer || visibleOfferId !== offer.id || pathname.startsWith("/app/service/")) return null;
 
   const expiresAt = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
   const remaining = Math.max(0, Math.ceil((expiresAt - now) / 1000));
@@ -287,4 +422,40 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       </DialogContent>
     </Dialog>
   );
+}
+
+function loadStoredOfferStatusMap(key: string) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return new Map<string, string>();
+    return new Map<string, string>(JSON.parse(raw));
+  } catch {
+    return new Map<string, string>();
+  }
+}
+
+function storeOfferStatusMap(key: string, value: Map<string, string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.from(value.entries()).slice(-200)));
+  } catch {
+    /* noop */
+  }
+}
+
+function loadStoredOfferIdSet(key: string) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return new Set<string>();
+    return new Set<string>(JSON.parse(raw));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function storeOfferIdSet(key: string, value: Set<string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.from(value).slice(-200)));
+  } catch {
+    /* noop */
+  }
 }

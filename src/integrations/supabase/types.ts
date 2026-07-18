@@ -5284,6 +5284,7 @@ export type Database = {
           booking_created_at: string | null
           booking_id: string | null
           booking_status: string | null
+          caller: string | null
           created_by: string | null
           current_offer_partner_id: string | null
           expires_at: string | null
@@ -5298,15 +5299,17 @@ export type Database = {
           partner_notification_id: string | null
           partner_notification_pushed_at: string | null
           payment_status: string | null
-          push_event_at: string | null
-          push_meta: Json | null
-          push_stage: string | null
           queue_created_at: string | null
           queue_id: string | null
           queue_status: string | null
+          remaining_seconds_server: number | null
           responded_at: string | null
           retry_count: number | null
           rpc: string | null
+          server_txid: string | null
+          transition_at: string | null
+          transition_meta: Json | null
+          transition_stage: string | null
         }
         Relationships: [
           {
@@ -6106,6 +6109,10 @@ export type Database = {
           total_amount: number
           vehicle_label: string
         }[]
+      }
+      log_offer_client_event: {
+        Args: { p_meta?: Json; p_offer_id: string; p_stage: string }
+        Returns: string
       }
       log_partner_apk_workflow_event: {
         Args: {
