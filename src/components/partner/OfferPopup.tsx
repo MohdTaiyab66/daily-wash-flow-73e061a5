@@ -10,6 +10,7 @@ import {
   Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route, User as UserIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { popupDebug, remainingSecondsFrom, tracePopupOpen } from "@/lib/offer-popup-debug";
 
 /**
  * Full-screen Daily Shine offer popup with countdown, vibration and ring tone.
@@ -27,12 +28,25 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const dismissedExpiredOfferIdsRef = useRef<Set<string>>(loadStoredOfferIdSet("uw_dismissed_offer_ids"));
   const lastRealtimeStatusRef = useRef<Map<string, string>>(new Map());
 
+  useEffect(() => {
+    popupDebug("OfferPopup mounted", { component: "OfferPopup", partner_id: partnerId });
+    return () => {
+      popupDebug("OfferPopup unmounted", { component: "OfferPopup", partner_id: partnerId });
+    };
+  }, [partnerId]);
+
   const { data: offer } = useQuery({
     queryKey: ["ds-offer-popup", partnerId],
     enabled: !!partnerId,
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
     queryFn: async () => {
+      popupDebug("Polling fired", {
+        component: "OfferPopup",
+        function: "get_pending_offer_for_partner",
+        reason: "React Query refetchInterval/focus/reconnect/manual",
+        partner_id: partnerId,
+      });
       // Partner role cannot read bookings/customer_vehicles/customer_addresses via RLS,
       // so use a SECURITY DEFINER RPC that bundles the joined payload.
       const { data, error } = await (supabase as any).rpc("get_pending_offer_for_partner", {
@@ -40,6 +54,17 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       });
       if (error) throw error;
       const nextOffer = (data as any) ?? null;
+      popupDebug("Polling result", {
+        component: "OfferPopup",
+        result_rows: nextOffer?.id ? 1 : 0,
+        offer_id: nextOffer?.id ?? null,
+        partner_id: partnerId,
+        booking_id: nextOffer?.subscription_assignment_queue?.booking_id ?? nextOffer?.booking_id ?? null,
+        status: nextOffer?.response ?? null,
+        remaining_seconds: nextOffer?._remaining_seconds ?? remainingSecondsFrom(nextOffer?.expires_at),
+        server_now: nextOffer?._server_now ?? null,
+        expires_at: nextOffer?.expires_at ?? null,
+      });
       if (nextOffer?.id) {
         void logOfferClientEvent(nextOffer, "polling_refetch", "useQuery.refetchInterval", {
           server_remaining_seconds: nextOffer._remaining_seconds ?? null,
@@ -63,6 +88,18 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
           const offerId = row.id as string | undefined;
           const previousStatus = offerId ? lastRealtimeStatusRef.current.get(offerId) : undefined;
           const nextStatus = row.response as string | undefined;
+          popupDebug("subscription_offers changed", {
+            component: "OfferPopup",
+            function: "supabase.channel(postgres_changes)",
+            reason: "realtime_event",
+            event: payload.eventType ?? null,
+            offer_id: offerId ?? null,
+            partner_id: row.partner_id ?? partnerId,
+            previous_status: previousStatus ?? null,
+            new_status: nextStatus ?? null,
+            expires_at: row.expires_at ?? null,
+            client_remaining_seconds: remainingSecondsFrom(row.expires_at),
+          });
           if (offerId && nextStatus) {
             lastRealtimeStatusRef.current.set(offerId, nextStatus);
             if (previousStatus === nextStatus) {
@@ -79,6 +116,15 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
               new_status: nextStatus,
             });
           }
+          popupDebug("React Query invalidation", {
+            component: "OfferPopup",
+            function: "subscription_offers.realtime handler",
+            reason: "subscription_offers changed",
+            query_key: ["ds-offer-popup", partnerId],
+            offer_id: offerId ?? null,
+            previous_status: previousStatus ?? null,
+            new_status: nextStatus ?? null,
+          });
           qc.invalidateQueries({ queryKey: ["ds-offer-popup", partnerId] });
         },
       )
@@ -89,8 +135,27 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   // Tick timer once an offer is on screen
   useEffect(() => {
     if (!offer) return;
+    popupDebug("Timer started", {
+      component: "OfferPopup",
+      offer_id: offer.id,
+      partner_id: partnerId,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+      expires_at: offer.expires_at ?? null,
+      server_now: offer._server_now ?? null,
+      server_remaining: offer._remaining_seconds ?? null,
+      client_remaining: remainingSecondsFrom(offer.expires_at),
+      countdown: "1000ms",
+    });
     const t = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(t);
+    return () => {
+      popupDebug("Timer stopped", {
+        component: "OfferPopup",
+        offer_id: offer.id,
+        partner_id: partnerId,
+        client_remaining: remainingSecondsFrom(offer.expires_at),
+      });
+      window.clearInterval(t);
+    };
   }, [offer]);
 
   // Open, ring and vibrate exactly once per offer/status. Realtime, polling,
@@ -99,6 +164,13 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   useEffect(() => {
     if (!offer) {
       stopRing();
+      popupDebug("Popup close", {
+        component: "OfferPopup",
+        function: "offer visibility effect",
+        reason: "offer query returned null",
+        partner_id: partnerId,
+        previous_visible_offer_id: visibleOfferId,
+      });
       setVisibleOfferId(null);
       return;
     }
@@ -109,6 +181,19 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     const statusKey = `${offer.id}:${status}`;
 
     if (clientRemainingSeconds <= 0 || dismissedExpiredOfferIdsRef.current.has(offer.id)) {
+      popupDebug("Popup close", {
+        component: "OfferPopup",
+        function: "offer visibility effect",
+        reason: clientRemainingSeconds <= 0 ? "client_remaining_seconds <= 0" : "offer_id dismissed in client state",
+        offer_id: offer.id,
+        partner_id: partnerId,
+        booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+        status,
+        remaining_seconds: offer._remaining_seconds ?? clientRemainingSeconds,
+        server_now: offer._server_now ?? null,
+        client_now: new Date().toISOString(),
+        expires_at: offer.expires_at ?? null,
+      });
       dismissedExpiredOfferIdsRef.current.add(offer.id);
       storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
       setVisibleOfferId((current) => (current === offer.id ? null : current));
@@ -123,6 +208,18 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     }
 
     if (displayedOfferStatusesRef.current.has(statusKey)) {
+      popupDebug("Popup duplicate ignored", {
+        component: "OfferPopup",
+        function: "offer visibility effect",
+        reason: "offer_id/status already displayed",
+        offer_id: offer.id,
+        partner_id: partnerId,
+        booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+        status,
+        remaining_seconds: offer._remaining_seconds ?? clientRemainingSeconds,
+        server_now: offer._server_now ?? null,
+        client_now: new Date().toISOString(),
+      });
       void logOfferClientEvent(offer, "popup_ignored_duplicate", "offer_query_refresh", {
         client_now: new Date().toISOString(),
         client_remaining_seconds: clientRemainingSeconds,
@@ -134,6 +231,20 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
 
     displayedOfferStatusesRef.current.set(statusKey, new Date().toISOString());
     storeOfferStatusMap("uw_displayed_offer_statuses", displayedOfferStatusesRef.current);
+    const openTrace = tracePopupOpen({
+      component: "OfferPopup",
+      function: "offer visibility effect",
+      reason: "new offer query data not previously displayed",
+      opened_by: "offer_query_data",
+      offer_id: offer.id,
+      partner_id: partnerId,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+      status,
+      remaining_seconds: offer._remaining_seconds ?? clientRemainingSeconds,
+      server_now: offer._server_now ?? null,
+      client_now: new Date().toISOString(),
+      expires_at: offer.expires_at ?? null,
+    });
     setVisibleOfferId(offer.id);
     void logOfferClientEvent(offer, "popup_open", "OfferPopup.useEffect", {
       opened_by: "offer_query_data",
@@ -142,6 +253,7 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       server_now: offer._server_now ?? null,
       server_remaining_seconds: offer._remaining_seconds ?? null,
       server_txid: offer._server_txid ?? null,
+      call_stack: openTrace.call_stack,
     });
     startRing();
     try { navigator.vibrate?.([300, 150, 300, 150, 600]); } catch { /* noop */ }
@@ -153,7 +265,30 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     if (!offer || visibleOfferId !== offer.id) return;
     const expiresAtMs = offer.expires_at ? new Date(offer.expires_at).getTime() : 0;
     const remainingSeconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
+    popupDebug("Timer tick", {
+      component: "OfferPopup",
+      offer_id: offer.id,
+      partner_id: partnerId,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+      expires_at: offer.expires_at ?? null,
+      server_now: offer._server_now ?? null,
+      server_remaining: offer._remaining_seconds ?? null,
+      client_remaining: remainingSeconds,
+      countdown: remainingSeconds,
+    });
     if (remainingSeconds > 0) return;
+    popupDebug("Popup close", {
+      component: "OfferPopup",
+      function: "timer tick effect",
+      reason: "timer reached zero",
+      offer_id: offer.id,
+      partner_id: partnerId,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+      status: offer.response ?? null,
+      remaining_seconds: offer._remaining_seconds ?? remainingSeconds,
+      server_now: offer._server_now ?? null,
+      client_now: new Date().toISOString(),
+    });
     dismissedExpiredOfferIdsRef.current.add(offer.id);
     storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
     setVisibleOfferId(null);
@@ -238,8 +373,29 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         });
       }
       toast.success(accept ? "Assignment accepted — added to Today's Route" : "Declined");
+      popupDebug("React Query invalidation", {
+        component: "OfferPopup",
+        function: "respond.onSuccess",
+        reason: accept ? "accept_success" : "decline_success",
+        query_key: ["ds-offer-popup", partnerId],
+        offer_id: offer?.id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["ds-offer-popup", partnerId] });
+      popupDebug("React Query invalidation", {
+        component: "OfferPopup",
+        function: "respond.onSuccess",
+        reason: accept ? "accept_success" : "decline_success",
+        query_key: ["my-assignment"],
+        offer_id: offer?.id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
+      popupDebug("React Query invalidation", {
+        component: "OfferPopup",
+        function: "respond.onSuccess",
+        reason: accept ? "accept_success" : "decline_success",
+        query_key: ["active-assignment-builder"],
+        offer_id: offer?.id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["active-assignment-builder"] });
     },
     onError: (e: any) => {

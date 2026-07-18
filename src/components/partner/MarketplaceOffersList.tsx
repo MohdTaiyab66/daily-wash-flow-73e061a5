@@ -6,6 +6,7 @@ import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
 import { logMarketplaceEvent } from "@/lib/marketplace-tracking";
 import { MarketplaceOfferCard } from "./MarketplaceOfferCard";
 import { MarketplaceOfferSheet } from "./MarketplaceOfferSheet";
+import { popupDebug, remainingSecondsFrom, tracePopupOpen } from "@/lib/offer-popup-debug";
 
 /** How long (ms) to suppress the auto-popup after a decline, unless a better
  * offer arrives (higher incentive or a different broadcast). */
@@ -26,7 +27,28 @@ export function MarketplaceOffersList() {
   const fetchOffers = useServerFn(getPartnerOpenOffers);
   const q = useQuery({
     queryKey: ["marketplace-offers"],
-    queryFn: () => fetchOffers(),
+    queryFn: async () => {
+      popupDebug("Polling fired", {
+        component: "MarketplaceOffersList",
+        function: "getPartnerOpenOffers",
+        reason: "React Query refetchInterval/focus/reconnect/manual",
+        query_key: ["marketplace-offers"],
+      });
+      const rows = await fetchOffers();
+      popupDebug("Polling result", {
+        component: "MarketplaceOffersList",
+        result_rows: Array.isArray(rows) ? rows.length : 0,
+        offers: (Array.isArray(rows) ? rows : []).map((o: any) => ({
+          offer_id: o.id,
+          partner_id: o.partner_id ?? null,
+          booking_id: o.broadcast?.booking_id ?? null,
+          status: o.response ?? null,
+          remaining_seconds: remainingSecondsFrom(o.broadcast?.round_expires_at),
+          expires_at: o.broadcast?.round_expires_at ?? null,
+        })),
+      });
+      return rows;
+    },
     // Fallback polling — keeps working when FCM misses / OEM blocks / offline.
     refetchInterval: 15_000,
     refetchIntervalInBackground: true,
@@ -35,20 +57,64 @@ export function MarketplaceOffersList() {
   });
 
   useEffect(() => {
+    popupDebug("MarketplaceOffersList mounted", { component: "MarketplaceOffersList" });
     const channel = supabase
       .channel("marketplace-live")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "marketplace_offers" },
-        () => qc.invalidateQueries({ queryKey: ["marketplace-offers"] }),
+        (payload: any) => {
+          const row = (payload.new ?? payload.old ?? {}) as any;
+          popupDebug("marketplace_offers changed", {
+            component: "MarketplaceOffersList",
+            function: "supabase.channel(postgres_changes)",
+            reason: "realtime_event",
+            event: payload.eventType ?? null,
+            offer_id: row.id ?? null,
+            partner_id: row.partner_id ?? null,
+            previous_status: payload.old?.response ?? null,
+            new_status: payload.new?.response ?? row.response ?? null,
+          });
+          popupDebug("React Query invalidation", {
+            component: "MarketplaceOffersList",
+            function: "marketplace_offers.realtime handler",
+            reason: "marketplace_offers changed",
+            query_key: ["marketplace-offers"],
+            offer_id: row.id ?? null,
+          });
+          qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
+        },
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "marketplace_broadcasts" },
-        () => qc.invalidateQueries({ queryKey: ["marketplace-offers"] }),
+        (payload: any) => {
+          const row = (payload.new ?? payload.old ?? {}) as any;
+          popupDebug("marketplace_broadcasts changed", {
+            component: "MarketplaceOffersList",
+            function: "supabase.channel(postgres_changes)",
+            reason: "realtime_event",
+            event: payload.eventType ?? null,
+            broadcast_id: row.id ?? null,
+            booking_id: row.booking_id ?? null,
+            previous_status: payload.old?.status ?? null,
+            new_status: payload.new?.status ?? row.status ?? null,
+            expires_at: row.round_expires_at ?? null,
+            remaining_seconds: remainingSecondsFrom(row.round_expires_at),
+          });
+          popupDebug("React Query invalidation", {
+            component: "MarketplaceOffersList",
+            function: "marketplace_broadcasts.realtime handler",
+            reason: "marketplace_broadcasts changed",
+            query_key: ["marketplace-offers"],
+            broadcast_id: row.id ?? null,
+          });
+          qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
+        },
       )
       .subscribe();
     return () => {
+      popupDebug("MarketplaceOffersList unmounted", { component: "MarketplaceOffersList" });
       supabase.removeChannel(channel);
     };
   }, [qc]);
@@ -117,10 +183,35 @@ export function MarketplaceOffersList() {
     if (!top || suppressTop) return;
     if (chirpedIdRef.current === top.id) return;
     chirpedIdRef.current = top.id;
+    const remaining = remainingSecondsFrom(top.broadcast?.round_expires_at);
+    const openTrace = tracePopupOpen({
+      component: "MarketplaceOffersList",
+      function: "top-offer chirp/display effect",
+      reason: "new top marketplace offer selected from query data",
+      opened_by: "marketplace_offers_query_top_offer",
+      offer_id: top.id,
+      partner_id: top.partner_id ?? null,
+      booking_id: top.broadcast?.booking_id ?? null,
+      status: top.response ?? null,
+      remaining_seconds: remaining,
+      server_now: null,
+      client_now: new Date().toISOString(),
+      expires_at: top.broadcast?.round_expires_at ?? null,
+    });
     void logMarketplaceEvent({
       offerId: top.id,
       broadcastId: top.broadcast_id,
       stage: "popup_displayed",
+      partnerId: top.partner_id ?? null,
+      meta: {
+        component: "MarketplaceOffersList",
+        function: "top-offer chirp/display effect",
+        reason: "new top marketplace offer selected from query data",
+        booking_id: top.broadcast?.booking_id ?? null,
+        remaining_seconds: remaining,
+        expires_at: top.broadcast?.round_expires_at ?? null,
+        call_stack: openTrace.call_stack,
+      },
     });
     try {
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as
@@ -158,6 +249,14 @@ export function MarketplaceOffersList() {
         broadcastId: offer?.broadcast_id ?? null,
         incentive: Number(offer?.incentive ?? 0),
       };
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOffersList",
+        function: "handleDecline",
+        reason: "decline cooldown started",
+        query_key: ["marketplace-offers"],
+        offer_id: offer?.id ?? null,
+        booking_id: offer?.broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
     },
     [qc],
@@ -194,8 +293,18 @@ export function MarketplaceOffersList() {
   );
 
   const closeTop = useMemo(
-    () => () => qc.invalidateQueries({ queryKey: ["marketplace-offers"] }),
-    [qc],
+    () => () => {
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOffersList",
+        function: "closeTop",
+        reason: "top marketplace sheet requested close/expired",
+        query_key: ["marketplace-offers"],
+        offer_id: top?.id ?? null,
+        booking_id: top?.broadcast?.booking_id ?? null,
+      });
+      qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
+    },
+    [qc, top?.id, top?.broadcast?.booking_id],
   );
 
   if (count === 0) return null;

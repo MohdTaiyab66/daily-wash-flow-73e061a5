@@ -20,6 +20,7 @@ import {
   declineMarketplaceOffer,
   getPartnerRoutePreview,
 } from "@/lib/marketplace.functions";
+import { popupDebug, remainingSecondsFrom } from "@/lib/offer-popup-debug";
 
 type OfferRow = {
   id: string;
@@ -125,11 +126,41 @@ export function MarketplaceOfferCard({
   const [total] = useState(() => Math.max(remaining, 30));
 
   useEffect(() => {
+    popupDebug("Timer started", {
+      component: "MarketplaceOfferCard",
+      offer_id: offer.id,
+      partner_id: (offer as any).partner_id ?? null,
+      booking_id: (offer as any).broadcast?.booking_id ?? null,
+      expires_at: offer.broadcast.round_expires_at,
+      server_remaining: null,
+      client_remaining: remainingSecondsFrom(offer.broadcast.round_expires_at),
+      countdown: "500ms",
+    });
     const t = setInterval(() => {
-      setRemaining(Math.max(0, Math.round((expiresAt - Date.now()) / 1000)));
+      const nextRemaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+      popupDebug("Timer tick", {
+        component: "MarketplaceOfferCard",
+        offer_id: offer.id,
+        partner_id: (offer as any).partner_id ?? null,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+        expires_at: offer.broadcast.round_expires_at,
+        server_remaining: null,
+        client_remaining: nextRemaining,
+        countdown: nextRemaining,
+      });
+      setRemaining(nextRemaining);
     }, 500);
-    return () => clearInterval(t);
-  }, [expiresAt]);
+    return () => {
+      popupDebug("Timer stopped", {
+        component: "MarketplaceOfferCard",
+        offer_id: offer.id,
+        partner_id: (offer as any).partner_id ?? null,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+        client_remaining: remainingSecondsFrom(offer.broadcast.round_expires_at),
+      });
+      clearInterval(t);
+    };
+  }, [expiresAt, offer.id, offer.broadcast.round_expires_at]);
 
   // Route preview — only for the full (top) card, not the stacked compact ones.
   const preview = useQuery({
@@ -170,9 +201,41 @@ export function MarketplaceOfferCard({
         toast.success(`Accepted — ₹${offer.incentive}/day added to your route`);
         onAccept?.();
       }
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOfferCard",
+        function: "handleAccept",
+        reason: "accept completed",
+        query_key: ["marketplace-offers"],
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOfferCard",
+        function: "handleAccept",
+        reason: "accept completed",
+        query_key: ["my-assignment"],
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["my-assignment"] });
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOfferCard",
+        function: "handleAccept",
+        reason: "accept completed",
+        query_key: ["partner-services"],
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["partner-services"] });
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOfferCard",
+        function: "handleAccept",
+        reason: "accept completed",
+        query_key: ["partner-route-preview"],
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["partner-route-preview"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to accept");
@@ -187,6 +250,14 @@ export function MarketplaceOfferCard({
     try {
       await decline({ data: { broadcastId: offer.broadcast_id } });
       onDecline?.();
+      popupDebug("React Query invalidation", {
+        component: "MarketplaceOfferCard",
+        function: "handleDecline",
+        reason: "decline completed",
+        query_key: ["marketplace-offers"],
+        offer_id: offer.id,
+        booking_id: (offer as any).broadcast?.booking_id ?? null,
+      });
       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to decline");
