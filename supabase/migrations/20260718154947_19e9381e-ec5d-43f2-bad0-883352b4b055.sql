@@ -1,0 +1,1 @@
+ALTER VIEW public.v_offer_debug SET (security_invoker = true);
