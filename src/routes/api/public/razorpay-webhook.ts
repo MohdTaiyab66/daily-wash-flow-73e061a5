@@ -64,6 +64,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           p_raw_payload: event,
         });
         if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
+        // Phase 2 shadow: log payment_verified in the new pipeline in parallel with legacy.
+        try { await (supabaseAdmin as any).rpc("ds_on_payment_verified", { p_booking_id: booking.id }); } catch {}
         // Instant partner dispatch: don't wait for the cron tick.
         try { await (supabaseAdmin as any).rpc("sweep_subscription_offers"); } catch {}
         return Response.json({ ok: true, result: data });
