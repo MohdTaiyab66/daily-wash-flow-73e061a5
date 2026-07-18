@@ -144,7 +144,7 @@ if (!mainActivity) {
 }
 
 let activity = await readFile(mainActivity, "utf8");
-const importsToEnsure = ["android.os.Bundle", "com.ionicframework.capacitor.Checkout"];
+const importsToEnsure = ["android.os.Bundle", "android.util.Log", "com.ionicframework.capacitor.Checkout"];
 for (const importName of importsToEnsure) {
   if (!activity.includes(`import ${importName};`)) {
     activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport ${importName};\n`);
@@ -155,6 +155,7 @@ for (const importName of importsToEnsure) {
 // bridge during super.onCreate(); registering after that is too late and leaves
 // Checkout unavailable at runtime.
 activity = activity.replace(/^\s*registerPlugin\(Checkout\.class\);\s*$/gm, "");
+activity = activity.replace(/^\s*Log\.i\("PARTNER_BUILD",[\s\S]*?\);\s*$/gm, "");
 const onCreateStart = /(void\s+onCreate\s*\(\s*Bundle\s+savedInstanceState\s*\)\s*\{)/s;
 if (onCreateStart.test(activity)) {
   activity = activity.replace(onCreateStart, `$1\n        registerPlugin(Checkout.class);`);
@@ -167,8 +168,19 @@ if (!activity.includes("registerPlugin(Checkout.class)")) {
   process.exit(1);
 }
 
+const partnerBuildNumber = process.env.PARTNER_BUILD_NUMBER ?? process.env.VERSION_CODE ?? "32";
+const partnerVersion = process.env.PARTNER_APP_VERSION ?? process.env.VERSION_NAME ?? "1.0.32";
+const partnerBuildId = process.env.PARTNER_BUILD_ID ?? "2026-07-18-trace-01";
+const partnerGitSha = process.env.PARTNER_GIT_SHA ?? process.env.GIT_SHA ?? "unknown";
+const partnerBuildTime = process.env.PARTNER_BUILD_TIME ?? new Date().toISOString();
+const buildLogLine = `Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=${partnerBuildNumber} BUILD_VERSION=${partnerVersion} BUILD_ID=${partnerBuildId} GIT_SHA=${partnerGitSha} BUILD_TIME=${partnerBuildTime}");`;
+activity = activity.replace(
+  /registerPlugin\(Checkout\.class\);/,
+  `registerPlugin(Checkout.class);\n        ${buildLogLine}\n        Log.i("PARTNER_BUILD", "DEVICE_MANUFACTURER=" + android.os.Build.MANUFACTURER + " DEVICE_MODEL=" + android.os.Build.MODEL + " SDK_INT=" + android.os.Build.VERSION.SDK_INT);`,
+);
+
 await writeFile(mainActivity, activity, "utf8");
-console.log(`[android-manifest] Razorpay Checkout plugin registered in ${mainActivity}`);
+console.log(`[android-manifest] Razorpay Checkout plugin and PARTNER_BUILD startup logs registered in ${mainActivity}`);
 
 // Copy Kotlin sources into the package directory.
 const pkgDir = "android/app/src/main/java/com/urbanwash/push";
