@@ -212,6 +212,31 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
           <Row label="Battery" value={diag.batteryLevel} />
           <Row label="Last push received" value={diag.lastPushAt} />
           <Row label="Last push tapped" value={diag.lastOpenAt} />
+
+          <div className="mt-2 rounded-md border border-dashed p-2">
+            <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Token sync</p>
+            <Row label="Current token" value={diag.currentTokenHash} />
+            <Row label="Last token refresh" value={diag.lastTokenRefreshAt} />
+            <Row label="Last upload to server" value={diag.lastTokenUploadAt} />
+            <Row
+              label="Client ↔ server token"
+              value={
+                diag.tokenUploadedMatch === "match"
+                  ? "MATCH ✅"
+                  : diag.tokenUploadedMatch === "mismatch"
+                    ? `MISMATCH ❌  server: ${diag.serverTokenTail}`
+                    : "unknown"
+              }
+              valueClass={
+                diag.tokenUploadedMatch === "match"
+                  ? "text-[color:var(--success)]"
+                  : diag.tokenUploadedMatch === "mismatch"
+                    ? "text-destructive"
+                    : ""
+              }
+            />
+          </div>
+
           {channelRows.length > 0 && (
             <div className="mt-2 rounded-md border border-dashed p-2">
               <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Channels</p>
