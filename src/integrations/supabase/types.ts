@@ -5927,6 +5927,31 @@ export type Database = {
         Returns: string
       }
       get_offer_details_by_id: { Args: { p_offer_id: string }; Returns: Json }
+      get_partner_open_offers: {
+        Args: { p_partner_id: string }
+        Returns: {
+          booking_id: string
+          broadcast_id: string
+          broadcast_status: string
+          current_incentive: number
+          current_radius_m: number
+          current_round: number
+          customer_lat: number
+          customer_lng: number
+          distance_from_route_m: number
+          id: string
+          incentive: number
+          partner_id: string
+          response: string
+          round: number
+          round_expires_at: string
+          route_impact_m: number
+          sent_at: string
+          server_now: string
+          subscription_id: string
+          vehicle_id: string
+        }[]
+      }
       get_partner_ui_prefs: { Args: never; Returns: Json }
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
@@ -6198,6 +6223,7 @@ export type Database = {
           today_cars: number
         }[]
       }
+      mp_expire_stale_offers: { Args: never; Returns: undefined }
       mp_haversine_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
