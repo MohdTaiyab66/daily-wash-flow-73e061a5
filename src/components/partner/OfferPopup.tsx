@@ -10,7 +10,7 @@ import {
   Sparkles, MapPin, IndianRupee, Timer, Car, Clock, Route, User as UserIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { popupDebug, remainingSecondsFrom, tracePopupOpen } from "@/lib/offer-popup-debug";
+import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen, traceStateCall } from "@/lib/offer-popup-debug";
 
 /**
  * Full-screen Daily Shine offer popup with countdown, vibration and ring tone.
@@ -29,8 +29,10 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const lastRealtimeStatusRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
+    traceComponentMount("OfferPopup", { component: "OfferPopup", partner_id: partnerId, route: "/app/*" });
     popupDebug("OfferPopup mounted", { component: "OfferPopup", partner_id: partnerId });
     return () => {
+      traceComponentUnmount("OfferPopup", { component: "OfferPopup", partner_id: partnerId, route: "/app/*" });
       popupDebug("OfferPopup unmounted", { component: "OfferPopup", partner_id: partnerId });
     };
   }, [partnerId]);
@@ -146,7 +148,16 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       client_remaining: remainingSecondsFrom(offer.expires_at),
       countdown: "1000ms",
     });
-    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    const t = window.setInterval(() => {
+      traceStateCall("setState", {
+        component: "OfferPopup",
+        function: "timer interval setNow",
+        reason: "timer tick",
+        offer_id: offer.id,
+        remaining_seconds: remainingSecondsFrom(offer.expires_at),
+      });
+      setNow(Date.now());
+    }, 1000);
     return () => {
       popupDebug("Timer stopped", {
         component: "OfferPopup",
@@ -170,6 +181,13 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
         reason: "offer query returned null",
         partner_id: partnerId,
         previous_visible_offer_id: visibleOfferId,
+      });
+      traceStateCall("setPopup", {
+        component: "OfferPopup",
+        function: "offer visibility effect setVisibleOfferId",
+        reason: "offer query returned null",
+        previous_visible_offer_id: visibleOfferId,
+        next: null,
       });
       setVisibleOfferId(null);
       return;
@@ -196,6 +214,14 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       });
       dismissedExpiredOfferIdsRef.current.add(offer.id);
       storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+      traceStateCall("setPopup", {
+        component: "OfferPopup",
+        function: "offer visibility effect setVisibleOfferId",
+        reason: clientRemainingSeconds <= 0 ? "client_remaining_seconds <= 0" : "offer_id dismissed in client state",
+        offer_id: offer.id,
+        current_offer_id: visibleOfferId,
+        next: "current === offer.id ? null : current",
+      });
       setVisibleOfferId((current) => (current === offer.id ? null : current));
       stopRing();
       void logOfferClientEvent(offer, "popup_timer_expired", "client_timer", {
@@ -245,6 +271,16 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       client_now: new Date().toISOString(),
       expires_at: offer.expires_at ?? null,
     });
+    traceStateCall("setPopup", {
+      component: "OfferPopup",
+      function: "offer visibility effect setVisibleOfferId",
+      reason: "new offer query data not previously displayed",
+      offer_id: offer.id,
+      booking_id: offer?.subscription_assignment_queue?.booking_id ?? offer?.booking_id ?? null,
+      status,
+      remaining_seconds: offer._remaining_seconds ?? clientRemainingSeconds,
+      next: offer.id,
+    });
     setVisibleOfferId(offer.id);
     void logOfferClientEvent(offer, "popup_open", "OfferPopup.useEffect", {
       opened_by: "offer_query_data",
@@ -291,6 +327,13 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
     });
     dismissedExpiredOfferIdsRef.current.add(offer.id);
     storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+    traceStateCall("setPopup", {
+      component: "OfferPopup",
+      function: "timer tick effect setVisibleOfferId",
+      reason: "timer reached zero",
+      offer_id: offer.id,
+      next: null,
+    });
     setVisibleOfferId(null);
     stopRing();
     void logOfferClientEvent(offer, "popup_timer_expired", "client_timer_tick", {
@@ -366,6 +409,13 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       if (offer?.id) {
         dismissedExpiredOfferIdsRef.current.add(offer.id);
         storeOfferIdSet("uw_dismissed_offer_ids", dismissedExpiredOfferIdsRef.current);
+        traceStateCall("setPopup", {
+          component: "OfferPopup",
+          function: "respond.onSuccess setVisibleOfferId",
+          reason: accept ? "accept_success" : "decline_success",
+          offer_id: offer.id,
+          next: null,
+        });
         setVisibleOfferId(null);
         void logOfferClientEvent(offer, "client_response_success", "OfferPopup.respond.onSuccess", {
           action: accept ? "accept" : "decline",

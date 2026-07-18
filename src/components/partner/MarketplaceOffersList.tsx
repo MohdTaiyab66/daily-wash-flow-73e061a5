@@ -6,7 +6,7 @@ import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
 import { logMarketplaceEvent } from "@/lib/marketplace-tracking";
 import { MarketplaceOfferCard } from "./MarketplaceOfferCard";
 import { MarketplaceOfferSheet } from "./MarketplaceOfferSheet";
-import { popupDebug, remainingSecondsFrom, tracePopupOpen } from "@/lib/offer-popup-debug";
+import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen, traceStateCall } from "@/lib/offer-popup-debug";
 
 /** How long (ms) to suppress the auto-popup after a decline, unless a better
  * offer arrives (higher incentive or a different broadcast). */
@@ -57,6 +57,7 @@ export function MarketplaceOffersList() {
   });
 
   useEffect(() => {
+    traceComponentMount("MarketplaceOffersList", { route: "/app", timestamp: new Date().toISOString() });
     popupDebug("MarketplaceOffersList mounted", { component: "MarketplaceOffersList" });
     const channel = supabase
       .channel("marketplace-live")
@@ -114,6 +115,7 @@ export function MarketplaceOffersList() {
       )
       .subscribe();
     return () => {
+      traceComponentUnmount("MarketplaceOffersList", { route: "/app", timestamp: new Date().toISOString() });
       popupDebug("MarketplaceOffersList unmounted", { component: "MarketplaceOffersList" });
       supabase.removeChannel(channel);
     };
@@ -137,7 +139,15 @@ export function MarketplaceOffersList() {
     if (!cooldownRef.current) return;
     const left = cooldownRef.current.untilMs - Date.now();
     if (left <= 0) return;
-    const t = window.setTimeout(() => forceRerender((n) => n + 1), left + 50);
+    const t = window.setTimeout(() => {
+      traceStateCall("setState", {
+        component: "MarketplaceOffersList",
+        function: "cooldown timeout forceRerender",
+        reason: "decline cooldown expired",
+        remaining_ms_before_timeout: left,
+      });
+      forceRerender((n) => n + 1);
+    }, left + 50);
     return () => window.clearTimeout(t);
   }, [offers.length]);
 
@@ -249,6 +259,14 @@ export function MarketplaceOffersList() {
         broadcastId: offer?.broadcast_id ?? null,
         incentive: Number(offer?.incentive ?? 0),
       };
+      traceStateCall("setPopup", {
+        component: "MarketplaceOffersList",
+        function: "handleDecline cooldownRef",
+        reason: "decline hides/suppresses top sheet",
+        offer_id: offer?.id ?? null,
+        booking_id: offer?.broadcast?.booking_id ?? null,
+        broadcast_id: offer?.broadcast_id ?? null,
+      });
       popupDebug("React Query invalidation", {
         component: "MarketplaceOffersList",
         function: "handleDecline",
@@ -288,6 +306,14 @@ export function MarketplaceOffersList() {
       } catch { /* noop */ }
       try { navigator.vibrate?.([80, 40, 80]); } catch { /* noop */ }
       cooldownRef.current = null;
+      traceStateCall("setPopup", {
+        component: "MarketplaceOffersList",
+        function: "handleAccept cooldownRef",
+        reason: "accept clears suppression state",
+        offer_id: _offer?.id ?? null,
+        booking_id: _offer?.broadcast?.booking_id ?? null,
+        broadcast_id: _offer?.broadcast_id ?? null,
+      });
     },
     [],
   );
