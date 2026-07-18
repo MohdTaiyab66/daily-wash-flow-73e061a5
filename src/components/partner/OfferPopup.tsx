@@ -18,7 +18,7 @@ import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUn
  */
 export function OfferPopup({ partnerId }: { partnerId: string | null }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  
   const qc = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const [visibleOfferId, setVisibleOfferId] = useState<string | null>(null);
