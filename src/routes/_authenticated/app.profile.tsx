@@ -1,17 +1,21 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, BookOpen, Headphones, Share2, ChevronRight,
-  Award, History, FileText, Shield, MapPin, Lock, Languages,
+  Award, History, FileText, Shield, MapPin, Lock, Languages, BellRing,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard";
 import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
 import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
+import { sendPushSelfTest } from "@/lib/push-selftest.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/profile")({
   component: ProfilePage,
@@ -140,6 +144,8 @@ function ProfilePage() {
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
+      <PushSelfTestCard />
+
       <Card className="mt-3 border-dashed p-3 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Partner Build</p>
         <p className="mt-1 text-sm font-semibold">v{PARTNER_APP_VERSION}</p>
@@ -160,6 +166,96 @@ function StatMini({ value, label }: { value: string; label: string }) {
       <p className="text-lg font-semibold">{value}</p>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
+  );
+}
+
+function PushSelfTestCard() {
+  const run = useServerFn(sendPushSelfTest);
+  const [busy, setBusy] = useState<null | "offer" | "assignment" | "generic">(null);
+  const [last, setLast] = useState<null | {
+    scenario: string;
+    sent: number;
+    failed: number;
+    tokenCount: number;
+    at: string;
+    errors: string[];
+  }>(null);
+
+  const fire = async (scenario: "offer" | "assignment" | "generic") => {
+    setBusy(scenario);
+    try {
+      const r: any = await run({ data: { scenario } });
+      const errors = (r?.results ?? [])
+        .filter((x: any) => !x.ok)
+        .map((x: any) => `${x.errorCode ?? "ERR"}: ${x.errorMessage ?? ""}`.trim());
+      setLast({
+        scenario,
+        sent: r?.sent ?? 0,
+        failed: r?.failed ?? 0,
+        tokenCount: r?.tokenCount ?? 0,
+        at: new Date().toLocaleTimeString("en-IN"),
+        errors,
+      });
+      if (r?.sent > 0) {
+        toast.success(`Test push sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
+          description: "Lock screen / background the app to see heads-up.",
+        });
+      } else if (r?.tokenCount === 0) {
+        toast.error("No push tokens registered on this account", {
+          description: "Open the app once with notifications allowed, then retry.",
+        });
+      } else {
+        toast.error("FCM rejected every token", {
+          description: errors[0] ?? "Check logs.",
+        });
+      }
+    } catch (e: any) {
+      toast.error("Self-test failed", { description: e?.message ?? String(e) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card className="mt-4 p-4">
+      <div className="flex items-center gap-2">
+        <BellRing className="h-4 w-4 text-primary" />
+        <p className="text-sm font-semibold">Notification self-test</p>
+      </div>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+        Sends a real FCM push to this device using the same code path as a live
+        offer. Lock the screen or background the app first to verify heads-up
+        works when killed.
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("offer")}>
+          {busy === "offer" ? "Sending…" : "Offer"}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("assignment")}>
+          {busy === "assignment" ? "Sending…" : "Assignment"}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => fire("generic")}>
+          {busy === "generic" ? "Sending…" : "Generic"}
+        </Button>
+      </div>
+      {last && (
+        <div className="mt-3 rounded-md border border-dashed p-2 text-[11px] leading-relaxed">
+          <p>
+            <span className="font-mono">{last.at}</span> · <b>{last.scenario}</b> ·{" "}
+            <span className={last.sent > 0 ? "text-[color:var(--success)]" : "text-destructive"}>
+              {last.sent}/{last.tokenCount} delivered
+            </span>
+          </p>
+          {last.errors.length > 0 && (
+            <ul className="mt-1 list-disc pl-4 text-destructive">
+              {last.errors.slice(0, 3).map((e, i) => (
+                <li key={i} className="font-mono">{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
