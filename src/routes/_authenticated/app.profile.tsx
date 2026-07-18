@@ -145,7 +145,11 @@ function ProfilePage() {
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
+      <DeviceDiagnosticsCard userId={partner?.id ?? null} />
+
       <PushSelfTestCard />
+
+
 
       <Card className="mt-3 border-dashed p-3 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Partner Build</p>
