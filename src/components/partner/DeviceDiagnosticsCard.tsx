@@ -32,6 +32,14 @@ type Diag = {
   lastTokenUploadAt: string;
   tokenUploadedMatch: "match" | "mismatch" | "unknown";
   serverTokenTail: string;
+  lastFcm: {
+    time: string;
+    payloadType: string;
+    channel: string;
+    messageId: string;
+    displayed: boolean | null;
+    displayPath: string;
+  } | null;
 };
 
 function tail(t: string | null | undefined, n = 12): string {
@@ -59,6 +67,7 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     lastTokenUploadAt: "—",
     tokenUploadedMatch: "unknown",
     serverTokenTail: "—",
+    lastFcm: null,
   };
   if (web) return empty;
 
@@ -108,6 +117,20 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     if (lr.value) empty.lastTokenRefreshAt = new Date(lr.value).toLocaleString("en-IN");
     const lu = await Preferences.get({ key: "urbanwash.last_token_upload_at" });
     if (lu.value) empty.lastTokenUploadAt = new Date(lu.value).toLocaleString("en-IN");
+    const lf = await Preferences.get({ key: "urbanwash.last_fcm_meta" });
+    if (lf.value) {
+      try {
+        const m = JSON.parse(lf.value);
+        empty.lastFcm = {
+          time: m.time ? new Date(m.time).toLocaleString("en-IN") : "—",
+          payloadType: m.payloadType ?? "—",
+          channel: m.channel ?? "—",
+          messageId: m.messageId ?? "—",
+          displayed: typeof m.displayed === "boolean" ? m.displayed : null,
+          displayPath: m.displayPath ?? "—",
+        };
+      } catch { /* noop */ }
+    }
   } catch { /* noop */ }
 
   // Cross-check server: does the row in push_tokens match the current token?
@@ -235,6 +258,32 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
                     : ""
               }
             />
+          </div>
+
+          <div className="mt-2 rounded-md border border-dashed p-2">
+            <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Last FCM Received</p>
+            {diag.lastFcm ? (
+              <>
+                <Row label="Time" value={diag.lastFcm.time} />
+                <Row label="Payload Type" value={diag.lastFcm.payloadType} />
+                <Row label="Channel" value={diag.lastFcm.channel} />
+                <Row label="Message ID" value={diag.lastFcm.messageId} />
+                <Row
+                  label="Notification Displayed"
+                  value={diag.lastFcm.displayed === true ? "YES ✅" : diag.lastFcm.displayed === false ? "NO ❌" : "—"}
+                  valueClass={
+                    diag.lastFcm.displayed === true
+                      ? "text-[color:var(--success)]"
+                      : diag.lastFcm.displayed === false
+                        ? "text-destructive"
+                        : ""
+                  }
+                />
+                <Row label="Display Path" value={diag.lastFcm.displayPath} />
+              </>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">No push received on this device yet.</p>
+            )}
           </div>
 
           {channelRows.length > 0 && (

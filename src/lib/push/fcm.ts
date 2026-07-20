@@ -160,12 +160,49 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     await upsertToken(token);
   });
 
+  // Diagnostics: persist a snapshot of the most recently received FCM push so
+  // the Device Diagnostics card can prove delivery/display path.
+  const recordLastFcm = async (
+    event: any,
+    displayPath: string,
+    displayed: boolean,
+  ) => {
+    try {
+      const notif = event?.notification ?? {};
+      const data = (notif.data ?? {}) as Record<string, unknown>;
+      const meta = {
+        time: new Date().toISOString(),
+        payloadType: (data.type as string) ?? (notif.title ? "notification" : "unknown"),
+        channel:
+          (data.channel_id as string) ??
+          (data.channelId as string) ??
+          notif.channelId ??
+          notif.android?.channelId ??
+          "—",
+        messageId: notif.id ?? notif.messageId ?? (data.message_id as string) ?? "—",
+        displayed,
+        displayPath,
+        title: notif.title ?? null,
+        body: notif.body ?? null,
+      };
+      await Preferences.set({ key: "urbanwash.last_fcm_meta", value: JSON.stringify(meta) });
+    } catch { /* noop */ }
+  };
+
   // 4) Foreground: incoming notification
   FirebaseMessaging.addListener("notificationReceived", async (event) => {
     try {
       await Preferences.set({ key: "urbanwash.last_push_at", value: new Date().toISOString() });
     } catch { /* noop */ }
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
+    const hasNotifPayload = !!(event.notification?.title || event.notification?.body);
+    await recordLastFcm(
+      event,
+      hasNotifPayload
+        ? "System Notification (foreground)"
+        : "UrbanwashMessagingService → data-only (foreground)",
+      hasNotifPayload,
+    );
     if (isOffer(data)) {
       await recordEvent("push_delivered", data, { in_app: true });
       // OfferPopup is already mounted globally and listens to realtime; no
@@ -178,6 +215,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     try {
       await Preferences.set({ key: "urbanwash.last_push_opened_at", value: new Date().toISOString() });
     } catch { /* noop */ }
+    await recordLastFcm(event, "System Notification → tap", true);
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
     const link = typeof data.link === "string" ? data.link : null;
     if (isOffer(data)) {
@@ -204,6 +242,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     if (firstOffer) {
       const data = firstOffer.data as OfferPayload;
       await recordEvent("opened", data, { cold_start: true });
+      await recordLastFcm({ notification: firstOffer }, "System Notification (cold-start)", true);
       pendingDeepLink = data;
     }
   } catch {
