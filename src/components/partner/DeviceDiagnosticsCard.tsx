@@ -117,6 +117,20 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     if (lr.value) empty.lastTokenRefreshAt = new Date(lr.value).toLocaleString("en-IN");
     const lu = await Preferences.get({ key: "urbanwash.last_token_upload_at" });
     if (lu.value) empty.lastTokenUploadAt = new Date(lu.value).toLocaleString("en-IN");
+    const lf = await Preferences.get({ key: "urbanwash.last_fcm_meta" });
+    if (lf.value) {
+      try {
+        const m = JSON.parse(lf.value);
+        empty.lastFcm = {
+          time: m.time ? new Date(m.time).toLocaleString("en-IN") : "—",
+          payloadType: m.payloadType ?? "—",
+          channel: m.channel ?? "—",
+          messageId: m.messageId ?? "—",
+          displayed: typeof m.displayed === "boolean" ? m.displayed : null,
+          displayPath: m.displayPath ?? "—",
+        };
+      } catch { /* noop */ }
+    }
   } catch { /* noop */ }
 
   // Cross-check server: does the row in push_tokens match the current token?
