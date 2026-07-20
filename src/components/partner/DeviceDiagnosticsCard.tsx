@@ -32,6 +32,14 @@ type Diag = {
   lastTokenUploadAt: string;
   tokenUploadedMatch: "match" | "mismatch" | "unknown";
   serverTokenTail: string;
+  lastFcm: {
+    time: string;
+    payloadType: string;
+    channel: string;
+    messageId: string;
+    displayed: boolean | null;
+    displayPath: string;
+  } | null;
 };
 
 function tail(t: string | null | undefined, n = 12): string {
