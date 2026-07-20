@@ -67,6 +67,7 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     lastTokenUploadAt: "—",
     tokenUploadedMatch: "unknown",
     serverTokenTail: "—",
+    lastFcm: null,
   };
   if (web) return empty;
 
