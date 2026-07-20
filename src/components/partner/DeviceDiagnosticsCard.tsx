@@ -260,6 +260,32 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
             />
           </div>
 
+          <div className="mt-2 rounded-md border border-dashed p-2">
+            <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Last FCM Received</p>
+            {diag.lastFcm ? (
+              <>
+                <Row label="Time" value={diag.lastFcm.time} />
+                <Row label="Payload Type" value={diag.lastFcm.payloadType} />
+                <Row label="Channel" value={diag.lastFcm.channel} />
+                <Row label="Message ID" value={diag.lastFcm.messageId} />
+                <Row
+                  label="Notification Displayed"
+                  value={diag.lastFcm.displayed === true ? "YES ✅" : diag.lastFcm.displayed === false ? "NO ❌" : "—"}
+                  valueClass={
+                    diag.lastFcm.displayed === true
+                      ? "text-[color:var(--success)]"
+                      : diag.lastFcm.displayed === false
+                        ? "text-destructive"
+                        : ""
+                  }
+                />
+                <Row label="Display Path" value={diag.lastFcm.displayPath} />
+              </>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">No push received on this device yet.</p>
+            )}
+          </div>
+
           {channelRows.length > 0 && (
             <div className="mt-2 rounded-md border border-dashed p-2">
               <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Channels</p>
