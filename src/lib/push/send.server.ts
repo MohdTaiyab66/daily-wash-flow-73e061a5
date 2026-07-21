@@ -127,7 +127,20 @@ export function inspectPrivateKey(raw: string | undefined) {
     firstInvalidIndex,
     firstInvalidCharCode: firstInvalidCode,
     firstInvalidCharHex: firstInvalidCode >= 0 ? "0x" + firstInvalidCode.toString(16) : null,
+    firstInvalidContextMask:
+      firstInvalidIndex >= 0
+        ? body
+            .slice(Math.max(0, firstInvalidIndex - 8), Math.min(body.length, firstInvalidIndex + 9))
+            .split("")
+            .map((ch, i) => {
+              const absolute = Math.max(0, firstInvalidIndex - 8) + i;
+              if (absolute === firstInvalidIndex) return `[${ch.charCodeAt(0).toString(16)}]`;
+              return /[A-Za-z0-9+/=]/.test(ch) ? "•" : `<${ch.charCodeAt(0).toString(16)}>`;
+            })
+            .join("")
+        : null,
   } as const;
+
 }
 
 async function getAccessToken(): Promise<string> {
