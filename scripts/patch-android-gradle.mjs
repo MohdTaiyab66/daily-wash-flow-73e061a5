@@ -22,7 +22,8 @@ if (!existsSync(APP_GRADLE)) {
 let gradle = await readFile(APP_GRADLE, "utf8");
 
 // Remove any prior injection so we always write the current pin.
-const priorRe = new RegExp(`${MARKER_BEGIN}[\\s\\S]*?${MARKER_END}\\n?`, "g");
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const priorRe = new RegExp(`${escapeRe(MARKER_BEGIN)}[\\s\\S]*?${escapeRe(MARKER_END)}\\n?`, "g");
 gradle = gradle.replace(priorRe, "");
 
 const block = `
