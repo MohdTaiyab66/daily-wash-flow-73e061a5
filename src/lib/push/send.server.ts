@@ -15,9 +15,45 @@ import { SignJWT, importPKCS8 } from "jose";
 type AccessToken = { token: string; exp: number };
 let cachedToken: AccessToken | null = null;
 
-function normalizePem(pem: string): string {
-  // Lovable secrets store newlines as literal "\n"; convert them back.
-  return pem.includes("\\n") ? pem.replace(/\\n/g, "\n") : pem;
+export function normalizePem(raw: string): string {
+  let pem = raw;
+  // Strip surrounding quotes if the secret was pasted with them.
+  if ((pem.startsWith('"') && pem.endsWith('"')) || (pem.startsWith("'") && pem.endsWith("'"))) {
+    pem = pem.slice(1, -1);
+  }
+  // Convert escaped "\n" sequences to real newlines.
+  if (pem.includes("\\n")) pem = pem.replace(/\\n/g, "\n");
+  // Normalize CRLF -> LF.
+  pem = pem.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  // If the value is base64-encoded PEM (no BEGIN marker), decode it.
+  if (!pem.includes("-----BEGIN")) {
+    try {
+      const decoded =
+        typeof Buffer !== "undefined"
+          ? Buffer.from(pem, "base64").toString("utf8")
+          : atob(pem.replace(/\s+/g, ""));
+      if (decoded.includes("-----BEGIN")) pem = decoded;
+    } catch {
+      /* ignore */
+    }
+  }
+  return pem.trim() + "\n";
+}
+
+export function inspectPrivateKey(raw: string | undefined) {
+  if (!raw) return { present: false } as const;
+  const normalized = normalizePem(raw);
+  return {
+    present: true,
+    rawLength: raw.length,
+    rawBeginsWithPem: raw.startsWith("-----BEGIN"),
+    rawContainsEscapedNewlines: raw.includes("\\n"),
+    rawContainsCRLF: raw.includes("\r"),
+    rawStartsWithQuote: raw.startsWith('"') || raw.startsWith("'"),
+    normalizedBeginsWithPem: normalized.startsWith("-----BEGIN"),
+    normalizedHasEndMarker: normalized.includes("-----END"),
+    normalizedLineCount: normalized.split("\n").length,
+  } as const;
 }
 
 async function getAccessToken(): Promise<string> {
@@ -31,7 +67,15 @@ async function getAccessToken(): Promise<string> {
     throw new Error("FCM is not configured: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY");
   }
 
-  const key = await importPKCS8(normalizePem(privateKey), "RS256");
+  let key;
+  try {
+    key = await importPKCS8(normalizePem(privateKey), "RS256");
+  } catch (e) {
+    const shape = inspectPrivateKey(privateKey);
+    throw new Error(
+      `FCM private key parse failed: ${(e as Error).message}. shape=${JSON.stringify(shape)}`,
+    );
+  }
   const jwt = await new SignJWT({
     scope: "https://www.googleapis.com/auth/firebase.messaging",
   })
