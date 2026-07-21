@@ -19,8 +19,35 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
     scenario: input?.scenario ?? "offer",
   }))
   .handler(async ({ data, context }) => {
+    // Runtime env visibility (booleans only — never log values).
+    const env = {
+      projectId: !!process.env.FIREBASE_PROJECT_ID,
+      clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+    };
+    const runtime =
+      (process.env.NODE_ENV as string | undefined) ??
+      (process.env.CF_PAGES ? "cloudflare" : "unknown");
+    // eslint-disable-next-line no-console
+    console.log("[push-selftest] env presence", { runtime, ...env });
+
+    if (!env.projectId || !env.clientEmail || !env.privateKey) {
+      return {
+        ok: false,
+        sent: 0,
+        failed: 0,
+        tokenCount: 0,
+        runtime,
+        env,
+        error: "FCM is not configured in this runtime",
+        results: [],
+        scenario: data.scenario,
+      };
+    }
+
     const { sendOfferPush } = await import("@/lib/push/send.server");
     const userId = context.userId;
+
 
     let title = "🚗 New Daily Shine Customer";
     let body = "TEST PUSH — 90s to accept (self-test)";
@@ -73,6 +100,8 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
       sent: result.sent,
       failed: result.failed,
       tokenCount: result.results.length,
+      runtime,
+      env,
       channelId,
       dataOnly,
       payloadType: type,
@@ -86,4 +115,5 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
       })),
       scenario: data.scenario,
     };
+
   });

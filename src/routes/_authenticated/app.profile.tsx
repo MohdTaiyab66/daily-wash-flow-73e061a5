@@ -187,6 +187,9 @@ function PushSelfTestCard() {
     payloadType: string;
     dataOnly: boolean;
     at: string;
+    runtime?: string;
+    env?: { projectId: boolean; clientEmail: boolean; privateKey: boolean };
+    error?: string;
     results: Array<{
       ok: boolean;
       httpStatus: string;
@@ -210,8 +213,12 @@ function PushSelfTestCard() {
         payloadType: r?.payloadType ?? "—",
         dataOnly: !!r?.dataOnly,
         at: new Date().toLocaleTimeString("en-IN"),
+        runtime: r?.runtime,
+        env: r?.env,
+        error: r?.error,
         results: r?.results ?? [],
       });
+
       if (r?.sent > 0) {
         toast.success(`Sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
           description: "If heads-up doesn't appear, check the diagnostics card above.",
@@ -282,12 +289,35 @@ function PushSelfTestCard() {
               {last.sent}/{last.tokenCount} delivered
             </span>
           </div>
+          {last.env && (
+            <div className="rounded border border-dashed p-1.5 font-mono text-[10px]">
+              <div className="mb-0.5 text-muted-foreground">
+                Backend runtime: {last.runtime ?? "unknown"}
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                <span className="text-muted-foreground">FIREBASE_PROJECT_ID</span>
+                <span className={last.env.projectId ? "text-[color:var(--success)]" : "text-destructive"}>
+                  {last.env.projectId ? "present ✅" : "missing ❌"}
+                </span>
+                <span className="text-muted-foreground">FIREBASE_CLIENT_EMAIL</span>
+                <span className={last.env.clientEmail ? "text-[color:var(--success)]" : "text-destructive"}>
+                  {last.env.clientEmail ? "present ✅" : "missing ❌"}
+                </span>
+                <span className="text-muted-foreground">FIREBASE_PRIVATE_KEY</span>
+                <span className={last.env.privateKey ? "text-[color:var(--success)]" : "text-destructive"}>
+                  {last.env.privateKey ? "present ✅" : "missing ❌"}
+                </span>
+              </div>
+              {last.error && <div className="mt-1 text-destructive">{last.error}</div>}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[10px]">
             <span className="text-muted-foreground">Scenario</span><span>{last.scenario}</span>
             <span className="text-muted-foreground">Payload type</span><span>{last.payloadType}</span>
             <span className="text-muted-foreground">Channel</span><span>{last.channelId}</span>
             <span className="text-muted-foreground">Data-only</span><span>{last.dataOnly ? "yes" : "no"}</span>
           </div>
+
           {last.results.map((r, i) => (
             <div key={i} className="rounded border p-1.5 font-mono text-[10px]">
               <div className="flex items-center justify-between">
