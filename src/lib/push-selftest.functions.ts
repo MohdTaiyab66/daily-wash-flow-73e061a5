@@ -19,14 +19,6 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
     scenario: input?.scenario ?? "offer",
   }))
   .handler(async ({ data, context }) => {
-    // CRASH-ISOLATION MODE: return a minimal, guaranteed-serializable payload
-    // so we can determine whether the APK crash is in response handling / UI
-    // rendering rather than Firebase auth. Remove after crash is diagnosed.
-    if ((data as any)?.scenario) {
-      // eslint-disable-next-line no-console
-      console.log("[push-selftest] crash-isolation stub hit", { scenario: data.scenario, userId: context.userId });
-      return { ok: false, error: "diagnostic" } as any;
-    }
     try {
       // Runtime env visibility (booleans only — never log values).
       const env = {
