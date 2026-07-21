@@ -28,8 +28,11 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
     const runtime =
       (process.env.NODE_ENV as string | undefined) ??
       (process.env.CF_PAGES ? "cloudflare" : "unknown");
+
+    const { inspectPrivateKey } = await import("@/lib/push/send.server");
+    const keyShape = inspectPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
     // eslint-disable-next-line no-console
-    console.log("[push-selftest] env presence", { runtime, ...env });
+    console.log("[push-selftest] env presence", { runtime, ...env, keyShape });
 
     if (!env.projectId || !env.clientEmail || !env.privateKey) {
       return {
@@ -39,6 +42,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
         tokenCount: 0,
         runtime,
         env,
+        keyShape,
         error: "FCM is not configured in this runtime",
         results: [],
         scenario: data.scenario,
