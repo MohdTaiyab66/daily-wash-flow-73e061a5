@@ -203,7 +203,30 @@ function PushSelfTestCard() {
   const fire = async (scenario: "offer" | "assignment" | "generic") => {
     setBusy(scenario);
     try {
-      const r: any = await run({ data: { scenario } });
+      let r: any = null;
+      try {
+        r = await run({ data: { scenario } });
+      } catch (rpcErr: any) {
+        // eslint-disable-next-line no-console
+        console.error("[push-selftest] RPC threw", rpcErr, rpcErr?.stack);
+        toast.error("Self-test request failed", {
+          description: rpcErr?.message ?? String(rpcErr),
+        });
+        setLast({
+          scenario,
+          sent: 0,
+          failed: 0,
+          tokenCount: 0,
+          channelId: "—",
+          payloadType: "—",
+          dataOnly: false,
+          at: new Date().toLocaleTimeString("en-IN"),
+          error: `RPC error: ${rpcErr?.message ?? String(rpcErr)}`,
+          results: [],
+        });
+        return;
+      }
+
       setLast({
         scenario,
         sent: r?.sent ?? 0,
@@ -216,23 +239,27 @@ function PushSelfTestCard() {
         runtime: r?.runtime,
         env: r?.env,
         error: r?.error,
-        results: r?.results ?? [],
+        results: Array.isArray(r?.results) ? r.results : [],
       });
 
-      if (r?.sent > 0) {
+      if ((r?.sent ?? 0) > 0) {
         toast.success(`Sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
           description: "If heads-up doesn't appear, check the diagnostics card above.",
         });
-      } else if (r?.tokenCount === 0) {
+      } else if ((r?.tokenCount ?? 0) === 0) {
         toast.error("No push tokens registered", {
           description: "Reopen the app with notifications allowed, then retry.",
         });
+      } else if (r?.error) {
+        toast.error("Self-test error", { description: r.error });
       } else {
         toast.error("FCM rejected every token", {
           description: r?.results?.[0]?.errorCode ?? "See detail below.",
         });
       }
     } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.error("[push-selftest] handler fatal", e, e?.stack);
       toast.error("Self-test failed", { description: e?.message ?? String(e) });
     } finally {
       setBusy(null);
