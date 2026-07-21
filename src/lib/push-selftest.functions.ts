@@ -30,7 +30,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
         (process.env.NODE_ENV as string | undefined) ??
         (process.env.CF_PAGES ? "cloudflare" : "unknown");
 
-      let keyShape: unknown = null;
+      let keyShape: any = null;
       try {
         const { inspectPrivateKey } = await import("@/lib/push/send.server");
         keyShape = inspectPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
