@@ -187,6 +187,9 @@ function PushSelfTestCard() {
     payloadType: string;
     dataOnly: boolean;
     at: string;
+    runtime?: string;
+    env?: { projectId: boolean; clientEmail: boolean; privateKey: boolean };
+    error?: string;
     results: Array<{
       ok: boolean;
       httpStatus: string;
@@ -210,8 +213,12 @@ function PushSelfTestCard() {
         payloadType: r?.payloadType ?? "—",
         dataOnly: !!r?.dataOnly,
         at: new Date().toLocaleTimeString("en-IN"),
+        runtime: r?.runtime,
+        env: r?.env,
+        error: r?.error,
         results: r?.results ?? [],
       });
+
       if (r?.sent > 0) {
         toast.success(`Sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`, {
           description: "If heads-up doesn't appear, check the diagnostics card above.",
