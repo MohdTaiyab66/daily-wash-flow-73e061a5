@@ -163,6 +163,9 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       } catch { /* noop */ }
       console.error("[fcm] push_tokens upsert threw", e);
     }
+  };
+
+
 
 
   try {
