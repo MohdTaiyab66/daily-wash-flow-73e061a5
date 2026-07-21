@@ -3245,7 +3245,7 @@ export type Database = {
         Row: {
           app: string
           created_at: string
-          device_id: string | null
+          device_id: string
           id: string
           invalid_at: string | null
           last_seen: string
@@ -3256,7 +3256,7 @@ export type Database = {
         Insert: {
           app?: string
           created_at?: string
-          device_id?: string | null
+          device_id?: string
           id?: string
           invalid_at?: string | null
           last_seen?: string
@@ -3267,7 +3267,7 @@ export type Database = {
         Update: {
           app?: string
           created_at?: string
-          device_id?: string | null
+          device_id?: string
           id?: string
           invalid_at?: string | null
           last_seen?: string
