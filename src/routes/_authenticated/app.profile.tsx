@@ -179,6 +179,8 @@ function PushSelfTestCard() {
   const [busy, setBusy] = useState<null | "offer" | "assignment" | "generic">(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [last, setLast] = useState<null | {
+    schemaVersion?: number;
+    serverBuild?: string;
     scenario: string;
     sent: number;
     failed: number;
@@ -189,7 +191,7 @@ function PushSelfTestCard() {
     at: string;
     runtime?: string;
     env?: { projectId: boolean; clientEmail: boolean; privateKey: boolean };
-    error?: string;
+    error?: string | null;
     results: Array<{
       ok: boolean;
       httpStatus: string;
@@ -227,7 +229,14 @@ function PushSelfTestCard() {
         return;
       }
 
+      if (r?.schemaVersion !== 2) {
+        // eslint-disable-next-line no-console
+        console.warn("[push-selftest] schema mismatch", { got: r?.schemaVersion, expected: 2 });
+      }
+
       setLast({
+        schemaVersion: r?.schemaVersion,
+        serverBuild: r?.serverBuild,
         scenario,
         sent: r?.sent ?? 0,
         failed: r?.failed ?? 0,
@@ -238,7 +247,7 @@ function PushSelfTestCard() {
         at: new Date().toLocaleTimeString("en-IN"),
         runtime: r?.runtime,
         env: r?.env,
-        error: r?.error,
+        error: r?.error ?? null,
         results: Array.isArray(r?.results) ? r.results : [],
       });
 
