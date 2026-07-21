@@ -30,6 +30,7 @@ type Diag = {
   currentTokenHash: string;
   lastTokenRefreshAt: string;
   lastTokenUploadAt: string;
+  lastTokenUploadError: string;
   tokenUploadedMatch: "match" | "mismatch" | "unknown";
   serverTokenTail: string;
   lastFcm: {
