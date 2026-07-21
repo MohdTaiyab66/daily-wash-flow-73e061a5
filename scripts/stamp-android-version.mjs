@@ -10,9 +10,9 @@ if (!["customer", "partner"].includes(variant)) {
 
 const isCustomer = variant === "customer";
 const appId = isCustomer ? "com.urbanwash.customer" : "com.urbanwash.partner";
-const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.30";
-const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "30");
-const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-17-01";
+const versionName = process.env.PARTNER_APP_VERSION ?? "1.0.32";
+const versionCode = Number(process.env.PARTNER_VERSION_CODE ?? "32");
+const buildId = process.env.PARTNER_BUILD_ID ?? "2026-07-18-trace-01";
 const gradleFile = "android/app/build.gradle";
 const googleServicesFile = "android/app/google-services.json";
 const syncedBuildInfoCandidates = [
@@ -87,12 +87,12 @@ if (!syncedBuildInfo) {
 }
 
 const info = JSON.parse(await readFile(syncedBuildInfo, "utf8"));
-if (info.version !== versionName || info.build !== buildId) {
-  console.error(`[android-build] synced asset mismatch: expected ${versionName} / ${buildId}, got ${info.version} / ${info.build}`);
+if (info.version !== versionName || info.build !== buildId || String(info.buildNumber ?? "") !== String(versionCode)) {
+  console.error(`[android-build] synced asset mismatch: expected ${versionName} / ${buildId} (${versionCode}), got ${info.version} / ${info.build} (${info.buildNumber ?? "missing buildNumber"})`);
   process.exit(1);
 }
 
-console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.version} / ${info.build}`);
+console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.version} / ${info.build} (${info.buildNumber})`);
 
 // Record which variant this android/ folder was last built for, so a later
 // switch (customer <-> partner) triggers a clean wipe via ensure-variant-clean.mjs.
