@@ -67,7 +67,15 @@ async function getAccessToken(): Promise<string> {
     throw new Error("FCM is not configured: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY");
   }
 
-  const key = await importPKCS8(normalizePem(privateKey), "RS256");
+  let key;
+  try {
+    key = await importPKCS8(normalizePem(privateKey), "RS256");
+  } catch (e) {
+    const shape = inspectPrivateKey(privateKey);
+    throw new Error(
+      `FCM private key parse failed: ${(e as Error).message}. shape=${JSON.stringify(shape)}`,
+    );
+  }
   const jwt = await new SignJWT({
     scope: "https://www.googleapis.com/auth/firebase.messaging",
   })
