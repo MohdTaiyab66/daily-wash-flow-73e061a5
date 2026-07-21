@@ -22,9 +22,14 @@ if (!existsSync(APP_GRADLE)) {
 let gradle = await readFile(APP_GRADLE, "utf8");
 
 // Remove any prior injection so we always write the current pin.
-const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const priorRe = new RegExp(`${escapeRe(MARKER_BEGIN)}[\\s\\S]*?${escapeRe(MARKER_END)}\\n?`, "g");
-gradle = gradle.replace(priorRe, "");
+// Use plain string slicing instead of RegExp because the marker contains []
+// and older exported copies failed under Node 24 when the marker was unescaped.
+while (gradle.includes(MARKER_BEGIN) && gradle.includes(MARKER_END)) {
+  const start = gradle.indexOf(MARKER_BEGIN);
+  const end = gradle.indexOf(MARKER_END, start);
+  if (start === -1 || end === -1) break;
+  gradle = gradle.slice(0, start) + gradle.slice(end + MARKER_END.length).replace(/^\r?\n/, "");
+}
 
 const block = `
 ${MARKER_BEGIN}
