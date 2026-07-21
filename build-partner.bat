@@ -153,6 +153,7 @@ echo.
 echo [5/6] Building web bundle...
 echo   Source marker: public\build-info.json
 type public\build-info.json || goto :fail
+call node scripts\verify-build-marker.mjs "public\build-info.json" "source marker" || goto :fail
 call bun run build || goto :fail
 
 echo   Preparing mobile web shell (Capacitor webDir)...
@@ -166,6 +167,7 @@ if not exist "mobile-shell\build-info.json" (
   echo   [X] Missing mobile-shell\build-info.json after prepare-mobile-shell
   goto :fail
 )
+call node scripts\verify-build-marker.mjs "mobile-shell\build-info.json" "mobile shell marker" || goto :fail
 findstr /C:"https://daily-wash-flow.lovable.app/auth" "mobile-shell\index.html" >nul || (
   echo   [X] mobile-shell\index.html does not point to the Partner login URL.
   goto :fail
@@ -180,6 +182,7 @@ if not exist ".output\public\build-info.json" (
 )
 echo   [OK] Latest dist asset present: .output\public\build-info.json
 type .output\public\build-info.json || goto :fail
+call node scripts\verify-build-marker.mjs ".output\public\build-info.json" "dist marker" || goto :fail
 echo   [OK] Capacitor webDir ready: mobile-shell\index.html
 
 echo   Ensuring android/ matches the current variant (%VARIANT%)...
@@ -228,8 +231,10 @@ if not exist "android\app\src\main\assets\public\build-info.json" if not exist "
 echo   [OK] Android asset copied from latest dist:
 if exist "android\app\src\main\assets\public\build-info.json" (
   type android\app\src\main\assets\public\build-info.json || goto :fail
+  call node scripts\verify-build-marker.mjs "android\app\src\main\assets\public\build-info.json" "android asset marker" || goto :fail
 ) else (
   type android\app\src\main\assets\build-info.json || goto :fail
+  call node scripts\verify-build-marker.mjs "android\app\src\main\assets\build-info.json" "android asset marker" || goto :fail
 )
 
 echo   Stamping Android version and verifying synced build marker...
