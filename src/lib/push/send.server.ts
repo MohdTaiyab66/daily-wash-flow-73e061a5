@@ -43,6 +43,21 @@ export function normalizePem(raw: string): string {
 export function inspectPrivateKey(raw: string | undefined) {
   if (!raw) return { present: false } as const;
   const normalized = normalizePem(raw);
+  const body = normalized
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+  const validBase64 = /^[A-Za-z0-9+/=]+$/.test(body);
+  let firstInvalidIndex = -1;
+  let firstInvalidCode = -1;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (!/[A-Za-z0-9+/=]/.test(ch)) {
+      firstInvalidIndex = i;
+      firstInvalidCode = body.charCodeAt(i);
+      break;
+    }
+  }
   return {
     present: true,
     rawLength: raw.length,
@@ -53,6 +68,11 @@ export function inspectPrivateKey(raw: string | undefined) {
     normalizedBeginsWithPem: normalized.startsWith("-----BEGIN"),
     normalizedHasEndMarker: normalized.includes("-----END"),
     normalizedLineCount: normalized.split("\n").length,
+    bodyLength: body.length,
+    bodyValidBase64: validBase64,
+    firstInvalidIndex,
+    firstInvalidCharCode: firstInvalidCode,
+    firstInvalidCharHex: firstInvalidCode >= 0 ? "0x" + firstInvalidCode.toString(16) : null,
   } as const;
 }
 
