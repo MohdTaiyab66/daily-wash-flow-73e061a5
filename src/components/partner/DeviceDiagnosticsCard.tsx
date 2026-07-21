@@ -66,6 +66,7 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     currentTokenHash: "—",
     lastTokenRefreshAt: "—",
     lastTokenUploadAt: "—",
+    lastTokenUploadError: "",
     tokenUploadedMatch: "unknown",
     serverTokenTail: "—",
     lastFcm: null,
