@@ -215,10 +215,10 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
           <Row label="Platform" value={diag.platform} />
           <Row label="App" value={`v${diag.appVersion} (${diag.buildId})`} />
           <Row
-            label="FCM Token"
+            label="Local FCM Token"
             value={
               diag.fcmTokenStatus === "registered"
-                ? `Registered ✅ ${diag.fcmToken}`
+                ? `Present ✅ ${diag.fcmToken}`
                 : diag.fcmTokenStatus === "web"
                   ? "Web (no FCM)"
                   : "Missing ❌"
@@ -227,6 +227,23 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
               diag.fcmTokenStatus === "registered"
                 ? "text-[color:var(--success)]"
                 : diag.fcmTokenStatus === "missing"
+                  ? "text-destructive"
+                  : ""
+            }
+          />
+          <Row
+            label="Server Registration"
+            value={
+              diag.tokenUploadedMatch === "match"
+                ? "Present ✅"
+                : diag.tokenUploadedMatch === "mismatch"
+                  ? "Missing ❌"
+                  : "unknown"
+            }
+            valueClass={
+              diag.tokenUploadedMatch === "match"
+                ? "text-[color:var(--success)]"
+                : diag.tokenUploadedMatch === "mismatch"
                   ? "text-destructive"
                   : ""
             }
@@ -262,7 +279,11 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
                     : ""
               }
             />
+            {diag.lastTokenUploadError ? (
+              <Row label="Last upload error" value={diag.lastTokenUploadError} valueClass="text-destructive" />
+            ) : null}
           </div>
+
 
           <div className="mt-2 rounded-md border border-dashed p-2">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Last FCM Received</p>
