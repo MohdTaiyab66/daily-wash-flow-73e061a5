@@ -16,15 +16,52 @@ type AccessToken = { token: string; exp: number };
 let cachedToken: AccessToken | null = null;
 
 export function normalizePem(raw: string): string {
-  let pem = raw;
-  // Strip surrounding quotes if the secret was pasted with them.
-  if ((pem.startsWith('"') && pem.endsWith('"')) || (pem.startsWith("'") && pem.endsWith("'"))) {
+  let pem = raw.trim().replace(/^\uFEFF/, "");
+
+  // If the full service-account JSON was pasted by mistake, use only private_key.
+  if (pem.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(pem) as { private_key?: unknown };
+      if (typeof parsed.private_key === "string") pem = parsed.private_key;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // If a JSON property line was pasted (`"private_key": "...",`), unwrap the string value.
+  const propertyMatch = pem.match(/^\s*"private_key"\s*:\s*("(?:[^"\\]|\\.)*")\s*,?\s*$/s);
+  if (propertyMatch) {
+    try {
+      pem = JSON.parse(propertyMatch[1]) as string;
+    } catch {
+      pem = propertyMatch[1];
+    }
+  }
+
+  pem = pem.trim();
+  // Unwrap a complete JSON string if the secret manager returns one.
+  if (pem.startsWith('"') && pem.endsWith('"')) {
+    try {
+      pem = JSON.parse(pem) as string;
+    } catch {
+      pem = pem.slice(1, -1);
+    }
+  } else if (pem.startsWith("'") && pem.endsWith("'")) {
     pem = pem.slice(1, -1);
   }
+
+  // Some runtimes/copy paths leave only a trailing JSON quote/comma. Strip only
+  // boundary punctuation; do not mutate the base64 body itself.
+  pem = pem.trim().replace(/^["']+/, "").replace(/["',]+$/, "").trim();
+
   // Convert escaped "\n" sequences to real newlines.
   if (pem.includes("\\n")) pem = pem.replace(/\\n/g, "\n");
   // Normalize CRLF -> LF.
   pem = pem.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  // Re-run boundary cleanup after newline normalization in case the quote was
+  // after a literal \n sequence.
+  pem = pem.trim().replace(/^["']+/, "").replace(/["',]+$/, "").trim();
+
   // If the value is base64-encoded PEM (no BEGIN marker), decode it.
   if (!pem.includes("-----BEGIN")) {
     try {
@@ -40,14 +77,21 @@ export function normalizePem(raw: string): string {
   return pem.trim() + "\n";
 }
 
-export function inspectPrivateKey(raw: string | undefined) {
-  if (!raw) return { present: false } as const;
-  const normalized = normalizePem(raw);
-  const body = normalized
+export function extractPemBody(normalizedPem: string): string {
+  return normalizedPem
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
     .replace(/\s/g, "");
+}
+
+export function inspectPrivateKey(raw: string | undefined) {
+  if (!raw) return { present: false } as const;
+  const normalized = normalizePem(raw);
+  const body = extractPemBody(normalized);
   const validBase64 = /^[A-Za-z0-9+/=]+$/.test(body);
+  const invalidIndexes = [...body]
+    .map((ch, index) => ({ ch, index }))
+    .filter(({ ch }) => !/[A-Za-z0-9+/=]/.test(ch));
   let firstInvalidIndex = -1;
   let firstInvalidCode = -1;
   for (let i = 0; i < body.length; i++) {
@@ -58,6 +102,7 @@ export function inspectPrivateKey(raw: string | undefined) {
       break;
     }
   }
+  const tail20Mask = body.slice(-20).replace(/[A-Za-z0-9+/=]/g, "•");
   return {
     present: true,
     rawLength: raw.length,
@@ -70,6 +115,15 @@ export function inspectPrivateKey(raw: string | undefined) {
     normalizedLineCount: normalized.split("\n").length,
     bodyLength: body.length,
     bodyValidBase64: validBase64,
+    bodyQuoteCount: [...body].filter((ch) => ch === '"').length,
+    bodyEndsWithQuote: body.endsWith('"'),
+    bodyTail20Mask: tail20Mask,
+    last10NonBase64CharCodes: [...body.slice(-10)].map((ch) =>
+      /[A-Za-z0-9+/=]/.test(ch) ? null : ch.charCodeAt(0),
+    ),
+    invalidCharCount: invalidIndexes.length,
+    lastInvalidIndex: invalidIndexes.at(-1)?.index ?? -1,
+    lastInvalidCharHex: invalidIndexes.at(-1) ? "0x" + invalidIndexes.at(-1)!.ch.charCodeAt(0).toString(16) : null,
     firstInvalidIndex,
     firstInvalidCharCode: firstInvalidCode,
     firstInvalidCharHex: firstInvalidCode >= 0 ? "0x" + firstInvalidCode.toString(16) : null,
