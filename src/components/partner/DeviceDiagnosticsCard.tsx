@@ -30,6 +30,7 @@ type Diag = {
   currentTokenHash: string;
   lastTokenRefreshAt: string;
   lastTokenUploadAt: string;
+  lastTokenUploadError: string;
   tokenUploadedMatch: "match" | "mismatch" | "unknown";
   serverTokenTail: string;
   lastFcm: {
@@ -65,6 +66,7 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     currentTokenHash: "—",
     lastTokenRefreshAt: "—",
     lastTokenUploadAt: "—",
+    lastTokenUploadError: "",
     tokenUploadedMatch: "unknown",
     serverTokenTail: "—",
     lastFcm: null,
@@ -117,6 +119,8 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     if (lr.value) empty.lastTokenRefreshAt = new Date(lr.value).toLocaleString("en-IN");
     const lu = await Preferences.get({ key: "urbanwash.last_token_upload_at" });
     if (lu.value) empty.lastTokenUploadAt = new Date(lu.value).toLocaleString("en-IN");
+    const lue = await Preferences.get({ key: "urbanwash.last_token_upload_error" });
+    if (lue.value) empty.lastTokenUploadError = lue.value;
     const lf = await Preferences.get({ key: "urbanwash.last_fcm_meta" });
     if (lf.value) {
       try {
@@ -211,10 +215,10 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
           <Row label="Platform" value={diag.platform} />
           <Row label="App" value={`v${diag.appVersion} (${diag.buildId})`} />
           <Row
-            label="FCM Token"
+            label="Local FCM Token"
             value={
               diag.fcmTokenStatus === "registered"
-                ? `Registered ✅ ${diag.fcmToken}`
+                ? `Present ✅ ${diag.fcmToken}`
                 : diag.fcmTokenStatus === "web"
                   ? "Web (no FCM)"
                   : "Missing ❌"
@@ -223,6 +227,23 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
               diag.fcmTokenStatus === "registered"
                 ? "text-[color:var(--success)]"
                 : diag.fcmTokenStatus === "missing"
+                  ? "text-destructive"
+                  : ""
+            }
+          />
+          <Row
+            label="Server Registration"
+            value={
+              diag.tokenUploadedMatch === "match"
+                ? "Present ✅"
+                : diag.tokenUploadedMatch === "mismatch"
+                  ? "Missing ❌"
+                  : "unknown"
+            }
+            valueClass={
+              diag.tokenUploadedMatch === "match"
+                ? "text-[color:var(--success)]"
+                : diag.tokenUploadedMatch === "mismatch"
                   ? "text-destructive"
                   : ""
             }
@@ -258,7 +279,11 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
                     : ""
               }
             />
+            {diag.lastTokenUploadError ? (
+              <Row label="Last upload error" value={diag.lastTokenUploadError} valueClass="text-destructive" />
+            ) : null}
           </div>
+
 
           <div className="mt-2 rounded-md border border-dashed p-2">
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Last FCM Received</p>

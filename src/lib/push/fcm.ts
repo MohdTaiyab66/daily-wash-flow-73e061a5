@@ -142,12 +142,31 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         try {
           await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
           await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
+          await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
         } catch { /* noop */ }
+      } else {
+        try {
+          await Preferences.set({
+            key: "urbanwash.last_token_upload_error",
+            value: `${error.code ?? ""} ${error.message ?? ""}`.trim(),
+          });
+        } catch { /* noop */ }
+        // Surface in console so remote log capture picks it up.
+        console.error("[fcm] push_tokens upsert failed", error);
       }
-    } catch {
-      /* noop */
+    } catch (e: any) {
+      try {
+        await Preferences.set({
+          key: "urbanwash.last_token_upload_error",
+          value: String(e?.message ?? e ?? "unknown"),
+        });
+      } catch { /* noop */ }
+      console.error("[fcm] push_tokens upsert threw", e);
     }
   };
+
+
+
 
   try {
     const { token } = await FirebaseMessaging.getToken();
