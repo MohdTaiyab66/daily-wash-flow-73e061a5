@@ -3,83 +3,150 @@
  *
  * Sends a real FCM push to the caller's own registered push_tokens, using the
  * exact same code path as the offer dispatcher (data-only, HIGH priority,
- * `assignments_v3` channel). Purpose: verify Android delivery in every device
- * state (foreground / background / killed / locked / Doze) without needing a
- * paid booking to flow through the pipeline.
+ * `assignments_v3` channel).
  *
- * Returns per-token results so the UI can show which tokens succeeded and
- * which errored (UNREGISTERED, INVALID_ARGUMENT, etc.).
+ * ─────────────────────────────────────────────────────────────────────────
+ * RESPONSE SCHEMA — v2  (FROZEN — client parser depends on this exact shape)
+ * ─────────────────────────────────────────────────────────────────────────
+ * Every code path MUST return every field. No optional keys, no drift.
+ *
+ *   schemaVersion : 2
+ *   serverBuild   : string          // build id the backend was serving
+ *   runtime       : string          // "cloudflare" | "unknown" | ...
+ *   env           : { projectId, clientEmail, privateKey } booleans
+ *   keyShape      : any | null      // structural PEM diagnostics (no secrets)
+ *   scenario      : "offer" | "assignment" | "generic"
+ *   channelId     : string          // "—" if not reached
+ *   payloadType   : string          // "—" if not reached
+ *   dataOnly      : boolean         // false if not reached
+ *   ok            : boolean
+ *   sent          : number
+ *   failed        : number
+ *   tokenCount    : number
+ *   error         : string | null
+ *   stack         : string | null
+ *   results       : Array<{ ok, httpStatus, messageId, errorCode, errorMessage, tokenTail }>
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const SCHEMA_VERSION = 2 as const;
+
+type ResultRow = {
+  ok: boolean;
+  httpStatus: string;
+  messageId: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  tokenTail: string | null;
+};
+
+type SelfTestResponse = {
+  schemaVersion: typeof SCHEMA_VERSION;
+  serverBuild: string;
+  runtime: string;
+  env: { projectId: boolean; clientEmail: boolean; privateKey: boolean };
+  keyShape: any | null;
+  scenario: "offer" | "assignment" | "generic";
+  channelId: string;
+  payloadType: string;
+  dataOnly: boolean;
+  ok: boolean;
+  sent: number;
+  failed: number;
+  tokenCount: number;
+  error: string | null;
+  stack: string | null;
+  results: ResultRow[];
+};
+
+function baseResponse(scenario: "offer" | "assignment" | "generic"): SelfTestResponse {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    serverBuild: process.env.PARTNER_BUILD_ID ?? process.env.BUILD_ID ?? "unknown",
+    runtime:
+      (process.env.NODE_ENV as string | undefined) ??
+      (process.env.CF_PAGES ? "cloudflare" : "unknown"),
+    env: {
+      projectId: !!process.env.FIREBASE_PROJECT_ID,
+      clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+    },
+    keyShape: null,
+    scenario,
+    channelId: "—",
+    payloadType: "—",
+    dataOnly: false,
+    ok: false,
+    sent: 0,
+    failed: 0,
+    tokenCount: 0,
+    error: null,
+    stack: null,
+    results: [],
+  };
+}
 
 export const sendPushSelfTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { scenario?: "offer" | "assignment" | "generic" }) => ({
     scenario: input?.scenario ?? "offer",
   }))
-  .handler(async ({ data, context }) => {
-    try {
-      // Runtime env visibility (booleans only — never log values).
-      const env = {
-        projectId: !!process.env.FIREBASE_PROJECT_ID,
-        clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
-      };
-      const runtime =
-        (process.env.NODE_ENV as string | undefined) ??
-        (process.env.CF_PAGES ? "cloudflare" : "unknown");
+  .handler(async ({ data, context }): Promise<SelfTestResponse> => {
+    const res = baseResponse(data.scenario);
 
-      let keyShape: any = null;
+    try {
       try {
         const { inspectPrivateKey } = await import("@/lib/push/send.server");
-        keyShape = inspectPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+        res.keyShape = inspectPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
       } catch (inspectErr) {
-        keyShape = { inspectError: (inspectErr as Error)?.message ?? String(inspectErr) };
+        res.keyShape = { inspectError: (inspectErr as Error)?.message ?? String(inspectErr) };
       }
       // eslint-disable-next-line no-console
-      console.log("[push-selftest] env presence", { runtime, ...env, keyShape });
+      console.log("[push-selftest] env presence", {
+        runtime: res.runtime,
+        serverBuild: res.serverBuild,
+        ...res.env,
+        keyShape: res.keyShape,
+      });
 
-      if (!env.projectId || !env.clientEmail || !env.privateKey) {
-        return {
-          ok: false,
-          sent: 0,
-          failed: 0,
-          tokenCount: 0,
-          runtime,
-          env,
-          keyShape,
-          error: "FCM is not configured in this runtime",
-          results: [],
-          scenario: data.scenario,
-        };
+      if (!res.env.projectId || !res.env.clientEmail || !res.env.privateKey) {
+        res.error = "FCM is not configured in this runtime";
+        return res;
       }
 
       const userId = context.userId;
 
-      let title = "🚗 New Daily Shine Customer";
-      let body = "TEST PUSH — 90s to accept (self-test)";
-      let type = "daily_shine_offer";
-      let dataOnly = true;
-      let channelId: "assignments_v3" | "offers_v3" | "general" = "assignments_v3";
-
       if (data.scenario === "assignment") {
-        title = "🚗 Test assignment";
-        body = "TEST PUSH — assignment heads-up (self-test)";
-        type = "new_assignment";
-        dataOnly = true;
-        channelId = "assignments_v3";
+        res.channelId = "assignments_v3";
+        res.payloadType = "new_assignment";
+        res.dataOnly = true;
       } else if (data.scenario === "generic") {
-        title = "Urban Wash test";
-        body = "TEST PUSH — generic tray (self-test)";
-        type = "generic_test";
-        dataOnly = false;
-        channelId = "general";
+        res.channelId = "general";
+        res.payloadType = "generic_test";
+        res.dataOnly = false;
+      } else {
+        res.channelId = "assignments_v3";
+        res.payloadType = "daily_shine_offer";
+        res.dataOnly = true;
       }
+
+      const title =
+        data.scenario === "assignment"
+          ? "🚗 Test assignment"
+          : data.scenario === "generic"
+            ? "Urban Wash test"
+            : "🚗 New Daily Shine Customer";
+      const body =
+        data.scenario === "assignment"
+          ? "TEST PUSH — assignment heads-up (self-test)"
+          : data.scenario === "generic"
+            ? "TEST PUSH — generic tray (self-test)"
+            : "TEST PUSH — 90s to accept (self-test)";
 
       const tag = `selftest-${Date.now()}`;
       const payload: Record<string, string> = {
-        type,
+        type: res.payloadType,
         link: "/app",
         selftest: "1",
         offer_id: tag,
@@ -100,71 +167,36 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
           title,
           body,
           data: payload,
-          channelId,
-          dataOnly,
+          channelId: res.channelId as "assignments_v3" | "offers_v3" | "general",
+          dataOnly: res.dataOnly,
           tag,
         });
 
-        return {
-          ok: result.sent > 0,
-          sent: result.sent,
-          failed: result.failed,
-          tokenCount: result.results.length,
-          runtime,
-          env,
-          keyShape,
-          channelId,
-          dataOnly,
-          payloadType: type,
-          results: result.results.map((r) => ({
-            ok: r.ok,
-            httpStatus: r.ok ? "200 OK" : (r.errorCode ?? "ERROR"),
-            messageId: r.messageId ?? null,
-            errorCode: r.errorCode ?? null,
-            errorMessage: r.errorMessage ?? null,
-            tokenTail: r.token ? r.token.slice(-12) : null,
-          })),
-          scenario: data.scenario,
-        };
+        res.sent = result.sent;
+        res.failed = result.failed;
+        res.tokenCount = result.results.length;
+        res.ok = result.sent > 0;
+        res.results = result.results.map((r) => ({
+          ok: r.ok,
+          httpStatus: r.ok ? "200 OK" : (r.errorCode ?? "ERROR"),
+          messageId: r.messageId ?? null,
+          errorCode: r.errorCode ?? null,
+          errorMessage: r.errorMessage ?? null,
+          tokenTail: r.token ? r.token.slice(-12) : null,
+        }));
+        return res;
       } catch (sendErr) {
-        const message = (sendErr as Error)?.message ?? String(sendErr);
-        const stack = (sendErr as Error)?.stack ?? null;
+        res.error = (sendErr as Error)?.message ?? String(sendErr);
+        res.stack = (sendErr as Error)?.stack ?? null;
         // eslint-disable-next-line no-console
-        console.error("[push-selftest] sendOfferPush threw", { message, stack });
-        return {
-          ok: false,
-          sent: 0,
-          failed: 0,
-          tokenCount: 0,
-          runtime,
-          env,
-          keyShape,
-          channelId,
-          dataOnly,
-          payloadType: type,
-          error: message,
-          stack,
-          results: [],
-          scenario: data.scenario,
-        };
+        console.error("[push-selftest] sendOfferPush threw", { message: res.error, stack: res.stack });
+        return res;
       }
     } catch (fatal) {
-      const message = (fatal as Error)?.message ?? String(fatal);
-      const stack = (fatal as Error)?.stack ?? null;
+      res.error = (fatal as Error)?.message ?? String(fatal);
+      res.stack = (fatal as Error)?.stack ?? null;
       // eslint-disable-next-line no-console
-      console.error("[push-selftest] fatal", { message, stack });
-      return {
-        ok: false,
-        sent: 0,
-        failed: 0,
-        tokenCount: 0,
-        runtime: "unknown",
-        env: { projectId: false, clientEmail: false, privateKey: false },
-        error: message,
-        stack,
-        results: [],
-        scenario: data?.scenario ?? "offer",
-      };
+      console.error("[push-selftest] fatal", { message: res.error, stack: res.stack });
+      return res;
     }
   });
-
