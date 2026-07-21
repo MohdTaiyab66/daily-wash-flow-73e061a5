@@ -100,6 +100,8 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
       sent: result.sent,
       failed: result.failed,
       tokenCount: result.results.length,
+      runtime,
+      env,
       channelId,
       dataOnly,
       payloadType: type,
@@ -113,4 +115,5 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
       })),
       scenario: data.scenario,
     };
+
   });
