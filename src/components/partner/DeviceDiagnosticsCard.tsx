@@ -119,6 +119,8 @@ async function loadDiagnostics(userId: string | null): Promise<Diag> {
     if (lr.value) empty.lastTokenRefreshAt = new Date(lr.value).toLocaleString("en-IN");
     const lu = await Preferences.get({ key: "urbanwash.last_token_upload_at" });
     if (lu.value) empty.lastTokenUploadAt = new Date(lu.value).toLocaleString("en-IN");
+    const lue = await Preferences.get({ key: "urbanwash.last_token_upload_error" });
+    if (lue.value) empty.lastTokenUploadError = lue.value;
     const lf = await Preferences.get({ key: "urbanwash.last_fcm_meta" });
     if (lf.value) {
       try {
