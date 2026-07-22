@@ -60,5 +60,78 @@ ${MARKER_END}
 
 // Append to end of file (safest — cap-generated file has no stable anchor).
 gradle = gradle.trimEnd() + "\n" + block + "\n";
+
+// ─── Kotlin support ─────────────────────────────────────────────────────────
+// Capacitor's Android template is Java-only. Our FCM service + accept/decline
+// receiver in android-native/kotlin/*.kt are copied into src/main/java, but
+// without the Kotlin Gradle plugin they are silently ignored by javac and
+// never land in classes.dex. Result: manifest declares
+// com.urbanwash.push.UrbanwashMessagingService, FCM tries to instantiate it
+// on boot, and Android throws ClassNotFoundException → app crash.
+// Apply kotlin-android + stdlib so the .kt files actually compile.
+const KOTLIN_VERSION = "1.9.24";
+const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
+const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
+
+while (gradle.includes(KOTLIN_APP_MARKER_BEGIN) && gradle.includes(KOTLIN_APP_MARKER_END)) {
+  const s = gradle.indexOf(KOTLIN_APP_MARKER_BEGIN);
+  const e = gradle.indexOf(KOTLIN_APP_MARKER_END, s);
+  if (s === -1 || e === -1) break;
+  gradle = gradle.slice(0, s) + gradle.slice(e + KOTLIN_APP_MARKER_END.length).replace(/^\r?\n/, "");
+}
+
+const kotlinAppBlock = `
+${KOTLIN_APP_MARKER_BEGIN}
+apply plugin: 'kotlin-android'
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${KOTLIN_VERSION}"
+}
+${KOTLIN_APP_MARKER_END}
+`;
+gradle = gradle.trimEnd() + "\n" + kotlinAppBlock + "\n";
+
 await writeFile(APP_GRADLE, gradle, "utf8");
 console.log(`[android-gradle] pinned com.razorpay:checkout to ${PIN_VERSION} in ${APP_GRADLE}`);
+console.log(`[android-gradle] applied kotlin-android plugin + stdlib ${KOTLIN_VERSION}`);
+
+// ─── Project-level buildscript: add Kotlin Gradle plugin classpath ──────────
+const ROOT_GRADLE = "android/build.gradle";
+if (existsSync(ROOT_GRADLE)) {
+  let root = await readFile(ROOT_GRADLE, "utf8");
+  const ROOT_BEGIN = "// [uw-kotlin-classpath BEGIN]";
+  const ROOT_END = "// [uw-kotlin-classpath END]";
+  while (root.includes(ROOT_BEGIN) && root.includes(ROOT_END)) {
+    const s = root.indexOf(ROOT_BEGIN);
+    const e = root.indexOf(ROOT_END, s);
+    if (s === -1 || e === -1) break;
+    root = root.slice(0, s) + root.slice(e + ROOT_END.length).replace(/^\r?\n/, "");
+  }
+  // Inject classpath inside buildscript { dependencies { ... } }.
+  const classpathLine = `        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${KOTLIN_VERSION}"`;
+  const injected = `${ROOT_BEGIN}\n${classpathLine}\n        ${ROOT_END}`;
+  // Find `buildscript {` then its `dependencies {` and insert after the opening brace.
+  const bsIdx = root.indexOf("buildscript");
+  if (bsIdx !== -1) {
+    const depIdx = root.indexOf("dependencies", bsIdx);
+    if (depIdx !== -1) {
+      const braceIdx = root.indexOf("{", depIdx);
+      if (braceIdx !== -1) {
+        root = root.slice(0, braceIdx + 1) + "\n" + injected + root.slice(braceIdx + 1);
+        await writeFile(ROOT_GRADLE, root, "utf8");
+        console.log(`[android-gradle] added Kotlin Gradle plugin classpath ${KOTLIN_VERSION} to ${ROOT_GRADLE}`);
+      } else {
+        console.error(`[android-gradle] could not locate buildscript.dependencies { in ${ROOT_GRADLE}`);
+        process.exit(1);
+      }
+    } else {
+      console.error(`[android-gradle] no dependencies block inside buildscript in ${ROOT_GRADLE}`);
+      process.exit(1);
+    }
+  } else {
+    console.error(`[android-gradle] no buildscript block in ${ROOT_GRADLE}`);
+    process.exit(1);
+  }
+} else {
+  console.log(`[android-gradle] skipped root gradle Kotlin classpath: ${ROOT_GRADLE} not found`);
+}
+
