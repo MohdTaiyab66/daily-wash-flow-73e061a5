@@ -272,8 +272,21 @@ if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
   echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
   goto :fail
 )
+
+REM -- 6b. Hard-gate native verification ---------------------------------
+echo.
+echo [6b] Verifying APK native surface (services, receivers, DEX classes)...
+call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk"
+if errorlevel 1 (
+  echo   [X] APK native verification FAILED. Deleting APK so it cannot be shipped.
+  del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
+  del /F /Q "urbanwash-partner.apk" >nul 2>&1
+  goto :fail
+)
+
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-partner.apk" >nul || goto :fail
 for %%A in ("urbanwash-partner.apk") do echo   [OK] Fresh APK copied: %%~fA ^(%%~zA bytes^)
+
 
 echo.
 echo ============================================================
