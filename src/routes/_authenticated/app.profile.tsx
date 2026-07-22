@@ -289,6 +289,16 @@ function PushSelfTestCard() {
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
         Only test Assignment / Generic <b>after</b> Offer works in all three states.
       </p>
+      <div className="mt-3 rounded border border-dashed p-2 font-mono text-[10px]">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+          <span className="text-muted-foreground">Backend Runtime</span>
+          <span>{last?.runtime ?? "tap Offer Test"}</span>
+          <span className="text-muted-foreground">Backend Build</span>
+          <span className="break-all">{last?.serverBuild ?? "tap Offer Test"}</span>
+          <span className="text-muted-foreground">Schema Version</span>
+          <span>{last?.schemaVersion ? `v${last.schemaVersion}` : "tap Offer Test"}</span>
+        </div>
+      </div>
       <Button
         className="mt-3 w-full"
         disabled={busy !== null}
