@@ -275,14 +275,38 @@ if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
 
 REM -- 6b. Hard-gate native verification ---------------------------------
 echo.
-echo [6b] Verifying APK native surface (services, receivers, DEX classes)...
-call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk"
-if errorlevel 1 (
-  echo   [X] APK native verification FAILED. Deleting APK so it cannot be shipped.
+echo ############################################################
+echo #   [6b] APK NATIVE VERIFICATION (hard gate)               #
+echo ############################################################
+echo.
+if not exist "scripts\verify-apk-native.mjs" (
+  echo   [X] scripts\verify-apk-native.mjs is missing from your checkout.
+  echo       Sync the repo and re-run build-partner.bat.
+  goto :fail
+)
+echo   Running: node scripts\verify-apk-native.mjs android\app\build\outputs\apk\debug\app-debug.apk
+echo   (full output also written to apk-verify.log)
+echo.
+call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk" > apk-verify.log 2>&1
+set "VERIFY_RC=%ERRORLEVEL%"
+type apk-verify.log
+echo.
+echo   Verifier exit code: %VERIFY_RC%
+if not "%VERIFY_RC%"=="0" (
+  echo.
+  echo ############################################################
+  echo #   RESULT: FAIL - APK native verification did NOT pass    #
+  echo #   Deleting APK so it cannot be shipped.                  #
+  echo ############################################################
   del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
   del /F /Q "urbanwash-partner.apk" >nul 2>&1
   goto :fail
 )
+echo.
+echo ############################################################
+echo #   RESULT: PASS - APK native surface verified             #
+echo ############################################################
+echo.
 
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-partner.apk" >nul || goto :fail
 for %%A in ("urbanwash-partner.apk") do echo   [OK] Fresh APK copied: %%~fA ^(%%~zA bytes^)
