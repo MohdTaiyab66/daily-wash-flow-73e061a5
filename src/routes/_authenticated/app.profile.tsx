@@ -325,11 +325,18 @@ function PushSelfTestCard() {
               {last.sent}/{last.tokenCount} delivered
             </span>
           </div>
+          <div className="rounded border border-dashed p-1.5 font-mono text-[10px]">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+              <span className="text-muted-foreground">Backend Runtime</span>
+              <span>{last.runtime ?? "unknown"}</span>
+              <span className="text-muted-foreground">Backend Build</span>
+              <span className="break-all">{last.serverBuild ?? "unknown"}</span>
+              <span className="text-muted-foreground">Schema Version</span>
+              <span>v{last.schemaVersion ?? "?"}</span>
+            </div>
+          </div>
           {last.env && (
             <div className="rounded border border-dashed p-1.5 font-mono text-[10px]">
-              <div className="mb-0.5 text-muted-foreground">
-                Backend runtime: {last.runtime ?? "unknown"} · build: {last.serverBuild ?? "unknown"} · schema v{last.schemaVersion ?? "?"}
-              </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 <span className="text-muted-foreground">FIREBASE_PROJECT_ID</span>
                 <span className={last.env.projectId ? "text-[color:var(--success)]" : "text-destructive"}>

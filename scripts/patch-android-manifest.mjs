@@ -144,7 +144,13 @@ if (!mainActivity) {
 }
 
 let activity = await readFile(mainActivity, "utf8");
-const importsToEnsure = ["android.os.Bundle", "android.util.Log", "com.ionicframework.capacitor.Checkout"];
+const importsToEnsure = [
+  "android.os.Bundle",
+  "android.util.Log",
+  "android.webkit.WebSettings",
+  "android.webkit.WebView",
+  "com.ionicframework.capacitor.Checkout",
+];
 for (const importName of importsToEnsure) {
   if (!activity.includes(`import ${importName};`)) {
     activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport ${importName};\n`);
@@ -165,6 +171,32 @@ if (onCreateStart.test(activity)) {
 
 if (!activity.includes("registerPlugin(Checkout.class)")) {
   console.error(`[android-manifest] failed to register Razorpay Checkout plugin in ${mainActivity}`);
+  process.exit(1);
+}
+
+activity = activity.replace(
+  /\n\s*\/\/ urbanwash-webview-cache-bust-start[\s\S]*?\/\/ urbanwash-webview-cache-bust-end\n/g,
+  "\n",
+);
+const cacheBustBlock = `
+        // urbanwash-webview-cache-bust-start
+        WebView urbanwashWebView = getBridge().getWebView();
+        if (urbanwashWebView != null) {
+            urbanwashWebView.clearCache(true);
+            urbanwashWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+            urbanwashWebView.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.i("PARTNER_BUILD", "WEBVIEW_CACHE_CLEARED_FORCE_RELOAD");
+                    urbanwashWebView.reload();
+                }
+            });
+        }
+        // urbanwash-webview-cache-bust-end`;
+if (/super\.onCreate\(savedInstanceState\);/.test(activity)) {
+  activity = activity.replace(/super\.onCreate\(savedInstanceState\);/, `super.onCreate(savedInstanceState);${cacheBustBlock}`);
+} else {
+  console.error(`[android-manifest] MainActivity.java has no super.onCreate(savedInstanceState); cannot install WebView cache reset`);
   process.exit(1);
 }
 
