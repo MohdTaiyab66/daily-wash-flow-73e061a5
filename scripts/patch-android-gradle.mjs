@@ -144,9 +144,17 @@ if (existsSync(ROOT_GRADLE)) {
     if (s === -1 || e === -1) break;
     root = root.slice(0, s) + root.slice(e + ROOT_END.length).replace(/^\r?\n/, "");
   }
-  // Inject classpath inside buildscript { dependencies { ... } }.
+  // Inject classpath inside buildscript { dependencies { ... } } and pin
+  // rootProject.ext.kotlin_version so every @capacitor/* module resolves the
+  // SAME Kotlin version as the app module (they read rootProject.ext first).
   const classpathLine = `        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${KOTLIN_VERSION}"`;
   const injected = `${ROOT_BEGIN}\n${classpathLine}\n        ${ROOT_END}`;
+  if (!/ext\.kotlin_version/.test(root)) {
+    root = `ext.kotlin_version = '${KOTLIN_VERSION}'\n${root}`;
+  } else {
+    root = root.replace(/ext\.kotlin_version\s*=\s*['"][\d.]+['"]/g, `ext.kotlin_version = '${KOTLIN_VERSION}'`);
+  }
+
   // Find `buildscript {` then its `dependencies {` and insert after the opening brace.
   const bsIdx = root.indexOf("buildscript");
   if (bsIdx !== -1) {
