@@ -69,7 +69,12 @@ gradle = gradle.trimEnd() + "\n" + block + "\n";
 // com.urbanwash.push.UrbanwashMessagingService, FCM tries to instantiate it
 // on boot, and Android throws ClassNotFoundException → app crash.
 // Apply kotlin-android + stdlib so the .kt files actually compile.
-const KOTLIN_VERSION = "1.9.24";
+// IMPORTANT: this must match the Kotlin version the bundled @capacitor/*
+// plugins compile against (they default to ext.kotlin_version = '2.2.20').
+// Only one Kotlin Gradle plugin can be loaded per build, so injecting an older
+// version here (e.g. 1.9.24) makes :capacitor-geolocation / :capacitor-camera /
+// :capacitor-filesystem fail with "compileDebugKotlin ... Compilation error".
+const KOTLIN_VERSION = readKotlinVersionFromPlugins();
 const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
 const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
 
