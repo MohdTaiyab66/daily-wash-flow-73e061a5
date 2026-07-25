@@ -114,6 +114,13 @@ while (gradle.includes(KOTLIN_APP_MARKER_BEGIN) && gradle.includes(KOTLIN_APP_MA
 const kotlinAppBlock = `
 ${KOTLIN_APP_MARKER_BEGIN}
 apply plugin: 'kotlin-android'
+android {
+    // Keep Kotlin's JVM target aligned with Java, otherwise AGP fails with
+    // "Inconsistent JVM-target compatibility detected".
+    kotlinOptions {
+        jvmTarget = android.compileOptions.sourceCompatibility.toString()
+    }
+}
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${KOTLIN_VERSION}"
 }
