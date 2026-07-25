@@ -1,5 +1,31 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+
+/**
+ * Detect the Kotlin version the installed Capacitor plugins expect.
+ * Each @capacitor/* Android module declares:
+ *   ext.kotlin_version = project.hasProperty("kotlin_version") ? ... : '2.2.20'
+ * We must load exactly that Kotlin Gradle plugin, otherwise their Kotlin
+ * sources fail to compile.
+ */
+function readKotlinVersionFromPlugins() {
+  const candidates = [
+    "node_modules/@capacitor/geolocation/android/build.gradle",
+    "node_modules/@capacitor/camera/android/build.gradle",
+    "node_modules/@capacitor/filesystem/android/build.gradle",
+    "node_modules/@capacitor/android/capacitor/build.gradle",
+  ];
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    const m = readFileSync(file, "utf8").match(/ext\.kotlin_version\s*=.*?'([\d.]+)'/);
+    if (m) {
+      console.log(`[android-gradle] detected Kotlin ${m[1]} from ${file}`);
+      return m[1];
+    }
+  }
+  console.log("[android-gradle] could not detect plugin Kotlin version; falling back to 2.2.20");
+  return "2.2.20";
+}
 
 /**
  * Force-pin the resolved Razorpay Android Checkout SDK version and expose a
