@@ -1,5 +1,31 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+
+/**
+ * Detect the Kotlin version the installed Capacitor plugins expect.
+ * Each @capacitor/* Android module declares:
+ *   ext.kotlin_version = project.hasProperty("kotlin_version") ? ... : '2.2.20'
+ * We must load exactly that Kotlin Gradle plugin, otherwise their Kotlin
+ * sources fail to compile.
+ */
+function readKotlinVersionFromPlugins() {
+  const candidates = [
+    "node_modules/@capacitor/geolocation/android/build.gradle",
+    "node_modules/@capacitor/camera/android/build.gradle",
+    "node_modules/@capacitor/filesystem/android/build.gradle",
+    "node_modules/@capacitor/android/capacitor/build.gradle",
+  ];
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    const m = readFileSync(file, "utf8").match(/ext\.kotlin_version\s*=.*?'([\d.]+)'/);
+    if (m) {
+      console.log(`[android-gradle] detected Kotlin ${m[1]} from ${file}`);
+      return m[1];
+    }
+  }
+  console.log("[android-gradle] could not detect plugin Kotlin version; falling back to 2.2.20");
+  return "2.2.20";
+}
 
 /**
  * Force-pin the resolved Razorpay Android Checkout SDK version and expose a
@@ -69,7 +95,12 @@ gradle = gradle.trimEnd() + "\n" + block + "\n";
 // com.urbanwash.push.UrbanwashMessagingService, FCM tries to instantiate it
 // on boot, and Android throws ClassNotFoundException → app crash.
 // Apply kotlin-android + stdlib so the .kt files actually compile.
-const KOTLIN_VERSION = "1.9.24";
+// IMPORTANT: this must match the Kotlin version the bundled @capacitor/*
+// plugins compile against (they default to ext.kotlin_version = '2.2.20').
+// Only one Kotlin Gradle plugin can be loaded per build, so injecting an older
+// version here (e.g. 1.9.24) makes :capacitor-geolocation / :capacitor-camera /
+// :capacitor-filesystem fail with "compileDebugKotlin ... Compilation error".
+const KOTLIN_VERSION = readKotlinVersionFromPlugins();
 const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
 const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
 
@@ -83,6 +114,13 @@ while (gradle.includes(KOTLIN_APP_MARKER_BEGIN) && gradle.includes(KOTLIN_APP_MA
 const kotlinAppBlock = `
 ${KOTLIN_APP_MARKER_BEGIN}
 apply plugin: 'kotlin-android'
+android {
+    // Keep Kotlin's JVM target aligned with Java, otherwise AGP fails with
+    // "Inconsistent JVM-target compatibility detected".
+    kotlinOptions {
+        jvmTarget = android.compileOptions.sourceCompatibility.toString()
+    }
+}
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${KOTLIN_VERSION}"
 }
