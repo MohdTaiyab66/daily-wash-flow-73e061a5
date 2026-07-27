@@ -101,6 +101,9 @@ gradle = gradle.trimEnd() + "\n" + block + "\n";
 // version here (e.g. 1.9.24) makes :capacitor-geolocation / :capacitor-camera /
 // :capacitor-filesystem fail with "compileDebugKotlin ... Compilation error".
 const KOTLIN_VERSION = readKotlinVersionFromPlugins();
+=======
+const KOTLIN_VERSION = "2.2.20";
+>>>>>>> Stashed changes
 const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
 const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
 

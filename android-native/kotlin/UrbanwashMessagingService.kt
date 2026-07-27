@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import android.util.Log
 
 /**
  * Urban Wash marketplace push receiver.
@@ -27,8 +28,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     companion object {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
-        const val CHANNEL_OFFERS = "offers_v3"
-        const val CHANNEL_ASSIGNMENTS = "assignments_v3"
+        const val CHANNEL_OFFERS = "offers_v4"
+        const val CHANNEL_ASSIGNMENTS = "assignments_v4"
         const val CHANNEL_GENERAL = "general"
         const val NOTIF_ID_OFFER = 42001
         const val ACTION_ACCEPT = "com.urbanwash.push.ACCEPT"
@@ -48,7 +49,6 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "assignment_updated",
             "partner_assigned",
             "daily_shine",
-            "daily_shine_offer",
             "new_booking",
             "new_customers",
             "route_updated"
@@ -62,10 +62,13 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(msg: RemoteMessage) {
-        val data = msg.data
-        val type = data["type"] ?: return
+    Log.d("UW_PUSH", "onMessageReceived: ${msg.data}")
+
+    val data = msg.data
+    val type = data["type"] ?: return
         when {
-            type == "marketplace_offer" -> {
+            type == "marketplace_offer" ||
+            type == "daily_shine_offer" -> {
                 ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
                     "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = false)
@@ -178,8 +181,10 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigBody))
             .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setAutoCancel(true)
             .setOngoing(false)
             .setContentIntent(contentPI)
@@ -192,6 +197,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
         // Notification id = broadcast id → subsequent updates replace the same
         // heads-up rather than stacking a fresh one.
+Log.d("UW_PUSH", "Posting notification id=${broadcastId.hashCode()}")
+Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_OFFERS)
         NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
     }
 
@@ -229,21 +236,25 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentPI)
             .setFullScreenIntent(contentPI, true)
+Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS)
 
-        NotificationManagerCompat.from(ctx).notify(notifKey.hashCode(), builder.build())
-    }
-
+NotificationManagerCompat.from(ctx)
+    .notify(notifKey.hashCode(), builder.build())
+}
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_GENERAL)
             .setSmallIcon(applicationInfo.icon)
             .setContentTitle(n.title ?: "Urban Wash")
             .setContentText(n.body ?: "")
+.setDefaults(NotificationCompat.DEFAULT_ALL)
+.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         NotificationManagerCompat.from(applicationContext)

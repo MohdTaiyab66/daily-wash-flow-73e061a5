@@ -106,7 +106,12 @@ async function dispatchPending() {
     };
 
     try {
-      const result = await sendOfferPush({
+      console.log("DISPATCHING OFFER", {
+    partner: r.partner_id,
+    offer: r.id,
+    type: data.type,
+})
+        const result = await sendOfferPush({
         userId: r.partner_id,
         title,
         body,

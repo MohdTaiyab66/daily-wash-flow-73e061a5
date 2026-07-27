@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -31,15 +32,34 @@ class OfferActionReceiver : BroadcastReceiver() {
         private const val ACTION_URL =
             "https://daily-wash-flow.lovable.app/api/public/marketplace/offer-action"
     }
-
     override fun onReceive(ctx: Context, intent: Intent) {
-        val token = intent.getStringExtra(UrbanwashMessagingService.EXTRA_TOKEN) ?: return
-        val offerId = intent.getStringExtra(UrbanwashMessagingService.EXTRA_OFFER) ?: return
-        val action = when (intent.action) {
-            UrbanwashMessagingService.ACTION_ACCEPT -> "accept"
-            UrbanwashMessagingService.ACTION_DECLINE -> "decline"
-            else -> return
-        }
+
+    Log.d("UW_ACTION", "Received action = ${intent.action}")
+
+    Log.d(
+        "UW_ACTION",
+        "token=${intent.getStringExtra(UrbanwashMessagingService.EXTRA_TOKEN)} " +
+        "offer=${intent.getStringExtra(UrbanwashMessagingService.EXTRA_OFFER)} " +
+        "broadcast=${intent.getStringExtra(UrbanwashMessagingService.EXTRA_BROADCAST)}"
+    )
+
+    val token = intent.getStringExtra(UrbanwashMessagingService.EXTRA_TOKEN) ?: run {
+        Log.e("UW_ACTION", "Missing action token")
+        return
+    }
+
+    val offerId = intent.getStringExtra(UrbanwashMessagingService.EXTRA_OFFER) ?: run {
+        Log.e("UW_ACTION", "Missing offer id")
+        return
+    }
+
+    Log.d("UW_ACTION", "Passed validation")
+
+    val action = when (intent.action) {
+        UrbanwashMessagingService.ACTION_ACCEPT -> "accept"
+        UrbanwashMessagingService.ACTION_DECLINE -> "decline"
+        else -> return
+    }
 
         // Dismiss the notification immediately so the partner gets instant feedback.
         NotificationManagerCompat.from(ctx).cancel(offerId.hashCode())
@@ -62,6 +82,7 @@ class OfferActionReceiver : BroadcastReceiver() {
             }.toString()
 
             val (ok, message) = post(ACTION_URL, body)
+            Log.d("UW_ACTION", "ok=$ok message=$message")
             nm.cancel(progressId)
 
             val finalTitle: String
@@ -123,15 +144,18 @@ class OfferActionReceiver : BroadcastReceiver() {
             }
             OutputStreamWriter(conn.outputStream).use { it.write(body) }
             val code = conn.responseCode
+            Log.d("UW_ACTION", "HTTP code = $code")
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val respText = stream?.let { BufferedReader(InputStreamReader(it)).use { r -> r.readText() } } ?: ""
+            Log.d("UW_ACTION", "Response = $respText")
             val json = runCatching { JSONObject(respText) }.getOrNull()
             val ok = json?.optBoolean("ok", false) ?: (code in 200..299)
             val reason = json?.optString("reason", "")?.takeIf { it.isNotEmpty() }
             ok to reason
         } catch (e: Exception) {
-            false to null
-        } finally {
+    Log.e("UW_ACTION", "Offer action failed", e)
+    false to e.message
+} finally {
             conn?.disconnect()
         }
     }
