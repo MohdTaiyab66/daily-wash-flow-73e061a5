@@ -9,11 +9,25 @@
  */
 
 const CHUNK_STRING_POOL = 0x001c0001;
+const CHUNK_RESOURCE_MAP = 0x00080180;
 const CHUNK_START_TAG = 0x00100102;
 const CHUNK_END_TAG = 0x00100103;
 
 const TYPE_STRING = 0x03;
 const TYPE_INT_BOOLEAN = 0x12;
+
+// Framework attr resource ids we care about when aapt2 blanks the name string.
+const ATTR_IDS = {
+  0x01010003: "name",
+  0x01010010: "exported",
+  0x0101000e: "enabled",
+  0x01010006: "permission",
+  0x01010011: "process",
+  0x0101055f: "directBootAware",
+  0x01010001: "label",
+  0x01010002: "icon",
+};
+
 
 function readStringPool(buf, off) {
   const chunkSize = buf.readUInt32LE(off + 4);
