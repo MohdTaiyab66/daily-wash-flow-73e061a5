@@ -1,31 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-
-/**
- * Detect the Kotlin version the installed Capacitor plugins expect.
- * Each @capacitor/* Android module declares:
- *   ext.kotlin_version = project.hasProperty("kotlin_version") ? ... : '2.2.20'
- * We must load exactly that Kotlin Gradle plugin, otherwise their Kotlin
- * sources fail to compile.
- */
-function readKotlinVersionFromPlugins() {
-  const candidates = [
-    "node_modules/@capacitor/geolocation/android/build.gradle",
-    "node_modules/@capacitor/camera/android/build.gradle",
-    "node_modules/@capacitor/filesystem/android/build.gradle",
-    "node_modules/@capacitor/android/capacitor/build.gradle",
-  ];
-  for (const file of candidates) {
-    if (!existsSync(file)) continue;
-    const m = readFileSync(file, "utf8").match(/ext\.kotlin_version\s*=.*?'([\d.]+)'/);
-    if (m) {
-      console.log(`[android-gradle] detected Kotlin ${m[1]} from ${file}`);
-      return m[1];
-    }
-  }
-  console.log("[android-gradle] could not detect plugin Kotlin version; falling back to 2.2.20");
-  return "2.2.20";
-}
 
 /**
  * Force-pin the resolved Razorpay Android Checkout SDK version and expose a
@@ -95,13 +69,7 @@ gradle = gradle.trimEnd() + "\n" + block + "\n";
 // com.urbanwash.push.UrbanwashMessagingService, FCM tries to instantiate it
 // on boot, and Android throws ClassNotFoundException → app crash.
 // Apply kotlin-android + stdlib so the .kt files actually compile.
-// IMPORTANT: this must match the Kotlin version the bundled @capacitor/*
-// plugins compile against (they default to ext.kotlin_version = '2.2.20').
-// Only one Kotlin Gradle plugin can be loaded per build, so injecting an older
-// version here (e.g. 1.9.24) makes :capacitor-geolocation / :capacitor-camera /
-// :capacitor-filesystem fail with "compileDebugKotlin ... Compilation error".
-const KOTLIN_VERSION = readKotlinVersionFromPlugins();
-console.log("UW_DEBUG_PATCH_SCRIPT_2026");
+const KOTLIN_VERSION = "1.9.24";
 const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
 const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
 
@@ -116,10 +84,8 @@ const kotlinAppBlock = `
 ${KOTLIN_APP_MARKER_BEGIN}
 apply plugin: 'kotlin-android'
 android {
-    // Keep Kotlin's JVM target aligned with Java, otherwise AGP fails with
-    // "Inconsistent JVM-target compatibility detected".
     kotlinOptions {
-        jvmTarget = "21"
+        jvmTarget = "17"
     }
 }
 dependencies {
@@ -145,17 +111,9 @@ if (existsSync(ROOT_GRADLE)) {
     if (s === -1 || e === -1) break;
     root = root.slice(0, s) + root.slice(e + ROOT_END.length).replace(/^\r?\n/, "");
   }
-  // Inject classpath inside buildscript { dependencies { ... } } and pin
-  // rootProject.ext.kotlin_version so every @capacitor/* module resolves the
-  // SAME Kotlin version as the app module (they read rootProject.ext first).
+  // Inject classpath inside buildscript { dependencies { ... } }.
   const classpathLine = `        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${KOTLIN_VERSION}"`;
   const injected = `${ROOT_BEGIN}\n${classpathLine}\n        ${ROOT_END}`;
-  if (!/ext\.kotlin_version/.test(root)) {
-    root = `ext.kotlin_version = '${KOTLIN_VERSION}'\n${root}`;
-  } else {
-    root = root.replace(/ext\.kotlin_version\s*=\s*['"][\d.]+['"]/g, `ext.kotlin_version = '${KOTLIN_VERSION}'`);
-  }
-
   // Find `buildscript {` then its `dependencies {` and insert after the opening brace.
   const bsIdx = root.indexOf("buildscript");
   if (bsIdx !== -1) {

@@ -1,0 +1,299 @@
+Activity Resolver Table:
+  Schemes:
+      razorpay:
+        7f5f7d6 com.urbanwash.partner/com.razorpay.DeeplinkActivity filter ac1ea57
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "razorpay"
+          Authority: "com.urbanwash.partner": -1
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        dab950a com.urbanwash.partner/.MainActivity filter 933b17b
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+        b383b98 com.urbanwash.partner/com.razorpay.CheckoutActivity filter 8a9dff1
+          Action: "android.intent.action.MAIN"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      androidx.profileinstaller.action.SAVE_PROFILE:
+        6b1bb62 com.urbanwash.partner/androidx.profileinstaller.ProfileInstallReceiver filter 7239c29
+          Action: "androidx.profileinstaller.action.SAVE_PROFILE"
+      androidx.profileinstaller.action.INSTALL_PROFILE:
+        6b1bb62 com.urbanwash.partner/androidx.profileinstaller.ProfileInstallReceiver filter 90d4f3
+          Action: "androidx.profileinstaller.action.INSTALL_PROFILE"
+      com.google.android.c2dm.intent.RECEIVE:
+        417944 com.urbanwash.partner/com.google.firebase.iid.FirebaseInstanceIdReceiver filter d6b8a2d
+          Action: "com.google.android.c2dm.intent.RECEIVE"
+      androidx.profileinstaller.action.SKIP_FILE:
+        6b1bb62 com.urbanwash.partner/androidx.profileinstaller.ProfileInstallReceiver filter 57ee5b0
+          Action: "androidx.profileinstaller.action.SKIP_FILE"
+      androidx.profileinstaller.action.BENCHMARK_OPERATION:
+        6b1bb62 com.urbanwash.partner/androidx.profileinstaller.ProfileInstallReceiver filter 4742bae
+          Action: "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+
+Service Resolver Table:
+  Non-Data Actions:
+      com.google.firebase.MESSAGING_EVENT:
+        159cd4f com.urbanwash.partner/com.urbanwash.push.UrbanwashMessagingService filter 9e4acdc
+          Action: "com.google.firebase.MESSAGING_EVENT"
+        130d1e5 com.urbanwash.partner/io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService filter ddb54ba
+          Action: "com.google.firebase.MESSAGING_EVENT"
+        c0fef6b com.urbanwash.partner/com.capacitorjs.plugins.pushnotifications.MessagingService filter 57dbac8
+          Action: "com.google.firebase.MESSAGING_EVENT"
+        421a761 com.urbanwash.partner/com.google.firebase.messaging.FirebaseMessagingService filter 95a0286
+          Action: "com.google.firebase.MESSAGING_EVENT"
+          mPriority=-500, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      com.google.android.gms.metadata.MODULE_DEPENDENCIES:
+        1bc1747 com.urbanwash.partner/com.google.android.gms.metadata.ModuleDependencies filter 417bb74
+          Action: "com.google.android.gms.metadata.MODULE_DEPENDENCIES"
+
+Domain verification status:
+
+Permissions:
+  Permission [com.urbanwash.partner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (2db25ef):
+    sourcePackage=com.urbanwash.partner
+    uid=10227 gids=[] type=0 prot=signature
+    perm=PermissionInfo{5ad61e com.urbanwash.partner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Registered ContentProviders:
+  com.urbanwash.partner/androidx.core.content.FileProvider:
+    Provider{d1e7eff com.urbanwash.partner/androidx.core.content.FileProvider}
+  com.urbanwash.partner/com.google.firebase.provider.FirebaseInitProvider:
+    Provider{8e7f4cc com.urbanwash.partner/com.google.firebase.provider.FirebaseInitProvider}
+  com.urbanwash.partner/io.ionic.libs.ioncameralib.IONCAMRFileProvider:
+    Provider{9219315 com.urbanwash.partner/io.ionic.libs.ioncameralib.IONCAMRFileProvider}
+  com.urbanwash.partner/androidx.startup.InitializationProvider:
+    Provider{55a362a com.urbanwash.partner/androidx.startup.InitializationProvider}
+
+ContentProvider Authorities:
+  [com.urbanwash.partner.androidx-startup]:
+    Provider{55a362a com.urbanwash.partner/androidx.startup.InitializationProvider}
+      applicationInfo=ApplicationInfo{2b828fc com.urbanwash.partner}
+  [com.urbanwash.partner.firebaseinitprovider]:
+    Provider{8e7f4cc com.urbanwash.partner/com.google.firebase.provider.FirebaseInitProvider}
+      applicationInfo=ApplicationInfo{3ce6b85 com.urbanwash.partner}
+  [com.urbanwash.partner.camera.provider]:
+    Provider{9219315 com.urbanwash.partner/io.ionic.libs.ioncameralib.IONCAMRFileProvider}
+      applicationInfo=ApplicationInfo{1847dda com.urbanwash.partner}
+  [com.urbanwash.partner.fileprovider]:
+    Provider{d1e7eff com.urbanwash.partner/androidx.core.content.FileProvider}
+      applicationInfo=ApplicationInfo{45e320b com.urbanwash.partner}
+
+Key Set Manager:
+  [com.urbanwash.partner]
+      Signing KeySets: 113
+
+Packages:
+  Package [com.urbanwash.partner] (1cf4ef7):
+    appId=10227
+    pkg=Package{95e1164 com.urbanwash.partner}
+    codePath=/data/app/~~bZE-7DczwYp3iF6q8bqiJw==/com.urbanwash.partner-tc0fwY_oCy8MX969O9NRJQ==
+    resourcePath=/data/app/~~bZE-7DczwYp3iF6q8bqiJw==/com.urbanwash.partner-tc0fwY_oCy8MX969O9NRJQ==
+    legacyNativeLibraryDir=/data/app/~~bZE-7DczwYp3iF6q8bqiJw==/com.urbanwash.partner-tc0fwY_oCy8MX969O9NRJQ==/lib
+    extractNativeLibs=false
+    primaryCpuAbi=arm64-v8a
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=32 minSdk=24 targetSdk=36
+    minExtensionVersions=[]
+    versionName=1.0.32
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=2
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_REQUEST_LEGACY_EXTERNAL_STORAGE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.google.android.apps.maps, com.google.android.apps.nbu.paisa.user, com.phonepe.app, net.one97.paytm, in.org.npci.upiapp, in.amazon.mShop.android.shopping, com.myairtelapp, com.mobikwik_new, com.freecharge.android, com.csam.icici.bank.imobile, com.axis.mobile, com.sbi.upi, com.enstage.wibmo.hdfc, com.msf.kbank.mobile]
+    queriesIntents=[Intent { act=android.intent.action.VIEW dat=geo:/... }, Intent { act=android.intent.action.VIEW dat=google.navigation:/... }, Intent { act=android.intent.action.VIEW dat=upi:/... }, Intent { act=android.intent.action.VIEW dat=upi://pay/... }, Intent { act=android.intent.action.SEND }, Intent { act=android.media.action.IMAGE_CAPTURE }, Intent { act=android.intent.action.GET_CONTENT }, Intent { act=android.intent.action.PICK }, Intent { act=android.intent.action.VIEW dat=*:/... typ=*/* }, Intent { act=android.intent.action.VIEW cat=[android.intent.category.BROWSABLE] dat=upi://pay/... typ=*/* }, Intent { act=android.intent.action.MAIN }, Intent { act=android.intent.action.SEND dat=content://*/... typ=*/* }, Intent { act=rzp.device_token.share }]
+    dataDir=/data/user/0/com.urbanwash.partner
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      org.apache.http.legacy
+    usesLibraryFiles:
+      /system/framework/org.apache.http.legacy.jar
+    timeStamp=2026-07-27 16:12:08
+    lastUpdateTime=2026-07-27 16:12:08
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    appMetadataFilePath=null
+    signatures=PackageSignatures{f313b13 version:2, signatures:[81a4af0d], past signatures:[]}
+    installPermissionsFixed=true
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_REQUEST_LEGACY_EXTERNAL_STORAGE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.urbanwash.partner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      android.permission.QUERY_ALL_PACKAGES
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.VIBRATE
+      android.permission.WAKE_LOCK
+      android.permission.USE_FULL_SCREEN_INTENT
+      android.permission.POST_NOTIFICATIONS
+      android.permission.CAMERA
+      android.permission.ACCESS_COARSE_LOCATION
+      android.permission.ACCESS_FINE_LOCATION
+      android.permission.INTERNET
+      android.permission.ACCESS_NETWORK_STATE
+      com.google.android.c2dm.permission.RECEIVE
+      android.permission.NFC
+      com.urbanwash.partner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+      android.permission.READ_BASIC_PHONE_STATE
+    install permissions:
+      com.google.android.c2dm.permission.RECEIVE: granted=true
+      android.permission.NFC: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.INTERNET: granted=true
+      com.urbanwash.partner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: granted=true
+      android.permission.USE_FULL_SCREEN_INTENT: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.READ_BASIC_PHONE_STATE: granted=true
+      android.permission.VIBRATE: granted=true
+      android.permission.QUERY_ALL_PACKAGES: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=101785 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=2026-07-26 21:52:50
+      uninstallReason=0
+      overlay paths:
+        /data/resource-cache/android-SemWT_G_MonetPalette-jsnr.frro
+      gids=[3003]
+      runtime permissions:
+        android.permission.POST_NOTIFICATIONS: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.ACCESS_FINE_LOCATION: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.ACCESS_COARSE_LOCATION: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.CAMERA: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  queries via package name:
+    com.urbanwash.partner:
+      com.google.android.apps.maps
+      com.phonepe.app
+  queries via component:
+    com.samsung.android.dynamiclock:
+      com.urbanwash.partner
+    com.android.settings.intelligence:
+      com.urbanwash.partner
+    com.google.android.apps.messaging:
+      com.urbanwash.partner
+    app.blinkit.onboarding:
+      com.urbanwash.partner
+    com.facebook.katana:
+      com.urbanwash.partner
+    com.urbanwash.partner:
+      com.google.android.documentsui
+      com.sec.android.app.samsungapps
+      com.microsoft.skydrive
+      com.samsung.android.app.contacts
+      com.samsung.android.themestore
+      com.hiya.star
+      com.sec.location.nfwlocationprivacy
+      com.android.dreams.phototable
+      com.google.android.projection.gearhead
+      com.google.android.apps.restore
+      com.google.android.apps.messaging
+      com.google.android.googlequicksearchbox
+      com.google.android.apps.tachyon
+      com.android.chrome
+      com.google.android.gm
+      com.google.android.youtube
+      com.google.android.apps.maps
+      com.mygalaxy
+      com.aura.oobe.samsung
+      com.google.android.setupwizard
+      com.google.android.photopicker
+      com.google.android.cellbroadcastreceiver
+      com.android.cts.priv.ctsshim
+      com.android.cts.ctsshim
+      app.blinkit.onboarding
+      com.facebook.katana
+      com.zepto.rider
+      com.sds.emm.cloud.knox.samsung
+      com.sec.knox.kccagent
+      com.infosysit.springboard
+      com.samsung.ecomm.global.in
+      com.digishakti.adhyayan
+      com.ytheekshana.deviceinfo
+      com.rsupport.rs.activity.rsupport.aas2
+      com.potterlabs.yomo
+      com.blinkit.delivery
+      app.customerapk.android
+      com.sec.android.app.billing
+      app.partnerapk.android
+      com.google.android.healthconnect.controller
+      com.instagram.android
+      com.company.prontopartner
+      com.whatsapp.w4b
+      com.whatsapp
+      com.phonepe.app
+      com.urbanwash.customer
+    com.zepto.rider:
+      com.urbanwash.partner
+    com.infosysit.springboard:
+      com.urbanwash.partner
+    com.potterlabs.yomo:
+      com.urbanwash.partner
+    com.blinkit.delivery:
+      com.urbanwash.partner
+    com.instagram.android:
+      com.urbanwash.partner
+    com.whatsapp.w4b:
+      com.urbanwash.partner
+    com.whatsapp:
+      com.urbanwash.partner
+    com.phonepe.app:
+      com.urbanwash.partner
+    com.urbanwash.customer:
+      com.urbanwash.partner
+  queryable via interaction:
+    User 0:
+      [com.sec.app.RilErrorNotifier,com.samsung.android.lool,com.android.keychain,com.android.dynsystem,com.sec.android.emergencylauncher,com.samsung.android.emergency,com.samsung.android.fmm,com.sec.usbsettings,com.sec.android.diagmonagent,com.android.inputdevices,com.sec.epdg,com.samsung.android.app.omcagent,com.samsung.android.brightnessbackupservice,com.sec.sve,com.samsung.android.app.dressroom,com.android.localtransport,com.samsung.android.uds,com.samsung.accessibility,com.sec.mhs.smarttethering,com.sec.android.app.parser,com.samsung.android.biometrics.app.setting,com.samsung.android.dqagent,android,com.android.settings,com.sec.imslogger,com.samsung.android.forest,com.android.location.fused,com.android.server.telecom,com.sec.android.sdhms,com.android.wallpaperbackup,com.sec.bcservice,com.sec.android.app.factorykeystring,com.wssyncmldm,com.samsung.android.app.settings.bixby,com.skms.android.agent,com.samsung.android.themecenter,com.sec.imsservice,com.samsung.android.da.daagent,com.samsung.android.smartswitchassistant,com.samsung.android.keycustomizationinfobackupservice,com.sec.enterprise.mdm.services.simpin,com.sec.automation,com.samsung.memorysaver,com.sec.android.CcInfo,com.samsung.logwriter,com.sec.android.iaft,com.val.hardware,com.samsung.aasaservice,com.sec.android.app.SecSetupWizard,com.samsung.android.stickercenter,com.android.providers.settings,com.sec.android.app.servicemodeapp,com.sec.android.soagent,com.sec.android.app.personalization,com.samsung.SMT]:
+        com.urbanwash.partner
+      [com.samsung.android.app.routines,com.android.systemui,com.samsung.android.app.clockpack]:
+        com.urbanwash.partner
+      com.sec.android.app.launcher:
+        com.urbanwash.partner
+      com.samsung.android.honeyboard:
+        com.urbanwash.partner
+      [com.google.android.gms,com.google.android.gsf]:
+        com.urbanwash.partner
+      com.google.android.webview:
+        com.urbanwash.partner
+      com.google.android.ext.services:
+        com.urbanwash.partner
+      com.urbanwash.partner:
+        com.google.android.webview
+  queryable via uses-library:
+
+Dexopt state:
+  [com.urbanwash.partner]
+    path: /data/app/~~bZE-7DczwYp3iF6q8bqiJw==/com.urbanwash.partner-tc0fwY_oCy8MX969O9NRJQ==/base.apk
+      arm64: [status=run-from-apk] [reason=unknown] [primary-abi]
+        [location is error]
+
+Compiler stats:
+  [com.urbanwash.partner]
+     base.apk - 1970
+
+Monetization app list:
+com.truecaller
+com.phonepe.app
+in.amazon.mShop.android.shopping
+com.snapchat.android
+
+Monetization apps launched list:
+com.phonepe.app
+
+GalaxyStore badge feature state: false
+
+HeimdAllFS state:
+  HeimdAllFS does not supported.

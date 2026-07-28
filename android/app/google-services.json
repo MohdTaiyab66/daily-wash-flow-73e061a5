@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "781422718869",
+    "project_id": "uw-partner-app",
+    "storage_bucket": "uw-partner-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781422718869:android:2e826f846ff6829b69509c",
+        "android_client_info": {
+          "package_name": "com.urbanwash.partner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAE2E9qNZJXDOxB1oxGjMCZwy_PB90N458"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

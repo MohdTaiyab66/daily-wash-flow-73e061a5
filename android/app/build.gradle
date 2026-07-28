@@ -1,0 +1,115 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.urbanwash.partner"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.urbanwash.partner"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 32
+        versionName "1.0.32"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "com.google.firebase:firebase-messaging:25.0.1"
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [uw-razorpay-pin BEGIN]
+configurations.all {
+    resolutionStrategy {
+        force 'com.razorpay:checkout:1.6.41'
+    }
+}
+dependencies {
+    implementation 'com.razorpay:checkout:1.6.41'
+}
+task printRazorpayResolved {
+    doLast {
+        configurations.findAll { it.canBeResolved }.each { cfg ->
+            try {
+                cfg.resolvedConfiguration.resolvedArtifacts.each { a ->
+                    def id = a.moduleVersion.id
+                    if (id.group == 'com.razorpay' && id.name == 'checkout') {
+                        println "[uw-razorpay-resolved] " + cfg.name + " -> " + id.group + ":" + id.name + ":" + id.version
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+}
+// [uw-razorpay-pin END]
+
+// [uw-kotlin BEGIN]
+apply plugin: 'kotlin-android'
+android {
+    // Keep Kotlin's JVM target aligned with Java, otherwise AGP fails with
+    // "Inconsistent JVM-target compatibility detected".
+    kotlinOptions {
+        jvmTarget = "21"
+    }
+}
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.2.20"
+}
+// [uw-kotlin END]
+
