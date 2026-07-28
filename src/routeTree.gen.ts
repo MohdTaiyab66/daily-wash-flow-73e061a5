@@ -9,107 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as TrustRouteImport } from './routes/trust'
-import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminAddonQueueRouteImport } from './routes/admin.addon-queue'
-import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
-import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
-import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
-import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
-import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
-import { Route as AdminDarRouteImport } from './routes/admin.dar'
-import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
-import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
-import { Route as AdminImportRouteImport } from './routes/admin.import'
-import { Route as AdminIntegrityAuditRouteImport } from './routes/admin.integrity-audit'
-import { Route as AdminLiveRouteImport } from './routes/admin.live'
-import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
-import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
-import { Route as AdminMarketplaceLiveRouteImport } from './routes/admin.marketplace-live'
-import { Route as AdminMarketplaceSettingsRouteImport } from './routes/admin.marketplace-settings'
-import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
-import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
-import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
-import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-modes'
-import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
-import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
-import { Route as AdminPlanInclusionsRouteImport } from './routes/admin.plan-inclusions'
-import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
-import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
-import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
-import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
-import { Route as AdminServiceAreasRouteImport } from './routes/admin.service-areas'
-import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
-import { Route as AdminServicesRouteImport } from './routes/admin.services'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminVehicleAuditRouteImport } from './routes/admin.vehicle-audit'
-import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as CIndexRouteImport } from './routes/c/index'
-import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
-import { Route as CAuthRouteImport } from './routes/c/auth'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CLocationRouteImport } from './routes/c/location'
+import { Route as CAuthRouteImport } from './routes/c/auth'
+import { Route as AdminWalletRouteImport } from './routes/admin.wallet'
+import { Route as AdminVehicleAuditRouteImport } from './routes/admin.vehicle-audit'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminServiceLeadsRouteImport } from './routes/admin.service-leads'
+import { Route as AdminServiceAreasRouteImport } from './routes/admin.service-areas'
+import { Route as AdminRouteManagerRouteImport } from './routes/admin.route-manager'
+import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
+import { Route as AdminRenewalsRouteImport } from './routes/admin.renewals'
+import { Route as AdminReliabilityRouteImport } from './routes/admin.reliability'
+import { Route as AdminPlanInclusionsRouteImport } from './routes/admin.plan-inclusions'
+import { Route as AdminPhotosRouteImport } from './routes/admin.photos'
+import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminPaymentModesRouteImport } from './routes/admin.payment-modes'
+import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
+import { Route as AdminOfferHistoryRouteImport } from './routes/admin.offer-history'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminMarketplaceSettingsRouteImport } from './routes/admin.marketplace-settings'
+import { Route as AdminMarketplaceLiveRouteImport } from './routes/admin.marketplace-live'
+import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
+import { Route as AdminManualAssignmentRouteImport } from './routes/admin.manual-assignment'
+import { Route as AdminLiveRouteImport } from './routes/admin.live'
+import { Route as AdminIntegrityAuditRouteImport } from './routes/admin.integrity-audit'
+import { Route as AdminImportRouteImport } from './routes/admin.import'
+import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
+import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
+import { Route as AdminDarRouteImport } from './routes/admin.dar'
+import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
+import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
+import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
+import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
+import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
+import { Route as AdminAddonQueueRouteImport } from './routes/admin.addon-queue'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
-import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
-import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
-import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
-import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
-import { Route as AuthenticatedAppLiveRouteImport } from './routes/_authenticated/app.live'
-import { Route as AuthenticatedAppMyAssignmentRouteImport } from './routes/_authenticated/app.my-assignment'
-import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
-import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
-import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
-import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
-import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
-import { Route as AdminMarketplaceIdRouteImport } from './routes/admin.marketplace.$id'
-import { Route as AdminOfferDeliveryIdRouteImport } from './routes/admin.offer-delivery.$id'
-import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
-import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
-import { Route as ApiPublicFcmDeliveryReceiptRouteImport } from './routes/api/public/fcm-delivery-receipt'
-import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
-import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
-import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
-import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
-import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
-import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
-import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
-import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
-import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
-import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
-import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/public/admin/trial-verify'
-import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
-import { Route as ApiPublicCronDailyRemindersRouteImport } from './routes/api/public/cron/daily-reminders'
-import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
-import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
-import { Route as ApiPublicCronMarketplacePushDispatchRouteImport } from './routes/api/public/cron/marketplace-push-dispatch'
-import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
-import { Route as ApiPublicCronMonthlyAddonsMaterializeRouteImport } from './routes/api/public/cron/monthly-addons-materialize'
-import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
-import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
-import { Route as ApiPublicMarketplaceOfferActionRouteImport } from './routes/api/public/marketplace/offer-action'
-import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
-import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
-import { Route as CAuthedVehiclesIdRouteImport } from './routes/c/_authed/vehicles_.$id'
+import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
+import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
+import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
+import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
+import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
+import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
+import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
+import { Route as ApiPublicFcmDeliveryReceiptRouteImport } from './routes/api/public/fcm-delivery-receipt'
+import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
+import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.partner-assignment.$id'
+import { Route as AdminOfferDeliveryIdRouteImport } from './routes/admin.offer-delivery.$id'
+import { Route as AdminMarketplaceIdRouteImport } from './routes/admin.marketplace.$id'
+import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
+import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
+import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
+import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
+import { Route as AuthenticatedAppNotificationsRouteImport } from './routes/_authenticated/app.notifications'
+import { Route as AuthenticatedAppMyAssignmentRouteImport } from './routes/_authenticated/app.my-assignment'
+import { Route as AuthenticatedAppLiveRouteImport } from './routes/_authenticated/app.live'
+import { Route as AuthenticatedAppHistoryRouteImport } from './routes/_authenticated/app.history'
+import { Route as AuthenticatedAppEarningsRouteImport } from './routes/_authenticated/app.earnings'
+import { Route as AuthenticatedAppAssignmentsRouteImport } from './routes/_authenticated/app.assignments'
+import { Route as AuthenticatedAppAreaRouteImport } from './routes/_authenticated/app.area'
 import { Route as CAuthedVehiclesAddRouteImport } from './routes/c/_authed/vehicles_.add'
+import { Route as CAuthedVehiclesIdRouteImport } from './routes/c/_authed/vehicles_.$id'
+import { Route as CAuthedServiceSlugRouteImport } from './routes/c/_authed/service.$slug'
+import { Route as CAuthedBookingsIdRouteImport } from './routes/c/_authed/bookings.$id'
+import { Route as ApiPublicMarketplaceOfferActionRouteImport } from './routes/api/public/marketplace/offer-action'
+import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api/public/hooks/notification-push'
+import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
+import { Route as ApiPublicCronMonthlyAddonsMaterializeRouteImport } from './routes/api/public/cron/monthly-addons-materialize'
+import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
+import { Route as ApiPublicCronMarketplacePushDispatchRouteImport } from './routes/api/public/cron/marketplace-push-dispatch'
+import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
+import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
+import { Route as ApiPublicCronDailyRemindersRouteImport } from './routes/api/public/cron/daily-reminders'
+import { Route as ApiPublicCronAssignmentTickRouteImport } from './routes/api/public/cron/assignment-tick'
+import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/public/admin/trial-verify'
+import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
+import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
+import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
 import { Route as CAuthedVehiclesIdPhotoRouteImport } from './routes/c/_authed/vehicles_.$id.photo'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -117,94 +108,123 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrustRoute = TrustRouteImport.update({
-  id: '/trust',
-  path: '/trust',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CIndexRoute = CIndexRouteImport.update({
+  id: '/c/',
+  path: '/c/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAddonQueueRoute = AdminAddonQueueRouteImport.update({
-  id: '/addon-queue',
-  path: '/addon-queue',
+const CLocationRoute = CLocationRouteImport.update({
+  id: '/c/location',
+  path: '/c/location',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CAuthRoute = CAuthRouteImport.update({
+  id: '/c/auth',
+  path: '/c/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWalletRoute = AdminWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAddonsRoute = AdminAddonsRouteImport.update({
-  id: '/addons',
-  path: '/addons',
+const AdminVehicleAuditRoute = AdminVehicleAuditRouteImport.update({
+  id: '/vehicle-audit',
+  path: '/vehicle-audit',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCoverageRoute = AdminCoverageRouteImport.update({
-  id: '/coverage',
-  path: '/coverage',
+const AdminServicesRoute = AdminServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
-  id: '/customer-map',
-  path: '/customer-map',
+const AdminServiceLeadsRoute = AdminServiceLeadsRouteImport.update({
+  id: '/service-leads',
+  path: '/service-leads',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCustomersRoute = AdminCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
+const AdminServiceAreasRoute = AdminServiceAreasRouteImport.update({
+  id: '/service-areas',
+  path: '/service-areas',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDarRoute = AdminDarRouteImport.update({
-  id: '/dar',
-  path: '/dar',
+const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
+  id: '/route-manager',
+  path: '/route-manager',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
-  id: '/expansion-requests',
-  path: '/expansion-requests',
+const AdminRevenueRoute = AdminRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFraudRoute = AdminFraudRouteImport.update({
-  id: '/fraud',
-  path: '/fraud',
+const AdminRenewalsRoute = AdminRenewalsRouteImport.update({
+  id: '/renewals',
+  path: '/renewals',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminImportRoute = AdminImportRouteImport.update({
-  id: '/import',
-  path: '/import',
+const AdminReliabilityRoute = AdminReliabilityRouteImport.update({
+  id: '/reliability',
+  path: '/reliability',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminIntegrityAuditRoute = AdminIntegrityAuditRouteImport.update({
-  id: '/integrity-audit',
-  path: '/integrity-audit',
+const AdminPlanInclusionsRoute = AdminPlanInclusionsRouteImport.update({
+  id: '/plan-inclusions',
+  path: '/plan-inclusions',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLiveRoute = AdminLiveRouteImport.update({
-  id: '/live',
-  path: '/live',
+const AdminPhotosRoute = AdminPhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminManualAssignmentRoute = AdminManualAssignmentRouteImport.update({
-  id: '/manual-assignment',
-  path: '/manual-assignment',
+const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
+const AdminPaymentModesRoute = AdminPaymentModesRouteImport.update({
+  id: '/payment-modes',
+  path: '/payment-modes',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminMarketplaceLiveRoute = AdminMarketplaceLiveRouteImport.update({
-  id: '/marketplace-live',
-  path: '/marketplace-live',
+const AdminPartnersRoute = AdminPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOfferHistoryRoute = AdminOfferHistoryRouteImport.update({
+  id: '/offer-history',
+  path: '/offer-history',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMarketplaceSettingsRoute =
@@ -213,109 +233,89 @@ const AdminMarketplaceSettingsRoute =
     path: '/marketplace-settings',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
+const AdminMarketplaceLiveRoute = AdminMarketplaceLiveRouteImport.update({
+  id: '/marketplace-live',
+  path: '/marketplace-live',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminOfferHistoryRoute = AdminOfferHistoryRouteImport.update({
-  id: '/offer-history',
-  path: '/offer-history',
+const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPartnersRoute = AdminPartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
+const AdminManualAssignmentRoute = AdminManualAssignmentRouteImport.update({
+  id: '/manual-assignment',
+  path: '/manual-assignment',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPaymentModesRoute = AdminPaymentModesRouteImport.update({
-  id: '/payment-modes',
-  path: '/payment-modes',
+const AdminLiveRoute = AdminLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
-  id: '/payouts',
-  path: '/payouts',
+const AdminIntegrityAuditRoute = AdminIntegrityAuditRouteImport.update({
+  id: '/integrity-audit',
+  path: '/integrity-audit',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPhotosRoute = AdminPhotosRouteImport.update({
-  id: '/photos',
-  path: '/photos',
+const AdminImportRoute = AdminImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminPlanInclusionsRoute = AdminPlanInclusionsRouteImport.update({
-  id: '/plan-inclusions',
-  path: '/plan-inclusions',
+const AdminFraudRoute = AdminFraudRouteImport.update({
+  id: '/fraud',
+  path: '/fraud',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReliabilityRoute = AdminReliabilityRouteImport.update({
-  id: '/reliability',
-  path: '/reliability',
+const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
+  id: '/expansion-requests',
+  path: '/expansion-requests',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminRenewalsRoute = AdminRenewalsRouteImport.update({
-  id: '/renewals',
-  path: '/renewals',
+const AdminDarRoute = AdminDarRouteImport.update({
+  id: '/dar',
+  path: '/dar',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminRevenueRoute = AdminRevenueRouteImport.update({
-  id: '/revenue',
-  path: '/revenue',
+const AdminCustomersRoute = AdminCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminRouteManagerRoute = AdminRouteManagerRouteImport.update({
-  id: '/route-manager',
-  path: '/route-manager',
+const AdminCustomerMapRoute = AdminCustomerMapRouteImport.update({
+  id: '/customer-map',
+  path: '/customer-map',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminServiceAreasRoute = AdminServiceAreasRouteImport.update({
-  id: '/service-areas',
-  path: '/service-areas',
+const AdminCoverageRoute = AdminCoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminServiceLeadsRoute = AdminServiceLeadsRouteImport.update({
-  id: '/service-leads',
-  path: '/service-leads',
+const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminServicesRoute = AdminServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
+const AdminAddonsRoute = AdminAddonsRouteImport.update({
+  id: '/addons',
+  path: '/addons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AdminAddonQueueRoute = AdminAddonQueueRouteImport.update({
+  id: '/addon-queue',
+  path: '/addon-queue',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminVehicleAuditRoute = AdminVehicleAuditRouteImport.update({
-  id: '/vehicle-audit',
-  path: '/vehicle-audit',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminWalletRoute = AdminWalletRouteImport.update({
-  id: '/wallet',
-  path: '/wallet',
-  getParentRoute: () => AdminRoute,
-} as any)
-const CIndexRoute = CIndexRouteImport.update({
-  id: '/c/',
-  path: '/c/',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const CAuthedRouteRoute = CAuthedRouteRouteImport.update({
   id: '/c/_authed',
   path: '/c',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CAuthRoute = CAuthRouteImport.update({
-  id: '/c/auth',
-  path: '/c/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CLocationRoute = CLocationRouteImport.update({
-  id: '/c/location',
-  path: '/c/location',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -323,74 +323,56 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
-  id: '/area',
-  path: '/area',
-  getParentRoute: () => AuthenticatedAppRoute,
+const CLocationSearchRoute = CLocationSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => CLocationRoute,
 } as any)
-const AuthenticatedAppAssignmentsRoute =
-  AuthenticatedAppAssignmentsRouteImport.update({
-    id: '/assignments',
-    path: '/assignments',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppEarningsRoute =
-  AuthenticatedAppEarningsRouteImport.update({
-    id: '/earnings',
-    path: '/earnings',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppHistoryRoute = AuthenticatedAppHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => AuthenticatedAppRoute,
+const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
+  id: '/vehicles',
+  path: '/vehicles',
+  getParentRoute: () => CAuthedRouteRoute,
 } as any)
-const AuthenticatedAppLiveRoute = AuthenticatedAppLiveRouteImport.update({
-  id: '/live',
-  path: '/live',
-  getParentRoute: () => AuthenticatedAppRoute,
+const CAuthedSubscriptionsRoute = CAuthedSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => CAuthedRouteRoute,
 } as any)
-const AuthenticatedAppMyAssignmentRoute =
-  AuthenticatedAppMyAssignmentRouteImport.update({
-    id: '/my-assignment',
-    path: '/my-assignment',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppNotificationsRoute =
-  AuthenticatedAppNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
+const CAuthedReferralsRoute = CAuthedReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedProfileRoute = CAuthedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => AuthenticatedAppRoute,
+  getParentRoute: () => CAuthedRouteRoute,
 } as any)
-const AuthenticatedAppRewardsRoute = AuthenticatedAppRewardsRouteImport.update({
-  id: '/rewards',
-  path: '/rewards',
-  getParentRoute: () => AuthenticatedAppRoute,
+const CAuthedHomeRoute = CAuthedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => CAuthedRouteRoute,
 } as any)
-const AuthenticatedAppTrainingRoute =
-  AuthenticatedAppTrainingRouteImport.update({
-    id: '/training',
-    path: '/training',
-    getParentRoute: () => AuthenticatedAppRoute,
+const CAuthedBookingsRoute = CAuthedBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const ApiPublicRazorpayWebhookRoute =
+  ApiPublicRazorpayWebhookRouteImport.update({
+    id: '/api/public/razorpay-webhook',
+    path: '/api/public/razorpay-webhook',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminCustomersRoute,
-} as any)
-const AdminMarketplaceIdRoute = AdminMarketplaceIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminMarketplaceRoute,
-} as any)
-const AdminOfferDeliveryIdRoute = AdminOfferDeliveryIdRouteImport.update({
-  id: '/offer-delivery/$id',
-  path: '/offer-delivery/$id',
+const ApiPublicFcmDeliveryReceiptRoute =
+  ApiPublicFcmDeliveryReceiptRouteImport.update({
+    id: '/api/public/fcm-delivery-receipt',
+    path: '/api/public/fcm-delivery-receipt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
+  id: '/service/$id',
+  path: '/service/$id',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPartnerAssignmentIdRoute =
@@ -399,127 +381,100 @@ const AdminPartnerAssignmentIdRoute =
     path: '/partner-assignment/$id',
     getParentRoute: () => AdminRoute,
   } as any)
-const AdminServiceIdRoute = AdminServiceIdRouteImport.update({
-  id: '/service/$id',
-  path: '/service/$id',
+const AdminOfferDeliveryIdRoute = AdminOfferDeliveryIdRouteImport.update({
+  id: '/offer-delivery/$id',
+  path: '/offer-delivery/$id',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiPublicFcmDeliveryReceiptRoute =
-  ApiPublicFcmDeliveryReceiptRouteImport.update({
-    id: '/api/public/fcm-delivery-receipt',
-    path: '/api/public/fcm-delivery-receipt',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicRazorpayWebhookRoute =
-  ApiPublicRazorpayWebhookRouteImport.update({
-    id: '/api/public/razorpay-webhook',
-    path: '/api/public/razorpay-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const CAuthedBookingsRoute = CAuthedBookingsRouteImport.update({
-  id: '/bookings',
-  path: '/bookings',
-  getParentRoute: () => CAuthedRouteRoute,
+const AdminMarketplaceIdRoute = AdminMarketplaceIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminMarketplaceRoute,
 } as any)
-const CAuthedHomeRoute = CAuthedHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => CAuthedRouteRoute,
+const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminCustomersRoute,
 } as any)
-const CAuthedProfileRoute = CAuthedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CAuthedReferralsRoute = CAuthedReferralsRouteImport.update({
-  id: '/referrals',
-  path: '/referrals',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CAuthedSubscriptionsRoute = CAuthedSubscriptionsRouteImport.update({
-  id: '/subscriptions',
-  path: '/subscriptions',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
-  id: '/vehicles',
-  path: '/vehicles',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CLocationSearchRoute = CLocationSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => CLocationRoute,
-} as any)
-const AuthenticatedAppServiceIdRoute =
-  AuthenticatedAppServiceIdRouteImport.update({
-    id: '/service/$id',
-    path: '/service/$id',
+const AuthenticatedAppTrainingRoute =
+  AuthenticatedAppTrainingRouteImport.update({
+    id: '/training',
+    path: '/training',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicAdminTrialCleanupRoute =
-  ApiPublicAdminTrialCleanupRouteImport.update({
-    id: '/api/public/admin/trial-cleanup',
-    path: '/api/public/admin/trial-cleanup',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminTrialSeedRoute = ApiPublicAdminTrialSeedRouteImport.update({
-  id: '/api/public/admin/trial-seed',
-  path: '/api/public/admin/trial-seed',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedAppRewardsRoute = AuthenticatedAppRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const ApiPublicAdminTrialVerifyRoute =
-  ApiPublicAdminTrialVerifyRouteImport.update({
-    id: '/api/public/admin/trial-verify',
-    path: '/api/public/admin/trial-verify',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppNotificationsRoute =
+  AuthenticatedAppNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicCronAssignmentTickRoute =
-  ApiPublicCronAssignmentTickRouteImport.update({
-    id: '/api/public/cron/assignment-tick',
-    path: '/api/public/cron/assignment-tick',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppMyAssignmentRoute =
+  AuthenticatedAppMyAssignmentRouteImport.update({
+    id: '/my-assignment',
+    path: '/my-assignment',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicCronDailyRemindersRoute =
-  ApiPublicCronDailyRemindersRouteImport.update({
-    id: '/api/public/cron/daily-reminders',
-    path: '/api/public/cron/daily-reminders',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppLiveRoute = AuthenticatedAppLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppHistoryRoute = AuthenticatedAppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppEarningsRoute =
+  AuthenticatedAppEarningsRouteImport.update({
+    id: '/earnings',
+    path: '/earnings',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicCronDarOfflinePartnersRoute =
-  ApiPublicCronDarOfflinePartnersRouteImport.update({
-    id: '/api/public/cron/dar-offline-partners',
-    path: '/api/public/cron/dar-offline-partners',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppAssignmentsRoute =
+  AuthenticatedAppAssignmentsRouteImport.update({
+    id: '/assignments',
+    path: '/assignments',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicCronDarTimeoutsRoute =
-  ApiPublicCronDarTimeoutsRouteImport.update({
-    id: '/api/public/cron/dar-timeouts',
-    path: '/api/public/cron/dar-timeouts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronMarketplacePushDispatchRoute =
-  ApiPublicCronMarketplacePushDispatchRouteImport.update({
-    id: '/api/public/cron/marketplace-push-dispatch',
-    path: '/api/public/cron/marketplace-push-dispatch',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronMarketplaceTickRoute =
-  ApiPublicCronMarketplaceTickRouteImport.update({
-    id: '/api/public/cron/marketplace-tick',
-    path: '/api/public/cron/marketplace-tick',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronMonthlyAddonsMaterializeRoute =
-  ApiPublicCronMonthlyAddonsMaterializeRouteImport.update({
-    id: '/api/public/cron/monthly-addons-materialize',
-    path: '/api/public/cron/monthly-addons-materialize',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronOfferPushDispatchRoute =
-  ApiPublicCronOfferPushDispatchRouteImport.update({
-    id: '/api/public/cron/offer-push-dispatch',
-    path: '/api/public/cron/offer-push-dispatch',
+const AuthenticatedAppAreaRoute = AuthenticatedAppAreaRouteImport.update({
+  id: '/area',
+  path: '/area',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
+  id: '/vehicles_/add',
+  path: '/vehicles/add',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedVehiclesIdRoute = CAuthedVehiclesIdRouteImport.update({
+  id: '/vehicles_/$id',
+  path: '/vehicles/$id',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedServiceSlugRoute = CAuthedServiceSlugRouteImport.update({
+  id: '/service/$slug',
+  path: '/service/$slug',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
+const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CAuthedBookingsRoute,
+} as any)
+const ApiPublicMarketplaceOfferActionRoute =
+  ApiPublicMarketplaceOfferActionRouteImport.update({
+    id: '/api/public/marketplace/offer-action',
+    path: '/api/public/marketplace/offer-action',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksNotificationPushRoute =
@@ -528,32 +483,77 @@ const ApiPublicHooksNotificationPushRoute =
     path: '/api/public/hooks/notification-push',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMarketplaceOfferActionRoute =
-  ApiPublicMarketplaceOfferActionRouteImport.update({
-    id: '/api/public/marketplace/offer-action',
-    path: '/api/public/marketplace/offer-action',
+const ApiPublicCronOfferPushDispatchRoute =
+  ApiPublicCronOfferPushDispatchRouteImport.update({
+    id: '/api/public/cron/offer-push-dispatch',
+    path: '/api/public/cron/offer-push-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CAuthedBookingsIdRoute = CAuthedBookingsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => CAuthedBookingsRoute,
+const ApiPublicCronMonthlyAddonsMaterializeRoute =
+  ApiPublicCronMonthlyAddonsMaterializeRouteImport.update({
+    id: '/api/public/cron/monthly-addons-materialize',
+    path: '/api/public/cron/monthly-addons-materialize',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronMarketplaceTickRoute =
+  ApiPublicCronMarketplaceTickRouteImport.update({
+    id: '/api/public/cron/marketplace-tick',
+    path: '/api/public/cron/marketplace-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronMarketplacePushDispatchRoute =
+  ApiPublicCronMarketplacePushDispatchRouteImport.update({
+    id: '/api/public/cron/marketplace-push-dispatch',
+    path: '/api/public/cron/marketplace-push-dispatch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronDarTimeoutsRoute =
+  ApiPublicCronDarTimeoutsRouteImport.update({
+    id: '/api/public/cron/dar-timeouts',
+    path: '/api/public/cron/dar-timeouts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronDarOfflinePartnersRoute =
+  ApiPublicCronDarOfflinePartnersRouteImport.update({
+    id: '/api/public/cron/dar-offline-partners',
+    path: '/api/public/cron/dar-offline-partners',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronDailyRemindersRoute =
+  ApiPublicCronDailyRemindersRouteImport.update({
+    id: '/api/public/cron/daily-reminders',
+    path: '/api/public/cron/daily-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronAssignmentTickRoute =
+  ApiPublicCronAssignmentTickRouteImport.update({
+    id: '/api/public/cron/assignment-tick',
+    path: '/api/public/cron/assignment-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminTrialVerifyRoute =
+  ApiPublicAdminTrialVerifyRouteImport.update({
+    id: '/api/public/admin/trial-verify',
+    path: '/api/public/admin/trial-verify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminTrialSeedRoute = ApiPublicAdminTrialSeedRouteImport.update({
+  id: '/api/public/admin/trial-seed',
+  path: '/api/public/admin/trial-seed',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const CAuthedServiceSlugRoute = CAuthedServiceSlugRouteImport.update({
-  id: '/service/$slug',
-  path: '/service/$slug',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CAuthedVehiclesIdRoute = CAuthedVehiclesIdRouteImport.update({
-  id: '/vehicles_/$id',
-  path: '/vehicles/$id',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
-const CAuthedVehiclesAddRoute = CAuthedVehiclesAddRouteImport.update({
-  id: '/vehicles_/add',
-  path: '/vehicles/add',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
+const ApiPublicAdminTrialCleanupRoute =
+  ApiPublicAdminTrialCleanupRouteImport.update({
+    id: '/api/public/admin/trial-cleanup',
+    path: '/api/public/admin/trial-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAppServiceIdRoute =
+  AuthenticatedAppServiceIdRouteImport.update({
+    id: '/service/$id',
+    path: '/service/$id',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const CAuthedVehiclesIdPhotoRoute = CAuthedVehiclesIdPhotoRouteImport.update({
   id: '/photo',
   path: '/photo',
@@ -1123,25 +1123,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1151,257 +1137,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trust': {
-      id: '/trust'
-      path: '/trust'
-      fullPath: '/trust'
-      preLoaderRoute: typeof TrustRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app': {
-      id: '/_authenticated/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AuthenticatedAppRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
+    '/': {
+      id: '/'
       path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/addon-queue': {
-      id: '/admin/addon-queue'
-      path: '/addon-queue'
-      fullPath: '/admin/addon-queue'
-      preLoaderRoute: typeof AdminAddonQueueRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/addons': {
-      id: '/admin/addons'
-      path: '/addons'
-      fullPath: '/admin/addons'
-      preLoaderRoute: typeof AdminAddonsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/attendance': {
-      id: '/admin/attendance'
-      path: '/attendance'
-      fullPath: '/admin/attendance'
-      preLoaderRoute: typeof AdminAttendanceRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/coverage': {
-      id: '/admin/coverage'
-      path: '/coverage'
-      fullPath: '/admin/coverage'
-      preLoaderRoute: typeof AdminCoverageRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/customer-map': {
-      id: '/admin/customer-map'
-      path: '/customer-map'
-      fullPath: '/admin/customer-map'
-      preLoaderRoute: typeof AdminCustomerMapRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/customers': {
-      id: '/admin/customers'
-      path: '/customers'
-      fullPath: '/admin/customers'
-      preLoaderRoute: typeof AdminCustomersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/dar': {
-      id: '/admin/dar'
-      path: '/dar'
-      fullPath: '/admin/dar'
-      preLoaderRoute: typeof AdminDarRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/expansion-requests': {
-      id: '/admin/expansion-requests'
-      path: '/expansion-requests'
-      fullPath: '/admin/expansion-requests'
-      preLoaderRoute: typeof AdminExpansionRequestsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/fraud': {
-      id: '/admin/fraud'
-      path: '/fraud'
-      fullPath: '/admin/fraud'
-      preLoaderRoute: typeof AdminFraudRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/import': {
-      id: '/admin/import'
-      path: '/import'
-      fullPath: '/admin/import'
-      preLoaderRoute: typeof AdminImportRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/integrity-audit': {
-      id: '/admin/integrity-audit'
-      path: '/integrity-audit'
-      fullPath: '/admin/integrity-audit'
-      preLoaderRoute: typeof AdminIntegrityAuditRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/live': {
-      id: '/admin/live'
-      path: '/live'
-      fullPath: '/admin/live'
-      preLoaderRoute: typeof AdminLiveRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/manual-assignment': {
-      id: '/admin/manual-assignment'
-      path: '/manual-assignment'
-      fullPath: '/admin/manual-assignment'
-      preLoaderRoute: typeof AdminManualAssignmentRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/marketplace': {
-      id: '/admin/marketplace'
-      path: '/marketplace'
-      fullPath: '/admin/marketplace'
-      preLoaderRoute: typeof AdminMarketplaceRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/marketplace-live': {
-      id: '/admin/marketplace-live'
-      path: '/marketplace-live'
-      fullPath: '/admin/marketplace-live'
-      preLoaderRoute: typeof AdminMarketplaceLiveRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/marketplace-settings': {
-      id: '/admin/marketplace-settings'
-      path: '/marketplace-settings'
-      fullPath: '/admin/marketplace-settings'
-      preLoaderRoute: typeof AdminMarketplaceSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/notifications': {
-      id: '/admin/notifications'
-      path: '/notifications'
-      fullPath: '/admin/notifications'
-      preLoaderRoute: typeof AdminNotificationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/offer-history': {
-      id: '/admin/offer-history'
-      path: '/offer-history'
-      fullPath: '/admin/offer-history'
-      preLoaderRoute: typeof AdminOfferHistoryRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/partners': {
-      id: '/admin/partners'
-      path: '/partners'
-      fullPath: '/admin/partners'
-      preLoaderRoute: typeof AdminPartnersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/payment-modes': {
-      id: '/admin/payment-modes'
-      path: '/payment-modes'
-      fullPath: '/admin/payment-modes'
-      preLoaderRoute: typeof AdminPaymentModesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/payouts': {
-      id: '/admin/payouts'
-      path: '/payouts'
-      fullPath: '/admin/payouts'
-      preLoaderRoute: typeof AdminPayoutsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/photos': {
-      id: '/admin/photos'
-      path: '/photos'
-      fullPath: '/admin/photos'
-      preLoaderRoute: typeof AdminPhotosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/plan-inclusions': {
-      id: '/admin/plan-inclusions'
-      path: '/plan-inclusions'
-      fullPath: '/admin/plan-inclusions'
-      preLoaderRoute: typeof AdminPlanInclusionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reliability': {
-      id: '/admin/reliability'
-      path: '/reliability'
-      fullPath: '/admin/reliability'
-      preLoaderRoute: typeof AdminReliabilityRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/renewals': {
-      id: '/admin/renewals'
-      path: '/renewals'
-      fullPath: '/admin/renewals'
-      preLoaderRoute: typeof AdminRenewalsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/revenue': {
-      id: '/admin/revenue'
-      path: '/revenue'
-      fullPath: '/admin/revenue'
-      preLoaderRoute: typeof AdminRevenueRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/route-manager': {
-      id: '/admin/route-manager'
-      path: '/route-manager'
-      fullPath: '/admin/route-manager'
-      preLoaderRoute: typeof AdminRouteManagerRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/service-areas': {
-      id: '/admin/service-areas'
-      path: '/service-areas'
-      fullPath: '/admin/service-areas'
-      preLoaderRoute: typeof AdminServiceAreasRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/service-leads': {
-      id: '/admin/service-leads'
-      path: '/service-leads'
-      fullPath: '/admin/service-leads'
-      preLoaderRoute: typeof AdminServiceLeadsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/services': {
-      id: '/admin/services'
-      path: '/services'
-      fullPath: '/admin/services'
-      preLoaderRoute: typeof AdminServicesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/vehicle-audit': {
-      id: '/admin/vehicle-audit'
-      path: '/vehicle-audit'
-      fullPath: '/admin/vehicle-audit'
-      preLoaderRoute: typeof AdminVehicleAuditRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/wallet': {
-      id: '/admin/wallet'
-      path: '/wallet'
-      fullPath: '/admin/wallet'
-      preLoaderRoute: typeof AdminWalletRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/c/': {
       id: '/c/'
@@ -1410,11 +1165,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/c/_authed': {
-      id: '/c/_authed'
-      path: '/c'
-      fullPath: '/c'
-      preLoaderRoute: typeof CAuthedRouteRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/c/location': {
+      id: '/c/location'
+      path: '/c/location'
+      fullPath: '/c/location'
+      preLoaderRoute: typeof CLocationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/auth': {
@@ -1424,11 +1186,249 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/c/location': {
-      id: '/c/location'
-      path: '/c/location'
-      fullPath: '/c/location'
-      preLoaderRoute: typeof CLocationRouteImport
+    '/admin/wallet': {
+      id: '/admin/wallet'
+      path: '/wallet'
+      fullPath: '/admin/wallet'
+      preLoaderRoute: typeof AdminWalletRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/vehicle-audit': {
+      id: '/admin/vehicle-audit'
+      path: '/vehicle-audit'
+      fullPath: '/admin/vehicle-audit'
+      preLoaderRoute: typeof AdminVehicleAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/services': {
+      id: '/admin/services'
+      path: '/services'
+      fullPath: '/admin/services'
+      preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/service-leads': {
+      id: '/admin/service-leads'
+      path: '/service-leads'
+      fullPath: '/admin/service-leads'
+      preLoaderRoute: typeof AdminServiceLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/service-areas': {
+      id: '/admin/service-areas'
+      path: '/service-areas'
+      fullPath: '/admin/service-areas'
+      preLoaderRoute: typeof AdminServiceAreasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/route-manager': {
+      id: '/admin/route-manager'
+      path: '/route-manager'
+      fullPath: '/admin/route-manager'
+      preLoaderRoute: typeof AdminRouteManagerRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/revenue': {
+      id: '/admin/revenue'
+      path: '/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminRevenueRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/renewals': {
+      id: '/admin/renewals'
+      path: '/renewals'
+      fullPath: '/admin/renewals'
+      preLoaderRoute: typeof AdminRenewalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reliability': {
+      id: '/admin/reliability'
+      path: '/reliability'
+      fullPath: '/admin/reliability'
+      preLoaderRoute: typeof AdminReliabilityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plan-inclusions': {
+      id: '/admin/plan-inclusions'
+      path: '/plan-inclusions'
+      fullPath: '/admin/plan-inclusions'
+      preLoaderRoute: typeof AdminPlanInclusionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/photos': {
+      id: '/admin/photos'
+      path: '/photos'
+      fullPath: '/admin/photos'
+      preLoaderRoute: typeof AdminPhotosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payouts': {
+      id: '/admin/payouts'
+      path: '/payouts'
+      fullPath: '/admin/payouts'
+      preLoaderRoute: typeof AdminPayoutsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payment-modes': {
+      id: '/admin/payment-modes'
+      path: '/payment-modes'
+      fullPath: '/admin/payment-modes'
+      preLoaderRoute: typeof AdminPaymentModesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/partners': {
+      id: '/admin/partners'
+      path: '/partners'
+      fullPath: '/admin/partners'
+      preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offer-history': {
+      id: '/admin/offer-history'
+      path: '/offer-history'
+      fullPath: '/admin/offer-history'
+      preLoaderRoute: typeof AdminOfferHistoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace-settings': {
+      id: '/admin/marketplace-settings'
+      path: '/marketplace-settings'
+      fullPath: '/admin/marketplace-settings'
+      preLoaderRoute: typeof AdminMarketplaceSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace-live': {
+      id: '/admin/marketplace-live'
+      path: '/marketplace-live'
+      fullPath: '/admin/marketplace-live'
+      preLoaderRoute: typeof AdminMarketplaceLiveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace': {
+      id: '/admin/marketplace'
+      path: '/marketplace'
+      fullPath: '/admin/marketplace'
+      preLoaderRoute: typeof AdminMarketplaceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/manual-assignment': {
+      id: '/admin/manual-assignment'
+      path: '/manual-assignment'
+      fullPath: '/admin/manual-assignment'
+      preLoaderRoute: typeof AdminManualAssignmentRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/live': {
+      id: '/admin/live'
+      path: '/live'
+      fullPath: '/admin/live'
+      preLoaderRoute: typeof AdminLiveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/integrity-audit': {
+      id: '/admin/integrity-audit'
+      path: '/integrity-audit'
+      fullPath: '/admin/integrity-audit'
+      preLoaderRoute: typeof AdminIntegrityAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/import': {
+      id: '/admin/import'
+      path: '/import'
+      fullPath: '/admin/import'
+      preLoaderRoute: typeof AdminImportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/fraud': {
+      id: '/admin/fraud'
+      path: '/fraud'
+      fullPath: '/admin/fraud'
+      preLoaderRoute: typeof AdminFraudRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/expansion-requests': {
+      id: '/admin/expansion-requests'
+      path: '/expansion-requests'
+      fullPath: '/admin/expansion-requests'
+      preLoaderRoute: typeof AdminExpansionRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dar': {
+      id: '/admin/dar'
+      path: '/dar'
+      fullPath: '/admin/dar'
+      preLoaderRoute: typeof AdminDarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customers': {
+      id: '/admin/customers'
+      path: '/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AdminCustomersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customer-map': {
+      id: '/admin/customer-map'
+      path: '/customer-map'
+      fullPath: '/admin/customer-map'
+      preLoaderRoute: typeof AdminCustomerMapRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/coverage': {
+      id: '/admin/coverage'
+      path: '/coverage'
+      fullPath: '/admin/coverage'
+      preLoaderRoute: typeof AdminCoverageRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/attendance': {
+      id: '/admin/attendance'
+      path: '/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AdminAttendanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/addons': {
+      id: '/admin/addons'
+      path: '/addons'
+      fullPath: '/admin/addons'
+      preLoaderRoute: typeof AdminAddonsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/addon-queue': {
+      id: '/admin/addon-queue'
+      path: '/addon-queue'
+      fullPath: '/admin/addon-queue'
+      preLoaderRoute: typeof AdminAddonQueueRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/c/_authed': {
+      id: '/c/_authed'
+      path: '/c'
+      fullPath: '/c'
+      preLoaderRoute: typeof CAuthedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
@@ -1438,151 +1438,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/area': {
-      id: '/_authenticated/app/area'
-      path: '/area'
-      fullPath: '/app/area'
-      preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
+    '/c/location/search': {
+      id: '/c/location/search'
+      path: '/search'
+      fullPath: '/c/location/search'
+      preLoaderRoute: typeof CLocationSearchRouteImport
+      parentRoute: typeof CLocationRoute
     }
-    '/_authenticated/app/assignments': {
-      id: '/_authenticated/app/assignments'
-      path: '/assignments'
-      fullPath: '/app/assignments'
-      preLoaderRoute: typeof AuthenticatedAppAssignmentsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/earnings': {
-      id: '/_authenticated/app/earnings'
-      path: '/earnings'
-      fullPath: '/app/earnings'
-      preLoaderRoute: typeof AuthenticatedAppEarningsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/history': {
-      id: '/_authenticated/app/history'
-      path: '/history'
-      fullPath: '/app/history'
-      preLoaderRoute: typeof AuthenticatedAppHistoryRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/live': {
-      id: '/_authenticated/app/live'
-      path: '/live'
-      fullPath: '/app/live'
-      preLoaderRoute: typeof AuthenticatedAppLiveRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/my-assignment': {
-      id: '/_authenticated/app/my-assignment'
-      path: '/my-assignment'
-      fullPath: '/app/my-assignment'
-      preLoaderRoute: typeof AuthenticatedAppMyAssignmentRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/notifications': {
-      id: '/_authenticated/app/notifications'
-      path: '/notifications'
-      fullPath: '/app/notifications'
-      preLoaderRoute: typeof AuthenticatedAppNotificationsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/profile': {
-      id: '/_authenticated/app/profile'
-      path: '/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/rewards': {
-      id: '/_authenticated/app/rewards'
-      path: '/rewards'
-      fullPath: '/app/rewards'
-      preLoaderRoute: typeof AuthenticatedAppRewardsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/training': {
-      id: '/_authenticated/app/training'
-      path: '/training'
-      fullPath: '/app/training'
-      preLoaderRoute: typeof AuthenticatedAppTrainingRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/admin/customers/$id': {
-      id: '/admin/customers/$id'
-      path: '/$id'
-      fullPath: '/admin/customers/$id'
-      preLoaderRoute: typeof AdminCustomersIdRouteImport
-      parentRoute: typeof AdminCustomersRoute
-    }
-    '/admin/marketplace/$id': {
-      id: '/admin/marketplace/$id'
-      path: '/$id'
-      fullPath: '/admin/marketplace/$id'
-      preLoaderRoute: typeof AdminMarketplaceIdRouteImport
-      parentRoute: typeof AdminMarketplaceRoute
-    }
-    '/admin/offer-delivery/$id': {
-      id: '/admin/offer-delivery/$id'
-      path: '/offer-delivery/$id'
-      fullPath: '/admin/offer-delivery/$id'
-      preLoaderRoute: typeof AdminOfferDeliveryIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/partner-assignment/$id': {
-      id: '/admin/partner-assignment/$id'
-      path: '/partner-assignment/$id'
-      fullPath: '/admin/partner-assignment/$id'
-      preLoaderRoute: typeof AdminPartnerAssignmentIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/service/$id': {
-      id: '/admin/service/$id'
-      path: '/service/$id'
-      fullPath: '/admin/service/$id'
-      preLoaderRoute: typeof AdminServiceIdRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/api/public/fcm-delivery-receipt': {
-      id: '/api/public/fcm-delivery-receipt'
-      path: '/api/public/fcm-delivery-receipt'
-      fullPath: '/api/public/fcm-delivery-receipt'
-      preLoaderRoute: typeof ApiPublicFcmDeliveryReceiptRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/razorpay-webhook': {
-      id: '/api/public/razorpay-webhook'
-      path: '/api/public/razorpay-webhook'
-      fullPath: '/api/public/razorpay-webhook'
-      preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/_authed/bookings': {
-      id: '/c/_authed/bookings'
-      path: '/bookings'
-      fullPath: '/c/bookings'
-      preLoaderRoute: typeof CAuthedBookingsRouteImport
-      parentRoute: typeof CAuthedRouteRoute
-    }
-    '/c/_authed/home': {
-      id: '/c/_authed/home'
-      path: '/home'
-      fullPath: '/c/home'
-      preLoaderRoute: typeof CAuthedHomeRouteImport
-      parentRoute: typeof CAuthedRouteRoute
-    }
-    '/c/_authed/profile': {
-      id: '/c/_authed/profile'
-      path: '/profile'
-      fullPath: '/c/profile'
-      preLoaderRoute: typeof CAuthedProfileRouteImport
-      parentRoute: typeof CAuthedRouteRoute
-    }
-    '/c/_authed/referrals': {
-      id: '/c/_authed/referrals'
-      path: '/referrals'
-      fullPath: '/c/referrals'
-      preLoaderRoute: typeof CAuthedReferralsRouteImport
+    '/c/_authed/vehicles': {
+      id: '/c/_authed/vehicles'
+      path: '/vehicles'
+      fullPath: '/c/vehicles'
+      preLoaderRoute: typeof CAuthedVehiclesRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
     '/c/_authed/subscriptions': {
@@ -1592,130 +1459,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedSubscriptionsRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
-    '/c/_authed/vehicles': {
-      id: '/c/_authed/vehicles'
-      path: '/vehicles'
-      fullPath: '/c/vehicles'
-      preLoaderRoute: typeof CAuthedVehiclesRouteImport
+    '/c/_authed/referrals': {
+      id: '/c/_authed/referrals'
+      path: '/referrals'
+      fullPath: '/c/referrals'
+      preLoaderRoute: typeof CAuthedReferralsRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
-    '/c/location/search': {
-      id: '/c/location/search'
-      path: '/search'
-      fullPath: '/c/location/search'
-      preLoaderRoute: typeof CLocationSearchRouteImport
-      parentRoute: typeof CLocationRoute
+    '/c/_authed/profile': {
+      id: '/c/_authed/profile'
+      path: '/profile'
+      fullPath: '/c/profile'
+      preLoaderRoute: typeof CAuthedProfileRouteImport
+      parentRoute: typeof CAuthedRouteRoute
     }
-    '/_authenticated/app/service/$id': {
-      id: '/_authenticated/app/service/$id'
+    '/c/_authed/home': {
+      id: '/c/_authed/home'
+      path: '/home'
+      fullPath: '/c/home'
+      preLoaderRoute: typeof CAuthedHomeRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/bookings': {
+      id: '/c/_authed/bookings'
+      path: '/bookings'
+      fullPath: '/c/bookings'
+      preLoaderRoute: typeof CAuthedBookingsRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/api/public/razorpay-webhook': {
+      id: '/api/public/razorpay-webhook'
+      path: '/api/public/razorpay-webhook'
+      fullPath: '/api/public/razorpay-webhook'
+      preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fcm-delivery-receipt': {
+      id: '/api/public/fcm-delivery-receipt'
+      path: '/api/public/fcm-delivery-receipt'
+      fullPath: '/api/public/fcm-delivery-receipt'
+      preLoaderRoute: typeof ApiPublicFcmDeliveryReceiptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/service/$id': {
+      id: '/admin/service/$id'
       path: '/service/$id'
-      fullPath: '/app/service/$id'
-      preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
+      fullPath: '/admin/service/$id'
+      preLoaderRoute: typeof AdminServiceIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/partner-assignment/$id': {
+      id: '/admin/partner-assignment/$id'
+      path: '/partner-assignment/$id'
+      fullPath: '/admin/partner-assignment/$id'
+      preLoaderRoute: typeof AdminPartnerAssignmentIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offer-delivery/$id': {
+      id: '/admin/offer-delivery/$id'
+      path: '/offer-delivery/$id'
+      fullPath: '/admin/offer-delivery/$id'
+      preLoaderRoute: typeof AdminOfferDeliveryIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace/$id': {
+      id: '/admin/marketplace/$id'
+      path: '/$id'
+      fullPath: '/admin/marketplace/$id'
+      preLoaderRoute: typeof AdminMarketplaceIdRouteImport
+      parentRoute: typeof AdminMarketplaceRoute
+    }
+    '/admin/customers/$id': {
+      id: '/admin/customers/$id'
+      path: '/$id'
+      fullPath: '/admin/customers/$id'
+      preLoaderRoute: typeof AdminCustomersIdRouteImport
+      parentRoute: typeof AdminCustomersRoute
+    }
+    '/_authenticated/app/training': {
+      id: '/_authenticated/app/training'
+      path: '/training'
+      fullPath: '/app/training'
+      preLoaderRoute: typeof AuthenticatedAppTrainingRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/admin/trial-cleanup': {
-      id: '/api/public/admin/trial-cleanup'
-      path: '/api/public/admin/trial-cleanup'
-      fullPath: '/api/public/admin/trial-cleanup'
-      preLoaderRoute: typeof ApiPublicAdminTrialCleanupRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/rewards': {
+      id: '/_authenticated/app/rewards'
+      path: '/rewards'
+      fullPath: '/app/rewards'
+      preLoaderRoute: typeof AuthenticatedAppRewardsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/admin/trial-seed': {
-      id: '/api/public/admin/trial-seed'
-      path: '/api/public/admin/trial-seed'
-      fullPath: '/api/public/admin/trial-seed'
-      preLoaderRoute: typeof ApiPublicAdminTrialSeedRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/profile': {
+      id: '/_authenticated/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/admin/trial-verify': {
-      id: '/api/public/admin/trial-verify'
-      path: '/api/public/admin/trial-verify'
-      fullPath: '/api/public/admin/trial-verify'
-      preLoaderRoute: typeof ApiPublicAdminTrialVerifyRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/notifications': {
+      id: '/_authenticated/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AuthenticatedAppNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/assignment-tick': {
-      id: '/api/public/cron/assignment-tick'
-      path: '/api/public/cron/assignment-tick'
-      fullPath: '/api/public/cron/assignment-tick'
-      preLoaderRoute: typeof ApiPublicCronAssignmentTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/my-assignment': {
+      id: '/_authenticated/app/my-assignment'
+      path: '/my-assignment'
+      fullPath: '/app/my-assignment'
+      preLoaderRoute: typeof AuthenticatedAppMyAssignmentRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/daily-reminders': {
-      id: '/api/public/cron/daily-reminders'
-      path: '/api/public/cron/daily-reminders'
-      fullPath: '/api/public/cron/daily-reminders'
-      preLoaderRoute: typeof ApiPublicCronDailyRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/live': {
+      id: '/_authenticated/app/live'
+      path: '/live'
+      fullPath: '/app/live'
+      preLoaderRoute: typeof AuthenticatedAppLiveRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/dar-offline-partners': {
-      id: '/api/public/cron/dar-offline-partners'
-      path: '/api/public/cron/dar-offline-partners'
-      fullPath: '/api/public/cron/dar-offline-partners'
-      preLoaderRoute: typeof ApiPublicCronDarOfflinePartnersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/history': {
+      id: '/_authenticated/app/history'
+      path: '/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AuthenticatedAppHistoryRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/dar-timeouts': {
-      id: '/api/public/cron/dar-timeouts'
-      path: '/api/public/cron/dar-timeouts'
-      fullPath: '/api/public/cron/dar-timeouts'
-      preLoaderRoute: typeof ApiPublicCronDarTimeoutsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/earnings': {
+      id: '/_authenticated/app/earnings'
+      path: '/earnings'
+      fullPath: '/app/earnings'
+      preLoaderRoute: typeof AuthenticatedAppEarningsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/marketplace-push-dispatch': {
-      id: '/api/public/cron/marketplace-push-dispatch'
-      path: '/api/public/cron/marketplace-push-dispatch'
-      fullPath: '/api/public/cron/marketplace-push-dispatch'
-      preLoaderRoute: typeof ApiPublicCronMarketplacePushDispatchRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/assignments': {
+      id: '/_authenticated/app/assignments'
+      path: '/assignments'
+      fullPath: '/app/assignments'
+      preLoaderRoute: typeof AuthenticatedAppAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/marketplace-tick': {
-      id: '/api/public/cron/marketplace-tick'
-      path: '/api/public/cron/marketplace-tick'
-      fullPath: '/api/public/cron/marketplace-tick'
-      preLoaderRoute: typeof ApiPublicCronMarketplaceTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/area': {
+      id: '/_authenticated/app/area'
+      path: '/area'
+      fullPath: '/app/area'
+      preLoaderRoute: typeof AuthenticatedAppAreaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
-    '/api/public/cron/monthly-addons-materialize': {
-      id: '/api/public/cron/monthly-addons-materialize'
-      path: '/api/public/cron/monthly-addons-materialize'
-      fullPath: '/api/public/cron/monthly-addons-materialize'
-      preLoaderRoute: typeof ApiPublicCronMonthlyAddonsMaterializeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/cron/offer-push-dispatch': {
-      id: '/api/public/cron/offer-push-dispatch'
-      path: '/api/public/cron/offer-push-dispatch'
-      fullPath: '/api/public/cron/offer-push-dispatch'
-      preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/notification-push': {
-      id: '/api/public/hooks/notification-push'
-      path: '/api/public/hooks/notification-push'
-      fullPath: '/api/public/hooks/notification-push'
-      preLoaderRoute: typeof ApiPublicHooksNotificationPushRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/marketplace/offer-action': {
-      id: '/api/public/marketplace/offer-action'
-      path: '/api/public/marketplace/offer-action'
-      fullPath: '/api/public/marketplace/offer-action'
-      preLoaderRoute: typeof ApiPublicMarketplaceOfferActionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/_authed/bookings/$id': {
-      id: '/c/_authed/bookings/$id'
-      path: '/$id'
-      fullPath: '/c/bookings/$id'
-      preLoaderRoute: typeof CAuthedBookingsIdRouteImport
-      parentRoute: typeof CAuthedBookingsRoute
-    }
-    '/c/_authed/service/$slug': {
-      id: '/c/_authed/service/$slug'
-      path: '/service/$slug'
-      fullPath: '/c/service/$slug'
-      preLoaderRoute: typeof CAuthedServiceSlugRouteImport
+    '/c/_authed/vehicles_/add': {
+      id: '/c/_authed/vehicles_/add'
+      path: '/vehicles/add'
+      fullPath: '/c/vehicles/add'
+      preLoaderRoute: typeof CAuthedVehiclesAddRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
     '/c/_authed/vehicles_/$id': {
@@ -1725,12 +1620,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedVehiclesIdRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
-    '/c/_authed/vehicles_/add': {
-      id: '/c/_authed/vehicles_/add'
-      path: '/vehicles/add'
-      fullPath: '/c/vehicles/add'
-      preLoaderRoute: typeof CAuthedVehiclesAddRouteImport
+    '/c/_authed/service/$slug': {
+      id: '/c/_authed/service/$slug'
+      path: '/service/$slug'
+      fullPath: '/c/service/$slug'
+      preLoaderRoute: typeof CAuthedServiceSlugRouteImport
       parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/bookings/$id': {
+      id: '/c/_authed/bookings/$id'
+      path: '/$id'
+      fullPath: '/c/bookings/$id'
+      preLoaderRoute: typeof CAuthedBookingsIdRouteImport
+      parentRoute: typeof CAuthedBookingsRoute
+    }
+    '/api/public/marketplace/offer-action': {
+      id: '/api/public/marketplace/offer-action'
+      path: '/api/public/marketplace/offer-action'
+      fullPath: '/api/public/marketplace/offer-action'
+      preLoaderRoute: typeof ApiPublicMarketplaceOfferActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/notification-push': {
+      id: '/api/public/hooks/notification-push'
+      path: '/api/public/hooks/notification-push'
+      fullPath: '/api/public/hooks/notification-push'
+      preLoaderRoute: typeof ApiPublicHooksNotificationPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/offer-push-dispatch': {
+      id: '/api/public/cron/offer-push-dispatch'
+      path: '/api/public/cron/offer-push-dispatch'
+      fullPath: '/api/public/cron/offer-push-dispatch'
+      preLoaderRoute: typeof ApiPublicCronOfferPushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/monthly-addons-materialize': {
+      id: '/api/public/cron/monthly-addons-materialize'
+      path: '/api/public/cron/monthly-addons-materialize'
+      fullPath: '/api/public/cron/monthly-addons-materialize'
+      preLoaderRoute: typeof ApiPublicCronMonthlyAddonsMaterializeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/marketplace-tick': {
+      id: '/api/public/cron/marketplace-tick'
+      path: '/api/public/cron/marketplace-tick'
+      fullPath: '/api/public/cron/marketplace-tick'
+      preLoaderRoute: typeof ApiPublicCronMarketplaceTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/marketplace-push-dispatch': {
+      id: '/api/public/cron/marketplace-push-dispatch'
+      path: '/api/public/cron/marketplace-push-dispatch'
+      fullPath: '/api/public/cron/marketplace-push-dispatch'
+      preLoaderRoute: typeof ApiPublicCronMarketplacePushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/dar-timeouts': {
+      id: '/api/public/cron/dar-timeouts'
+      path: '/api/public/cron/dar-timeouts'
+      fullPath: '/api/public/cron/dar-timeouts'
+      preLoaderRoute: typeof ApiPublicCronDarTimeoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/dar-offline-partners': {
+      id: '/api/public/cron/dar-offline-partners'
+      path: '/api/public/cron/dar-offline-partners'
+      fullPath: '/api/public/cron/dar-offline-partners'
+      preLoaderRoute: typeof ApiPublicCronDarOfflinePartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/daily-reminders': {
+      id: '/api/public/cron/daily-reminders'
+      path: '/api/public/cron/daily-reminders'
+      fullPath: '/api/public/cron/daily-reminders'
+      preLoaderRoute: typeof ApiPublicCronDailyRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/assignment-tick': {
+      id: '/api/public/cron/assignment-tick'
+      path: '/api/public/cron/assignment-tick'
+      fullPath: '/api/public/cron/assignment-tick'
+      preLoaderRoute: typeof ApiPublicCronAssignmentTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/trial-verify': {
+      id: '/api/public/admin/trial-verify'
+      path: '/api/public/admin/trial-verify'
+      fullPath: '/api/public/admin/trial-verify'
+      preLoaderRoute: typeof ApiPublicAdminTrialVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/trial-seed': {
+      id: '/api/public/admin/trial-seed'
+      path: '/api/public/admin/trial-seed'
+      fullPath: '/api/public/admin/trial-seed'
+      preLoaderRoute: typeof ApiPublicAdminTrialSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/trial-cleanup': {
+      id: '/api/public/admin/trial-cleanup'
+      path: '/api/public/admin/trial-cleanup'
+      fullPath: '/api/public/admin/trial-cleanup'
+      preLoaderRoute: typeof ApiPublicAdminTrialCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/service/$id': {
+      id: '/_authenticated/app/service/$id'
+      path: '/service/$id'
+      fullPath: '/app/service/$id'
+      preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
     '/c/_authed/vehicles_/$id/photo': {
       id: '/c/_authed/vehicles_/$id/photo'
@@ -1985,3 +1985,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
