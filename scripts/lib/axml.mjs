@@ -64,6 +64,9 @@ export function decodeAxml(buf) {
     if (type === CHUNK_STRING_POOL || chunkType === 0x0001) {
       const pool = readStringPool(buf, off);
       strings = pool.strings;
+    } else if (type === CHUNK_RESOURCE_MAP) {
+      resourceMap = [];
+      for (let p = off + 8; p + 4 <= off + chunkSize; p += 4) resourceMap.push(buf.readUInt32LE(p));
     } else if (type === CHUNK_START_TAG) {
       const nameIdx = buf.readUInt32LE(off + 20);
       const attrStart = buf.readUInt16LE(off + 24);
@@ -80,7 +83,15 @@ export function decodeAxml(buf) {
         const data = buf.readUInt32LE(a + 16);
         const ns = str(nsIdx);
         const prefix = ns && ns.includes("android") ? "android:" : ns ? "ns:" : "";
-        const aName = `${prefix}${str(aNameIdx) ?? ""}`;
+        // aapt2 usually emits EMPTY attribute-name strings and resolves them
+        // through the resource map (attr resource id -> framework attr name).
+        let localName = str(aNameIdx) || "";
+        if (!localName) {
+          const resId = resourceMap?.[aNameIdx];
+          localName = (resId != null && ATTR_IDS[resId]) || (resId != null ? `attr:0x${resId.toString(16)}` : "");
+        }
+        const aName = `${prefix}${localName}`;
+
         let value;
         if (rawIdx !== 0xffffffff && str(rawIdx) != null) value = str(rawIdx);
         else if (dataType === TYPE_STRING) value = str(data);
