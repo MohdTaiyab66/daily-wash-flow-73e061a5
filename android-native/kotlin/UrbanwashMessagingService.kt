@@ -216,6 +216,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         // heads-up rather than stacking a fresh one.
 Log.d("UW_PUSH", "Posting notification id=${broadcastId.hashCode()}")
 Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_OFFERS)
+Log.d("UW_PUSH", "sdk=" + Build.VERSION.SDK_INT + " canUseFullScreen=" + canUseFullScreen())
         NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
     }
 
