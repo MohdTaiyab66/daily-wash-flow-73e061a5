@@ -119,6 +119,34 @@ if (!xml.includes("com.urbanwash.push.UrbanwashMessagingService")) {
   xml = xml.replace(/(<\/application>)/, `${svc}    $1`);
 }
 
+// Firebase dispatches a message to exactly ONE service registered for
+// com.google.firebase.MESSAGING_EVENT (the first match returned by
+// PackageManager). Capacitor's plugins each merge in their own MessagingService,
+// so without these overrides a plugin service can win the race: it forwards to
+// the JS bridge (fine in foreground) but posts nothing for a data-only message
+// when the app is backgrounded, locked or killed. Removing them at merge time
+// guarantees UrbanwashMessagingService is the single FCM entry point.
+const PLUGIN_MESSAGING_SERVICES = [
+  "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
+  "com.capacitorjs.plugins.pushnotifications.MessagingService",
+];
+
+if (!/xmlns:tools=/.test(xml)) {
+  xml = xml.replace(
+    /(<manifest\b)/,
+    `$1 xmlns:tools="http://schemas.android.com/tools"`,
+  );
+}
+
+for (const fqcn of PLUGIN_MESSAGING_SERVICES) {
+  if (xml.includes(`android:name="${fqcn}"`)) continue;
+  xml = xml.replace(
+    /(<\/application>)/,
+    `        <service android:name="${fqcn}" tools:node="remove" />\n    $1`,
+  );
+}
+
+
 await writeFile(manifest, xml);
 console.log("[android-manifest] permissions, UPI package visibility, maps intents and offer service verified");
 
