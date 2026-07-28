@@ -207,9 +207,10 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .setTimeoutAfter(95_000L)
             .addAction(0, "Accept", acceptPI)
             .addAction(0, "Decline", declinePI)
-            // Silent updates should NOT re-alert. Fresh offers get full-screen intent.
+            // Silent updates should NOT re-alert. Fresh offers get a full-screen
+            // intent only when the OS actually allows one (see canUseFullScreen).
             .setOnlyAlertOnce(isUpdate)
-            .apply { if (!isUpdate) setFullScreenIntent(fullScreenPI, true) }
+            .apply { if (!isUpdate && canUseFullScreen()) setFullScreenIntent(fullScreenPI, true) }
 
         // Notification id = broadcast id → subsequent updates replace the same
         // heads-up rather than stacking a fresh one.
