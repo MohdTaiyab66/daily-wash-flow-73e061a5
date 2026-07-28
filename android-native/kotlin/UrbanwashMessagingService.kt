@@ -258,8 +258,8 @@ Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_OFFERS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentPI)
-            .setFullScreenIntent(contentPI, true)
-Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS)
+            .apply { if (canUseFullScreen()) setFullScreenIntent(contentPI, true) }
+Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen())
 
 NotificationManagerCompat.from(ctx)
     .notify(notifKey.hashCode(), builder.build())
