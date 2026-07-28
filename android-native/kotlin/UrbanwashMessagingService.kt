@@ -87,10 +87,26 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * Android 14 (API 34) only auto-grants USE_FULL_SCREEN_INTENT to calling /
+     * alarm apps. For everyone else the permission is denied by default, and a
+     * notification that carries a full-screen intent can be swallowed on the
+     * lock screen (sound + vibration fire, nothing is drawn) instead of being
+     * demoted to a normal heads-up. Only attach the FSI when it is actually
+     * usable; otherwise post a plain high-importance notification.
+     */
+    private fun canUseFullScreen(): Boolean {
+        if (Build.VERSION.SDK_INT < 34) return true
+        return runCatching {
+            getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+        }.getOrDefault(false)
+    }
+
     private fun ensureUrgentChannel(id: String, name: String, desc: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
         if (nm.getNotificationChannel(id) != null) return
+
 
 
         val soundUri: Uri = runCatching {
