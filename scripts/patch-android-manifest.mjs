@@ -144,8 +144,24 @@ if (!/xmlns:tools=/.test(xml)) {
   );
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function removeServiceDeclarations(source, fqcn) {
+  const name = escapeRegExp(fqcn);
+  const serviceWithName = `<service\\b(?=[^>]*android:name\\s*=\\s*["']${name}["'])[^>]*`;
+  return source
+    .replace(new RegExp(`\\n?\\s*${serviceWithName}\\/>\\s*`, "g"), "\n")
+    .replace(new RegExp(`\\n?\\s*${serviceWithName}>[\\s\\S]*?<\\/service>\\s*`, "g"), "\n");
+}
+
 for (const fqcn of PLUGIN_MESSAGING_SERVICES) {
-  if (xml.includes(`android:name="${fqcn}"`)) continue;
+  // Always normalize stale declarations first. Repeated builds or generated
+  // manifests may already contain this service without tools:node="remove";
+  // merely checking xml.includes(android:name=...) would then skip the actual
+  // merge-removal rule and allow the library's MESSAGING_EVENT owner through.
+  xml = removeServiceDeclarations(xml, fqcn);
   xml = xml.replace(
     /(<\/application>)/,
     `        <service android:name="${fqcn}" tools:node="remove" />\n    $1`,
