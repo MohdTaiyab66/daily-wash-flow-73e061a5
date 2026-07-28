@@ -129,7 +129,13 @@ if (!xml.includes("com.urbanwash.push.UrbanwashMessagingService")) {
 const PLUGIN_MESSAGING_SERVICES = [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
+  // Shipped by the firebase-messaging AAR itself as a low-priority fallback
+  // receiver for MESSAGING_EVENT. It merges in even when no plugin is present,
+  // leaving two MESSAGING_EVENT owners. Our service extends
+  // FirebaseMessagingService, so this default entry is redundant.
+  "com.google.firebase.messaging.FirebaseMessagingService",
 ];
+
 
 if (!/xmlns:tools=/.test(xml)) {
   xml = xml.replace(

@@ -61,7 +61,10 @@ for (const { simple, kind } of CLASSES) {
 for (const fqcn of [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
+  // Default fallback service shipped inside the firebase-messaging AAR.
+  "com.google.firebase.messaging.FirebaseMessagingService",
 ]) {
+
   const removed = new RegExp(
     `<service[^>]*android:name\\s*=\\s*"${fqcn.replace(/\./g, "\\.")}"[^>]*tools:node\\s*=\\s*"remove"`,
   ).test(manifestXml);
@@ -169,7 +172,9 @@ const MERGED_FCM_OWNER = `${EXPECTED_PACKAGE}.UrbanwashMessagingService`;
 const COMPETING_SERVICES = [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
+  "com.google.firebase.messaging.FirebaseMessagingService",
 ];
+
 
 try {
   const [manifestEntry] = readApkEntries(APK, (n) => n === "AndroidManifest.xml");
