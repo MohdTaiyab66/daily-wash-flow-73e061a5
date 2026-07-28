@@ -284,7 +284,17 @@ if not exist "scripts\verify-apk-native.mjs" (
   echo       Sync the repo and re-run build-partner.bat.
   goto :fail
 )
+REM Optional human-readable cross-check with aapt/aapt2 (APK Analyzer equivalent).
+REM Non-fatal: the Node verifier below decodes the same merged binary manifest
+REM itself, so the hard gate does not depend on Android build-tools being on PATH.
+where aapt >nul 2>&1 && (
+  echo   aapt dump xmltree AndroidManifest.xml ^(merged, from APK^):
+  aapt dump xmltree "android\app\build\outputs\apk\debug\app-debug.apk" AndroidManifest.xml > apk-manifest-xmltree.txt 2>&1
+  findstr /C:"MESSAGING_EVENT" /C:"MessagingService" apk-manifest-xmltree.txt
+  echo   Full merged manifest dump written to apk-manifest-xmltree.txt
+)
 echo   Running: node scripts\verify-apk-native.mjs android\app\build\outputs\apk\debug\app-debug.apk
+
 echo   (full output also written to apk-verify.log)
 echo.
 call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk" > apk-verify.log 2>&1
