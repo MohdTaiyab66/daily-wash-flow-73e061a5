@@ -91,7 +91,7 @@ export function decodeAxml(buf) {
       const name = str(nameIdx);
       const attrs = {};
       for (let i = 0; i < attrCount; i++) {
-        const a = off + attrStart + i * attrSize;
+        const a = off + 16 + attrStart + i * attrSize;
         const nsIdx = buf.readUInt32LE(a);
         const aNameIdx = buf.readUInt32LE(a + 4);
         const rawIdx = buf.readUInt32LE(a + 8);
