@@ -87,10 +87,26 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * Android 14 (API 34) only auto-grants USE_FULL_SCREEN_INTENT to calling /
+     * alarm apps. For everyone else the permission is denied by default, and a
+     * notification that carries a full-screen intent can be swallowed on the
+     * lock screen (sound + vibration fire, nothing is drawn) instead of being
+     * demoted to a normal heads-up. Only attach the FSI when it is actually
+     * usable; otherwise post a plain high-importance notification.
+     */
+    private fun canUseFullScreen(): Boolean {
+        if (Build.VERSION.SDK_INT < 34) return true
+        return runCatching {
+            getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+        }.getOrDefault(false)
+    }
+
     private fun ensureUrgentChannel(id: String, name: String, desc: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
         if (nm.getNotificationChannel(id) != null) return
+
 
 
         val soundUri: Uri = runCatching {
@@ -191,9 +207,10 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             .setTimeoutAfter(95_000L)
             .addAction(0, "Accept", acceptPI)
             .addAction(0, "Decline", declinePI)
-            // Silent updates should NOT re-alert. Fresh offers get full-screen intent.
+            // Silent updates should NOT re-alert. Fresh offers get a full-screen
+            // intent only when the OS actually allows one (see canUseFullScreen).
             .setOnlyAlertOnce(isUpdate)
-            .apply { if (!isUpdate) setFullScreenIntent(fullScreenPI, true) }
+            .apply { if (!isUpdate && canUseFullScreen()) setFullScreenIntent(fullScreenPI, true) }
 
         // Notification id = broadcast id → subsequent updates replace the same
         // heads-up rather than stacking a fresh one.
@@ -241,8 +258,8 @@ Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_OFFERS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentPI)
-            .setFullScreenIntent(contentPI, true)
-Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS)
+            .apply { if (canUseFullScreen()) setFullScreenIntent(contentPI, true) }
+Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen())
 
 NotificationManagerCompat.from(ctx)
     .notify(notifKey.hashCode(), builder.build())
