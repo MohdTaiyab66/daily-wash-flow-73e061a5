@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { decodeAxml } from "./lib/axml.mjs";
+import { findMessagingEventServices } from "./lib/manifest-audit.mjs";
 
 const APK = process.argv[2] || "android/app/build/outputs/apk/debug/app-debug.apk";
 const MANIFEST = "android/app/src/main/AndroidManifest.xml";
