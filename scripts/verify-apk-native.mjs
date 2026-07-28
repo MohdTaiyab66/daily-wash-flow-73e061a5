@@ -14,6 +14,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { decodeAxml } from "./lib/axml.mjs";
+import { findMessagingEventServices } from "./lib/manifest-audit.mjs";
 
 const APK = process.argv[2] || "android/app/build/outputs/apk/debug/app-debug.apk";
 const MANIFEST = "android/app/src/main/AndroidManifest.xml";
@@ -96,9 +98,9 @@ for (const { simple } of CLASSES) {
   }
 }
 
-// --- 3. DEX bytes check ------------------------------------------------------
-// Minimal ZIP reader: walks central directory, extracts entries matching classes*.dex.
-function readApkDexEntries(apkPath) {
+// --- 3. APK entry reader -----------------------------------------------------
+// Minimal ZIP reader: walks central directory, extracts entries matching a filter.
+function readApkEntries(apkPath, match) {
   const buf = fs.readFileSync(apkPath);
   // Locate EOCD
   let eocd = -1;
@@ -121,7 +123,7 @@ function readApkDexEntries(apkPath) {
     const commentLen = buf.readUInt16LE(p + 32);
     const localHeader = buf.readUInt32LE(p + 42);
     const name = buf.slice(p + 46, p + 46 + nameLen).toString("utf8");
-    if (/^classes\d*\.dex$/.test(name)) {
+    if (match(name)) {
       // Read local file header to skip its variable fields
       const lh = localHeader;
       const lhNameLen = buf.readUInt16LE(lh + 26);
@@ -143,7 +145,7 @@ function readApkDexEntries(apkPath) {
 let dexEntries = [];
 try {
   if (!fs.existsSync(APK)) throw new Error(`APK not found: ${APK}`);
-  dexEntries = readApkDexEntries(APK);
+  dexEntries = readApkEntries(APK, (n) => /^classes\d*\.dex$/.test(n));
   record("apk.dex.count", dexEntries.length > 0, `${dexEntries.length} dex file(s): ${dexEntries.map(d => d.name).join(", ")}`);
 } catch (e) {
   record("apk.dex.count", false, e.message);
@@ -157,6 +159,87 @@ for (const { simple } of CLASSES) {
   }
   record(`apk.dex.contains.${simple}`, !!hit, hit ? `found in ${hit}` : "not present in any classes*.dex");
 }
+
+// --- 4. MERGED manifest inside the APK ---------------------------------------
+// The source manifest is only an input to the manifest merger. What actually
+// ships is the binary AndroidManifest.xml inside the APK, which also contains
+// everything Capacitor plugin manifests merged in. Decode it and assert that
+// exactly one service owns com.google.firebase.MESSAGING_EVENT.
+const MERGED_FCM_OWNER = `${EXPECTED_PACKAGE}.UrbanwashMessagingService`;
+const COMPETING_SERVICES = [
+  "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
+  "com.capacitorjs.plugins.pushnotifications.MessagingService",
+];
+
+try {
+  const [manifestEntry] = readApkEntries(APK, (n) => n === "AndroidManifest.xml");
+  if (!manifestEntry) throw new Error("AndroidManifest.xml not found inside APK");
+  const elements = decodeAxml(manifestEntry.data);
+  record("apk.manifest.decoded", elements.length > 0, `${elements.length} elements decoded from merged binary manifest`);
+
+  const names = findMessagingEventServices(elements);
+  record(
+    "apk.merged.messaging-event.single",
+    names.length === 1,
+
+    names.length ? `MESSAGING_EVENT services: ${names.join(", ")}` : "no MESSAGING_EVENT service in merged manifest",
+  );
+  record(
+    "apk.merged.messaging-event.owner",
+    names.length === 1 && names[0] === MERGED_FCM_OWNER,
+    `expected ${MERGED_FCM_OWNER}, got ${names.join(", ") || "(none)"}`,
+  );
+  for (const fqcn of COMPETING_SERVICES) {
+    const present = names.includes(fqcn);
+    record(
+      `apk.merged.no-competing.${fqcn.split(".").slice(-2).join(".")}`,
+      !present,
+      present ? "still registered for MESSAGING_EVENT after merge" : "absent from merged manifest",
+    );
+  }
+
+  // Runtime-critical permissions must survive the merge too.
+  const permissions = new Set(
+    elements.filter((e) => e.name === "uses-permission").map((e) => e.attrs["android:name"]),
+  );
+  for (const perm of [
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.USE_FULL_SCREEN_INTENT",
+    "android.permission.WAKE_LOCK",
+  ]) {
+    record(`apk.merged.permission.${perm.split(".").pop()}`, permissions.has(perm), permissions.has(perm) ? "present" : "missing after merge");
+  }
+
+  const receiverPresent = elements.some(
+    (e) => e.name === "receiver" && e.attrs["android:name"] === `${EXPECTED_PACKAGE}.OfferActionReceiver`,
+  );
+  record("apk.merged.receiver.OfferActionReceiver", receiverPresent, receiverPresent ? "declared in merged manifest" : "missing after merge");
+} catch (e) {
+  record("apk.manifest.decoded", false, e.message);
+}
+
+// Cross-check against the Gradle merged-manifest artifact when it exists — this
+// is the same file APK Analyzer / `aapt dump xmltree` would show, in plain text.
+const MERGED_TEXT_GLOBS = [
+  "android/app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml",
+  "android/app/build/intermediates/merged_manifests/debug/AndroidManifest.xml",
+  "android/app/build/outputs/logs/manifest-merger-debug-report.txt",
+];
+const mergedTextPath = MERGED_TEXT_GLOBS.find((p) => fs.existsSync(p));
+if (mergedTextPath && mergedTextPath.endsWith(".xml")) {
+  const text = fs.readFileSync(mergedTextPath, "utf8");
+  const count = (text.match(/com\.google\.firebase\.MESSAGING_EVENT/g) ?? []).length;
+  record("gradle.merged-manifest.messaging-event.single", count === 1, `${count} MESSAGING_EVENT filter(s) in ${mergedTextPath}`);
+  for (const fqcn of COMPETING_SERVICES) {
+    const present = text.includes(`android:name="${fqcn}"`);
+    record(
+      `gradle.merged-manifest.no-competing.${fqcn.split(".").slice(-2).join(".")}`,
+      !present,
+      present ? `still present in ${mergedTextPath}` : "absent",
+    );
+  }
+}
+
 
 // --- Summary -----------------------------------------------------------------
 const pass = results.every(r => r.ok);
