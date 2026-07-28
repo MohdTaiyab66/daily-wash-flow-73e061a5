@@ -164,40 +164,23 @@ for (const { simple } of CLASSES) {
 // ships is the binary AndroidManifest.xml inside the APK, which also contains
 // everything Capacitor plugin manifests merged in. Decode it and assert that
 // exactly one service owns com.google.firebase.MESSAGING_EVENT.
-export function auditMergedManifestElements(elements) {
-  const services = [];
-  let current = null;
-  for (const el of elements) {
-    if (el.name === "service") {
-      current = { name: el.attrs["android:name"] ?? "(unnamed)", messagingEvent: false };
-      services.push(current);
-    } else if (el.name === "application" || el.name === "activity" || el.name === "receiver" || el.name === "provider") {
-      current = null;
-    } else if (el.name === "action" && current) {
-      if (el.attrs["android:name"] === "com.google.firebase.MESSAGING_EVENT") current.messagingEvent = true;
-    }
-  }
-  return services.filter((s) => s.messagingEvent);
-}
-
 const MERGED_FCM_OWNER = `${EXPECTED_PACKAGE}.UrbanwashMessagingService`;
 const COMPETING_SERVICES = [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
 ];
 
-let mergedOwners = null;
 try {
   const [manifestEntry] = readApkEntries(APK, (n) => n === "AndroidManifest.xml");
   if (!manifestEntry) throw new Error("AndroidManifest.xml not found inside APK");
   const elements = decodeAxml(manifestEntry.data);
   record("apk.manifest.decoded", elements.length > 0, `${elements.length} elements decoded from merged binary manifest`);
-  mergedOwners = auditMergedManifestElements(elements);
 
-  const names = mergedOwners.map((s) => s.name);
+  const names = findMessagingEventServices(elements);
   record(
     "apk.merged.messaging-event.single",
     names.length === 1,
+
     names.length ? `MESSAGING_EVENT services: ${names.join(", ")}` : "no MESSAGING_EVENT service in merged manifest",
   );
   record(
