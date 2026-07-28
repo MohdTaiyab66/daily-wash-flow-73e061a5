@@ -53,6 +53,32 @@ for (const { simple, kind } of CLASSES) {
   );
 }
 
+// Exactly one FirebaseMessagingService may win FCM dispatch. Capacitor plugins
+// merge their own MessagingService in; they must be removed at merge time or
+// background/locked/killed data-only pushes silently go to the plugin instead.
+for (const fqcn of [
+  "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
+  "com.capacitorjs.plugins.pushnotifications.MessagingService",
+]) {
+  const removed = new RegExp(
+    `<service[^>]*android:name\\s*=\\s*"${fqcn.replace(/\./g, "\\.")}"[^>]*tools:node\\s*=\\s*"remove"`,
+  ).test(manifestXml);
+  record(
+    `manifest.single-fcm-service.${fqcn.split(".").pop()}`,
+    removed,
+    removed ? `${fqcn} removed at merge` : `${fqcn} not removed — duplicate FCM entry point`,
+  );
+}
+
+const messagingEventFilters = (manifestXml.match(/com\.google\.firebase\.MESSAGING_EVENT/g) ?? []).length;
+record(
+  "manifest.messaging-event.single",
+  messagingEventFilters === 1,
+  `${messagingEventFilters} MESSAGING_EVENT intent-filter(s) declared in app manifest`,
+);
+
+
+
 // --- 2. Kotlin package check -------------------------------------------------
 for (const { simple } of CLASSES) {
   const file = path.join(KOTLIN_DIR, `${simple}.kt`);
