@@ -202,10 +202,37 @@ if (!activity.includes("registerPlugin(Checkout.class)")) {
   process.exit(1);
 }
 
-activity = activity.replace(
-  /\n\s*\/\/ urbanwash-webview-cache-bust-start[\s\S]*?\/\/ urbanwash-webview-cache-bust-end\n/g,
-  "\n",
+// Idempotent marker removal (same pattern as the Gradle patchers): strip every
+// previously injected block before inserting a fresh one. Index-based so it is
+// immune to CRLF line endings and to nested/duplicated blocks from past builds.
+function stripMarkedBlocks(source, startMarker, endMarker) {
+  let out = source;
+  for (;;) {
+    const start = out.indexOf(startMarker);
+    if (start === -1) break;
+    const endIdx = out.indexOf(endMarker, start);
+    if (endIdx === -1) {
+      // Orphan start marker (truncated block) — drop to end of that line.
+      const lineEnd = out.indexOf("\n", start);
+      out = out.slice(0, start) + (lineEnd === -1 ? "" : out.slice(lineEnd + 1));
+      continue;
+    }
+    let from = start;
+    // Swallow the leading indentation/newline of the block.
+    while (from > 0 && (out[from - 1] === " " || out[from - 1] === "\t")) from -= 1;
+    if (from > 0 && out[from - 1] === "\n") from -= 1;
+    if (from > 0 && out[from - 1] === "\r") from -= 1;
+    out = out.slice(0, from) + out.slice(endIdx + endMarker.length);
+  }
+  return out;
+}
+
+activity = stripMarkedBlocks(
+  activity,
+  "// urbanwash-webview-cache-bust-start",
+  "// urbanwash-webview-cache-bust-end",
 );
+
 const cacheBustBlock = `
         // urbanwash-webview-cache-bust-start
         WebView urbanwashWebView = getBridge().getWebView();
