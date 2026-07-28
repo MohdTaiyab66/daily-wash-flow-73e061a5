@@ -16,7 +16,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(Checkout.class);
-        Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=32 BUILD_VERSION=1.0.32 BUILD_ID=2026-07-18-trace-01 GIT_SHA=unknown BUILD_TIME=2026-07-28T13:02:45.737Z");
+        Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=32 BUILD_VERSION=1.0.32 BUILD_ID=2026-07-18-trace-01 GIT_SHA=unknown BUILD_TIME=2026-07-28T13:13:39.613Z");
         Log.i("PARTNER_BUILD", "DEVICE_MANUFACTURER=" + android.os.Build.MANUFACTURER + " DEVICE_MODEL=" + android.os.Build.MODEL + " SDK_INT=" + android.os.Build.VERSION.SDK_INT);
 
 
