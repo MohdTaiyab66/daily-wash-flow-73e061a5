@@ -64,6 +64,8 @@ export function decodeAxml(buf) {
   if (buf.length < 8) throw new Error("AXML too short");
   let off = 8; // file header
   let strings = null;
+  let resourceMap = null;
+
   const elements = [];
   const stack = [];
 
