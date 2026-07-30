@@ -136,7 +136,7 @@ async function dispatchPartner(sb: any) {
           ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
         },
         // Unified assignment channel; general otherwise.
-        channelId: isAssignment ? "assignments_v3" : "general",
+        channelId: isAssignment ? "assignments_v4" : "general",
         // dataOnly so the Kotlin service always builds the heads-up (custom
         // channel, uw_offer.mp3, full-screen intent) — even when the app is
         // backgrounded or swiped away.
