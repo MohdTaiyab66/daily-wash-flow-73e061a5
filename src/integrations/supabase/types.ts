@@ -6526,6 +6526,10 @@ export type Database = {
         }[]
       }
       mp_expire_stale_offers: { Args: never; Returns: undefined }
+      mp_generate_services_for_broadcast: {
+        Args: { p_broadcast_id: string }
+        Returns: number
+      }
       mp_haversine_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number

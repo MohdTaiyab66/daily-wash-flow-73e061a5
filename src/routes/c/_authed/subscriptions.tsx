@@ -86,6 +86,9 @@ function MyPlanPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "services", filter: `customer_id=eq.${userId}` }, refresh)
+      // Photo uploads by the partner must update the customer timeline instantly.
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_photos" }, refresh)
+
       .on("postgres_changes", { event: "*", schema: "public", table: "subscription_extensions", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "dirty_vehicle_reports", filter: `customer_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "unavailability_reports", filter: `customer_id=eq.${userId}` }, refresh)

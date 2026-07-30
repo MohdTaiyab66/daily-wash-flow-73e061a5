@@ -254,21 +254,18 @@ export function MarketplaceOfferCard({
       popupDebug("React Query invalidation", {
         component: "MarketplaceOfferCard",
         function: "handleAccept",
-        reason: "accept completed",
-        query_key: ["partner-services"],
+        reason: "accept completed — refresh active route sources",
+        query_key: ["today-assignment", "route-today"],
         offer_id: offer.id,
         booking_id: (offer as any).broadcast?.booking_id ?? null,
       });
-      qc.invalidateQueries({ queryKey: ["partner-services"] });
-      popupDebug("React Query invalidation", {
-        component: "MarketplaceOfferCard",
-        function: "handleAccept",
-        reason: "accept completed",
-        query_key: ["partner-route-preview"],
-        offer_id: offer.id,
-        booking_id: (offer as any).broadcast?.booking_id ?? null,
-      });
-      qc.invalidateQueries({ queryKey: ["partner-route-preview"] });
+      // Same backend sources the route list and the map read from.
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["route-preview"] });
+      qc.invalidateQueries({ queryKey: ["cancellability"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to accept");
     } finally {
