@@ -62,30 +62,89 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(msg: RemoteMessage) {
+    // --- UW notification lifecycle audit: stage 1, FCM reception ---
+    Log.d("UW_AUDIT", "1_fcm_received msgId=${msg.messageId} from=${msg.from} " +
+        "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
+        "hasNotifBlock=${msg.notification != null} " +
+        "notifChannel=${msg.notification?.channelId} notifTag=${msg.notification?.tag} " +
+        "sentTime=${msg.sentTime} ttl=${msg.ttl}")
     Log.d("UW_PUSH", "onMessageReceived: ${msg.data}")
 
     val data = msg.data
-    val type = data["type"] ?: return
+    val type = data["type"] ?: run {
+        Log.w("UW_AUDIT", "2_branch=DROPPED_NO_TYPE data=$data")
+        return
+    }
         when {
             type == "marketplace_offer" ||
             type == "daily_shine_offer" -> {
+                Log.d("UW_AUDIT", "2_branch=offer_new type=$type")
                 ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
                     "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = false)
             }
             type == "marketplace_offer_update" -> {
+                Log.d("UW_AUDIT", "2_branch=offer_update type=$type")
                 ensureUrgentChannel(CHANNEL_OFFERS, "New customer offers",
                     "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = true)
             }
             ASSIGNMENT_TYPES.contains(type) -> {
+                Log.d("UW_AUDIT", "2_branch=assignment type=$type")
                 ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
                     "New customer assignments — wake screen with heads-up")
                 postAssignment(data)
             }
-            else -> postGeneric(msg)
+            else -> {
+                Log.w("UW_AUDIT", "2_branch=generic type=$type")
+                postGeneric(msg)
+            }
         }
     }
+
+    /**
+     * Audit helper. Logs the exact notification identity immediately before and
+     * after notify(), then re-checks the system's active list at +1s and +5s so
+     * a notification that is posted and then silently removed by the framework,
+     * the OEM, or another component is provable from logcat alone.
+     */
+    private fun auditNotify(
+        nm: NotificationManagerCompat,
+        id: Int,
+        tag: String?,
+        channelId: String,
+        idSource: String,
+        notification: android.app.Notification,
+    ) {
+        val sysNm = getSystemService(NotificationManager::class.java)
+        val ch = runCatching { sysNm?.getNotificationChannel(channelId) }.getOrNull()
+        Log.d("UW_AUDIT", "3_pre_notify id=$id tag=$tag channel=$channelId idSource=$idSource " +
+            "channelExists=${ch != null} importance=${ch?.importance} " +
+            "sound=${ch?.sound} lockVis=${ch?.lockscreenVisibility} " +
+            "fsiAllowed=${canUseFullScreen()} " +
+            "notifEnabled=${nm.areNotificationsEnabled()} " +
+            "hasFsi=${notification.fullScreenIntent != null} flags=${notification.flags}")
+        try {
+            nm.notify(id, notification)
+            Log.d("UW_AUDIT", "4_post_notify_ok id=$id")
+        } catch (e: Throwable) {
+            Log.e("UW_AUDIT", "4_post_notify_threw id=$id", e)
+            return
+        }
+        val probe = { at: String ->
+            val active = runCatching {
+                sysNm?.activeNotifications?.map { it.id } ?: emptyList()
+            }.getOrDefault(emptyList())
+            val alive = active.contains(id)
+            Log.d("UW_AUDIT", "5_probe_$at id=$id alive=$alive active=$active")
+            if (!alive) Log.e("UW_AUDIT", "5_DISAPPEARED_$at id=$id channel=$channelId")
+        }
+        val h = Handler(Looper.getMainLooper())
+        h.post { probe("t0") }
+        h.postDelayed({ probe("t1s") }, 1_000L)
+        h.postDelayed({ probe("t5s") }, 5_000L)
+    }
+
 
     /**
      * Android 14 (API 34) only auto-grants USE_FULL_SCREEN_INTENT to calling /
