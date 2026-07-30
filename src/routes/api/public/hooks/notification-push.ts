@@ -37,6 +37,9 @@ const CUSTOMER_ALLOWED_TYPES = new Set<string>([
   "refund_processing",
   // Service lifecycle (customer-visible only)
   "service_completed",
+  "service_started",
+  "partner_accepted",
+
   "completed",
   "vehicle_unavailable",
   "service_unavailable",
