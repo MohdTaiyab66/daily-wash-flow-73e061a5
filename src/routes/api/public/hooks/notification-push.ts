@@ -56,7 +56,7 @@ const CUSTOMER_ALLOWED_TYPES = new Set<string>([
 
 /**
  * H-1: partner-side types that must render through the unified Kotlin
- * heads-up path (assignments_v3 channel, uw_offer.mp3, full-screen intent,
+ * heads-up path (assignments_v4 channel, uw_offer.mp3, full-screen intent,
  * deep link on tap). MUST match `ASSIGNMENT_TYPES` in
  * android-native/kotlin/UrbanwashMessagingService.kt.
  */

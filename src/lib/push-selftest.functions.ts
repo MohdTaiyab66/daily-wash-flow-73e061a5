@@ -3,7 +3,7 @@
  *
  * Sends a real FCM push to the caller's own registered push_tokens, using the
  * exact same code path as the offer dispatcher (data-only, HIGH priority,
- * `assignments_v3` channel).
+ * `assignments_v4` channel).
  *
  * ─────────────────────────────────────────────────────────────────────────
  * RESPONSE SCHEMA — v2  (FROZEN — client parser depends on this exact shape)
@@ -118,7 +118,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
       const userId = context.userId;
 
       if (data.scenario === "assignment") {
-        res.channelId = "assignments_v3";
+        res.channelId = "assignments_v4";
         res.payloadType = "new_assignment";
         res.dataOnly = true;
       } else if (data.scenario === "generic") {
@@ -126,7 +126,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
         res.payloadType = "generic_test";
         res.dataOnly = false;
       } else {
-        res.channelId = "assignments_v3";
+        res.channelId = "assignments_v4";
         res.payloadType = "daily_shine_offer";
         res.dataOnly = true;
       }
@@ -167,7 +167,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
           title,
           body,
           data: payload,
-          channelId: res.channelId as "assignments_v3" | "offers_v3" | "general",
+          channelId: res.channelId as "assignments_v4" | "offers_v4" | "general",
           dataOnly: res.dataOnly,
           tag,
         });
