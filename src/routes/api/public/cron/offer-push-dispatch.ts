@@ -79,7 +79,7 @@ async function dispatchPending() {
         title,
         body,
         data,
-        channelId: "assignments_v3",
+        channelId: "assignments_v4",
         dataOnly: true,
         tag: r.offer_id,
       });

@@ -188,7 +188,7 @@ export function DeviceDiagnosticsCard({ userId }: { userId: string | null | unde
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const targetChannels = ["assignments_v3", "offers_v3", "assignments", "offers", "general"];
+  const targetChannels = ["assignments_v4", "offers_v4", "assignments", "offers", "general"];
   const channelRows = diag
     ? targetChannels
         .map((id) => ({ id, found: diag.channels.find((c) => c.id === id) }))

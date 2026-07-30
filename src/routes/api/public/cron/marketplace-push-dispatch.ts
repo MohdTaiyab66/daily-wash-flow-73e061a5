@@ -116,7 +116,14 @@ async function dispatchPending() {
         title,
         body,
         data,
-        channelId: "offers",
+        // MUST stay data-only. With an FCM `notification` block, a
+        // backgrounded/locked/killed app never reaches
+        // UrbanwashMessagingService.onMessageReceived: firebase-messaging's
+        // own display path handles the message instead, alerting on the
+        // legacy `offers` channel with no heads-up, no full-screen intent and
+        // no Accept/Decline actions.
+        channelId: "offers_v4",
+        dataOnly: true,
         silent: isUpdate,
         tag: String(r.broadcast_id),
       });

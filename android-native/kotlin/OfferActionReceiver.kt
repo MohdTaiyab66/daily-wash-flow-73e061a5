@@ -62,7 +62,15 @@ class OfferActionReceiver : BroadcastReceiver() {
     }
 
         // Dismiss the notification immediately so the partner gets instant feedback.
+        // The offer heads-up is posted with broadcastId.hashCode() (see
+        // UrbanwashMessagingService.postOffer), so cancelling only offerId
+        // left it on screen. Cancel both ids; they never collide with the
+        // progress ("progress:<offer>") or result ("done:<offer>") ids.
+        val broadcastId = intent.getStringExtra(UrbanwashMessagingService.EXTRA_BROADCAST)
+        Log.d("UW_AUDIT", "6_cancel_by_action offerIdHash=${offerId.hashCode()} " +
+            "broadcastIdHash=${broadcastId?.hashCode()} action=$action")
         NotificationManagerCompat.from(ctx).cancel(offerId.hashCode())
+        if (broadcastId != null) NotificationManagerCompat.from(ctx).cancel(broadcastId.hashCode())
 
         // Show a transient "posting…" heads-up so the user sees something happened.
         val progress = NotificationCompat.Builder(ctx, UrbanwashMessagingService.CHANNEL_GENERAL)
@@ -73,6 +81,7 @@ class OfferActionReceiver : BroadcastReceiver() {
             .build()
         val nm = NotificationManagerCompat.from(ctx)
         val progressId = ("progress:$offerId").hashCode()
+        Log.d("UW_AUDIT", "3_pre_notify id=$progressId channel=${UrbanwashMessagingService.CHANNEL_GENERAL} idSource=progress:offer_id")
         try { nm.notify(progressId, progress) } catch (_: SecurityException) {}
 
         thread(start = true, isDaemon = true) {
@@ -83,6 +92,7 @@ class OfferActionReceiver : BroadcastReceiver() {
 
             val (ok, message) = post(ACTION_URL, body)
             Log.d("UW_ACTION", "ok=$ok message=$message")
+            Log.d("UW_AUDIT", "6_cancel_progress id=$progressId")
             nm.cancel(progressId)
 
             val finalTitle: String
