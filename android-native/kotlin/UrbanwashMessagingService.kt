@@ -9,6 +9,8 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -274,9 +276,18 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         // Notification id = broadcast id → subsequent updates replace the same
         // heads-up rather than stacking a fresh one.
 Log.d("UW_PUSH", "Posting notification id=${broadcastId.hashCode()}")
-Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_OFFERS)
-Log.d("UW_PUSH", "sdk=" + Build.VERSION.SDK_INT + " canUseFullScreen=" + canUseFullScreen())
-        NotificationManagerCompat.from(ctx).notify(broadcastId.hashCode(), builder.build())
+Log.d("UW_AUDIT", "2b_ids broadcastId=$broadcastId offerId=$offerId " +
+    "notifId=${broadcastId.hashCode()} offerIdHash=${offerId.hashCode()} " +
+    "progressIdHash=${("progress:" + offerId).hashCode()} doneIdHash=${("done:" + offerId).hashCode()} " +
+    "isUpdate=$isUpdate sdk=${Build.VERSION.SDK_INT} canUseFullScreen=${canUseFullScreen()}")
+        auditNotify(
+            NotificationManagerCompat.from(ctx),
+            broadcastId.hashCode(),
+            null,
+            CHANNEL_OFFERS,
+            "broadcast_id",
+            builder.build(),
+        )
     }
 
     /**
@@ -320,9 +331,16 @@ Log.d("UW_PUSH", "sdk=" + Build.VERSION.SDK_INT + " canUseFullScreen=" + canUseF
             .setContentIntent(contentPI)
             .apply { if (canUseFullScreen()) setFullScreenIntent(contentPI, true) }
 Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen())
+Log.d("UW_AUDIT", "2b_ids notifKey=$notifKey notifId=${notifKey.hashCode()} link=$link")
 
-NotificationManagerCompat.from(ctx)
-    .notify(notifKey.hashCode(), builder.build())
+auditNotify(
+    NotificationManagerCompat.from(ctx),
+    notifKey.hashCode(),
+    null,
+    CHANNEL_ASSIGNMENTS,
+    "assignment_id|service_id|offer_id|link",
+    builder.build(),
+)
 }
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
