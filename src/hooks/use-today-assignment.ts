@@ -96,7 +96,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     todaysCustomers: todays.length,
     completedToday: todays.filter((s: any) => s.status === "completed").length,
     remainingToday: todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-    assignmentTotalCustomers: new Set(all.map((s: any) => s.customer_id).filter(Boolean)).size,
+    // Vehicles, not customers: a customer with 3 vehicles is 3 stops.
+    assignmentTotalCustomers: new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size,
+
     assignmentCompleted: all.filter((s: any) => s.status === "completed").length,
     fetchedAt: Date.now(),
   };
