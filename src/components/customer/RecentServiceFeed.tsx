@@ -46,6 +46,7 @@ export function RecentServiceFeed({
   vehicleId?: string | null;
 }) {
   const qc = useQueryClient();
+  const [showAll, setShowAll] = useState(false);
   const recentQ = useQuery({
     queryKey: ["my-recent-services", userId, vehicleId],
     enabled: !!userId,
@@ -60,17 +61,33 @@ export function RecentServiceFeed({
     },
   });
 
-  // Realtime: refresh when a service or photo changes
+  // Full daily history: every scheduled day, whatever the outcome.
+  const historyQ = useQuery({
+    queryKey: ["my-service-history", userId, vehicleId],
+    enabled: !!userId && showAll,
+    queryFn: async (): Promise<RecentService[]> => {
+      const { data, error } = await (supabase as any).rpc("list_my_service_history", {
+        p_days: 60,
+        p_vehicle_id: vehicleId,
+      });
+      if (error) throw error;
+      return (data ?? []) as RecentService[];
+    },
+  });
+
+  // Realtime: refresh when a service, photo or outcome report changes
   useEffect(() => {
     if (!userId) return;
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
+      qc.invalidateQueries({ queryKey: ["my-service-history", userId] });
+    };
     const ch = supabase
       .channel("customer-service-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "services" }, () => {
-        qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_photos" }, () => {
-        qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "services" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_photos" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "dirty_vehicle_reports" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "unavailability_reports" }, invalidate)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [userId, qc]);
@@ -98,25 +115,45 @@ export function RecentServiceFeed({
     });
   }, [recentQ.data]);
 
-  const list = recentQ.data ?? [];
+  const list = showAll ? historyQ.data ?? [] : recentQ.data ?? [];
 
   if (recentQ.isLoading) {
     return <div className="mt-5 h-24 animate-pulse rounded-2xl bg-muted" />;
   }
-  if (list.length === 0) return null;
+  if (list.length === 0 && !showAll) return null;
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
+    qc.invalidateQueries({ queryKey: ["my-service-history", userId] });
+  };
 
   return (
     <div className="mt-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight">Recent service updates</h3>
-        <span className="text-[10px] text-muted-foreground">Visible for 2 days</span>
+        <h3 className="text-sm font-semibold tracking-tight">
+          {showAll ? "Service history" : "Recent service updates"}
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+        >
+          {showAll ? "Show recent only" : "View full history"}
+        </button>
       </div>
       <div className="mt-2 space-y-3">
-        {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-recent-services", userId] })} />)}
+        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-2xl bg-muted" />}
+        {showAll && !historyQ.isLoading && list.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+            No service days recorded yet.
+          </p>
+        )}
+        {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={invalidateAll} />)}
       </div>
     </div>
   );
 }
+
 
 function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmitted: () => void }) {
   const completed = new Date(service.completed_at);
@@ -128,7 +165,15 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const canComplain = service.can_complain && msLeft > 0 && !service.has_complaint;
 
   const isUnavailable = service.status === "unavailable";
+  const isMissed = service.status === "skipped";
+  const isPending = service.status === "pending" || service.status === "in_progress";
   const hasDirty = !!service.dirty_report;
+  const dirtyPhotos = [
+    service.dirty_report?.photo_front,
+    service.dirty_report?.photo_rear,
+    service.dirty_report?.photo_left,
+    service.dirty_report?.photo_right,
+  ].filter((p): p is string => !!p);
   const reasonLabel = (r: string | null | undefined) => {
     if (!r) return "Service skipped";
     const map: Record<string, string> = {
@@ -146,27 +191,52 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     <Card className="overflow-hidden p-0">
       <div className="flex items-start gap-3 p-4">
         <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-          isUnavailable ? "bg-amber-500/15 text-amber-600" : hasDirty ? "bg-orange-500/15 text-orange-600" : "bg-success/15 text-success"
+          isUnavailable ? "bg-amber-500/15 text-amber-600"
+            : isMissed ? "bg-destructive/10 text-destructive"
+            : isPending ? "bg-muted text-muted-foreground"
+            : hasDirty ? "bg-orange-500/15 text-orange-600"
+            : "bg-success/15 text-success"
         }`}>
-          {isUnavailable ? <ShieldAlert className="h-5 w-5" /> : hasDirty ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+          {isUnavailable ? <ShieldAlert className="h-5 w-5" />
+            : isMissed ? <AlertCircle className="h-5 w-5" />
+            : isPending ? <Clock3 className="h-5 w-5" />
+            : hasDirty ? <AlertCircle className="h-5 w-5" />
+            : <CheckCircle2 className="h-5 w-5" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-semibold">
-              {isUnavailable ? `Skipped · ${service.service_name ?? "Service"}` : service.service_name ?? "Service complete"}
+              {isUnavailable
+                ? `Skipped · ${service.service_name ?? "Service"}`
+                : isMissed
+                  ? `Missed by Urban Wash · ${service.service_name ?? "Service"}`
+                  : isPending
+                    ? `Scheduled · ${service.service_name ?? "Service"}`
+                    : service.service_name ?? "Service complete"}
             </p>
             {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {service.vehicle_label}
+            {service.vehicle_label}{service.partner_name ? ` · ${service.partner_name}` : ""}
           </p>
           <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {completed.toLocaleDateString()} · {completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="inline-flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              {isPending || isMissed
+                ? new Date(service.scheduled_date).toLocaleDateString()
+                : `${completed.toLocaleDateString()} · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            </span>
           </div>
+          {isMissed && (
+            <div className="mt-2 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-[11px] text-destructive">
+              <span className="font-medium">We could not service your vehicle.</span> Your plan has been extended by a day.
+            </div>
+          )}
           {isUnavailable && (
             <div className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-700">
               <span className="font-medium">{reasonLabel(service.unavailable_reason)}.</span>
               {service.unavailable_notes ? <> {service.unavailable_notes}</> : null}
+              <div className="mt-0.5">No wash was deducted from your plan.</div>
             </div>
           )}
           {hasDirty && (
@@ -178,17 +248,22 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       </div>
 
-      {!isUnavailable && <PhotoStrip photos={service.photos} />}
-      {isUnavailable && service.unavailable_photo && (
-        <div className="bg-muted/40 px-4 py-2">
-          <SignedPhoto path={service.unavailable_photo} stage="proof" />
+      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} />}
+      {(isUnavailable || hasDirty) && (
+        <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
+          {service.unavailable_photo && <SignedPhoto path={service.unavailable_photo} stage="proof" />}
+          {dirtyPhotos.map((p) => <SignedPhoto key={p} path={p} stage="dirty" />)}
         </div>
       )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <div className="inline-flex items-center gap-1.5 text-[11px]">
           <Clock3 className="h-3.5 w-3.5 text-primary" />
-          {isUnavailable ? (
+          {isMissed ? (
+            <span className="text-muted-foreground">Plan extended — no wash deducted</span>
+          ) : isPending ? (
+            <span className="text-muted-foreground">Scheduled</span>
+          ) : isUnavailable ? (
             <span className="text-muted-foreground">No charge — marked unavailable</span>
           ) : service.has_complaint ? (
             <span className="text-muted-foreground">Complaint submitted</span>
@@ -198,9 +273,10 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             <span className="text-muted-foreground">Complaint window closed</span>
           )}
         </div>
-        {!isUnavailable && (
+        {!isUnavailable && !isMissed && !isPending && (
           <ComplaintButton service={service} canComplain={canComplain} onSubmitted={onSubmitted} />
         )}
+
       </div>
     </Card>
   );

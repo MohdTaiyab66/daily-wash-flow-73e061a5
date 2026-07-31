@@ -5985,6 +5985,7 @@ export type Database = {
         Args: { p_lat: number; p_lng: number; p_slug: string }
         Returns: string
       }
+      auto_extend_company_failures: { Args: { p_date?: string }; Returns: Json }
       available_customers_by_area: {
         Args: never
         Returns: {
@@ -6413,6 +6414,29 @@ export type Database = {
               vehicle_label: string
             }[]
           }
+      list_my_service_history: {
+        Args: { p_days?: number; p_vehicle_id?: string }
+        Returns: {
+          booking_id: string
+          can_complain: boolean
+          complaint_window_ends_at: string
+          completed_at: string
+          dirty_report: Json
+          has_complaint: boolean
+          partner_id: string
+          partner_name: string
+          photos: Json
+          scheduled_date: string
+          service_id: string
+          service_name: string
+          service_slug: string
+          status: string
+          unavailable_notes: string
+          unavailable_photo: string
+          unavailable_reason: string
+          vehicle_label: string
+        }[]
+      }
       list_partner_booking_requests: {
         Args: never
         Returns: {
