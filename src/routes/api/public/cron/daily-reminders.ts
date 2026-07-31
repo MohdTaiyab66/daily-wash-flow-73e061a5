@@ -139,6 +139,18 @@ async function renewalReminder(sb: any) {
   return n;
 }
 
+/**
+ * Company-side failures: any stop still `pending` after its scheduled day was
+ * never started by Urban Wash. Those days must not be lost by the customer —
+ * the plan is extended by one day and the customer is notified.
+ */
+async function extendCompanyFailures(sb: any) {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const { data, error } = await sb.rpc("auto_extend_company_failures", { p_date: yesterday });
+  if (error) throw error;
+  return Number(data?.extended ?? 0);
+}
+
 export const Route = createFileRoute("/api/public/cron/daily-reminders")({
   server: {
     handlers: {
@@ -152,13 +164,15 @@ export const Route = createFileRoute("/api/public/cron/daily-reminders")({
           });
         }
         const sb = await admin();
-        const [weekly, renewal] = await Promise.all([
+        const [weekly, renewal, extended] = await Promise.all([
           weeklyIncludedWashReminder(sb).catch(() => 0),
           renewalReminder(sb).catch(() => 0),
+          extendCompanyFailures(sb).catch(() => 0),
         ]);
-        return Response.json({ ok: true, weekly, renewal });
+        return Response.json({ ok: true, weekly, renewal, extended });
       },
       GET: async () => Response.json({ ok: true, hint: "POST to dispatch" }),
     },
   },
 });
+
