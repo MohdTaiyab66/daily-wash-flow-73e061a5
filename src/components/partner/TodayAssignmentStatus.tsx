@@ -66,17 +66,8 @@ export function TodayAssignmentStatus({
       </div>
     );
   }
-  if (isRefetching && hasData) {
-    return (
-      <div className="mt-3 rounded-2xl border border-border bg-muted/40 px-4 py-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Refreshing today's route… showing last update from {timeAgo(lastSuccessAt ?? metrics?.lastSuccessAt ?? null)}
-        </div>
-        <MetricsLine metrics={metrics} lastSuccessAt={lastSuccessAt} />
-      </div>
-    );
-  }
+  // Background refresh stays silent — no banner while data is already on screen.
+
   if (isFetching && !hasData) {
     return (
       <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
