@@ -58,11 +58,13 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   if (!a) {
     const { data: loose, error: lErr } = await supabase
       .from("services")
-      .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+      .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
       .eq("partner_id", u.user.id)
       .eq("scheduled_date", today);
     if (lErr) throw lErr;
-    const tds = loose ?? [];
+    // Same filter the Live Route screen uses — bookings covered elsewhere are
+    // not part of the partner's route, so counts can never diverge.
+    const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
     return {
       assignment: null, all: [], today: tds, nextDate: null,
       todaysCustomers: tds.length,
@@ -75,11 +77,12 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   const { data: services, error: sErr } = await supabase
     .from("services")
-    .select("id,customer_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+    .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
     .eq("assignment_id", a.id);
   if (sErr) throw sErr;
-  const all = services ?? [];
+  const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
   const todays = all.filter((s: any) => s.scheduled_date === today);
+
   const nextDate = all
     .map((s: any) => s.scheduled_date as string)
     .filter((d) => d && d > today)
