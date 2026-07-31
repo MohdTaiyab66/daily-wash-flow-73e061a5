@@ -5985,6 +5985,7 @@ export type Database = {
         Args: { p_lat: number; p_lng: number; p_slug: string }
         Returns: string
       }
+      auto_extend_company_failures: { Args: { p_date?: string }; Returns: Json }
       available_customers_by_area: {
         Args: never
         Returns: {
