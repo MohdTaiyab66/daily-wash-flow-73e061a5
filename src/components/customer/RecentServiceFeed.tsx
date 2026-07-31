@@ -46,6 +46,7 @@ export function RecentServiceFeed({
   vehicleId?: string | null;
 }) {
   const qc = useQueryClient();
+  const [showAll, setShowAll] = useState(false);
   const recentQ = useQuery({
     queryKey: ["my-recent-services", userId, vehicleId],
     enabled: !!userId,
@@ -60,17 +61,33 @@ export function RecentServiceFeed({
     },
   });
 
-  // Realtime: refresh when a service or photo changes
+  // Full daily history: every scheduled day, whatever the outcome.
+  const historyQ = useQuery({
+    queryKey: ["my-service-history", userId, vehicleId],
+    enabled: !!userId && showAll,
+    queryFn: async (): Promise<RecentService[]> => {
+      const { data, error } = await (supabase as any).rpc("list_my_service_history", {
+        p_days: 60,
+        p_vehicle_id: vehicleId,
+      });
+      if (error) throw error;
+      return (data ?? []) as RecentService[];
+    },
+  });
+
+  // Realtime: refresh when a service, photo or outcome report changes
   useEffect(() => {
     if (!userId) return;
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
+      qc.invalidateQueries({ queryKey: ["my-service-history", userId] });
+    };
     const ch = supabase
       .channel("customer-service-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "services" }, () => {
-        qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_photos" }, () => {
-        qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "services" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_photos" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "dirty_vehicle_reports" }, invalidate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "unavailability_reports" }, invalidate)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [userId, qc]);
@@ -98,25 +115,45 @@ export function RecentServiceFeed({
     });
   }, [recentQ.data]);
 
-  const list = recentQ.data ?? [];
+  const list = showAll ? historyQ.data ?? [] : recentQ.data ?? [];
 
   if (recentQ.isLoading) {
     return <div className="mt-5 h-24 animate-pulse rounded-2xl bg-muted" />;
   }
-  if (list.length === 0) return null;
+  if (list.length === 0 && !showAll) return null;
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
+    qc.invalidateQueries({ queryKey: ["my-service-history", userId] });
+  };
 
   return (
     <div className="mt-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight">Recent service updates</h3>
-        <span className="text-[10px] text-muted-foreground">Visible for 2 days</span>
+        <h3 className="text-sm font-semibold tracking-tight">
+          {showAll ? "Service history" : "Recent service updates"}
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+        >
+          {showAll ? "Show recent only" : "View full history"}
+        </button>
       </div>
       <div className="mt-2 space-y-3">
-        {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-recent-services", userId] })} />)}
+        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-2xl bg-muted" />}
+        {showAll && !historyQ.isLoading && list.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+            No service days recorded yet.
+          </p>
+        )}
+        {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={invalidateAll} />)}
       </div>
     </div>
   );
 }
+
 
 function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmitted: () => void }) {
   const completed = new Date(service.completed_at);
