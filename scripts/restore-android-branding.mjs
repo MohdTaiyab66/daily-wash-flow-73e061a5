@@ -6,7 +6,7 @@
  * ---------------
  * `scripts/ensure-variant-clean.mjs` deletes android/ whenever the build
  * switches variant, and `cap add android` then regenerates the Capacitor
- * template, which ships its OWN mipmap-*/ic_launcher*.png plus
+ * template, which ships its OWN mipmap ic_launcher PNGs plus
  * mipmap-anydpi-v26/ic_launcher.xml pointing at @drawable/ic_launcher_foreground.
  * That silently overwrites the committed Urban Wash launcher assets, so the
  * packaged APK ends up with stale/default icons even after a clean reinstall.
