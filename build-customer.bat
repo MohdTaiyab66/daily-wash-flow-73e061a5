@@ -180,6 +180,9 @@ if errorlevel 1 (
   goto :fail
 )
 
+echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
+call node scripts\restore-android-branding.mjs || goto :fail
+
 echo   Stamping Android package id and verifying synced build marker...
 call node scripts\stamp-android-version.mjs || goto :fail
 
