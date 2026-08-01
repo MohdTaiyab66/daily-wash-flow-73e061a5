@@ -11,6 +11,7 @@
  *
  * Prints a PASS/FAIL summary at the end.
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -244,6 +245,44 @@ if (mergedTextPath && mergedTextPath.endsWith(".xml")) {
     );
   }
 }
+
+// --- 5. Launcher icons packaged in the APK -----------------------------------
+// The res/mipmap-*/ic_launcher*.png entries inside the APK must be byte-identical
+// to android-branding/res (the branding source of truth). A mismatch means a
+// template/stale asset survived cap sync into the package.
+const BRANDING = "android-branding/res";
+try {
+  if (!fs.existsSync(BRANDING)) throw new Error(`${BRANDING} missing`);
+  const brandHashes = new Map();
+  for (const dir of fs.readdirSync(BRANDING)) {
+    const dirPath = path.join(BRANDING, dir);
+    if (!fs.statSync(dirPath).isDirectory()) continue;
+    for (const name of fs.readdirSync(dirPath)) {
+      if (!name.endsWith(".png")) continue;
+      const h = createHash("sha256").update(fs.readFileSync(path.join(dirPath, name))).digest("hex");
+      brandHashes.set(h, `${dir}/${name}`);
+    }
+  }
+  const iconEntries = readApkEntries(APK, (n) => /^res\/mipmap-[^/]*\/ic_launcher[^/]*\.(png|webp)$/.test(n));
+  record("apk.res.launcher.present", iconEntries.length > 0, `${iconEntries.length} launcher bitmap(s) in APK`);
+
+  const stale = [];
+  for (const e of iconEntries) {
+    const h = createHash("sha256").update(e.data).digest("hex");
+    if (!brandHashes.has(h)) stale.push(e.name);
+  }
+  record(
+    "apk.res.launcher.matches-branding",
+    iconEntries.length > 0 && stale.length === 0,
+    stale.length
+      ? `NOT from android-branding/res: ${stale.join(", ")} (run scripts/restore-android-branding.mjs before packaging; disable PNG crunching if AGP re-encoded them)`
+      : "all launcher bitmaps byte-identical to android-branding/res",
+  );
+} catch (e) {
+  record("apk.res.launcher.matches-branding", false, e.message);
+}
+
+
 
 
 // --- Summary -----------------------------------------------------------------
