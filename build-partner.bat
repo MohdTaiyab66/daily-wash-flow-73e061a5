@@ -237,6 +237,9 @@ if exist "android\app\src\main\assets\public\build-info.json" (
   call node scripts\verify-build-marker.mjs "android\app\src\main\assets\build-info.json" "android asset marker" || goto :fail
 )
 
+echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
+call node scripts\restore-android-branding.mjs || goto :fail
+
 echo   Stamping Android version and verifying synced build marker...
 call node scripts\stamp-android-version.mjs || goto :fail
 
