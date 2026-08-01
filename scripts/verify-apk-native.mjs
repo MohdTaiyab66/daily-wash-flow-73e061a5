@@ -11,6 +11,7 @@
  *
  * Prints a PASS/FAIL summary at the end.
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
