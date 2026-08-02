@@ -1,10 +1,13 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
+import { EmptyState } from "@/components/customer/ui/EmptyState";
+import { SkeletonList } from "@/components/customer/ui/Skeletons";
+import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
 
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
@@ -74,8 +77,10 @@ function BookingsPage() {
   });
 
   const items = q.data ?? [];
+  const qc = useQueryClient();
 
   return (
+    <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
     <div className="px-5 pt-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">My Bookings</h1>
@@ -94,15 +99,18 @@ function BookingsPage() {
       </div>
 
       {!hasVehicles && !vehiclesQ.isLoading ? (
-        <div className="mt-10 flex flex-col items-center">
-          <div className="grid h-24 w-24 place-items-center rounded-2xl bg-accent">
-            <Car className="h-12 w-12 text-accent-foreground" />
-          </div>
-          <p className="mt-5 text-sm text-muted-foreground">Add a vehicle to view bookings</p>
-          <Button asChild className="mt-6 rounded-full">
-            <Link to="/c/vehicles/add">Add vehicle</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="mt-10"
+          icon={Car}
+          tone="primary"
+          title="No vehicle added"
+          description="Add your car to see and manage its bookings."
+          action={
+            <Button asChild className="h-11 rounded-full px-7 font-semibold">
+              <Link to="/c/vehicles/add">Add vehicle</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
           <div className="mt-5 rounded-full border border-border bg-card p-1 flex">
@@ -121,28 +129,29 @@ function BookingsPage() {
 
           <div className="mt-8">
             {q.isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
-                ))}
-              </div>
+              <SkeletonList count={3} />
             ) : items.length === 0 ? (
-              <div className="flex flex-col items-center pt-12">
-                <div className="grid h-24 w-24 place-items-center rounded-2xl bg-accent">
-                  <CalendarDays className="h-12 w-12 text-accent-foreground" />
-                </div>
-                <p className="mt-5 text-sm text-muted-foreground">No bookings for this vehicle</p>
-                <Button asChild className="mt-6 rounded-full">
-                  <Link to="/c/home">Browse services</Link>
-                </Button>
-              </div>
+              <EmptyState
+                icon={CalendarDays}
+                title={tab === "upcoming" ? "No upcoming bookings" : "No past bookings"}
+                description={
+                  tab === "upcoming"
+                    ? "Book a wash and it will appear here with live status."
+                    : "Completed and cancelled services will be listed here."
+                }
+                action={
+                  <Button asChild className="h-11 rounded-full px-7 font-semibold">
+                    <Link to="/c/home">Browse services</Link>
+                  </Button>
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {items.map((b) => (
                   <button
                     key={b.id}
                     onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                    className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4 text-left hover:border-primary/40"
+                    className="uw-pressable flex w-full items-center justify-between rounded-3xl border border-border bg-card p-4 text-left hover:border-primary/40"
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold">{b.service_catalog?.name ?? "Service"}</div>
@@ -165,5 +174,6 @@ function BookingsPage() {
         </>
       )}
     </div>
+    </PullToRefresh>
   );
 }
