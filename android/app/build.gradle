@@ -74,6 +74,11 @@ try {
 
 
 
+
+
+
+
+
 // [uw-razorpay-pin BEGIN]
 configurations.all {
     resolutionStrategy {
@@ -98,6 +103,17 @@ task printRazorpayResolved {
     }
 }
 // [uw-razorpay-pin END]
+
+// [uw-firebase BEGIN]
+dependencies {
+    implementation "com.google.firebase:firebase-messaging:25.0.1"
+}
+configurations.all {
+    resolutionStrategy {
+        force "com.google.firebase:firebase-messaging:25.0.1"
+    }
+}
+// [uw-firebase END]
 
 // [uw-kotlin BEGIN]
 apply plugin: 'kotlin-android'
