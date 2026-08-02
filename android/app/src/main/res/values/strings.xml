@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Urban Wash Partner</string>
-    <string name="title_activity_main">Urban Wash Partner</string>
-    <string name="package_name">com.urbanwash.partner</string>
-    <string name="custom_url_scheme">com.urbanwash.partner</string>
+    <string name="app_name">Urban Wash</string>
+    <string name="title_activity_main">Urban Wash</string>
+    <string name="package_name">com.urbanwash.customer</string>
+    <string name="custom_url_scheme">com.urbanwash.customer</string>
 </resources>

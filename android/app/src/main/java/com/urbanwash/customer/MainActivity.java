@@ -1,4 +1,4 @@
-package com.urbanwash.partner;
+package com.urbanwash.customer;
 
 
 
@@ -16,10 +16,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(Checkout.class);
-        Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=32 BUILD_VERSION=1.0.32 BUILD_ID=2026-07-18-trace-01 GIT_SHA=unknown BUILD_TIME=2026-08-02T17:21:07.816Z");
+        Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=32 BUILD_VERSION=1.0.32 BUILD_ID=2026-07-18-trace-01 GIT_SHA=unknown BUILD_TIME=2026-08-02T19:24:28.203Z");
         Log.i("PARTNER_BUILD", "DEVICE_MANUFACTURER=" + android.os.Build.MANUFACTURER + " DEVICE_MODEL=" + android.os.Build.MODEL + " SDK_INT=" + android.os.Build.VERSION.SDK_INT);
-
-
         super.onCreate(savedInstanceState);
         // urbanwash-webview-cache-bust-start
         WebView urbanwashWebView = getBridge().getWebView();

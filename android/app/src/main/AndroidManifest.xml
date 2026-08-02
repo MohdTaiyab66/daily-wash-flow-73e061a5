@@ -92,7 +92,7 @@
         <receiver
             android:name="com.urbanwash.push.OfferActionReceiver"
             android:exported="false" />
-<service android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService" tools:node="remove" />
+            <service android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService" tools:node="remove" />
             <service android:name="com.capacitorjs.plugins.pushnotifications.MessagingService" tools:node="remove" />
             <service android:name="com.google.firebase.messaging.FirebaseMessagingService" tools:node="remove" />
     </application>

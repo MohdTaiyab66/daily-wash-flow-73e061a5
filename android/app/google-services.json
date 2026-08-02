@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "781422718869",
-    "project_id": "uw-partner-app",
-    "storage_bucket": "uw-partner-app.firebasestorage.app"
+    "project_number": "588235347243",
+    "project_id": "customer-apk-20ef8",
+    "storage_bucket": "customer-apk-20ef8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:781422718869:android:2e826f846ff6829b69509c",
+        "mobilesdk_app_id": "1:588235347243:android:46d2a07a5209af3d7da16e",
         "android_client_info": {
-          "package_name": "com.urbanwash.partner"
+          "package_name": "com.urbanwash.customer"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAE2E9qNZJXDOxB1oxGjMCZwy_PB90N458"
+          "current_key": "AIzaSyC926M_f0CZS2yzkXTynpdMnbpqBZ2S6bM"
         }
       ],
       "services": {
