@@ -20,6 +20,7 @@ function VehicleAuditPage() {
   const auditFn = useServerFn(getVehicleAudit);
   const [tab, setTab] = useState<"all" | "mismatch">("all");
   const [search, setSearch] = useState("");
+  const [devMode, setDevMode] = useState(false);
   const [openBookingId, setOpenBookingId] = useState<string | null>(null);
 
   const { data, isFetching } = useQuery({
@@ -42,17 +43,28 @@ function VehicleAuditPage() {
   const mismatchCount = (data ?? []).filter((r) => r.mismatch).length;
 
   return (
-    <div className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Vehicle Audit</h1>
           <p className="text-sm text-muted-foreground">
             Verify every scheduled service references the exact car chosen at booking.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => router.invalidate()}>
-          <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDevMode((v) => !v)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              devMode ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            Developer mode
+          </button>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => router.invalidate()}>
+            <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "all" | "mismatch")}>
@@ -68,36 +80,38 @@ function VehicleAuditPage() {
 
         <div className="my-3">
           <Input
-            placeholder="Search by customer, registration, booking id…"
+            placeholder="Search by customer or registration…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="max-w-sm rounded-full"
           />
         </div>
 
         <TabsContent value={tab} className="mt-0">
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Customer</th>
-                  <th className="px-3 py-2">Booking vehicle</th>
-                  <th className="px-3 py-2">Service vehicle</th>
-                  <th className="px-3 py-2">Booking ID</th>
-                  <th className="px-3 py-2">Service ID</th>
+                  <th className="px-3 py-2">Vehicle</th>
+                  <th className="px-3 py-2">Partner vehicle</th>
+                  <th className="px-3 py-2">Service date</th>
+                  {devMode && <th className="px-3 py-2">Booking ID</th>}
+                  {devMode && <th className="px-3 py-2">Service ID</th>}
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2"></th>
+                  <th className="px-3 py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {isFetching && (
-                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
+                  <tr><td colSpan={devMode ? 8 : 6} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
                 )}
                 {!isFetching && filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">No rows.</td></tr>
+                  <tr><td colSpan={devMode ? 8 : 6} className="px-3 py-6 text-center text-muted-foreground">No rows.</td></tr>
                 )}
-                {filtered.map((r) => <Row key={r.service_id} row={r} onOpen={() => setOpenBookingId(r.booking_id)} />)}
+                {filtered.map((r) => (
+                  <Row key={r.service_id} row={r} devMode={devMode} onOpen={() => setOpenBookingId(r.booking_id)} />
+                ))}
               </tbody>
             </table>
           </div>
@@ -109,19 +123,19 @@ function VehicleAuditPage() {
   );
 }
 
-function Row({ row, onOpen }: { row: VehicleAuditRow; onOpen: () => void }) {
+function Row({ row, devMode, onOpen }: { row: VehicleAuditRow; devMode: boolean; onOpen: () => void }) {
   const bookingLabel = row.booking_id
     ? `${row.booking_make ?? "?"} ${row.booking_model ?? ""} · ${row.booking_reg ?? "—"}`
     : "—";
   const serviceLabel = `${row.service_make ?? "?"} ${row.service_model ?? ""} · ${row.service_reg ?? "—"}`;
   return (
     <tr className={row.mismatch ? "bg-destructive/5" : ""}>
-      <td className="px-3 py-2 whitespace-nowrap">{row.scheduled_date ?? "—"}</td>
       <td className="px-3 py-2">{row.customer_name ?? "—"}</td>
       <td className="px-3 py-2">{bookingLabel}</td>
       <td className="px-3 py-2">{serviceLabel}</td>
-      <td className="px-3 py-2 font-mono text-xs">{row.booking_id?.slice(0, 8) ?? "—"}</td>
-      <td className="px-3 py-2 font-mono text-xs">{row.service_id.slice(0, 8)}</td>
+      <td className="whitespace-nowrap px-3 py-2">{row.scheduled_date ?? "—"}</td>
+      {devMode && <td className="px-3 py-2 font-mono text-xs">{row.booking_id?.slice(0, 8) ?? "—"}</td>}
+      {devMode && <td className="px-3 py-2 font-mono text-xs">{row.service_id.slice(0, 8)}</td>}
       <td className="px-3 py-2">
         {row.mismatch ? (
           <span className="inline-flex items-center gap-1 text-destructive">
@@ -141,6 +155,7 @@ function Row({ row, onOpen }: { row: VehicleAuditRow; onOpen: () => void }) {
     </tr>
   );
 }
+
 
 function TraceSheet({ bookingId, onClose }: { bookingId: string | null; onClose: () => void }) {
   const traceFn = useServerFn(getVehicleTraceLog);

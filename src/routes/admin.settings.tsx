@@ -39,7 +39,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "min_assignment_days", label: "Minimum assignment days" },
       { key: "min_assignment_days_new", label: "Minimum days (new partner)" },
       { key: "max_assignment_days", label: "Maximum assignment days" },
-      { key: "trial_mode", label: "Trial mode", kind: "bool" },
+      
       { key: "manual_assignment_enabled", label: "Manual assignment", kind: "bool" },
       { key: "auto_assign_enabled", label: "Auto assignment", kind: "bool" },
       { key: "allow_partner_cancel", label: "Allow partner to cancel", kind: "bool" },
@@ -123,7 +123,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
   {
     id: "service_verification",
     title: "Service Verification",
-    description: "Controls how partner service completion is verified. Turn GPS Verification OFF for trial mode — partners can then start and complete services from any location. Photos, wallet, notifications and all other checks continue to work.",
+    description: "Controls how partner service completion is verified. Turning GPS Verification OFF lets partners start and complete services from any location. Photos, wallet, notifications and all other checks continue to work.",
     fields: [
       { key: "gps_verification", label: "Enable GPS Verification", help: "ON: partner must be within the allowed radius of the customer to complete. OFF: skip GPS distance check entirely.", kind: "bool" },
       { key: "complete_gps_radius_m", label: "Allowed radius when ON (m)" },

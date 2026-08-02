@@ -11,8 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-export function EditPartnerDialog({ partner }: { partner: any }) {
-  const [open, setOpen] = useState(false);
+export function EditPartnerDialog({
+  partner,
+  open: controlledOpen,
+  onOpenChange,
+}: { partner: any; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v);
+    onOpenChange?.(v);
+  };
   const [f, setF] = useState({
     full_name: partner.full_name ?? "",
     phone: partner.phone ?? "",
@@ -38,9 +48,11 @@ export function EditPartnerDialog({ partner }: { partner: any }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost"><Pencil className="h-3.5 w-3.5" /></Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="ghost"><Pencil className="h-3.5 w-3.5" /></Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader><DialogTitle>Edit partner · {partner.partner_code}</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
