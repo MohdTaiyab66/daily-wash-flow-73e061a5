@@ -28,6 +28,26 @@ function readKotlinVersionFromPlugins() {
 }
 
 /**
+ * Read the firebase-messaging version the installed @capacitor-firebase/messaging
+ * plugin compiles against, so the app module links against the SAME SDK.
+ */
+function readFirebaseMessagingVersion() {
+  const file = "node_modules/@capacitor-firebase/messaging/android/build.gradle";
+  if (existsSync(file)) {
+    const src = readFileSync(file, "utf8");
+    const m =
+      src.match(/firebaseMessagingVersion\s*=.*?:\s*'([\d.]+)'/) ||
+      src.match(/com\.google\.firebase:firebase-messaging:([\d.]+)/);
+    if (m) {
+      console.log(`[android-gradle] detected firebase-messaging ${m[1]} from plugin`);
+      return m[1];
+    }
+  }
+  console.log("[android-gradle] could not detect firebase-messaging version; falling back to 25.0.1");
+  return "25.0.1";
+}
+
+/**
  * Force-pin the resolved Razorpay Android Checkout SDK version and expose a
  * Gradle task that prints the actual resolved dependency version at build
  * time. This lets us prove the packaged SDK is the latest 1.6.x and not an
