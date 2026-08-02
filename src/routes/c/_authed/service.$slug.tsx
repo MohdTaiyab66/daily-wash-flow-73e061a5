@@ -426,11 +426,18 @@ function ServiceDetail() {
         qc.invalidateQueries({ queryKey: ["customer-bookings"] });
         qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
         qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicle.id] });
-        if (service.service_type === "subscription") {
-          await navigate({ to: "/c/subscriptions" });
-        } else {
-          await navigate({ to: "/c/bookings/$id", params: { id: String(bookingId) } });
-        }
+        // Dedicated confirmation screen instead of a toast-only handoff.
+        await navigate({
+          to: "/c/booking-success",
+          search: {
+            bookingId: service.service_type === "subscription" ? undefined : String(bookingId),
+            service: service.name,
+            date,
+            slot: slot || undefined,
+            vehicle: `${vehicle.make} ${vehicle.model}`,
+            plan: service.service_type === "subscription" ? true : undefined,
+          },
+        });
         return;
       }
 
@@ -832,11 +839,13 @@ function ServiceDetail() {
     if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
     setPendingCheckout(null);
     setPaymentError(null);
-    if (ctx.isSubscription) {
-      await navigate({ to: "/c/subscriptions" });
-    } else {
-      await navigate({ to: "/c/bookings/$id", params: { id: ctx.bookingId } });
-    }
+    await navigate({
+      to: "/c/booking-success",
+      search: {
+        bookingId: ctx.isSubscription ? undefined : ctx.bookingId,
+        plan: ctx.isSubscription ? true : undefined,
+      },
+    });
   }, [navigate, qc]);
 
   const onRetryPayment = useCallback(async () => {

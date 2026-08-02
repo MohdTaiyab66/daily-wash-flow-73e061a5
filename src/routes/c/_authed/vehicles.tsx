@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
+import { EmptyState } from "@/components/customer/ui/EmptyState";
+import { SkeletonList } from "@/components/customer/ui/Skeletons";
 
 export const Route = createFileRoute("/c/_authed/vehicles")({
   ssr: false,
@@ -56,18 +58,19 @@ function VehiclesPage() {
       </div>
 
       <div className="mt-5 space-y-3">
-        {q.isLoading &&
-          Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
-          ))}
+        {q.isLoading && <SkeletonList count={2} />}
         {!q.isLoading && (q.data ?? []).length === 0 && (
-          <div className="rounded-3xl border border-dashed border-border p-10 text-center">
-            <Car className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">No vehicles yet.</p>
-            <Button asChild className="mt-4">
-              <Link to="/c/vehicles/add">Add your first vehicle</Link>
-            </Button>
-          </div>
+          <EmptyState
+            icon={Car}
+            tone="primary"
+            title="No vehicles yet"
+            description="Add your car to get pricing, book washes and track service history."
+            action={
+              <Button asChild className="h-11 rounded-full px-7 font-semibold">
+                <Link to="/c/vehicles/add">Add your first vehicle</Link>
+              </Button>
+            }
+          />
         )}
         {(q.data ?? []).map((v) => (
           <VehicleRow key={v.id} v={v} />

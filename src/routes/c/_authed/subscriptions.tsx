@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SkeletonCard, SkeletonRow } from "@/components/customer/ui/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -315,8 +316,8 @@ function MyPlanPage() {
 
           {bookingsQ.isLoading && (
             <div className="mt-6 space-y-3">
-              <div className="h-32 animate-pulse rounded-3xl bg-muted" />
-              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+              <SkeletonCard />
+              <SkeletonRow />
             </div>
           )}
 

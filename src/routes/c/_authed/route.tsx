@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 // Customer app intentionally does not subscribe to route/ETA updates.
 // Per product policy, customers see a Service Window — not live arrival data.
 
@@ -21,6 +23,9 @@ export const Route = createFileRoute("/c/_authed")({
 
 function CustomerAuthedLayout() {
   const [userId, setUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
   useEffect(() => {
     let cancelled = false;
     void supabase.auth.getUser().then(({ data }) => {
@@ -30,6 +35,21 @@ function CustomerAuthedLayout() {
       cancelled = true;
     };
   }, []);
+
+  // Session expiry / remote sign-out: land on the login screen with a clear
+  // message instead of a silently failing screen full of empty queries.
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || (event === "TOKEN_REFRESHED" && !session)) {
+        void qc.cancelQueries();
+        qc.clear();
+        toast.info("Session expired. Please log in again.");
+        navigate({ to: "/c/auth", replace: true });
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [navigate, qc]);
+
   useFcmRegistration(userId, "customer");
   // No live ETA / route sync for customers by design.
   return (
