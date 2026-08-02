@@ -62,6 +62,7 @@ import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
 import { Route as CAuthedNotificationsRouteImport } from './routes/c/_authed/notifications'
 import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
 import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
+import { Route as CAuthedBookingSuccessRouteImport } from './routes/c/_authed/booking-success'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ApiPublicFcmDeliveryReceiptRouteImport } from './routes/api/public/fcm-delivery-receipt'
 import { Route as AdminServiceIdRouteImport } from './routes/admin.service.$id'
@@ -364,6 +365,11 @@ const CAuthedBookingsRoute = CAuthedBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const CAuthedBookingSuccessRoute = CAuthedBookingSuccessRouteImport.update({
+  id: '/booking-success',
+  path: '/booking-success',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
 const ApiPublicRazorpayWebhookRoute =
   ApiPublicRazorpayWebhookRouteImport.update({
     id: '/api/public/razorpay-webhook',
@@ -627,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/c/booking-success': typeof CAuthedBookingSuccessRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/notifications': typeof CAuthedNotificationsRoute
@@ -714,6 +721,7 @@ export interface FileRoutesByTo {
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/c/booking-success': typeof CAuthedBookingSuccessRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
   '/c/notifications': typeof CAuthedNotificationsRoute
@@ -806,6 +814,7 @@ export interface FileRoutesById {
   '/admin/service/$id': typeof AdminServiceIdRoute
   '/api/public/fcm-delivery-receipt': typeof ApiPublicFcmDeliveryReceiptRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/c/_authed/booking-success': typeof CAuthedBookingSuccessRoute
   '/c/_authed/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/_authed/home': typeof CAuthedHomeRoute
   '/c/_authed/notifications': typeof CAuthedNotificationsRoute
@@ -898,6 +907,7 @@ export interface FileRouteTypes {
     | '/admin/service/$id'
     | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
+    | '/c/booking-success'
     | '/c/bookings'
     | '/c/home'
     | '/c/notifications'
@@ -985,6 +995,7 @@ export interface FileRouteTypes {
     | '/admin/service/$id'
     | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
+    | '/c/booking-success'
     | '/c/bookings'
     | '/c/home'
     | '/c/notifications'
@@ -1076,6 +1087,7 @@ export interface FileRouteTypes {
     | '/admin/service/$id'
     | '/api/public/fcm-delivery-receipt'
     | '/api/public/razorpay-webhook'
+    | '/c/_authed/booking-success'
     | '/c/_authed/bookings'
     | '/c/_authed/home'
     | '/c/_authed/notifications'
@@ -1506,6 +1518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CAuthedBookingsRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
+    '/c/_authed/booking-success': {
+      id: '/c/_authed/booking-success'
+      path: '/booking-success'
+      fullPath: '/c/booking-success'
+      preLoaderRoute: typeof CAuthedBookingSuccessRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
     '/api/public/razorpay-webhook': {
       id: '/api/public/razorpay-webhook'
       path: '/api/public/razorpay-webhook'
@@ -1934,6 +1953,7 @@ const CAuthedVehiclesIdRouteWithChildren =
   CAuthedVehiclesIdRoute._addFileChildren(CAuthedVehiclesIdRouteChildren)
 
 interface CAuthedRouteRouteChildren {
+  CAuthedBookingSuccessRoute: typeof CAuthedBookingSuccessRoute
   CAuthedBookingsRoute: typeof CAuthedBookingsRouteWithChildren
   CAuthedHomeRoute: typeof CAuthedHomeRoute
   CAuthedNotificationsRoute: typeof CAuthedNotificationsRoute
@@ -1947,6 +1967,7 @@ interface CAuthedRouteRouteChildren {
 }
 
 const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
+  CAuthedBookingSuccessRoute: CAuthedBookingSuccessRoute,
   CAuthedBookingsRoute: CAuthedBookingsRouteWithChildren,
   CAuthedHomeRoute: CAuthedHomeRoute,
   CAuthedNotificationsRoute: CAuthedNotificationsRoute,

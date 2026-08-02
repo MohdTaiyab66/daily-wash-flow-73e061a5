@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -16,6 +16,7 @@ import {
   Clock,
   Pencil,
   Camera,
+  Bell,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { toast } from "sonner";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
+import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { SkeletonCard, SkeletonRow, Shimmer } from "@/components/customer/ui/Skeletons";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -129,6 +132,57 @@ function CustomerHome() {
     },
   });
 
+  const qc = useQueryClient();
+
+  // Greeting name — read-only profile lookup, no schema or API change.
+  const profileQ = useQuery({
+    queryKey: ["customer-profile-name"],
+    queryFn: async (): Promise<string | null> => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await (supabase as any)
+        .from("customer_profiles")
+        .select("full_name")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      return (data?.full_name as string | undefined) ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const unreadQ = useQuery({
+    queryKey: ["customer-notifications-unread"],
+    queryFn: async (): Promise<number> => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return 0;
+      const { count } = await supabase
+        .from("customer_notifications")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null);
+      return count ?? 0;
+    },
+    refetchInterval: 60000,
+  });
+
+  // Status chip only — subscription lifecycle stays owned by the backend.
+  const subStatusQ = useQuery({
+    queryKey: ["customer-subscription-status", selectedVehicleId],
+    queryFn: async (): Promise<string | null> => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("status,vehicle_id,created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      const rows = (data ?? []) as Array<{ status: string; vehicle_id: string | null }>;
+      if (rows.length === 0) return null;
+      const mine = selectedVehicleId ? rows.filter((r) => r.vehicle_id === selectedVehicleId) : rows;
+      const pick = mine.find((r) => r.status === "active")
+        ?? mine.find((r) => r.status === "payment_pending")
+        ?? mine[0];
+      return pick?.status ?? null;
+    },
+  });
+
   const vehicles = vehiclesQ.data ?? [];
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
   const category = activeVehicle?.category ?? "hatchback_compact_sedan";
@@ -167,8 +221,67 @@ function CustomerHome() {
   const bothOff = !a.daily_shine && !a.premium;
   const showCatalog = !area || !bothOff;
 
+  const firstName = (profileQ.data ?? "").trim().split(/\s+/)[0] || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const unread = unreadQ.data ?? 0;
+  const subStatus = subStatusQ.data;
+
+  const refreshAll = () =>
+    Promise.all([
+      vehiclesQ.refetch(),
+      servicesQ.refetch(),
+      subStatusQ.refetch(),
+      unreadQ.refetch(),
+      qc.invalidateQueries({ queryKey: ["customer-notifications-unread"] }),
+    ]);
+
   return (
+    <PullToRefresh onRefresh={refreshAll}>
     <div className="px-5 pt-6">
+      {/* Greeting + notifications */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">{greeting},</p>
+          {profileQ.isLoading ? (
+            <Shimmer className="mt-1 h-5 w-32 rounded-lg" />
+          ) : (
+            <h1 className="truncate text-xl font-bold tracking-tight">{firstName}</h1>
+          )}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {subStatus && (
+            <span
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                subStatus === "active"
+                  ? "bg-success/12 text-success"
+                  : subStatus === "payment_pending"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {subStatus === "active"
+                ? "Plan active"
+                : subStatus === "payment_pending"
+                ? "Payment pending"
+                : "No active plan"}
+            </span>
+          )}
+          <Link
+            to="/c/notifications"
+            aria-label="Notifications"
+            className="relative grid h-10 w-10 place-items-center rounded-full border border-border bg-card"
+          >
+            <Bell className="h-4.5 w-4.5" />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Link>
+        </div>
+      </div>
+
       {/* Top bar */}
       <div className="flex items-start justify-between gap-3">
         <button
@@ -216,7 +329,9 @@ function CustomerHome() {
       </div>
 
       {/* Vehicle hero card */}
-      {activeVehicle ? (
+      {vehiclesQ.isLoading ? (
+        <SkeletonCard className="mt-4" />
+      ) : activeVehicle ? (
         <div className="mt-4 rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -338,9 +453,7 @@ function CustomerHome() {
               </div>
               <div className="space-y-2.5">
                 {servicesQ.isLoading &&
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
-                  ))}
+                  Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
                 {oneTime.map((s) => {
                   const Icon = SERVICE_ICON[s.slug] ?? Droplets;
                   const allowed = isServiceAllowed(s.slug, a);
@@ -433,6 +546,7 @@ function CustomerHome() {
         onOpenChange={setPhotoOpen}
       />
     </div>
+    </PullToRefresh>
   );
 }
 
