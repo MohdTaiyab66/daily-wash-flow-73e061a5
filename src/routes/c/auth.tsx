@@ -138,8 +138,8 @@ function CustomerAuth() {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       {/* Faded vehicle gallery — a quiet backdrop, not the subject. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden" aria-hidden>
-        <div className="grid grid-cols-3 gap-2 px-3 pt-3 opacity-[0.14]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-52 overflow-hidden" aria-hidden>
+        <div className="grid grid-cols-3 gap-2 px-3 pt-3 opacity-[0.09]">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -151,7 +151,7 @@ function CustomerAuth() {
             />
           ))}
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
       </div>
 
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
