@@ -59,6 +59,7 @@ import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
 import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
 import { Route as CAuthedProfileRouteImport } from './routes/c/_authed/profile'
+import { Route as CAuthedNotificationsRouteImport } from './routes/c/_authed/notifications'
 import { Route as CAuthedHomeRouteImport } from './routes/c/_authed/home'
 import { Route as CAuthedBookingsRouteImport } from './routes/c/_authed/bookings'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
@@ -348,6 +349,11 @@ const CAuthedProfileRoute = CAuthedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => CAuthedRouteRoute,
 } as any)
+const CAuthedNotificationsRoute = CAuthedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => CAuthedRouteRoute,
+} as any)
 const CAuthedHomeRoute = CAuthedHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -623,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
+  '/c/notifications': typeof CAuthedNotificationsRoute
   '/c/profile': typeof CAuthedProfileRoute
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
@@ -709,6 +716,7 @@ export interface FileRoutesByTo {
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/home': typeof CAuthedHomeRoute
+  '/c/notifications': typeof CAuthedNotificationsRoute
   '/c/profile': typeof CAuthedProfileRoute
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/c/_authed/bookings': typeof CAuthedBookingsRouteWithChildren
   '/c/_authed/home': typeof CAuthedHomeRoute
+  '/c/_authed/notifications': typeof CAuthedNotificationsRoute
   '/c/_authed/profile': typeof CAuthedProfileRoute
   '/c/_authed/referrals': typeof CAuthedReferralsRoute
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
@@ -891,6 +900,7 @@ export interface FileRouteTypes {
     | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
+    | '/c/notifications'
     | '/c/profile'
     | '/c/referrals'
     | '/c/subscriptions'
@@ -977,6 +987,7 @@ export interface FileRouteTypes {
     | '/api/public/razorpay-webhook'
     | '/c/bookings'
     | '/c/home'
+    | '/c/notifications'
     | '/c/profile'
     | '/c/referrals'
     | '/c/subscriptions'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/api/public/razorpay-webhook'
     | '/c/_authed/bookings'
     | '/c/_authed/home'
+    | '/c/_authed/notifications'
     | '/c/_authed/profile'
     | '/c/_authed/referrals'
     | '/c/_authed/subscriptions'
@@ -1471,6 +1483,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/c/profile'
       preLoaderRoute: typeof CAuthedProfileRouteImport
+      parentRoute: typeof CAuthedRouteRoute
+    }
+    '/c/_authed/notifications': {
+      id: '/c/_authed/notifications'
+      path: '/notifications'
+      fullPath: '/c/notifications'
+      preLoaderRoute: typeof CAuthedNotificationsRouteImport
       parentRoute: typeof CAuthedRouteRoute
     }
     '/c/_authed/home': {
@@ -1917,6 +1936,7 @@ const CAuthedVehiclesIdRouteWithChildren =
 interface CAuthedRouteRouteChildren {
   CAuthedBookingsRoute: typeof CAuthedBookingsRouteWithChildren
   CAuthedHomeRoute: typeof CAuthedHomeRoute
+  CAuthedNotificationsRoute: typeof CAuthedNotificationsRoute
   CAuthedProfileRoute: typeof CAuthedProfileRoute
   CAuthedReferralsRoute: typeof CAuthedReferralsRoute
   CAuthedSubscriptionsRoute: typeof CAuthedSubscriptionsRoute
@@ -1929,6 +1949,7 @@ interface CAuthedRouteRouteChildren {
 const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
   CAuthedBookingsRoute: CAuthedBookingsRouteWithChildren,
   CAuthedHomeRoute: CAuthedHomeRoute,
+  CAuthedNotificationsRoute: CAuthedNotificationsRoute,
   CAuthedProfileRoute: CAuthedProfileRoute,
   CAuthedReferralsRoute: CAuthedReferralsRoute,
   CAuthedSubscriptionsRoute: CAuthedSubscriptionsRoute,
