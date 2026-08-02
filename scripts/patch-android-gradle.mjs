@@ -107,6 +107,38 @@ ${MARKER_END}
 // Append to end of file (safest — cap-generated file has no stable anchor).
 gradle = gradle.trimEnd() + "\n" + block + "\n";
 
+// ─── Firebase Messaging SDK on the APP compile classpath ────────────────────
+// Root cause of "Unresolved reference: FirebaseMessagingService":
+// @capacitor-firebase/messaging declares
+//   implementation "com.google.firebase:firebase-messaging:<v>"
+// `implementation` (unlike `api`) is NOT exported to consumers, so the app
+// module only sees `project(':capacitor-firebase-messaging')` and none of the
+// Firebase classes. Our own UrbanwashMessagingService.kt imports those classes
+// directly, therefore the app module must declare the dependency itself.
+// We pin the exact same version the plugin compiles against to avoid a split.
+const FIREBASE_MESSAGING_VERSION = readFirebaseMessagingVersion();
+const FB_BEGIN = "// [uw-firebase BEGIN]";
+const FB_END = "// [uw-firebase END]";
+while (gradle.includes(FB_BEGIN) && gradle.includes(FB_END)) {
+  const s = gradle.indexOf(FB_BEGIN);
+  const e = gradle.indexOf(FB_END, s);
+  if (s === -1 || e === -1) break;
+  gradle = gradle.slice(0, s) + gradle.slice(e + FB_END.length).replace(/^\r?\n/, "");
+}
+const firebaseBlock = `
+${FB_BEGIN}
+dependencies {
+    implementation "com.google.firebase:firebase-messaging:${FIREBASE_MESSAGING_VERSION}"
+}
+configurations.all {
+    resolutionStrategy {
+        force "com.google.firebase:firebase-messaging:${FIREBASE_MESSAGING_VERSION}"
+    }
+}
+${FB_END}
+`;
+gradle = gradle.trimEnd() + "\n" + firebaseBlock + "\n";
+
 // ─── Kotlin support ─────────────────────────────────────────────────────────
 // Capacitor's Android template is Java-only. Our FCM service + accept/decline
 // receiver in android-native/kotlin/*.kt are copied into src/main/java, but
