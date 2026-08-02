@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { OtpInput } from "@/components/customer/ui/OtpInput";
 import logo from "@/assets/logo.jpeg";
 import hero from "@/assets/hero-car-wash.jpg";
 
@@ -23,6 +24,11 @@ type Step = "phone" | "otp" | "name";
 const customerEmail = (phone: string) => `${phone}@customer.urbanwash.app`;
 const customerPassword = (phone: string) => `UWC@${phone}#2026`;
 
+const OTP_LENGTH = 4;
+const RESEND_SECONDS = 30;
+// Demo OTP hint is a development affordance only — never shipped in the APK.
+const SHOW_DEMO_OTP = import.meta.env.DEV;
+
 function CustomerAuth() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
@@ -39,6 +45,8 @@ function CustomerAuth() {
   const [hasReferral, setHasReferral] = useState(false);
   const [referral, setReferral] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const verifyingRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -50,19 +58,39 @@ function CustomerAuth() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Resend countdown.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = window.setInterval(() => setResendIn((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    return () => window.clearInterval(t);
+  }, [resendIn]);
+
   const sendOtp = () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit mobile number"); return; }
     setStep("otp");
-    toast.success("OTP sent. Use 1234 to continue (demo)");
+    setOtp("");
+    setResendIn(RESEND_SECONDS);
+    toast.success(`OTP sent to +91 ${phone}`);
   };
 
-  const verifyOtp = async () => {
-    if (otp !== "1234") { toast.error("Invalid OTP. Use 1234"); return; }
+  const resendOtp = () => {
+    if (resendIn > 0) return;
+    setOtp("");
+    setResendIn(RESEND_SECONDS);
+    toast.success("OTP sent again");
+  };
+
+  const verifyOtp = async (code = otp) => {
+    if (verifyingRef.current) return; // no double submits
+    if (code.length !== OTP_LENGTH) { toast.error(`Enter the ${OTP_LENGTH}-digit code`); return; }
+    if (code !== "1234") { toast.error("Invalid OTP. Please try again."); return; }
+    verifyingRef.current = true;
     setLoading(true);
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    verifyingRef.current = false;
     if (data.session) { goAfterAuth(); return; }
     // Only treat "user does not exist" as a signup path. Surface other errors
     // (rate-limit, network, unconfirmed email) so users aren't silently sent
@@ -80,6 +108,7 @@ function CustomerAuth() {
   };
 
   const signUp = async () => {
+    if (loading) return;
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
     const email = customerEmail(phone);
@@ -104,126 +133,188 @@ function CustomerAuth() {
     goAfterAuth();
   };
 
-  const tiles = Array.from({ length: 12 });
+  const backToPhone = () => { setOtp(""); setName(""); setResendIn(0); setStep("phone"); };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="relative bg-primary text-primary-foreground rounded-b-[36px] px-5 pt-8 pb-10">
-        {step !== "phone" && (
-          <button
-            onClick={() => { setOtp(""); setName(""); setStep("phone"); }}
-            className="absolute left-5 top-6 inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-sm font-semibold backdrop-blur"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-        )}
-        <div className="mt-8 flex flex-col items-center text-center">
-          <img src={logo} alt="" className="h-12 w-12 rounded-xl object-cover" />
-          <h1 className="mt-3 text-4xl font-bold tracking-tight">Urban Wash</h1>
-          <p className="mt-3 text-lg font-semibold leading-snug">Making Every Ride Shine</p>
-        </div>
-      </div>
-
-      <div className="relative px-3 -mt-2">
-        <div className="grid grid-cols-4 gap-1.5">
-          {tiles.map((_, i) => (
+    <div className="relative flex min-h-screen flex-col bg-background">
+      {/* Faded vehicle gallery — a quiet backdrop, not the subject. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden" aria-hidden>
+        <div className="grid grid-cols-3 gap-2 px-3 pt-3 opacity-[0.14]">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="aspect-square rounded-xl bg-cover bg-center ring-1 ring-border"
+              className="aspect-[4/3] rounded-3xl bg-cover bg-center"
               style={{
                 backgroundImage: `url(${hero})`,
-                backgroundPosition: `${(i % 4) * 33}% ${Math.floor(i / 4) * 33}%`,
-                opacity: i >= 8 ? 0.35 : 1,
+                backgroundPosition: `${(i % 3) * 45}% ${Math.floor(i / 3) * 50}%`,
               }}
             />
           ))}
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-background" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background" />
       </div>
 
-      <div className="flex-1 px-6 pt-6 pb-8">
+      <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
+        {step !== "phone" && (
+          <button
+            onClick={backToPhone}
+            className="-ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+        )}
+
+        {/* Compact brand lockup — the splash already did the big reveal. */}
+        <div className="mt-8 flex items-center gap-3">
+          <img src={logo} alt="Urban Wash" className="h-11 w-11 rounded-2xl object-cover shadow-sm" />
+          <div className="leading-tight">
+            <p className="text-lg font-bold tracking-tight">Urban Wash</p>
+            <p className="text-xs text-muted-foreground">Making every ride shine</p>
+          </div>
+        </div>
+
         {step === "phone" && (
-          <>
-            <h2 className="text-center text-2xl font-bold tracking-tight">Log in or Sign up</h2>
-            <div className="mt-5">
-              <div className="flex items-center rounded-xl border border-input bg-card px-4 py-3">
-                <span className="text-base font-bold text-foreground">+91</span>
-                <Input
-                  inputMode="numeric"
-                  maxLength={10}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter mobile number"
-                  className="border-0 bg-transparent text-base shadow-none focus-visible:ring-0 ml-3 p-0 h-auto"
-                />
-              </div>
-              <Button
-                size="lg"
-                onClick={sendOtp}
-                disabled={phone.length !== 10}
-                className="mt-4 w-full h-14 rounded-xl text-base font-semibold"
-              >
-                Continue
-              </Button>
+          <div className="mt-12 animate-fade-in">
+            <h1 className="text-3xl font-bold tracking-tight">Log in or sign up</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We'll send a one-time code to verify your number.
+            </p>
 
-              <div className="mt-5 flex items-center gap-3">
-                <Checkbox
-                  id="ref"
-                  checked={hasReferral}
-                  onCheckedChange={(v) => setHasReferral(v === true)}
-                />
-                <label htmlFor="ref" className="text-sm font-medium">Have a referral code?</label>
-              </div>
-              {hasReferral && (
-                <Input
-                  value={referral}
-                  onChange={(e) => setReferral(e.target.value.toUpperCase())}
-                  placeholder="Enter referral code"
-                  className="mt-3 rounded-xl"
-                />
-              )}
-
-              <p className="mt-6 text-center text-xs text-muted-foreground">
-                By continuing, you agree to our{" "}
-                <Link to="/trust" className="underline font-semibold">Terms of Service</Link> &{" "}
-                <Link to="/trust" className="underline font-semibold">Privacy Policy</Link>
-              </p>
+            <div className="mt-8 flex items-center rounded-2xl border border-input bg-card px-4 py-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+              <span className="text-base font-semibold text-foreground">+91</span>
+              <span className="mx-3 h-5 w-px bg-border" />
+              <Input
+                inputMode="numeric"
+                autoComplete="tel"
+                maxLength={10}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                placeholder="Mobile number"
+                className="h-auto border-0 bg-transparent p-0 text-base tracking-wide shadow-none focus-visible:ring-0"
+              />
             </div>
-          </>
+
+            <Button
+              size="lg"
+              onClick={sendOtp}
+              disabled={phone.length !== 10}
+              className="mt-5 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+            >
+              Continue
+            </Button>
+
+            <div className="mt-7 flex items-center gap-3">
+              <Checkbox
+                id="ref"
+                checked={hasReferral}
+                onCheckedChange={(v) => setHasReferral(v === true)}
+              />
+              <label htmlFor="ref" className="text-sm font-medium">Have a referral code?</label>
+            </div>
+            {hasReferral && (
+              <Input
+                value={referral}
+                onChange={(e) => setReferral(e.target.value.toUpperCase())}
+                placeholder="Enter referral code"
+                className="mt-3 h-12 rounded-2xl animate-fade-in"
+              />
+            )}
+
+            <div className="mt-auto" />
+            <p className="mt-12 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-success" /> Your number is never shared
+            </p>
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
+              By continuing, you agree to our{" "}
+              <Link to="/trust" className="font-semibold underline underline-offset-2">Terms of Service</Link> &{" "}
+              <Link to="/trust" className="font-semibold underline underline-offset-2">Privacy Policy</Link>
+            </p>
+          </div>
         )}
 
         {step === "otp" && (
-          <>
-            <h2 className="text-center text-2xl font-bold tracking-tight">Verify mobile</h2>
-            <p className="mt-2 text-center text-sm text-muted-foreground">Code sent to +91 {phone}</p>
-            <Input
-              inputMode="numeric"
-              maxLength={4}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="mt-5 text-center text-2xl tracking-[0.5em] h-14 rounded-xl"
-            />
-            <p className="mt-2 text-center text-xs text-muted-foreground">Demo OTP: <span className="font-mono">1234</span></p>
-            <Button size="lg" className="mt-4 w-full h-14 rounded-xl text-base font-semibold" onClick={verifyOtp} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
+          <div className="mt-12 animate-fade-in">
+            <h1 className="text-3xl font-bold tracking-tight">Verify your number</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Code sent to <span className="font-semibold text-foreground">+91 {phone}</span>
+            </p>
+
+            <div className="mt-8">
+              <OtpInput
+                value={otp}
+                onChange={setOtp}
+                length={OTP_LENGTH}
+                disabled={loading}
+                onComplete={(code) => void verifyOtp(code)}
+              />
+            </div>
+
+            {SHOW_DEMO_OTP && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                Demo OTP: <span className="font-mono font-semibold">1234</span>
+              </p>
+            )}
+
+            <Button
+              size="lg"
+              className="mt-6 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+              onClick={() => void verifyOtp()}
+              disabled={loading || otp.length !== OTP_LENGTH}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "Verifying…" : "Verify"}
             </Button>
-          </>
+
+            <div className="mt-6 text-center text-sm">
+              {resendIn > 0 ? (
+                <span className="text-muted-foreground">
+                  Resend OTP in <span className="font-semibold tabular-nums text-foreground">{resendIn}s</span>
+                </span>
+              ) : (
+                <button onClick={resendOtp} className="font-semibold text-primary underline underline-offset-4">
+                  Resend OTP
+                </button>
+              )}
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-border bg-card p-4 text-center">
+              <p className="text-xs font-semibold">Trouble receiving OTP?</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Check your network, then request a new code.
+              </p>
+              <button
+                onClick={backToPhone}
+                className="mt-3 text-xs font-semibold text-primary underline underline-offset-4"
+              >
+                Change mobile number
+              </button>
+            </div>
+          </div>
         )}
 
         {step === "name" && (
-          <>
-            <h2 className="text-center text-2xl font-bold tracking-tight">Welcome to Urban Wash</h2>
-            <p className="mt-2 text-center text-sm text-muted-foreground">Tell us your name to set up your account</p>
+          <div className="mt-12 animate-fade-in">
+            <h1 className="text-3xl font-bold tracking-tight">Welcome to Urban Wash</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tell us your name to finish setting up your account.
+            </p>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your full name"
-              className="mt-5 rounded-xl h-12"
+              autoComplete="name"
+              className="mt-8 h-14 rounded-2xl text-base"
             />
-            <Button size="lg" className="mt-4 w-full h-14 rounded-xl text-base font-semibold" onClick={signUp} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create my account
+            <Button
+              size="lg"
+              className="mt-5 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+              onClick={signUp}
+              disabled={loading || name.trim().length < 2}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "Creating your account…" : "Create my account"}
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>
