@@ -48,9 +48,11 @@ export function EditPartnerDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost"><Pencil className="h-3.5 w-3.5" /></Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="ghost"><Pencil className="h-3.5 w-3.5" /></Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader><DialogTitle>Edit partner · {partner.partner_code}</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
