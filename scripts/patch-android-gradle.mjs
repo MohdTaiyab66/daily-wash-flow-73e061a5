@@ -138,6 +138,7 @@ configurations.all {
 ${FB_END}
 `;
 gradle = gradle.trimEnd() + "\n" + firebaseBlock + "\n";
+console.log(`[android-gradle] injected Firebase Messaging dependency (${FIREBASE_MESSAGING_VERSION})`);
 
 // ─── Kotlin support ─────────────────────────────────────────────────────────
 // Capacitor's Android template is Java-only. Our FCM service + accept/decline
