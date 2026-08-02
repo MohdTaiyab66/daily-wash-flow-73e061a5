@@ -182,6 +182,7 @@ export function GuidedReport({
             angle={angles[nextAngleIdx === -1 ? angles.length - 1 : nextAngleIdx]}
             slotId={`${kind}_${angles[nextAngleIdx === -1 ? angles.length - 1 : nextAngleIdx]}`}
             done={false}
+            label={angleLabel(angles[nextAngleIdx === -1 ? angles.length - 1 : nextAngleIdx])}
             variant="hero"
             hint="Hold the phone steady"
             onUploaded={() => refetch()}
