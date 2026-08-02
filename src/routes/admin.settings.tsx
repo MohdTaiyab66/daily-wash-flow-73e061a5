@@ -39,7 +39,7 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
       { key: "min_assignment_days", label: "Minimum assignment days" },
       { key: "min_assignment_days_new", label: "Minimum days (new partner)" },
       { key: "max_assignment_days", label: "Maximum assignment days" },
-      { key: "trial_mode", label: "Trial mode", kind: "bool" },
+      
       { key: "manual_assignment_enabled", label: "Manual assignment", kind: "bool" },
       { key: "auto_assign_enabled", label: "Auto assignment", kind: "bool" },
       { key: "allow_partner_cancel", label: "Allow partner to cancel", kind: "bool" },
