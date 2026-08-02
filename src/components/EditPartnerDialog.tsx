@@ -11,8 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-export function EditPartnerDialog({ partner }: { partner: any }) {
-  const [open, setOpen] = useState(false);
+export function EditPartnerDialog({
+  partner,
+  open: controlledOpen,
+  onOpenChange,
+}: { partner: any; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v);
+    onOpenChange?.(v);
+  };
   const [f, setF] = useState({
     full_name: partner.full_name ?? "",
     phone: partner.phone ?? "",
