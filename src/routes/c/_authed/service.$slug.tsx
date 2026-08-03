@@ -1117,6 +1117,8 @@ function ServiceDetail() {
 
   const onDiscardResumable = useCallback(() => {
     setResumable(null);
+    setTimeline([]);
+    setHoldBlocked(null);
     clearPendingCheckout();
   }, []);
 
