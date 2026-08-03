@@ -91,3 +91,18 @@ Then confirm in the build log: `[uw-razorpay-resolved] ... com.razorpay:checkout
 
 Needed next, before any further code change: the Android stack trace / logcat slice filtered on
 `adb logcat -v time | findstr /R "PARTNER_BUILD Razorpay AndroidRuntime Capacitor"` from app launch through checkout dismissal.
+
+---
+
+## Stabilization outcome (F1–F4 + toolchain)
+
+| ID | Fix | Proof |
+|----|-----|-------|
+| F4 | Native checkout is now app-owned source (`android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java`, mirrored in `android-native/java/`). `capacitor-razorpay` removed from `package.json`, `node_modules`, and `capacitor.settings.gradle`. `scripts/patch-capacitor-java.mjs` deleted. | `npx cap sync android` lists 10 plugins, none Razorpay; plugin file still present afterwards. |
+| F2 | One payment API: `openRazorpayCheckout()` in `src/lib/razorpay-checkout.ts`. The inline implementation in `service.$slug.tsx` is gone; add-ons and subscriptions call the same service. | No `window.Razorpay` usage outside `src/lib/razorpay-checkout.ts`. |
+| F1 | `com.razorpay:checkout:1.6.41` pinned permanently in `android/app/build.gradle` (`[uw-payments]`), with `force` + an `eachDependency` guard that fails the build on any `+` version. | `gradlew :app:printRazorpayResolved` prints the resolved coordinate during every build. |
+| F3 | `MainActivity` registers `UrbanWashCheckoutPlugin` exactly once and forwards `onActivityResult`. | `payments.registration.single` gate. |
+| Java env | `org.gradle.java.home` removed; Gradle toolchain pins Java 21 for all modules (`[uw-java-toolchain]` in `android/build.gradle`), Kotlin `jvmTarget = 21`. | `build.java.no-machine-path` gate. |
+| Cleanup | `PARTNER_BUILD` logging and the WebView cache-bust hack removed from the customer `MainActivity`. | `payments.mainactivity.clean` gate. |
+
+`scripts/verify-apk-native.mjs` now hard-fails the build (and `build-customer.bat` deletes the APK) if the upstream plugin reappears, the pin goes dynamic, registration is duplicated, or `UrbanWashCheckoutPlugin` / the Razorpay SDK is missing from `classes*.dex`.
