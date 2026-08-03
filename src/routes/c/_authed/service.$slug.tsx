@@ -755,11 +755,14 @@ function ServiceDetail() {
       attemptNo: ctx.attemptNo,
       providerOrderId: ctx.orderId,
     });
-    pushEvent(
-      ctx.bookingId,
-      "opened",
-      `${channel === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`,
-    );
+    // NOTE: on native we only log "opened" once the Razorpay activity has
+    // actually launched (checkoutLaunched event from the plugin). Logging it
+    // before the launch produced misleading "Razorpay opened" entries when the
+    // SDK exited immediately.
+    if (channel !== "native") {
+      pushEvent(ctx.bookingId, "opened", `Web checkout · attempt ${ctx.attemptNo}`);
+    }
+
 
     const isPluginUnavailable = (err: any) => {
       const msg = String(err?.message || err?.description || err || "").toLowerCase();
