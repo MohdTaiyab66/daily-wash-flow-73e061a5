@@ -41,9 +41,12 @@ type Vehicle = {
 
 const ACTIVE_SUB_STATUSES = ["active", "assigned", "awaiting_partner_assignment", "payment_pending"];
 const BLOCKING_BOOKING_STATUSES = ["pending", "confirmed", "assigned", "in_progress", "paid", "payment_pending"];
+const ONGOING_SERVICE_STATUSES = ["pending", "in_progress"];
 
-/** Returns a human message when the vehicle must not be deleted, else null. */
-async function vehicleDeletionBlockReason(vehicleId: string): Promise<string | null> {
+type DeleteBlock = { title: string; detail: string };
+
+/** Returns the exact blocking condition when the vehicle must not be deleted, else null. */
+async function vehicleDeletionBlockReason(vehicleId: string): Promise<DeleteBlock | null> {
   const { data: sub } = await (supabase as any)
     .from("subscriptions")
     .select("id,status")
@@ -51,19 +54,61 @@ async function vehicleDeletionBlockReason(vehicleId: string): Promise<string | n
     .in("status", ACTIVE_SUB_STATUSES)
     .limit(1)
     .maybeSingle();
-  if (sub) return "This vehicle cannot be deleted while it has active services.";
+  if (sub) {
+    return sub.status === "payment_pending"
+      ? {
+          title: "Subscription payment is pending",
+          detail:
+            "This vehicle has a Daily Shine subscription waiting for payment. Complete or cancel that payment from My Plan before deleting the vehicle.",
+        }
+      : {
+          title: "Active subscription on this vehicle",
+          detail:
+            "A Daily Shine subscription is currently running for this vehicle. Cancel the plan from My Plan first — deleting the vehicle would break your scheduled services.",
+        };
+  }
+
+  const { data: service } = await (supabase as any)
+    .from("services")
+    .select("id,status,scheduled_date")
+    .eq("vehicle_id", vehicleId)
+    .in("status", ONGOING_SERVICE_STATUSES)
+    .limit(1)
+    .maybeSingle();
+  if (service) {
+    return {
+      title: service.status === "in_progress" ? "A service is in progress" : "A service is scheduled",
+      detail:
+        service.status === "in_progress"
+          ? "Your partner is currently servicing this vehicle. You can delete it once the service is completed."
+          : `A wash is scheduled for this vehicle${service.scheduled_date ? ` on ${service.scheduled_date}` : ""}. Wait for it to complete or ask support to cancel it first.`,
+    };
+  }
 
   const { data: booking } = await (supabase as any)
     .from("bookings")
-    .select("id,status,payment_status")
+    .select("id,status,payment_status,scheduled_date")
     .eq("vehicle_id", vehicleId)
     .in("status", BLOCKING_BOOKING_STATUSES)
     .limit(1)
     .maybeSingle();
-  if (booking) return "This vehicle cannot be deleted while it has active services.";
+  if (booking) {
+    const when = booking.scheduled_date ? ` on ${booking.scheduled_date}` : "";
+    if (booking.payment_status === "pending" || booking.status === "payment_pending") {
+      return {
+        title: "A payment is still pending",
+        detail: `There is an unpaid booking for this vehicle${when}. Finish or cancel that payment from My Bookings before deleting the vehicle.`,
+      };
+    }
+    return {
+      title: "Active booking on this vehicle",
+      detail: `This vehicle has a booking${when} with status “${String(booking.status).replace(/_/g, " ")}”. Cancel it from My Bookings first.`,
+    };
+  }
 
   return null;
 }
+
 
 function VehiclesPage() {
   const qc = useQueryClient();
