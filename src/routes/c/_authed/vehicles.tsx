@@ -218,25 +218,42 @@ function VehiclesPage() {
       <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) setTarget(null); }}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete vehicle?</AlertDialogTitle>
+            <AlertDialogTitle>{block ? "Can’t delete this vehicle" : "Delete vehicle?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently remove
-              {target ? ` ${target.nickname?.trim() || `${target.make} ${target.model}`}` : " this vehicle"}?
-              This action cannot be undone.
+              {block ? (
+                <span data-testid="vehicle-delete-block-reason">
+                  <span className="font-medium text-destructive">{block.title}</span>
+                  <span className="mt-1 block">{block.detail}</span>
+                </span>
+              ) : checking ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Checking for active services…
+                </span>
+              ) : (
+                <>
+                  Are you sure you want to permanently remove
+                  {target ? ` ${target.nickname?.trim() || `${target.make} ${target.model}`}` : " this vehicle"}?
+                  This action cannot be undone.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete vehicle
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleting}>{block ? "Close" : "Cancel"}</AlertDialogCancel>
+            {!block && (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
+                disabled={deleting || checking}
+                data-testid="vehicle-delete-confirm"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete vehicle
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
+
       </AlertDialog>
     </div>
   );
