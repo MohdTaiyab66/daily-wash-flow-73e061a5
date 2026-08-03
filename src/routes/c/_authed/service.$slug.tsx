@@ -1005,6 +1005,9 @@ function ServiceDetail() {
     setPendingCheckout(null);
     setPaymentError(null);
     setResumable(null);
+    setHoldBlocked(null);
+    setTimeline([]);
+    await releaseHold(ctx.bookingId);
     clearPendingCheckout();
     await navigate({
       to: "/c/booking-success",
@@ -1013,17 +1016,24 @@ function ServiceDetail() {
         plan: ctx.isSubscription ? true : undefined,
       },
     });
-  }, [navigate, qc]);
+  }, [navigate, qc, releaseHold]);
 
   const onRetryPayment = useCallback(async () => {
     const base = pendingCheckout ?? resumable;
-    if (!base || paying) return;
+    if (!base || paying || checkoutLockRef.current) return;
     const next: PendingCheckout = { ...base, attemptNo: base.attemptNo + 1 };
     setPendingCheckout(next);
     setResumable(null);
-    savePendingCheckout({ ...next, serviceSlug: slug });
+    const stored = readPendingCheckout();
+    savePendingCheckout({
+      ...next,
+      serviceSlug: slug,
+      selection: stored?.selection,
+      events: stored?.events,
+    });
     await runPayment(next, { isRetry: true });
   }, [pendingCheckout, resumable, paying, runPayment, slug]);
+
 
   /**
    * Crash / reopen recovery. On mount, if a checkout for this service was
