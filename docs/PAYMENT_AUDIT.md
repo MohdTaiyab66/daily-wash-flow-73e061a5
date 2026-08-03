@@ -106,3 +106,36 @@ Needed next, before any further code change: the Android stack trace / logcat sl
 | Cleanup | `PARTNER_BUILD` logging and the WebView cache-bust hack removed from the customer `MainActivity`. | `payments.mainactivity.clean` gate. |
 
 `scripts/verify-apk-native.mjs` now hard-fails the build (and `build-customer.bat` deletes the APK) if the upstream plugin reappears, the pin goes dynamic, registration is duplicated, or `UrbanWashCheckoutPlugin` / the Razorpay SDK is missing from `classes*.dex`.
+
+---
+
+## Stale-APK remediation (build pipeline)
+
+**1. Build graph audit (source of truth, verified):**
+- `android/capacitor.settings.gradle` — no `capacitor-razorpay` module; only the 11 legitimate Capacitor plugins.
+- `android/app/capacitor.build.gradle` — no legacy Checkout project dependency.
+- `node_modules/capacitor-razorpay` — absent; `package.json` / `bun.lock` — no such dependency.
+- Only compiled payment class: `android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java`
+  (app module source set, registered exactly once in `MainActivity.onCreate`).
+- `com.ionicframework.capacitor.Checkout` exists nowhere in the build graph, so it cannot be compiled.
+- `UrbanWashCheckoutPlugin` contains no `Checkout.preload(` call; `checkout.open(activity, options)` runs inside `activity.runOnUiThread`.
+
+**2. Artifact deletion:** `scripts/clean-android-build.mjs` removes `android/build`, `android/app/build`,
+`android/.gradle`, `.gradle`, cordova plugin build dir, the synced `assets/public` + `capacitor.plugins.json`,
+the cached root APKs, and sweeps any `.apk`/`.aab` under `android/`. Both stale root APKs
+(`urbanwash-customer.apk`, `urbanwash-partner.apk`, dated before this fix) have been deleted from the repo.
+
+**3. Clean build:** `build-customer.bat` / `build-partner.bat` now run, in order:
+variant clean → hard artifact clean → `cap sync android` (regenerates plugin registration) →
+manifest/gradle patchers → `gradlew --stop` → `gradlew clean` → `gradlew assembleDebug`.
+
+**4/5. APK verification + evidence:** `scripts/verify-apk-native.mjs` now also asserts
+`Lcom/ionicframework/capacitor/Checkout;` is absent from every `classes*.dex`, that no app source calls
+`preload(`, that `open` is UI-thread wrapped, and that the APK is < 120 minutes old (stale-artifact gate).
+It prints an evidence block: APK path, SHA256, size, build timestamp, verification timestamp, dex file list,
+git branch + commit, and web build id. A failing verification deletes the APK so it cannot be installed.
+
+**6. Install only after PASS** — the build scripts already gate `adb install` behind the verifier.
+
+Note: this Linux workspace has no JDK/Android SDK, so the Gradle build and the APK-byte evidence must be
+produced by running `build-customer.bat` on the Windows build machine; all non-APK gates pass here.
