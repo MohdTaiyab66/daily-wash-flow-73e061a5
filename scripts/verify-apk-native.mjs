@@ -381,6 +381,61 @@ try {
     upstreamDotted ? "legacy Checkout FQCN remains in APK" : "legacy Checkout FQCN absent from APK");
   const sdk = dexEntries.some((d) => d.data.indexOf(Buffer.from("com/razorpay/Checkout", "utf8")) !== -1);
   record("apk.dex.contains.RazorpaySdk", sdk, sdk ? "com.razorpay SDK packaged" : "Razorpay SDK missing from APK");
+  const dexType = dexEntries.some((d) => d.data.indexOf(Buffer.from("Lcom/ionicframework/capacitor/Checkout;", "utf8")) !== -1);
+  record("apk.dex.no-upstream-checkout-type", !dexType,
+    dexType ? "legacy Checkout dex type descriptor present" : "no legacy Checkout dex type descriptor");
+}
+
+// Checkout.preload() creates a WebView and crashes off the UI thread. The SDK
+// itself declares the method, so the only meaningful gate is that OUR code
+// never calls it.
+for (const file of [PAYMENT_PLUGIN_SRC, PAYMENT_PLUGIN_REPO_SRC, MAIN_ACTIVITY]) {
+  try {
+    const src = fs.readFileSync(file, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+    const calls = /\.preload\s*\(/.test(src);
+    record(`payments.no-preload-call.${path.basename(file)}`, !calls,
+      calls ? `${file} calls Checkout.preload()` : "no preload() call");
+    if (file !== MAIN_ACTIVITY) {
+      const uiThread = src.includes("runOnUiThread");
+      record(`payments.open-on-ui-thread.${path.basename(path.dirname(file))}`, uiThread,
+        uiThread ? "checkout.open runs inside runOnUiThread" : "checkout.open is not wrapped in runOnUiThread");
+    }
+  } catch (e) {
+    record(`payments.no-preload-call.${path.basename(file)}`, false, e.message);
+  }
+}
+
+// --- 7. Build evidence -------------------------------------------------------
+const evidence = [];
+try {
+  const bytes = fs.readFileSync(APK);
+  const stat = fs.statSync(APK);
+  evidence.push(["APK path", path.resolve(APK)]);
+  evidence.push(["APK SHA256", createHash("sha256").update(bytes).digest("hex")]);
+  evidence.push(["APK size", `${bytes.length} bytes`]);
+  evidence.push(["APK built at", stat.mtime.toISOString()]);
+  evidence.push(["Verified at", new Date().toISOString()]);
+  evidence.push(["DEX files", dexEntries.map((d) => d.name).join(", ") || "(none)"]);
+  const ageMinutes = (Date.now() - stat.mtimeMs) / 60000;
+  record("apk.freshness", ageMinutes < 120,
+    `APK is ${ageMinutes.toFixed(1)} minute(s) old${ageMinutes >= 120 ? " — this looks like a stale artifact, run a clean build" : ""}`);
+} catch (e) {
+  evidence.push(["APK", `unreadable: ${e.message}`]);
+}
+try {
+  const head = fs.readFileSync(".git/HEAD", "utf8").trim();
+  const ref = head.startsWith("ref: ") ? head.slice(5) : null;
+  const sha = ref ? fs.readFileSync(path.join(".git", ref), "utf8").trim() : head;
+  evidence.push(["Git branch", ref ? ref.replace("refs/heads/", "") : "(detached)"]);
+  evidence.push(["Git commit", sha]);
+} catch {
+  evidence.push(["Git commit", "(unavailable)"]);
+}
+try {
+  const info = JSON.parse(fs.readFileSync("mobile-shell/build-info.json", "utf8"));
+  evidence.push(["Web build id", info.buildId ?? info.build ?? JSON.stringify(info).slice(0, 120)]);
+} catch {
+  /* optional */
 }
 
 // --- Summary -----------------------------------------------------------------
@@ -394,8 +449,12 @@ for (const r of results) {
   console.log(`${tag} ${r.name}${r.detail ? "  -  " + r.detail : ""}`);
 }
 console.log("------------------------------------------------------------");
+console.log(" BUILD EVIDENCE");
+for (const [k, v] of evidence) console.log(`  ${k.padEnd(14)} ${v}`);
+console.log("------------------------------------------------------------");
 console.log(pass ? " RESULT: PASS" : " RESULT: FAIL");
 console.log("============================================================");
 console.log("");
 
 process.exit(pass ? 0 : 1);
+
