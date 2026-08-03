@@ -490,7 +490,10 @@ function ServiceDetail() {
         attemptNo: 1,
       };
       setPendingCheckout(checkoutCtx);
+      setResumable(null);
+      savePendingCheckout({ ...checkoutCtx, serviceSlug: service.slug });
       await runPayment(checkoutCtx, { isRetry: false });
+
     } catch (err: any) {
       fail(err?.message || "Could not confirm booking");
     } finally {
