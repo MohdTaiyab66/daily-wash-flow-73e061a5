@@ -54,14 +54,21 @@ dependencies {
 ext.razorpayCheckoutVersion = '1.6.41'
 
 dependencies {
-    implementation "com.razorpay:checkout:${rootProject.ext.has('razorpayCheckoutVersion') ? rootProject.ext.razorpayCheckoutVersion : '1.6.41'}"
+    implementation "com.razorpay:checkout:1.6.41"
 }
 
 configurations.all {
     resolutionStrategy {
         force 'com.razorpay:checkout:1.6.41'
-        // Fail fast instead of silently resolving a dynamic version.
-        failOnDynamicVersions()
+        // Fail fast if anything ever reintroduces a dynamic Razorpay version.
+        eachDependency { details ->
+            if (details.requested.group == 'com.razorpay' && details.requested.name == 'checkout') {
+                if (details.requested.version?.contains('+')) {
+                    throw new GradleException("Dynamic Razorpay version requested (" + details.requested.version + "); only 1.6.41 is allowed")
+                }
+                details.useVersion '1.6.41'
+            }
+        }
     }
 }
 
