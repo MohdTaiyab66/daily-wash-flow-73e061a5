@@ -168,7 +168,22 @@ const SECTIONS: { id: string; title: string; description: string; fields: Field[
     ],
   },
   {
+    id: "payments",
+    title: "Payments",
+    description:
+      "Controls whether customers must pay before a booking is confirmed. Changes apply instantly — no app update or deployment needed.",
+    fields: [
+      {
+        key: "prepayment_required",
+        label: "Pre-payment Required",
+        help: "ON: the customer must complete and verify payment before the booking is confirmed. OFF: the booking is confirmed immediately and payment is collected later.",
+        kind: "bool",
+      },
+    ],
+  },
+  {
     id: "notifications",
+
     title: "Notifications",
     description: "Toggle notification categories and UX behaviour.",
     fields: [

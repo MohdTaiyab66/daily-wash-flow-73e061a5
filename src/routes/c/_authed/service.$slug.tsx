@@ -687,7 +687,12 @@ function ServiceDetail() {
             order_id: ctx.orderId,
             prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
             notes: { booking_id: ctx.bookingId },
+            // Native SDK supports the flat `method` preference map. UPI / cards /
+            // netbanking / wallets stay on (default sheet renders UPI first);
+            // EMI and Pay Later are explicitly suppressed.
+            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
             theme: { color: "#FF6B1A" },
+
           };
           const nativeDiagnostics = await getNativePaymentDiagnostics();
           await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
