@@ -867,8 +867,6 @@ function ServiceDetail() {
             ...nativeOptions,
             key: ctx.keyId,
           });
-          const result: any = await Checkout.open(nativeOptions);
-          await appendPaymentDiagnostic("native Checkout.open returned", result);
           // Fires from the native plugin only after CheckoutActivity has been
           // started by the Razorpay SDK.
           let launchListener: any = null;
