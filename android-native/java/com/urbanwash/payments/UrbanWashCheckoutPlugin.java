@@ -122,11 +122,11 @@ public class UrbanWashCheckoutPlugin extends Plugin {
             lastCheckoutPayload = redact(options.toString());
             record("final native checkout payload: " + lastCheckoutPayload);
 
-            try {
-                com.razorpay.Checkout.preload(getContext().getApplicationContext());
-            } catch (Throwable t) {
-                record("Checkout.preload failure: " + t.getMessage());
-            }
+            // NOTE: Checkout.preload() is deliberately NOT called. It builds a
+            // WebView, and the Capacitor plugin thread is not the UI thread, so
+            // it crashed with IllegalStateException ("Calling View methods on
+            // another thread than the UI thread"). Never pass applicationContext
+            // to Razorpay Checkout either — it must run against the Activity.
 
             // A previous call that never received an activity result must not
             // leak — settle it before taking ownership of the new one.
@@ -142,17 +142,46 @@ public class UrbanWashCheckoutPlugin extends Plugin {
             PENDING_CALL = call;
             LAUNCHED = false;
 
-            com.razorpay.Checkout checkout = new com.razorpay.Checkout();
-            checkout.setKeyID(key);
-            checkout.open(getActivity(), options);
-            LAUNCHED = true;
-            record("CheckoutActivity launched via SDK (RZP_REQUEST_CODE="
-                    + com.razorpay.Checkout.RZP_REQUEST_CODE + ")");
+            final Activity activity = getActivity();
+            if (activity == null) {
+                PENDING_CALL = null;
+                record("checkout aborted: host activity unavailable");
+                call.reject("Razorpay checkout unavailable (no activity)", "launch_failed");
+                return;
+            }
 
-            JSObject launchEvent = new JSObject();
-            launchEvent.put("orderId", orderId);
-            launchEvent.put("launchedAt", timestamp());
-            notifyListeners("checkoutLaunched", launchEvent);
+            final JSONObject launchOptions = options;
+            final String launchKey = key;
+            final String launchOrderId = orderId;
+
+            // Razorpay Checkout must be created and opened on the UI thread.
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        com.razorpay.Checkout checkout = new com.razorpay.Checkout();
+                        checkout.setKeyID(launchKey);
+                        checkout.open(activity, launchOptions);
+                        LAUNCHED = true;
+                        record("CheckoutActivity launched via SDK on UI thread (RZP_REQUEST_CODE="
+                                + com.razorpay.Checkout.RZP_REQUEST_CODE + ")");
+
+                        JSObject launchEvent = new JSObject();
+                        launchEvent.put("orderId", launchOrderId);
+                        launchEvent.put("launchedAt", timestamp());
+                        notifyListeners("checkoutLaunched", launchEvent);
+                    } catch (Throwable t) {
+                        PluginCall pending = PENDING_CALL;
+                        PENDING_CALL = null;
+                        record("open exception (ui thread): " + t.getClass().getSimpleName() + ": " + t.getMessage());
+                        if (pending != null) {
+                            pending.reject(t.getMessage() == null
+                                    ? "Razorpay checkout open failed" : t.getMessage(), "launch_failed");
+                        }
+                    }
+                }
+            });
+
         } catch (Throwable t) {
             PENDING_CALL = null;
             record("open exception: " + t.getClass().getSimpleName() + ": " + t.getMessage());
