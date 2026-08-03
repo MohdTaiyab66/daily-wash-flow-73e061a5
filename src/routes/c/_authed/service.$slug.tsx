@@ -1183,7 +1183,8 @@ function ServiceDetail() {
           ) : null}
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
-              This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
+              This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
+              <Link to="/c/home" className="font-semibold underline">browse extra services</Link>.
             </div>
           ) : null}
           <div className="flex items-center justify-between gap-3">
@@ -1191,7 +1192,7 @@ function ServiceDetail() {
               <div className="text-xs text-muted-foreground">Total</div>
               <div className="text-xl font-semibold">{!previewReady ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
               <div className="text-[10px] text-muted-foreground">
-                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : previewPayable > 0 ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
               </div>
               {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
             </div>
@@ -1203,7 +1204,7 @@ function ServiceDetail() {
               className="rounded-full px-6"
               data-testid="pay-button"
             >
-              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : previewPayable > 0 ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
