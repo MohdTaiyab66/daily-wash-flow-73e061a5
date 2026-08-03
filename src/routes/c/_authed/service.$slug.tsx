@@ -85,29 +85,9 @@ function nextBookableDateIso(start = new Date()) {
   return toIsoDate(d);
 }
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
+// Razorpay is handled exclusively by the shared payment service
+// (src/lib/razorpay-checkout.ts). No checkout logic lives in this screen.
 
-function loadRazorpayCheckout() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.Razorpay) { resolve(); return; }
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Razorpay checkout failed to load")), { once: true });
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Razorpay checkout failed to load"));
-    document.body.appendChild(script);
-  });
-}
 
 function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
