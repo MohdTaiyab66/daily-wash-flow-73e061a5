@@ -320,14 +320,24 @@ function ServiceDetail() {
 
   const confirm = async () => {
     const fail = (message: string) => {
+      console.warn("[uw-checkout] blocked", { slug, message });
       setConfirmError(message);
       toast.error(message);
     };
     setConfirmError(null);
+    if (submitting || paying) return;
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
     if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
+    console.log("[uw-checkout] started", {
+      slug: service.slug,
+      serviceType: service.service_type,
+      vehicleId: vehicle.id,
+      payable: previewPayable,
+      includedBooking: isIncludedBooking,
+      addonItemsCount,
+    });
     setSubmitting(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
@@ -401,6 +411,7 @@ function ServiceDetail() {
 
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
+      console.log("[uw-checkout] booking created", { bookingId: String(bookingId), slug: service.slug });
       traceVehicle("customer_schedule", { booking_id: String(bookingId), vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
 
       const { data: bookingAfterCreate, error: bookingReadError } = await (supabase as any)
@@ -1183,7 +1194,8 @@ function ServiceDetail() {
           ) : null}
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
-              This vehicle already has an active Daily Shine subscription. Add another vehicle, or wait until the current plan expires to subscribe again.
+              This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
+              <Link to="/c/home" className="font-semibold underline">browse extra services</Link>.
             </div>
           ) : null}
           <div className="flex items-center justify-between gap-3">
@@ -1191,19 +1203,25 @@ function ServiceDetail() {
               <div className="text-xs text-muted-foreground">Total</div>
               <div className="text-xl font-semibold">{!previewReady ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
               <div className="text-[10px] text-muted-foreground">
-                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : service?.service_type === "subscription" ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : previewPayable > 0 ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
               </div>
               {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
             </div>
             <Button
               type="button"
-              onClick={confirm}
+              onClick={() => {
+                void confirm().catch((e: any) => {
+                  console.error("[uw-checkout] unhandled checkout error", e);
+                  setSubmitting(false);
+                  setConfirmError(e?.message || "Something went wrong. Please try again.");
+                });
+              }}
               disabled={submitting || paying || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
               data-testid="pay-button"
             >
-              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : service?.service_type === "subscription" ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : previewPayable > 0 ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
