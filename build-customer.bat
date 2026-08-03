@@ -180,6 +180,8 @@ if errorlevel 1 (
   goto :fail
 )
 
+echo   Verifying Capacitor plugin registry (only UrbanWashCheckoutPlugin may load)...
+call node scripts\verify-plugin-registry.mjs || goto :fail
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
 

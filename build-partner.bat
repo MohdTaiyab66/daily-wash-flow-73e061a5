@@ -237,6 +237,8 @@ if exist "android\app\src\main\assets\public\build-info.json" (
   call node scripts\verify-build-marker.mjs "android\app\src\main\assets\build-info.json" "android asset marker" || goto :fail
 )
 
+echo   Verifying Capacitor plugin registry (only UrbanWashCheckoutPlugin may load)...
+call node scripts\verify-plugin-registry.mjs || goto :fail
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
 
