@@ -1368,6 +1368,26 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {offline ? (
+            <div
+              role="status"
+              data-testid="payment-offline-banner"
+              className="mb-2 rounded-lg border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-800"
+            >
+              You're offline. Your selection and pending order are saved — we'll re-check the payment
+              automatically when you're back online.
+            </div>
+          ) : null}
+          {holdBlocked ? (
+            <div
+              role="alert"
+              data-testid="payment-hold-banner"
+              className="mb-2 rounded-lg border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-900"
+            >
+              {holdBlocked}
+            </div>
+          ) : null}
+          <PaymentTimeline events={timeline} />
           {recovering ? (
             <div
               data-testid="payment-recovery-checking"
@@ -1377,6 +1397,7 @@ function ServiceDetail() {
               Checking your last payment status…
             </div>
           ) : null}
+
           {!recovering && resumable && !paymentError ? (
             <div
               role="status"
