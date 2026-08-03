@@ -1209,7 +1209,13 @@ function ServiceDetail() {
             </div>
             <Button
               type="button"
-              onClick={confirm}
+              onClick={() => {
+                void confirm().catch((e: any) => {
+                  console.error("[uw-checkout] unhandled checkout error", e);
+                  setSubmitting(false);
+                  setConfirmError(e?.message || "Something went wrong. Please try again.");
+                });
+              }}
               disabled={submitting || paying || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
               size="lg"
               className="rounded-full px-6"
