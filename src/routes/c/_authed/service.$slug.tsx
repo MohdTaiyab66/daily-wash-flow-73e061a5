@@ -26,6 +26,12 @@ import {
   getNativePaymentDiagnostics,
   sanitizePaymentDiagnostic,
 } from "@/lib/payment-diagnostics";
+import {
+  clearPendingCheckout,
+  readPendingCheckout,
+  savePendingCheckout,
+} from "@/lib/pending-checkout-store";
+
 
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
@@ -131,8 +137,13 @@ function ServiceDetail() {
   const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
   const [upiUnavailable, setUpiUnavailable] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+  // Crash / reopen recovery: a checkout that was persisted but never finished.
+  const [recovering, setRecovering] = useState(false);
+  const [resumable, setResumable] = useState<PendingCheckout | null>(null);
+  const recoveryRan = useRef(false);
   const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
   useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
+
 
 
   const serviceQ = useQuery({
@@ -479,7 +490,10 @@ function ServiceDetail() {
         attemptNo: 1,
       };
       setPendingCheckout(checkoutCtx);
+      setResumable(null);
+      savePendingCheckout({ ...checkoutCtx, serviceSlug: service.slug });
       await runPayment(checkoutCtx, { isRetry: false });
+
     } catch (err: any) {
       fail(err?.message || "Could not confirm booking");
     } finally {
@@ -855,6 +869,8 @@ function ServiceDetail() {
     if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
     setPendingCheckout(null);
     setPaymentError(null);
+    setResumable(null);
+    clearPendingCheckout();
     await navigate({
       to: "/c/booking-success",
       search: {
@@ -865,16 +881,73 @@ function ServiceDetail() {
   }, [navigate, qc]);
 
   const onRetryPayment = useCallback(async () => {
-    if (!pendingCheckout || paying) return;
-    const next: PendingCheckout = { ...pendingCheckout, attemptNo: pendingCheckout.attemptNo + 1 };
+    const base = pendingCheckout ?? resumable;
+    if (!base || paying) return;
+    const next: PendingCheckout = { ...base, attemptNo: base.attemptNo + 1 };
     setPendingCheckout(next);
+    setResumable(null);
+    savePendingCheckout({ ...next, serviceSlug: slug });
     await runPayment(next, { isRetry: true });
-  }, [pendingCheckout, paying, runPayment]);
+  }, [pendingCheckout, resumable, paying, runPayment, slug]);
+
+  /**
+   * Crash / reopen recovery. On mount, if a checkout for this service was
+   * persisted but never finished, ask the server what actually happened:
+   *  - already paid  → finalize (no duplicate charge, no re-booking)
+   *  - still pending → surface a "Resume payment" banner with the same order
+   */
+  useEffect(() => {
+    if (recoveryRan.current) return;
+    recoveryRan.current = true;
+    const stored = readPendingCheckout();
+    if (!stored || stored.serviceSlug !== slug) return;
+    let cancelled = false;
+    void (async () => {
+      setRecovering(true);
+      try {
+        const status = await getStatusFn({ data: { bookingId: stored.bookingId } });
+        if (cancelled) return;
+        const ctx: PendingCheckout = {
+          bookingId: stored.bookingId,
+          keyId: stored.keyId,
+          orderId: stored.orderId,
+          amount: stored.amount,
+          currency: stored.currency,
+          serviceName: stored.serviceName,
+          isSubscription: stored.isSubscription,
+          prefillEmail: stored.prefillEmail,
+          prefillContact: stored.prefillContact,
+          attemptNo: stored.attemptNo,
+        };
+        if (status.paymentStatus === "paid" || (status as any).subscriptionId) {
+          console.log("[uw-checkout] recovered a completed payment", { bookingId: stored.bookingId });
+          await finalizeSuccess(ctx);
+          return;
+        }
+        if (status.paymentStatus === "cancelled" || status.paymentStatus === "failed") {
+          clearPendingCheckout();
+          return;
+        }
+        setResumable(ctx);
+      } catch (e) {
+        console.warn("[uw-checkout] recovery status check failed", e);
+      } finally {
+        if (!cancelled) setRecovering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [slug, getStatusFn, finalizeSuccess]);
+
+  const onDiscardResumable = useCallback(() => {
+    setResumable(null);
+    clearPendingCheckout();
+  }, []);
 
   const onDismissPaymentError = useCallback(() => {
     setPaymentError(null);
     if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
   }, []);
+
 
   const onExportPaymentDiagnostics = useCallback(async () => {
     try {
@@ -1118,7 +1191,53 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {recovering ? (
+            <div
+              data-testid="payment-recovery-checking"
+              className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              Checking your last payment status…
+            </div>
+          ) : null}
+          {!recovering && resumable && !paymentError ? (
+            <div
+              role="status"
+              data-testid="payment-resume-banner"
+              className="mb-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] leading-snug"
+            >
+              <div className="font-medium">Unfinished payment for this booking</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                Your booking is saved and still unpaid — ₹{Math.round(resumable.amount / 100)} for {resumable.serviceName}.
+                Resume to reopen the same payment (Order {resumable.orderId.slice(-6)}).
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={onRetryPayment}
+                  disabled={paying}
+                  data-testid="payment-resume-btn"
+                  className="h-7 rounded-full px-3 text-[11px]"
+                >
+                  {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                  Resume payment
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={onDiscardResumable}
+                  className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                  data-testid="payment-resume-discard"
+                >
+                  <X className="mr-1 h-3 w-3" /> Start over
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {paymentError ? (
+
             <div
               role="alert"
               data-testid="payment-error-banner"
