@@ -945,6 +945,7 @@ function ServiceDetail() {
           providerOrderId: ctx.orderId,
           metadata: { reconciled_via: "polling" },
         });
+        pushEvent(ctx.bookingId, "paid", "Verified paid after reconnecting");
         await finalizeSuccess(ctx);
         return;
       }
@@ -956,6 +957,13 @@ function ServiceDetail() {
         errorCode: cancelled ? "user_cancelled" : "checkout_failed",
         errorMessage: String(err?.message ?? err).slice(0, 500),
       });
+      const timedOut = /timeout|timed out/i.test(String(err?.message ?? ""));
+      pushEvent(
+        ctx.bookingId,
+        cancelled ? "cancelled" : timedOut ? "timeout" : "failed",
+        String(err?.message ?? "Checkout did not complete").slice(0, 120),
+      );
+      pushEvent(ctx.bookingId, "unpaid", "Server reports this booking is still unpaid");
       if (nativeMode) {
         const diag = await getNativePaymentDiagnostics();
         const reason = cancelled
@@ -970,9 +978,13 @@ function ServiceDetail() {
         canRetry: true,
       });
     } finally {
+      // Always drop both holds so a retry (or another device) can proceed.
+      await releaseHold(ctx.bookingId);
+      checkoutLockRef.current = false;
       setPaying(false);
     }
-  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess]);
+  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess, acquireHold, releaseHold, pushEvent]);
+
 
   const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
     if (ctx.isSubscription) {
