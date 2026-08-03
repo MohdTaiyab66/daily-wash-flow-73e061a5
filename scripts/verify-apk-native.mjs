@@ -386,6 +386,28 @@ try {
     dexType ? "legacy Checkout dex type descriptor present" : "no legacy Checkout dex type descriptor");
 }
 
+// The plugin registry packaged inside the APK is what Capacitor's Bridge reads
+// at startup to build its plugin map. Print it and gate on its contents.
+try {
+  const [registryEntry] = readApkEntries(APK, (n) => n === "assets/capacitor.plugins.json");
+  if (!registryEntry) throw new Error("assets/capacitor.plugins.json not found inside APK");
+  const raw = registryEntry.data.toString("utf8");
+  record("apk.registry.present", true, "assets/capacitor.plugins.json packaged");
+  console.log("");
+  console.log("---- PACKAGED CAPACITOR PLUGIN REGISTRY -------------------");
+  try {
+    for (const e of JSON.parse(raw)) console.log(`  ${String(e.pkg ?? "?").padEnd(48)} -> ${e.classpath ?? "?"}`);
+  } catch {
+    console.log(raw);
+  }
+  console.log("-----------------------------------------------------------");
+  const legacy = ["com.ionicframework.capacitor.Checkout", "capacitor-razorpay"].filter((t) => raw.includes(t));
+  record("apk.registry.no-legacy-checkout", legacy.length === 0,
+    legacy.length ? `registry references ${legacy.join(", ")}` : "no legacy Checkout entry in packaged registry");
+} catch (e) {
+  record("apk.registry.present", false, e.message);
+}
+
 // Checkout.preload() creates a WebView and crashes off the UI thread. The SDK
 // itself declares the method, so the only meaningful gate is that OUR code
 // never calls it.
