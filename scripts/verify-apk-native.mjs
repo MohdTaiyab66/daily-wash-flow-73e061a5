@@ -297,6 +297,17 @@ record("payments.upstream-plugin.absent", !fs.existsSync("node_modules/capacitor
     ? "node_modules/capacitor-razorpay is present — upstream raw-Intent checkout would ship"
     : "capacitor-razorpay is not installed");
 
+for (const manifest of ["package.json", "bun.lock"]) {
+  try {
+    const source = fs.readFileSync(manifest, "utf8");
+    const hasLegacyDependency = source.includes('"capacitor-razorpay"');
+    record(`payments.dependency-manifest.clean.${path.basename(manifest)}`, !hasLegacyDependency,
+      hasLegacyDependency ? `${manifest} can reinstall capacitor-razorpay` : `${manifest} has no legacy payment dependency`);
+  } catch (e) {
+    record(`payments.dependency-manifest.clean.${path.basename(manifest)}`, false, e.message);
+  }
+}
+
 record("payments.patch-script.removed", !fs.existsSync("scripts/patch-capacitor-java.mjs"),
   "scripts/patch-capacitor-java.mjs must not exist");
 
@@ -311,6 +322,20 @@ try {
   record("payments.cap-settings.clean", !has, has ? "capacitor-razorpay still included by Capacitor" : "no upstream Razorpay module included");
 } catch (e) {
   record("payments.cap-settings.clean", false, e.message);
+}
+
+for (const generatedFile of [
+  "android/app/capacitor.build.gradle",
+  "android/app/src/main/assets/capacitor.plugins.json",
+]) {
+  try {
+    const source = fs.readFileSync(generatedFile, "utf8");
+    const hasLegacyPlugin = source.includes("capacitor-razorpay") || source.includes("com.ionicframework.capacitor.Checkout");
+    record(`payments.generated-registration.clean.${path.basename(generatedFile)}`, !hasLegacyPlugin,
+      hasLegacyPlugin ? `${generatedFile} still packages/registers legacy Checkout` : `${generatedFile} has no legacy Checkout registration`);
+  } catch (e) {
+    record(`payments.generated-registration.clean.${path.basename(generatedFile)}`, false, e.message);
+  }
 }
 
 try {
@@ -351,6 +376,9 @@ try {
   record("apk.dex.contains.UrbanWashCheckoutPlugin", present, present ? "compiled into classes*.dex" : "missing from APK");
   const upstream = dexEntries.some((d) => d.data.indexOf(Buffer.from("com/ionicframework/capacitor/Checkout", "utf8")) !== -1);
   record("apk.dex.no-upstream-checkout", !upstream, upstream ? "upstream capacitor-razorpay Checkout class shipped" : "upstream plugin absent from APK");
+  const upstreamDotted = dexEntries.some((d) => d.data.indexOf(Buffer.from("com.ionicframework.capacitor.Checkout", "utf8")) !== -1);
+  record("apk.dex.no-upstream-checkout-dotted", !upstreamDotted,
+    upstreamDotted ? "legacy Checkout FQCN remains in APK" : "legacy Checkout FQCN absent from APK");
   const sdk = dexEntries.some((d) => d.data.indexOf(Buffer.from("com/razorpay/Checkout", "utf8")) !== -1);
   record("apk.dex.contains.RazorpaySdk", sdk, sdk ? "com.razorpay SDK packaged" : "Razorpay SDK missing from APK");
 }

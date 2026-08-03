@@ -138,9 +138,6 @@ if not exist "%CAP_CLI%" (
   call bun install || goto :fail
 )
 
-echo   Patching Capacitor Android Java compatibility before build...
-call node scripts\patch-capacitor-java.mjs || goto :fail
-
 if not exist "%CAP_CLI%" (
   echo   [X] Capacitor CLI still missing after bun install.
   echo       Run: bun add @capacitor/cli @capacitor/core @capacitor/android
