@@ -26,6 +26,12 @@ import {
   getNativePaymentDiagnostics,
   sanitizePaymentDiagnostic,
 } from "@/lib/payment-diagnostics";
+import {
+  clearPendingCheckout,
+  readPendingCheckout,
+  savePendingCheckout,
+} from "@/lib/pending-checkout-store";
+
 
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
