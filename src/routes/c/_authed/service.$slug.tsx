@@ -320,14 +320,24 @@ function ServiceDetail() {
 
   const confirm = async () => {
     const fail = (message: string) => {
+      console.warn("[uw-checkout] blocked", { slug, message });
       setConfirmError(message);
       toast.error(message);
     };
     setConfirmError(null);
+    if (submitting || paying) return;
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
     if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
+    console.log("[uw-checkout] started", {
+      slug: service.slug,
+      serviceType: service.service_type,
+      vehicleId: vehicle.id,
+      payable: previewPayable,
+      includedBooking: isIncludedBooking,
+      addonItemsCount,
+    });
     setSubmitting(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
