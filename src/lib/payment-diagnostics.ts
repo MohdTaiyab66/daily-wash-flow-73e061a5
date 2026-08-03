@@ -133,7 +133,7 @@ export function formatUpiUnavailableMessage(diag: Record<string, unknown> | null
     .map(([key]) => key)
     .join(", ") || "none detected";
   const sdk = String(diag?.sdkVersion ?? diag?.sdkImplementationVersion ?? diag?.configuredSdkVersion ?? "unknown");
-  const plugin = String(diag?.pluginVersion ?? "capacitor-razorpay 1.3.0");
+  const plugin = String(diag?.pluginVersion ?? "UrbanWashCheckout (app-owned)");
 
   return [
     "UPI unavailable.",
