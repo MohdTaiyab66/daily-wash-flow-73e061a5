@@ -131,8 +131,13 @@ function ServiceDetail() {
   const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
   const [upiUnavailable, setUpiUnavailable] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+  // Crash / reopen recovery: a checkout that was persisted but never finished.
+  const [recovering, setRecovering] = useState(false);
+  const [resumable, setResumable] = useState<PendingCheckout | null>(null);
+  const recoveryRan = useRef(false);
   const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
   useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
+
 
 
   const serviceQ = useQuery({
