@@ -869,6 +869,8 @@ function ServiceDetail() {
     if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
     setPendingCheckout(null);
     setPaymentError(null);
+    setResumable(null);
+    clearPendingCheckout();
     await navigate({
       to: "/c/booking-success",
       search: {
@@ -879,16 +881,73 @@ function ServiceDetail() {
   }, [navigate, qc]);
 
   const onRetryPayment = useCallback(async () => {
-    if (!pendingCheckout || paying) return;
-    const next: PendingCheckout = { ...pendingCheckout, attemptNo: pendingCheckout.attemptNo + 1 };
+    const base = pendingCheckout ?? resumable;
+    if (!base || paying) return;
+    const next: PendingCheckout = { ...base, attemptNo: base.attemptNo + 1 };
     setPendingCheckout(next);
+    setResumable(null);
+    savePendingCheckout({ ...next, serviceSlug: slug });
     await runPayment(next, { isRetry: true });
-  }, [pendingCheckout, paying, runPayment]);
+  }, [pendingCheckout, resumable, paying, runPayment, slug]);
+
+  /**
+   * Crash / reopen recovery. On mount, if a checkout for this service was
+   * persisted but never finished, ask the server what actually happened:
+   *  - already paid  → finalize (no duplicate charge, no re-booking)
+   *  - still pending → surface a "Resume payment" banner with the same order
+   */
+  useEffect(() => {
+    if (recoveryRan.current) return;
+    recoveryRan.current = true;
+    const stored = readPendingCheckout();
+    if (!stored || stored.serviceSlug !== slug) return;
+    let cancelled = false;
+    void (async () => {
+      setRecovering(true);
+      try {
+        const status = await getStatusFn({ data: { bookingId: stored.bookingId } });
+        if (cancelled) return;
+        const ctx: PendingCheckout = {
+          bookingId: stored.bookingId,
+          keyId: stored.keyId,
+          orderId: stored.orderId,
+          amount: stored.amount,
+          currency: stored.currency,
+          serviceName: stored.serviceName,
+          isSubscription: stored.isSubscription,
+          prefillEmail: stored.prefillEmail,
+          prefillContact: stored.prefillContact,
+          attemptNo: stored.attemptNo,
+        };
+        if (status.paymentStatus === "paid" || (status as any).subscriptionId) {
+          console.log("[uw-checkout] recovered a completed payment", { bookingId: stored.bookingId });
+          await finalizeSuccess(ctx);
+          return;
+        }
+        if (status.paymentStatus === "cancelled" || status.paymentStatus === "failed") {
+          clearPendingCheckout();
+          return;
+        }
+        setResumable(ctx);
+      } catch (e) {
+        console.warn("[uw-checkout] recovery status check failed", e);
+      } finally {
+        if (!cancelled) setRecovering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [slug, getStatusFn, finalizeSuccess]);
+
+  const onDiscardResumable = useCallback(() => {
+    setResumable(null);
+    clearPendingCheckout();
+  }, []);
 
   const onDismissPaymentError = useCallback(() => {
     setPaymentError(null);
     if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
   }, []);
+
 
   const onExportPaymentDiagnostics = useCallback(async () => {
     try {
