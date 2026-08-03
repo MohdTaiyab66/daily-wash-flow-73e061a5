@@ -114,6 +114,8 @@ function VehiclesPage() {
   const qc = useQueryClient();
   const [target, setTarget] = useState<Vehicle | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [block, setBlock] = useState<DeleteBlock | null>(null);
 
   const q = useQuery({
     queryKey: ["customer-vehicles"],
@@ -128,15 +130,37 @@ function VehiclesPage() {
     },
   });
 
+  // Run the blocking check as soon as the confirmation opens, so the customer
+  // sees the exact reason instead of a generic failure after tapping Delete.
+  useEffect(() => {
+    if (!target) { setBlock(null); setChecking(false); return; }
+    let cancelled = false;
+    setBlock(null);
+    setChecking(true);
+    void vehicleDeletionBlockReason(target.id)
+      .then((reason) => { if (!cancelled) setBlock(reason); })
+      .catch((e) => {
+        console.error("[uw-vehicle] block check failed", e);
+        if (!cancelled) {
+          setBlock({
+            title: "Couldn’t verify this vehicle",
+            detail: "We couldn’t check for active services right now. Please try again in a moment.",
+          });
+        }
+      })
+      .finally(() => { if (!cancelled) setChecking(false); });
+    return () => { cancelled = true; };
+  }, [target]);
+
   const confirmDelete = useCallback(async () => {
     if (!target) return;
     setDeleting(true);
     try {
       const blocked = await vehicleDeletionBlockReason(target.id);
       if (blocked) {
-        console.warn("[uw-vehicle] delete blocked", { vehicleId: target.id, reason: blocked });
-        toast.error(blocked);
-        setTarget(null);
+        console.warn("[uw-vehicle] delete blocked", { vehicleId: target.id, reason: blocked.title });
+        setBlock(blocked);
+        toast.error(blocked.title, { description: blocked.detail });
         return;
       }
       console.log("[uw-vehicle] delete started", { vehicleId: target.id });
@@ -153,6 +177,7 @@ function VehiclesPage() {
       setDeleting(false);
     }
   }, [target, qc]);
+
 
   return (
     <div className="px-5 pt-6 pb-24">
