@@ -411,6 +411,7 @@ function ServiceDetail() {
 
       if (error) throw error;
       if (!bookingId) throw new Error("Booking was not created. Please try again.");
+      console.log("[uw-checkout] booking created", { bookingId: String(bookingId), slug: service.slug });
       traceVehicle("customer_schedule", { booking_id: String(bookingId), vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
 
       const { data: bookingAfterCreate, error: bookingReadError } = await (supabase as any)
