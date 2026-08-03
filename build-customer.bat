@@ -180,8 +180,10 @@ if errorlevel 1 (
   goto :fail
 )
 
-echo   Verifying Capacitor plugin registry (only UrbanWashCheckoutPlugin may load)...
-call node scripts\verify-plugin-registry.mjs || goto :fail
+echo Running verify-plugin-registry.mjs
+call node scripts\verify-plugin-registry.mjs
+if errorlevel 1 goto :fail
+echo PASS
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
 
@@ -221,14 +223,15 @@ if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
   echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
   goto :fail
 )
-echo   Verifying native payment + push classes inside the APK...
-call node scripts\verify-apk-native.mjs
+echo Running verify-apk-native.mjs
+call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk"
 if errorlevel 1 (
   echo   [X] Native verification FAILED - deleting APK so a broken build cannot ship
   del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
   del /F /Q "urbanwash-customer.apk" >nul 2>&1
   goto :fail
 )
+echo PASS
 
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-customer.apk" >nul || goto :fail
 
