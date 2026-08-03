@@ -16,6 +16,10 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -42,26 +46,25 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
 }
 
-apply from: 'capacitor.build.gradle'
+// [uw-payments] PERMANENT — do not move into a patch script.
+// Single, deterministic Razorpay Android SDK version for every module. The
+// upstream capacitor-razorpay plugin (which used a dynamic `1.6.+` range) has
+// been removed; the native checkout lives in
+// android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java
+ext.razorpayCheckoutVersion = '1.6.41'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+dependencies {
+    implementation "com.razorpay:checkout:${rootProject.ext.has('razorpayCheckoutVersion') ? rootProject.ext.razorpayCheckoutVersion : '1.6.41'}"
 }
 
-// [uw-razorpay-pin BEGIN]
 configurations.all {
     resolutionStrategy {
         force 'com.razorpay:checkout:1.6.41'
+        // Fail fast instead of silently resolving a dynamic version.
+        failOnDynamicVersions()
     }
 }
-dependencies {
-    implementation 'com.razorpay:checkout:1.6.41'
-}
+
 task printRazorpayResolved {
     doLast {
         configurations.findAll { it.canBeResolved }.each { cfg ->
@@ -76,7 +79,18 @@ task printRazorpayResolved {
         }
     }
 }
-// [uw-razorpay-pin END]
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
 
 // [uw-firebase BEGIN]
 dependencies {

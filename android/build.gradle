@@ -31,3 +31,20 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+// [uw-java-toolchain] One Java version for every module, resolved by Gradle
+// toolchains. No machine-specific org.gradle.java.home anywhere.
+subprojects {
+    plugins.withId('java-base') {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+    }
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+        }
+    }
+}
