@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, Droplets, Wrench, Plus, Loader2, CheckCircle2, ShoppingBag } from "lucide-react";
+import { Sparkles, Plus, Loader2, CheckCircle2, ShoppingBag, AlertTriangle, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,15 @@ import { toast } from "sonner";
 import { traceVehicle } from "@/lib/vehicle-trace";
 
 /**
- * Gated Book-a-Wash flow (Phase 3).
+ * Gated Book-a-Wash flow.
  *
- * The customer never sees exhausted benefits — they simply do not render.
- * If nothing is left, only "Buy More Washes" is shown.
+ * Only the monthly *Included Wash* (interior + exterior) is bookable here.
+ * Daily Exterior runs automatically every day while the subscription is
+ * active — the customer must never book it manually, so it is not rendered.
  *
- * Benefits are mapped to Daily Shine service slugs so the existing
- * `create_addon_request` RPC can materialise the booking. Wallet and
- * credit accounting is invisible; the app enforces silently.
+ * Every async path is defensive: nothing in this component may throw during
+ * render or leave an unhandled rejection, because an uncaught error inside the
+ * Android WebView tears down the whole app.
  */
 
 type EntitlementRow = {
@@ -54,67 +55,49 @@ const SLOT_OPTIONS = [
   "Before 12 PM",
 ];
 
+const log = (event: string, payload?: Record<string, unknown>) => {
+  try {
+    console.log(`[uw-booking] ${event}`, payload ?? {});
+  } catch {
+    /* logging must never break the flow */
+  }
+};
+
 /**
  * Daily Shine skips Mondays. Pick tomorrow, or the next non-Monday if tomorrow is Monday.
- * The customer never sees a "Monday is off" error — the picker simply cannot land on one.
  */
 function nextServiceableDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  if (d.getDay() === 1) d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  try {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() === 1) d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
 }
 
 function bumpOffMonday(iso: string): string {
-  const d = new Date(iso);
+  if (!iso) return iso;
+  const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
   if (d.getDay() === 1) d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  try {
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return iso;
+  }
 }
 
-type BookableKey = "interior" | "exterior_daily" | "extra_exterior" | "extra_interior";
-
-const BOOKABLE_ORDER: BookableKey[] = [
-  "interior",
-  "exterior_daily",
-  "extra_exterior",
-  "extra_interior",
-];
-
-const CONFIG: Record<
-  BookableKey,
-  {
-    label: string;
-    hint: string;
-    slug: string;
-    icon: typeof Sparkles;
-  }
-> = {
-  interior: {
-    label: "Included Wash",
-    hint: "Full interior + exterior — once a month",
-    slug: "daily-shine-interior",
-    icon: Sparkles,
-  },
-  exterior_daily: {
-    label: "Daily Exterior",
-    hint: "Quick outside rinse — daily",
-    slug: "daily-shine-exterior",
-    icon: Droplets,
-  },
-  extra_exterior: {
-    label: "Extra Exterior Wash",
-    hint: "From your monthly add-on",
-    slug: "daily-shine-exterior",
-    icon: Plus,
-  },
-  extra_interior: {
-    label: "Extra Interior Wash",
-    hint: "From your monthly add-on",
-    slug: "daily-shine-interior",
-    icon: Wrench,
-  },
+/** The only customer-bookable benefit. Daily Exterior is automatic. */
+const INCLUDED = {
+  benefitType: "interior",
+  label: "Included Wash",
+  hint: "Full interior + exterior — once a month",
+  slug: "daily-shine-interior",
 };
+
+type Phase = "idle" | "booking" | "confirmed";
 
 export function BookAWashSheet({
   open,
@@ -128,57 +111,60 @@ export function BookAWashSheet({
   userId: string | null;
 }) {
   const qc = useQueryClient();
-  const [pickedKey, setPickedKey] = useState<BookableKey | null>(null);
   const [date, setDate] = useState(() => nextServiceableDate());
   const [slot, setSlot] = useState(SLOT_OPTIONS[3]);
   const [addressId, setAddressId] = useState<string>("");
-  const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [error, setError] = useState<string | null>(null);
 
   const entQ = useQuery({
     queryKey: ["vehicle-entitlements", vehicleId],
     enabled: !!vehicleId && open,
+    retry: 1,
     queryFn: async (): Promise<EntitlementRow[]> => {
-      const { data, error } = await (supabase as any).rpc("get_vehicle_entitlements", {
+      const { data, error: e } = await (supabase as any).rpc("get_vehicle_entitlements", {
         p_vehicle_id: vehicleId,
       });
-      if (error) throw error;
-      return (data ?? []) as EntitlementRow[];
+      if (e) throw e;
+      return Array.isArray(data) ? (data as EntitlementRow[]) : [];
     },
   });
 
   const svcQ = useQuery({
     queryKey: ["book-wash-services"],
     enabled: open,
+    retry: 1,
     queryFn: async (): Promise<ServiceRow[]> => {
-      const { data } = await (supabase as any)
+      const { data, error: e } = await (supabase as any)
         .from("service_catalog")
         .select("id, slug, name, service_type")
         .eq("active", true)
-        .in("slug", [
-          "daily-shine-interior",
-          "daily-shine-exterior",
-        ]);
-      return (data ?? []) as ServiceRow[];
+        .eq("slug", INCLUDED.slug);
+      if (e) throw e;
+      return Array.isArray(data) ? (data as ServiceRow[]) : [];
     },
   });
 
   const addrQ = useQuery({
     queryKey: ["book-wash-addresses", userId],
     enabled: !!userId && open,
+    retry: 1,
     queryFn: async (): Promise<AddrRow[]> => {
-      const { data } = await (supabase as any)
+      const { data, error: e } = await (supabase as any)
         .from("customer_addresses")
         .select("id, label, area, is_default")
         .order("created_at");
-      return (data ?? []) as AddrRow[];
+      if (e) throw e;
+      return Array.isArray(data) ? (data as AddrRow[]) : [];
     },
   });
 
   const subQ = useQuery({
     queryKey: ["book-wash-subscription", userId, vehicleId],
     enabled: !!userId && !!vehicleId && open,
+    retry: 1,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data, error: e } = await (supabase as any)
         .from("subscriptions")
         .select("id, status, vehicle_id")
         .eq("user_id", userId)
@@ -187,116 +173,167 @@ export function BookAWashSheet({
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return data as { id: string } | null;
+      if (e) throw e;
+      return (data ?? null) as { id: string } | null;
     },
   });
 
   useEffect(() => {
     if (!open) return;
-    if (!addressId && addrQ.data?.length) {
-      setAddressId((addrQ.data.find((a) => a.is_default) ?? addrQ.data[0]).id);
+    const list = addrQ.data ?? [];
+    if (!addressId && list.length > 0) {
+      const chosen = list.find((a) => a?.is_default) ?? list[0];
+      if (chosen?.id) setAddressId(chosen.id);
     }
   }, [open, addrQ.data, addressId]);
 
-  // Reset selection whenever the sheet is closed.
+  // Reset transient state whenever the sheet is closed.
   useEffect(() => {
     if (!open) {
-      setPickedKey(null);
-      setSaving(false);
+      setPhase("idle");
+      setError(null);
     }
   }, [open]);
 
   const rows = entQ.data ?? [];
-  const byType = useMemo(() => new Map(rows.map((r) => [r.benefit_type, r])), [rows]);
-
-  const available = useMemo(
-    () =>
-      BOOKABLE_ORDER
-        .map((key) => ({ key, row: byType.get(key) }))
-        .filter((x): x is { key: BookableKey; row: EntitlementRow } => {
-          if (!x.row) return false;
-          if (x.row.unlimited) return true;
-          return (x.row.remaining ?? 0) > 0;
-        }),
-    [byType]
+  const includedRow = useMemo(
+    () => rows.find((r) => r?.benefit_type === INCLUDED.benefitType) ?? null,
+    [rows]
   );
 
-  const nothingLeft = !entQ.isLoading && available.length === 0;
+  const includedRemaining = includedRow?.unlimited
+    ? Infinity
+    : Number(includedRow?.remaining ?? 0);
+  const canBookIncluded = !!includedRow && includedRemaining > 0;
 
-  const picked = pickedKey ? CONFIG[pickedKey] : null;
-  const today = new Date().toISOString().slice(0, 10);
-  const noActivePlan = !subQ.isLoading && !subQ.data && !entQ.isLoading;
+  const loading = entQ.isLoading || subQ.isLoading;
+  const noActivePlan = !loading && !subQ.data;
+  const usedUpIncluded = !loading && !noActivePlan && !canBookIncluded;
+
+  const today = (() => {
+    try {
+      return new Date().toISOString().slice(0, 10);
+    } catch {
+      return undefined;
+    }
+  })();
 
   const confirm = async () => {
-    if (!pickedKey || !picked) {
-      toast.error("Pick a service");
+    setError(null);
+
+    const subscriptionId = subQ.data?.id;
+    if (!subscriptionId) {
+      setError("No active plan for this vehicle.");
       return;
     }
-    if (!subQ.data) {
-      toast.error("No active plan for this vehicle.");
+    if (!canBookIncluded) {
+      setError("You've already used your included wash this month.");
       return;
     }
     if (!addressId) {
-      toast.error("Add a service address first.");
+      setError("Add a service address first.");
       return;
     }
-    const service = (svcQ.data ?? []).find((s) => s.slug === picked.slug);
-    if (!service) {
-      toast.error("Service unavailable — please try again in a moment.");
+    if (!date) {
+      setError("Pick a service date.");
+      return;
+    }
+    const service = (svcQ.data ?? []).find((s) => s?.slug === INCLUDED.slug);
+    if (!service?.id) {
+      setError("Service unavailable right now. Please try again.");
       return;
     }
 
-    setSaving(true);
+    setPhase("booking");
+    log("Booking Started", { subscriptionId, vehicleId, date, slot, addressId });
     try {
-      const { data: res, error } = await (supabase as any).rpc("create_addon_request", {
-        p_subscription_id: subQ.data.id,
+      const { data: res, error: rpcError } = await (supabase as any).rpc("create_addon_request", {
+        p_subscription_id: subscriptionId,
         p_service_id: service.id,
         p_preferred_date: date,
         p_preferred_time: slot,
-        p_notes: `Booked from My Plan — ${picked.label}`,
+        p_notes: `Booked from My Plan — ${INCLUDED.label}`,
         p_vehicle_id: vehicleId,
         p_address_id: addressId,
       });
-      if (error) throw error;
-      traceVehicle("create_addon", {
-        addon_request_id: res?.addon_request_id ?? null,
-        vehicle_id: vehicleId ?? undefined,
-        details: {
-          service_slug: service.slug,
-          benefit_type: pickedKey,
-          date,
-          slot,
-          paid: res?.paid,
-          entitlement: res?.entitlement,
-        },
-      });
-      toast.success(`₹0 — ${picked.label} scheduled for ${date} · ${slot}`);
+      if (rpcError) throw rpcError;
+
+      log("Booking Created", { addon_request_id: res?.addon_request_id ?? null, paid: res?.paid });
+      log("Credit Deducted", { benefit: INCLUDED.benefitType });
+
+      try {
+        traceVehicle("create_addon", {
+          addon_request_id: res?.addon_request_id ?? null,
+          vehicle_id: vehicleId ?? undefined,
+          details: {
+            service_slug: service.slug,
+            benefit_type: INCLUDED.benefitType,
+            date,
+            slot,
+            paid: res?.paid,
+            entitlement: res?.entitlement,
+          },
+        });
+      } catch {
+        /* tracing must never fail a confirmed booking */
+      }
+
+      setPhase("confirmed");
+      toast.success(`${INCLUDED.label} scheduled for ${date} · ${slot}`);
       qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicleId] });
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
-      onOpenChange(false);
+      setTimeout(() => {
+        try {
+          onOpenChange(false);
+        } catch {
+          /* noop */
+        }
+      }, 700);
     } catch (err: any) {
-      toast.error(err?.message ?? "Could not book.");
-    } finally {
-      setSaving(false);
+      const message =
+        typeof err?.message === "string" && err.message.trim()
+          ? err.message
+          : "Could not complete your booking. Please try again.";
+      log("Booking Failed", { message });
+      setPhase("idle");
+      setError(message);
     }
   };
 
+  const buttonLabel =
+    phase === "booking" ? "Booking…" : phase === "confirmed" ? "Booking Confirmed" : "Book wash";
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
       <DialogContent className="max-w-md" aria-describedby="book-a-wash-desc">
         <DialogHeader>
           <DialogTitle>Book a wash</DialogTitle>
           <p id="book-a-wash-desc" className="text-xs text-muted-foreground">
-            Only services with remaining credit are shown.
+            Your Daily Exterior wash runs automatically every day — no booking needed.
           </p>
         </DialogHeader>
 
-        {entQ.isLoading && (
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+        {loading && <div className="h-24 animate-pulse rounded-2xl bg-muted" />}
+
+        {!loading && (entQ.isError || subQ.isError) && (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center">
+            <AlertTriangle className="mx-auto h-5 w-5 text-destructive" />
+            <p className="mt-2 text-sm font-semibold">Couldn't load your plan.</p>
+            <Button
+              variant="outline"
+              className="mt-3 rounded-full"
+              onClick={() => {
+                entQ.refetch();
+                subQ.refetch();
+              }}
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" /> Retry
+            </Button>
+          </div>
         )}
 
-        {noActivePlan && (
+        {!loading && !entQ.isError && !subQ.isError && noActivePlan && (
           <div className="rounded-2xl border border-dashed border-border p-5 text-center">
             <p className="text-sm font-semibold">No active plan on this vehicle.</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -310,11 +347,11 @@ export function BookAWashSheet({
           </div>
         )}
 
-        {!entQ.isLoading && !noActivePlan && nothingLeft && (
+        {!loading && !entQ.isError && !subQ.isError && usedUpIncluded && (
           <div className="rounded-2xl border border-dashed border-border p-5 text-center">
-            <p className="text-sm font-semibold">You've used all your washes this month.</p>
+            <p className="text-sm font-semibold">You've already used your included wash this month.</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add more washes or book a one-time premium service.
+              Your Daily Exterior wash continues every day. Need another full wash?
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <Button asChild className="rounded-full" onClick={() => onOpenChange(false)}>
@@ -330,52 +367,21 @@ export function BookAWashSheet({
           </div>
         )}
 
-        {!entQ.isLoading && !noActivePlan && available.length > 0 && (
+        {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">Choose service</Label>
-              <div className="mt-1.5 space-y-2">
-                {available.map(({ key, row }) => {
-                  const cfg = CONFIG[key];
-                  const Icon = cfg.icon;
-                  const selected = pickedKey === key;
-                  const remainingLabel = row.unlimited
-                    ? "Unlimited"
-                    : `${row.remaining} remaining`;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setPickedKey(key)}
-                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
-                        selected
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40"
-                      }`}
-                    >
-                      <span
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                          selected ? "bg-primary text-primary-foreground" : "bg-accent text-primary"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold">{cfg.label}</div>
-                        <div className="text-[11px] text-muted-foreground">{cfg.hint}</div>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          selected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {remainingLabel}
-                      </span>
-                    </button>
-                  );
-                })}
+              <Label className="text-xs">Your wash</Label>
+              <div className="mt-1.5 flex w-full items-center gap-3 rounded-2xl border border-primary bg-primary/5 p-3 text-left">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold">{INCLUDED.label}</div>
+                  <div className="text-[11px] text-muted-foreground">{INCLUDED.hint}</div>
+                </div>
+                <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                  {includedRow?.unlimited ? "Unlimited" : `${includedRemaining} remaining`}
+                </span>
               </div>
               <div className="mt-3 text-right">
                 <Link
@@ -409,6 +415,7 @@ export function BookAWashSheet({
                   onChange={(e) => setAddressId(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
                 >
+                  {(addrQ.data ?? []).length === 0 && <option value="">No saved address</option>}
                   {(addrQ.data ?? []).map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label || "Address"} · {a.area}
@@ -445,20 +452,40 @@ export function BookAWashSheet({
               </span>
               <span className="font-semibold">₹0 Payable</span>
             </div>
+
+            {error && (
+              <div
+                data-testid="booking-error-banner"
+                className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium">{error}</p>
+                  <button
+                    type="button"
+                    className="mt-1 inline-flex items-center gap-1 font-semibold underline"
+                    onClick={() => void confirm()}
+                  >
+                    <RotateCcw className="h-3 w-3" /> Try again
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {!nothingLeft && !noActivePlan && (
+        {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
           <DialogFooter>
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button variant="ghost" disabled={phase === "booking"} onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
-              onClick={confirm}
-              disabled={saving || !pickedKey || !addressId}
+              data-testid="book-wash-button"
+              onClick={() => void confirm()}
+              disabled={phase !== "idle" || !addressId || !date}
             >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Book wash
+              {phase === "booking" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {buttonLabel}
             </Button>
           </DialogFooter>
         )}
