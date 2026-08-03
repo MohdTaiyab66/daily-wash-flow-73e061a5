@@ -782,7 +782,7 @@ function ServiceDetail() {
       checkoutLockRef.current = false;
       setPaying(false);
     }
-  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess, acquireHold, releaseHold, pushEvent]);
+  }, [verifyPayment, safeLog, pollForSuccess, acquireHold, releaseHold, pushEvent]);
 
 
   const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
