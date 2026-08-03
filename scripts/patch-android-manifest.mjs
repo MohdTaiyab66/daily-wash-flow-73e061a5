@@ -195,6 +195,7 @@ if (!mainActivity) {
 
 let activity = await readFile(mainActivity, "utf8");
 const importsToEnsure = [
+  "android.content.Intent",
   "android.os.Bundle",
   "android.util.Log",
   "android.webkit.WebSettings",
@@ -276,6 +277,35 @@ if (/super\.onCreate\(savedInstanceState\);/.test(activity)) {
   console.error(`[android-manifest] MainActivity.java has no super.onCreate(savedInstanceState); cannot install WebView cache reset`);
   process.exit(1);
 }
+
+// Razorpay checkout is launched by the SDK itself (com.razorpay.Checkout.open),
+// so its result arrives on the host Activity, not on the Capacitor bridge.
+// Forward it to the plugin or the payment promise never settles.
+activity = stripMarkedBlocks(
+  activity,
+  "// urbanwash-rzp-result-start",
+  "// urbanwash-rzp-result-end",
+);
+const rzpResultBlock = `
+    // urbanwash-rzp-result-start
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        try {
+            Checkout.handleRazorpayActivityResult(this, requestCode, resultCode, data);
+        } catch (Throwable t) {
+            Log.e("PARTNER_BUILD", "Razorpay activity result forwarding failed", t);
+        }
+    }
+    // urbanwash-rzp-result-end
+`;
+const lastBrace = activity.lastIndexOf("}");
+if (lastBrace === -1) {
+  console.error(`[android-manifest] MainActivity.java is malformed; cannot install Razorpay result bridge`);
+  process.exit(1);
+}
+activity = activity.slice(0, lastBrace) + rzpResultBlock + activity.slice(lastBrace);
+
 
 const partnerBuildNumber = process.env.PARTNER_BUILD_NUMBER ?? process.env.VERSION_CODE ?? "32";
 const partnerVersion = process.env.PARTNER_APP_VERSION ?? process.env.VERSION_NAME ?? "1.0.32";

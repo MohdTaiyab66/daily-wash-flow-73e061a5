@@ -755,11 +755,14 @@ function ServiceDetail() {
       attemptNo: ctx.attemptNo,
       providerOrderId: ctx.orderId,
     });
-    pushEvent(
-      ctx.bookingId,
-      "opened",
-      `${channel === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`,
-    );
+    // NOTE: on native we only log "opened" once the Razorpay activity has
+    // actually launched (checkoutLaunched event from the plugin). Logging it
+    // before the launch produced misleading "Razorpay opened" entries when the
+    // SDK exited immediately.
+    if (channel !== "native") {
+      pushEvent(ctx.bookingId, "opened", `Web checkout · attempt ${ctx.attemptNo}`);
+    }
+
 
     const isPluginUnavailable = (err: any) => {
       const msg = String(err?.message || err?.description || err || "").toLowerCase();
@@ -864,11 +867,28 @@ function ServiceDetail() {
             ...nativeOptions,
             key: ctx.keyId,
           });
-          const result: any = await Checkout.open(nativeOptions);
+          // Fires from the native plugin only after CheckoutActivity has been
+          // started by the Razorpay SDK.
+          let launchListener: any = null;
+          try {
+            launchListener = await (Checkout as any).addListener?.("checkoutLaunched", (ev: any) => {
+              console.log("[uw-pay] native checkoutLaunched", ev);
+              pushEvent(ctx.bookingId, "opened", `Native checkout · attempt ${ctx.attemptNo}`);
+            });
+          } catch (listenerErr) {
+            console.warn("[uw-pay] could not attach checkoutLaunched listener", listenerErr);
+          }
+          const result: any = await Checkout.open(nativeOptions).finally(() => {
+            try { launchListener?.remove?.(); } catch { /* noop */ }
+          });
           await appendPaymentDiagnostic("native Checkout.open returned", result);
           console.log("[uw-pay] native Checkout.open returned", result);
+          if (result?.cancelled === true && result?.launched === false) {
+            await appendPaymentDiagnostic("native checkout never launched", result);
+          }
           nativeResp = result?.response ?? result;
         } catch (err: any) {
+
           await appendPaymentDiagnostic("native path error", {
             nativeUnavailable,
             code: err?.code,
