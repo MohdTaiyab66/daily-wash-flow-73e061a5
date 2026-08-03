@@ -1,4 +1,3 @@
-import "./patch-capacitor-java.mjs";
 import { readFile, writeFile, mkdir, copyFile, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -172,10 +171,11 @@ for (const fqcn of PLUGIN_MESSAGING_SERVICES) {
 await writeFile(manifest, xml);
 console.log("[android-manifest] permissions, UPI package visibility, maps intents and offer service verified");
 
-// capacitor-razorpay is an old Capacitor plugin and does not reliably
-// auto-register on Capacitor 8. If Checkout is not registered, the JS import can
-// exist while the native bridge is missing, leading to WebView checkout fallback
-// where Razorpay hides UPI intents. Register it explicitly in MainActivity.
+// MainActivity.java is production source owned by this repo
+// (android/app/src/main/java/com/urbanwash/customer/MainActivity.java). It
+// registers the app-module payment plugin exactly once and forwards the
+// Razorpay activity result. Nothing is injected into it any more.
+
 async function collectFiles(dir, out = []) {
   if (!existsSync(dir)) return out;
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -186,140 +186,33 @@ async function collectFiles(dir, out = []) {
   return out;
 }
 
-const javaFiles = await collectFiles("android/app/src/main/java");
-const mainActivity = javaFiles.find((file) => file.endsWith("MainActivity.java"));
-if (!mainActivity) {
-  console.error("[android-manifest] missing MainActivity.java; cannot register Razorpay Checkout plugin");
-  process.exit(1);
-}
-
-let activity = await readFile(mainActivity, "utf8");
-const importsToEnsure = [
-  "android.content.Intent",
-  "android.os.Bundle",
-  "android.util.Log",
-  "android.webkit.WebSettings",
-  "android.webkit.WebView",
-  "com.ionicframework.capacitor.Checkout",
-];
-for (const importName of importsToEnsure) {
-  if (!activity.includes(`import ${importName};`)) {
-    activity = activity.replace(/(package\s+[^;]+;\s*)/, `$1\nimport ${importName};\n`);
+// Restore repo-owned native Java sources (payment plugin) into the Android
+// project. `cap sync` never removes them; this only matters when android/ was
+// regenerated from scratch (variant switch / clean clone).
+const javaSrcRoot = "android-native/java";
+if (existsSync(javaSrcRoot)) {
+  for (const file of await collectFiles(javaSrcRoot)) {
+    const dest = join("android/app/src/main/java", file.slice(javaSrcRoot.length + 1));
+    await mkdir(dirname(dest), { recursive: true });
+    await copyFile(file, dest);
+    console.log(`[android-manifest] restored native source → ${dest}`);
   }
 }
 
-// Register before super.onCreate(). In Capacitor 8, BridgeActivity creates the
-// bridge during super.onCreate(); registering after that is too late and leaves
-// Checkout unavailable at runtime.
-activity = activity.replace(/^\s*registerPlugin\(Checkout\.class\);\s*$/gm, "");
-activity = activity.replace(/^\s*Log\.i\("PARTNER_BUILD",[\s\S]*?\);\s*$/gm, "");
-const onCreateStart = /(void\s+onCreate\s*\(\s*Bundle\s+savedInstanceState\s*\)\s*\{)/s;
-if (onCreateStart.test(activity)) {
-  activity = activity.replace(onCreateStart, `$1\n        registerPlugin(Checkout.class);`);
-} else {
-  activity = activity.replace(/(public\s+class\s+MainActivity\s+extends\s+BridgeActivity\s*\{)/, `$1\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(Checkout.class);\n        super.onCreate(savedInstanceState);\n    }\n`);
-}
-
-if (!activity.includes("registerPlugin(Checkout.class)")) {
-  console.error(`[android-manifest] failed to register Razorpay Checkout plugin in ${mainActivity}`);
-  process.exit(1);
-}
-
-// Idempotent marker removal (same pattern as the Gradle patchers): strip every
-// previously injected block before inserting a fresh one. Index-based so it is
-// immune to CRLF line endings and to nested/duplicated blocks from past builds.
-function stripMarkedBlocks(source, startMarker, endMarker) {
-  let out = source;
-  for (;;) {
-    const start = out.indexOf(startMarker);
-    if (start === -1) break;
-    const endIdx = out.indexOf(endMarker, start);
-    if (endIdx === -1) {
-      // Orphan start marker (truncated block) — drop to end of that line.
-      const lineEnd = out.indexOf("\n", start);
-      out = out.slice(0, start) + (lineEnd === -1 ? "" : out.slice(lineEnd + 1));
-      continue;
-    }
-    let from = start;
-    // Swallow the leading indentation/newline of the block.
-    while (from > 0 && (out[from - 1] === " " || out[from - 1] === "\t")) from -= 1;
-    if (from > 0 && out[from - 1] === "\n") from -= 1;
-    if (from > 0 && out[from - 1] === "\r") from -= 1;
-    out = out.slice(0, from) + out.slice(endIdx + endMarker.length);
+const mainActivityPath = "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
+if (existsSync(mainActivityPath)) {
+  const activity = await readFile(mainActivityPath, "utf8");
+  if (activity.includes("com.ionicframework.capacitor")) {
+    console.error("[android-manifest] FATAL: MainActivity still references the removed upstream Razorpay plugin");
+    process.exit(1);
   }
-  return out;
+  const registrations = (activity.match(/registerPlugin\(/g) ?? []).length;
+  if (registrations !== 1 || !activity.includes("registerPlugin(UrbanWashCheckoutPlugin.class)")) {
+    console.error(`[android-manifest] FATAL: MainActivity must register UrbanWashCheckoutPlugin exactly once (found ${registrations})`);
+    process.exit(1);
+  }
+  console.log("[android-manifest] MainActivity verified: single UrbanWashCheckout registration");
 }
-
-activity = stripMarkedBlocks(
-  activity,
-  "// urbanwash-webview-cache-bust-start",
-  "// urbanwash-webview-cache-bust-end",
-);
-
-const cacheBustBlock = `
-        // urbanwash-webview-cache-bust-start
-        WebView urbanwashWebView = getBridge().getWebView();
-        if (urbanwashWebView != null) {
-            urbanwashWebView.clearCache(true);
-            urbanwashWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-            urbanwashWebView.post(new Runnable() {
-                @Override
-                public void run() {
-                    Log.i("PARTNER_BUILD", "WEBVIEW_CACHE_CLEARED_FORCE_RELOAD");
-                    urbanwashWebView.reload();
-                }
-            });
-        }
-        // urbanwash-webview-cache-bust-end`;
-if (/super\.onCreate\(savedInstanceState\);/.test(activity)) {
-  activity = activity.replace(/super\.onCreate\(savedInstanceState\);/, `super.onCreate(savedInstanceState);${cacheBustBlock}`);
-} else {
-  console.error(`[android-manifest] MainActivity.java has no super.onCreate(savedInstanceState); cannot install WebView cache reset`);
-  process.exit(1);
-}
-
-// Razorpay checkout is launched by the SDK itself (com.razorpay.Checkout.open),
-// so its result arrives on the host Activity, not on the Capacitor bridge.
-// Forward it to the plugin or the payment promise never settles.
-activity = stripMarkedBlocks(
-  activity,
-  "// urbanwash-rzp-result-start",
-  "// urbanwash-rzp-result-end",
-);
-const rzpResultBlock = `
-    // urbanwash-rzp-result-start
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        try {
-            Checkout.handleRazorpayActivityResult(this, requestCode, resultCode, data);
-        } catch (Throwable t) {
-            Log.e("PARTNER_BUILD", "Razorpay activity result forwarding failed", t);
-        }
-    }
-    // urbanwash-rzp-result-end
-`;
-const lastBrace = activity.lastIndexOf("}");
-if (lastBrace === -1) {
-  console.error(`[android-manifest] MainActivity.java is malformed; cannot install Razorpay result bridge`);
-  process.exit(1);
-}
-activity = activity.slice(0, lastBrace) + rzpResultBlock + activity.slice(lastBrace);
-
-
-const partnerBuildNumber = process.env.PARTNER_BUILD_NUMBER ?? process.env.VERSION_CODE ?? "32";
-const partnerVersion = process.env.PARTNER_APP_VERSION ?? process.env.VERSION_NAME ?? "1.0.32";
-const partnerBuildId = process.env.PARTNER_BUILD_ID ?? "2026-07-18-trace-01";
-const partnerGitSha = process.env.PARTNER_GIT_SHA ?? process.env.GIT_SHA ?? "unknown";
-const partnerBuildTime = process.env.PARTNER_BUILD_TIME ?? new Date().toISOString();
-const buildLogLine = `Log.i("PARTNER_BUILD", "PARTNER_BUILD=partner BUILD_NUMBER=${partnerBuildNumber} BUILD_VERSION=${partnerVersion} BUILD_ID=${partnerBuildId} GIT_SHA=${partnerGitSha} BUILD_TIME=${partnerBuildTime}");`;
-activity = activity.replace(
-  /registerPlugin\(Checkout\.class\);/,
-  `registerPlugin(Checkout.class);\n        ${buildLogLine}\n        Log.i("PARTNER_BUILD", "DEVICE_MANUFACTURER=" + android.os.Build.MANUFACTURER + " DEVICE_MODEL=" + android.os.Build.MODEL + " SDK_INT=" + android.os.Build.VERSION.SDK_INT);`,
-);
-
-await writeFile(mainActivity, activity, "utf8");
-console.log(`[android-manifest] Razorpay Checkout plugin and PARTNER_BUILD startup logs registered in ${mainActivity}`);
 
 // Copy Kotlin sources into the package directory.
 const pkgDir = "android/app/src/main/java/com/urbanwash/push";
