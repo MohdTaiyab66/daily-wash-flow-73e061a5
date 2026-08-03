@@ -4521,12 +4521,15 @@ export type Database = {
       }
       subscription_monthly_addons: {
         Row: {
+          activated_at: string | null
           added_at: string
           addon_type: string
+          booking_id: string | null
           created_at: string
           id: string
           is_active: boolean
           monthly_price: number
+          payment_status: string
           quantity: number
           removed_at: string | null
           subscription_id: string
@@ -4534,12 +4537,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activated_at?: string | null
           added_at?: string
           addon_type: string
+          booking_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           monthly_price?: number
+          payment_status?: string
           quantity?: number
           removed_at?: string | null
           subscription_id: string
@@ -4547,12 +4553,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activated_at?: string | null
           added_at?: string
           addon_type?: string
+          booking_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           monthly_price?: number
+          payment_status?: string
           quantity?: number
           removed_at?: string | null
           subscription_id?: string
@@ -4560,6 +4569,55 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_notification_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_pipeline_timeline"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "subscription_monthly_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_vehicle_audit"
+            referencedColumns: ["booking_id"]
+          },
           {
             foreignKeyName: "subscription_monthly_addons_subscription_id_fkey"
             columns: ["subscription_id"]
@@ -6039,6 +6097,10 @@ export type Database = {
           p_vehicle_id?: string
         }
         Returns: Json
+      }
+      create_monthly_addon_checkout: {
+        Args: { p_addon_type: string; p_subscription_id: string }
+        Returns: string
       }
       customer_cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }

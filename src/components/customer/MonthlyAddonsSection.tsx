@@ -1,9 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Plus, Droplets, Wrench, Sparkles, Loader2, Trash2, ShoppingBag } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import {
+  Plus,
+  Droplets,
+  Wrench,
+  Sparkles,
+  Loader2,
+  Trash2,
+  ShoppingBag,
+  AlertCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { createRazorpayOrder, verifyRazorpayPayment, logPaymentAttempt } from "@/lib/payment.functions";
+import { openRazorpayCheckout } from "@/lib/razorpay-checkout";
 
 /**
  * Phase 4 — Add-ons split
@@ -11,9 +24,10 @@ import { toast } from "sonner";
  *   Monthly Add-ons   → recurring, attached to the subscription until removed
  *   One-time Add-ons  → this month only, routed to the existing service page
  *
- * Monthly add-on intent is stored in `subscription_monthly_addons`.
- * A follow-up cron will materialise active rows into `subscription_entitlements`
- * on renewal — for now selection is captured and shown to the customer.
+ * BUSINESS RULE: NO PAYMENT = NO SERVICE.
+ * Monthly add-ons are now paid upfront: adding one creates a pending row plus
+ * a `pending_payment` booking, and it only becomes active after Razorpay
+ * verification flips the booking to `paid` (DB trigger).
  */
 
 type MonthlyRow = {
@@ -23,6 +37,8 @@ type MonthlyRow = {
   monthly_price: number;
   is_active: boolean;
   added_at: string;
+  payment_status: "pending" | "paid" | "failed" | "cancelled";
+  booking_id: string | null;
 };
 
 const MONTHLY_OPTIONS: {
@@ -74,6 +90,10 @@ export function MonthlyAddonsSection({
   userId: string | null;
 }) {
   const qc = useQueryClient();
+  const createOrder = useServerFn(createRazorpayOrder);
+  const verifyPayment = useServerFn(verifyRazorpayPayment);
+  const logAttempt = useServerFn(logPaymentAttempt);
+  const [busyType, setBusyType] = useState<string | null>(null);
 
   const activeQ = useQuery({
     queryKey: ["monthly-addons", subscriptionId],
@@ -81,46 +101,111 @@ export function MonthlyAddonsSection({
     queryFn: async (): Promise<MonthlyRow[]> => {
       const { data, error } = await (supabase as any)
         .from("subscription_monthly_addons")
-        .select("id, addon_type, quantity, monthly_price, is_active, added_at")
+        .select("id, addon_type, quantity, monthly_price, is_active, added_at, payment_status, booking_id")
         .eq("subscription_id", subscriptionId)
-        .eq("is_active", true)
+        .is("removed_at", null)
+        .in("payment_status", ["pending", "paid"])
         .order("added_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as MonthlyRow[];
     },
   });
 
-  const active = activeQ.data ?? [];
-  const activeTypes = new Set(active.map((a) => a.addon_type));
+  const rows = activeQ.data ?? [];
+  const rowFor = (t: MonthlyRow["addon_type"]) => rows.find((r) => r.addon_type === t) ?? null;
+  const paidRows = rows.filter((r) => r.payment_status === "paid" && r.is_active);
 
-  const addMut = useMutation({
+  const safeLog = async (payload: Parameters<typeof logPaymentAttempt>[0] extends never ? never : any) => {
+    try {
+      await logAttempt({ data: payload });
+    } catch {
+      /* logging must never block checkout */
+    }
+  };
+
+  /** Create pending add-on + booking, then take payment upfront. */
+  const payMut = useMutation({
     mutationFn: async (opt: (typeof MONTHLY_OPTIONS)[number]) => {
       if (!subscriptionId || !userId) throw new Error("No active plan");
-      const { error } = await (supabase as any)
-        .from("subscription_monthly_addons")
-        .insert({
-          subscription_id: subscriptionId,
-          user_id: userId,
-          addon_type: opt.addon_type,
-          quantity: 1,
-          monthly_price: opt.price,
-          is_active: true,
-        });
-      if (error) throw error;
+
+      const { data: bookingId, error } = await (supabase as any).rpc(
+        "create_monthly_addon_checkout",
+        { p_subscription_id: subscriptionId, p_addon_type: opt.addon_type },
+      );
+      if (error) throw new Error(error.message);
+      if (!bookingId) throw new Error("Could not start checkout");
+      await qc.invalidateQueries({ queryKey: ["monthly-addons", subscriptionId] });
+      return runCheckout(String(bookingId), opt.label);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["monthly-addons", subscriptionId] });
-      toast.success("Add-on scheduled — applies from your next billing cycle.");
+      qc.invalidateQueries({ queryKey: ["subscription"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not add. Try again."),
+    onSettled: () => setBusyType(null),
   });
 
+  /** Retry payment for an already-created pending add-on. */
+  const retryMut = useMutation({
+    mutationFn: async (row: MonthlyRow) => {
+      if (!row.booking_id) throw new Error("Missing checkout — remove and add again");
+      const label = MONTHLY_OPTIONS.find((o) => o.addon_type === row.addon_type)?.label ?? "Add-on";
+      return runCheckout(row.booking_id, label, true);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["monthly-addons", subscriptionId] }),
+    onError: (e: any) => toast.error(e?.message ?? "Payment failed. Try again."),
+    onSettled: () => setBusyType(null),
+  });
+
+  async function runCheckout(bookingId: string, label: string, isRetry = false) {
+    const order = await createOrder({ data: { bookingId } });
+    const { data: auth } = await supabase.auth.getUser();
+
+    await safeLog({
+      bookingId,
+      channel: "unknown",
+      outcome: isRetry ? "retry" : "started",
+      providerOrderId: order.orderId,
+    });
+
+    const result = await openRazorpayCheckout({
+      keyId: order.keyId,
+      orderId: order.orderId,
+      amount: order.amount,
+      currency: order.currency,
+      description: `${label} (monthly add-on)`,
+      bookingId,
+      prefillEmail: auth?.user?.email ?? "",
+      prefillContact: (auth?.user?.phone as string) ?? "",
+    });
+
+    if (result.status === "cancelled") {
+      await safeLog({ bookingId, channel: "unknown", outcome: "cancelled", providerOrderId: order.orderId });
+      toast.message("Payment cancelled — the add-on stays pending until it's paid.");
+      return;
+    }
+
+    await verifyPayment({
+      data: {
+        bookingId,
+        razorpayOrderId: result.orderId,
+        razorpayPaymentId: result.paymentId,
+        razorpaySignature: result.signature,
+      },
+    });
+    toast.success(`${label} added — active from your next billing cycle.`);
+  }
+
   const removeMut = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (row: MonthlyRow) => {
       const { error } = await (supabase as any)
         .from("subscription_monthly_addons")
-        .update({ is_active: false, removed_at: new Date().toISOString() })
-        .eq("id", id);
+        .update({
+          is_active: false,
+          payment_status: row.payment_status === "paid" ? row.payment_status : "cancelled",
+          removed_at: new Date().toISOString(),
+        })
+        .eq("id", row.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,6 +217,8 @@ export function MonthlyAddonsSection({
 
   if (!subscriptionId) return null;
 
+  const busy = payMut.isPending || retryMut.isPending;
+
   return (
     <div className="mt-5 space-y-4">
       {/* Monthly Add-ons */}
@@ -140,7 +227,7 @@ export function MonthlyAddonsSection({
           <div className="min-w-0">
             <h3 className="text-sm font-semibold tracking-tight">Monthly add-ons</h3>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Added every month until you remove them.
+              Paid upfront — added every month until you remove them.
             </p>
           </div>
         </div>
@@ -148,71 +235,119 @@ export function MonthlyAddonsSection({
         <div className="mt-3 space-y-2">
           {MONTHLY_OPTIONS.map((opt) => {
             const Icon = opt.icon;
-            const isActive = activeTypes.has(opt.addon_type);
-            const row = active.find((a) => a.addon_type === opt.addon_type);
+            const row = rowFor(opt.addon_type);
+            const isPaid = !!row && row.payment_status === "paid" && row.is_active;
+            const isPending = !!row && row.payment_status === "pending";
+            const thisBusy = busy && busyType === opt.addon_type;
             return (
               <div
                 key={opt.addon_type}
-                className={`flex items-center gap-3 rounded-2xl border p-3 ${
-                  isActive ? "border-primary/50 bg-primary/5" : "border-border"
+                className={`rounded-2xl border p-3 ${
+                  isPaid
+                    ? "border-primary/50 bg-primary/5"
+                    : isPending
+                      ? "border-amber-500/50 bg-amber-500/5"
+                      : "border-border"
                 }`}
               >
-                <span
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                    isActive ? "bg-primary text-primary-foreground" : "bg-accent text-primary"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold">{opt.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{opt.hint}</div>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                      isPaid ? "bg-primary text-primary-foreground" : "bg-accent text-primary"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold">{opt.label}</div>
+                    <div className="text-[11px] text-muted-foreground">{opt.hint}</div>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums">
+                    ₹{opt.price}
+                    <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
+                  </span>
+                  {isPaid ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => removeMut.mutate(row!)}
+                      disabled={removeMut.isPending}
+                      aria-label={`Remove ${opt.label}`}
+                    >
+                      {removeMut.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  ) : isPending ? null : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 shrink-0 rounded-full text-xs"
+                      onClick={() => {
+                        setBusyType(opt.addon_type);
+                        payMut.mutate(opt);
+                      }}
+                      disabled={busy}
+                    >
+                      {thisBusy ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="mr-1 h-3.5 w-3.5" /> Add
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
-                <span className="shrink-0 text-sm font-semibold tabular-nums">
-                  ₹{opt.price}
-                  <span className="text-[10px] font-normal text-muted-foreground">/mo</span>
-                </span>
-                {isActive ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 shrink-0 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => row && removeMut.mutate(row.id)}
-                    disabled={removeMut.isPending}
-                    aria-label={`Remove ${opt.label}`}
-                  >
-                    {removeMut.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 shrink-0 rounded-full text-xs"
-                    onClick={() => addMut.mutate(opt)}
-                    disabled={addMut.isPending}
-                  >
-                    {addMut.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Add
-                      </>
-                    )}
-                  </Button>
+
+                {isPending && (
+                  <div className="mt-3 rounded-xl border border-amber-500/40 bg-background p-2.5">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-semibold text-amber-700">Payment pending</div>
+                        <p className="text-[11px] text-muted-foreground">
+                          This add-on activates only after payment is confirmed.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        size="sm"
+                        className="h-8 flex-1 rounded-full text-xs"
+                        onClick={() => {
+                          setBusyType(opt.addon_type);
+                          retryMut.mutate(row!);
+                        }}
+                        disabled={busy}
+                        data-testid="monthly-addon-retry"
+                      >
+                        {thisBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay ₹${opt.price}`}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 rounded-full text-xs text-muted-foreground"
+                        onClick={() => removeMut.mutate(row!)}
+                        disabled={removeMut.isPending || busy}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
 
-        {active.length > 0 && (
+        {paidRows.length > 0 && (
           <p className="mt-3 rounded-xl bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
             These apply from your next billing cycle. Total add-on cost: ₹
-            {active.reduce((sum, r) => sum + r.monthly_price * r.quantity, 0)}/mo
+            {paidRows.reduce((sum, r) => sum + r.monthly_price * r.quantity, 0)}/mo
           </p>
         )}
       </div>
