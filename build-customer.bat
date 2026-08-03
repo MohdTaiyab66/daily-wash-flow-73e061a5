@@ -157,6 +157,9 @@ echo   [OK] Capacitor webDir ready: mobile-shell\index.html
 echo   Ensuring android/ matches the current variant (%VARIANT%)...
 call node scripts\ensure-variant-clean.mjs || goto :fail
 
+echo   Hard-cleaning previous Android build artifacts...
+call node scripts\clean-android-build.mjs || goto :fail
+
 if not exist "android" (
   echo   android/ folder missing - running: Capacitor add android
   call node "%CAP_CLI%" add android || goto :fail
@@ -207,6 +210,8 @@ echo   Resolved Razorpay dependency:
 call gradlew.bat -q :app:printRazorpayResolved || echo   [!] Razorpay resolution report failed (non-fatal)
 call gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath > ..\razorpay-customer-deps.txt 2>&1
 echo   Full dependency tree written to razorpay-customer-deps.txt
+echo   Gradle clean (no stale dex/APK may survive):
+call gradlew.bat clean || (popd & goto :fail)
 call gradlew.bat assembleDebug || (popd & goto :fail)
 popd
 
