@@ -195,6 +195,7 @@ if (!mainActivity) {
 
 let activity = await readFile(mainActivity, "utf8");
 const importsToEnsure = [
+  "android.content.Intent",
   "android.os.Bundle",
   "android.util.Log",
   "android.webkit.WebSettings",
