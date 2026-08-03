@@ -1191,7 +1191,53 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {recovering ? (
+            <div
+              data-testid="payment-recovery-checking"
+              className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              Checking your last payment status…
+            </div>
+          ) : null}
+          {!recovering && resumable && !paymentError ? (
+            <div
+              role="status"
+              data-testid="payment-resume-banner"
+              className="mb-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] leading-snug"
+            >
+              <div className="font-medium">Unfinished payment for this booking</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                Your booking is saved and still unpaid — ₹{Math.round(resumable.amount / 100)} for {resumable.serviceName}.
+                Resume to reopen the same payment (Order {resumable.orderId.slice(-6)}).
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={onRetryPayment}
+                  disabled={paying}
+                  data-testid="payment-resume-btn"
+                  className="h-7 rounded-full px-3 text-[11px]"
+                >
+                  {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                  Resume payment
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={onDiscardResumable}
+                  className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                  data-testid="payment-resume-discard"
+                >
+                  <X className="mr-1 h-3 w-3" /> Start over
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {paymentError ? (
+
             <div
               role="alert"
               data-testid="payment-error-banner"
