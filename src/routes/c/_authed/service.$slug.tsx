@@ -869,9 +869,28 @@ function ServiceDetail() {
           });
           const result: any = await Checkout.open(nativeOptions);
           await appendPaymentDiagnostic("native Checkout.open returned", result);
+          // Fires from the native plugin only after CheckoutActivity has been
+          // started by the Razorpay SDK.
+          let launchListener: any = null;
+          try {
+            launchListener = await (Checkout as any).addListener?.("checkoutLaunched", (ev: any) => {
+              console.log("[uw-pay] native checkoutLaunched", ev);
+              pushEvent(ctx.bookingId, "opened", `Native checkout · attempt ${ctx.attemptNo}`);
+            });
+          } catch (listenerErr) {
+            console.warn("[uw-pay] could not attach checkoutLaunched listener", listenerErr);
+          }
+          const result: any = await Checkout.open(nativeOptions).finally(() => {
+            try { launchListener?.remove?.(); } catch { /* noop */ }
+          });
+          await appendPaymentDiagnostic("native Checkout.open returned", result);
           console.log("[uw-pay] native Checkout.open returned", result);
+          if (result?.cancelled === true && result?.launched === false) {
+            await appendPaymentDiagnostic("native checkout never launched", result);
+          }
           nativeResp = result?.response ?? result;
         } catch (err: any) {
+
           await appendPaymentDiagnostic("native path error", {
             nativeUnavailable,
             code: err?.code,
