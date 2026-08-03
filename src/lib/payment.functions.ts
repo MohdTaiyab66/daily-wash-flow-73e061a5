@@ -23,6 +23,16 @@ const logAttemptInput = z.object({
 });
 
 const statusInput = z.object({ bookingId: z.string().uuid() });
+const holdInput = z.object({
+  bookingId: z.string().uuid(),
+  holderId: z.string().min(6).max(64),
+  ttlSeconds: z.number().int().min(30).max(900).optional(),
+  reason: z.string().max(40).optional(),
+});
+const releaseHoldInput = z.object({
+  bookingId: z.string().uuid(),
+  holderId: z.string().min(6).max(64),
+});
 const userAttemptsInput = z.object({
   userId: z.string().uuid().optional(),
   phone: z.string().min(6).max(20).optional(),
@@ -407,3 +417,44 @@ export const getUserPaymentAttempts = createServerFn({ method: "POST" })
   });
 
 
+
+/**
+ * Server-side checkout hold.
+ *
+ * Prevents duplicate checkout attempts for the same booking while a payment
+ * is being opened, verified, or finalized — including from a second tab or a
+ * second device. The hold is short-lived and self-expiring, so a crashed
+ * client can never permanently lock its own booking.
+ *
+ * BUSINESS RULE: the hold never marks anything paid; it only serializes
+ * checkout attempts. The server remains the single source of truth.
+ */
+export const acquireCheckoutHold = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => holdInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await (context.supabase as any).rpc("acquire_checkout_hold", {
+      p_booking_id: data.bookingId,
+      p_holder_id: data.holderId,
+      p_ttl_seconds: data.ttlSeconds ?? 300,
+      p_reason: data.reason ?? "checkout",
+    });
+    if (error) throw new Error(error.message);
+    return (result ?? { acquired: false, reason: "unknown" }) as {
+      acquired: boolean;
+      reason?: string;
+      expires_at?: string;
+    };
+  });
+
+export const releaseCheckoutHold = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => releaseHoldInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).rpc("release_checkout_hold", {
+      p_booking_id: data.bookingId,
+      p_holder_id: data.holderId,
+    });
+    if (error) throw new Error(error.message);
+    return { released: true };
+  });

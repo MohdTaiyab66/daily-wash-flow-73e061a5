@@ -9,6 +9,8 @@ import {
   verifyRazorpayPayment,
   logPaymentAttempt,
   getBookingPaymentStatus,
+  acquireCheckoutHold,
+  releaseCheckoutHold,
 } from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +29,15 @@ import {
   sanitizePaymentDiagnostic,
 } from "@/lib/payment-diagnostics";
 import {
+  appendCheckoutEvent,
   clearPendingCheckout,
+  getCheckoutHolderId,
   readPendingCheckout,
   savePendingCheckout,
+  type CheckoutEvent,
+  type CheckoutStage,
 } from "@/lib/pending-checkout-store";
+import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 
 
 
@@ -140,9 +147,78 @@ function ServiceDetail() {
   // Crash / reopen recovery: a checkout that was persisted but never finished.
   const [recovering, setRecovering] = useState(false);
   const [resumable, setResumable] = useState<PendingCheckout | null>(null);
+  const [timeline, setTimeline] = useState<CheckoutEvent[]>([]);
+  const [holdBlocked, setHoldBlocked] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [recoveryNonce, setRecoveryNonce] = useState(0);
   const recoveryRan = useRef(false);
+  // Hard client-side lock: blocks re-entry into checkout while a payment is
+  // being opened, verified or finalized (double taps, resume + retry races).
+  const checkoutLockRef = useRef(false);
+  const heldBookingRef = useRef<string | null>(null);
   const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
+  const acquireHoldFn = useServerFn(acquireCheckoutHold);
+  const releaseHoldFn = useServerFn(releaseCheckoutHold);
   useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
+
+  /** Persist + surface a payment timeline event. */
+  const pushEvent = useCallback((bookingId: string, stage: CheckoutStage, detail?: string) => {
+    const events = appendCheckoutEvent(bookingId, stage, detail);
+    setTimeline(events);
+  }, []);
+
+  const acquireHold = useCallback(async (bookingId: string) => {
+    try {
+      const res = await acquireHoldFn({
+        data: { bookingId, holderId: getCheckoutHolderId(), ttlSeconds: 300, reason: "checkout" },
+      });
+      if (!res?.acquired) {
+        if (res?.reason === "already_paid") return { ok: false, alreadyPaid: true } as const;
+        return { ok: false, alreadyPaid: false } as const;
+      }
+      heldBookingRef.current = bookingId;
+      return { ok: true, alreadyPaid: false } as const;
+    } catch (e) {
+      // Never block checkout because the hold service itself is unreachable —
+      // the client lock plus server-side payment verification still apply.
+      console.warn("[uw-checkout] could not acquire hold (continuing)", e);
+      return { ok: true, alreadyPaid: false } as const;
+    }
+  }, [acquireHoldFn]);
+
+  const releaseHold = useCallback(async (bookingId: string) => {
+    if (heldBookingRef.current !== bookingId) return;
+    heldBookingRef.current = null;
+    try {
+      await releaseHoldFn({ data: { bookingId, holderId: getCheckoutHolderId() } });
+    } catch (e) {
+      console.warn("[uw-checkout] hold release failed (it will expire)", e);
+    }
+  }, [releaseHoldFn]);
+
+  // Offline-safe recovery: remember the drop and re-verify when back online.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setOffline(!navigator.onLine);
+    const onOffline = () => {
+      setOffline(true);
+      const stored = readPendingCheckout();
+      if (stored) pushEvent(stored.bookingId, "offline", "Connection lost during checkout");
+    };
+    const onOnline = () => {
+      setOffline(false);
+      const stored = readPendingCheckout();
+      // Re-verify the real Razorpay status as soon as the network is back.
+      if (stored && stored.serviceSlug === slug) setRecoveryNonce((n) => n + 1);
+    };
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [slug, pushEvent]);
+
 
 
 
@@ -491,7 +567,21 @@ function ServiceDetail() {
       };
       setPendingCheckout(checkoutCtx);
       setResumable(null);
-      savePendingCheckout({ ...checkoutCtx, serviceSlug: service.slug });
+      savePendingCheckout({
+        ...checkoutCtx,
+        serviceSlug: service.slug,
+        selection: {
+          vehicleId: vehicle.id,
+          addressId: bookingAddressId,
+          date,
+          slot,
+          notes: notes || null,
+          addonQty,
+          couponCode: appliedCoupon?.code ?? null,
+        },
+        events: [],
+      });
+      pushEvent(String(bookingId), "created", `Order ${order.orderId.slice(-6)} · ₹${Math.round(order.amount / 100)}`);
       await runPayment(checkoutCtx, { isRetry: false });
 
     } catch (err: any) {
@@ -611,11 +701,39 @@ function ServiceDetail() {
   }, [verifyPayment]);
 
   const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
+    // Client-side hold: hard re-entrancy guard around the whole attempt.
+    if (checkoutLockRef.current) {
+      console.warn("[uw-checkout] duplicate checkout attempt blocked (client hold)");
+      return;
+    }
+    checkoutLockRef.current = true;
     setPaymentError(null);
     setUpiUnavailable(null);
+    setHoldBlocked(null);
     setPaying(true);
     // Cancel any prior polling loop.
     if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+
+    // Server-side hold: blocks a second tab/device from opening the same order
+    // while this one is being paid, verified or finalized.
+    const hold = await acquireHold(ctx.bookingId);
+    if (!hold.ok) {
+      checkoutLockRef.current = false;
+      setPaying(false);
+      setHoldBlocked(
+        "This payment is already being processed on another device or tab. Wait a few moments and try again.",
+      );
+      pushEvent(ctx.bookingId, "failed", "Blocked — payment already in progress elsewhere");
+      return;
+    }
+    if (hold.alreadyPaid) {
+      checkoutLockRef.current = false;
+      setPaying(false);
+      pushEvent(ctx.bookingId, "paid", "Already paid — finalizing");
+      await finalizeSuccess(ctx);
+      return;
+    }
+
 
     const { isNative } = await import("@/lib/platform");
     const nativeMode = isNative();
@@ -637,6 +755,11 @@ function ServiceDetail() {
       attemptNo: ctx.attemptNo,
       providerOrderId: ctx.orderId,
     });
+    pushEvent(
+      ctx.bookingId,
+      "opened",
+      `${channel === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`,
+    );
 
     const isPluginUnavailable = (err: any) => {
       const msg = String(err?.message || err?.description || err || "").toLowerCase();
@@ -822,6 +945,7 @@ function ServiceDetail() {
           providerOrderId: ctx.orderId,
           metadata: { reconciled_via: "polling" },
         });
+        pushEvent(ctx.bookingId, "paid", "Verified paid after reconnecting");
         await finalizeSuccess(ctx);
         return;
       }
@@ -833,6 +957,13 @@ function ServiceDetail() {
         errorCode: cancelled ? "user_cancelled" : "checkout_failed",
         errorMessage: String(err?.message ?? err).slice(0, 500),
       });
+      const timedOut = /timeout|timed out/i.test(String(err?.message ?? ""));
+      pushEvent(
+        ctx.bookingId,
+        cancelled ? "cancelled" : timedOut ? "timeout" : "failed",
+        String(err?.message ?? "Checkout did not complete").slice(0, 120),
+      );
+      pushEvent(ctx.bookingId, "unpaid", "Server reports this booking is still unpaid");
       if (nativeMode) {
         const diag = await getNativePaymentDiagnostics();
         const reason = cancelled
@@ -847,9 +978,13 @@ function ServiceDetail() {
         canRetry: true,
       });
     } finally {
+      // Always drop both holds so a retry (or another device) can proceed.
+      await releaseHold(ctx.bookingId);
+      checkoutLockRef.current = false;
       setPaying(false);
     }
-  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess]);
+  }, [runWebCheckout, verifyPayment, safeLog, pollForSuccess, acquireHold, releaseHold, pushEvent]);
+
 
   const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
     if (ctx.isSubscription) {
@@ -870,6 +1005,9 @@ function ServiceDetail() {
     setPendingCheckout(null);
     setPaymentError(null);
     setResumable(null);
+    setHoldBlocked(null);
+    setTimeline([]);
+    await releaseHold(ctx.bookingId);
     clearPendingCheckout();
     await navigate({
       to: "/c/booking-success",
@@ -878,17 +1016,24 @@ function ServiceDetail() {
         plan: ctx.isSubscription ? true : undefined,
       },
     });
-  }, [navigate, qc]);
+  }, [navigate, qc, releaseHold]);
 
   const onRetryPayment = useCallback(async () => {
     const base = pendingCheckout ?? resumable;
-    if (!base || paying) return;
+    if (!base || paying || checkoutLockRef.current) return;
     const next: PendingCheckout = { ...base, attemptNo: base.attemptNo + 1 };
     setPendingCheckout(next);
     setResumable(null);
-    savePendingCheckout({ ...next, serviceSlug: slug });
+    const stored = readPendingCheckout();
+    savePendingCheckout({
+      ...next,
+      serviceSlug: slug,
+      selection: stored?.selection,
+      events: stored?.events,
+    });
     await runPayment(next, { isRetry: true });
   }, [pendingCheckout, resumable, paying, runPayment, slug]);
+
 
   /**
    * Crash / reopen recovery. On mount, if a checkout for this service was
@@ -897,13 +1042,41 @@ function ServiceDetail() {
    *  - still pending → surface a "Resume payment" banner with the same order
    */
   useEffect(() => {
-    if (recoveryRan.current) return;
+    if (recoveryRan.current && recoveryNonce === 0) return;
     recoveryRan.current = true;
     const stored = readPendingCheckout();
     if (!stored || stored.serviceSlug !== slug) return;
+    setTimeline(stored.events ?? []);
+    // Restore the selection that produced this checkout, so a reopen after an
+    // offline drop shows the same cart instead of a blank form.
+    if (stored.selection) {
+      if (stored.selection.vehicleId) setVehicleId(stored.selection.vehicleId);
+      if (stored.selection.addressId) setAddressId(stored.selection.addressId);
+      if (stored.selection.date) setDate(stored.selection.date);
+      if (stored.selection.slot) setSlot(stored.selection.slot);
+      if (stored.selection.notes) setNotes(stored.selection.notes);
+      if (stored.selection.addonQty) setAddonQty(stored.selection.addonQty);
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // Offline: keep the persisted context, verify as soon as we're back.
+      setResumable({
+        bookingId: stored.bookingId,
+        keyId: stored.keyId,
+        orderId: stored.orderId,
+        amount: stored.amount,
+        currency: stored.currency,
+        serviceName: stored.serviceName,
+        isSubscription: stored.isSubscription,
+        prefillEmail: stored.prefillEmail,
+        prefillContact: stored.prefillContact,
+        attemptNo: stored.attemptNo,
+      });
+      return;
+    }
     let cancelled = false;
     void (async () => {
       setRecovering(true);
+      pushEvent(stored.bookingId, "verifying", "Re-checking payment status");
       try {
         const status = await getStatusFn({ data: { bookingId: stored.bookingId } });
         if (cancelled) return;
@@ -921,13 +1094,16 @@ function ServiceDetail() {
         };
         if (status.paymentStatus === "paid" || (status as any).subscriptionId) {
           console.log("[uw-checkout] recovered a completed payment", { bookingId: stored.bookingId });
+          pushEvent(stored.bookingId, "paid", "Payment confirmed by Razorpay");
           await finalizeSuccess(ctx);
           return;
         }
         if (status.paymentStatus === "cancelled" || status.paymentStatus === "failed") {
+          pushEvent(stored.bookingId, "unpaid", "Payment was not completed");
           clearPendingCheckout();
           return;
         }
+        pushEvent(stored.bookingId, "unpaid", "Still unpaid — you can resume this order");
         setResumable(ctx);
       } catch (e) {
         console.warn("[uw-checkout] recovery status check failed", e);
@@ -936,10 +1112,13 @@ function ServiceDetail() {
       }
     })();
     return () => { cancelled = true; };
-  }, [slug, getStatusFn, finalizeSuccess]);
+  }, [slug, recoveryNonce, getStatusFn, finalizeSuccess, pushEvent]);
+
 
   const onDiscardResumable = useCallback(() => {
     setResumable(null);
+    setTimeline([]);
+    setHoldBlocked(null);
     clearPendingCheckout();
   }, []);
 
@@ -1191,6 +1370,26 @@ function ServiceDetail() {
       {/* Sticky checkout bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
+          {offline ? (
+            <div
+              role="status"
+              data-testid="payment-offline-banner"
+              className="mb-2 rounded-lg border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-800"
+            >
+              You're offline. Your selection and pending order are saved — we'll re-check the payment
+              automatically when you're back online.
+            </div>
+          ) : null}
+          {holdBlocked ? (
+            <div
+              role="alert"
+              data-testid="payment-hold-banner"
+              className="mb-2 rounded-lg border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-900"
+            >
+              {holdBlocked}
+            </div>
+          ) : null}
+          <PaymentTimeline events={timeline} />
           {recovering ? (
             <div
               data-testid="payment-recovery-checking"
@@ -1200,6 +1399,7 @@ function ServiceDetail() {
               Checking your last payment status…
             </div>
           ) : null}
+
           {!recovering && resumable && !paymentError ? (
             <div
               role="status"

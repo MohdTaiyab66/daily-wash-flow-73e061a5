@@ -597,6 +597,83 @@ export type Database = {
           },
         ]
       }
+      checkout_holds: {
+        Row: {
+          acquired_at: string
+          booking_id: string
+          expires_at: string
+          holder_id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          booking_id: string
+          expires_at: string
+          holder_id: string
+          reason?: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          booking_id?: string
+          expires_at?: string
+          holder_id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_notification_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_payment_pipeline_timeline"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_pipeline_metrics"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "checkout_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "v_vehicle_audit"
+            referencedColumns: ["booking_id"]
+          },
+        ]
+      }
       complaints: {
         Row: {
           complaint_type: string
@@ -5729,6 +5806,15 @@ export type Database = {
         Args: { p_cars: number; p_duration: number }
         Returns: string
       }
+      acquire_checkout_hold: {
+        Args: {
+          p_booking_id: string
+          p_holder_id: string
+          p_reason?: string
+          p_ttl_seconds?: number
+        }
+        Returns: Json
+      }
       activate_paid_booking: {
         Args: {
           p_booking_id: string
@@ -6736,6 +6822,10 @@ export type Database = {
       regenerate_assignment_services: {
         Args: { p_assignment_id: string; p_from_date?: string }
         Returns: number
+      }
+      release_checkout_hold: {
+        Args: { p_booking_id: string; p_holder_id: string }
+        Returns: Json
       }
       renew_assignments: { Args: never; Returns: number }
       respond_subscription_offer: {
