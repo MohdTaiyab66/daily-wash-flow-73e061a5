@@ -129,9 +129,6 @@ if not exist "%CAP_CLI%" (
   call bun install || goto :fail
 )
 
-echo   Patching Capacitor Android Java compatibility before build...
-call node scripts\patch-capacitor-java.mjs || goto :fail
-
 if not exist "%CAP_CLI%" (
   echo   [X] Capacitor CLI still missing after bun install.
   echo       Run: bun add @capacitor/cli @capacitor/core @capacitor/android
@@ -217,6 +214,15 @@ if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
   echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
   goto :fail
 )
+echo   Verifying native payment + push classes inside the APK...
+call node scripts\verify-apk-native.mjs
+if errorlevel 1 (
+  echo   [X] Native verification FAILED - deleting APK so a broken build cannot ship
+  del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
+  del /F /Q "urbanwash-customer.apk" >nul 2>&1
+  goto :fail
+)
+
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-customer.apk" >nul || goto :fail
 
 echo.

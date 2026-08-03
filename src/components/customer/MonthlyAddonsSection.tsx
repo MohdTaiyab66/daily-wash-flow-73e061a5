@@ -185,6 +185,19 @@ export function MonthlyAddonsSection({
       return;
     }
 
+    if (result.status === "failed") {
+      await safeLog({
+        bookingId,
+        channel: result.channel,
+        outcome: "failure",
+        providerOrderId: order.orderId,
+        errorCode: result.code,
+        errorMessage: result.message,
+      });
+      throw new Error(result.message);
+    }
+
+
     await verifyPayment({
       data: {
         bookingId,

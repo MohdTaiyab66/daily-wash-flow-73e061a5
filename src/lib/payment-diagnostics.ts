@@ -62,14 +62,15 @@ function appendLocal(line: string) {
 async function callNative(method: string, payload?: Record<string, unknown>) {
   if (!isNative()) return null;
   try {
-    const mod = await import("capacitor-razorpay");
-    const checkout = (mod as any).Checkout;
-    if (!checkout || typeof checkout[method] !== "function") return null;
-    return await checkout[method](payload ?? {});
+    const { UrbanWashCheckout } = await import("@/lib/razorpay-checkout");
+    const plugin = UrbanWashCheckout as unknown as Record<string, any>;
+    if (typeof plugin?.[method] !== "function") return null;
+    return await plugin[method](payload ?? {});
   } catch {
     return null;
   }
 }
+
 
 export async function appendPaymentDiagnostic(label: string, data?: Jsonish) {
   const payload = stringify(data);

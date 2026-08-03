@@ -285,6 +285,76 @@ try {
 
 
 
+// --- 6. Payment stack hard gate (audit F1–F4) --------------------------------
+// The native checkout MUST be app-owned source, not a node_modules plugin that
+// `cap sync` / `npm install` can restore to its broken upstream form.
+const PAYMENT_PLUGIN_SRC = "android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
+const PAYMENT_PLUGIN_REPO_SRC = "android-native/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
+const MAIN_ACTIVITY = "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
+
+record("payments.upstream-plugin.absent", !fs.existsSync("node_modules/capacitor-razorpay"),
+  fs.existsSync("node_modules/capacitor-razorpay")
+    ? "node_modules/capacitor-razorpay is present — upstream raw-Intent checkout would ship"
+    : "capacitor-razorpay is not installed");
+
+record("payments.patch-script.removed", !fs.existsSync("scripts/patch-capacitor-java.mjs"),
+  "scripts/patch-capacitor-java.mjs must not exist");
+
+for (const [name, file] of [["app-module", PAYMENT_PLUGIN_SRC], ["repo-source", PAYMENT_PLUGIN_REPO_SRC]]) {
+  const ok = fs.existsSync(file);
+  record(`payments.plugin-source.${name}`, ok, ok ? file : `missing ${file}`);
+}
+
+try {
+  const capSettings = fs.readFileSync("android/capacitor.settings.gradle", "utf8");
+  const has = capSettings.includes("capacitor-razorpay");
+  record("payments.cap-settings.clean", !has, has ? "capacitor-razorpay still included by Capacitor" : "no upstream Razorpay module included");
+} catch (e) {
+  record("payments.cap-settings.clean", false, e.message);
+}
+
+try {
+  const appGradle = fs.readFileSync("android/app/build.gradle", "utf8");
+  record("payments.gradle.permanent-block", appGradle.includes("[uw-payments]"), "permanent [uw-payments] block present");
+  const dynamic = /com\.razorpay:checkout:[^'"]*\+/.test(appGradle);
+  record("payments.gradle.no-dynamic-version", !dynamic, dynamic ? "dynamic com.razorpay:checkout version found" : "only fixed 1.6.41");
+  const pins = (appGradle.match(/com\.razorpay:checkout:1\.6\.41/g) ?? []).length;
+  record("payments.gradle.single-pin", pins > 0, `${pins} reference(s) to com.razorpay:checkout:1.6.41`);
+} catch (e) {
+  record("payments.gradle.permanent-block", false, e.message);
+}
+
+try {
+  const props = fs.readFileSync("android/gradle.properties", "utf8");
+  const hardcoded = /^org\.gradle\.java\.home=/m.test(props);
+  record("build.java.no-machine-path", !hardcoded, hardcoded ? "org.gradle.java.home is hardcoded" : "no machine-specific JDK path");
+} catch (e) {
+  record("build.java.no-machine-path", false, e.message);
+}
+
+try {
+  const activity = fs.readFileSync(MAIN_ACTIVITY, "utf8");
+  const registrations = (activity.match(/registerPlugin\(/g) ?? []).length;
+  record("payments.registration.single", registrations === 1 && activity.includes("registerPlugin(UrbanWashCheckoutPlugin.class)"),
+    `${registrations} registerPlugin call(s) in MainActivity`);
+  record("payments.mainactivity.no-upstream", !activity.includes("com.ionicframework.capacitor"),
+    "MainActivity must not reference the upstream plugin");
+  record("payments.mainactivity.clean", !activity.includes("PARTNER_BUILD"),
+    "MainActivity must not carry partner build logging");
+} catch (e) {
+  record("payments.registration.single", false, e.message);
+}
+
+// APK bytes: our plugin must be compiled in, the upstream one must be gone.
+{
+  const present = dexEntries.some((d) => d.data.indexOf(Buffer.from("UrbanWashCheckoutPlugin", "utf8")) !== -1);
+  record("apk.dex.contains.UrbanWashCheckoutPlugin", present, present ? "compiled into classes*.dex" : "missing from APK");
+  const upstream = dexEntries.some((d) => d.data.indexOf(Buffer.from("com/ionicframework/capacitor/Checkout", "utf8")) !== -1);
+  record("apk.dex.no-upstream-checkout", !upstream, upstream ? "upstream capacitor-razorpay Checkout class shipped" : "upstream plugin absent from APK");
+  const sdk = dexEntries.some((d) => d.data.indexOf(Buffer.from("com/razorpay/Checkout", "utf8")) !== -1);
+  record("apk.dex.contains.RazorpaySdk", sdk, sdk ? "com.razorpay SDK packaged" : "Razorpay SDK missing from APK");
+}
+
 // --- Summary -----------------------------------------------------------------
 const pass = results.every(r => r.ok);
 console.log("");
