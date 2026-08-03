@@ -121,7 +121,6 @@ console.log(`[android-gradle] injected Firebase Messaging dependency (${FIREBASE
 // version here (e.g. 1.9.24) makes :capacitor-geolocation / :capacitor-camera /
 // :capacitor-filesystem fail with "compileDebugKotlin ... Compilation error".
 const KOTLIN_VERSION = readKotlinVersionFromPlugins();
-console.log("UW_DEBUG_PATCH_SCRIPT_2026");
 const KOTLIN_APP_MARKER_BEGIN = "// [uw-kotlin BEGIN]";
 const KOTLIN_APP_MARKER_END = "// [uw-kotlin END]";
 
@@ -150,7 +149,7 @@ ${KOTLIN_APP_MARKER_END}
 gradle = gradle.trimEnd() + "\n" + kotlinAppBlock + "\n";
 
 await writeFile(APP_GRADLE, gradle, "utf8");
-console.log(`[android-gradle] pinned com.razorpay:checkout to ${PIN_VERSION} in ${APP_GRADLE}`);
+console.log(`[android-gradle] Razorpay pin left to the permanent [uw-payments] block in ${APP_GRADLE}`);
 console.log(`[android-gradle] applied kotlin-android plugin + stdlib ${KOTLIN_VERSION}`);
 
 // ─── Project-level buildscript: add Kotlin Gradle plugin classpath ──────────
