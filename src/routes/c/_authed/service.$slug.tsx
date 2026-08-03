@@ -632,74 +632,6 @@ function ServiceDetail() {
     return false;
   }, [getStatusFn]);
 
-  const runWebCheckout = useCallback((ctx: PendingCheckout) => {
-    return new Promise<void>((resolve, reject) => {
-      loadRazorpayCheckout().then(() => {
-        const webOptions = {
-          key: ctx.keyId,
-          amount: ctx.amount,
-          currency: ctx.currency,
-          name: "Urban Wash",
-          description: ctx.serviceName,
-          order_id: ctx.orderId,
-          prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
-          notes: { booking_id: ctx.bookingId },
-          config: {
-            display: {
-              blocks: {
-                upi_first: {
-                  name: "Pay using UPI",
-                  instruments: [
-                    { method: "upi", flows: ["intent"], apps: ["google_pay", "phonepe", "paytm", "bhim"] },
-                    { method: "upi", flows: ["collect"] },
-                    { method: "upi", flows: ["qr"] },
-                  ],
-                },
-                cards_block: { name: "Cards", instruments: [{ method: "card" }] },
-                netbanking_block: { name: "Net Banking", instruments: [{ method: "netbanking" }] },
-                wallet_block: { name: "Wallets", instruments: [{ method: "wallet" }] },
-              },
-              sequence: ["block.upi_first", "block.cards_block", "block.netbanking_block", "block.wallet_block"],
-              preferences: { show_default_blocks: false },
-              hide: [{ method: "emi" }, { method: "paylater" }],
-            },
-          },
-          method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-          timeout: 600,
-          retry: { enabled: true, max_count: 3 },
-          modal: {
-            escape: true,
-            ondismiss: () => reject(new Error("Payment cancelled")),
-          },
-          handler: async (response: any) => {
-            try {
-              await appendPaymentDiagnostic("web checkout handler response", response);
-              await verifyPayment({
-                data: {
-                  bookingId: ctx.bookingId,
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature,
-                },
-              });
-              resolve();
-            } catch (error) {
-              reject(error);
-            }
-          },
-        };
-        void appendPaymentDiagnostic("final web checkout payload", webOptions);
-        const checkout = new window.Razorpay!(webOptions);
-        (checkout as any).on?.("payment.failed", (resp: any) => {
-          void appendPaymentDiagnostic("web checkout payment.failed", resp);
-          const desc = resp?.error?.description || "Payment failed. Please try again.";
-          reject(new Error(desc));
-        });
-        checkout.open();
-      }).catch(reject);
-    });
-  }, [verifyPayment]);
-
   const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
     // Client-side hold: hard re-entrancy guard around the whole attempt.
     if (checkoutLockRef.current) {
@@ -734,10 +666,11 @@ function ServiceDetail() {
       return;
     }
 
+    // Single shared payment service (src/lib/razorpay-checkout.ts) — this screen
+    // has no Razorpay logic of its own.
+    let channel: CheckoutChannel = await resolveCheckoutChannel();
+    const nativeMode = channel === "native";
 
-    const { isNative } = await import("@/lib/platform");
-    const nativeMode = isNative();
-    let channel: "native" | "web" | "unknown" = nativeMode ? "native" : "web";
     await appendPaymentDiagnostic("payment attempt started", {
       bookingId: ctx.bookingId,
       channel,
@@ -755,187 +688,53 @@ function ServiceDetail() {
       attemptNo: ctx.attemptNo,
       providerOrderId: ctx.orderId,
     });
-    // NOTE: on native we only log "opened" once the Razorpay activity has
-    // actually launched (checkoutLaunched event from the plugin). Logging it
-    // before the launch produced misleading "Razorpay opened" entries when the
-    // SDK exited immediately.
-    if (channel !== "native") {
-      pushEvent(ctx.bookingId, "opened", `Web checkout · attempt ${ctx.attemptNo}`);
-    }
-
-
-    const isPluginUnavailable = (err: any) => {
-      const msg = String(err?.message || err?.description || err || "").toLowerCase();
-      return (
-        msg.includes("not implemented") ||
-        msg.includes("not available") ||
-        msg.includes("unimplemented") ||
-        err?.code === "UNIMPLEMENTED"
-      );
-    };
 
     try {
       if (nativeMode) {
-        let nativeUnavailable = false;
-        let nativeResp: any = null;
-        try {
-          console.log("[uw-pay] native mode: importing capacitor-razorpay");
-          const mod = await import("capacitor-razorpay").catch((e) => {
-            nativeUnavailable = true;
-            throw e;
-          });
-          const Checkout = (mod as any).Checkout;
-          await appendPaymentDiagnostic("native plugin resolved", {
-            hasCheckout: !!Checkout,
-            keys: Checkout ? Object.keys(Checkout) : [],
-          });
-          console.log("[uw-pay] plugin resolved:", {
-            hasCheckout: !!Checkout,
-            keys: Checkout ? Object.keys(Checkout) : [],
-          });
-          // Probe the native bridge directly — if the Android class isn't
-          // registered, this returns false and we know the APK shipped without
-          // the compiled plugin (usually a JDK/sourceCompatibility mismatch).
-          try {
-            const { Capacitor } = await import("@capacitor/core");
-            const isRegistered = (Capacitor as any).isPluginAvailable?.("Checkout");
-            console.log("[uw-pay] Capacitor.isPluginAvailable('Checkout') =", isRegistered);
-            await appendPaymentDiagnostic("Capacitor plugin availability", { plugin: "Checkout", isRegistered });
-            if (isRegistered === false) {
-              nativeUnavailable = true;
-              throw new Error("Native Razorpay plugin not registered in this APK");
-            }
-          } catch (probeErr) {
-            console.warn("[uw-pay] plugin availability probe failed", probeErr);
-          }
-          if (!Checkout) {
-            nativeUnavailable = true;
-            throw new Error("Native Razorpay plugin not available");
-          }
-          // ROOT CAUSE FIX (UPI missing on Android APK):
-          // The Android Razorpay SDK (com.razorpay:checkout:1.6.x, bundled by
-          // capacitor-razorpay@1.3.0) does NOT fully implement Standard
-          // Checkout's `config.display.blocks` schema. Previously we passed the
-          // web-only `display.blocks` + `preferences.show_default_blocks:false`
-          // payload; on Android the UPI block silently failed to render while
-          // defaults were suppressed, leaving only Cards / Netbanking / Wallets
-          // visible — exactly the reported symptom.
-          //
-          // The native SDK must receive the MINIMAL supported options object
-          // and be allowed to render its own default method sheet. UPI intent
-          // apps then appear automatically provided:
-          //   1. The Razorpay account has UPI enabled for this key (same key
-          //      as web — verified: single RAZORPAY_KEY_ID env var, one code
-          //      path via createRazorpayOrder server fn).
-          //   2. AndroidManifest.xml declares <queries> for UPI packages and
-          //      the `upi` scheme (see scripts/patch-android-manifest.mjs).
-          const nativeOptions = {
-            key: ctx.keyId,
-            amount: ctx.amount,
-            currency: ctx.currency,
-            name: "Urban Wash",
-            description: ctx.serviceName,
-            order_id: ctx.orderId,
-            prefill: { email: ctx.prefillEmail, contact: ctx.prefillContact },
-            notes: { booking_id: ctx.bookingId },
-            // Native SDK supports the flat `method` preference map. UPI / cards /
-            // netbanking / wallets stay on (default sheet renders UPI first);
-            // EMI and Pay Later are explicitly suppressed.
-            method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-            theme: { color: "#FF6B1A" },
-
-          };
-          const nativeDiagnostics = await getNativePaymentDiagnostics();
-          await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
-          const upiPackages = (nativeDiagnostics?.upiPackages ?? {}) as Record<string, unknown>;
-          const detectedCount = Number(upiPackages.detectedCount ?? 0);
-          const handlerCount = Number(upiPackages.upiIntentHandlers ?? 0);
-          if (nativeDiagnostics && detectedCount === 0 && handlerCount === 0) {
-            const reason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
-            setUpiUnavailable(formatUpiUnavailableMessage(nativeDiagnostics, reason, ctx.keyId));
-            await appendPaymentDiagnostic("UPI unavailable pre-check", { reason, nativeDiagnostics });
-          }
-          console.log("[uw-pay] calling native Checkout.open", {
-            orderId: ctx.orderId,
-            amount: ctx.amount,
-            currency: ctx.currency,
-            keyIdPrefix: ctx.keyId?.slice(0, 8),
-            keyIdLength: ctx.keyId?.length,
-            payloadKeys: Object.keys(nativeOptions),
-          });
-          await appendPaymentDiagnostic("final native checkout payload", {
-            ...nativeOptions,
-            key: ctx.keyId,
-          });
-          // Fires from the native plugin only after CheckoutActivity has been
-          // started by the Razorpay SDK.
-          let launchListener: any = null;
-          try {
-            launchListener = await (Checkout as any).addListener?.("checkoutLaunched", (ev: any) => {
-              console.log("[uw-pay] native checkoutLaunched", ev);
-              pushEvent(ctx.bookingId, "opened", `Native checkout · attempt ${ctx.attemptNo}`);
-            });
-          } catch (listenerErr) {
-            console.warn("[uw-pay] could not attach checkoutLaunched listener", listenerErr);
-          }
-          const result: any = await Checkout.open(nativeOptions).finally(() => {
-            try { launchListener?.remove?.(); } catch { /* noop */ }
-          });
-          await appendPaymentDiagnostic("native Checkout.open returned", result);
-          console.log("[uw-pay] native Checkout.open returned", result);
-          if (result?.cancelled === true && result?.launched === false) {
-            await appendPaymentDiagnostic("native checkout never launched", result);
-          }
-          nativeResp = result?.response ?? result;
-        } catch (err: any) {
-
-          await appendPaymentDiagnostic("native path error", {
-            nativeUnavailable,
-            code: err?.code,
-            message: err?.message,
-            error: sanitizePaymentDiagnostic(err),
-          });
-          console.warn("[uw-pay] native path error", {
-            nativeUnavailable,
-            code: err?.code,
-            message: err?.message,
-          });
-          if (nativeUnavailable || isPluginUnavailable(err)) {
-            // Fall back to Razorpay Standard Checkout in the WebView.
-            console.warn("[uw-pay] FALLING BACK to WebView checkout — UPI intent apps will be hidden by Razorpay");
-            const diag = await getNativePaymentDiagnostics();
-            const reason = `Native Razorpay plugin unavailable; app fell back to WebView checkout. ${String(err?.message ?? "")}`.trim();
-            setUpiUnavailable(formatUpiUnavailableMessage(diag, reason, ctx.keyId));
-            await appendPaymentDiagnostic("UPI unavailable fallback", { reason, diag });
-            await safeLog({
-              bookingId: ctx.bookingId,
-              channel: "native",
-              outcome: "failure",
-              attemptNo: ctx.attemptNo,
-              errorCode: "plugin_unimplemented",
-              errorMessage: String(err?.message ?? "Native Razorpay plugin not available"),
-            });
-            channel = "web";
-            await runWebCheckout(ctx);
-          } else {
-            throw err;
-          }
+        const nativeDiagnostics = await getNativePaymentDiagnostics();
+        await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
+        const upiPackages = (nativeDiagnostics?.upiPackages ?? {}) as Record<string, unknown>;
+        const detectedCount = Number(upiPackages.detectedCount ?? 0);
+        const handlerCount = Number(upiPackages.upiIntentHandlers ?? 0);
+        if (nativeDiagnostics && detectedCount === 0 && handlerCount === 0) {
+          const reason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
+          setUpiUnavailable(formatUpiUnavailableMessage(nativeDiagnostics, reason, ctx.keyId));
+          await appendPaymentDiagnostic("UPI unavailable pre-check", { reason });
         }
-        if (nativeResp) {
-          if (!nativeResp.razorpay_payment_id) throw new Error("Payment cancelled");
-          await appendPaymentDiagnostic("native payment response for verification", nativeResp);
-          await verifyPayment({
-            data: {
-              bookingId: ctx.bookingId,
-              razorpayOrderId: nativeResp.razorpay_order_id ?? ctx.orderId,
-              razorpayPaymentId: nativeResp.razorpay_payment_id,
-              razorpaySignature: nativeResp.razorpay_signature,
-            },
-          });
-        }
-      } else {
-        await runWebCheckout(ctx);
       }
+
+      const result = await openRazorpayCheckout({
+        keyId: ctx.keyId,
+        orderId: ctx.orderId,
+        amount: ctx.amount,
+        currency: ctx.currency,
+        description: ctx.serviceName,
+        bookingId: ctx.bookingId,
+        prefillEmail: ctx.prefillEmail,
+        prefillContact: ctx.prefillContact,
+        // "Opened" is only recorded once the sheet is genuinely on screen.
+        onOpened: (ch) => {
+          channel = ch;
+          pushEvent(ctx.bookingId, "opened", `${ch === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`);
+        },
+        onDiagnostic: (label, data) => { void appendPaymentDiagnostic(label, data as any); },
+      });
+      channel = result.channel;
+
+      if (result.status === "cancelled") throw new Error("Payment cancelled");
+      if (result.status === "failed") {
+        throw Object.assign(new Error(result.message || "Payment failed"), { code: result.code });
+      }
+
+      await verifyPayment({
+        data: {
+          bookingId: ctx.bookingId,
+          razorpayOrderId: result.orderId,
+          razorpayPaymentId: result.paymentId,
+          razorpaySignature: result.signature,
+        },
+      });
+
 
       await safeLog({
         bookingId: ctx.bookingId,
