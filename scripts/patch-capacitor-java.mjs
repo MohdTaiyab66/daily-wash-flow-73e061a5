@@ -284,58 +284,82 @@ public class Checkout extends Plugin {
         }
     }
 
-    @ActivityCallback
-    private void handleOnActivityResult(PluginCall call, ActivityResult result) {
-        final PluginCall lastSavedCall = call;
-        record("Razorpay SDK activityResult resultCode=" + result.getResultCode() + " hasData=" + (result.getData() != null));
-        com.razorpay.Checkout.handleActivityResult(getActivity(), com.razorpay.Checkout.RZP_REQUEST_CODE, result.getResultCode(), result.getData(), new PaymentResultWithDataListener() {
-            @Override
-            public void onPaymentSuccess(String paymentId, PaymentData paymentData) {
-                try {
-                    JSObject jsObject = new JSObject();
+    /**
+     * Called from MainActivity.onActivityResult. Because checkout is launched
+     * by the Razorpay SDK itself (not by the Capacitor bridge), the result lands
+     * on the host Activity and must be forwarded here.
+     */
+    public static boolean handleRazorpayActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        if (requestCode != com.razorpay.Checkout.RZP_REQUEST_CODE) return false;
+        final PluginCall lastSavedCall = PENDING_CALL;
+        PENDING_CALL = null;
+        final boolean[] handled = { false };
+        record("Checkout Returned: resultCode=" + resultCode + " hasData=" + (data != null) + " launched=" + LAUNCHED);
+        try {
+            com.razorpay.Checkout.handleActivityResult(activity, requestCode, resultCode, data, new PaymentResultWithDataListener() {
+                @Override
+                public void onPaymentSuccess(String paymentId, PaymentData paymentData) {
+                    handled[0] = true;
                     try {
-                        JSONObject data = paymentData.getData();
-                        record("Razorpay callback payment success paymentId=" + paymentId + " data=" + redact(data.toString()));
-                        jsObject.put("response", data);
+                        JSObject jsObject = new JSObject();
+                        try {
+                            JSONObject payload = paymentData.getData();
+                            record("Payment Success: paymentId=" + paymentId + " data=" + redact(payload.toString()));
+                            jsObject.put("response", payload);
+                        } catch (Exception e) {
+                            record("Razorpay success callback data read failure: " + e.getMessage());
+                        }
+                        if (lastSavedCall == null) {
+                            record("Razorpay success callback dropped: no saved PluginCall");
+                            return;
+                        }
+                        lastSavedCall.resolve(jsObject);
                     } catch (Exception e) {
-                        record("Razorpay success callback data read failure: " + e.getMessage());
+                        record("Razorpay success callback exception: " + e.getMessage());
                     }
-                    if (lastSavedCall == null) {
-                        record("Razorpay success callback dropped: no saved PluginCall");
-                        return;
-                    }
-                    lastSavedCall.resolve(jsObject);
-                } catch (Exception e) {
-                    record("Razorpay success callback exception: " + e.getMessage());
                 }
-            }
 
-            @Override
-            public void onPaymentError(int code, String description, PaymentData paymentData) {
-                try {
+                @Override
+                public void onPaymentError(int code, String description, PaymentData paymentData) {
+                    handled[0] = true;
+                    try {
+                        String raw = "";
+                        try { raw = paymentData == null ? "" : redact(paymentData.getData().toString()); } catch (Exception ignored) {}
+                        record("Payment Error: code=" + code + " description=" + description + " data=" + raw);
+                        if (lastSavedCall == null) return;
+                        JSObject error = new JSObject();
+                        error.put("code", code);
+                        error.put("description", description);
+                        error.put("data", raw);
+                        error.put("launched", LAUNCHED);
+                        lastSavedCall.reject(description == null ? "Payment failed" : description, String.valueOf(code), error);
+                    } catch (Exception e) {
+                        record("Razorpay error callback exception: " + e.getMessage());
+                    }
+                }
+            }, new ExternalWalletListener() {
+                @Override
+                public void onExternalWalletSelected(String walletName, PaymentData paymentData) {
+                    handled[0] = true;
                     String raw = "";
                     try { raw = paymentData == null ? "" : redact(paymentData.getData().toString()); } catch (Exception ignored) {}
-                    record("Razorpay callback payment error code=" + code + " description=" + description + " data=" + raw);
-                    if (lastSavedCall == null) return;
-                    JSObject error = new JSObject();
-                    error.put("code", code);
-                    error.put("description", description);
-                    error.put("data", raw);
-                    lastSavedCall.reject(description == null ? "Payment failed" : description, String.valueOf(code), error);
-                } catch (Exception e) {
-                    record("Razorpay error callback exception: " + e.getMessage());
+                    record("Razorpay callback external wallet selected wallet=" + walletName + " data=" + raw);
+                    if (lastSavedCall != null) lastSavedCall.reject(walletName, "external_wallet");
                 }
-            }
-        }, new ExternalWalletListener() {
-            @Override
-            public void onExternalWalletSelected(String walletName, PaymentData paymentData) {
-                String raw = "";
-                try { raw = paymentData == null ? "" : redact(paymentData.getData().toString()); } catch (Exception ignored) {}
-                record("Razorpay callback external wallet selected wallet=" + walletName + " data=" + raw);
-                if (lastSavedCall != null) lastSavedCall.reject(walletName);
-            }
-        });
+            });
+        } catch (Throwable t) {
+            record("handleActivityResult failure: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
+        if (!handled[0] && lastSavedCall != null) {
+            record("Payment Cancelled: checkout returned without a Razorpay callback");
+            JSObject ret = new JSObject();
+            ret.put("cancelled", true);
+            ret.put("launched", LAUNCHED);
+            lastSavedCall.resolve(ret);
+        }
+        return true;
     }
+
 
     private void recordOrder(JSObject options) {
         try {
