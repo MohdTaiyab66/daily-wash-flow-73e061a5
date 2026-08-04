@@ -63,17 +63,26 @@ export type RazorpayResult =
   | { status: "failed"; code?: string; message: string };
 
 function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
-  return {
+  // Razorpay treats a present-but-empty prefill value as supplied-invalid and can
+  // suppress payment method blocks (notably UPI). Only send what we actually have.
+  const email = opts.prefillEmail?.trim();
+  const contact = opts.prefillContact?.trim();
+  const prefill: NonNullable<PaymentBridgeOptions["prefill"]> = {};
+  if (email) prefill.email = email;
+  if (contact) prefill.contact = contact;
+
+  const options: PaymentBridgeOptions = {
     key: opts.keyId,
     order_id: opts.orderId,
     amount: opts.amount,
     currency: opts.currency,
     name: "Urban Wash",
     description: opts.description,
-    prefill: { email: opts.prefillEmail ?? "", contact: opts.prefillContact ?? "" },
     notes: { booking_id: opts.bookingId },
     theme: { color: "#FF6B1A" },
   };
+  if (Object.keys(prefill).length > 0) options.prefill = prefill;
+  return options;
 }
 
 /**
