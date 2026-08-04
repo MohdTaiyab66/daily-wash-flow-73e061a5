@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createRazorpayOrder, verifyRazorpayPayment, logPaymentAttempt } from "@/lib/payment.functions";
-import { openRazorpayCheckout } from "@/lib/razorpay-checkout";
+import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 /**
  * Phase 4 — Add-ons split

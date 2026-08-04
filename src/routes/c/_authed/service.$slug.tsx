@@ -42,7 +42,7 @@ import {
   openRazorpayCheckout,
   resolveCheckoutChannel,
   type CheckoutChannel,
-} from "@/lib/razorpay-checkout";
+} from "@/lib/paymentBridge";
 
 
 
