@@ -79,16 +79,7 @@ function ProfilePage() {
     navigate({ to: "/c" });
   };
 
-  const exportDiagnostics = async () => {
-    try {
-      const result = await exportPaymentDiagnosticsFile();
-      toast.success("Payment diagnostics exported", {
-        description: String(result?.message ?? result?.filename ?? "payment-diagnostics.txt"),
-      });
-    } catch (error: any) {
-      toast.error(error?.message ?? "Could not export diagnostics");
-    }
-  };
+
 
   const p = q.data;
   const name = p?.full_name ?? "Customer";
