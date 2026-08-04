@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const javaHome = process.env.JAVA_HOME;
 
 if (!javaHome) {
-  console.error("[android-build] JAVA_HOME is not set; Gradle cannot be pinned to the detected JDK");
+  console.error("[android-build] JAVA_HOME is not set; Gradle cannot find a JDK");
   process.exit(1);
 }
 
@@ -21,18 +21,20 @@ if (!existsSync(androidDir)) {
   process.exit(1);
 }
 
+// Never persist machine-specific paths into project files.
+// Gradle picks up the JDK from JAVA_HOME in this process; Java 21 toolchain
+// selection stays declared in android/build.gradle.
 const gradlePropertiesPath = join(androidDir, "gradle.properties");
-const gradleJavaHome = javaHome.replaceAll("\\", "/");
-
-let lines = [];
 if (existsSync(gradlePropertiesPath)) {
-  lines = (await readFile(gradlePropertiesPath, "utf8")).split(/\r?\n/);
+  const original = await readFile(gradlePropertiesPath, "utf8");
+  const cleaned = original
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*org\.gradle\.java\.home\s*=/.test(line))
+    .join("\n");
+  if (cleaned !== original) {
+    await writeFile(gradlePropertiesPath, `${cleaned.replace(/\n+$/, "")}\n`, "utf8");
+    console.log("[android-build] removed machine-specific org.gradle.java.home from android/gradle.properties");
+  }
 }
 
-const nextLines = lines.filter((line) => !/^\s*org\.gradle\.java\.home\s*=/.test(line));
-nextLines.push(`org.gradle.java.home=${gradleJavaHome}`);
-
-await mkdir(androidDir, { recursive: true });
-await writeFile(gradlePropertiesPath, `${nextLines.filter(Boolean).join("\n")}\n`, "utf8");
-
-console.log(`[android-build] Gradle pinned to JDK: ${gradleJavaHome}`);
+console.log(`[android-build] using JDK from JAVA_HOME (process only): ${javaHome}`);
