@@ -684,9 +684,8 @@ function ServiceDetail() {
       });
       await finalizeSuccess(ctx);
     } catch (err: any) {
-      await appendPaymentDiagnostic("payment attempt failed", {
+      console.warn("[uw-checkout] payment attempt failed", {
         bookingId: ctx.bookingId,
-        channel,
         message: err?.message ?? String(err),
         code: err?.code,
       });
