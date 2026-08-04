@@ -516,15 +516,6 @@ function ServiceDetail() {
 
 
       const order = await createOrder({ data: { bookingId: String(bookingId) } });
-      await appendPaymentDiagnostic("Razorpay order created", {
-        bookingId: String(bookingId),
-        orderId: order.orderId,
-        amount: order.amount,
-        currency: order.currency,
-        keyId: order.keyId,
-        service: service.name,
-        serviceType: service.service_type,
-      });
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
