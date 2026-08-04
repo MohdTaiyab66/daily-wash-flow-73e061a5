@@ -121,6 +121,25 @@ public class UrbanWashCheckoutPlugin extends Plugin {
         return true;
     }
 
+    /**
+     * TEMPORARY: exact payload handed to the SDK, with the merchant key masked to
+     * its last four characters. No secrets or signatures are ever logged here.
+     */
+    private static String maskedOptions(JSONObject options) {
+        try {
+            JSONObject copy = new JSONObject(options.toString());
+            String key = copy.optString("key", "");
+            if (key.length() > 4) {
+                copy.put("key", "****" + key.substring(key.length() - 4));
+            } else if (key.length() > 0) {
+                copy.put("key", "****");
+            }
+            return copy.toString();
+        } catch (Throwable t) {
+            return "<unloggable options>";
+        }
+    }
+
     private static String message(Throwable t) {
         return t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
     }
