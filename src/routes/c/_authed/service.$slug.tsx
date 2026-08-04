@@ -117,7 +117,7 @@ function ServiceDetail() {
   };
   const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
   const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
-  const [upiUnavailable, setUpiUnavailable] = useState<string | null>(null);
+  
   const [paying, setPaying] = useState(false);
   // Crash / reopen recovery: a checkout that was persisted but never finished.
   const [recovering, setRecovering] = useState(false);
