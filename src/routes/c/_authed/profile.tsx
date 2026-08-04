@@ -14,8 +14,6 @@ import {
   Shield,
   Trash2,
   User as UserIcon,
-  Bug,
-  FileDown,
   Bell,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +40,6 @@ export const Route = createFileRoute("/c/_authed/profile")({
 function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [developerOpen, setDeveloperOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const q = useQuery({
     queryKey: ["customer-profile-self"],
