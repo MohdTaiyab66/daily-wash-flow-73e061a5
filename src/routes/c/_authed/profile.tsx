@@ -148,25 +148,7 @@ function ProfilePage() {
           <Row icon={<FileText className="h-4 w-4" />} label="Terms of services" />
           <Row icon={<Shield className="h-4 w-4" />} label="Privacy policy" />
           <Row icon={<Trash2 className="h-4 w-4" />} label="Request account deletion" />
-          <Row icon={<Bug className="h-4 w-4" />} label="Developer Settings" onClick={() => setDeveloperOpen((v) => !v)} />
-          {developerOpen ? (
-            <div className="bg-muted/30 px-4 py-4">
-              <div className="rounded-xl border border-border bg-card p-3">
-                <div className="text-sm font-semibold">Payment Diagnostics</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Exports checkout payload, device info, UPI app detection, SDK callbacks, and Razorpay logs captured by this APK.
-                </div>
-                <button
-                  type="button"
-                  onClick={exportDiagnostics}
-                  className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
-                  data-testid="export-payment-diagnostics"
-                >
-                  <FileDown className="h-4 w-4" /> Export Payment Diagnostics
-                </button>
-              </div>
-            </div>
-          ) : null}
+
           <button
             onClick={() => setLogoutOpen(true)}
             className="flex w-full items-center justify-between px-4 py-4 text-left text-sm hover:bg-muted/60"
