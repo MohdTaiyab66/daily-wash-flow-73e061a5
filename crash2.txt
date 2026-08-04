@@ -1,0 +1,50 @@
+--------- beginning of main
+08-04 04:23:26.685 24652 24696 W System.err: INFO: com.whatsapp.net.logging.a.a(WtLog.java:10) : Start handshake.
+08-04 04:23:26.774 24652 24696 W System.err: INFO: com.whatsapp.net.logging.a.a(WtLog.java:10) : Handshake complete : session_resumed false early_data_sent false early_data_accepted false client_cert_requested false time_ms 89
+08-04 04:23:29.999 24707 24707 D Capacitor: Starting BridgeActivity
+08-04 04:23:30.093 24707 24707 D Capacitor: Registering plugin instance: CapacitorCookies
+08-04 04:23:30.105 24707 24707 D Capacitor: Registering plugin instance: WebView
+08-04 04:23:30.112 24707 24707 D Capacitor: Registering plugin instance: CapacitorHttp
+08-04 04:23:30.120 24707 24707 D Capacitor: Registering plugin instance: SystemBars
+08-04 04:23:30.135 24707 24707 D Capacitor: Registering plugin instance: Checkout
+08-04 04:23:30.141 24707 24707 D Capacitor: Registering plugin instance: FirebaseMessaging
+08-04 04:23:30.149 24707 24707 D Capacitor: Registering plugin instance: App
+08-04 04:23:30.157 24707 24707 D Capacitor: Registering plugin instance: AppLauncher
+08-04 04:23:30.163 24707 24707 D Capacitor: Registering plugin instance: Camera
+08-04 04:23:30.210 24707 24707 D Capacitor: Registering plugin instance: Device
+08-04 04:23:30.217 24707 24707 D Capacitor: Registering plugin instance: Filesystem
+08-04 04:23:30.228 24707 24707 D Capacitor: Registering plugin instance: Geolocation
+08-04 04:23:30.306 24707 24707 D Capacitor: Registering plugin instance: Haptics
+08-04 04:23:30.314 24707 24707 D Capacitor: Registering plugin instance: Preferences
+08-04 04:23:30.323 24707 24707 D Capacitor: Registering plugin instance: PushNotifications
+08-04 04:23:30.337 24707 24707 D Capacitor: Registering plugin instance: Checkout
+08-04 04:23:30.445 24707 24707 W Capacitor: Unable to read file at path public/plugins
+08-04 04:23:30.463 24707 24707 D Capacitor: Loading app at https://daily-wash-flow.lovable.app/c
+08-04 04:23:30.690 24707 24707 D Capacitor: App started
+08-04 04:23:30.704 24707 24707 D Capacitor: App resumed
+--------- beginning of crash
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: FATAL EXCEPTION: main
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: Process: com.urbanwash.customer, PID: 24707
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: java.lang.IllegalStateException: Calling View methods on another thread than the UI thread.
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.android.webview.chromium.WebViewChromium.a(chromium-SystemWebViewGoogle.aab-stable-787118101:12)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.android.webview.chromium.WebViewChromium.init(chromium-SystemWebViewGoogle.aab-stable-787118101:111)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.webkit.WebView.<init>(WebView.java:447)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.webkit.WebView.<init>(WebView.java:367)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.webkit.WebView.<init>(WebView.java:349)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.webkit.WebView.<init>(WebView.java:336)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.webkit.WebView.<init>(WebView.java:326)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.razorpay.Checkout.preload(Checkout.java:406)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.ionicframework.capacitor.Checkout.open(Checkout.java:84)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.getcapacitor.PluginHandle.invoke(PluginHandle.java:138)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.getcapacitor.Bridge.lambda$callPluginMethod$0(Bridge.java:841)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.getcapacitor.Bridge.$r8$lambda$FNYM7cvgeBk0k8YXQH7M96Mrf-c(Bridge.java:0)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at com.getcapacitor.Bridge$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:958)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:230)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:319)
+08-04 04:24:24.515 24707 24707 E AndroidRuntime: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+08-04 04:24:31.024 13606 13606 D Capacitor: App restarted
+08-04 04:24:31.052 13606 13606 D Capacitor: App started
+08-04 04:24:31.082 13606 13606 D Capacitor: App resumed
