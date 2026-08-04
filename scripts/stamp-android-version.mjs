@@ -1,4 +1,4 @@
-import "./patch-capacitor-java.mjs";
+
 import { existsSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 
