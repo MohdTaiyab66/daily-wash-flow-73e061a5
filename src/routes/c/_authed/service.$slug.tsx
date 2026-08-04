@@ -1219,40 +1219,11 @@ function ServiceDetail() {
                   >
                     <X className="mr-1 h-3 w-3" /> Dismiss
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={onExportPaymentDiagnostics}
-                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
-                    data-testid="payment-diagnostics-export"
-                  >
-                    Export diagnostics
-                  </Button>
                 </div>
               </div>
             </div>
           ) : null}
-          {upiUnavailable ? (
-            <div
-              role="status"
-              data-testid="upi-unavailable-banner"
-              className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-950 whitespace-pre-line"
-            >
-              <div className="font-semibold">UPI unavailable</div>
-              <div className="mt-1">{upiUnavailable}</div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onExportPaymentDiagnostics}
-                className="mt-2 h-7 rounded-full px-3 text-[11px]"
-                data-testid="upi-unavailable-export"
-              >
-                Export payment diagnostics
-              </Button>
-            </div>
-          ) : null}
+
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
