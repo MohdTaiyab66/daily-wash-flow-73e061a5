@@ -53,6 +53,21 @@ public class UrbanWashCheckoutPlugin extends Plugin {
                 return;
             }
 
+            // Razorpay requires an integer paise amount; never forward a raw JSON double.
+            final long amount = options.optLong("amount", 0L);
+            if (amount <= 0L) {
+                call.reject("amount must be a positive integer in paise", "invalid_amount");
+                return;
+            }
+            options.put("amount", amount);
+
+            final String currency = options.optString("currency", "").trim();
+            if (currency.length() == 0) {
+                call.reject("currency is required", "invalid_currency");
+                return;
+            }
+            options.put("currency", currency);
+
             final Activity activity = getActivity();
             if (activity == null) {
                 call.reject("No host activity", "no_activity");
@@ -64,6 +79,8 @@ public class UrbanWashCheckoutPlugin extends Plugin {
                 @Override
                 public void run() {
                     try {
+                        // TEMPORARY verification log — remove after checkout is confirmed.
+                        Log.d(TAG, "checkout options -> " + maskedOptions(options));
                         Checkout checkout = new Checkout();
                         checkout.setKeyID(key);
                         checkout.open(activity, options);
