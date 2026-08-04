@@ -606,7 +606,7 @@ function ServiceDetail() {
     }
     checkoutLockRef.current = true;
     setPaymentError(null);
-    setUpiUnavailable(null);
+    
     setHoldBlocked(null);
     setPaying(true);
     // Cancel any prior polling loop.
