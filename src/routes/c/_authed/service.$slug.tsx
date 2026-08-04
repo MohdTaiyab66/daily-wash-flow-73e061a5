@@ -632,20 +632,9 @@ function ServiceDetail() {
       return;
     }
 
-    // Single shared payment service (src/lib/razorpay-checkout.ts) — this screen
-    // has no Razorpay logic of its own.
-    let channel: CheckoutChannel = await resolveCheckoutChannel();
-    const nativeMode = channel === "native";
-
-    await appendPaymentDiagnostic("payment attempt started", {
-      bookingId: ctx.bookingId,
-      channel,
-      attemptNo: ctx.attemptNo,
-      isRetry: opts.isRetry,
-      order: { id: ctx.orderId, amount: ctx.amount, currency: ctx.currency },
-      serviceName: ctx.serviceName,
-      isSubscription: ctx.isSubscription,
-    });
+    // Single native payment layer (src/lib/paymentBridge.ts) — this screen has
+    // no Razorpay logic of its own.
+    const channel = "native" as const;
 
     await safeLog({
       bookingId: ctx.bookingId,
@@ -656,19 +645,6 @@ function ServiceDetail() {
     });
 
     try {
-      if (nativeMode) {
-        const nativeDiagnostics = await getNativePaymentDiagnostics();
-        await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
-        const upiPackages = (nativeDiagnostics?.upiPackages ?? {}) as Record<string, unknown>;
-        const detectedCount = Number(upiPackages.detectedCount ?? 0);
-        const handlerCount = Number(upiPackages.upiIntentHandlers ?? 0);
-        if (nativeDiagnostics && detectedCount === 0 && handlerCount === 0) {
-          const reason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
-          setUpiUnavailable(formatUpiUnavailableMessage(nativeDiagnostics, reason, ctx.keyId));
-          await appendPaymentDiagnostic("UPI unavailable pre-check", { reason });
-        }
-      }
-
       const result = await openRazorpayCheckout({
         keyId: ctx.keyId,
         orderId: ctx.orderId,
@@ -678,14 +654,11 @@ function ServiceDetail() {
         bookingId: ctx.bookingId,
         prefillEmail: ctx.prefillEmail,
         prefillContact: ctx.prefillContact,
-        // "Opened" is only recorded once the sheet is genuinely on screen.
-        onOpened: (ch) => {
-          channel = ch;
-          pushEvent(ctx.bookingId, "opened", `${ch === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`);
+        onOpened: () => {
+          pushEvent(ctx.bookingId, "opened", `Checkout · attempt ${ctx.attemptNo}`);
         },
-        onDiagnostic: (label, data) => { void appendPaymentDiagnostic(label, data as any); },
       });
-      channel = result.channel;
+
 
       if (result.status === "cancelled") throw new Error("Payment cancelled");
       if (result.status === "failed") {
