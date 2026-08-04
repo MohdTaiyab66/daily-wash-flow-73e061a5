@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.getcapacitor.BridgeActivity;
-import com.urbanwash.payments.UWCheckoutPlugin;
 import com.urbanwash.payments.UrbanWashCheckoutPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -14,9 +13,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // Active payment bridge.
-        registerPlugin(UWCheckoutPlugin.class);
-        // Legacy bridge — kept registered but no longer used by the web app.
+        // The single payment bridge. No other checkout plugin exists.
         registerPlugin(UrbanWashCheckoutPlugin.class);
         super.onCreate(savedInstanceState);
     }
@@ -26,11 +23,8 @@ public class MainActivity extends BridgeActivity {
         super.onActivityResult(requestCode, resultCode, data);
         try {
             // Razorpay's CheckoutActivity is started by the SDK, so its result
-            // arrives here and must be forwarded to the active bridge first.
-            if (UWCheckoutPlugin.handleActivityResult(requestCode, resultCode, data)) {
-                return;
-            }
-            UrbanWashCheckoutPlugin.handleRazorpayActivityResult(this, requestCode, resultCode, data);
+            // arrives here and must be forwarded to the bridge.
+            UrbanWashCheckoutPlugin.handleActivityResult(requestCode, resultCode, data);
         } catch (Throwable t) {
             Log.e(TAG, "Razorpay activity result forwarding failed", t);
         }
