@@ -1,37 +1,21 @@
 /**
- * Active Android payment bridge.
+ * THE single payment layer for the whole app.
  *
- * Native (Android) goes through the minimal `UWCheckout` Capacitor plugin
- * (android/app/src/main/java/com/urbanwash/payments/UWCheckoutPlugin.java).
- * Web uses Razorpay Standard Checkout.
+ * Native Android only — the official Razorpay Android SDK behind the
+ * `UrbanWashCheckout` Capacitor plugin
+ * (android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java).
  *
- * The exported API shape is identical to the legacy bridge
- * (`src/lib/razorpay-checkout.ts`, still present but unused) so no calling
- * screen or business logic changes.
+ * No web fallback. No legacy compatibility layer. No diagnostics.
+ * No plugin version reporting. Every purchase path in the app — subscriptions,
+ * one-time washes, add-ons, premium services, marketplace purchases — MUST call
+ * `openRazorpayCheckout` from this file.
+ *
+ * Nothing is activated here: order creation, signature verification, the
+ * webhook and booking activation are server-side and untouched by this layer.
  */
 import { registerPlugin } from "@capacitor/core";
 
-export type CheckoutChannel = "native" | "web";
-
-export type RazorpayResult =
-  | { status: "success"; channel: CheckoutChannel; orderId: string; paymentId: string; signature: string }
-  | { status: "cancelled"; channel: CheckoutChannel }
-  | { status: "failed"; channel: CheckoutChannel; code?: string; message: string };
-
-export type CheckoutOptions = {
-  keyId: string;
-  orderId: string;
-  amount: number;
-  currency: string;
-  description: string;
-  bookingId: string;
-  prefillEmail?: string;
-  prefillContact?: string;
-  onOpened?: (channel: CheckoutChannel) => void;
-  onDiagnostic?: (label: string, data?: unknown) => void;
-};
-
-/** Native payload contract — exactly the nine keys the plugin accepts. */
+/** Exactly the payload the native plugin accepts. */
 export type PaymentBridgeOptions = {
   key: string;
   order_id: string;
@@ -44,50 +28,41 @@ export type PaymentBridgeOptions = {
   theme?: { color?: string };
 };
 
+/** Exactly what the native plugin resolves. */
 export type PaymentBridgeResult =
-  | { payment_id: string; order_id: string; signature: string }
+  | { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }
   | { cancelled: true };
 
-export interface UWCheckoutPlugin {
+export interface UrbanWashCheckoutPlugin {
   open(options: PaymentBridgeOptions): Promise<PaymentBridgeResult>;
 }
 
-export const UWCheckout = registerPlugin<UWCheckoutPlugin>("UWCheckout");
+export const UrbanWashCheckout = registerPlugin<UrbanWashCheckoutPlugin>("UrbanWashCheckout");
 
-/** Direct, single-method access to the native bridge. */
+/** Direct single-method access to the native bridge. */
 export function open(options: PaymentBridgeOptions): Promise<PaymentBridgeResult> {
-  return UWCheckout.open(options);
+  return UrbanWashCheckout.open(options);
 }
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void; on?: (e: string, cb: (r: any) => void) => void };
-    __UW_FORCE_WEB?: boolean;
-    __UW_FORCE_NATIVE?: boolean;
-  }
-}
+export type CheckoutOptions = {
+  keyId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  description: string;
+  bookingId: string;
+  prefillEmail?: string;
+  prefillContact?: string;
+  /** Fires immediately before the native sheet is requested. */
+  onOpened?: () => void;
+};
 
-const WEB_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
+export type RazorpayResult =
+  | { status: "success"; orderId: string; paymentId: string; signature: string }
+  | { status: "cancelled" }
+  | { status: "failed"; code?: string; message: string };
 
-function loadWebCheckout() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${WEB_SCRIPT}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Razorpay checkout failed to load")), { once: true });
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = WEB_SCRIPT;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Razorpay checkout failed to load"));
-    document.body.appendChild(script);
-  });
-}
-
-function baseOptions(opts: CheckoutOptions): PaymentBridgeOptions {
+function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
   return {
     key: opts.keyId,
     order_id: opts.orderId,
@@ -101,95 +76,27 @@ function baseOptions(opts: CheckoutOptions): PaymentBridgeOptions {
   };
 }
 
-async function openNative(opts: CheckoutOptions): Promise<RazorpayResult> {
-  const payload = baseOptions(opts);
-  opts.onDiagnostic?.("final native checkout payload", payload);
-  opts.onOpened?.("native");
-
-  const res = await UWCheckout.open(payload);
-  opts.onDiagnostic?.("native checkout returned", res);
-
-  if ("payment_id" in res && res.payment_id) {
-    return {
-      status: "success",
-      channel: "native",
-      orderId: res.order_id ?? opts.orderId,
-      paymentId: res.payment_id,
-      signature: res.signature,
-    };
-  }
-  return { status: "cancelled", channel: "native" };
-}
-
-function openWeb(opts: CheckoutOptions): Promise<RazorpayResult> {
-  return new Promise<RazorpayResult>((resolve, reject) => {
-    let settled = false;
-    const settle = (r: RazorpayResult) => {
-      if (settled) return;
-      settled = true;
-      resolve(r);
-    };
-    try {
-      const options = {
-        ...baseOptions(opts),
-        method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-        timeout: 600,
-        modal: { escape: true, ondismiss: () => settle({ status: "cancelled", channel: "web" }) },
-        handler: (r: any) =>
-          settle({
-            status: "success",
-            channel: "web",
-            orderId: r.razorpay_order_id ?? opts.orderId,
-            paymentId: r.razorpay_payment_id,
-            signature: r.razorpay_signature,
-          }),
-      };
-      opts.onDiagnostic?.("final web checkout payload", options);
-      const rz = new window.Razorpay!(options);
-      rz.on?.("payment.failed", (resp: any) => {
-        opts.onDiagnostic?.("web checkout payment.failed", resp);
-        settle({
-          status: "failed",
-          channel: "web",
-          code: resp?.error?.code,
-          message: resp?.error?.description || "Payment failed. Please try again.",
-        });
-      });
-      rz.open();
-      opts.onOpened?.("web");
-    } catch (e) {
-      reject(e as Error);
-    }
-  });
-}
-
-/** Resolve the channel to use for this device/session. */
-export async function resolveCheckoutChannel(): Promise<CheckoutChannel> {
-  if (typeof window !== "undefined" && window.__UW_FORCE_WEB) return "web";
-  if (typeof window !== "undefined" && window.__UW_FORCE_NATIVE) return "native";
-  const { isNative } = await import("@/lib/platform");
-  return isNative() ? "native" : "web";
-}
-
+/**
+ * The one and only checkout entry point.
+ * Resolves `cancelled` when the user dismisses the sheet and `failed` only
+ * when the native SDK throws.
+ */
 export async function openRazorpayCheckout(opts: CheckoutOptions): Promise<RazorpayResult> {
-  const channel = await resolveCheckoutChannel();
+  try {
+    opts.onOpened?.();
+    const res = await UrbanWashCheckout.open(toNativeOptions(opts));
 
-  if (channel === "native") {
-    try {
-      return await openNative(opts);
-    } catch (e: any) {
-      const msg = String(e?.message || e?.description || e || "");
-      opts.onDiagnostic?.("native checkout error", { code: e?.code, message: msg });
+    if ("razorpay_payment_id" in res && res.razorpay_payment_id) {
       return {
-        status: "failed",
-        channel: "native",
-        code: e?.code ? String(e.code) : undefined,
-        message: msg || "Payment failed",
+        status: "success",
+        orderId: res.razorpay_order_id ?? opts.orderId,
+        paymentId: res.razorpay_payment_id,
+        signature: res.razorpay_signature,
       };
     }
+    return { status: "cancelled" };
+  } catch (e: any) {
+    const message = String(e?.message ?? e?.description ?? e ?? "Payment failed");
+    return { status: "failed", code: e?.code ? String(e.code) : undefined, message };
   }
-
-  await loadWebCheckout();
-  if (!window.Razorpay) throw new Error("Razorpay checkout is unavailable");
-  return openWeb(opts);
 }
