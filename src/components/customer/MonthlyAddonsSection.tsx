@@ -188,7 +188,7 @@ export function MonthlyAddonsSection({
     if (result.status === "failed") {
       await safeLog({
         bookingId,
-        channel: result.channel,
+        channel: "native",
         outcome: "failure",
         providerOrderId: order.orderId,
         errorCode: result.code,

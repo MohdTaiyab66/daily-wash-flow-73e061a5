@@ -22,13 +22,6 @@ import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import {
-  appendPaymentDiagnostic,
-  exportPaymentDiagnosticsFile,
-  formatUpiUnavailableMessage,
-  getNativePaymentDiagnostics,
-  sanitizePaymentDiagnostic,
-} from "@/lib/payment-diagnostics";
-import {
   appendCheckoutEvent,
   clearPendingCheckout,
   getCheckoutHolderId,
@@ -38,11 +31,7 @@ import {
   type CheckoutStage,
 } from "@/lib/pending-checkout-store";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
-import {
-  openRazorpayCheckout,
-  resolveCheckoutChannel,
-  type CheckoutChannel,
-} from "@/lib/paymentBridge";
+import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 
 
@@ -128,7 +117,7 @@ function ServiceDetail() {
   };
   const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
   const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
-  const [upiUnavailable, setUpiUnavailable] = useState<string | null>(null);
+  
   const [paying, setPaying] = useState(false);
   // Crash / reopen recovery: a checkout that was persisted but never finished.
   const [recovering, setRecovering] = useState(false);
@@ -527,15 +516,6 @@ function ServiceDetail() {
 
 
       const order = await createOrder({ data: { bookingId: String(bookingId) } });
-      await appendPaymentDiagnostic("Razorpay order created", {
-        bookingId: String(bookingId),
-        orderId: order.orderId,
-        amount: order.amount,
-        currency: order.currency,
-        keyId: order.keyId,
-        service: service.name,
-        serviceType: service.service_type,
-      });
       const prefillEmail = currentUser.user.email ?? "";
       const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
 
@@ -626,7 +606,7 @@ function ServiceDetail() {
     }
     checkoutLockRef.current = true;
     setPaymentError(null);
-    setUpiUnavailable(null);
+    
     setHoldBlocked(null);
     setPaying(true);
     // Cancel any prior polling loop.
@@ -652,20 +632,9 @@ function ServiceDetail() {
       return;
     }
 
-    // Single shared payment service (src/lib/razorpay-checkout.ts) — this screen
-    // has no Razorpay logic of its own.
-    let channel: CheckoutChannel = await resolveCheckoutChannel();
-    const nativeMode = channel === "native";
-
-    await appendPaymentDiagnostic("payment attempt started", {
-      bookingId: ctx.bookingId,
-      channel,
-      attemptNo: ctx.attemptNo,
-      isRetry: opts.isRetry,
-      order: { id: ctx.orderId, amount: ctx.amount, currency: ctx.currency },
-      serviceName: ctx.serviceName,
-      isSubscription: ctx.isSubscription,
-    });
+    // Single native payment layer (src/lib/paymentBridge.ts) — this screen has
+    // no Razorpay logic of its own.
+    const channel = "native" as const;
 
     await safeLog({
       bookingId: ctx.bookingId,
@@ -676,19 +645,6 @@ function ServiceDetail() {
     });
 
     try {
-      if (nativeMode) {
-        const nativeDiagnostics = await getNativePaymentDiagnostics();
-        await appendPaymentDiagnostic("native pre-checkout diagnostics", nativeDiagnostics ?? { available: false });
-        const upiPackages = (nativeDiagnostics?.upiPackages ?? {}) as Record<string, unknown>;
-        const detectedCount = Number(upiPackages.detectedCount ?? 0);
-        const handlerCount = Number(upiPackages.upiIntentHandlers ?? 0);
-        if (nativeDiagnostics && detectedCount === 0 && handlerCount === 0) {
-          const reason = "Android PackageManager reports no visible UPI apps and no upi://pay handlers before checkout.";
-          setUpiUnavailable(formatUpiUnavailableMessage(nativeDiagnostics, reason, ctx.keyId));
-          await appendPaymentDiagnostic("UPI unavailable pre-check", { reason });
-        }
-      }
-
       const result = await openRazorpayCheckout({
         keyId: ctx.keyId,
         orderId: ctx.orderId,
@@ -698,14 +654,11 @@ function ServiceDetail() {
         bookingId: ctx.bookingId,
         prefillEmail: ctx.prefillEmail,
         prefillContact: ctx.prefillContact,
-        // "Opened" is only recorded once the sheet is genuinely on screen.
-        onOpened: (ch) => {
-          channel = ch;
-          pushEvent(ctx.bookingId, "opened", `${ch === "native" ? "Native" : "Web"} checkout · attempt ${ctx.attemptNo}`);
+        onOpened: () => {
+          pushEvent(ctx.bookingId, "opened", `Checkout · attempt ${ctx.attemptNo}`);
         },
-        onDiagnostic: (label, data) => { void appendPaymentDiagnostic(label, data as any); },
       });
-      channel = result.channel;
+
 
       if (result.status === "cancelled") throw new Error("Payment cancelled");
       if (result.status === "failed") {
@@ -731,9 +684,8 @@ function ServiceDetail() {
       });
       await finalizeSuccess(ctx);
     } catch (err: any) {
-      await appendPaymentDiagnostic("payment attempt failed", {
+      console.warn("[uw-checkout] payment attempt failed", {
         bookingId: ctx.bookingId,
-        channel,
         message: err?.message ?? String(err),
         code: err?.code,
       });
@@ -769,13 +721,6 @@ function ServiceDetail() {
         String(err?.message ?? "Checkout did not complete").slice(0, 120),
       );
       pushEvent(ctx.bookingId, "unpaid", "Server reports this booking is still unpaid");
-      if (nativeMode) {
-        const diag = await getNativePaymentDiagnostics();
-        const reason = cancelled
-          ? "Native checkout closed without a verified payment. If UPI was not visible inside Razorpay, export diagnostics from this screen."
-          : String(err?.message ?? "Razorpay native checkout failed before verified payment.");
-        setUpiUnavailable(formatUpiUnavailableMessage(diag, reason, ctx.keyId));
-      }
       setPaymentError({
         message: cancelled
           ? "Checkout was cancelled. You can retry when you're ready."
@@ -933,16 +878,8 @@ function ServiceDetail() {
   }, []);
 
 
-  const onExportPaymentDiagnostics = useCallback(async () => {
-    try {
-      const result = await exportPaymentDiagnosticsFile();
-      toast.success("Payment diagnostics exported", {
-        description: String(result?.message ?? result?.filename ?? "payment-diagnostics.txt"),
-      });
-    } catch (error: any) {
-      toast.error(error?.message ?? "Could not export diagnostics");
-    }
-  }, []);
+
+
 
 
 
@@ -1282,40 +1219,11 @@ function ServiceDetail() {
                   >
                     <X className="mr-1 h-3 w-3" /> Dismiss
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={onExportPaymentDiagnostics}
-                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
-                    data-testid="payment-diagnostics-export"
-                  >
-                    Export diagnostics
-                  </Button>
                 </div>
               </div>
             </div>
           ) : null}
-          {upiUnavailable ? (
-            <div
-              role="status"
-              data-testid="upi-unavailable-banner"
-              className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-950 whitespace-pre-line"
-            >
-              <div className="font-semibold">UPI unavailable</div>
-              <div className="mt-1">{upiUnavailable}</div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onExportPaymentDiagnostics}
-                className="mt-2 h-7 rounded-full px-3 text-[11px]"
-                data-testid="upi-unavailable-export"
-              >
-                Export payment diagnostics
-              </Button>
-            </div>
-          ) : null}
+
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
             <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
               This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
