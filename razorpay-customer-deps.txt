@@ -677,5 +677,5 @@ releaseRuntimeClasspath - Runtime classpath of '/release'.
 
 A web-based, searchable dependency report is available by adding the --scan option.
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 4s
 1 actionable task: 1 executed
