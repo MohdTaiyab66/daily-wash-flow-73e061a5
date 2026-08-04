@@ -22,13 +22,6 @@ import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import {
-  appendPaymentDiagnostic,
-  exportPaymentDiagnosticsFile,
-  formatUpiUnavailableMessage,
-  getNativePaymentDiagnostics,
-  sanitizePaymentDiagnostic,
-} from "@/lib/payment-diagnostics";
-import {
   appendCheckoutEvent,
   clearPendingCheckout,
   getCheckoutHolderId,
@@ -38,11 +31,7 @@ import {
   type CheckoutStage,
 } from "@/lib/pending-checkout-store";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
-import {
-  openRazorpayCheckout,
-  resolveCheckoutChannel,
-  type CheckoutChannel,
-} from "@/lib/paymentBridge";
+import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 
 
