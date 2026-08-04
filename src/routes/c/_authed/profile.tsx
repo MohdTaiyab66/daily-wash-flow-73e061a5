@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { exportPaymentDiagnosticsFile } from "@/lib/payment-diagnostics";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/c/_authed/profile")({
