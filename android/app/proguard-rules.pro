@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Razorpay invokes these callbacks reflectively on the host Activity.
+-keepclassmembers class com.urbanwash.customer.MainActivity {
+  public void onPaymentSuccess(...);
+  public void onPaymentError(...);
+}
+-keep class com.razorpay.** { *; }
+-dontwarn com.razorpay.**
