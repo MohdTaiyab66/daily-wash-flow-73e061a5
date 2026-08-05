@@ -26,8 +26,6 @@ type Step = "phone" | "otp" | "name";
 const OTP_LENGTH = 6; // Server-issued one-time code (see src/lib/staff-auth.functions.ts).
 
 // Phone-as-email pattern (phone provider is disabled on this project).
-const partnerEmail = (phone: string) => `${phone}@partner.urbanwash.app`;
-const adminEmail = (phone: string) => `${phone}@admin.urbanwash.app`;
 
 
 function haptic(pattern: number | number[] = 12) {
