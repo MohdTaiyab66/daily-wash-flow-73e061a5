@@ -45,7 +45,6 @@ function AuthPage() {
   const { redirect } = Route.useSearch();
   const nextRoute = redirect?.startsWith("/admin") ? redirect : redirect?.startsWith("/app") ? redirect : "/app";
   const isAdminLogin = nextRoute.startsWith("/admin");
-  const emailFor = (p: string) => (isAdminLogin ? adminEmail(p) : partnerEmail(p));
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -56,7 +55,6 @@ function AuthPage() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const prepareLogin = useServerFn(prepareStaffLogin);
   const requestOtp = useServerFn(requestStaffOtp);
-  const [newAccount, setNewAccount] = useState(false);
 
 
   const otp = otpDigits.join("");
@@ -116,11 +114,9 @@ function AuthPage() {
       setOtpDigits(Array(OTP_LENGTH).fill(""));
       if (res.newAccount) {
         // No account exists for this number yet — continue to sign-up.
-        setNewAccount(true);
         setStep("name");
         return;
       }
-      setNewAccount(false);
       setStep("otp");
       toast.success(
         res.delivery === "push"
