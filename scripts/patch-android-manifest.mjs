@@ -45,7 +45,17 @@ xml = xml.replace(
     if (!/android:configChanges=/.test(next)) {
       next += ' android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"';
     }
-    if (!/android:launchMode=/.test(next)) next += ' android:launchMode="singleTask"';
+    // Razorpay's CheckoutActivity is started with startActivityForResult from
+    // MainActivity. Under singleTask the checkout lands in a separate task, so
+    // Android never routes the result back and the SDK never invokes
+    // onPaymentSuccess/onPaymentError. The official Razorpay sample app uses
+    // the default (standard) launch mode; singleTop keeps Capacitor's deep-link
+    // behaviour while preserving the caller/result relationship.
+    if (/android:launchMode="singleTask"/.test(next)) {
+      next = next.replace('android:launchMode="singleTask"', 'android:launchMode="singleTop"');
+    } else if (!/android:launchMode=/.test(next)) {
+      next += ' android:launchMode="singleTop"';
+    }
     return `<activity${next}>`;
   },
 );
