@@ -413,8 +413,9 @@ function AuthPage() {
                   ))}
                 </div>
                 <p className="mt-3 text-[11px] text-white/40">
-                  Demo OTP: <span className="font-mono text-orange-400">1234</span>
+                  The 6-digit code expires in 5 minutes.
                 </p>
+
               </div>
               <Button
                 size="lg"
