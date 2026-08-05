@@ -37,4 +37,25 @@ public class MainActivity extends BridgeActivity implements PaymentResultWithDat
             Log.e(TAG, "Razorpay activity result forwarding failed", t);
         }
     }
+
+    @Override
+    public void onPaymentSuccess(String razorpayPaymentId, PaymentData paymentData) {
+        try {
+            UrbanWashCheckoutPlugin.handlePaymentSuccess(
+                    razorpayPaymentId,
+                    paymentData == null ? null : paymentData.getOrderId(),
+                    paymentData == null ? null : paymentData.getSignature());
+        } catch (Throwable t) {
+            Log.e(TAG, "onPaymentSuccess forwarding failed", t);
+        }
+    }
+
+    @Override
+    public void onPaymentError(int code, String description, PaymentData paymentData) {
+        try {
+            UrbanWashCheckoutPlugin.handlePaymentError(code, description);
+        } catch (Throwable t) {
+            Log.e(TAG, "onPaymentError forwarding failed", t);
+        }
+    }
 }
