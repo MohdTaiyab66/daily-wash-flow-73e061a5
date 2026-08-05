@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, Clock, IndianRupee, Map as MapIcon, Car, Users, Lock } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
-import { prepareStaffLogin } from "@/lib/staff-auth.functions";
+import { prepareStaffLogin, requestStaffOtp } from "@/lib/staff-auth.functions";
 import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/auth")({
@@ -23,12 +23,12 @@ export const Route = createFileRoute("/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-const OTP_LENGTH = 4; // Demo OTP is 1234 — do not change without updating auth logic.
+const OTP_LENGTH = 6; // Server-issued one-time code (see src/lib/staff-auth.functions.ts).
 
 // Phone-as-email pattern (phone provider is disabled on this project).
 const partnerEmail = (phone: string) => `${phone}@partner.urbanwash.app`;
 const adminEmail = (phone: string) => `${phone}@admin.urbanwash.app`;
-const partnerPassword = (phone: string) => `UWP@${phone}#2026`;
+
 
 function haptic(pattern: number | number[] = 12) {
   try {
