@@ -105,10 +105,16 @@ async function dispatchPending() {
   return dispatched;
 }
 
-async function handle(_request: Request) {
-  // No secret gate: matches the pattern of every other /api/public/cron/*
-  // endpoint (marketplace-push-dispatch, notification-push, etc.). Path
-  // obscurity + pg_cron-only caller is the accepted contract here.
+async function handle(request: Request) {
+  // Auth: same x-cron-secret gate as assignment-tick / dar-timeouts.
+  const expected = process.env.CRON_SECRET;
+  const got = request.headers.get("x-cron-secret");
+  if (!expected || !got || got !== expected) {
+    return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
   try {
     const dispatched = await dispatchPending();
     return Response.json({ ok: true, dispatched });

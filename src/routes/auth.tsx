@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Loader2, Clock, IndianRupee, Map as MapIcon, Car, Users, Lock } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
-import { prepareStaffLogin } from "@/lib/staff-auth.functions";
+import { prepareStaffLogin, requestStaffOtp } from "@/lib/staff-auth.functions";
 import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/auth")({
@@ -23,12 +23,10 @@ export const Route = createFileRoute("/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-const OTP_LENGTH = 4; // Demo OTP is 1234 — do not change without updating auth logic.
+const OTP_LENGTH = 6; // Server-issued one-time code (see src/lib/staff-auth.functions.ts).
 
 // Phone-as-email pattern (phone provider is disabled on this project).
-const partnerEmail = (phone: string) => `${phone}@partner.urbanwash.app`;
-const adminEmail = (phone: string) => `${phone}@admin.urbanwash.app`;
-const partnerPassword = (phone: string) => `UWP@${phone}#2026`;
+
 
 function haptic(pattern: number | number[] = 12) {
   try {
@@ -45,7 +43,6 @@ function AuthPage() {
   const { redirect } = Route.useSearch();
   const nextRoute = redirect?.startsWith("/admin") ? redirect : redirect?.startsWith("/app") ? redirect : "/app";
   const isAdminLogin = nextRoute.startsWith("/admin");
-  const emailFor = (p: string) => (isAdminLogin ? adminEmail(p) : partnerEmail(p));
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -55,6 +52,8 @@ function AuthPage() {
   const [showSplash, setShowSplash] = useState(true);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const prepareLogin = useServerFn(prepareStaffLogin);
+  const requestOtp = useServerFn(requestStaffOtp);
+
 
   const otp = otpDigits.join("");
 
@@ -104,60 +103,68 @@ function AuthPage() {
     if (error || !data) throw new Error(error?.message || `${role === "admin" ? "Admin" : "Partner"} access is not enabled for this phone`);
   };
 
-  const sendOtp = () => {
+  const sendOtp = async () => {
     if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit phone"); return; }
     haptic(15);
-    setOtpDigits(Array(OTP_LENGTH).fill(""));
-    setStep("otp");
-    toast.success("OTP sent. Use 1234 to continue (demo)");
-    setTimeout(() => otpRefs.current[0]?.focus(), 50);
+    setLoading(true);
+    try {
+      const res = await requestOtp({ data: { phone, role: isAdminLogin ? "admin" : "partner" } });
+      setOtpDigits(Array(OTP_LENGTH).fill(""));
+      if (res.newAccount) {
+        // No account exists for this number yet — continue to sign-up.
+        setStep("name");
+        return;
+      }
+      setStep("otp");
+      toast.success(
+        res.delivery === "push"
+          ? "Code sent to your registered Urban Wash device."
+          : "Code generated. Contact Urban Wash support to receive it.",
+      );
+      setTimeout(() => otpRefs.current[0]?.focus(), 50);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not send the code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submitOtp = async (code: string) => {
-    if (code !== "1234") {
+    if (!/^\d{6}$/.test(code)) {
       haptic([40, 40, 40]);
-      toast.error("Invalid OTP. Use 1234");
-      setOtpDigits(Array(OTP_LENGTH).fill(""));
-      setTimeout(() => otpRefs.current[0]?.focus(), 30);
+      toast.error("Enter the 6-digit code");
       return;
     }
     haptic(20);
     setLoading(true);
     try {
-      const email = emailFor(phone);
-      const password = partnerPassword(phone);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (data?.session) {
-        if (!isAdminLogin) {
-          const uid = data.session.user.id;
-          const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
-          if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
-          try { await ensureStaffRole("partner", partner.full_name); }
-          catch (e: any) { toast.error(e.message || "Partner access is not enabled for this phone"); return; }
-        } else {
-          try { await ensureStaffRole("admin"); }
-          catch (e: any) { toast.error(e.message || "Admin access is not enabled for this phone"); return; }
-        }
-        navigate({ to: nextRoute as any });
-        return;
+      const role = isAdminLogin ? "admin" : "partner";
+      const prepared = await prepareLogin({ data: { phone, otp: code, role, fullName: "" } });
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: prepared.email,
+        password: prepared.password,
+      });
+      if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
+
+      if (!isAdminLogin) {
+        const uid = signInData.session.user.id;
+        const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
+        if (!partner?.full_name) { setLoading(false); setStep("name"); return; }
+        await ensureStaffRole("partner", partner.full_name);
+      } else {
+        await ensureStaffRole("admin");
       }
-      if (error) {
-        if (isAdminLogin) {
-          const prepared = await prepareLogin({ data: { phone, otp: code, role: "admin", fullName: "Admin" } });
-          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: prepared.email, password });
-          if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
-          await ensureStaffRole("admin");
-          navigate({ to: nextRoute as any });
-          return;
-        }
-        setStep("name");
-      }
+      navigate({ to: nextRoute as any });
     } catch (e: any) {
+      haptic([40, 40, 40]);
+      setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setTimeout(() => otpRefs.current[0]?.focus(), 30);
       toast.error(e?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleOtpChange = (idx: number, val: string) => {
     const clean = val.replace(/\D/g, "");
@@ -198,34 +205,31 @@ function AuthPage() {
   const saveName = async () => {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
-    const email = emailFor(phone);
-    const password = partnerPassword(phone);
     const role = isAdminLogin ? "admin" : "partner";
 
     try {
-      await prepareLogin({ data: { phone, otp, role, fullName: name.trim() } });
-    } catch (e: any) {
-      setLoading(false); toast.error(e?.message || "Could not prepare login"); return;
-    }
+      // Existing (already signed-in) staff finishing their profile.
+      const { data: current } = await supabase.auth.getSession();
+      if (!current.session) {
+        // New account: nothing exists for this number, so no code is required.
+        const prepared = await prepareLogin({ data: { phone, otp, role, fullName: name.trim() } });
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: prepared.email,
+          password: prepared.password,
+        });
+        if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
+      }
 
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInErr || !signInData.session) {
-      setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
-    }
-
-    await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
-
-    try {
+      await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
       await ensureStaffRole(role as "admin" | "partner", name.trim());
+      navigate({ to: nextRoute as any });
     } catch (e: any) {
+      toast.error(e?.message || "Could not complete sign in");
+    } finally {
       setLoading(false);
-      toast.error(e.message || "Access is not enabled for this phone");
-      return;
     }
-
-    setLoading(false);
-    navigate({ to: nextRoute as any });
   };
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0B0B0F] text-white">
@@ -403,8 +407,9 @@ function AuthPage() {
                   ))}
                 </div>
                 <p className="mt-3 text-[11px] text-white/40">
-                  Demo OTP: <span className="font-mono text-orange-400">1234</span>
+                  The 6-digit code expires in 5 minutes.
                 </p>
+
               </div>
               <Button
                 size="lg"
