@@ -55,6 +55,9 @@ function AuthPage() {
   const [showSplash, setShowSplash] = useState(true);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const prepareLogin = useServerFn(prepareStaffLogin);
+  const requestOtp = useServerFn(requestStaffOtp);
+  const [newAccount, setNewAccount] = useState(false);
+
 
   const otp = otpDigits.join("");
 
