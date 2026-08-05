@@ -40,6 +40,7 @@ public class MainActivity extends BridgeActivity implements PaymentResultWithDat
 
     @Override
     public void onPaymentSuccess(String razorpayPaymentId, PaymentData paymentData) {
+        Log.d("UW_CALLBACK", "onPaymentSuccess called");
         try {
             UrbanWashCheckoutPlugin.handlePaymentSuccess(
                     razorpayPaymentId,
@@ -52,6 +53,7 @@ public class MainActivity extends BridgeActivity implements PaymentResultWithDat
 
     @Override
     public void onPaymentError(int code, String description, PaymentData paymentData) {
+        Log.d("UW_CALLBACK", "onPaymentError called code=" + code + " desc=" + description);
         try {
             UrbanWashCheckoutPlugin.handlePaymentError(code, description);
         } catch (Throwable t) {

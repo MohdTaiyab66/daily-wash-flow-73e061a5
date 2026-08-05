@@ -105,6 +105,7 @@ public class UrbanWashCheckoutPlugin extends Plugin {
      * directly and does NOT surface a result through onActivityResult.
      */
     public static void handlePaymentSuccess(String paymentId, String orderId, String signature) {
+        Log.d("UW_CALLBACK", "handlePaymentSuccess called");
         PluginCall call = PENDING;
         PENDING = null;
         if (call == null) return;
@@ -117,6 +118,7 @@ public class UrbanWashCheckoutPlugin extends Plugin {
 
     /** Forwarded from the host Activity's PaymentResultWithDataListener. */
     public static void handlePaymentError(int code, String description) {
+        Log.d("UW_CALLBACK", "handlePaymentError called");
         PluginCall call = PENDING;
         PENDING = null;
         if (call == null) return;
