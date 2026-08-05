@@ -211,34 +211,31 @@ function AuthPage() {
   const saveName = async () => {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
-    const email = emailFor(phone);
-    const password = partnerPassword(phone);
     const role = isAdminLogin ? "admin" : "partner";
 
     try {
-      await prepareLogin({ data: { phone, otp, role, fullName: name.trim() } });
-    } catch (e: any) {
-      setLoading(false); toast.error(e?.message || "Could not prepare login"); return;
-    }
+      // Existing (already signed-in) staff finishing their profile.
+      const { data: current } = await supabase.auth.getSession();
+      if (!current.session) {
+        // New account: nothing exists for this number, so no code is required.
+        const prepared = await prepareLogin({ data: { phone, otp, role, fullName: name.trim() } });
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: prepared.email,
+          password: prepared.password,
+        });
+        if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
+      }
 
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInErr || !signInData.session) {
-      setLoading(false); toast.error(signInErr?.message || "Could not sign in"); return;
-    }
-
-    await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
-
-    try {
+      await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
       await ensureStaffRole(role as "admin" | "partner", name.trim());
+      navigate({ to: nextRoute as any });
     } catch (e: any) {
+      toast.error(e?.message || "Could not complete sign in");
+    } finally {
       setLoading(false);
-      toast.error(e.message || "Access is not enabled for this phone");
-      return;
     }
-
-    setLoading(false);
-    navigate({ to: nextRoute as any });
   };
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0B0B0F] text-white">
