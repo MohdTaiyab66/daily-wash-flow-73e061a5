@@ -99,7 +99,35 @@ public class UrbanWashCheckoutPlugin extends Plugin {
         }
     }
 
-    /** Forwarded from the host Activity's onActivityResult. */
+    /**
+     * Forwarded from the host Activity's PaymentResultWithDataListener.
+     * This is the primary result path: the Razorpay SDK invokes the listener
+     * directly and does NOT surface a result through onActivityResult.
+     */
+    public static void handlePaymentSuccess(String paymentId, String orderId, String signature) {
+        PluginCall call = PENDING;
+        PENDING = null;
+        if (call == null) return;
+        JSObject result = new JSObject();
+        result.put("razorpay_payment_id", paymentId);
+        result.put("razorpay_order_id", orderId);
+        result.put("razorpay_signature", signature);
+        call.resolve(result);
+    }
+
+    /** Forwarded from the host Activity's PaymentResultWithDataListener. */
+    public static void handlePaymentError(int code, String description) {
+        PluginCall call = PENDING;
+        PENDING = null;
+        if (call == null) return;
+        JSObject result = new JSObject();
+        result.put("cancelled", true);
+        result.put("code", code);
+        result.put("description", description == null ? "" : description);
+        call.resolve(result);
+    }
+
+    /** Fallback: forwarded from the host Activity's onActivityResult. */
     public static boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != Checkout.RZP_REQUEST_CODE) return false;
         PluginCall call = PENDING;

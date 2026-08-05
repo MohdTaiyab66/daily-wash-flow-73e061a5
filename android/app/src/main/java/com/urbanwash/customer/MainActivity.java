@@ -5,9 +5,17 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.getcapacitor.BridgeActivity;
+import com.razorpay.PaymentData;
+import com.razorpay.PaymentResultWithDataListener;
 import com.urbanwash.payments.UrbanWashCheckoutPlugin;
 
-public class MainActivity extends BridgeActivity {
+/**
+ * The Razorpay SDK delivers checkout results by reflectively invoking
+ * onPaymentSuccess/onPaymentError on the activity that called Checkout.open().
+ * Without this interface the SDK logs "onPaymentSuccess probably not implemented"
+ * and the payment result never reaches the Capacitor bridge.
+ */
+public class MainActivity extends BridgeActivity implements PaymentResultWithDataListener {
 
     private static final String TAG = "UW_CUSTOMER";
 
