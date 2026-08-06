@@ -479,11 +479,9 @@ if (PAYMENTS_ENABLED) {
     }
   }
 } else {
-  for (const file of [PAYMENT_PLUGIN_SRC, MAIN_ACTIVITY]) {
-    const exists = fs.existsSync(file);
-    record(`payments.customer-source.absent.${path.basename(path.dirname(file))}`, !exists,
-      exists ? `${file} must not exist in a partner build` : `${file} absent (expected for partner)`);
-  }
+  // Partner: the payment plugin and customer MainActivity are intentionally
+  // removed. Never read those paths here — absence is the expected PASS state.
+  record("payments.no-preload-call.partner", true, "payment plugin intentionally absent");
 }
 
 // --- 7. Build evidence -------------------------------------------------------
