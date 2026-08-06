@@ -236,6 +236,15 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         console.warn("[payment] sweep_subscription_offers failed (non-fatal)", e);
       }
 
+      // Immediate FCM push for the offers we just created (~2s to partner).
+      // Same shared dispatcher the cron uses; cron remains the retry path.
+      try {
+        const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
+        await dispatchPendingOffers("immediate:payment-verified");
+      } catch (e) {
+        console.warn("[payment] immediate offer push failed (non-fatal)", e);
+      }
+
       await logAttempt({ outcome: "success", metadata: { razorpay_status: payment.status } });
       return result as { ok: boolean; booking_id: string; payment_id: string; subscription_id?: string; queue_id?: string };
     } catch (err: any) {
