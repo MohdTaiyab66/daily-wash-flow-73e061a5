@@ -1,6 +1,8 @@
-import { readFile, writeFile, mkdir, copyFile, readdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, copyFile, readdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { PAYMENTS_ENABLED, VARIANT } from "./lib/variant.mjs";
+
 
 const manifest = "android/app/src/main/AndroidManifest.xml";
 
