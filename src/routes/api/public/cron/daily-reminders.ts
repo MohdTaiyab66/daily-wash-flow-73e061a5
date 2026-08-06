@@ -10,6 +10,8 @@
  * Idempotent: each row uses a metadata.reminder_key that we dedupe on.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
+
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

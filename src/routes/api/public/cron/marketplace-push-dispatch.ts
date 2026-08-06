@@ -13,6 +13,8 @@
  * row (i.e. new round or new broadcast).
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
+
 
 function workingDaysBetween(start?: string | null, end?: string | null) {
   if (!start || !end) return 26;
