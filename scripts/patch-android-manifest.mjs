@@ -81,11 +81,8 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
   // Remove any legacy maps-only <queries> block so we can replace it with
   // the expanded version below.
   xml = xml.replace(/\n?\s*<queries>[\s\S]*?<\/queries>\n?/, "\n");
-  const queries = `
-    <!-- urbanwash-queries -->
-    <queries>
-        <package android:name="com.google.android.apps.maps" />
-        <!-- UPI apps (Android 11+ package visibility) -->
+  const upiQueries = PAYMENTS_ENABLED
+    ? `        <!-- UPI apps (Android 11+ package visibility) -->
         <package android:name="com.google.android.apps.nbu.paisa.user" />
         <package android:name="com.phonepe.app" />
         <package android:name="net.one97.paytm" />
@@ -101,19 +98,25 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
         <package android:name="com.msf.kbank.mobile" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="geo" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="google.navigation" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" android:host="pay" />
+        </intent>
+`
+    : "";
+  const queries = `
+    <!-- urbanwash-queries -->
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+${upiQueries}        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="google.navigation" />
         </intent>
         <intent>
             <action android:name="android.intent.action.SEND" />
@@ -122,6 +125,7 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
 `;
   xml = xml.replace("<application", `${queries}\n    <application`);
 }
+
 
 // Register the marketplace FCM service + accept/decline receiver.
 if (!xml.includes("com.urbanwash.push.UrbanwashMessagingService")) {
