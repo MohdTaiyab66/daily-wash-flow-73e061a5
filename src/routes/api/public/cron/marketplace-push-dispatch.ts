@@ -28,23 +28,59 @@ async function dispatchPending() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendOfferPush } = await import("@/lib/push/send.server");
 
-  const { data: rows, error } = await (supabaseAdmin as any)
+  const { data: offerRows, error } = await (supabaseAdmin as any)
     .from("marketplace_offers")
-    .select(
-      `id, partner_id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at,
-       broadcast:marketplace_broadcasts!inner (
-         status, round_expires_at,
-         vehicle:customer_vehicles ( make, model, registration_number ),
-         service_area:coverage_zones ( name ),
-         subscription:subscriptions ( start_date, renewal_date )
-       )`,
-    )
+    .select("id, partner_id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at")
     .eq("response", "pending")
     .is("viewed_at", null)
     .gt("sent_at", new Date(Date.now() - 5 * 60_000).toISOString())
     .order("sent_at", { ascending: false })
     .limit(100);
   if (error) throw error;
+
+  // marketplace_broadcasts has no FK constraints, so PostgREST cannot embed
+  // vehicle/zone/subscription. Resolve them with explicit lookups instead.
+  const broadcastIds = [...new Set((offerRows ?? []).map((o: any) => o.broadcast_id).filter(Boolean))];
+  const rows: any[] = [];
+  if (broadcastIds.length) {
+    const { data: bcs } = await (supabaseAdmin as any)
+      .from("marketplace_broadcasts")
+      .select("id, status, round_expires_at, vehicle_id, service_area_id, subscription_id")
+      .in("id", broadcastIds);
+    const byId = new Map((bcs ?? []).map((b: any) => [b.id, b]));
+
+    const ids = (key: string) => [...new Set((bcs ?? []).map((b: any) => b[key]).filter(Boolean))];
+    const [veh, zones, subs] = await Promise.all([
+      ids("vehicle_id").length
+        ? (supabaseAdmin as any).from("customer_vehicles").select("id, make, model, registration_number").in("id", ids("vehicle_id"))
+        : Promise.resolve({ data: [] }),
+      ids("service_area_id").length
+        ? (supabaseAdmin as any).from("coverage_zones").select("id, name").in("id", ids("service_area_id"))
+        : Promise.resolve({ data: [] }),
+      ids("subscription_id").length
+        ? (supabaseAdmin as any).from("subscriptions").select("id, start_date, renewal_date").in("id", ids("subscription_id"))
+        : Promise.resolve({ data: [] }),
+    ]);
+    const vMap = new Map((veh.data ?? []).map((x: any) => [x.id, x]));
+    const zMap = new Map((zones.data ?? []).map((x: any) => [x.id, x]));
+    const sMap = new Map((subs.data ?? []).map((x: any) => [x.id, x]));
+
+    for (const o of offerRows ?? []) {
+      const b: any = byId.get(o.broadcast_id);
+      rows.push({
+        ...o,
+        broadcast: b
+          ? {
+              status: b.status,
+              round_expires_at: b.round_expires_at,
+              vehicle: vMap.get(b.vehicle_id) ?? null,
+              service_area: zMap.get(b.service_area_id) ?? null,
+              subscription: sMap.get(b.subscription_id) ?? null,
+            }
+          : null,
+      });
+    }
+  }
 
   let dispatched = 0;
   for (const r of rows ?? []) {

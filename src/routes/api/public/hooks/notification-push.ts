@@ -11,8 +11,13 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
-import { sendOfferPush } from "@/lib/push/send.server";
 
+// send.server must be imported lazily inside the handler — a module-scope
+// import of a server-only module in a route file breaks the route bundle.
+async function sender() {
+  const { sendOfferPush } = await import("@/lib/push/send.server");
+  return sendOfferPush;
+}
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -79,6 +84,7 @@ const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
 ]);
 
 async function dispatchCustomer(sb: any) {
+  const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
     .select("id,user_id,title,body,type,link")
@@ -115,6 +121,7 @@ async function dispatchCustomer(sb: any) {
 }
 
 async function dispatchPartner(sb: any) {
+  const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("partner_notifications")
     .select("id,partner_id,title,body,type,link,metadata")
@@ -158,6 +165,7 @@ async function dispatchPartner(sb: any) {
 }
 
 async function dispatchAdmin(sb: any) {
+  const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("admin_alerts")
     .select("id,title,body,kind,meta")
@@ -165,7 +173,10 @@ async function dispatchAdmin(sb: any) {
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(20);
   if (!rows?.length) return 0;
-  const { data: admins } = await sb.rpc("get_admin_user_ids").catch(() => ({ data: null }));
+  const admins = await sb
+    .rpc("get_admin_user_ids")
+    .then((res: any) => res.data)
+    .catch(() => null);
   const adminIds: string[] = (admins ?? []).map((x: any) => x.user_id ?? x);
   for (const r of rows) {
     for (const uid of adminIds) {
@@ -192,9 +203,17 @@ export const Route = createFileRoute("/api/public/hooks/notification-push")({
       POST: async ({ request }) => {
         if (!isAuthorizedCron(request)) return cronForbidden();
 
-        const sb = await admin();
-        const [c, p, a] = await Promise.all([dispatchCustomer(sb), dispatchPartner(sb), dispatchAdmin(sb)]);
-        return Response.json({ ok: true, customer: c, partner: p, admin: a });
+        try {
+          const sb = await admin();
+          const [c, p, a] = await Promise.all([dispatchCustomer(sb), dispatchPartner(sb), dispatchAdmin(sb)]);
+          return Response.json({ ok: true, customer: c, partner: p, admin: a });
+        } catch (e: any) {
+          console.error("[notification-push] failed", e);
+          return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
       },
       GET: async () => Response.json({ ok: true, hint: "POST to dispatch" }),
     },
