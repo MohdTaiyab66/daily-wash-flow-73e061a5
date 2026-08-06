@@ -344,13 +344,26 @@ export async function sendOfferPush(args: {
   );
 
 
-  // Cleanup invalid tokens
+  const failures = results.filter((r) => !r.ok);
+  if (failures.length) {
+    console.error(
+      "[fcm] send failures",
+      failures.map((r) => ({ code: r.errorCode, msg: r.errorMessage, tail: r.token.slice(-8) })),
+    );
+  }
+
+  // Cleanup invalid tokens.
+  // NOTE: SENDER_ID_MISMATCH is a server/app configuration problem (the token
+  // belongs to a different Firebase project than the service account), NOT a
+  // dead token. Invalidating on it silently wipes every registration during a
+  // misconfiguration, so we log it and leave the row alone.
   const invalidIds = tokens
     .filter((t: { id: string; token: string }, i: number) => {
       const r = results[i];
-      return !r.ok && (r.errorCode === "UNREGISTERED" || r.errorCode === "INVALID_ARGUMENT" || r.errorCode === "NOT_FOUND" || r.errorCode === "SENDER_ID_MISMATCH");
+      return !r.ok && (r.errorCode === "UNREGISTERED" || r.errorCode === "NOT_FOUND");
     })
     .map((t: { id: string }) => t.id);
+
   if (invalidIds.length) {
     await (supabaseAdmin as any)
       .from("push_tokens")
