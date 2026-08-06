@@ -105,6 +105,10 @@ for (const r of registrations) console.log(`  ${r.cls.padEnd(28)} <- ${r.file}`)
 console.log(`  @CapacitorPlugin name expected by JS: ${EXPECTED_PLUGIN_NAME}`);
 console.log("");
 
+// TEMPORARY DIAGNOSTIC — remove once the partner build is confirmed green.
+console.log("VERIFY VARIANT =", process.env.URBANWASH_APP);
+console.log(`  resolved VARIANT=${VARIANT}  PAYMENTS_ENABLED=${PAYMENTS_ENABLED}`);
+
 if (PAYMENTS_ENABLED) {
   record(
     "native.registration.single",
