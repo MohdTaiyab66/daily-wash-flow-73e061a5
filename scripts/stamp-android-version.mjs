@@ -66,19 +66,45 @@ if (!hasExpectedApplicationId || !hasExpectedNamespace) {
 await writeFile(gradleFile, gradle);
 console.log(`[android-build] Android Gradle config stamped for ${variant}: ${appId}, version ${versionName} (${versionCode})`);
 
+// Both Customer and Partner APKs MUST ship the same Firebase project
+// (uw-partner-app), because the backend dispatcher authenticates with that
+// project's service account. A config from any other project produces
+// SENDER_ID_MISMATCH and tokens the backend can never send to.
+const FIREBASE_PROJECT_ID = "uw-partner-app";
+const canonicalGoogleServices = "android-native/firebase/google-services.json";
+
+if (existsSync(canonicalGoogleServices)) {
+  const canonical = await readFile(canonicalGoogleServices, "utf8");
+  const current = existsSync(googleServicesFile) ? await readFile(googleServicesFile, "utf8") : null;
+  if (current !== canonical) {
+    await writeFile(googleServicesFile, canonical);
+    console.log(`[android-build] Restored ${googleServicesFile} from ${canonicalGoogleServices}`);
+  }
+}
+
 if (existsSync(googleServicesFile)) {
   const googleServices = JSON.parse(await readFile(googleServicesFile, "utf8"));
+  const projectId = googleServices?.project_info?.project_id;
   const packageNames = (googleServices.client ?? [])
     .map((client) => client?.client_info?.android_client_info?.package_name)
     .filter(Boolean);
+
+  if (projectId !== FIREBASE_PROJECT_ID) {
+    console.error(`[android-build] ${googleServicesFile} targets Firebase project "${projectId}"; expected "${FIREBASE_PROJECT_ID}"`);
+    process.exit(1);
+  }
 
   if (!packageNames.includes(appId)) {
     console.error(`[android-build] ${googleServicesFile} does not contain ${appId}; found: ${packageNames.join(", ") || "none"}`);
     process.exit(1);
   }
 
-  console.log(`[android-build] Firebase config verified for ${appId}`);
+  console.log(`[android-build] Firebase config verified for ${appId} on ${projectId}`);
+} else {
+  console.error(`[android-build] missing ${googleServicesFile}`);
+  process.exit(1);
 }
+
 
 const syncedBuildInfo = syncedBuildInfoCandidates.find((path) => existsSync(path));
 if (!syncedBuildInfo) {
