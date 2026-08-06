@@ -125,6 +125,38 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
       await Preferences.set({ key: "urbanwash.current_token", value: token });
     } catch { /* noop */ }
+
+    const markOk = async () => {
+      try {
+        await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
+        await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
+        await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
+      } catch { /* noop */ }
+    };
+    const markErr = async (msg: string) => {
+      try {
+        await Preferences.set({ key: "urbanwash.last_token_upload_error", value: msg });
+      } catch { /* noop */ }
+      console.error("[fcm] push_tokens registration failed", msg);
+    };
+
+    // Server-side registration: `push_tokens.token` is globally unique, so the
+    // row may already belong to another user/device (re-install, account
+    // switch). RLS forbids the client from moving that row, so the server fn
+    // claims it with admin rights — idempotent, never a 23505.
+    try {
+      const { registerPushToken } = await import("./register-token.functions");
+      await registerPushToken({
+        data: { token, platform: nativePlatform(), device_id: deviceId, app },
+      });
+      await markOk();
+      return;
+    } catch (e: any) {
+      await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);
+    }
+
+    // Fallback (offline / server fn unreachable): best-effort direct write on
+    // the device-scoped conflict target.
     try {
       const { error } = await supabase.from("push_tokens").upsert(
         {
@@ -138,30 +170,10 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         } as any,
         { onConflict: "user_id,device_id,app" } as any,
       );
-      if (!error) {
-        try {
-          await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
-          await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
-          await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
-        } catch { /* noop */ }
-      } else {
-        try {
-          await Preferences.set({
-            key: "urbanwash.last_token_upload_error",
-            value: `${error.code ?? ""} ${error.message ?? ""}`.trim(),
-          });
-        } catch { /* noop */ }
-        // Surface in console so remote log capture picks it up.
-        console.error("[fcm] push_tokens upsert failed", error);
-      }
+      if (!error) await markOk();
+      else await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
     } catch (e: any) {
-      try {
-        await Preferences.set({
-          key: "urbanwash.last_token_upload_error",
-          value: String(e?.message ?? e ?? "unknown"),
-        });
-      } catch { /* noop */ }
-      console.error("[fcm] push_tokens upsert threw", e);
+      await markErr(String(e?.message ?? e ?? "unknown"));
     }
   };
 

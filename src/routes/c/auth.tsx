@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +14,7 @@ import hero from "@/assets/hero-car-wash.jpg";
 export const Route = createFileRoute("/c/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Log in — Urban Wash" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
-  }),
+  validateSearch: z.object({ redirect: z.string().optional().catch(undefined) }),
   component: CustomerAuth,
 });
 

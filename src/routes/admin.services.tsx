@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,9 +23,7 @@ const FILTERS: Array<{ id: Filter; label: string; statuses?: string[] }> = [
 ];
 
 export const Route = createFileRoute("/admin/services")({
-  validateSearch: (s: Record<string, unknown>): { f?: Filter } => ({
-    f: (typeof s.f === "string" ? (s.f as Filter) : undefined),
-  }),
+  validateSearch: z.object({ f: z.string().optional().catch(undefined) }).transform((v) => ({ f: v.f as Filter | undefined })),
   component: BookingsPage,
 });
 

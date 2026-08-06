@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,9 +16,7 @@ import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/") ? search.redirect : undefined,
-  }),
+  validateSearch: z.object({ redirect: z.string().startsWith("/").optional().catch(undefined) }),
   component: AuthPage,
 });
 
