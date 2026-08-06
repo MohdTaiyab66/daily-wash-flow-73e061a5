@@ -51,22 +51,29 @@ dependencies {
 // upstream capacitor-razorpay plugin (which used a dynamic `1.6.+` range) has
 // been removed; the native checkout lives in
 // android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java
-ext.razorpayCheckoutVersion = '1.6.41'
+//
+// Razorpay renamed the published artifact: the current Android Checkout SDK is
+// `com.razorpay:standard-core` (latest 1.7.18). The legacy
+// `com.razorpay:checkout` artifact stopped at 1.6.41. Same `com.razorpay.*`
+// classes, no code changes required.
+ext.razorpayCheckoutVersion = '1.7.18'
 
 dependencies {
-    implementation "com.razorpay:checkout:1.6.41"
+    implementation "com.razorpay:standard-core:1.7.18"
 }
 
 configurations.all {
     resolutionStrategy {
-        force 'com.razorpay:checkout:1.6.41'
+        force 'com.razorpay:standard-core:1.7.18'
         // Fail fast if anything ever reintroduces a dynamic Razorpay version.
         eachDependency { details ->
-            if (details.requested.group == 'com.razorpay' && details.requested.name == 'checkout') {
+            if (details.requested.group == 'com.razorpay' && details.requested.name in ['checkout', 'standard-core']) {
                 if (details.requested.version?.contains('+')) {
-                    throw new GradleException("Dynamic Razorpay version requested (" + details.requested.version + "); only 1.6.41 is allowed")
+                    throw new GradleException("Dynamic Razorpay version requested (" + details.requested.version + "); only 1.7.18 is allowed")
                 }
-                details.useVersion '1.6.41'
+                if (details.requested.name == 'standard-core') {
+                    details.useVersion '1.7.18'
+                }
             }
         }
     }
@@ -78,7 +85,7 @@ task printRazorpayResolved {
             try {
                 cfg.resolvedConfiguration.resolvedArtifacts.each { a ->
                     def id = a.moduleVersion.id
-                    if (id.group == 'com.razorpay' && id.name == 'checkout') {
+                    if (id.group == 'com.razorpay') {
                         println "[uw-razorpay-resolved] " + cfg.name + " -> " + id.group + ":" + id.name + ":" + id.version
                     }
                 }

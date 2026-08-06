@@ -341,10 +341,10 @@ for (const generatedFile of [
 try {
   const appGradle = fs.readFileSync("android/app/build.gradle", "utf8");
   record("payments.gradle.permanent-block", appGradle.includes("[uw-payments]"), "permanent [uw-payments] block present");
-  const dynamic = /com\.razorpay:checkout:[^'"]*\+/.test(appGradle);
-  record("payments.gradle.no-dynamic-version", !dynamic, dynamic ? "dynamic com.razorpay:checkout version found" : "only fixed 1.6.41");
-  const pins = (appGradle.match(/com\.razorpay:checkout:1\.6\.41/g) ?? []).length;
-  record("payments.gradle.single-pin", pins > 0, `${pins} reference(s) to com.razorpay:checkout:1.6.41`);
+  const dynamic = /com\.razorpay:(?:checkout|standard-core):[^'"]*\+/.test(appGradle);
+  record("payments.gradle.no-dynamic-version", !dynamic, dynamic ? "dynamic Razorpay SDK version found" : "only fixed 1.7.18");
+  const pins = (appGradle.match(/com\.razorpay:standard-core:1\.7\.18/g) ?? []).length;
+  record("payments.gradle.single-pin", pins > 0, `${pins} reference(s) to com.razorpay:standard-core:1.7.18`);
 } catch (e) {
   record("payments.gradle.permanent-block", false, e.message);
 }
