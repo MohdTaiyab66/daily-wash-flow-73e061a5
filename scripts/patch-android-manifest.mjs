@@ -212,21 +212,37 @@ async function collectFiles(dir, out = []) {
   return out;
 }
 
-// Restore repo-owned native Java sources (payment plugin) into the Android
-// project. `cap sync` never removes them; this only matters when android/ was
-// regenerated from scratch (variant switch / clean clone).
+// Restore repo-owned native Java sources (payment plugin + customer
+// MainActivity) into the Android project. `cap add android` regenerates a stub
+// MainActivity and drops com/urbanwash/payments entirely, so the Customer build
+// must re-materialise both here — this is what makes
+// customer -> partner -> customer switching work with no manual copying.
 //
 // The Partner app never collects payments, so the payment plugin is neither
 // restored nor allowed to survive in the Partner Android project.
 const javaSrcRoot = "android-native/java";
-if (PAYMENTS_ENABLED && existsSync(javaSrcRoot)) {
+if (PAYMENTS_ENABLED) {
+  if (!existsSync(javaSrcRoot)) {
+    console.error(`[android-manifest] FATAL: missing repo-owned native sources at ${javaSrcRoot}`);
+    process.exit(1);
+  }
   for (const file of await collectFiles(javaSrcRoot)) {
     const dest = join("android/app/src/main/java", file.slice(javaSrcRoot.length + 1));
     await mkdir(dirname(dest), { recursive: true });
     await copyFile(file, dest);
     console.log(`[android-manifest] restored native source → ${dest}`);
   }
+  for (const required of [
+    "android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java",
+    "android/app/src/main/java/com/urbanwash/customer/MainActivity.java",
+  ]) {
+    if (!existsSync(required)) {
+      console.error(`[android-manifest] FATAL: customer build is missing ${required} after restore`);
+      process.exit(1);
+    }
+  }
 }
+
 
 async function findMainActivities(dir, out = []) {
   if (!existsSync(dir)) return out;
