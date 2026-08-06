@@ -168,7 +168,12 @@ ${KOTLIN_APP_MARKER_END}
 gradle = gradle.trimEnd() + "\n" + kotlinAppBlock + "\n";
 
 await writeFile(APP_GRADLE, gradle, "utf8");
-console.log(`[android-gradle] Razorpay pin left to the permanent [uw-payments] block in ${APP_GRADLE}`);
+console.log(
+  PAYMENTS_ENABLED
+    ? `[android-gradle] Razorpay pin left to the permanent [uw-payments] block in ${APP_GRADLE}`
+    : `[android-gradle] partner build: no payment SDK in ${APP_GRADLE}`,
+);
+
 console.log(`[android-gradle] applied kotlin-android plugin + stdlib ${KOTLIN_VERSION}`);
 
 // ─── Project-level buildscript: add Kotlin Gradle plugin classpath ──────────
