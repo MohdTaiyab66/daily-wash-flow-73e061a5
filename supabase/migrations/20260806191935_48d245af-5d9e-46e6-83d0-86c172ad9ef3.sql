@@ -1,0 +1,2 @@
+ALTER TABLE public.offer_delivery_events DROP CONSTRAINT IF EXISTS offer_delivery_events_stage_check;
+ALTER TABLE public.offer_delivery_events ADD CONSTRAINT offer_delivery_events_stage_check CHECK (stage = ANY (ARRAY['created'::text, 'queued'::text, 'selected'::text, 'push_claimed'::text, 'push_sent'::text, 'push_delivered'::text, 'opened'::text, 'popup_displayed'::text, 'accepted'::text, 'declined'::text, 'timed_out'::text, 'reassigned'::text, 'completed'::text, 'push_failed'::text]));
