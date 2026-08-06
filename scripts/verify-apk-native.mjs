@@ -379,7 +379,7 @@ try {
     record("firebase.config.project", pid === FB_PROJECT && num === FB_SENDER,
       `project_id=${pid} project_number=${num} (expected ${FB_PROJECT}/${FB_SENDER})`);
     const pkgs = (gs.client ?? []).map((c) => c?.client_info?.android_client_info?.package_name).filter(Boolean);
-    const appId = IS_PARTNER ? "com.urbanwash.partner" : "com.urbanwash.customer";
+    const appId = VARIANT === "partner" ? "com.urbanwash.partner" : "com.urbanwash.customer";
     record("firebase.config.package", pkgs.includes(appId), `clients: ${pkgs.join(", ")} (need ${appId})`);
 
   } catch (e) {
