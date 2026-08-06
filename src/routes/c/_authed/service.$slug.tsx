@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -38,9 +39,7 @@ import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
-  }),
+  validateSearch: z.object({ vehicleId: z.string().optional().catch(undefined) }),
   head: () => ({ meta: [{ title: "Book service — Urban Wash" }] }),
   component: ServiceDetail,
 });

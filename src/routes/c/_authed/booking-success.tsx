@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Calendar, Clock, Car, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,13 +6,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/c/_authed/booking-success")({
   ssr: false,
   head: () => ({ meta: [{ title: "Booking confirmed — Urban Wash" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    bookingId: typeof s.bookingId === "string" ? s.bookingId : undefined,
-    service: typeof s.service === "string" ? s.service : undefined,
-    date: typeof s.date === "string" ? s.date : undefined,
-    slot: typeof s.slot === "string" ? s.slot : undefined,
-    vehicle: typeof s.vehicle === "string" ? s.vehicle : undefined,
-    plan: s.plan === "1" || s.plan === true ? true : undefined,
+  validateSearch: z.object({
+    bookingId: z.string().optional().catch(undefined),
+    service: z.string().optional().catch(undefined),
+    date: z.string().optional().catch(undefined),
+    slot: z.string().optional().catch(undefined),
+    vehicle: z.string().optional().catch(undefined),
+    plan: z.coerce.boolean().optional().catch(undefined),
   }),
   component: BookingSuccess,
 });

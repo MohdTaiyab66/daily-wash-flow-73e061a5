@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -48,9 +49,9 @@ import {
 import { googleMapsDirectionsUrl } from "@/lib/gps";
 
 export const Route = createFileRoute("/admin/route-manager")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    partner: typeof s.partner === "string" ? s.partner : undefined,
-    date: typeof s.date === "string" ? s.date : undefined,
+  validateSearch: z.object({
+    partner: z.string().optional().catch(undefined),
+    date: z.string().optional().catch(undefined),
   }),
   component: RouteManagerPage,
 });
