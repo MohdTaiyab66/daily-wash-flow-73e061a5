@@ -150,11 +150,8 @@ async function dispatchPending() {
 }
 
 async function handle(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  if (expected) {
-    const got = request.headers.get("x-cron-secret");
-    if (got !== expected) return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(request)) return cronForbidden();
+
   try {
     const dispatched = await dispatchPending();
     return Response.json({ ok: true, dispatched });

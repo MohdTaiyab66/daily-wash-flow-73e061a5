@@ -6,6 +6,8 @@
  * Guarded by CRON_SECRET when the env var is set.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
+
 
 async function dispatchPending() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -106,15 +108,9 @@ async function dispatchPending() {
 }
 
 async function handle(request: Request) {
-  // Auth: same x-cron-secret gate as assignment-tick / dar-timeouts.
-  const expected = process.env.CRON_SECRET;
-  const got = request.headers.get("x-cron-secret");
-  if (!expected || !got || got !== expected) {
-    return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
-      status: 401,
-      headers: { "content-type": "application/json" },
-    });
-  }
+  // Auth: x-cron-secret OR the Supabase apikey header pg_cron sends.
+  if (!isAuthorizedCron(request)) return cronForbidden();
+
   try {
     const dispatched = await dispatchPending();
     return Response.json({ ok: true, dispatched });
