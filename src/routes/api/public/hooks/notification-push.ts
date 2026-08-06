@@ -10,7 +10,9 @@
  * Notifications are marked `pushed_at = now()` so retries are idempotent.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
 import { sendOfferPush } from "@/lib/push/send.server";
+
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -188,14 +190,8 @@ export const Route = createFileRoute("/api/public/hooks/notification-push")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.CRON_SECRET;
-        const got = request.headers.get("x-cron-secret");
-        if (!expected || !got || got !== expected) {
-          return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
-            status: 401,
-            headers: { "content-type": "application/json" },
-          });
-        }
+        if (!isAuthorizedCron(request)) return cronForbidden();
+
         const sb = await admin();
         const [c, p, a] = await Promise.all([dispatchCustomer(sb), dispatchPartner(sb), dispatchAdmin(sb)]);
         return Response.json({ ok: true, customer: c, partner: p, admin: a });

@@ -10,6 +10,8 @@
  * Idempotent: each row uses a metadata.reminder_key that we dedupe on.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
+
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -155,14 +157,8 @@ export const Route = createFileRoute("/api/public/cron/daily-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.CRON_SECRET;
-        const got = request.headers.get("x-cron-secret");
-        if (!expected || !got || got !== expected) {
-          return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
-            status: 401,
-            headers: { "content-type": "application/json" },
-          });
-        }
+        if (!isAuthorizedCron(request)) return cronForbidden();
+
         const sb = await admin();
         const [weekly, renewal, extended] = await Promise.all([
           weeklyIncludedWashReminder(sb).catch(() => 0),

@@ -13,6 +13,8 @@
  * row (i.e. new round or new broadcast).
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { isAuthorizedCron, cronForbidden } from "@/lib/cron-auth";
+
 
 function workingDaysBetween(start?: string | null, end?: string | null) {
   if (!start || !end) return 26;
@@ -150,11 +152,8 @@ async function dispatchPending() {
 }
 
 async function handle(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  if (expected) {
-    const got = request.headers.get("x-cron-secret");
-    if (got !== expected) return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(request)) return cronForbidden();
+
   try {
     const dispatched = await dispatchPending();
     return Response.json({ ok: true, dispatched });
