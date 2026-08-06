@@ -1,6 +1,8 @@
-import { readFile, writeFile, mkdir, copyFile, readdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, copyFile, readdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { PAYMENTS_ENABLED, VARIANT } from "./lib/variant.mjs";
+
 
 const manifest = "android/app/src/main/AndroidManifest.xml";
 
@@ -21,18 +23,28 @@ const permissions = [
   "android.permission.VIBRATE",
   "android.permission.RECEIVE_BOOT_COMPLETED",
   "android.permission.INTERNET",
+];
+
+if (PAYMENTS_ENABLED) {
   // Razorpay's Android SDK detects installed UPI apps through PackageManager.
   // Some OEM Android 11+ builds still return an empty result even with scheme
   // intent queries, causing Checkout to hide UPI completely. This keeps the APK
   // fail-open for payment-app discovery on sideload/debug production builds.
-  "android.permission.QUERY_ALL_PACKAGES",
-];
+  // Partner never collects payments, so it does not need this permission.
+  permissions.push("android.permission.QUERY_ALL_PACKAGES");
+}
 
 for (const name of permissions) {
   if (!xml.includes(`android:name="${name}"`)) {
     xml = xml.replace(/(<manifest\b[^>]*>)/, `$1\n    <uses-permission android:name="${name}" />`);
   }
 }
+
+if (!PAYMENTS_ENABLED) {
+  // Strip payment-only package visibility from the Partner manifest.
+  xml = xml.replace(/\n?\s*<uses-permission android:name="android\.permission\.QUERY_ALL_PACKAGES"[^>]*\/>/g, "");
+}
+
 
 // Keep Capacitor's MainActivity alive through camera/permission orientation and
 // screen-size changes. Without this, Android may recreate the WebView when the
@@ -69,11 +81,8 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
   // Remove any legacy maps-only <queries> block so we can replace it with
   // the expanded version below.
   xml = xml.replace(/\n?\s*<queries>[\s\S]*?<\/queries>\n?/, "\n");
-  const queries = `
-    <!-- urbanwash-queries -->
-    <queries>
-        <package android:name="com.google.android.apps.maps" />
-        <!-- UPI apps (Android 11+ package visibility) -->
+  const upiQueries = PAYMENTS_ENABLED
+    ? `        <!-- UPI apps (Android 11+ package visibility) -->
         <package android:name="com.google.android.apps.nbu.paisa.user" />
         <package android:name="com.phonepe.app" />
         <package android:name="net.one97.paytm" />
@@ -89,19 +98,25 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
         <package android:name="com.msf.kbank.mobile" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="geo" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="google.navigation" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" android:host="pay" />
+        </intent>
+`
+    : "";
+  const queries = `
+    <!-- urbanwash-queries -->
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+${upiQueries}        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="google.navigation" />
         </intent>
         <intent>
             <action android:name="android.intent.action.SEND" />
@@ -110,6 +125,7 @@ if (!xml.includes("<!-- urbanwash-queries -->")) {
 `;
   xml = xml.replace("<application", `${queries}\n    <application`);
 }
+
 
 // Register the marketplace FCM service + accept/decline receiver.
 if (!xml.includes("com.urbanwash.push.UrbanwashMessagingService")) {
@@ -199,8 +215,11 @@ async function collectFiles(dir, out = []) {
 // Restore repo-owned native Java sources (payment plugin) into the Android
 // project. `cap sync` never removes them; this only matters when android/ was
 // regenerated from scratch (variant switch / clean clone).
+//
+// The Partner app never collects payments, so the payment plugin is neither
+// restored nor allowed to survive in the Partner Android project.
 const javaSrcRoot = "android-native/java";
-if (existsSync(javaSrcRoot)) {
+if (PAYMENTS_ENABLED && existsSync(javaSrcRoot)) {
   for (const file of await collectFiles(javaSrcRoot)) {
     const dest = join("android/app/src/main/java", file.slice(javaSrcRoot.length + 1));
     await mkdir(dirname(dest), { recursive: true });
@@ -209,20 +228,69 @@ if (existsSync(javaSrcRoot)) {
   }
 }
 
-const mainActivityPath = "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
-if (existsSync(mainActivityPath)) {
-  const activity = await readFile(mainActivityPath, "utf8");
-  if (activity.includes("com.ionicframework.capacitor")) {
-    console.error("[android-manifest] FATAL: MainActivity still references the removed upstream Razorpay plugin");
-    process.exit(1);
+async function findMainActivities(dir, out = []) {
+  if (!existsSync(dir)) return out;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) await findMainActivities(path, out);
+    else if (entry.name === "MainActivity.java") out.push(path);
   }
-  const registrations = (activity.match(/registerPlugin\(/g) ?? []).length;
-  if (registrations !== 1 || !activity.includes("registerPlugin(UrbanWashCheckoutPlugin.class)")) {
-    console.error(`[android-manifest] FATAL: MainActivity must register UrbanWashCheckoutPlugin exactly once (found ${registrations})`);
-    process.exit(1);
-  }
-  console.log("[android-manifest] MainActivity verified: single UrbanWashCheckout registration");
+  return out;
 }
+
+const JAVA_ROOT = "android/app/src/main/java";
+
+if (!PAYMENTS_ENABLED) {
+  // 1. Drop the payment plugin source from the Partner Android project.
+  const paymentsDir = join(JAVA_ROOT, "com/urbanwash/payments");
+  if (existsSync(paymentsDir)) {
+    await rm(paymentsDir, { recursive: true, force: true });
+    console.log(`[android-manifest] removed payment plugin source (${VARIANT} build) → ${paymentsDir}`);
+  }
+
+  // 2. Rewrite any MainActivity that still imports Razorpay / registers the
+  //    checkout plugin. Partner keeps the plain Capacitor BridgeActivity so
+  //    Firebase Messaging, Camera, Geolocation, Preferences, Device,
+  //    Filesystem, Haptics and App Launcher keep working untouched.
+  for (const activityPath of await findMainActivities(JAVA_ROOT)) {
+    const source = await readFile(activityPath, "utf8");
+    if (!/razorpay|Razorpay|UrbanWashCheckout/.test(source)) continue;
+    const pkg = source.match(/package\s+([\w.]+);/)?.[1] ?? "com.urbanwash.partner";
+    const clean = `package ${pkg};
+
+import com.getcapacitor.BridgeActivity;
+
+/**
+ * Partner app entry point.
+ *
+ * The Partner app does not collect payments: no Razorpay SDK, no checkout
+ * plugin, no payment callbacks. Only push/messaging, camera, geolocation,
+ * preferences, device, filesystem, haptics and app-launcher plugins are used,
+ * and Capacitor registers those automatically.
+ */
+public class MainActivity extends BridgeActivity {
+}
+`;
+    await writeFile(activityPath, clean);
+    console.log(`[android-manifest] stripped Razorpay from ${activityPath} (${VARIANT} build)`);
+  }
+} else {
+  const mainActivityPath = join(JAVA_ROOT, "com/urbanwash/customer/MainActivity.java");
+  if (existsSync(mainActivityPath)) {
+    const activity = await readFile(mainActivityPath, "utf8");
+    if (activity.includes("com.ionicframework.capacitor")) {
+      console.error("[android-manifest] FATAL: MainActivity still references the removed upstream Razorpay plugin");
+      process.exit(1);
+    }
+    const registrations = (activity.match(/registerPlugin\(/g) ?? []).length;
+    if (registrations !== 1 || !activity.includes("registerPlugin(UrbanWashCheckoutPlugin.class)")) {
+      console.error(`[android-manifest] FATAL: MainActivity must register UrbanWashCheckoutPlugin exactly once (found ${registrations})`);
+      process.exit(1);
+    }
+    console.log("[android-manifest] MainActivity verified: single UrbanWashCheckout registration");
+  }
+}
+
 
 // Copy Kotlin sources into the package directory.
 const pkgDir = "android/app/src/main/java/com/urbanwash/push";

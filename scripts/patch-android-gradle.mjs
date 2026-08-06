@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { PAYMENTS_ENABLED } from "./lib/variant.mjs";
+
 
 /**
  * Detect the Kotlin version the installed Capacitor plugins expect.
@@ -69,10 +71,27 @@ while (gradle.includes(LEGACY_PIN_BEGIN) && gradle.includes(LEGACY_PIN_END)) {
   console.log("[android-gradle] removed legacy script-injected Razorpay pin");
 }
 
-if (!gradle.includes("[uw-payments]")) {
-  console.error("[android-gradle] FATAL: android/app/build.gradle is missing the permanent [uw-payments] Razorpay block");
-  process.exit(1);
+if (PAYMENTS_ENABLED) {
+  if (!gradle.includes("[uw-payments]")) {
+    console.error("[android-gradle] FATAL: android/app/build.gradle is missing the permanent [uw-payments] Razorpay block");
+    process.exit(1);
+  }
+} else {
+  // Partner never collects payments: strip the whole Razorpay block so the SDK
+  // is not on the Partner compile/runtime classpath at all.
+  const start = gradle.indexOf("// [uw-payments]");
+  if (start !== -1) {
+    const anchor = gradle.indexOf("apply from: 'capacitor.build.gradle'", start);
+    const end = anchor === -1 ? gradle.length : anchor;
+    gradle = gradle.slice(0, start) + gradle.slice(end);
+    console.log("[android-gradle] removed Razorpay [uw-payments] block (partner build)");
+  }
+  if (/com\.razorpay/.test(gradle)) {
+    console.error("[android-gradle] FATAL: partner build.gradle still references com.razorpay");
+    process.exit(1);
+  }
 }
+
 
 // ─── Firebase Messaging SDK on the APP compile classpath ────────────────────
 // Root cause of "Unresolved reference: FirebaseMessagingService":
@@ -149,7 +168,12 @@ ${KOTLIN_APP_MARKER_END}
 gradle = gradle.trimEnd() + "\n" + kotlinAppBlock + "\n";
 
 await writeFile(APP_GRADLE, gradle, "utf8");
-console.log(`[android-gradle] Razorpay pin left to the permanent [uw-payments] block in ${APP_GRADLE}`);
+console.log(
+  PAYMENTS_ENABLED
+    ? `[android-gradle] Razorpay pin left to the permanent [uw-payments] block in ${APP_GRADLE}`
+    : `[android-gradle] partner build: no payment SDK in ${APP_GRADLE}`,
+);
+
 console.log(`[android-gradle] applied kotlin-android plugin + stdlib ${KOTLIN_VERSION}`);
 
 // ─── Project-level buildscript: add Kotlin Gradle plugin classpath ──────────

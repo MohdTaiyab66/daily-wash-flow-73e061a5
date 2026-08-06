@@ -237,7 +237,7 @@ if exist "android\app\src\main\assets\public\build-info.json" (
   call node scripts\verify-build-marker.mjs "android\app\src\main\assets\build-info.json" "android asset marker" || goto :fail
 )
 
-echo   Verifying Capacitor plugin registry (only UrbanWashCheckoutPlugin may load)...
+echo   Verifying Capacitor plugin registry (partner: no payment plugin may load)...
 call node scripts\verify-plugin-registry.mjs || goto :fail
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
@@ -254,7 +254,7 @@ call fix-android-java.bat || goto :fail
 echo   Pinning Gradle to detected JDK...
 call node scripts\configure-gradle-jdk.mjs || goto :fail
 
-echo   Pinning Razorpay Checkout SDK (standard-core) to 1.7.18 in app build.gradle...
+echo   Patching Android Gradle (Firebase Messaging + Kotlin; partner ships no payment SDK)...
 call node scripts\patch-android-gradle.mjs || goto :fail
 
 REM -- 6. Build APK -------------------------------------------------------
@@ -266,10 +266,15 @@ call gradlew.bat --stop >nul 2>&1
 echo   Gradle project: %CD%
 echo   Gradle JVM check:
 call gradlew.bat -version || (popd & goto :fail)
-echo   Resolved Razorpay dependency:
-call gradlew.bat -q :app:printRazorpayResolved || echo   [!] Razorpay resolution report failed (non-fatal)
-call gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath > ..\razorpay-partner-deps.txt 2>&1
-echo   Full dependency tree written to razorpay-partner-deps.txt
+echo   Resolved dependency tree (partner must contain no com.razorpay artifacts):
+call gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath > ..\partner-deps.txt 2>&1
+findstr /I "com.razorpay" ..\partner-deps.txt >nul && (
+  echo   [X] Partner dependency tree still contains a Razorpay artifact.
+  popd
+  goto :fail
+)
+echo   [OK] No Razorpay artifact on the partner classpath - tree written to partner-deps.txt
+
 echo   Gradle clean (no stale dex/APK may survive):
 call gradlew.bat clean || (popd & goto :fail)
 call gradlew.bat assembleDebug || (popd & goto :fail)
