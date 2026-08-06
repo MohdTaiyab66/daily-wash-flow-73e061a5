@@ -481,7 +481,11 @@ if (PAYMENTS_ENABLED) {
 } else {
   // Partner: the payment plugin and customer MainActivity are intentionally
   // removed. Never read those paths here — absence is the expected PASS state.
-  record("payments.no-preload-call.partner", true, "payment plugin intentionally absent");
+  record(
+    "payments.no-preload-call.partner",
+    true,
+    "Partner build has no payment plugin.",
+  );
 }
 
 // --- 7. Build evidence -------------------------------------------------------
