@@ -351,17 +351,62 @@ auditNotify(
 )
 }
     private fun postGeneric(msg: RemoteMessage) {
-        val n = msg.notification ?: return
+        // Data-only pushes have no notification block. Fall back to data
+        // title/body so nothing is silently dropped.
+        val title = msg.notification?.title ?: msg.data["title"] ?: "Urban Wash"
+        val body = msg.notification?.body ?: msg.data["body"] ?: ""
+        if (title.isBlank() && body.isBlank()) return
+
+        // The general channel is normally created by the JS layer at app init;
+        // when a push arrives before that (background / killed), create it here.
+        ensureGeneralChannel()
+
+        val iconRes = resources.getIdentifier(
+            "ic_stat_notify", "drawable", packageName
+        ).let { if (it != 0) it else applicationInfo.icon }
+
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_GENERAL)
-            .setSmallIcon(applicationInfo.icon)
-            .setContentTitle(n.title ?: "Urban Wash")
-            .setContentText(n.body ?: "")
-.setDefaults(NotificationCompat.DEFAULT_ALL)
-.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setSmallIcon(iconRes)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        NotificationManagerCompat.from(applicationContext)
-            .notify(System.currentTimeMillis().toInt(), builder.build())
+        auditNotify(
+            NotificationManagerCompat.from(applicationContext),
+            System.currentTimeMillis().toInt(),
+            null,
+            CHANNEL_GENERAL,
+            "timestamp",
+            builder.build(),
+        )
     }
+
+    private fun ensureGeneralChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = getSystemService(NotificationManager::class.java) ?: return
+        if (nm.getNotificationChannel(CHANNEL_GENERAL) != null) return
+        val ch = NotificationChannel(
+            CHANNEL_GENERAL,
+            "General",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Urban Wash updates"
+            enableVibration(true)
+            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+            setShowBadge(true)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build()
+            )
+        }
+        nm.createNotificationChannel(ch)
+    }
+
 
 }
