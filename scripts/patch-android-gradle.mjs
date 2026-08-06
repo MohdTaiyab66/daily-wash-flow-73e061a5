@@ -69,10 +69,27 @@ while (gradle.includes(LEGACY_PIN_BEGIN) && gradle.includes(LEGACY_PIN_END)) {
   console.log("[android-gradle] removed legacy script-injected Razorpay pin");
 }
 
-if (!gradle.includes("[uw-payments]")) {
-  console.error("[android-gradle] FATAL: android/app/build.gradle is missing the permanent [uw-payments] Razorpay block");
-  process.exit(1);
+if (PAYMENTS_ENABLED) {
+  if (!gradle.includes("[uw-payments]")) {
+    console.error("[android-gradle] FATAL: android/app/build.gradle is missing the permanent [uw-payments] Razorpay block");
+    process.exit(1);
+  }
+} else {
+  // Partner never collects payments: strip the whole Razorpay block so the SDK
+  // is not on the Partner compile/runtime classpath at all.
+  const start = gradle.indexOf("// [uw-payments]");
+  if (start !== -1) {
+    const anchor = gradle.indexOf("apply from: 'capacitor.build.gradle'", start);
+    const end = anchor === -1 ? gradle.length : anchor;
+    gradle = gradle.slice(0, start) + gradle.slice(end);
+    console.log("[android-gradle] removed Razorpay [uw-payments] block (partner build)");
+  }
+  if (/com\.razorpay/.test(gradle)) {
+    console.error("[android-gradle] FATAL: partner build.gradle still references com.razorpay");
+    process.exit(1);
+  }
 }
+
 
 // ─── Firebase Messaging SDK on the APP compile classpath ────────────────────
 // Root cause of "Unresolved reference: FirebaseMessagingService":
