@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen, traceStateCall } from "@/lib/offer-popup-debug";
+import { flushNotificationPush } from "@/lib/push/immediate.functions";
 
 /**
  * Full-screen Daily Shine offer popup with countdown, vibration and ring tone.
@@ -402,6 +403,11 @@ export function OfferPopup({ partnerId }: { partnerId: string | null }) {
       });
       const { data, error } = await (supabase as any).rpc("respond_subscription_offer", { p_offer_id: offer.id, p_accept: accept });
       if (error) throw error;
+      // Immediate customer push (~2s) instead of waiting for the 1-min cron.
+      // Fire-and-forget: cron remains the retry path if this fails.
+      if (accept) {
+        void flushNotificationPush().catch(() => {});
+      }
       return data;
     },
     onSuccess: (_d, accept) => {
