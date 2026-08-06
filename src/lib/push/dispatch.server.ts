@@ -284,8 +284,10 @@ export async function dispatchPartnerNotifications(): Promise<number> {
         body: r.body ?? "",
         data: {
           type,
-          link: r.link ?? "",
-          ...(r.metadata && typeof r.metadata === "object" ? { meta: JSON.stringify(r.metadata) } : {}),
+          link: r.link ?? (isAssignment ? "/app/assignments" : ""),
+          // Kotlin uses these to key the notification and deep link.
+          ...(r.metadata?.assignment_id ? { assignment_id: String(r.metadata.assignment_id) } : {}),
+          ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
         },
         channelId: isAssignment ? "assignments_v4" : "general",
         dataOnly: isAssignment,
