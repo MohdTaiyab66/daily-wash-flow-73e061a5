@@ -180,18 +180,21 @@ if errorlevel 1 (
   goto :fail
 )
 
-echo Running verify-plugin-registry.mjs
-call node scripts\verify-plugin-registry.mjs
-if errorlevel 1 goto :fail
-echo PASS
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
 
 echo   Stamping Android package id and verifying synced build marker...
 call node scripts\stamp-android-version.mjs || goto :fail
 
-echo   Patching Android permissions and Maps intents...
+REM `cap add/sync android` regenerates a stub MainActivity and drops
+REM com/urbanwash/payments. This restore MUST run before verification.
+echo   Patching Android permissions, Maps intents and restoring native payment sources...
 call node scripts\patch-android-manifest.mjs || goto :fail
+
+echo Running verify-plugin-registry.mjs
+call node scripts\verify-plugin-registry.mjs
+if errorlevel 1 goto :fail
+echo PASS
 
 echo   Repairing Capacitor Android Java compatibility...
 call fix-android-java.bat || goto :fail
