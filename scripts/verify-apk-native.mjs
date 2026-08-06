@@ -460,20 +460,29 @@ try {
 
 // Checkout.preload() creates a WebView and crashes off the UI thread. The SDK
 // itself declares the method, so the only meaningful gate is that OUR code
-// never calls it.
-for (const file of [PAYMENT_PLUGIN_SRC, PAYMENT_PLUGIN_REPO_SRC, MAIN_ACTIVITY]) {
-  try {
-    const src = fs.readFileSync(file, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
-    const calls = /\.preload\s*\(/.test(src);
-    record(`payments.no-preload-call.${path.basename(file)}`, !calls,
-      calls ? `${file} calls Checkout.preload()` : "no preload() call");
-    if (file !== MAIN_ACTIVITY) {
-      const uiThread = src.includes("runOnUiThread");
-      record(`payments.open-on-ui-thread.${path.basename(path.dirname(file))}`, uiThread,
-        uiThread ? "checkout.open runs inside runOnUiThread" : "checkout.open is not wrapped in runOnUiThread");
+// never calls it. These are customer-only sources: the partner variant deletes
+// them, so their absence is the expected PASS state there.
+if (PAYMENTS_ENABLED) {
+  for (const file of [PAYMENT_PLUGIN_SRC, PAYMENT_PLUGIN_REPO_SRC, MAIN_ACTIVITY]) {
+    try {
+      const src = fs.readFileSync(file, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+      const calls = /\.preload\s*\(/.test(src);
+      record(`payments.no-preload-call.${path.basename(file)}`, !calls,
+        calls ? `${file} calls Checkout.preload()` : "no preload() call");
+      if (file !== MAIN_ACTIVITY) {
+        const uiThread = src.includes("runOnUiThread");
+        record(`payments.open-on-ui-thread.${path.basename(path.dirname(file))}`, uiThread,
+          uiThread ? "checkout.open runs inside runOnUiThread" : "checkout.open is not wrapped in runOnUiThread");
+      }
+    } catch (e) {
+      record(`payments.no-preload-call.${path.basename(file)}`, false, e.message);
     }
-  } catch (e) {
-    record(`payments.no-preload-call.${path.basename(file)}`, false, e.message);
+  }
+} else {
+  for (const file of [PAYMENT_PLUGIN_SRC, MAIN_ACTIVITY]) {
+    const exists = fs.existsSync(file);
+    record(`payments.customer-source.absent.${path.basename(path.dirname(file))}`, !exists,
+      exists ? `${file} must not exist in a partner build` : `${file} absent (expected for partner)`);
   }
 }
 
