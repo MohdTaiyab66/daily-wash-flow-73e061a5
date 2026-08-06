@@ -122,7 +122,8 @@ const projectRegistrations = registrations.filter((r) => toPosix(r.file).startsW
 if (PAYMENTS_ENABLED) {
   record(
     "native.registration.single",
-    projectRegistrations.length === 1 && projectRegistrations[0].cls === "UrbanWashCheckoutPlugin",
+    projectRegistrations.length === 1 &&
+      projectRegistrations[0].cls.split(".").pop() === "UrbanWashCheckoutPlugin",
     projectRegistrations.length
       ? projectRegistrations.map((r) => `${r.cls} (${r.file})`).join(", ")
       : "no registerPlugin call found in android/",
