@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { PAYMENTS_ENABLED } from "./lib/variant.mjs";
+
 
 /**
  * Detect the Kotlin version the installed Capacitor plugins expect.
