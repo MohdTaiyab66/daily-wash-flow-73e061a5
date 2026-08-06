@@ -367,6 +367,35 @@ try {
     dexType ? "legacy Checkout dex type descriptor present" : "no legacy Checkout dex type descriptor");
 }
 
+// Both variants must ship the same Firebase project (uw-partner-app), or FCM
+// tokens will be minted for a sender the backend cannot send to.
+{
+  const FB_PROJECT = "uw-partner-app";
+  const FB_SENDER = "781422718869";
+  try {
+    const gs = JSON.parse(fs.readFileSync("android/app/google-services.json", "utf8"));
+    const pid = gs?.project_info?.project_id;
+    const num = gs?.project_info?.project_number;
+    record("firebase.config.project", pid === FB_PROJECT && num === FB_SENDER,
+      `project_id=${pid} project_number=${num} (expected ${FB_PROJECT}/${FB_SENDER})`);
+    const pkgs = (gs.client ?? []).map((c) => c?.client_info?.android_client_info?.package_name).filter(Boolean);
+    record("firebase.config.package", pkgs.includes(EXPECTED_PACKAGE ?? ""), `clients: ${pkgs.join(", ")}`);
+  } catch (e) {
+    record("firebase.config.project", false, e.message);
+  }
+  try {
+    const arsc = readApkEntries(APK, (n) => n === "resources.arsc");
+    const senderInApk = arsc.some((a) =>
+      a.data.indexOf(Buffer.from(FB_SENDER, "utf8")) !== -1 ||
+      a.data.indexOf(Buffer.from(FB_SENDER, "utf16le")) !== -1);
+    record("firebase.apk.sender-id", senderInApk,
+      senderInApk ? `gcm sender ${FB_SENDER} packaged` : `sender ${FB_SENDER} not found in resources.arsc`);
+  } catch (e) {
+    record("firebase.apk.sender-id", false, e.message);
+  }
+}
+
+
 if (PAYMENTS_ENABLED) {
   for (const [name, file] of [["app-module", PAYMENT_PLUGIN_SRC], ["repo-source", PAYMENT_PLUGIN_REPO_SRC]]) {
     const ok = fs.existsSync(file);
