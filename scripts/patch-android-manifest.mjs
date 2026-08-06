@@ -23,18 +23,28 @@ const permissions = [
   "android.permission.VIBRATE",
   "android.permission.RECEIVE_BOOT_COMPLETED",
   "android.permission.INTERNET",
+];
+
+if (PAYMENTS_ENABLED) {
   // Razorpay's Android SDK detects installed UPI apps through PackageManager.
   // Some OEM Android 11+ builds still return an empty result even with scheme
   // intent queries, causing Checkout to hide UPI completely. This keeps the APK
   // fail-open for payment-app discovery on sideload/debug production builds.
-  "android.permission.QUERY_ALL_PACKAGES",
-];
+  // Partner never collects payments, so it does not need this permission.
+  permissions.push("android.permission.QUERY_ALL_PACKAGES");
+}
 
 for (const name of permissions) {
   if (!xml.includes(`android:name="${name}"`)) {
     xml = xml.replace(/(<manifest\b[^>]*>)/, `$1\n    <uses-permission android:name="${name}" />`);
   }
 }
+
+if (!PAYMENTS_ENABLED) {
+  // Strip payment-only package visibility from the Partner manifest.
+  xml = xml.replace(/\n?\s*<uses-permission android:name="android\.permission\.QUERY_ALL_PACKAGES"[^>]*\/>/g, "");
+}
+
 
 // Keep Capacitor's MainActivity alive through camera/permission orientation and
 // screen-size changes. Without this, Android may recreate the WebView when the
