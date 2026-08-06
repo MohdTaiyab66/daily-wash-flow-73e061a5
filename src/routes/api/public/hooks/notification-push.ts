@@ -46,6 +46,7 @@ const CUSTOMER_ALLOWED_TYPES = new Set<string>([
   "service_completed",
   "service_started",
   "partner_accepted",
+  "partner_assigned",
 
   "completed",
   "vehicle_unavailable",
