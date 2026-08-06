@@ -40,9 +40,10 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         const val EXTRA_BROADCAST = "broadcast_id"
         const val EXTRA_OFFER = "offer_id"
 
-        // Every partner-side assignment/offer push type must route through the
-        // unified heads-up path so foreground / background / killed all behave
-        // identically. Keep this list in sync with the backend dispatcher
+        // Every partner-side assignment/offer push AND every customer-side
+        // service-lifecycle push must route through the unified heads-up path so
+        // foreground / background / killed all behave identically. Keep this list
+        // in sync with the backend dispatcher
         // (src/routes/api/public/hooks/notification-push.ts).
         val ASSIGNMENT_TYPES = setOf(
             "new_assignment",
@@ -53,8 +54,15 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "daily_shine",
             "new_booking",
             "new_customers",
-            "route_updated"
+            "route_updated",
+            // customer-side lifecycle
+            "partner_accepted",
+            "service_started",
+            "service_completed",
+            "payment_success",
+            "payment_failed"
         )
+
     }
 
 
