@@ -109,23 +109,35 @@ console.log("");
 console.log("VERIFY VARIANT =", process.env.URBANWASH_APP);
 console.log(`  resolved VARIANT=${VARIANT}  PAYMENTS_ENABLED=${PAYMENTS_ENABLED}`);
 
+// Only registrations inside the generated Android project decide the variant
+// gate. `android-native/` holds the repo-owned templates that get restored into
+// the project for the Customer build; they must not be double-counted (and must
+// not fail the Partner build, which simply never copies them).
+const projectRegistrations = registrations.filter((r) => r.file.startsWith("android/"));
+
 if (PAYMENTS_ENABLED) {
   record(
     "native.registration.single",
-    registrations.length === 1 && registrations[0].cls === "UrbanWashCheckoutPlugin",
-    registrations.length
-      ? registrations.map((r) => `${r.cls} (${r.file})`).join(", ")
-      : "no registerPlugin call found",
+    projectRegistrations.length === 1 && projectRegistrations[0].cls === "UrbanWashCheckoutPlugin",
+    projectRegistrations.length
+      ? projectRegistrations.map((r) => `${r.cls} (${r.file})`).join(", ")
+      : "no registerPlugin call found in android/",
+  );
+  record(
+    "native.template.customer-mainactivity",
+    !!read("android-native/java/com/urbanwash/customer/MainActivity.java"),
+    "android-native/java/com/urbanwash/customer/MainActivity.java must exist so cap add android can be re-run",
   );
 } else {
   // Partner collects no payments: no payment plugin may be registered at all.
-  const paymentRegs = registrations.filter((r) => /Checkout/i.test(r.cls));
+  const paymentRegs = projectRegistrations.filter((r) => /Checkout/i.test(r.cls));
   record(
     "native.registration.no-payment-plugin",
     paymentRegs.length === 0,
     paymentRegs.length ? paymentRegs.map((r) => `${r.cls} (${r.file})`).join(", ") : "no payment plugin registered (partner)",
   );
 }
+
 record(
   "native.no-legacy-registration",
   !registrations.some((r) => /(^|\.)Checkout$/.test(r.cls)),
