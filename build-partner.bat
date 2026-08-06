@@ -237,16 +237,19 @@ if exist "android\app\src\main\assets\public\build-info.json" (
   call node scripts\verify-build-marker.mjs "android\app\src\main\assets\build-info.json" "android asset marker" || goto :fail
 )
 
-echo   Verifying Capacitor plugin registry (partner: no payment plugin may load)...
-call node scripts\verify-plugin-registry.mjs || goto :fail
 echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
 call node scripts\restore-android-branding.mjs || goto :fail
 
 echo   Stamping Android version and verifying synced build marker...
 call node scripts\stamp-android-version.mjs || goto :fail
 
+REM Variant-aware native source pass (strips payment sources for partner).
+REM Must run before verification so the generated project is final.
 echo   Patching Android permissions and Maps intents...
 call node scripts\patch-android-manifest.mjs || goto :fail
+
+echo   Verifying Capacitor plugin registry (partner: no payment plugin may load)...
+call node scripts\verify-plugin-registry.mjs || goto :fail
 
 echo   Repairing Capacitor Android Java compatibility...
 call fix-android-java.bat || goto :fail
