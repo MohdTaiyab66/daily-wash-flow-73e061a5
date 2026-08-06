@@ -113,7 +113,11 @@ console.log(`  resolved VARIANT=${VARIANT}  PAYMENTS_ENABLED=${PAYMENTS_ENABLED}
 // gate. `android-native/` holds the repo-owned templates that get restored into
 // the project for the Customer build; they must not be double-counted (and must
 // not fail the Partner build, which simply never copies them).
-const projectRegistrations = registrations.filter((r) => r.file.startsWith("android/"));
+// NOTE: path.join() yields backslashes on Windows, so compare on a normalised
+// posix-style path — otherwise every registration is filtered out and the
+// summary contradicts the plugin map printed above.
+const toPosix = (p) => p.split(path.sep).join("/").replace(/\\/g, "/");
+const projectRegistrations = registrations.filter((r) => toPosix(r.file).startsWith("android/"));
 
 if (PAYMENTS_ENABLED) {
   record(
