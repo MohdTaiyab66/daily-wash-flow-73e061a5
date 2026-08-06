@@ -16,6 +16,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { PAYMENTS_ENABLED, VARIANT } from "./lib/variant.mjs";
 
 const results = [];
 const record = (name, ok, detail = "") => results.push({ name, ok, detail });
@@ -104,13 +105,23 @@ for (const r of registrations) console.log(`  ${r.cls.padEnd(28)} <- ${r.file}`)
 console.log(`  @CapacitorPlugin name expected by JS: ${EXPECTED_PLUGIN_NAME}`);
 console.log("");
 
-record(
-  "native.registration.single",
-  registrations.length === 1 && registrations[0].cls === "UrbanWashCheckoutPlugin",
-  registrations.length
-    ? registrations.map((r) => `${r.cls} (${r.file})`).join(", ")
-    : "no registerPlugin call found",
-);
+if (PAYMENTS_ENABLED) {
+  record(
+    "native.registration.single",
+    registrations.length === 1 && registrations[0].cls === "UrbanWashCheckoutPlugin",
+    registrations.length
+      ? registrations.map((r) => `${r.cls} (${r.file})`).join(", ")
+      : "no registerPlugin call found",
+  );
+} else {
+  // Partner collects no payments: no payment plugin may be registered at all.
+  const paymentRegs = registrations.filter((r) => /Checkout/i.test(r.cls));
+  record(
+    "native.registration.no-payment-plugin",
+    paymentRegs.length === 0,
+    paymentRegs.length ? paymentRegs.map((r) => `${r.cls} (${r.file})`).join(", ") : "no payment plugin registered (partner)",
+  );
+}
 record(
   "native.no-legacy-registration",
   !registrations.some((r) => /(^|\.)Checkout$/.test(r.cls)),
@@ -118,16 +129,20 @@ record(
 );
 
 const pluginSrc = read("android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java");
-record(
-  "native.plugin-name",
-  !!pluginSrc && pluginSrc.includes(`@CapacitorPlugin(name = "${EXPECTED_PLUGIN_NAME}")`),
-  pluginSrc ? `plugin declares name ${EXPECTED_PLUGIN_NAME}` : "app-module plugin source missing",
-);
-record(
-  "native.plugin-fqcn",
-  !!pluginSrc && pluginSrc.includes("package com.urbanwash.payments;"),
-  `expected ${EXPECTED_PLUGIN_CLASS}`,
-);
+if (PAYMENTS_ENABLED) {
+  record(
+    "native.plugin-name",
+    !!pluginSrc && pluginSrc.includes(`@CapacitorPlugin(name = "${EXPECTED_PLUGIN_NAME}")`),
+    pluginSrc ? `plugin declares name ${EXPECTED_PLUGIN_NAME}` : "app-module plugin source missing",
+  );
+  record(
+    "native.plugin-fqcn",
+    !!pluginSrc && pluginSrc.includes("package com.urbanwash.payments;"),
+    `expected ${EXPECTED_PLUGIN_CLASS}`,
+  );
+} else {
+  record("native.plugin-source.absent", !pluginSrc, pluginSrc ? `${EXPECTED_PLUGIN_CLASS} must not exist in the partner project` : "no payment plugin source in partner project");
+}
 
 // --- 3. JS/TS references -----------------------------------------------------
 const jsFiles = [];
@@ -167,11 +182,21 @@ console.log("");
 
 record("js.no-legacy-reference", jsOffenders.length === 0, jsOffenders.join("; ") || "no legacy Checkout reference in src/");
 const paymentBindings = jsRegistrations.filter((r) => /checkout/i.test(r.name));
-record(
-  "js.payment-binding.single",
-  paymentBindings.length === 1 && paymentBindings[0].name === EXPECTED_PLUGIN_NAME,
-  paymentBindings.map((r) => `${r.name} (${r.file})`).join(", ") || "no payment plugin binding found",
-);
+if (PAYMENTS_ENABLED) {
+  record(
+    "js.payment-binding.single",
+    paymentBindings.length === 1 && paymentBindings[0].name === EXPECTED_PLUGIN_NAME,
+    paymentBindings.map((r) => `${r.name} (${r.file})`).join(", ") || "no payment plugin binding found",
+  );
+} else {
+  // The shared web bundle still contains the customer checkout module, but the
+  // partner APK ships no native payment plugin, so nothing can invoke it.
+  record(
+    "js.payment-binding.at-most-one",
+    paymentBindings.length <= 1,
+    paymentBindings.map((r) => `${r.name} (${r.file})`).join(", ") || "no payment plugin binding found",
+  );
+}
 
 // --- 4. Dependency / gradle graph -------------------------------------------
 record("deps.node_modules.clean", !fs.existsSync("node_modules/capacitor-razorpay"), "node_modules/capacitor-razorpay must not exist");
@@ -197,7 +222,7 @@ record("native.no-preload-call", preloadOffenders.length === 0, preloadOffenders
 // --- Summary -----------------------------------------------------------------
 const pass = results.every((r) => r.ok);
 console.log("============================================================");
-console.log(" PLUGIN REGISTRY VERIFICATION");
+console.log(` PLUGIN REGISTRY VERIFICATION (variant: ${VARIANT}, payments: ${PAYMENTS_ENABLED ? "enabled" : "disabled"})`);
 console.log("============================================================");
 for (const r of results) console.log(`  ${r.ok ? "[PASS]" : "[FAIL]"} ${r.name}${r.detail ? "  -  " + r.detail : ""}`);
 console.log("------------------------------------------------------------");
