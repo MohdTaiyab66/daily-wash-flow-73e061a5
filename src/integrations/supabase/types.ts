@@ -6964,6 +6964,10 @@ export type Database = {
         }
         Returns: Json
       }
+      user_owns_service: {
+        Args: { _service_id: string; _user: string }
+        Returns: boolean
+      }
       validate_today_assignment: { Args: { p_partner: string }; Returns: Json }
       working_days_end_date: {
         Args: { p_off_dow?: number; p_start: string; p_working: number }
