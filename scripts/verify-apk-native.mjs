@@ -463,7 +463,10 @@ try {
 // never calls it. These are customer-only sources: the partner variant deletes
 // them, so their absence is the expected PASS state there.
 if (PAYMENTS_ENABLED) {
-  for (const file of [PAYMENT_PLUGIN_SRC, PAYMENT_PLUGIN_REPO_SRC, MAIN_ACTIVITY]) {
+  // Keep the customer-only paths inside this branch so partner verification
+  // cannot accidentally open them.
+  const customerPaymentSources = [PAYMENT_PLUGIN_SRC, PAYMENT_PLUGIN_REPO_SRC, MAIN_ACTIVITY];
+  for (const file of customerPaymentSources) {
     try {
       const src = fs.readFileSync(file, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
       const calls = /\.preload\s*\(/.test(src);
@@ -479,12 +482,10 @@ if (PAYMENTS_ENABLED) {
     }
   }
 } else {
-  // Partner: the payment plugin and customer MainActivity are intentionally
-  // removed. Never read those paths here — absence is the expected PASS state.
   record(
     "payments.no-preload-call.partner",
     true,
-    "Partner build has no payment plugin.",
+    "payment plugin intentionally absent",
   );
 }
 
