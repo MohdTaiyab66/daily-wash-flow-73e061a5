@@ -271,7 +271,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
-        data: { type, link: r.link ?? "" },
+        data: { type, link: r.link || (headsUp ? "/app" : "") },
         channelId: headsUp ? "assignments_v4" : "general",
         dataOnly: headsUp,
         ...(headsUp ? { tag: `customer:${r.id}` } : {}),
