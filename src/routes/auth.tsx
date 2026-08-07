@@ -24,6 +24,10 @@ type Step = "phone" | "otp" | "name";
 
 const OTP_LENGTH = 6; // Server-issued one-time code (see src/lib/staff-auth.functions.ts).
 
+// DEV ONLY - Hardcoded OTP. Remove before production.
+// Partner app only: any mobile number is accepted and the code is always "1234".
+const DEV_PARTNER_OTP = "1234";
+
 // Phone-as-email pattern (phone provider is disabled on this project).
 
 
@@ -45,7 +49,9 @@ function AuthPage() {
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [otpDigits, setOtpDigits] = useState<string[]>(() => Array(OTP_LENGTH).fill(""));
+  // DEV ONLY - Hardcoded OTP. Remove before production. (Admin keeps the real 6-digit flow.)
+  const otpLength = isAdminLogin ? OTP_LENGTH : DEV_PARTNER_OTP.length;
+  const [otpDigits, setOtpDigits] = useState<string[]>(() => Array(otpLength).fill(""));
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -83,8 +89,8 @@ function AuthPage() {
       .then((cred: any) => {
         const code: string = cred?.code || "";
         if (code) {
-          const digits = code.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
-          const next = Array(OTP_LENGTH).fill("").map((_, i) => digits[i] ?? "");
+          const digits = code.replace(/\D/g, "").slice(0, otpLength).split("");
+          const next = Array(otpLength).fill("").map((_, i) => digits[i] ?? "");
           setOtpDigits(next);
           if (next.every((d) => d !== "")) void submitOtp(next.join(""));
         }
@@ -107,8 +113,9 @@ function AuthPage() {
     haptic(15);
     setLoading(true);
     try {
+      // DEV ONLY - Hardcoded OTP. Remove before production. No SMS/push is sent for partners.
       const res = await requestOtp({ data: { phone, role: isAdminLogin ? "admin" : "partner" } });
-      setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setOtpDigits(Array(otpLength).fill(""));
       if (res.newAccount) {
         // No account exists for this number yet — continue to sign-up.
         setStep("name");
@@ -116,7 +123,9 @@ function AuthPage() {
       }
       setStep("otp");
       toast.success(
-        res.delivery === "push"
+        !isAdminLogin
+          ? `Dev mode: use ${DEV_PARTNER_OTP}`
+          : res.delivery === "push"
           ? "Code sent to your registered Urban Wash device."
           : "Code generated. Contact Urban Wash support to receive it.",
       );
@@ -129,9 +138,9 @@ function AuthPage() {
   };
 
   const submitOtp = async (code: string) => {
-    if (!/^\d{6}$/.test(code)) {
+    if (!new RegExp(`^\\d{${otpLength}}$`).test(code)) {
       haptic([40, 40, 40]);
-      toast.error("Enter the 6-digit code");
+      toast.error(`Enter the ${otpLength}-digit code`);
       return;
     }
     haptic(20);
@@ -156,7 +165,7 @@ function AuthPage() {
       navigate({ to: nextRoute as any });
     } catch (e: any) {
       haptic([40, 40, 40]);
-      setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setOtpDigits(Array(otpLength).fill(""));
       setTimeout(() => otpRefs.current[0]?.focus(), 30);
       toast.error(e?.message || "Login failed. Please try again.");
     } finally {
@@ -176,10 +185,10 @@ function AuthPage() {
     const next = [...otpDigits];
     // support paste
     if (clean.length > 1) {
-      const chars = clean.slice(0, OTP_LENGTH - idx).split("");
+      const chars = clean.slice(0, otpLength - idx).split("");
       chars.forEach((c, i) => { next[idx + i] = c; });
       setOtpDigits(next);
-      const lastFilled = Math.min(idx + chars.length, OTP_LENGTH - 1);
+      const lastFilled = Math.min(idx + chars.length, otpLength - 1);
       otpRefs.current[lastFilled]?.focus();
       haptic(8);
       if (next.every((d) => d !== "")) void submitOtp(next.join(""));
@@ -188,7 +197,7 @@ function AuthPage() {
     next[idx] = clean[0];
     setOtpDigits(next);
     haptic(8);
-    if (idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
+    if (idx < otpLength - 1) otpRefs.current[idx + 1]?.focus();
     if (next.every((d) => d !== "")) void submitOtp(next.join(""));
   };
 
@@ -342,7 +351,9 @@ function AuthPage() {
             </h2>
             <p className="mt-1 text-xs text-white/55">
               {step === "phone" && "We'll text you a one-time password."}
-              {step === "otp" && `Enter the ${OTP_LENGTH}-digit code sent to +91 ${phone}.`}
+              {step === "otp" && (isAdminLogin
+              ? `Enter the ${otpLength}-digit code sent to +91 ${phone}.`
+              : `Dev mode — enter ${DEV_PARTNER_OTP} to continue.`)}
               {step === "name" && "Tell us your name to finish signing up."}
             </p>
           </div>
@@ -394,7 +405,7 @@ function AuthPage() {
                       ref={(el) => { otpRefs.current[i] = el; }}
                       inputMode="numeric"
                       autoComplete={i === 0 ? "one-time-code" : "off"}
-                      maxLength={OTP_LENGTH}
+                      maxLength={otpLength}
                       value={d}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKey(i, e)}
@@ -414,14 +425,14 @@ function AuthPage() {
                 size="lg"
                 className="h-12 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:brightness-110 disabled:opacity-60 transition"
                 onClick={() => submitOtp(otp)}
-                disabled={loading || otp.length !== OTP_LENGTH}
+                disabled={loading || otp.length !== otpLength}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify & Continue
               </Button>
               <button
                 type="button"
                 className="w-full text-center text-xs text-white/50 underline-offset-4 hover:text-white hover:underline"
-                onClick={() => { setStep("phone"); setOtpDigits(Array(OTP_LENGTH).fill("")); }}
+                onClick={() => { setStep("phone"); setOtpDigits(Array(otpLength).fill("")); }}
               >
                 Change number
               </button>

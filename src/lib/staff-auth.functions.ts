@@ -15,6 +15,12 @@ const OTP_REQUEST_WINDOW_MS = 10 * 60 * 1000;
 
 const staffEmail = (phone: string, role: StaffRole) => `${phone}@${STAFF_DOMAIN[role]}`;
 
+// DEV ONLY - Hardcoded OTP. Remove before production.
+// Partner app only: any 10-digit number is accepted with code "1234".
+// No code is generated, no SMS/push is sent, no OTP provider is called.
+const DEV_PARTNER_OTP = "1234";
+const isDevPartner = (role: StaffRole) => role === "partner";
+
 /**
  * Login passwords are cryptographically random and rotated on every verified
  * login. They are NEVER derived from the phone number (or any other public
@@ -98,10 +104,16 @@ export const requestStaffOtp = createServerFn({ method: "POST" })
     const email = staffEmail(data.phone, data.role);
     const user = await findAuthUserByEmail(sb, email);
 
+    // DEV ONLY - Hardcoded OTP. Remove before production.
+    if (isDevPartner(data.role)) {
+      return { newAccount: !user, delivery: "none" as const };
+    }
+
     if (!user) {
       // No account for this number yet — nothing exists that could be hijacked.
       return { newAccount: true as const, delivery: "none" as const };
     }
+
 
     const { count } = await sb
       .from("staff_login_otps")
@@ -177,7 +189,11 @@ export const prepareStaffLogin = createServerFn({ method: "POST" })
     const password = randomPassword();
     let user = await findAuthUserByEmail(sb, email);
 
-    if (user) {
+    // DEV ONLY - Hardcoded OTP. Remove before production.
+    if (isDevPartner(data.role)) {
+      if (data.otp !== DEV_PARTNER_OTP) throw new Error("Invalid OTP");
+      if (!user && data.fullName.length < 2) throw new Error("Enter your full name");
+    } else if (user) {
       // Existing account: a valid, unexpired, unconsumed server-issued code is
       // mandatory before we touch the credentials.
       const { data: rows, error: otpError } = await sb
@@ -204,8 +220,6 @@ export const prepareStaffLogin = createServerFn({ method: "POST" })
       }
 
       await sb.from("staff_login_otps").update({ consumed_at: new Date().toISOString() }).eq("id", record.id);
-    } else if (data.role === "partner" && data.fullName.length < 2) {
-      throw new Error("Enter your full name");
     }
 
     const userMetadata = {
