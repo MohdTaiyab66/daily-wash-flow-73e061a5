@@ -33,3 +33,7 @@ dist-ssr
 
 # Per-variant Firebase configs (not committed)
 android-config/
+
+# Per-variant APK outputs (build-customer.bat / build-partner.bat)
+builds/
+*.apk
