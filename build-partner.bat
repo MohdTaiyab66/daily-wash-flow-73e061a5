@@ -325,6 +325,7 @@ if not "%VERIFY_RC%"=="0" (
   echo ############################################################
   del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
   del /F /Q "urbanwash-partner.apk" >nul 2>&1
+  del /F /Q "builds\partner\urbanwash-partner.apk" >nul 2>&1
   goto :fail
 )
 echo.
@@ -333,7 +334,11 @@ echo #   RESULT: PASS - APK native surface verified             #
 echo ############################################################
 echo.
 
+REM Permanent per-variant output. The customer APK under builds\customer is
+REM NEVER touched by this script.
+if not exist "builds\partner" mkdir "builds\partner"
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-partner.apk" >nul || goto :fail
+copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "builds\partner\urbanwash-partner.apk" >nul || goto :fail
 for %%A in ("urbanwash-partner.apk") do echo   [OK] Fresh APK copied: %%~fA ^(%%~zA bytes^)
 
 
@@ -343,12 +348,16 @@ echo  APK build complete for %VARIANT% (%APP_ID%)
 echo  Version visible in app: Partner Build v%PARTNER_APP_VERSION% / %PARTNER_BUILD_ID%
 echo ============================================================
 echo.
-echo  APK ready:
-echo    urbanwash-partner.apk
-echo    android\app\build\outputs\apk\debug\app-debug.apk
+echo  APK ready (full paths):
+for %%A in ("builds\partner\urbanwash-partner.apk") do echo    %%~fA ^(%%~zA bytes^)
+for %%A in ("urbanwash-partner.apk") do echo    %%~fA
+for %%A in ("android\app\build\outputs\apk\debug\app-debug.apk") do echo    %%~fA
+echo.
+echo  Customer APK (if previously built) is untouched:
+echo    builds\customer\urbanwash-customer.apk
 echo.
 echo  Install on device:
-echo    adb install -r urbanwash-partner.apk
+for %%A in ("builds\partner\urbanwash-partner.apk") do echo    adb install -r "%%~fA"
 echo.
 endlocal
 exit /b 0
