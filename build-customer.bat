@@ -232,23 +232,32 @@ if errorlevel 1 (
   echo   [X] Native verification FAILED - deleting APK so a broken build cannot ship
   del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
   del /F /Q "urbanwash-customer.apk" >nul 2>&1
+  del /F /Q "builds\customer\urbanwash-customer.apk" >nul 2>&1
   goto :fail
 )
 echo PASS
 
+REM Permanent per-variant output. The partner APK under builds\partner is
+REM NEVER touched by this script.
+if not exist "builds\customer" mkdir "builds\customer"
 copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-customer.apk" >nul || goto :fail
+copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "builds\customer\urbanwash-customer.apk" >nul || goto :fail
 
 echo.
 echo ============================================================
 echo  APK build complete for %VARIANT% (%APP_ID%)
 echo ============================================================
 echo.
-echo  APK ready:
-echo    urbanwash-customer.apk
-echo    android\app\build\outputs\apk\debug\app-debug.apk
+echo  APK ready (full paths):
+for %%A in ("builds\customer\urbanwash-customer.apk") do echo    %%~fA ^(%%~zA bytes^)
+for %%A in ("urbanwash-customer.apk") do echo    %%~fA
+for %%A in ("android\app\build\outputs\apk\debug\app-debug.apk") do echo    %%~fA
+echo.
+echo  Partner APK (if previously built) is untouched:
+echo    builds\partner\urbanwash-partner.apk
 echo.
 echo  Install on device:
-echo    adb install -r urbanwash-customer.apk
+for %%A in ("builds\customer\urbanwash-customer.apk") do echo    adb install -r "%%~fA"
 echo.
 endlocal
 exit /b 0
