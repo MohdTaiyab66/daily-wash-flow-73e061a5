@@ -225,6 +225,22 @@ export const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
 ]);
 
 /**
+ * Customer-side lifecycle types that MUST render through the native Kotlin
+ * heads-up path (`postAssignment`, assignments_v4 channel) instead of the
+ * Android system tray. Sent data-only so `onMessageReceived` always runs —
+ * in foreground, background AND killed states.
+ * MUST stay a subset of `ASSIGNMENT_TYPES` in
+ * android-native/kotlin/UrbanwashMessagingService.kt.
+ */
+export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
+  "partner_accepted",
+  "service_started",
+  "service_completed",
+  "payment_success",
+  "payment_failed",
+]);
+
+/**
  * Dispatch unpushed customer notifications.
  *
  * `pushed_at` is stamped ONLY after Firebase reports at least one successful
@@ -249,14 +265,18 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       console.warn(`[push-dispatch] blocked customer notification type="${type}" id=${r.id}`);
       continue;
     }
+    const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
         data: { type, link: r.link ?? "" },
-        channelId: "general",
+        channelId: headsUp ? "assignments_v4" : "general",
+        dataOnly: headsUp,
+        ...(headsUp ? { tag: `customer:${r.id}` } : {}),
       });
+
       if (result.sent > 0) {
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
