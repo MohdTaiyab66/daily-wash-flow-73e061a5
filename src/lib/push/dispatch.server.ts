@@ -95,14 +95,26 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     // full-screen intent, custom sound, vibration, wake screen). `dataOnly`
     // suppresses the FCM notification block so background/killed devices
     // always dispatch through onMessageReceived instead of the system tray.
+    // REQUIRED CONTRACT — UrbanwashMessagingService.postOffer() returns early
+    // (no notify() call, no visible notification) unless ALL THREE of
+    // `action_token`, `broadcast_id` and `offer_id` are present in `data`.
+    // Daily Shine offers live in subscription_offers / subscription_assignment_queue,
+    // which have no marketplace broadcast row, so we map queue_id -> broadcast_id
+    // and use the offer id as the action nonce — exactly the shape the Offer
+    // Self-Test sends (push-selftest.functions.ts).
     const data = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
       queue_id: r.queue_id,
+      broadcast_id: r.queue_id,
+      action_token: r.offer_id,
       partner_id: r.partner_id,
       category: "daily_shine",
+      area: r.area ?? "",
+      vehicle: r.vehicle_category ?? "",
       link: `/app`,
     };
+
 
     try {
       const result = await sendOfferPush({
