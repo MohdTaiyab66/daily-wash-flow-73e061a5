@@ -189,7 +189,10 @@ export const prepareStaffLogin = createServerFn({ method: "POST" })
     const password = randomPassword();
     let user = await findAuthUserByEmail(sb, email);
 
-    if (user) {
+    // DEV ONLY - Hardcoded OTP. Remove before production.
+    if (isDevPartner(data.role)) {
+      if (data.otp !== DEV_PARTNER_OTP) throw new Error("Invalid OTP");
+    } else if (user) {
       // Existing account: a valid, unexpired, unconsumed server-issued code is
       // mandatory before we touch the credentials.
       const { data: rows, error: otpError } = await sb
