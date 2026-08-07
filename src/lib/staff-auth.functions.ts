@@ -192,6 +192,7 @@ export const prepareStaffLogin = createServerFn({ method: "POST" })
     // DEV ONLY - Hardcoded OTP. Remove before production.
     if (isDevPartner(data.role)) {
       if (data.otp !== DEV_PARTNER_OTP) throw new Error("Invalid OTP");
+      if (!user && data.fullName.length < 2) throw new Error("Enter your full name");
     } else if (user) {
       // Existing account: a valid, unexpired, unconsumed server-issued code is
       // mandatory before we touch the credentials.
