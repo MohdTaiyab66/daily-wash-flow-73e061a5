@@ -16,7 +16,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { VARIANT } from "./lib/variant.mjs";
 
+// Only the CURRENT variant's cached root APK may be removed. The other
+// variant's APK is an independent artifact and must survive this clean.
 const TARGETS = [
   "android/build",
   "android/app/build",
@@ -25,8 +28,7 @@ const TARGETS = [
   "android/capacitor-cordova-android-plugins/build",
   "android/app/src/main/assets/public",
   "android/app/src/main/assets/capacitor.plugins.json",
-  "urbanwash-customer.apk",
-  "urbanwash-partner.apk",
+  `urbanwash-${VARIANT}.apk`,
   "apk-verify.log",
 ];
 
