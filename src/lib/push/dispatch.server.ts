@@ -102,7 +102,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     // which have no marketplace broadcast row, so we map queue_id -> broadcast_id
     // and use the offer id as the action nonce — exactly the shape the Offer
     // Self-Test sends (push-selftest.functions.ts).
-    const data = {
+    const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
       queue_id: r.queue_id,
@@ -110,10 +110,11 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
       action_token: r.offer_id,
       partner_id: r.partner_id,
       category: "daily_shine",
-      area: r.area ?? "",
-      vehicle: r.vehicle_category ?? "",
       link: `/app`,
     };
+    if (r.area) data.area = r.area;
+    if (r.vehicle_category) data.vehicle = r.vehicle_category;
+
 
 
     try {
