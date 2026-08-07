@@ -15,6 +15,12 @@ const OTP_REQUEST_WINDOW_MS = 10 * 60 * 1000;
 
 const staffEmail = (phone: string, role: StaffRole) => `${phone}@${STAFF_DOMAIN[role]}`;
 
+// DEV ONLY - Hardcoded OTP. Remove before production.
+// Partner app only: any 10-digit number is accepted with code "1234".
+// No code is generated, no SMS/push is sent, no OTP provider is called.
+const DEV_PARTNER_OTP = "1234";
+const isDevPartner = (role: StaffRole) => role === "partner";
+
 /**
  * Login passwords are cryptographically random and rotated on every verified
  * login. They are NEVER derived from the phone number (or any other public
