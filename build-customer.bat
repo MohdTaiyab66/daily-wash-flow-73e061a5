@@ -6,7 +6,8 @@ setlocal EnableDelayedExpansion
 
 set "VARIANT=customer"
 set "APP_ID=com.urbanwash.customer"
-set "GSJSON=android-config\customer\google-services.json"
+REM Canonical, committed Firebase config shared by both variants (project uw-partner-app).
+set "GSJSON=android-native\firebase\google-services.json"
 set "CAP_CLI=node_modules\@capacitor\cli\bin\capacitor"
 
 echo.

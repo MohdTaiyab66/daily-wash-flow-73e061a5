@@ -6,7 +6,8 @@ setlocal EnableDelayedExpansion
 
 set "VARIANT=partner"
 set "APP_ID=com.urbanwash.partner"
-set "GSJSON=android-config\partner\google-services.json"
+REM Canonical, committed Firebase config shared by both variants (project uw-partner-app).
+set "GSJSON=android-native\firebase\google-services.json"
 set "PARTNER_APP_VERSION=1.0.32"
 set "PARTNER_VERSION_CODE=32"
 set "PARTNER_BUILD_ID=2026-07-18-trace-01"
