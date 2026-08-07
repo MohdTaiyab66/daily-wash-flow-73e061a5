@@ -220,8 +220,6 @@ export const prepareStaffLogin = createServerFn({ method: "POST" })
       }
 
       await sb.from("staff_login_otps").update({ consumed_at: new Date().toISOString() }).eq("id", record.id);
-    } else if (data.fullName.length < 2 && false) {
-      throw new Error("Enter your full name");
     }
 
     const userMetadata = {
