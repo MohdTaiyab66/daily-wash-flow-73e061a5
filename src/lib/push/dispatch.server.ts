@@ -95,14 +95,27 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     // full-screen intent, custom sound, vibration, wake screen). `dataOnly`
     // suppresses the FCM notification block so background/killed devices
     // always dispatch through onMessageReceived instead of the system tray.
-    const data = {
+    // REQUIRED CONTRACT — UrbanwashMessagingService.postOffer() returns early
+    // (no notify() call, no visible notification) unless ALL THREE of
+    // `action_token`, `broadcast_id` and `offer_id` are present in `data`.
+    // Daily Shine offers live in subscription_offers / subscription_assignment_queue,
+    // which have no marketplace broadcast row, so we map queue_id -> broadcast_id
+    // and use the offer id as the action nonce — exactly the shape the Offer
+    // Self-Test sends (push-selftest.functions.ts).
+    const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
       queue_id: r.queue_id,
+      broadcast_id: r.queue_id,
+      action_token: r.offer_id,
       partner_id: r.partner_id,
       category: "daily_shine",
       link: `/app`,
     };
+    if (r.area) data.area = r.area;
+    if (r.vehicle_category) data.vehicle = r.vehicle_category;
+
+
 
     try {
       const result = await sendOfferPush({
@@ -212,6 +225,22 @@ export const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
 ]);
 
 /**
+ * Customer-side lifecycle types that MUST render through the native Kotlin
+ * heads-up path (`postAssignment`, assignments_v4 channel) instead of the
+ * Android system tray. Sent data-only so `onMessageReceived` always runs —
+ * in foreground, background AND killed states.
+ * MUST stay a subset of `ASSIGNMENT_TYPES` in
+ * android-native/kotlin/UrbanwashMessagingService.kt.
+ */
+export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
+  "partner_accepted",
+  "service_started",
+  "service_completed",
+  "payment_success",
+  "payment_failed",
+]);
+
+/**
  * Dispatch unpushed customer notifications.
  *
  * `pushed_at` is stamped ONLY after Firebase reports at least one successful
@@ -236,14 +265,18 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       console.warn(`[push-dispatch] blocked customer notification type="${type}" id=${r.id}`);
       continue;
     }
+    const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
-        data: { type, link: r.link ?? "" },
-        channelId: "general",
+        data: { type, link: r.link || (headsUp ? "/app" : "") },
+        channelId: headsUp ? "assignments_v4" : "general",
+        dataOnly: headsUp,
+        ...(headsUp ? { tag: `customer:${r.id}` } : {}),
       });
+
       if (result.sent > 0) {
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
