@@ -104,10 +104,16 @@ export const requestStaffOtp = createServerFn({ method: "POST" })
     const email = staffEmail(data.phone, data.role);
     const user = await findAuthUserByEmail(sb, email);
 
+    // DEV ONLY - Hardcoded OTP. Remove before production.
+    if (isDevPartner(data.role)) {
+      return { newAccount: !user, delivery: "none" as const };
+    }
+
     if (!user) {
       // No account for this number yet — nothing exists that could be hijacked.
       return { newAccount: true as const, delivery: "none" as const };
     }
+
 
     const { count } = await sb
       .from("staff_login_otps")
