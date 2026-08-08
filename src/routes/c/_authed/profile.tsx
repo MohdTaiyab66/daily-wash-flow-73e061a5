@@ -110,6 +110,7 @@ function ProfilePage() {
           <ListRow icon={Car} title="Vehicles" to="/c/vehicles" />
           <ListRow icon={ClipboardList} title="Bookings" to="/c/bookings" />
           <ListRow icon={Bell} title="Notifications" to="/c/notifications" />
+          <ListRow icon={Car} title="Saved packages" to="/c/profile" />
           <ListRow icon={Gift} title="Refer & earn" subtitle="Up to ₹100 per friend" to="/c/referrals" />
         </ListGroup>
       </Section>
