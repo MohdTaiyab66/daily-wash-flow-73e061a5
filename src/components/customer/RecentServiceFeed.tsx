@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ServicePhotoViewer } from "./ServicePhotoViewer";
+import { cn } from "@/lib/utils";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
 type DirtyReport = {
