@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export type EditableVehicle = {
   id: string;
@@ -346,13 +347,12 @@ export function EditVehicleDialog({
             </div>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => attemptClose(false)} disabled={save.isPending}>
-              Cancel
+          <DialogFooter className="mt-6 flex flex-col gap-3 sm:flex-col">
+            <Button type="submit" className="h-14 w-full rounded-2xl text-[16px] font-black shadow-lg shadow-primary/20 transition-transform active:scale-95" disabled={save.isPending || (!dirty && !saveError)}>
+              {save.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (saveError ? "Retry save" : "Save changes")}
             </Button>
-            <Button type="submit" disabled={save.isPending || (!dirty && !saveError)}>
-              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-              {saveError ? "Retry save" : "Save changes"}
+            <Button type="button" variant="ghost" className="h-14 w-full rounded-2xl font-bold text-muted-foreground/60 transition-transform active:scale-95" onClick={() => attemptClose(false)} disabled={save.isPending}>
+              Cancel
             </Button>
           </DialogFooter>
         </form>
