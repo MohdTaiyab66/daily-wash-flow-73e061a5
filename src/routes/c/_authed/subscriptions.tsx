@@ -360,6 +360,8 @@ function MyPlanPage() {
                   <span>/ month</span>
                   <span className="mx-1 opacity-30">·</span>
                   <span>{daysLeft} days left</span>
+
+
                 </div>
               </div>
             </div>

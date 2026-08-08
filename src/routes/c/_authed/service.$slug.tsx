@@ -2,7 +2,9 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check, Clock } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check, Clock, CheckCircle2 } from "lucide-react";
+import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   createRazorpayOrder,
@@ -32,6 +34,8 @@ import {
 } from "@/lib/pending-checkout-store";
 import { SectionTitle, Section, Surface, StatusChip, PageTitle, Muted } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
+import { PremiumHero } from "@/components/customer/PremiumHero";
+
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
 import {
@@ -93,6 +97,8 @@ function nextBookableDateIso(start = new Date()) {
 }
 
 // Razorpay is handled exclusively by the shared payment service
+
+
 // (src/lib/razorpay-checkout.ts). No checkout logic lives in this screen.
 
 
@@ -110,10 +116,18 @@ function ServiceDetail() {
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+
+
   // Payment-specific state: inline retry banner + pending checkout context.
   type PendingCheckout = {
     bookingId: string;
@@ -333,7 +347,18 @@ function ServiceDetail() {
         p_coupon_code: appliedCoupon?.code ?? null,
       });
       if (error) throw error;
-      return normalizeBookingPreview(data);
+      
+      const normalized = normalizeBookingPreview(data);
+      
+      // HARD GUARD: If vehicle has an active sub, base amount MUST be 0
+      // unless we are renewing or it's a specific paid upgrade.
+      if (vehicleSubQ.data?.status === 'active' && !isIncludedBooking) {
+        normalized.base_amount = 0;
+        normalized.payable = Number(normalized.addon_amount ?? 0);
+      }
+      
+      return normalized;
+
     },
   });
 
@@ -400,6 +425,16 @@ function ServiceDetail() {
     };
     setConfirmError(null);
     if (submitting || paying) return;
+    if (vehicleSubQ.data?.status === 'active' && previewBase > 0) {
+      fail("This vehicle already has an active Daily Shine subscription.");
+      return;
+    }
+
+    if (vehicleSubQ.data?.status === 'active' && previewBase > 0) {
+      fail("This vehicle already has an active Daily Shine subscription.");
+      return;
+    }
+
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
@@ -920,36 +955,29 @@ function ServiceDetail() {
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-32">
       <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm">
+        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm transition-transform active:scale-90">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-[17px] font-bold tracking-tight text-foreground">{service.name}</h1>
-          <p className="truncate text-[13px] text-muted-foreground">Your car, clean every day</p>
+          <PageTitle className="text-[17px]">{service.name}</PageTitle>
+          <Muted className="truncate">{vehicleSubQ.data?.status === 'active' ? 'Active on this vehicle' : 'Your car, clean every day'}</Muted>
         </div>
+        {vehicleSubQ.data?.status === 'active' && (
+          <div className="ml-auto">
+            <StatusChip tone="success" className="font-black uppercase tracking-widest text-[9px]">Active Plan</StatusChip>
+          </div>
+        )}
       </header>
 
       <div className="px-5 pb-6">
-        {/* PREMIUM HERO */}
-        <Surface className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white to-[#FFF5ED]">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0">
-              <h2 className="text-[20px] font-bold text-foreground">{service.name}</h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">Daily exterior cleaning + 1 premium monthly interior & exterior wash.</p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-[28px] font-bold text-primary">₹999</span>
-                <span className="text-[13px] text-muted-foreground">/ month</span>
-              </div>
-            </div>
-            <div className="rounded-full bg-[#FFE6D6] px-3 py-1 text-[11px] font-bold text-primary">✨ BEST VALUE</div>
-          </div>
-          
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-black/5 pt-4">
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Car className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">26 Daily</div><div className="text-[10px] text-muted-foreground">Exterior</div></div>
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Sparkles className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">1 Premium</div><div className="text-[10px] text-muted-foreground">Monthly</div></div>
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><MapPin className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">Doorstep</div><div className="text-[10px] text-muted-foreground">Service</div></div>
-          </div>
-        </Surface>
+        <PremiumHero 
+          service={service} 
+          vehicleSubActive={vehicleSubQ.data?.status === 'active'} 
+          previewPayable={previewPayable}
+          onBookIncluded={() => setBookOpen(true)}
+        />
+
+
 
         <Section title={<><Car className="h-4 w-4 text-primary" /> Your vehicle</>}>
           <Drawer>
@@ -1146,6 +1174,14 @@ function ServiceDetail() {
       </div>
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
+      <BookAWashSheet 
+        open={bookOpen} 
+        onOpenChange={setBookOpen} 
+        vehicleId={vehicleId || null} 
+        userId={userId || null} 
+      />
+
+
     </div>
   );
 

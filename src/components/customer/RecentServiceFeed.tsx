@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ServicePhotoViewer } from "./ServicePhotoViewer";
+import { cn } from "@/lib/utils";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
 type DirtyReport = {
@@ -156,6 +158,14 @@ export function RecentServiceFeed({
 
 
 function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmitted: () => void }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [initialPhotoIndex, setInitialPhotoIndex] = useState(0);
+
+  const openViewer = (index: number) => {
+    setInitialPhotoIndex(index);
+    setViewerOpen(true);
+  };
+
   const completed = new Date(service.completed_at);
   const windowEnd = new Date(service.complaint_window_ends_at);
   const [now, setNow] = useState(Date.now());
@@ -248,13 +258,43 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       </div>
 
-      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} />}
+      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />}
       {(isUnavailable || hasDirty) && (
         <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-          {service.unavailable_photo && <SignedPhoto path={service.unavailable_photo} stage="proof" />}
-          {dirtyPhotos.map((p) => <SignedPhoto key={p} path={p} stage="dirty" />)}
+          {service.unavailable_photo && (
+            <SignedPhoto 
+              path={service.unavailable_photo} 
+              stage="proof" 
+              onClick={() => openViewer(0)} 
+            />
+          )}
+          {dirtyPhotos.map((p, i) => (
+            <SignedPhoto 
+              key={p} 
+              path={p} 
+              stage="dirty" 
+              onClick={() => openViewer(service.unavailable_photo ? i + 1 : i)} 
+            />
+          ))}
         </div>
       )}
+
+      <ServicePhotoViewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        photos={
+          isUnavailable || hasDirty
+            ? [
+                ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at }] : []),
+                ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at }))
+              ]
+            : service.photos
+        }
+        initialIndex={initialPhotoIndex}
+        serviceName={service.service_name ?? "Daily Shine"}
+        serviceDate={service.completed_at}
+      />
+
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <div className="inline-flex items-center gap-1.5 text-[11px]">
@@ -283,16 +323,23 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
 }
 
 
-function PhotoStrip({ photos }: { photos: Photo[] }) {
+function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
   return (
     <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-      {photos.slice(0, 8).map((p, i) => <SignedPhoto key={i} path={p.storage_path} stage={p.stage} />)}
+      {photos.slice(0, 8).map((p, i) => (
+        <SignedPhoto 
+          key={i} 
+          path={p.storage_path} 
+          stage={p.stage} 
+          onClick={() => onPhotoClick(i)} 
+        />
+      ))}
     </div>
   );
 }
 
-function SignedPhoto({ path, stage }: { path: string; stage: string }) {
+function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -303,12 +350,19 @@ function SignedPhoto({ path, stage }: { path: string; stage: string }) {
     return () => { cancelled = true; };
   }, [path]);
   return (
-    <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative aspect-square overflow-hidden rounded-md bg-muted",
+        onClick && "cursor-pointer active:scale-95 transition-transform"
+      )}
+    >
       {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
       <span className="absolute bottom-0.5 left-0.5 rounded bg-foreground/60 px-1 text-[8px] uppercase text-background">{stage}</span>
     </div>
   );
 }
+
 
 function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
   const [open, setOpen] = useState(false);
