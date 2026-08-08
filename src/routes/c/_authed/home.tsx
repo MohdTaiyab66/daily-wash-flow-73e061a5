@@ -206,16 +206,34 @@ function CustomerHome() {
           <Section title={<span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">Your active car</span>} className="mt-2">
             {vehiclesQ.isLoading ? <SkeletonCard className="h-28" /> : activeVehicle ? (
               <Surface className="overflow-hidden p-0 bg-white border-primary/10">
-                <button type="button" onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))} className="uw-pressable flex w-full items-center gap-4 p-4 text-left">
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
-                    <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-1" />
+                <div className="flex w-full items-center gap-4 p-4">
+                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB] group">
+                    <VehicleAvatar 
+                      imageUrl={catalogImageQ.data} 
+                      make={activeVehicle.make} 
+                      model={activeVehicle.model} 
+                      color={activeVehicle.color} 
+                      className="h-full w-full object-contain p-1" 
+                    />
+                    <button 
+                      onClick={() => setPhotoOpen(true)}
+                      className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-md transition-transform active:scale-90"
+                    >
+                      {activeVehicle.image_path ? <Pencil className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                    </button>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-[17px] font-black tracking-tight text-[#1a1a1a]">{activeVehicle.make} {activeVehicle.model}</h2>
+                  <button 
+                    type="button" 
+                    onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))} 
+                    className="uw-pressable min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="truncate text-[17px] font-black tracking-tight text-[#1a1a1a]">{activeVehicle.make} {activeVehicle.model}</h2>
+                      {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />}
+                    </div>
                     <p className="mt-0.5 truncate text-[12px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
-                  </div>
-                  {vehicles.length > 1 && <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary"><ChevronDown className="h-4 w-4" /></div>}
-                </button>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between border-t border-border/40 bg-[#F9FAFB]/50 px-4 py-3">
                   <button onClick={() => setEditOpen(true)} className="text-[13px] font-black text-[#1a1a1a] flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5 text-primary" /> Details</button>
                   <Link to="/c/vehicles/add" className="text-[13px] font-black text-primary flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> New car</Link>

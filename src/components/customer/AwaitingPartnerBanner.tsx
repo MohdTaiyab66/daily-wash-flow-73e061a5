@@ -231,13 +231,13 @@ export function AwaitingPartnerBanner({
 
   const titleMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "Subscription activated · Waiting for area assignment",
-    assigned: "Today's service is scheduled",
+    assigned: "Today's service scheduled",
     in_progress: "Your Daily Shine service is in progress",
     completed: "Service completed",
   };
   const copyMap: Record<Exclude<State, "unassignable">, string> = {
-    searching: "You're all set. We'll notify you once your first service is completed — no need to wait for updates in between.",
-    assigned: "Your vehicle will be serviced before your selected time.",
+    searching: "You're all set. We'll notify you once your first service is completed.",
+    assigned: "", // Empty so it's not rendered
     in_progress: "Your partner is taking care of your vehicle now.",
     completed: completedAt
       ? `Completed at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}.`
@@ -278,7 +278,7 @@ export function AwaitingPartnerBanner({
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-black tracking-tight text-[#1a1a1a]">{titleMap[state]}</p>
-          <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/60">{copyMap[state]}</p>
+          {copyMap[state] && <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/60">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
             <div className="mt-4 flex items-center gap-3">

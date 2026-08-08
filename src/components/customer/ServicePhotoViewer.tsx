@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Calendar, Sparkles, MapPin, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,31 @@ export function ServicePhotoViewer({
 }: ServicePhotoViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    touchStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.clientX - touchStart.current.x;
+    setSwipeOffset(dx);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.clientX - touchStart.current.x;
+    const dy = e.clientY - touchStart.current.y;
+    touchStart.current = null;
+
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) prev();
+      else next();
+    }
+    setSwipeOffset(0);
+  };
 
   useEffect(() => {
     if (open) setCurrentIndex(initialIndex);
@@ -105,7 +130,7 @@ export function ServicePhotoViewer({
                     day: "numeric",
                     month: "short",
                     year: "numeric"
-                  })} · {new Date(serviceDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  })}
                 </div>
               )}
             </div>
@@ -118,13 +143,22 @@ export function ServicePhotoViewer({
           </div>
 
           {/* Main Image View - with Swipe area */}
-          <div className="relative flex flex-1 items-center justify-center p-0">
+          <div 
+            className="relative flex flex-1 items-center justify-center p-0 touch-none"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
             {currentUrl ? (
               <img
                 src={currentUrl}
                 alt={currentPhoto.stage}
-                className="h-full w-full object-contain select-none"
+                className="h-full w-full object-contain select-none transition-transform duration-300"
                 draggable={false}
+                style={{
+                  transform: `translateX(${swipeOffset}px)`,
+                }}
               />
             ) : (
               <div className="flex flex-col items-center gap-4">
@@ -136,16 +170,6 @@ export function ServicePhotoViewer({
             {/* Tap areas for navigation */}
             {photos.length > 1 && (
               <>
-                <div 
-                  className="absolute left-0 top-0 z-10 h-full w-1/3 cursor-pointer" 
-                  onClick={(e) => { e.stopPropagation(); prev(); }}
-                />
-                <div 
-                  className="absolute right-0 top-0 z-10 h-full w-1/3 cursor-pointer" 
-                  onClick={(e) => { e.stopPropagation(); next(); }}
-                />
-                
-                {/* Visual cues */}
                 <button
                   onClick={(e) => { e.stopPropagation(); prev(); }}
                   className="absolute left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 md:bg-white/10"
