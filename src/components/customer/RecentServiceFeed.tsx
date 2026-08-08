@@ -130,24 +130,24 @@ export function RecentServiceFeed({
   };
 
   return (
-    <div className="mt-5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight">
-          {showAll ? "Service history" : "Recent service updates"}
+    <div className="pt-2">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-[14px] font-black uppercase tracking-widest text-muted-foreground/40">
+          {showAll ? "Full History" : "Recent Activity"}
         </h3>
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+          className="text-[12px] font-black text-primary active:opacity-60"
         >
-          {showAll ? "Show recent only" : "View full history"}
+          {showAll ? "Show Recent" : "View All"}
         </button>
       </div>
-      <div className="mt-2 space-y-3">
-        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-2xl bg-muted" />}
+      <div className="mt-3 space-y-4">
+        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-            No service days recorded yet.
+          <p className="rounded-[28px] border border-dashed border-black/10 p-8 text-center text-[13px] font-medium text-muted-foreground/60">
+            No service records found.
           </p>
         )}
         {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={invalidateAll} />)}
@@ -167,9 +167,9 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   };
 
   const completed = new Date(service.completed_at);
-  const windowEnd = new Date(service.complaint_window_ends_at);
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t); }, []);
+  const windowEnd = new Date(service.complaint_window_ends_at);
   const msLeft = windowEnd.getTime() - now;
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
   const canComplain = service.can_complain && msLeft > 0 && !service.has_complaint;
@@ -178,89 +178,94 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const isMissed = service.status === "skipped";
   const isPending = service.status === "pending" || service.status === "in_progress";
   const hasDirty = !!service.dirty_report;
+
   const dirtyPhotos = [
     service.dirty_report?.photo_front,
     service.dirty_report?.photo_rear,
     service.dirty_report?.photo_left,
     service.dirty_report?.photo_right,
   ].filter((p): p is string => !!p);
-  const reasonLabel = (r: string | null | undefined) => {
-    if (!r) return "Service skipped";
-    const map: Record<string, string> = {
-      car_not_parked: "Car not at parking",
-      gate_locked: "Gate / building locked",
-      customer_unreachable: "Customer unreachable",
-      vehicle_moved: "Vehicle was moved",
-      heavy_rain: "Heavy rain",
-      other: "Other reason",
-    };
-    return map[r] ?? r.replaceAll("_", " ");
+
+  const getStatusDisplay = () => {
+    if (isUnavailable) return { label: "Skipped", tone: "neutral" as const, icon: ShieldAlert };
+    if (isMissed) return { label: "Missed", tone: "danger" as const, icon: AlertCircle };
+    if (isPending) return { label: "Scheduled", tone: "brand" as const, icon: Clock3 };
+    if (hasDirty) return { label: "Extra Dirty", tone: "warning" as const, icon: AlertCircle };
+    return { label: "Completed", tone: "success" as const, icon: CheckCircle2 };
   };
 
+  const status = getStatusDisplay();
+  const StatusIcon = status.icon;
+
+  // Clean human-friendly reasons
+  const cleanReason = (raw: string | null) => {
+    if (!raw) return null;
+    const map: Record<string, string> = {
+      car_not_parked: "Vehicle not found at location",
+      gate_locked: "Access blocked (Gate/Building locked)",
+      customer_unreachable: "Could not reach customer",
+      vehicle_moved: "Vehicle was moved during service",
+      heavy_rain: "Service paused due to heavy rain",
+      dirty_vehicle: "Vehicle requires extra attention (Heavy dust)",
+      heavy_dust: "Heavy dust found on vehicle",
+    };
+    return map[raw] ?? raw.replaceAll("_", " ").replace(/\.$/, "");
+  };
+
+  const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
+
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="flex items-start gap-3 p-4">
-        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-          isUnavailable ? "bg-warning/20 text-warning-foreground"
-            : isMissed ? "bg-destructive/10 text-destructive"
-            : isPending ? "bg-muted text-muted-foreground"
-            : hasDirty ? "bg-orange-500/15 text-orange-600"
-            : "bg-success/15 text-success"
-        }`}>
-          {isUnavailable ? <ShieldAlert className="h-5 w-5" />
-            : isMissed ? <AlertCircle className="h-5 w-5" />
-            : isPending ? <Clock3 className="h-5 w-5" />
-            : hasDirty ? <AlertCircle className="h-5 w-5" />
-            : <CheckCircle2 className="h-5 w-5" />}
-        </div>
+    <div className="overflow-hidden rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold">
-              {isUnavailable
-                ? `Skipped · ${service.service_name ?? "Service"}`
-                : isMissed
-                  ? `Missed by Urban Wash · ${service.service_name ?? "Service"}`
-                  : isPending
-                    ? `Scheduled · ${service.service_name ?? "Service"}`
-                    : service.service_name ?? "Service complete"}
-            </p>
-            {hasDirty && !isUnavailable && <Badge className="h-5 bg-orange-500/15 text-[9px] text-orange-700">Dirty car reported</Badge>}
-          </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {service.vehicle_label}{service.partner_name ? ` · ${service.partner_name}` : ""}
-          </p>
-          <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              {isPending || isMissed
-                ? new Date(service.scheduled_date).toLocaleDateString()
-                : `${completed.toLocaleDateString()} · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            <span className="text-[13px] font-black text-[#1a1a1a]">
+              {status.label} · {service.service_name ?? "Daily Shine"}
             </span>
+            <div className={`h-1.5 w-1.5 rounded-full ${
+              status.tone === "success" ? "bg-success" : 
+              status.tone === "danger" ? "bg-destructive" :
+              status.tone === "warning" ? "bg-warning" : "bg-primary"
+            }`} />
           </div>
-          {isMissed && (
-            <div className="mt-2 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-[11px] text-destructive">
-              <span className="font-medium">We could not service your vehicle.</span> Your plan has been extended by a day.
+          
+          <p className="mt-1 text-[12px] font-bold text-muted-foreground/40">
+            {service.vehicle_label} · {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+            {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+          </p>
+
+          {(reason || (isUnavailable && service.unavailable_notes)) && (
+            <div className="mt-3 space-y-1">
+              {reason && <p className="text-[13px] font-black text-[#1a1a1a]">{reason}</p>}
+              {isUnavailable && (
+                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                  {service.unavailable_notes || "No wash was deducted from your plan."}
+                </p>
+              )}
+              {hasDirty && (
+                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                  Partner reported the vehicle needed more attention than usual.
+                </p>
+              )}
             </div>
           )}
-          {isUnavailable && (
-            <div className="mt-2 rounded-lg bg-warning/15 px-2.5 py-1.5 text-[11px] text-warning-foreground">
-              <span className="font-medium">{reasonLabel(service.unavailable_reason)}.</span>
-              {service.unavailable_notes ? <> {service.unavailable_notes}</> : null}
-              <div className="mt-0.5">No wash was deducted from your plan.</div>
-            </div>
-          )}
-          {hasDirty && (
-            <div className="mt-2 rounded-lg bg-orange-500/10 px-2.5 py-1.5 text-[11px] text-orange-700">
-              <span className="font-medium">{service.dirty_report?.reason ?? "Extra dirt noted"}.</span>
-              {service.dirty_report?.notes ? <> {service.dirty_report.notes}</> : null}
-            </div>
-          )}
+        </div>
+        <div className={cn(
+          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+          status.tone === "success" ? "bg-success/10 text-success" : 
+          status.tone === "danger" ? "bg-destructive/10 text-destructive" :
+          status.tone === "warning" ? "bg-warning/20 text-warning-foreground" : "bg-primary/10 text-primary"
+        )}>
+          <StatusIcon className="h-5 w-5" />
         </div>
       </div>
 
-      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />}
-      {(isUnavailable || hasDirty) && (
-        <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
+      {!isUnavailable && !isMissed && service.photos.length > 0 && (
+        <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />
+      )}
+
+      {(isUnavailable || hasDirty) && (service.unavailable_photo || dirtyPhotos.length > 0) && (
+        <div className="mt-4 grid grid-cols-4 gap-2">
           {service.unavailable_photo && (
             <SignedPhoto 
               path={service.unavailable_photo} 
@@ -279,6 +284,34 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       )}
 
+      <div className="mt-4 flex items-center justify-between border-t border-black/[0.03] pt-4">
+        <div className="flex items-center gap-1.5">
+          <Clock3 className="h-3.5 w-3.5 text-muted-foreground/40" />
+          <span className="text-[11px] font-bold text-muted-foreground/40">
+            {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `${minutesLeft}m to report issue` : "Window closed"}
+          </span>
+        </div>
+        
+        {!isUnavailable && !isMissed && !isPending && (
+          <div className="flex items-center gap-3">
+            {canComplain && (
+              <button 
+                onClick={() => setViewerOpen(true)}
+                className="text-[12px] font-black text-primary active:opacity-60"
+              >
+                Report Issue
+              </button>
+            )}
+            <button 
+              onClick={() => openViewer(0)}
+              className="text-[12px] font-black text-[#1a1a1a] active:opacity-60"
+            >
+              View Photos
+            </button>
+          </div>
+        )}
+      </div>
+
       <ServicePhotoViewer
         open={viewerOpen}
         onOpenChange={setViewerOpen}
@@ -294,75 +327,9 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         serviceName={service.service_name ?? "Daily Shine"}
         serviceDate={service.completed_at}
       />
-
-
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
-        <div className="inline-flex items-center gap-1.5 text-[11px]">
-          <Clock3 className="h-3.5 w-3.5 text-primary" />
-          {isMissed ? (
-            <span className="text-muted-foreground">Plan extended — no wash deducted</span>
-          ) : isPending ? (
-            <span className="text-muted-foreground">Scheduled</span>
-          ) : isUnavailable ? (
-            <span className="text-muted-foreground">No charge — marked unavailable</span>
-          ) : service.has_complaint ? (
-            <span className="text-muted-foreground">Complaint submitted</span>
-          ) : msLeft > 0 ? (
-            <span className="font-medium text-primary">Report issue · {minutesLeft} min left</span>
-          ) : (
-            <span className="text-muted-foreground">Complaint window closed</span>
-          )}
-        </div>
-        {!isUnavailable && !isMissed && !isPending && (
-          <ComplaintButton service={service} canComplain={canComplain} onSubmitted={onSubmitted} />
-        )}
-
-      </div>
-    </Card>
-  );
-}
-
-
-function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
-  if (!photos.length) return null;
-  return (
-    <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-      {photos.slice(0, 8).map((p, i) => (
-        <SignedPhoto 
-          key={i} 
-          path={p.storage_path} 
-          stage={p.stage} 
-          onClick={() => onPhotoClick(i)} 
-        />
-      ))}
     </div>
   );
 }
-
-function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase.storage.from("service-photos").createSignedUrl(path, 600);
-      if (!cancelled) setUrl(data?.signedUrl ?? null);
-    })();
-    return () => { cancelled = true; };
-  }, [path]);
-  return (
-    <div 
-      onClick={onClick}
-      className={cn(
-        "relative aspect-square overflow-hidden rounded-md bg-muted",
-        onClick && "cursor-pointer active:scale-95 transition-transform"
-      )}
-    >
-      {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
-      <span className="absolute bottom-0.5 left-0.5 rounded bg-foreground/60 px-1 text-[8px] uppercase text-background">{stage}</span>
-    </div>
-  );
-}
-
 
 function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
   const [open, setOpen] = useState(false);
@@ -421,5 +388,53 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
+  if (!photos.length) return null;
+  return (
+    <div className="mt-4 grid grid-cols-4 gap-2">
+      {photos.slice(0, 3).map((p, i) => (
+        <SignedPhoto 
+          key={i} 
+          path={p.storage_path} 
+          stage={p.stage} 
+          onClick={() => onPhotoClick(i)} 
+        />
+      ))}
+      {photos.length > 3 && (
+        <button 
+          onClick={() => onPhotoClick(3)}
+          className="uw-pressable relative aspect-square overflow-hidden rounded-xl bg-black/5 text-[12px] font-black text-primary active:scale-95"
+        >
+          +{photos.length - 3}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage.from("service-photos").createSignedUrl(path, 600);
+      if (!cancelled) setUrl(data?.signedUrl ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [path]);
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative aspect-square overflow-hidden rounded-xl bg-black/5",
+        onClick && "cursor-pointer active:scale-95 transition-transform shadow-sm"
+      )}
+    >
+      {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
+      <span className="absolute bottom-1 left-1 rounded-md bg-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black/80">{stage}</span>
+    </div>
   );
 }

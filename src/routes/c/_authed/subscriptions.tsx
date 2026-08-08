@@ -335,191 +335,144 @@ function MyPlanPage() {
       )}
 
       {hasVehicles && activeSub && (
-        <div className="mt-6 space-y-6">
-          {/* Plan Hero Card */}
-          <div className="relative overflow-hidden rounded-[32px] border border-primary/20 bg-white p-6 shadow-sm">
-            {/* Glossy overlay effect */}
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
-            
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+        <div className="mt-6 space-y-5">
+          {/* Flat Service Status Header */}
+          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+
+          {/* Service Notice Card (if any) */}
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+
+          {/* Compact Active Plan Surface */}
+          <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
-                    <Sparkles className="h-3 w-3" />
+                  <span className="flex h-5 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-primary">
+                    <Sparkles className="h-2.5 w-2.5" />
                     Daily Shine
                   </span>
-                  <StatusChip tone="success" className="bg-success/10 text-success text-[10px] font-black uppercase tracking-wider">
-                    {activeSub.status.replaceAll("_", " ")}
+                  <StatusChip tone="success" className="h-5 px-2 text-[9px] font-black uppercase tracking-wider">
+                    Active
                   </StatusChip>
                 </div>
-                <h2 className="mt-3 text-[24px] font-black tracking-tight text-[#1a1a1a]">
-                  {activeSub.service_catalog?.name ?? "Daily Shine"}
+                <h2 className="mt-2 text-[18px] font-black tracking-tight text-[#1a1a1a]">
+                  {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                 </h2>
-                <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
-                  <span className="text-primary font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}</span>
-                  <span>/ month</span>
-                  <span className="mx-1 opacity-30">·</span>
+                <div className="mt-1 flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground/60">
+                  <span className="text-[#1a1a1a]">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month</span>
+                  <span className="mx-0.5 opacity-30">·</span>
                   <span>{daysLeft} days left</span>
-
-
                 </div>
               </div>
+              <button 
+                onClick={() => setManageOpen(true)}
+                className="flex items-center gap-1 text-[13px] font-black text-primary active:opacity-60"
+              >
+                Manage <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Progress Section */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                <span>Usage</span>
+            {/* Usage Progress - Compact */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">
+                <span>Monthly Usage</span>
                 <span className="text-[#1a1a1a]">Day {elapsed} of {totalDays}</span>
               </div>
-              <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-muted/30">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted/30">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700"
+                  className="h-full rounded-full bg-primary transition-all duration-700"
                   style={{ width: `${(elapsed / totalDays) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-between border-t border-border/40 pt-5">
+            <div className="mt-4 flex items-center justify-between border-t border-black/[0.03] pt-4">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Next renewal</span>
-                <span className="text-[13px] font-bold text-[#1a1a1a]">{planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Next Renewal</span>
+                <span className="text-[13px] font-bold text-[#1a1a1a]">
+                  {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) || "4 Sept"}
+                </span>
               </div>
-              <button 
-                onClick={() => setManageOpen(true)}
-                className="flex items-center gap-1 text-[13px] font-black text-primary transition-opacity active:opacity-60"
-              >
-                Manage <ChevronRight className="h-4 w-4" />
-              </button>
+              <div className="flex gap-2">
+                 {cancelScheduled && (
+                   <div className="flex items-center gap-1 text-[11px] font-bold text-warning-foreground">
+                     <XCircle className="h-3 w-3" /> Scheduled to end
+                   </div>
+                 )}
+              </div>
             </div>
           </div>
 
-          {/* Attractive Quick Actions Grid */}
+          {/* Premium Quick Actions */}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setBookOpen(true)}
-              className="uw-pressable flex flex-col items-center gap-3 rounded-[28px] border border-primary/10 bg-accent/30 p-5 text-center transition-all shadow-sm"
+              className="uw-pressable flex items-center gap-3 rounded-2xl bg-[#1a1a1a] p-4 shadow-md active:scale-[0.98]"
             >
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
-                <CalendarPlus className="h-6 w-6" />
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white">
+                <CalendarPlus className="h-5 w-5" />
               </div>
-              <div>
-                <div className="text-[15px] font-black text-[#1a1a1a]">Book Wash</div>
-                <div className="text-[11px] font-bold text-primary/70 uppercase tracking-tighter">Included wash</div>
+              <div className="text-left">
+                <div className="text-[14px] font-black text-white">Book Wash</div>
+                <div className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">Included</div>
               </div>
             </button>
             
             <button
               onClick={() => setBuilderOpen(true)}
-              className="uw-pressable flex flex-col items-center gap-3 rounded-[28px] border border-border/60 bg-white p-5 text-center shadow-sm"
+              className="uw-pressable flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm active:scale-[0.98]"
             >
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
-                <Settings2 className="h-6 w-6" />
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF9F3] text-primary">
+                <Settings2 className="h-5 w-5" />
               </div>
-              <div>
-                <div className="text-[15px] font-black text-[#1a1a1a]">Modify</div>
-                <div className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Adjust plan</div>
+              <div className="text-left">
+                <div className="text-[14px] font-black text-[#1a1a1a]">Modify</div>
+                <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-tighter">Adjust plan</div>
               </div>
             </button>
           </div>
 
-          {/* Pause/Cancel row */}
-          <div className="flex gap-3">
-             <button
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border/60 bg-white py-3.5 text-[13px] font-bold text-muted-foreground/80 shadow-sm transition-colors active:bg-muted/30"
+          {/* Secondary Actions */}
+          <div className="flex items-center justify-between gap-4 px-1">
+            <button
+              className="text-[13px] font-bold text-muted-foreground/60 transition-colors active:text-primary"
             >
-              <Pause className="h-4 w-4" /> Pause
+              Pause Subscription
             </button>
-             <button
+            <button
               onClick={() => setCancelDialogOpen(true)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-destructive/10 bg-destructive/5 py-3.5 text-[13px] font-bold text-destructive shadow-sm transition-colors active:bg-destructive/10"
+              className="text-[13px] font-bold text-muted-foreground/60 transition-colors active:text-destructive"
             >
-              <XCircle className="h-4 w-4" /> Cancel
+              Cancel Plan
             </button>
           </div>
 
-          {cancelScheduled && subRow?.renewal_date && (
-            <div className="mt-3 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning/15 p-3">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
-              <div className="min-w-0 flex-1 text-xs">
-                <p className="font-semibold text-warning-foreground">
-                  Ending on {new Date(subRow.renewal_date).toLocaleDateString(undefined, { day: "numeric", month: "long" })}
-                </p>
-                <p className="mt-0.5 text-warning-foreground/80">
-                  Your plan stays active until then. No more renewals after that.
-                </p>
-              </div>
-              <button
-                onClick={() => undoMut.mutate()}
-                disabled={undoMut.isPending}
-                className="shrink-0 text-xs font-semibold text-warning-foreground underline underline-offset-2 disabled:opacity-50"
-              >
-                Undo
-              </button>
-            </div>
-          )}
-
-          {/* Plan inclusions (dynamic, admin-editable) */}
-          <PlanInclusionsCard planSlug={activePlanSlug} />
-
-          {/* Per-vehicle remaining benefits */}
-
-
-
-
-          {/* This month's washes */}
-          <div className="mt-6">
-            <h3 className="text-[15px] font-bold tracking-tight">This month's usage</h3>
-            <div className="mt-4 space-y-5 rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-[13px] font-medium">
-                  <span>Exterior wash</span>
-                  <span className="text-muted-foreground">{exteriorCount} / 25</span>
+          {/* Usage Meters Section */}
+          <div className="pt-2">
+            <h3 className="text-[14px] font-black uppercase tracking-widest text-muted-foreground/40 px-1">Detailed Usage</h3>
+            <div className="mt-3 space-y-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-[13px] font-bold">
+                  <span className="text-[#1a1a1a]">Exterior washes</span>
+                  <span className="text-muted-foreground/60">{exteriorCount} / 25</span>
                 </div>
                 <Meter value={exteriorCount} max={25} />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-[13px] font-medium">
-                  <span>Interior wash</span>
-                  <span className="text-muted-foreground">{interiorCount} / 1</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-[13px] font-bold">
+                  <span className="text-[#1a1a1a]">Interior wash</span>
+                  <span className="text-muted-foreground/60">{interiorCount} / 1</span>
                 </div>
                 <Meter value={interiorCount} max={1} />
               </div>
             </div>
           </div>
 
-          {/* Book a wash — gated flow (Phase 3) */}
-          <div className="mt-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-[15px] font-bold tracking-tight">Need to book a wash?</h3>
-                <p className="mt-1 text-[12.5px] text-muted-foreground">
-                  You still have included washes available.
-                </p>
-              </div>
-              <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
-            </div>
-            <Button
-              onClick={() => setBookOpen(true)}
-              className="mt-4 h-11 w-full rounded-full text-sm font-bold shadow-sm"
-            >
-              Book a wash
-            </Button>
-            <button
-              type="button"
-              onClick={() => openSchedule("any")}
-              className="mt-3 inline-flex w-full items-center justify-center gap-1 text-[12.5px] font-medium text-primary hover:underline"
-            >
-              Explore one-time services <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          {/* Plan Inclusions (Collapsible) */}
+          <PlanInclusionsCard planSlug={activePlanSlug} />
 
-
-          {/* Recent service feed with photos + complaint window */}
+          {/* Recent Service Feed (The Timeline) */}
           <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
-
-
-          {/* Counters */}
         </div>
       )}
 

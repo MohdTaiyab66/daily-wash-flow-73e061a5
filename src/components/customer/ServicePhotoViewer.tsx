@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, Calendar, Sparkles, MapPin } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Calendar, Sparkles, MapPin, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 type Photo = {
   stage: string;
@@ -91,21 +92,20 @@ export function ServicePhotoViewer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl border-none bg-black/95 p-0 shadow-2xl outline-none sm:rounded-3xl">
-        <div className="relative flex h-[80vh] flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl border-none bg-black p-0 shadow-2xl outline-none sm:rounded-3xl">
+        <div className="relative flex h-[85vh] flex-col overflow-hidden">
           {/* Header */}
-          <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent px-6 py-6">
+          <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-6 py-6">
             <div className="text-white">
-              <h3 className="text-lg font-black">{serviceName}</h3>
+              <h3 className="text-[17px] font-black tracking-tight">{serviceName}</h3>
               {serviceDate && (
-                <div className="mt-1 flex items-center gap-2 text-xs font-bold text-white/60">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(serviceDate).toLocaleString("en-IN", {
+                <div className="mt-1 flex items-center gap-2 text-[12px] font-bold text-white/40">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {new Date(serviceDate).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+                    year: "numeric"
+                  })} · {new Date(serviceDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               )}
             </div>
@@ -117,31 +117,44 @@ export function ServicePhotoViewer({
             </button>
           </div>
 
-          {/* Main Image View */}
-          <div className="relative flex flex-1 items-center justify-center p-4">
+          {/* Main Image View - with Swipe area */}
+          <div className="relative flex flex-1 items-center justify-center p-0">
             {currentUrl ? (
               <img
                 src={currentUrl}
                 alt={currentPhoto.stage}
-                className="h-full w-full object-contain"
+                className="h-full w-full object-contain select-none"
+                draggable={false}
               />
             ) : (
-              <div className="flex h-64 w-64 items-center justify-center rounded-3xl bg-white/5">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-white/20" />
+                <span className="text-[12px] font-bold text-white/20 uppercase tracking-widest">Loading Photo</span>
               </div>
             )}
 
+            {/* Tap areas for navigation */}
             {photos.length > 1 && (
               <>
+                <div 
+                  className="absolute left-0 top-0 z-10 h-full w-1/3 cursor-pointer" 
+                  onClick={(e) => { e.stopPropagation(); prev(); }}
+                />
+                <div 
+                  className="absolute right-0 top-0 z-10 h-full w-1/3 cursor-pointer" 
+                  onClick={(e) => { e.stopPropagation(); next(); }}
+                />
+                
+                {/* Visual cues */}
                 <button
-                  onClick={prev}
-                  className="absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-transform active:scale-90"
+                  onClick={(e) => { e.stopPropagation(); prev(); }}
+                  className="absolute left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 md:bg-white/10"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
                 <button
-                  onClick={next}
-                  className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-transform active:scale-90"
+                  onClick={(e) => { e.stopPropagation(); next(); }}
+                  className="absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 md:bg-white/10"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
@@ -150,18 +163,32 @@ export function ServicePhotoViewer({
           </div>
 
           {/* Footer Info */}
-          <div className="bg-gradient-to-t from-black/80 to-transparent px-8 pb-10 pt-6">
-             <div className="flex items-center justify-between">
-                <div>
-                   <div className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+          <div className="bg-gradient-to-t from-black/90 to-transparent px-8 pb-10 pt-10">
+             <div className="flex items-end justify-between">
+                <div className="space-y-3">
+                   <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-black">
                       {stageLabels[currentPhoto.stage] || currentPhoto.stage}
                    </div>
-                   <div className="mt-2 text-sm font-bold text-white/80">
+                   <div className="text-[16px] font-black text-white">
                       {currentPhoto.angle.charAt(0).toUpperCase() + currentPhoto.angle.slice(1)} View
                    </div>
                 </div>
-                <div className="text-[14px] font-black text-white/40">
-                   {currentIndex + 1} / {photos.length}
+                <div className="flex flex-col items-end gap-2">
+                   <div className="text-[14px] font-black text-white/40">
+                      {currentIndex + 1} / {photos.length}
+                   </div>
+                   {/* Dots indicator */}
+                   <div className="flex gap-1.5">
+                      {photos.map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "h-1 rounded-full transition-all duration-300",
+                            i === currentIndex ? "w-4 bg-white" : "w-1.5 bg-white/20"
+                          )} 
+                        />
+                      ))}
+                   </div>
                 </div>
              </div>
           </div>
