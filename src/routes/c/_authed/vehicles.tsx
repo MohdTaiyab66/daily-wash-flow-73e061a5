@@ -340,16 +340,16 @@ function SwipeableVehicleRow({ v, onRequestDelete }: { v: Vehicle; onRequestDele
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
+    <div className="relative overflow-hidden rounded-[32px] shadow-sm border border-black/5">
       {/* Delete action revealed behind the card */}
       <button
         type="button"
         aria-label={`Delete ${primary}`}
         onClick={() => { setOffset(0); onRequestDelete(); }}
-        className="absolute inset-y-0 right-0 flex w-[88px] flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground"
+        className="absolute inset-y-0 right-0 flex w-[88px] flex-col items-center justify-center gap-1 bg-destructive text-white"
       >
-        <Trash2 className="h-5 w-5" />
-        <span className="text-[11px] font-semibold">Delete</span>
+        <Trash2 className="h-6 w-6" />
+        <span className="text-[10px] font-black uppercase tracking-widest">Delete</span>
       </button>
 
       <div
@@ -370,37 +370,41 @@ function SwipeableVehicleRow({ v, onRequestDelete }: { v: Vehicle; onRequestDele
         onKeyDown={(e) => { if (e.key === "Enter") void navigate({ to: "/c/vehicles/$id", params: { id: v.id } }); }}
         style={{
           transform: `translateX(${offset}px)`,
-          transition: dragging ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+          transition: dragging ? "none" : "transform 400ms cubic-bezier(0.22, 1, 0.36, 1)",
           touchAction: "pan-y",
         }}
-        className="relative flex cursor-pointer select-none items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+        className="relative flex cursor-pointer select-none items-center gap-4 bg-white p-5 transition-colors active:bg-[#FFF9F3]"
       >
-        <VehicleAvatar
-          imageUrl={imgQ.data}
-          make={v.make}
-          model={v.model}
-          color={v.color}
-          category={v.category}
-          className="h-14 w-16 rounded-2xl"
-        />
+        <div className="relative shrink-0">
+          <VehicleAvatar
+            imageUrl={imgQ.data}
+            make={v.make}
+            model={v.model}
+            color={v.color}
+            category={v.category}
+            className="h-16 w-16 rounded-[24px] border border-black/5 shadow-sm"
+          />
+          {v.is_default && (
+            <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-md border-2 border-white">
+              <Star className="h-3 w-3 fill-current" />
+            </div>
+          )}
+        </div>
+        
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate font-semibold">{primary}</span>
-            {v.is_default && (
-              <span
-                data-testid="default-badge"
-                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-              >
-                <Star className="h-2.5 w-2.5" /> Default
-              </span>
-            )}
+            <span className="truncate text-[17px] font-black text-[#1a1a1a]">{primary}</span>
           </div>
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {v.nickname ? `${v.make} ${v.model} · ` : ""}
-            {v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-bold text-muted-foreground/60">
+            <span>{v.registration_number}</span>
+            <div className="h-1 w-1 rounded-full bg-black/10" />
+            <span className="truncate">{vehicleBodyLabel(v.make, v.model, v.category)}</span>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFF9F3] text-muted-foreground/30">
+           <ChevronRight className="h-5 w-5" />
+        </div>
       </div>
     </div>
   );
