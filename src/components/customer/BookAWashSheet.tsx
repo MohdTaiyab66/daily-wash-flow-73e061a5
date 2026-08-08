@@ -429,42 +429,42 @@ export function BookAWashSheet({
           )}
 
           {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Wash Card */}
               <div>
-                <Surface className="relative overflow-hidden border-primary/20 bg-accent/20 px-5 py-5">
+                <div className="relative overflow-hidden rounded-[32px] bg-white border border-black/5 p-6 shadow-sm">
+                  <div className="absolute top-0 right-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-primary/5 blur-3xl" />
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2 font-bold text-primary">
-                        <Sparkles className="h-4 w-4" />
-                        <span>Included premium wash</span>
+                      <div className="flex items-center gap-2 font-black text-primary">
+                        <Sparkles className="h-5 w-5" />
+                        <span className="text-[16px]">Included Wash</span>
                       </div>
-                      <div className="mt-1 text-[13px] text-muted-foreground">Interior + Exterior</div>
+                      <p className="mt-1 text-[13px] font-medium text-muted-foreground/60">Full Interior + Exterior</p>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[12px] font-bold text-primary">
-                      <Check className="h-3.5 w-3.5" />
-                      Included
+                    <div className="rounded-full bg-success/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-success">
+                      Free ✓
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="text-[24px] font-black text-primary leading-none">
+                  <div className="mt-6 flex items-baseline gap-2">
+                    <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
                       {includedRow?.unlimited ? "∞" : includedRemaining}
                     </span>
-                    <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">
-                      wash{includedRemaining !== 1 ? "es" : ""} remaining
+                    <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                      wash{includedRemaining !== 1 ? "es" : ""} left
                     </span>
                   </div>
-                </Surface>
-                <div className="mt-3">
+                </div>
+                <div className="mt-4 px-1">
                   <button
                     onClick={() => {
                       onOpenChange(false);
-                      // Navigate manually if Link doesn't trigger well in Dialog
                       window.location.href = "/c/service/daily-shine";
                     }}
-                    className="flex items-center gap-1 text-[13px] font-semibold text-primary transition-opacity active:opacity-60"
+                    className="flex items-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
                   >
-                    Need another wash? Buy more <ChevronRight className="h-3.5 w-3.5" />
+                    Need another wash? <span className="underline underline-offset-4">Buy more</span>
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
