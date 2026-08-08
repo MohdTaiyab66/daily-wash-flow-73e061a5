@@ -35,6 +35,7 @@ import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel"
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
 import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 
 
@@ -276,7 +277,7 @@ function CustomerHome() {
 
         <div className="px-5 space-y-7">
           {/* Active Vehicle Section - Compact Context Row */}
-          <Section className="mt-2">
+          <Section className="mt-[-8px]">
             {vehiclesQ.isLoading ? (
               <SkeletonCard className="h-16" />
             ) : activeVehicle ? (
@@ -297,11 +298,10 @@ function CustomerHome() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
                       <h2 className="truncate text-[15px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
-                      {vehicles.length > 1 && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground/40" />
                     </div>
                     <p className="truncate text-[11px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/20" />
                 </div>
               </Surface>
             ) : (
@@ -315,8 +315,9 @@ function CustomerHome() {
             )}
           </Section>
 
-          {/* Featured Daily Shine Carousel */}
-          <UWFeaturedCarousel 
+          <div className="mt-[-16px]">
+            <UWFeaturedCarousel 
+
             items={imagesQ.data?.length ? imagesQ.data.map((img: any) => ({
               id: img.id,
               title: img.title || "Daily Shine",
@@ -344,6 +345,7 @@ function CustomerHome() {
             ]}
             onItemClick={(item) => navigate({ to: item.link as any })}
           />
+        </div>
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
           {latestNoticeQ.data && activeVehicle && (
@@ -375,8 +377,27 @@ function CustomerHome() {
             </Surface>
           )}
 
-          <Section title="Car care services">
-            <div className="grid grid-cols-2 gap-4">
+          <Section 
+            title="Car care services"
+            className="mt-6"
+          >
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-none">
+              {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat, i) => (
+                <button
+                  key={cat}
+                  className={cn(
+                    "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all",
+                    i === 0 
+                      ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                      : "bg-white text-muted-foreground border border-border/50"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-1">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
               ) : oneTime.map((s) => (
