@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -59,6 +59,7 @@ type AddonRow = {
 
 function MyPlanPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -242,6 +243,8 @@ function MyPlanPage() {
 
   useEffect(() => {
     latestNoticeQ.refetch();
+    // Force a router re-evaluation to ensure layout reflects new selection
+    router.invalidate();
   }, [selectedVehicleId]);
 
   // Recent service list must only reflect paid activity. Never surface
