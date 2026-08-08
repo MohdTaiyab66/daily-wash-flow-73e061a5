@@ -1183,120 +1183,24 @@ function ServiceDetail() {
         </div>
       </div>
 
-                     return (
-                      <div key={a.id} className="flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                         <div className="min-w-0 flex-1">
-                           <div className="text-[15px] font-black text-[#1a1a1a]">{a.name}</div>
-                           <div className="text-[12px] font-medium text-muted-foreground/60 line-clamp-1">{a.description}</div>
-                           <div className="mt-1 text-[13px] font-black text-primary">₹{p}</div>
-                         </div>
-                         <div className="ml-4 shrink-0">
-                           {qty > 0 ? (
-                              <div className="flex items-center gap-2 bg-primary/5 rounded-full p-1 border border-primary/20 shadow-inner">
-                                  <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Minus className="h-3 w-3" /></button>
-                                  <span className="text-[13px] font-black w-4 text-center">{qty}</span>
-                                  <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Plus className="h-3 w-3" /></button>
-                              </div>
-                           ) : (
-                              <Button size="sm" variant="outline" className="rounded-full h-9 px-5 font-black border-primary/20 text-primary hover:bg-primary/5 active:scale-95 transition-transform" onClick={() => setQty(a.id, 1)}>+ Add</Button>
-                           )}
-                         </div>
-                      </div>
-                     )
-                   })}
-                </div>
-              </DrawerContent>
-            </Drawer>
-          }
-        >
-           {addonsQ.data?.slice(0, 2).map((a) => {
-             const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-             const qty = addonQty[a.id] || 0;
-             return (
-              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                 <div>
-                   <div className="text-[14px] font-black text-[#1a1a1a]">{a.name}</div>
-                   <div className="text-[12px] font-medium text-muted-foreground/60">₹{p}</div>
-                 </div>
-                 {qty > 0 ? (
-                    <div className="flex items-center gap-3 bg-primary/5 rounded-full p-1 border border-primary/20 shadow-inner">
-                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Minus className="h-3 w-3" /></button>
-                        <span className="text-[13px] font-black w-4 text-center">{qty}</span>
-                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Plus className="h-3 w-3" /></button>
-                    </div>
-                 ) : (
-                    <button className="text-[13px] font-black text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary/5 active:scale-95 transition-transform" onClick={() => setQty(a.id, 1)}>+ Add</button>
-                 )}
-              </div>
-             )
-           })}
-        </Section>
-
-        {/* PRICE SUMMARY */}
-        <Section title="Price summary">
-           <Surface className="space-y-3 p-4">
-              {purchaseMode !== 'paid_add_on' && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>{service.name}</span>
-                  <span>₹{previewBase}</span>
-                </div>
-              )}
-              {purchaseMode === 'paid_add_on' && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>{service.name}</span>
-                  <span>₹{previewBase || (isSUV ? service.price_sedan_suv : service.price_hatchback)}</span>
-                </div>
-              )}
-              {previewAddon > 0 && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>Add-ons</span>
-                  <span>₹{previewAddon}</span>
-                </div>
-              )}
-              {previewDiscount > 0 && <div className="flex justify-between text-[14px] font-black text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
-              <div className="flex justify-between pt-3 text-[17px] font-black border-t border-black/5 text-[#1a1a1a]">
-                <span>Total Payable</span>
-                <span>₹{previewPayable}</span>
-              </div>
-           </Surface>
-        </Section>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-5 pt-4 pb-8 backdrop-blur shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
-        <div className="mx-auto max-w-md">
-          <Button size="lg" className="h-16 w-full rounded-2xl text-[17px] font-black shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform" onClick={() => confirm()} disabled={submitting || paying}>
-            {submitting || paying ? (
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-            ) : (
-              <div className="flex w-full items-center justify-between px-2">
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[13px] opacity-70 font-medium">Total Payable</span>
-                  <span className="text-[18px]">₹{previewPayable}</span>
-                </div>
-                <div className="flex items-center gap-1 font-black">
-                  {purchaseMode === 'new_subscription' ? 'Subscribe' : 
-                   purchaseMode === 'included_wash' ? 'Schedule wash' : 
-                   `Pay ₹${previewPayable}`} <ChevronRight className="h-5 w-5" />
-                </div>
-              </div>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
+      <AddressDialog 
+        open={addrOpen} 
+        onOpenChange={setAddrOpen} 
+        onCreated={(id) => { 
+          setAddressId(id); 
+          qc.invalidateQueries({ queryKey: ["customer-addresses"] }); 
+        }} 
+      />
       <BookAWashSheet 
         open={bookOpen} 
         onOpenChange={setBookOpen} 
         vehicleId={vehicleId || null} 
         userId={userId || null} 
       />
-
-
     </div>
   );
-
 }
+
 
 function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
   return (
