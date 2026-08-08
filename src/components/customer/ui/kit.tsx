@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 /* ---------------------------------- text --------------------------------- */
 
 export function PageTitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <h1 className={cn("text-[26px] font-bold leading-tight tracking-tight", className)}>{children}</h1>;
+  return <h1 className={cn("text-[26px] font-black leading-tight tracking-tight text-[#1a1a1a]", className)}>{children}</h1>;
 }
 
 export function SectionTitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cn("text-[15px] font-semibold tracking-tight", className)}>{children}</h2>;
+  return <h2 className={cn("text-[16px] font-black tracking-tight text-[#1a1a1a]", className)}>{children}</h2>;
 }
 
 export function Muted({ children, className }: { children: ReactNode; className?: string }) {
