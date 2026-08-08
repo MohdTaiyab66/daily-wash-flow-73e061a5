@@ -75,7 +75,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-75",
+              "flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-[0.85]",
               isAdded 
                 ? "bg-success text-white" 
                 : "bg-primary/10 text-primary hover:bg-primary/20"
