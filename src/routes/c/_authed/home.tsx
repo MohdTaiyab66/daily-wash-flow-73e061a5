@@ -13,9 +13,7 @@ import {
   ChevronDown,
   BellRing,
   Check,
-  Clock,
   Pencil,
-  Camera,
   Bell,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +26,8 @@ import { toast } from "sonner";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
-import { SkeletonCard, SkeletonRow, Shimmer } from "@/components/customer/ui/Skeletons";
+import { SkeletonCard, Shimmer } from "@/components/customer/ui/Skeletons";
+import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -86,12 +85,8 @@ function CustomerHome() {
     setArea(savedArea);
     setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
     // Self-heal: older sessions stored `uw_customer_area` without `uw_customer_geo`.
-    // Without geo the coverage lookup returns matched:false and the home banner
-    // wrongly says "Daily Shine not yet available in your area". Back-fill from
-    // the canonical service-area list so the coverage RPC has coordinates to test.
     try {
       if (savedArea && !localStorage.getItem("uw_customer_geo")) {
-        // Late import so the module isn't loaded before hydration.
         import("@/lib/areas").then(({ SERVICE_AREAS }) => {
           const match = SERVICE_AREAS.find((a) => a.name.toLowerCase() === savedArea.toLowerCase());
           if (match) {
@@ -105,7 +100,6 @@ function CustomerHome() {
       }
     } catch { /* ignore */ }
   }, []);
-
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
@@ -134,7 +128,6 @@ function CustomerHome() {
 
   const qc = useQueryClient();
 
-  // Greeting name — read-only profile lookup, no schema or API change.
   const profileQ = useQuery({
     queryKey: ["customer-profile-name"],
     queryFn: async (): Promise<string | null> => {
@@ -190,12 +183,6 @@ function CustomerHome() {
     ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category)
     : "";
 
-  // Uses useVehicleImageUrl so the customer's own uploaded photo (from
-  // `customer_vehicles.image_path`) takes priority over the catalog stock
-  // image. Change photo dialog invalidates ["vehicle-image-url", ...] on
-  // success so Home reflects the new picture instantly.
-  // Ask Storage for a compact server-resized thumbnail so Home is fast on
-  // mobile — the stored original is untouched, but delivery is downscaled.
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
     model: activeVehicle?.model,
@@ -226,6 +213,8 @@ function CustomerHome() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const unread = unreadQ.data ?? 0;
   const subStatus = subStatusQ.data;
+  const planActive = subStatus === "active";
+  const planPending = subStatus === "payment_pending";
 
   const refreshAll = () =>
     Promise.all([
@@ -239,138 +228,78 @@ function CustomerHome() {
   return (
     <PullToRefresh onRefresh={refreshAll}>
     <div className="px-5 pt-6">
-      {/* Greeting + notifications */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{greeting},</p>
+      {/* Greeting */}
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] text-muted-foreground">{greeting},</p>
           {profileQ.isLoading ? (
-            <Shimmer className="mt-1 h-5 w-32 rounded-lg" />
+            <Shimmer className="mt-1.5 h-6 w-32 rounded-lg" />
           ) : (
-            <h1 className="truncate text-xl font-bold tracking-tight">{firstName}</h1>
+            <h1 className="truncate text-[26px] font-bold leading-tight tracking-tight">{firstName}</h1>
           )}
+          <button
+            onClick={() => {
+              try { localStorage.removeItem("uw_customer_area"); } catch {}
+              if (typeof window !== "undefined") window.location.href = "/c?change=1";
+            }}
+            className="mt-1.5 inline-flex items-center gap-1 text-[13px] text-muted-foreground"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">{area || "Pick area"}</span>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          {subStatus && (
-            <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                subStatus === "active"
-                  ? "bg-success/12 text-success"
-                  : subStatus === "payment_pending"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {subStatus === "active"
-                ? "Plan active"
-                : subStatus === "payment_pending"
-                ? "Payment pending"
-                : "No active plan"}
+        <Link
+          to="/c/notifications"
+          aria-label="Notifications"
+          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border/70 bg-card"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          {unread > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+              {unread > 9 ? "9+" : unread}
             </span>
           )}
-          <Link
-            to="/c/notifications"
-            aria-label="Notifications"
-            className="relative grid h-10 w-10 place-items-center rounded-full border border-border bg-card"
-          >
-            <Bell className="h-4.5 w-4.5" />
-            {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-          </Link>
-        </div>
+        </Link>
       </div>
 
-      {/* Top bar */}
-      <div className="flex items-start justify-between gap-3">
-        <button
-          onClick={() => {
-            try { localStorage.removeItem("uw_customer_area"); } catch {}
-            if (typeof window !== "undefined") window.location.href = "/c?change=1";
-          }}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          <span className="font-medium text-foreground">{area || "Pick area"}</span>
-          <ChevronDown className="h-3.5 w-3.5" />
-        </button>
-
-        {activeVehicle ? (
+      {/* Vehicle */}
+      {vehiclesQ.isLoading ? (
+        <SkeletonCard className="mt-5" />
+      ) : activeVehicle ? (
+        <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-card">
           <button
-            onClick={() =>
-              vehicles.length > 1 ? setVehicleSheetOpen(true) : navigate({ to: "/c/vehicles/add" })
-            }
-            className="group flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 pr-3 shadow-sm transition-all hover:border-primary/40"
+            type="button"
+            onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+            className="uw-pressable flex w-full items-center gap-3.5 p-4 text-left"
           >
             <VehicleAvatar
               imageUrl={catalogImageQ.data}
               make={activeVehicle.make}
               model={activeVehicle.model}
               color={activeVehicle.color}
-              className="h-9 w-9 rounded-full"
+              className="h-14 w-20 shrink-0 rounded-xl bg-muted"
             />
-            <span className="flex flex-col items-start leading-tight">
-              <span className="text-[11px] font-semibold uppercase tracking-wide">
-                {activeVehicle.model}
-              </span>
-              <span className="text-[10px] text-muted-foreground">{bodyLabel}</span>
-            </span>
-            {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
-          </button>
-        ) : (
-          <Link
-            to="/c/vehicles/add"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add vehicle
-          </Link>
-        )}
-      </div>
-
-      {/* Vehicle hero card */}
-      {vehiclesQ.isLoading ? (
-        <SkeletonCard className="mt-4" />
-      ) : activeVehicle ? (
-        <div className="mt-4 rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5">
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Your car</p>
-              <h2 className="mt-1 truncate text-2xl font-semibold tracking-tight">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your car</p>
+              <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-tight">
                 {activeVehicle.make} {activeVehicle.model}
               </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {activeVehicle.registration_number} ·{" "}
-                <span className="font-medium text-foreground">{bodyLabel}</span>
+              <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+                {activeVehicle.registration_number} · {bodyLabel}
               </p>
             </div>
-            <VehicleAvatar
-              imageUrl={catalogImageQ.data}
-              make={activeVehicle.make}
-              model={activeVehicle.model}
-              color={activeVehicle.color}
-              className="h-16 w-24 rounded-2xl bg-card"
-            />
-          </div>
-          <div className="mt-3 flex items-center gap-4 text-xs">
+            {vehicles.length > 1 && <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+          </button>
+          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2.5">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="inline-flex items-center gap-1 font-medium text-primary"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary"
             >
               <Pencil className="h-3.5 w-3.5" /> Edit vehicle
             </button>
-            <button
-              type="button"
-              onClick={() => setPhotoOpen(true)}
-              className="inline-flex items-center gap-1 font-medium text-primary"
-            >
-              <Camera className="h-3.5 w-3.5" /> Change photo
-            </button>
-            <Link
-              to="/c/vehicles/add"
-              className="ml-auto inline-flex items-center gap-1 text-muted-foreground"
-            >
+            <Link to="/c/vehicles/add" className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
               <Plus className="h-3.5 w-3.5" /> Add another
             </Link>
           </div>
@@ -378,157 +307,176 @@ function CustomerHome() {
       ) : (
         <Link
           to="/c/vehicles/add"
-          className="mt-4 flex items-center justify-between rounded-3xl border border-border bg-gradient-to-br from-accent/60 to-card p-5"
+          className="uw-pressable mt-5 flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-4"
         >
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Add your car</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight">Get started in 30 seconds</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Add your vehicle to see pricing.</p>
-          </div>
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
             <Plus className="h-5 w-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[16px] font-bold tracking-tight">Add your car</span>
+            <span className="mt-0.5 block text-[13px] text-muted-foreground">Takes 30 seconds — then you'll see your prices.</span>
           </span>
         </Link>
       )}
 
       {!showCatalog ? (
-        <div className="mt-7">
+        <div className="mt-8">
           <ComingSoon area={area} onChange={() => navigate({ to: "/c" })} />
         </div>
       ) : (
         <>
-          {/* Subscription hero */}
-          {subscription && (() => {
-            const dsAllowed = a.daily_shine;
-            const card = (
-              <div className={`relative block overflow-hidden rounded-3xl border ${dsAllowed ? "border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-card" : "border-border bg-muted/30 opacity-70"} p-5 transition-all`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
-                      <Sparkles className="h-3 w-3" /> Daily plan
-                    </span>
-                    <h4 className="mt-2 text-xl font-semibold tracking-tight">{subscription.name}</h4>
-                    <ul className="mt-2 space-y-1 text-xs text-foreground/80">
-                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Daily Exterior Cleaning</li>
-                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> 1 Interior &amp; Exterior Wash every month</li>
-                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Doorstep Service</li>
-                      <li className="flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Monday Weekly Rest</li>
-                    </ul>
-                    {!dsAllowed && <p className="mt-2 text-[11px] font-semibold text-amber-700">Daily Shine subscription is not yet available in your area.</p>}
+          {/* Plan status — active / payment pending / promo */}
+          {planActive || planPending ? (
+            <Link to="/c/subscriptions" className="mt-5 block">
+              <Surface
+                className={`uw-pressable flex items-center gap-3.5 ${planPending ? "border-warning/50 bg-warning/[0.07]" : ""}`}
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${planPending ? "bg-warning/20 text-warning-foreground" : "bg-success/12 text-success"}`}>
+                  <Sparkles className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[15px] font-semibold">Daily Shine</span>
+                    {planPending ? (
+                      <StatusChip tone="warning">Payment pending</StatusChip>
+                    ) : (
+                      <StatusChip tone="success">Active</StatusChip>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-[13px] text-muted-foreground">
+                    {planPending
+                      ? "Complete payment to start your service."
+                      : "We'll take care of your car today."}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+              </Surface>
+            </Link>
+          ) : subscription && a.daily_shine ? (
+            <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="mt-5 block">
+              <Surface raised className="uw-pressable bg-gradient-to-br from-accent/70 via-card to-card">
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Daily plan</p>
+                    <h3 className="mt-1 text-[19px] font-bold tracking-tight">Keep your car clean every day</h3>
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                      Daily exterior cleaning, a monthly interior wash, at your doorstep.
+                    </p>
                   </div>
-                  <Sparkles className="h-8 w-8 shrink-0 text-primary/70" />
+                  <Sparkles className="h-6 w-6 shrink-0 text-primary/70" />
                 </div>
-                <div className="mt-4 flex items-baseline justify-between border-t border-border/60 pt-3">
-                  <div>
-                    <span className="text-2xl font-bold">₹{priceFor(subscription)}</span>
-                    <span className="ml-1 text-xs text-muted-foreground">/month</span>
-                  </div>
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${dsAllowed ? "text-primary" : "text-muted-foreground"}`}>
-                    {dsAllowed ? <>View plan <ChevronRight className="h-3.5 w-3.5" /></> : "Coming soon"}
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-[15px]">
+                    <span className="text-[20px] font-bold">₹{priceFor(subscription)}</span>
+                    <span className="ml-1 text-[13px] text-muted-foreground">/month</span>
+                  </p>
+                  <span className="inline-flex h-9 items-center rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground">
+                    View plan
                   </span>
                 </div>
-              </div>
-            );
-            return (
-              <section className="mt-7">
-                <div className="mb-3 flex items-baseline justify-between">
-                  <h3 className="text-base font-semibold tracking-tight">Subscribe & save</h3>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Best value</span>
-                </div>
-                {dsAllowed ? (
-                  <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="block hover:-translate-y-0.5 transition-transform">{card}</Link>
-                ) : card}
-              </section>
-            );
-          })()}
+              </Surface>
+            </Link>
+          ) : subscription ? (
+            <Surface className="mt-5">
+              <p className="text-[15px] font-semibold">Daily Shine is coming to your area</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                One-time services below are available right now.
+              </p>
+            </Surface>
+          ) : null}
 
-          {/* One-time washes */}
+          {/* One-time services */}
           {oneTime.length > 0 && (
-            <section className="mt-7">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-base font-semibold tracking-tight">One-time washes</h3>
-                <span className="text-[11px] text-muted-foreground">
-                  {bodyLabel ? `Prices for ${bodyLabel}` : ""}
-                </span>
-              </div>
-              <div className="space-y-2.5">
-                {servicesQ.isLoading &&
-                  Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
-                {oneTime.map((s) => {
-                  const Icon = SERVICE_ICON[s.slug] ?? Droplets;
-                  const allowed = isServiceAllowed(s.slug, a);
-                  const inner = (
-                    <>
-                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent text-primary">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="truncate text-sm font-semibold">{s.name}</h4>
-                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.description}</p>
-                        <div className="mt-1.5 flex items-center gap-3">
-                          <span className="text-sm font-bold text-foreground">₹{priceFor(s)}</span>
-                          {s.duration_minutes ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Clock className="h-3 w-3" /> {s.duration_minutes} min
-                            </span>
-                          ) : null}
-                          {!allowed && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Coming soon</span>}
-                        </div>
+            <Section
+              title="Services"
+              action={
+                bodyLabel ? (
+                  <span className="text-[12px] text-muted-foreground">Prices for {bodyLabel}</span>
+                ) : null
+              }
+            >
+              {servicesQ.isLoading ? (
+                <ListGroup>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-4">
+                      <Shimmer className="h-9 w-9 rounded-xl" />
+                      <div className="flex-1 space-y-2">
+                        <Shimmer className="h-3 w-1/2 rounded-full" />
+                        <Shimmer className="h-3 w-1/3 rounded-full" />
                       </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </>
-                  );
-                  const cls = `group flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5 transition-all ${allowed ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm" : "opacity-60 pointer-events-none"}`;
-                  return allowed ? (
-                    <Link key={s.id} to="/c/service/$slug" params={{ slug: s.slug }} className={cls}>{inner}</Link>
-                  ) : (
-                    <div key={s.id} className={cls}>{inner}</div>
-                  );
-                })}
-              </div>
-            </section>
+                    </div>
+                  ))}
+                </ListGroup>
+              ) : (
+                <ListGroup>
+                  {oneTime.map((s) => {
+                    const Icon = SERVICE_ICON[s.slug] ?? Droplets;
+                    const allowed = isServiceAllowed(s.slug, a);
+                    return (
+                      <ListRow
+                        key={s.id}
+                        icon={Icon}
+                        title={s.name}
+                        subtitle={s.description}
+                        disabled={!allowed}
+                        to={allowed ? "/c/service/$slug" : undefined}
+                        params={{ slug: s.slug }}
+                        trailing={
+                          allowed ? (
+                            <span className="shrink-0 text-[15px] font-bold">₹{priceFor(s)}</span>
+                          ) : (
+                            <StatusChip tone="warning">Soon</StatusChip>
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </ListGroup>
+              )}
+            </Section>
           )}
 
           {/* Trust strip */}
-          <div className="mt-6 grid grid-cols-3 gap-2 text-center text-[10px] text-muted-foreground">
-            <TrustChip><Check className="h-3 w-3 text-success" /> Vetted partners</TrustChip>
-            <TrustChip><Check className="h-3 w-3 text-success" /> Photo proof</TrustChip>
-            <TrustChip><Check className="h-3 w-3 text-success" /> Pay after</TrustChip>
+          <div className="mt-6 flex items-center justify-center gap-4 text-[11.5px] text-muted-foreground">
+            <TrustChip>Vetted partners</TrustChip>
+            <TrustChip>Photo proof</TrustChip>
+            <TrustChip>Doorstep</TrustChip>
           </div>
         </>
       )}
 
       {/* Vehicle switcher sheet */}
       <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Switch vehicle</DialogTitle>
+            <DialogTitle>Your vehicles</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            {vehicles.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => pickVehicle(v.id)}
-                className={`flex w-full items-center justify-between rounded-2xl border p-3 text-left ${
-                  v.id === activeVehicle?.id
-                    ? "border-primary bg-accent"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                <div>
-                  <div className="font-medium">
-                    {v.make} {v.model}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{v.registration_number}</div>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {vehicleBodyLabel(v.make, v.model, v.category)}
-                </span>
-              </button>
-            ))}
-            <Button asChild variant="outline" className="w-full">
+            {vehicles.map((v) => {
+              const isActive = v.id === activeVehicle?.id;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => pickVehicle(v.id)}
+                  className={`uw-pressable flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${
+                    isActive ? "border-primary bg-primary/[0.06]" : "border-border/70"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold">
+                      {v.make} {v.model}
+                    </span>
+                    <span className="mt-0.5 block text-[12.5px] text-muted-foreground">
+                      {v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}
+                    </span>
+                  </span>
+                  {isActive && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                </button>
+              );
+            })}
+            <Button asChild variant="outline" className="w-full rounded-full">
               <Link to="/c/vehicles/add">
-                <Plus className="mr-1 h-4 w-4" /> Add another
+                <Plus className="mr-1 h-4 w-4" /> Add vehicle
               </Link>
             </Button>
           </div>
@@ -552,9 +500,10 @@ function CustomerHome() {
 
 function TrustChip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-1 rounded-full border border-border bg-card px-2 py-1.5">
+    <span className="inline-flex items-center gap-1.5">
+      <Check className="h-3.5 w-3.5 text-success" />
       {children}
-    </div>
+    </span>
   );
 }
 
@@ -580,23 +529,23 @@ function ComingSoon({ area, onChange: _onChange }: { area: string; onChange: () 
     }
   };
   return (
-    <div className="flex flex-col items-center px-4 py-8 text-center">
-      <h2 className="text-3xl font-extrabold tracking-tight text-muted-foreground">
-        WE ARE <br />
-        COMING <span className="text-primary">SOON</span>
-      </h2>
-      <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-        Urban Wash is expanding rapidly. We'll notify you once services become available in your area.
+    <div className="flex flex-col items-center px-4 py-10 text-center">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-accent text-primary">
+        <MapPin className="h-6 w-6" />
+      </span>
+      <h2 className="mt-4 text-[20px] font-bold tracking-tight">We're not here yet</h2>
+      <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+        Urban Wash is expanding fast. We'll let you know the moment we start serving your area.
       </p>
-      <Button onClick={notify} size="lg" className="mt-6 rounded-full px-8">
-        <BellRing className="mr-2 h-4 w-4" /> Notify me!
+      <Button onClick={notify} size="lg" className="mt-6 h-11 rounded-full px-8 font-semibold">
+        <BellRing className="mr-2 h-4 w-4" /> Notify me
       </Button>
       <button
         onClick={() => {
           try { localStorage.removeItem("uw_customer_area"); } catch {}
           if (typeof window !== "undefined") window.location.href = "/c?change=1";
         }}
-        className="mt-4 text-sm font-medium text-primary underline underline-offset-4"
+        className="mt-4 text-[13px] font-semibold text-primary"
       >
         Change location
       </button>
