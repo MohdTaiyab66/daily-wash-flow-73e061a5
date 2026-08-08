@@ -135,40 +135,25 @@ function CustomerAuth() {
   const backToPhone = () => { setOtp(""); setName(""); setResendIn(0); setStep("phone"); };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
-      {/* Faded vehicle gallery — a quiet backdrop, not the subject. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-52 overflow-hidden" aria-hidden>
-        <div className="grid grid-cols-3 gap-2 px-3 pt-3 opacity-[0.09]">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-[4/3] rounded-3xl bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${hero})`,
-                backgroundPosition: `${(i % 3) * 45}% ${Math.floor(i / 3) * 50}%`,
-              }}
-            />
-          ))}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
-      </div>
-
+    <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
         {step !== "phone" && (
           <button
             onClick={backToPhone}
-            className="-ml-1 inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
           </button>
         )}
 
-        {/* Compact brand lockup — the splash already did the big reveal. */}
-        <div className="mt-8 flex items-center gap-3">
-          <img src={logo} alt="Urban Wash" className="h-11 w-11 rounded-2xl object-cover shadow-sm" />
-          <div className="leading-tight">
-            <p className="text-lg font-bold tracking-tight">Urban Wash</p>
-            <p className="text-xs text-muted-foreground">Making every ride shine</p>
+        <div className={cn("flex flex-col items-center text-center", step === "phone" ? "mt-12" : "mt-8")}>
+          <div className="relative">
+             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full" />
+             <img src={logo} alt="Urban Wash" className="relative h-16 w-16 rounded-[20px] object-cover shadow-sm" />
+          </div>
+          <div className="mt-4 leading-tight">
+            <p className="text-xl font-black tracking-tight text-[#1a1a1a]">Urban Wash</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">Lucknow</p>
           </div>
         </div>
 
