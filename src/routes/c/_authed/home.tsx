@@ -212,26 +212,14 @@ function CustomerHome() {
   return (
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-[#FFF9F3] pb-24">
-        <div className="sticky top-0 z-20 bg-[#FFF9F3]/95 px-5 pt-6 pb-4 backdrop-blur">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium text-muted-foreground">{greeting},</p>
-              {profileQ.isLoading ? <Shimmer className="mt-1 h-7 w-32 rounded-lg" /> : <h1 className="truncate text-[24px] font-black tracking-tight text-[#1a1a1a]">{firstName}</h1>}
-              <button
-                onClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
-                className="mt-1.5 flex items-center gap-1 text-[13px] font-bold text-primary transition-opacity active:opacity-60"
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="truncate max-w-[150px]">{area || "Set location"}</span>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <Link to="/c/notifications" className="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-95">
-              <Bell className="h-5 w-5 text-[#1a1a1a]" />
-              {unread > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-white ring-2 ring-[#FFF9F3]">{unread > 9 ? "9+" : unread}</span>}
-            </Link>
-          </div>
-        </div>
+        <UWHeader 
+          greeting={greeting} 
+          firstName={firstName} 
+          area={area} 
+          unread={unread} 
+          onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
+        />
+
 
         <div className="px-5 space-y-6">
           <Section title={<span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">Your active car</span>} className="mt-2">
