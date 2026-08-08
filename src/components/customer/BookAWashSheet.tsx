@@ -596,10 +596,10 @@ export function BookAWashSheet({
             </p>
           </div>
         )}
-      </div>
+      </DialogContent>
 
       {/* Date Picker Drawer */}
-        <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+      <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
               <DrawerTitle>Choose date</DrawerTitle>
