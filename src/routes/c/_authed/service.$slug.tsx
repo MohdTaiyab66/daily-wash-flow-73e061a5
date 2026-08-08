@@ -122,9 +122,11 @@ function ServiceDetail() {
   const [userId, setUserId] = useState<string | null>(null);
   const [vehDrawerOpen, setVehDrawerOpen] = useState(false);
   const [addrDrawerOpen, setAddrDrawerOpen] = useState(false);
+  const [addrDialogOpen, setAddrDialogOpen] = useState(false);
   const [payDrawerOpen, setPayDrawerOpen] = useState(false);
   const [billExpanded, setBillExpanded] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: 'phonepe', name: 'PhonePe UPI', icon: '🟣' });
+
 
 
   useEffect(() => {
