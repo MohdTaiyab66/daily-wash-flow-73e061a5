@@ -91,26 +91,20 @@ function BookingsPage() {
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
       <div className="min-h-screen bg-[#FFF9F3] pb-24">
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Bookings</h1>
-              <p className="mt-1 text-[13px] font-bold text-muted-foreground/50 uppercase tracking-widest">Service History</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasVehicles && (
-                <VehicleSelector
-                  vehicles={vehiclesQ.data ?? []}
-                  value={selectedVehicleId}
-                  onChange={setSelectedVehicleId}
-                />
-              )}
-            </div>
-          </div>
+        {/* Compact Marketplace Header */}
+        <div className="bg-[#FFF9F3] pt-2">
+          <UWHeader 
+            greeting="Service" 
+            firstName="History" 
+            unread={0}
+            area={vehiclesQ.data?.find(v => v.id === selectedVehicleId)?.registration_number ?? "My Bookings"}
+            onAreaClick={() => {}}
+          />
+        </div>
 
-          {/* Tabs */}
-          <div className="mt-8 flex gap-3 overflow-x-auto no-scrollbar">
+        {/* Tabs - Marketplace Style */}
+        <div className="sticky top-0 z-20 bg-[#FFF9F3]/80 backdrop-blur-md px-5 py-3">
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar">
             {(["upcoming", "completed", "cancelled"] as Tab[]).map((t) => {
               const active = tab === t;
               return (
@@ -118,10 +112,10 @@ function BookingsPage() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={cn(
-                    "flex-none rounded-2xl px-6 py-3 text-[14px] font-black capitalize transition-all",
+                    "flex-none rounded-full px-5 py-2 text-[13px] font-bold capitalize transition-all",
                     active 
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                      : "bg-white text-[#1a1a1a] shadow-sm border border-black/5"
+                      ? "bg-black text-white shadow-md shadow-black/10" 
+                      : "bg-white text-foreground/70 border border-border/50"
                   )}
                 >
                   {t}
@@ -130,6 +124,7 @@ function BookingsPage() {
             })}
           </div>
         </div>
+
 
         <div className="px-5">
           {!hasVehicles && !vehiclesQ.isLoading ? (
