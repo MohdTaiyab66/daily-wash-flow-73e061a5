@@ -649,7 +649,7 @@ function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id
   return (
     <div className={`mt-5 rounded-2xl border p-4 ${isDirty ? "border-primary/30 bg-primary/10" : "border-warning/40 bg-warning/15"}`}>
       <div className="flex items-start gap-3">
-        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isDirty ? "bg-orange-500/15 text-orange-700" : "bg-amber-500/15 text-warning-foreground"}`}>
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isDirty ? "bg-primary/15 text-primary" : "bg-warning/20 text-warning-foreground"}`}>
           {isDirty ? <ShieldAlert className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
         </div>
         <div className="min-w-0 flex-1">
@@ -1129,7 +1129,7 @@ function ScheduleWashDialog({
           </div>
 
           {isExhausted && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <div className="rounded-xl border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-warning-foreground">
               {exhaustedEntitlementMessage(preview)}
             </div>
           )}
