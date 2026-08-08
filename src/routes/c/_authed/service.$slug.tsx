@@ -97,6 +97,7 @@ function ServiceDetail() {
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
+  const [addonsSheetOpen, setAddonsSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
