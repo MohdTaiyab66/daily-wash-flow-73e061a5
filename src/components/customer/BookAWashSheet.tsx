@@ -505,12 +505,12 @@ export function BookAWashSheet({
               </div>
 
               {/* Time Slots */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">Preferred time</span>
-                  <p className="mt-1 text-[12px] text-muted-foreground">When should we arrive?</p>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Preferred time</Label>
+                  <p className="mt-1 ml-1 text-[12px] font-medium text-muted-foreground/60">Choose your arrival window</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3">
                   {SLOT_OPTIONS.map((s) => {
                     const isSelected = slot === s;
                     return (
@@ -519,35 +519,35 @@ export function BookAWashSheet({
                         type="button"
                         onClick={() => setSlot(s)}
                         className={cn(
-                          "uw-pressable relative flex h-12 items-center justify-center rounded-xl border px-3 text-[13px] font-semibold transition-all",
+                          "relative flex h-14 items-center justify-center rounded-2xl border text-[14px] font-black transition-all active:scale-[0.98]",
                           isSelected
-                            ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                            : "border-border bg-card hover:bg-muted"
+                            ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                            : "border-black/5 bg-white text-[#1a1a1a] shadow-sm hover:bg-black/5"
                         )}
                       >
                         {s}
                         {isSelected && (
-                          <div className="absolute top-1 right-1">
-                            <Check className="h-3 w-3" />
+                          <div className="absolute top-2 right-2">
+                            <Check className="h-3.5 w-3.5" />
                           </div>
                         )}
                       </button>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>Partner may arrive anytime within the window.</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-black/5 px-4 py-3 text-[11px] font-bold text-muted-foreground/60">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Our partner may arrive anytime within this window.</span>
                 </div>
               </div>
 
-              {/* Included Indicator */}
-              <div className="flex items-center justify-between rounded-xl bg-success/5 px-4 py-3 text-[13px]">
-                <div className="flex items-center gap-2 text-success">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="font-semibold">Included with Daily Shine</span>
+              {/* Success Indicator */}
+              <div className="flex items-center justify-between rounded-2xl bg-success/10 px-5 py-4 text-[13px] border border-success/10">
+                <div className="flex items-center gap-2.5 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-black uppercase tracking-wider">Plan Benefit</span>
                 </div>
-                <span className="font-bold text-success/80">No payment needed</span>
+                <span className="font-black text-success">✓ Included</span>
               </div>
 
               {/* Error Banner */}
