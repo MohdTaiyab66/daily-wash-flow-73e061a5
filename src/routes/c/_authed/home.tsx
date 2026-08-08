@@ -184,7 +184,9 @@ function CustomerHome() {
   const a = availability.data;
   const showCatalog = !area || (a && (a.daily_shine || a.premium));
 
-  const firstName = (profileQ.data ?? "").trim().split(/\s+/)[0] || "there";
+  const nameToProcess = typeof profileQ.data === 'object' && profileQ.data !== null ? (profileQ.data.fullName ?? "") : "";
+  const firstName = nameToProcess.trim().split(/\s+/)[0] || "there";
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const unread = unreadQ.data ?? 0;
