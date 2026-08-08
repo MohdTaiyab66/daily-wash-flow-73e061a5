@@ -1,10 +1,9 @@
-import { z } from "zod";
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, X, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check } from "lucide-react";
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -23,19 +22,27 @@ import { validateExactGps, GPS_INVALID_MESSAGE } from "@/lib/gps";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
 import {
+  appendCheckoutEvent,
   clearPendingCheckout,
+  getCheckoutHolderId,
   readPendingCheckout,
   savePendingCheckout,
   type CheckoutEvent,
+  type CheckoutStage,
 } from "@/lib/pending-checkout-store";
-import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
-import { openRazorpayCheckout } from "@/lib/paymentBridge";
 import { PageTitle, SectionTitle, Muted, Section, Surface, ListGroup, ListRow, StatusChip, Meter } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
+import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
+import { openRazorpayCheckout } from "@/lib/paymentBridge";
+
+
+
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
-  validateSearch: z.object({ vehicleId: z.string().optional().catch(undefined) }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
+  }),
   head: () => ({ meta: [{ title: "Book service — Urban Wash" }] }),
   component: ServiceDetail,
 });
@@ -60,13 +67,24 @@ type Addon = { id: string; name: string; description: string | null; price_hatch
 
 const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
 
-function toIsoDate(d: Date) { return d.toISOString().slice(0, 10); }
-function isMondayIso(iso: string) { return new Date(`${iso}T12:00:00`).getDay() === 1; }
+function toIsoDate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function isMondayIso(iso: string) {
+  return new Date(`${iso}T12:00:00`).getDay() === 1;
+}
+
 function nextBookableDateIso(start = new Date()) {
-  const d = new Date(start); d.setDate(d.getDate() + 1);
+  const d = new Date(start);
+  d.setDate(d.getDate() + 1);
   while (d.getDay() === 1) d.setDate(d.getDate() + 1);
   return toIsoDate(d);
 }
+
+// Razorpay is handled exclusively by the shared payment service
+// (src/lib/razorpay-checkout.ts). No checkout logic lives in this screen.
+
 
 function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
@@ -86,27 +104,786 @@ function ServiceDetail() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+  // Payment-specific state: inline retry banner + pending checkout context.
+  type PendingCheckout = {
+    bookingId: string;
+    keyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    serviceName: string;
+    isSubscription: boolean;
+    prefillEmail: string;
+    prefillContact: string;
+    attemptNo: number;
+  };
+  const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
+  const [paymentError, setPaymentError] = useState<{ message: string; canRetry: boolean } | null>(null);
+  
   const [paying, setPaying] = useState(false);
+  // Crash / reopen recovery: a checkout that was persisted but never finished.
   const [recovering, setRecovering] = useState(false);
-  const [resumable, setResumable] = useState<any | null>(null);
+  const [resumable, setResumable] = useState<PendingCheckout | null>(null);
   const [timeline, setTimeline] = useState<CheckoutEvent[]>([]);
   const [holdBlocked, setHoldBlocked] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
   const [recoveryNonce, setRecoveryNonce] = useState(0);
+  const recoveryRan = useRef(false);
+  // Hard client-side lock: blocks re-entry into checkout while a payment is
+  // being opened, verified or finalized (double taps, resume + retry races).
+  const checkoutLockRef = useRef(false);
+  const heldBookingRef = useRef<string | null>(null);
+  const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
+  const acquireHoldFn = useServerFn(acquireCheckoutHold);
+  const releaseHoldFn = useServerFn(releaseCheckoutHold);
+  useEffect(() => () => { if (pollAbortRef.current) pollAbortRef.current.cancelled = true; }, []);
 
-  const vehiclesQ = useQuery({ queryKey: ["customer-vehicles"], queryFn: async () => (await (supabase as any).from("vehicles").select("*").order("created_at")).data as Vehicle[] });
-  const serviceQ = useQuery({ queryKey: ["service", slug], queryFn: async () => (await (supabase as any).from("services").select("*").eq("slug", slug).maybeSingle()).data as Service });
-  const addressesQ = useQuery({ queryKey: ["customer-addresses"], queryFn: async () => (await (supabase as any).from("customer_addresses").select("*").order("created_at")).data as Address[] });
-  const addonsQ = useQuery({ queryKey: ["service-addons", slug], queryFn: async () => { const { data } = await (supabase as any).from("service_addons").select("*").eq("active", true).order("sort_order"); return ((data ?? []) as Addon[]).filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)); } });
-  const vehicleSubQ = useQuery({ queryKey: ["vehicle-open-subscription", vehicleId], enabled: !!vehicleId, queryFn: async () => { const { data } = await (supabase as any).from("subscriptions").select("id,status").eq("vehicle_id", vehicleId).in("status", ["active", "awaiting_partner_assignment", "assigned"]).limit(1).maybeSingle(); return data; } });
+  /** Persist + surface a payment timeline event. */
+  const pushEvent = useCallback((bookingId: string, stage: CheckoutStage, detail?: string) => {
+    const events = appendCheckoutEvent(bookingId, stage, detail);
+    setTimeline(events);
+  }, []);
+
+  const acquireHold = useCallback(async (bookingId: string) => {
+    try {
+      const res = await acquireHoldFn({
+        data: { bookingId, holderId: getCheckoutHolderId(), ttlSeconds: 300, reason: "checkout" },
+      });
+      if (!res?.acquired) {
+        if (res?.reason === "already_paid") return { ok: false, alreadyPaid: true } as const;
+        return { ok: false, alreadyPaid: false } as const;
+      }
+      heldBookingRef.current = bookingId;
+      return { ok: true, alreadyPaid: false } as const;
+    } catch (e) {
+      // Never block checkout because the hold service itself is unreachable —
+      // the client lock plus server-side payment verification still apply.
+      console.warn("[uw-checkout] could not acquire hold (continuing)", e);
+      return { ok: true, alreadyPaid: false } as const;
+    }
+  }, [acquireHoldFn]);
+
+  const releaseHold = useCallback(async (bookingId: string) => {
+    if (heldBookingRef.current !== bookingId) return;
+    heldBookingRef.current = null;
+    try {
+      await releaseHoldFn({ data: { bookingId, holderId: getCheckoutHolderId() } });
+    } catch (e) {
+      console.warn("[uw-checkout] hold release failed (it will expire)", e);
+    }
+  }, [releaseHoldFn]);
+
+  // Offline-safe recovery: remember the drop and re-verify when back online.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setOffline(!navigator.onLine);
+    const onOffline = () => {
+      setOffline(true);
+      const stored = readPendingCheckout();
+      if (stored) pushEvent(stored.bookingId, "offline", "Connection lost during checkout");
+    };
+    const onOnline = () => {
+      setOffline(false);
+      const stored = readPendingCheckout();
+      // Re-verify the real Razorpay status as soon as the network is back.
+      if (stored && stored.serviceSlug === slug) setRecoveryNonce((n) => n + 1);
+    };
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [slug, pushEvent]);
+
+
+
+
+  const serviceQ = useQuery({
+    queryKey: ["service", slug],
+    queryFn: async (): Promise<Service | null> => {
+      const { data, error } = await (supabase as any)
+        .from("service_catalog").select("*").eq("slug", slug).eq("active", true).maybeSingle();
+      if (error) throw error;
+      return data as Service | null;
+    },
+  });
+
+  const vehiclesQ = useQuery({
+    queryKey: ["customer-vehicles"],
+    queryFn: async (): Promise<Vehicle[]> => {
+      const { data } = await (supabase as any).from("customer_vehicles").select("*").order("created_at");
+      return (data ?? []) as Vehicle[];
+    },
+  });
+
+  const addressesQ = useQuery({
+    queryKey: ["customer-addresses"],
+    queryFn: async (): Promise<Address[]> => {
+      const { data } = await (supabase as any).from("customer_addresses").select("*").order("created_at");
+      return (data ?? []) as Address[];
+    },
+  });
+
+  const addonsQ = useQuery({
+    queryKey: ["service-addons", slug],
+    queryFn: async (): Promise<Addon[]> => {
+      const { data } = await (supabase as any).from("service_addons").select("*").eq("active", true).order("sort_order");
+      return ((data ?? []) as Addon[]).filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
+    },
+  });
+
+  // P0-DUP-01: detect an existing open Daily Shine subscription for the selected vehicle.
+  const vehicleSubQ = useQuery({
+    queryKey: ["vehicle-open-subscription", vehicleId],
+    enabled: !!vehicleId,
+    queryFn: async (): Promise<{ id: string; status: string } | null> => {
+      const { data } = await (supabase as any)
+        .from("subscriptions")
+        .select("id,status")
+        .eq("vehicle_id", vehicleId)
+        .in("status", ["active", "awaiting_partner_assignment", "assigned"])
+        .limit(1)
+        .maybeSingle();
+      return data ?? null;
+    },
+  });
+
+
+
+  const search = Route.useSearch();
+  const preselectVehicleId = search.vehicleId ?? null;
+
+  useEffect(() => {
+    if (vehiclesQ.data?.length) {
+      // Priority: 1) explicit ?vehicleId= from Subscribe Now, 2) sessionStorage
+      // selection from My Plan, 3) localStorage remembered, 4) default, 5) first.
+      let session: string | null = null;
+      try { session = sessionStorage.getItem("uw:selectedVehicleId"); } catch { /* noop */ }
+      const stored = localStorage.getItem("uw_customer_vehicle");
+      const inList = (id: string | null) => !!id && vehiclesQ.data!.some((v) => v.id === id);
+      const nextVehicleId =
+        (inList(preselectVehicleId) && preselectVehicleId) ||
+        (inList(session) && session) ||
+        (inList(stored) && stored) ||
+        vehiclesQ.data.find((v) => v.is_default)?.id ||
+        vehiclesQ.data[0].id;
+      if (!vehicleId || !vehiclesQ.data.some((v) => v.id === vehicleId)) {
+        setVehicleId(nextVehicleId!);
+        localStorage.setItem("uw_customer_vehicle", nextVehicleId!);
+      }
+    }
+  }, [vehiclesQ.data, vehicleId, preselectVehicleId]);
+
+  useEffect(() => {
+    if (!addressId && addressesQ.data?.length) {
+      const def = addressesQ.data.find((a) => (a as any).is_default) ?? addressesQ.data[0];
+      setAddressId(def?.id ?? null);
+    }
+  }, [addressesQ.data, addressId]);
 
   const service = serviceQ.data;
   const vehicle = vehiclesQ.data?.find((v) => v.id === vehicleId);
+  const address = addressesQ.data?.find((a) => a.id === addressId);
   const isSUV = vehicle?.category === "sedan_suv";
   const isDailyShine = service?.service_type === "subscription" || service?.slug?.startsWith("daily-shine");
+
+  useEffect(() => {
+    if (isDailyShine && isMondayIso(date)) {
+      setDate(nextBookableDateIso(new Date(`${date}T12:00:00`)));
+    }
+  }, [isDailyShine, date]);
+
+  const selectedAddons = useMemo(
+    () => Object.entries(addonQty)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([id, quantity]) => ({ id, quantity })),
+    [addonQty],
+  );
+
   const vehicleCount = vehiclesQ.data?.length ?? 1;
+
+  // The "first" car on the account is the earliest-created vehicle.
+  // Coupons never apply to the first car — only to additional cars
+  // (2nd, 3rd, 4th...). vehiclesQ is ordered by created_at asc.
   const firstVehicleId = vehiclesQ.data?.[0]?.id ?? null;
   const isFirstVehicle = !!vehicleId && vehicleId === firstVehicleId;
+
+  const previewQ = useQuery({
+    queryKey: ["booking-preview", service?.id, vehicleId, addressId, date, slot, appliedCoupon?.code ?? null, selectedAddons],
+    enabled: !!service?.id && !!vehicleId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("preview_customer_booking", {
+        p_service_id: service!.id,
+        p_vehicle_id: vehicleId,
+        p_address_id: addressId,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_addons: selectedAddons,
+        p_coupon_code: appliedCoupon?.code ?? null,
+      });
+      if (error) throw error;
+      return normalizeBookingPreview(data);
+    },
+  });
+
+  // Discount only via coupon (multi-vehicle perk: customer must own >1 vehicle
+  // AND must be booking for a car other than their first one).
+  const discountPct = appliedCoupon?.percent ?? 0;
+  const preview = previewQ.data ?? null;
+  const previewReady = !!preview && !previewQ.isError;
+  const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
+  const previewBase = Number(preview?.base_amount ?? previewPayable);
+  const previewAddon = Number(preview?.addon_amount ?? 0);
+  const previewDiscount = Number(preview?.discount_amount ?? 0);
+  const isIncludedBooking = !!preview?.used_entitlement;
+  const isEntitlementExhausted = !!preview?.exhausted;
+  const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
+
+  // Multi-vehicle coupon: only unlocked when booking for a non-first car.
+  // Admin can explicitly approve a first-vehicle exception for edge cases.
+  // 2 cars → 10%, 3 cars → 15%, 4+ cars → 20%.
+  const eligibleCoupon = useMemo(() => {
+    if (vehicleCount < 2) return null;
+    if (isFirstVehicle && !vehicle?.discount_approved) return null;
+    if (vehicleCount >= 4) return { code: "MULTI20", percent: 20 };
+    if (vehicleCount === 3) return { code: "EXTRA15", percent: 15 };
+    return { code: "EXTRA10", percent: 10 };
+  }, [vehicleCount, isFirstVehicle, vehicle?.discount_approved]);
+
+  // If the selected vehicle changes to one that is no longer eligible
+  // (e.g. user switches back to their first car), silently drop the coupon.
+  useEffect(() => {
+    if (appliedCoupon && !eligibleCoupon) setAppliedCoupon(null);
+  }, [appliedCoupon, eligibleCoupon]);
+
+  const applyBestCoupon = () => {
+    if (vehicleCount < 2) {
+      toast.error("Add another car to your account to unlock multi-car discounts.");
+      return;
+    }
+    if (isFirstVehicle && !vehicle?.discount_approved) {
+      toast.error("Coupons apply only when booking for an additional car, not your first one.");
+      return;
+    }
+    if (!eligibleCoupon) return;
+    setAppliedCoupon(eligibleCoupon);
+    toast.success(`${eligibleCoupon.percent}% multi-car discount applied`);
+  };
+
+  const removeCoupon = () => setAppliedCoupon(null);
+
+  const setQty = (id: string, q: number) => {
+    setAddonQty((prev) => {
+      const next = { ...prev };
+      if (q <= 0) delete next[id]; else next[id] = Math.min(q, 20);
+      return next;
+    });
+  };
+
+
+  const confirm = async () => {
+    const fail = (message: string) => {
+      console.warn("[uw-checkout] blocked", { slug, message });
+      setConfirmError(message);
+      toast.error(message);
+    };
+    setConfirmError(null);
+    if (submitting || paying) return;
+    if (!service) { fail("Service is still loading. Please try again."); return; }
+    if (!vehicle) { fail("Add or select a vehicle first."); return; }
+    if (!date) { fail("Choose a service date."); return; }
+    if (isDailyShine && isMondayIso(date)) { fail("Daily Shine does not run on Mondays. Please pick another date."); return; }
+    console.log("[uw-checkout] started", {
+      slug: service.slug,
+      serviceType: service.service_type,
+      vehicleId: vehicle.id,
+      payable: previewPayable,
+      includedBooking: isIncludedBooking,
+      addonItemsCount,
+    });
+    setSubmitting(true);
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error("Please sign in again before confirming.");
+
+      let bookingAddressId = address?.id ?? null;
+      let servicePoint = validateExactGps(address?.latitude, address?.longitude);
+
+      if (!bookingAddressId) {
+        const savedArea = localStorage.getItem("uw_customer_area")?.trim();
+        const savedAddress = localStorage.getItem("uw_customer_full_address")?.trim();
+        const savedPincode = localStorage.getItem("uw_customer_pincode")?.trim();
+        let savedGeo: any = {};
+        try { savedGeo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+        const exact = validateExactGps(savedGeo.lat, savedGeo.lng);
+
+        if (savedArea && savedAddress && exact) {
+          const { data: createdAddress, error: addressError } = await (supabase as any)
+            .from("customer_addresses")
+            .insert({
+              user_id: currentUser.user.id,
+              label: "Home",
+              address_line: savedAddress,
+              area: savedArea,
+              pincode: savedPincode || savedGeo.pincode || null,
+              latitude: exact.latitude,
+              longitude: exact.longitude,
+              is_default: true,
+            })
+            .select("id")
+            .single();
+          if (addressError) throw addressError;
+          bookingAddressId = createdAddress.id;
+          servicePoint = exact;
+          setAddressId(createdAddress.id);
+          qc.invalidateQueries({ queryKey: ["customer-addresses"] });
+        } else {
+          setAddrOpen(true);
+          throw new Error("Exact GPS is required before booking. Please use current location and save GPS again.");
+        }
+      }
+
+      const selectedAddress = addressesQ.data?.find((a) => a.id === bookingAddressId);
+      if (selectedAddress) servicePoint = validateExactGps((selectedAddress as any).latitude, (selectedAddress as any).longitude);
+      if (!servicePoint) {
+        setAddrOpen(true);
+        throw new Error("Exact GPS is required before booking. Please update this address using current location.");
+      }
+
+      // Coverage Zone validation (server-side, fail-closed).
+      // The selected service address is the booking source of truth. Browser
+      // localStorage GPS may be stale from a previous customer/session and was
+      // causing valid polygon addresses to be rejected.
+      const { error: covErr } = await supabase.rpc("assert_serviceable", {
+        p_lat: servicePoint.latitude,
+        p_lng: servicePoint.longitude,
+        p_slug: service.slug,
+      });
+      if (covErr) throw new Error(covErr.message || "This service isn't available in your area yet.");
+
+      const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
+        p_service_id: service.id,
+        p_vehicle_id: vehicle.id,
+        p_address_id: bookingAddressId,
+        p_scheduled_date: date,
+        p_scheduled_time: slot,
+        p_notes: notes || null,
+        p_coupon_code: appliedCoupon?.code ?? null,
+        p_addons: selectedAddons,
+      });
+
+      if (error) throw error;
+      if (!bookingId) throw new Error("Booking was not created. Please try again.");
+      console.log("[uw-checkout] booking created", { bookingId: String(bookingId), slug: service.slug });
+      traceVehicle("customer_schedule", { booking_id: String(bookingId), vehicle_id: vehicle.id, details: { service_slug: service.slug, date, slot } });
+
+      const { data: bookingAfterCreate, error: bookingReadError } = await (supabase as any)
+        .from("bookings")
+        .select("total_amount,payment_status")
+        .eq("id", bookingId)
+        .maybeSingle();
+      if (bookingReadError) throw bookingReadError;
+      const createdPayable = Number(bookingAfterCreate?.total_amount ?? previewPayable ?? 0);
+      const alreadyPaid = bookingAfterCreate?.payment_status === "paid" || createdPayable <= 0;
+
+      // Pre/Post payment is driven by admin flags on the service + each addon.
+      // Default is 'pre' (online payment before work). Post-payment skips Razorpay.
+      const servicePrepay = ((service as any).payment_mode ?? "pre") === "pre";
+      const addonPrepay = (addonsQ.data ?? []).some((a: any) => {
+        const q = addonQty[a.id] ?? 0;
+        return q > 0 && ((a.payment_mode ?? "pre") === "pre");
+      });
+      const requiresPrepay = servicePrepay || addonPrepay;
+
+      if (alreadyPaid || !requiresPrepay) {
+        toast.success(alreadyPaid ? "Included in your Daily Shine Plan · ₹0 payable" : "Booking confirmed! You'll pay after the service is completed.");
+        qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+        qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+        qc.invalidateQueries({ queryKey: ["vehicle-entitlements", vehicle.id] });
+        // Dedicated confirmation screen instead of a toast-only handoff.
+        await navigate({
+          to: "/c/booking-success",
+          search: {
+            bookingId: service.service_type === "subscription" ? undefined : String(bookingId),
+            service: service.name,
+            date,
+            slot: slot || undefined,
+            vehicle: `${vehicle.make} ${vehicle.model}`,
+            plan: service.service_type === "subscription" ? true : undefined,
+          },
+        });
+        return;
+      }
+
+
+      const order = await createOrder({ data: { bookingId: String(bookingId) } });
+      const prefillEmail = currentUser.user.email ?? "";
+      const prefillContact = (currentUser.user.phone ?? currentUser.user.user_metadata?.phone ?? "") as string;
+
+      const checkoutCtx: PendingCheckout = {
+        bookingId: String(bookingId),
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        serviceName: service.name,
+        isSubscription: service.service_type === "subscription",
+        prefillEmail,
+        prefillContact,
+        attemptNo: 1,
+      };
+      setPendingCheckout(checkoutCtx);
+      setResumable(null);
+      savePendingCheckout({
+        ...checkoutCtx,
+        serviceSlug: service.slug,
+        selection: {
+          vehicleId: vehicle.id,
+          addressId: bookingAddressId,
+          date,
+          slot,
+          notes: notes || null,
+          addonQty,
+          couponCode: appliedCoupon?.code ?? null,
+        },
+        events: [],
+      });
+      pushEvent(String(bookingId), "created", `Order ${order.orderId.slice(-6)} · ₹${Math.round(order.amount / 100)}`);
+      await runPayment(checkoutCtx, { isRetry: false });
+
+    } catch (err: any) {
+      fail(err?.message || "Could not confirm booking");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const safeLog = useCallback(async (row: {
+    bookingId: string;
+    channel: "native" | "web" | "unknown";
+    outcome: "started" | "success" | "failure" | "cancelled" | "retry" | "timeout";
+    attemptNo?: number;
+    errorCode?: string;
+    errorMessage?: string;
+    providerOrderId?: string;
+    providerPaymentId?: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    try {
+      await logAttemptFn({ data: row });
+    } catch (e) {
+      console.warn("[payment] attempt log failed (non-fatal)", e);
+    }
+  }, [logAttemptFn]);
+
+  /**
+   * Poll the server for payment reconciliation. Razorpay may finalize the
+   * payment via webhook even if the checkout window failed to return a
+   * response to the client. Polls every 2s up to ~60s, returns true if
+   * the booking flips to `paid` (or a subscription is created).
+   */
+  const pollForSuccess = useCallback(async (bookingId: string): Promise<boolean> => {
+    const abort = { cancelled: false };
+    pollAbortRef.current = abort;
+    const deadline = Date.now() + 60_000;
+    while (!abort.cancelled && Date.now() < deadline) {
+      try {
+        const s = await getStatusFn({ data: { bookingId } });
+        if (s.paymentStatus === "paid" || s.subscriptionId) return true;
+        if (s.latestAttempt?.outcome === "success") return true;
+      } catch (e) {
+        console.warn("[payment] status poll error (will retry)", e);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return false;
+  }, [getStatusFn]);
+
+  const runPayment = useCallback(async (ctx: PendingCheckout, opts: { isRetry: boolean }) => {
+    // Client-side hold: hard re-entrancy guard around the whole attempt.
+    if (checkoutLockRef.current) {
+      console.warn("[uw-checkout] duplicate checkout attempt blocked (client hold)");
+      return;
+    }
+    checkoutLockRef.current = true;
+    setPaymentError(null);
+    
+    setHoldBlocked(null);
+    setPaying(true);
+    // Cancel any prior polling loop.
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+
+    // Server-side hold: blocks a second tab/device from opening the same order
+    // while this one is being paid, verified or finalized.
+    const hold = await acquireHold(ctx.bookingId);
+    if (!hold.ok) {
+      checkoutLockRef.current = false;
+      setPaying(false);
+      setHoldBlocked(
+        "This payment is already being processed on another device or tab. Wait a few moments and try again.",
+      );
+      pushEvent(ctx.bookingId, "failed", "Blocked — payment already in progress elsewhere");
+      return;
+    }
+    if (hold.alreadyPaid) {
+      checkoutLockRef.current = false;
+      setPaying(false);
+      pushEvent(ctx.bookingId, "paid", "Already paid — finalizing");
+      await finalizeSuccess(ctx);
+      return;
+    }
+
+    // Single native payment layer (src/lib/paymentBridge.ts) — this screen has
+    // no Razorpay logic of its own.
+    const channel = "native" as const;
+
+    await safeLog({
+      bookingId: ctx.bookingId,
+      channel,
+      outcome: opts.isRetry ? "retry" : "started",
+      attemptNo: ctx.attemptNo,
+      providerOrderId: ctx.orderId,
+    });
+
+    try {
+      const result = await openRazorpayCheckout({
+        keyId: ctx.keyId,
+        orderId: ctx.orderId,
+        amount: ctx.amount,
+        currency: ctx.currency,
+        description: ctx.serviceName,
+        bookingId: ctx.bookingId,
+        prefillEmail: ctx.prefillEmail,
+        prefillContact: ctx.prefillContact,
+        onOpened: () => {
+          pushEvent(ctx.bookingId, "opened", `Checkout · attempt ${ctx.attemptNo}`);
+        },
+      });
+
+
+      if (result.status === "cancelled") throw new Error("Payment cancelled");
+      if (result.status === "failed") {
+        throw Object.assign(new Error(result.message || "Payment failed"), { code: result.code });
+      }
+
+      await verifyPayment({
+        data: {
+          bookingId: ctx.bookingId,
+          razorpayOrderId: result.orderId,
+          razorpayPaymentId: result.paymentId,
+          razorpaySignature: result.signature,
+        },
+      });
+
+
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: "success",
+        attemptNo: ctx.attemptNo,
+        providerOrderId: ctx.orderId,
+      });
+      await finalizeSuccess(ctx);
+    } catch (err: any) {
+      console.warn("[uw-checkout] payment attempt failed", {
+        bookingId: ctx.bookingId,
+        message: err?.message ?? String(err),
+        code: err?.code,
+      });
+      const cancelled = /cancelled/i.test(String(err?.message ?? ""));
+      // Even on cancel/failure, poll the server briefly — the webhook may
+      // have already reconciled the payment out-of-band.
+      const reconciled = await pollForSuccess(ctx.bookingId);
+      if (reconciled) {
+        await safeLog({
+          bookingId: ctx.bookingId,
+          channel,
+          outcome: "success",
+          attemptNo: ctx.attemptNo,
+          providerOrderId: ctx.orderId,
+          metadata: { reconciled_via: "polling" },
+        });
+        pushEvent(ctx.bookingId, "paid", "Verified paid after reconnecting");
+        await finalizeSuccess(ctx);
+        return;
+      }
+      await safeLog({
+        bookingId: ctx.bookingId,
+        channel,
+        outcome: cancelled ? "cancelled" : "failure",
+        attemptNo: ctx.attemptNo,
+        errorCode: cancelled ? "user_cancelled" : "checkout_failed",
+        errorMessage: String(err?.message ?? err).slice(0, 500),
+      });
+      const timedOut = /timeout|timed out/i.test(String(err?.message ?? ""));
+      pushEvent(
+        ctx.bookingId,
+        cancelled ? "cancelled" : timedOut ? "timeout" : "failed",
+        String(err?.message ?? "Checkout did not complete").slice(0, 120),
+      );
+      pushEvent(ctx.bookingId, "unpaid", "Server reports this booking is still unpaid");
+      setPaymentError({
+        message: cancelled
+          ? "Checkout was cancelled. You can retry when you're ready."
+          : (err?.message || "Payment failed. Please try again."),
+        canRetry: true,
+      });
+    } finally {
+      // Always drop both holds so a retry (or another device) can proceed.
+      await releaseHold(ctx.bookingId);
+      checkoutLockRef.current = false;
+      setPaying(false);
+    }
+  }, [verifyPayment, safeLog, pollForSuccess, acquireHold, releaseHold, pushEvent]);
+
+
+  const finalizeSuccess = useCallback(async (ctx: PendingCheckout) => {
+    if (ctx.isSubscription) {
+      toast.success("Subscription activated · Waiting for area assignment", {
+        description: "We'll notify you once your first service is completed.",
+        duration: 6000,
+      });
+    } else {
+      toast.success("Payment successful · Booking confirmed", {
+        description: "We'll notify you when the service is completed.",
+        duration: 6000,
+      });
+    }
+    qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+    qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) qc.invalidateQueries({ queryKey: ["sub-queue", u.user.id] });
+    setPendingCheckout(null);
+    setPaymentError(null);
+    setResumable(null);
+    setHoldBlocked(null);
+    setTimeline([]);
+    await releaseHold(ctx.bookingId);
+    clearPendingCheckout();
+    await navigate({
+      to: "/c/booking-success",
+      search: {
+        bookingId: ctx.isSubscription ? undefined : ctx.bookingId,
+        plan: ctx.isSubscription ? true : undefined,
+      },
+    });
+  }, [navigate, qc, releaseHold]);
+
+  const onRetryPayment = useCallback(async () => {
+    const base = pendingCheckout ?? resumable;
+    if (!base || paying || checkoutLockRef.current) return;
+    const next: PendingCheckout = { ...base, attemptNo: base.attemptNo + 1 };
+    setPendingCheckout(next);
+    setResumable(null);
+    const stored = readPendingCheckout();
+    savePendingCheckout({
+      ...next,
+      serviceSlug: slug,
+      selection: stored?.selection,
+      events: stored?.events,
+    });
+    await runPayment(next, { isRetry: true });
+  }, [pendingCheckout, resumable, paying, runPayment, slug]);
+
+
+  /**
+   * Crash / reopen recovery. On mount, if a checkout for this service was
+   * persisted but never finished, ask the server what actually happened:
+   *  - already paid  → finalize (no duplicate charge, no re-booking)
+   *  - still pending → surface a "Resume payment" banner with the same order
+   */
+  useEffect(() => {
+    if (recoveryRan.current && recoveryNonce === 0) return;
+    recoveryRan.current = true;
+    const stored = readPendingCheckout();
+    if (!stored || stored.serviceSlug !== slug) return;
+    setTimeline(stored.events ?? []);
+    // Restore the selection that produced this checkout, so a reopen after an
+    // offline drop shows the same cart instead of a blank form.
+    if (stored.selection) {
+      if (stored.selection.vehicleId) setVehicleId(stored.selection.vehicleId);
+      if (stored.selection.addressId) setAddressId(stored.selection.addressId);
+      if (stored.selection.date) setDate(stored.selection.date);
+      if (stored.selection.slot) setSlot(stored.selection.slot);
+      if (stored.selection.notes) setNotes(stored.selection.notes);
+      if (stored.selection.addonQty) setAddonQty(stored.selection.addonQty);
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // Offline: keep the persisted context, verify as soon as we're back.
+      setResumable({
+        bookingId: stored.bookingId,
+        keyId: stored.keyId,
+        orderId: stored.orderId,
+        amount: stored.amount,
+        currency: stored.currency,
+        serviceName: stored.serviceName,
+        isSubscription: stored.isSubscription,
+        prefillEmail: stored.prefillEmail,
+        prefillContact: stored.prefillContact,
+        attemptNo: stored.attemptNo,
+      });
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      setRecovering(true);
+      pushEvent(stored.bookingId, "verifying", "Re-checking payment status");
+      try {
+        const status = await getStatusFn({ data: { bookingId: stored.bookingId } });
+        if (cancelled) return;
+        const ctx: PendingCheckout = {
+          bookingId: stored.bookingId,
+          keyId: stored.keyId,
+          orderId: stored.orderId,
+          amount: stored.amount,
+          currency: stored.currency,
+          serviceName: stored.serviceName,
+          isSubscription: stored.isSubscription,
+          prefillEmail: stored.prefillEmail,
+          prefillContact: stored.prefillContact,
+          attemptNo: stored.attemptNo,
+        };
+        if (status.paymentStatus === "paid" || (status as any).subscriptionId) {
+          console.log("[uw-checkout] recovered a completed payment", { bookingId: stored.bookingId });
+          pushEvent(stored.bookingId, "paid", "Payment confirmed by Razorpay");
+          await finalizeSuccess(ctx);
+          return;
+        }
+        if (status.paymentStatus === "cancelled" || status.paymentStatus === "failed") {
+          pushEvent(stored.bookingId, "unpaid", "Payment was not completed");
+          clearPendingCheckout();
+          return;
+        }
+        pushEvent(stored.bookingId, "unpaid", "Still unpaid — you can resume this order");
+        setResumable(ctx);
+      } catch (e) {
+        console.warn("[uw-checkout] recovery status check failed", e);
+      } finally {
+        if (!cancelled) setRecovering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [slug, recoveryNonce, getStatusFn, finalizeSuccess, pushEvent]);
+
+
+  const onDiscardResumable = useCallback(() => {
+    setResumable(null);
+    setTimeline([]);
+    setHoldBlocked(null);
+    clearPendingCheckout();
+  }, []);
+
+  const onDismissPaymentError = useCallback(() => {
+    setPaymentError(null);
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+  }, []);
+
+
+
+
+
+
 
   const uniqueAddresses = useMemo(() => {
     const seen = new Set<string>();
@@ -118,49 +895,28 @@ function ServiceDetail() {
     });
   }, [addressesQ.data]);
 
-  const selectedAddons = useMemo(() => Object.entries(addonQty).filter(([, q]) => q > 0).map(([id, q]) => ({ id, quantity: q })), [addonQty]);
-
-  const previewQ = useQuery({
-    queryKey: ["booking-preview", service?.id, vehicleId, addressId, date, slot, appliedCoupon?.code ?? null, selectedAddons],
-    enabled: !!service?.id && !!vehicleId,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("preview_customer_booking", {
-        p_service_id: service!.id, p_vehicle_id: vehicleId, p_address_id: addressId,
-        p_scheduled_date: date, p_scheduled_time: slot, p_addons: selectedAddons, p_coupon_code: appliedCoupon?.code ?? null,
-      });
-      if (error) throw error;
-      return normalizeBookingPreview(data);
-    },
-  });
-
-  const preview = previewQ.data ?? null;
-  const previewReady = !!preview && !previewQ.isError;
-  const previewPayable = previewReady ? Number(preview.payable ?? 0) : 0;
-  const previewBase = Number(preview?.base_amount ?? previewPayable);
-  const previewAddon = Number(preview?.addon_amount ?? 0);
-  const previewDiscount = Number(preview?.discount_amount ?? 0);
-  const isIncludedBooking = !!preview?.used_entitlement;
-  const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
-
-  const eligibleCoupon = useMemo(() => {
-    if (vehicleCount < 2 || (isFirstVehicle && !vehicle?.discount_approved)) return null;
-    if (vehicleCount >= 4) return { code: "MULTI20", percent: 20 };
-    if (vehicleCount === 3) return { code: "EXTRA15", percent: 15 };
-    return { code: "EXTRA10", percent: 10 };
-  }, [vehicleCount, isFirstVehicle, vehicle?.discount_approved]);
-
-  const applyBestCoupon = () => { if (eligibleCoupon) setAppliedCoupon(eligibleCoupon); };
-  const removeCoupon = () => setAppliedCoupon(null);
-  const setQty = (id: string, q: number) => setAddonQty((prev) => ({ ...prev, [id]: Math.min(q, 20) }));
-
-  if (serviceQ.isLoading) return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
-  if (!service) return <div className="px-5 pt-10 text-center"><p className="text-muted-foreground">Not found</p></div>;
+  if (serviceQ.isLoading) {
+    return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
+  }
+  if (!service) {
+    return (
+      <div className="px-5 pt-10 text-center">
+        <p className="text-sm text-muted-foreground">Service not found.</p>
+        <Button asChild variant="outline" className="mt-4"><Link to="/c/home">Back to home</Link></Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-[120px]">
       <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm"><ArrowLeft className="h-4 w-4" /></button>
-        <div className="min-w-0"><h1 className="text-[17px] font-bold text-foreground">{service.name}</h1><p className="text-[13px] text-muted-foreground">Your car, clean every day</p></div>
+        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-[17px] font-bold tracking-tight text-foreground">{service.name}</h1>
+          <p className="truncate text-[13px] text-muted-foreground">Your car, clean every day</p>
+        </div>
       </header>
 
       <div className="px-5 pb-6">
@@ -169,7 +925,10 @@ function ServiceDetail() {
             <div className="min-w-0">
               <h2 className="text-[20px] font-bold text-foreground">{service.name}</h2>
               <p className="mt-1 text-[13px] text-muted-foreground">{service.description}</p>
-              <div className="mt-3 flex items-baseline gap-2"><span className="text-[24px] font-bold text-primary">₹{isSUV ? service.price_sedan_suv : service.price_hatchback}</span><span className="text-[13px] text-muted-foreground">/ month</span></div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-[24px] font-bold text-primary">₹{isSUV ? service.price_sedan_suv : service.price_hatchback}</span>
+                <span className="text-[13px] text-muted-foreground">/ month</span>
+              </div>
             </div>
             <StatusChip tone="brand">BEST VALUE</StatusChip>
           </div>
@@ -177,7 +936,13 @@ function ServiceDetail() {
 
         <Section title="What's included">
           <Surface className="py-3">
-             <ul className="space-y-2">{service.benefits?.slice(0, 3).map((b, i) => <li key={i} className="flex items-center gap-2 text-[14px] text-foreground"><Check className="h-4 w-4 text-success" /> {b}</li>)}</ul>
+             <ul className="space-y-2">
+                {service.benefits?.slice(0, 3).map((b, i) => (
+                  <li key={i} className="flex items-center gap-2 text-[14px] text-foreground">
+                    <Check className="h-4 w-4 text-success" /> {b}
+                  </li>
+                ))}
+             </ul>
              <button className="mt-3 text-[13px] font-semibold text-primary">View all benefits ›</button>
           </Surface>
         </Section>
@@ -185,8 +950,11 @@ function ServiceDetail() {
         <Section title="Your vehicle">
           <Surface className="flex items-center justify-between p-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-accent" />
-              <div><div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div><div className="text-[12px] text-muted-foreground">{vehicle?.registration_number}</div></div>
+              <div className="h-12 w-12 rounded-full bg-accent" />
+              <div>
+                <div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div>
+                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category}</div>
+              </div>
             </div>
             <button className="text-[13px] font-semibold text-primary">Change ›</button>
           </Surface>
@@ -195,39 +963,121 @@ function ServiceDetail() {
         <Section title="Service address">
           <div className="space-y-2">
             {uniqueAddresses.map((a) => (
-              <button key={a.id} onClick={() => setAddressId(a.id)} className={cn("flex w-full items-start gap-3 rounded-2xl border bg-card p-3 text-left", addressId === a.id ? "border-primary" : "border-border")}>
-                <div className={cn("mt-1 h-4 w-4 rounded-full border-2", addressId === a.id ? "border-primary" : "border-border")} />
-                <div className="min-w-0 flex-1"><div className="text-[14px] font-semibold">{a.label}</div><div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div></div>
+              <button key={a.id} onClick={() => setAddressId(a.id)}
+                className={cn("flex w-full items-start gap-3 rounded-2xl border bg-card p-3 text-left transition-all", 
+                  addressId === a.id ? "border-primary ring-1 ring-primary/20" : "border-border")}>
+                <div className={cn("mt-1 h-4 w-4 rounded-full border-2 transition-colors", 
+                  addressId === a.id ? "border-primary bg-primary ring-offset-2 ring-1 ring-primary" : "border-border")} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-semibold">{a.label}</div>
+                  <div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div>
+                </div>
               </button>
             ))}
-            <button onClick={() => setAddrOpen(true)} className="flex w-full items-center gap-2 py-2 text-[14px] font-medium text-primary"><Plus className="h-4 w-4" /> Add a new service address</button>
+            <button onClick={() => setAddrOpen(true)} className="flex w-full items-center gap-2 py-2 text-[14px] font-medium text-primary">
+              <Plus className="h-4 w-4" /> Add a new service address
+            </button>
           </div>
         </Section>
 
         <Section title="Your first service">
           <div className="mb-3 text-[14px] font-medium">Tomorrow · {date}</div>
-          <div className="grid grid-cols-3 gap-2">{TIME_SLOTS.map((s) => <button key={s} onClick={() => setSlot(s)} className={cn("rounded-full border py-2 text-[12px] font-medium", slot === s ? "border-primary bg-primary/10 text-primary" : "border-border bg-card")}>{s}</button>)}</div>
+          <div className="grid grid-cols-3 gap-2">
+            {TIME_SLOTS.map((s) => (
+              <button key={s} onClick={() => setSlot(s)}
+                className={cn("rounded-full border py-2 text-[12px] font-medium transition-all", 
+                  slot === s ? "border-primary bg-primary/10 text-primary" : "border-border bg-card")}>
+                {s}
+              </button>
+            ))}
+          </div>
         </Section>
 
         <Section title="Make it even better" action={<button className="text-[13px] font-semibold text-primary">View all ›</button>}>
            {addonsQ.data?.slice(0, 3).map((a) => {
              const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-             return (<div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3"><div><div className="text-[14px] font-semibold">{a.name}</div><div className="text-[12px] text-muted-foreground">₹{p}</div></div><Button size="sm" variant="outline" className="rounded-full">+ Add</Button></div>)
+             const qty = addonQty[a.id] || 0;
+             return (
+              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3">
+                 <div>
+                   <div className="text-[14px] font-semibold">{a.name}</div>
+                   <div className="text-[12px] text-muted-foreground">₹{p}</div>
+                 </div>
+                 {qty > 0 ? (
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Minus className="h-3 w-3" /></button>
+                        <span className="text-sm font-bold">{qty}</span>
+                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Plus className="h-3 w-3" /></button>
+                    </div>
+                 ) : (
+                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => setQty(a.id, 1)}>+ Add</Button>
+                 )}
+              </div>
+             )
            })}
         </Section>
+        
+        {eligibleCoupon && !appliedCoupon && (
+           <Section>
+            <Surface className="flex items-center justify-between bg-primary/5">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🎉</span>
+                <div>
+                   <div className="text-[14px] font-semibold">You unlock {eligibleCoupon.percent}% off</div>
+                   <div className="text-[12px] text-muted-foreground">For having multiple cars</div>
+                </div>
+              </div>
+              <Button size="sm" className="rounded-full" onClick={applyBestCoupon}>Apply</Button>
+            </Surface>
+           </Section>
+        )}
 
         <Section title="Price summary">
-           <Surface className="space-y-2 text-[14px]"><div className="flex justify-between text-muted-foreground"><span>Daily Shine</span><span>₹{previewBase}</span></div><div className="flex justify-between text-muted-foreground"><span>Add-ons</span><span>₹{previewAddon}</span></div><div className="flex justify-between text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div><div className="flex justify-between pt-2 text-[16px] font-bold border-t"><span>Total</span><span>₹{previewPayable}</span></div></Surface>
+           <Surface className="space-y-2 text-[14px]">
+              <div className="flex justify-between text-muted-foreground"><span>Daily Shine</span><span>₹{previewBase}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Add-ons</span><span>₹{previewAddon}</span></div>
+              {previewDiscount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
+              <div className="flex justify-between pt-2 text-[16px] font-bold border-t border-border"><span>Total</span><span>₹{previewPayable}</span></div>
+           </Surface>
         </Section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-5 py-4 backdrop-blur">
-        <Button size="lg" className="h-14 w-full rounded-2xl text-[16px] font-bold" onClick={() => {}}>
-           <div className="flex flex-col items-start gap-0.5"><span>Pay ₹{previewPayable}</span><span className="text-[10px] font-normal opacity-80">Secure payment via Razorpay</span></div>
-           <ChevronRight className="ml-auto h-5 w-5" />
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-5 py-4 backdrop-blur shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+          {paymentError && (
+             <div className="mb-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-[12px] text-destructive">
+                {paymentError.message}
+             </div>
+          )}
+        <Button size="lg" className="h-14 w-full rounded-2xl text-[16px] font-bold" onClick={() => confirm()} disabled={submitting || paying}>
+           {submitting || paying ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+           ) : (
+              <>
+                <div className="flex flex-col items-start gap-0.5">
+                  <span>Pay ₹{previewPayable}</span>
+                  <span className="text-[10px] font-normal opacity-80">Secure payment via Razorpay</span>
+                </div>
+                <ChevronRight className="ml-auto h-5 w-5" />
+              </>
+           )}
         </Button>
       </div>
+
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
+    </div>
+  );
+}
+
+function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-5 rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <span className="text-muted-foreground">{icon}</span> {title}
+        </div>
+        {hint ? <span className="text-[11px] text-muted-foreground">{hint}</span> : null}
+      </div>
+      {children}
     </div>
   );
 }
@@ -237,17 +1087,59 @@ function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpe
   const [line, setLine] = useState("");
   const [area, setArea] = useState("");
   const [pincode, setPincode] = useState("");
+  const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
   const save = async () => {
+    if (line.trim().length < 4) { toast.error("Enter a valid address"); return; }
+    let savedGeo: any = {};
+    try { savedGeo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+    const exact = validateExactGps(savedGeo.lat, savedGeo.lng);
+    if (!exact) { toast.error(GPS_INVALID_MESSAGE); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
-    const { data, error } = await (supabase as any).from("customer_addresses").insert({ user_id: u.user?.id, label, address_line: line, area, pincode, is_default: true }).select("id").single();
+    if (!u.user) { setSaving(false); return; }
+    const { data, error } = await (supabase as any).from("customer_addresses").insert({
+      user_id: u.user.id, label, address_line: line.trim(), area: area.trim(),
+      pincode: pincode || savedGeo.pincode || null, parking_notes: notes || null,
+      latitude: exact.latitude, longitude: exact.longitude, is_default: true,
+    }).select("id").single();
     setSaving(false);
-    if (!error) { onCreated(data.id); onOpenChange(false); }
+    if (error) { toast.error(error.message); return; }
+    toast.success("Address saved");
+    onCreated(data.id);
+    onOpenChange(false);
+    setLine(""); setArea(""); setPincode(""); setNotes("");
   };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md"><DialogHeader><DialogTitle>Add address</DialogTitle></DialogHeader><div className="space-y-3"><Input value={line} onChange={(e) => setLine(e.target.value)} placeholder="House, Street" /><Input value={area} onChange={(e) => setArea(e.target.value)} placeholder="Area" /><Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Pincode" /></div><DialogFooter><Button onClick={save} disabled={saving}>Save</Button></DialogFooter></DialogContent>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Add address</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            {["Home", "Work", "Other"].map((l) => (
+              <button key={l} onClick={() => setLabel(l)}
+                className={`rounded-full border px-3 py-1.5 text-xs ${
+                  label === l ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                }`}>{l}</button>
+            ))}
+          </div>
+          <div><Label>Flat / House / Street</Label><Input value={line} onChange={(e) => setLine(e.target.value)} placeholder="A-203, Greens Apt" /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Area</Label><Input value={area} onChange={(e) => setArea(e.target.value)} placeholder="Sector 18" /></div>
+            <div><Label>Pincode</Label><Input value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} /></div>
+          </div>
+          <div><Label>Parking notes (optional)</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Exact GPS is mandatory for Daily Shine navigation. Use the location screen so your partner never gets an area centroid.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save address</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
