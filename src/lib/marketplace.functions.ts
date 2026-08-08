@@ -248,7 +248,8 @@ async function rpc(context: any, fn: string, args: Record<string, unknown>) {
 export const getLiveBroadcasts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    const { userId, supabase } = context as any;
+    const isAdmin = await rpc(context, "has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
     const { data, error } = await (context.supabase as any)
       .from("marketplace_broadcasts")
