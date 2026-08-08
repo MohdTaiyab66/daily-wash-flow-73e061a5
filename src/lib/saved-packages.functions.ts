@@ -48,7 +48,7 @@ export const saveCustomerPackage = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const name = data.name.trim();
     if (!name) throw new Error("Please enter a package name");
     if (name.length > 60) throw new Error("Name is too long");
