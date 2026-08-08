@@ -101,11 +101,6 @@ function MyPlanPage() {
   }, [userId, qc]);
 
 
-  const openSchedule = (kind: "any" | "interior" | "exterior" | "dusting" = "any") => {
-    setScheduleKind(kind);
-    setScheduleOpen(true);
-  };
-
 
   // Vehicle selector: subscription is per-vehicle. All queries below are scoped
   // to the selected vehicle. Default = first vehicle with an active subscription,
