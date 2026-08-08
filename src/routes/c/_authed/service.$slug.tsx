@@ -993,7 +993,7 @@ function ServiceDetail() {
         </div>
       </header>
 
-      <div className="px-5 pb-6">
+      <div className="px-5 pb-6 space-y-8">
         <PremiumHero 
           service={service} 
           vehicleSubActive={isVehicleSubActive} 
@@ -1003,66 +1003,11 @@ function ServiceDetail() {
           address={address}
           onVehicleClick={() => setVehDrawerOpen(true)}
           onAddressClick={() => setAddrDrawerOpen(true)}
-          onBookIncluded={() => setBookOpen(true)}
+          onBookIncluded={() => {}} // No-op, we'll handle it in the sticky CTA
         />
 
-        {/* Vehicle Drawer */}
-        <Drawer open={vehDrawerOpen} onOpenChange={setVehDrawerOpen}>
-          <DrawerContent className="max-h-[80vh]">
-            <DrawerHeader className="pb-2">
-              <DrawerTitle>Select Vehicle</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 py-2 space-y-2 overflow-y-auto">
-              {(vehiclesQ.data || []).map(v => (
-                <DrawerClose key={v.id} asChild>
-                  <button 
-                    onClick={() => {
-                      setVehicleId(v.id);
-                      localStorage.setItem("uw_customer_vehicle", v.id);
-                    }}
-                    className={cn("w-full text-left p-4 rounded-xl border flex items-center justify-between", vehicleId === v.id ? "border-primary bg-primary/5 shadow-sm" : "border-black/5")}
-                  >
-                    <div>
-                      <div className="font-black text-[15px]">{v.make} {v.model}</div>
-                      <div className="text-xs font-medium text-muted-foreground/60">{v.registration_number}</div>
-                    </div>
-                    {vehicleId === v.id && <div className="h-2 w-2 rounded-full bg-primary" />}
-                  </button>
-                </DrawerClose>
-              ))}
-            </div>
-            <DrawerFooter>
-              <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95"><Link to="/c/vehicles/add">Add another car</Link></Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-
-        {/* Address Drawer */}
-        <Drawer open={addrDrawerOpen} onOpenChange={setAddrDrawerOpen}>
-          <DrawerContent className="max-h-[80vh]">
-            <DrawerHeader className="pb-2">
-              <DrawerTitle>Select Location</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 py-2 space-y-2 overflow-y-auto">
-              {uniqueAddresses.map(addr => (
-                <DrawerClose key={addr.id} asChild>
-                  <button 
-                    onClick={() => setAddressId(addr.id)}
-                    className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-black/5")}
-                  >
-                    <div className="font-black text-[15px]">{addr.label}</div>
-                    <div className="text-xs font-medium text-muted-foreground/60">{addr.address_line}, {addr.area}</div>
-                  </button>
-                </DrawerClose>
-              ))}
-            </div>
-            <DrawerFooter>
-              <Button onClick={() => setAddrOpen(true)} variant="outline" className="h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95">Add new address</Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-
-        <Section className="mt-8" title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Choose a time</span></>}>
+        {/* Schedule Section */}
+        <Section title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Choose a time</span></>}>
           <div className="mb-4 text-[14px] font-black text-foreground px-1">
             {date === new Date().toISOString().split("T")[0] ? "Today" : "Tomorrow"} · {new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </div>
@@ -1078,8 +1023,9 @@ function ServiceDetail() {
           <p className="mt-3 text-[11px] font-medium text-muted-foreground/60">Your partner may arrive anytime within this window.</p>
         </Section>
 
+        {/* Add-ons Section */}
         {addonsQ.data && addonsQ.data.length > 0 && (
-          <Section className="mt-8" title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Add more to your service</span></>}>
+          <Section title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Add more to your service</span></>}>
             <div className="space-y-3">
                {addonsQ.data.slice(0, 3).map((a) => {
                  const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
@@ -1090,17 +1036,22 @@ function ServiceDetail() {
                        <div className="text-[14px] font-black">{a.name}</div>
                        <div className="text-[12px] font-bold text-primary">₹{p}</div>
                      </div>
-                     <button
-                       onClick={() => setQty(a.id, qty > 0 ? 0 : 1)}
-                       className={cn(
-                         "h-9 px-4 rounded-lg text-[12px] font-black transition-all active:scale-95",
-                         qty > 0 
-                           ? "bg-success/10 text-success border border-success/20" 
-                           : "bg-primary text-white shadow-sm"
-                       )}
-                     >
-                       {qty > 0 ? "✓ Added" : "+ Add"}
-                     </button>
+                     <div className="flex items-center gap-3">
+                        {qty > 0 ? (
+                          <div className="flex items-center gap-3 bg-primary/5 rounded-lg p-1 border border-primary/10">
+                            <button onClick={() => setQty(a.id, qty - 1)} className="h-7 w-7 rounded-md bg-white border border-black/5 flex items-center justify-center text-primary active:scale-90"><Minus className="h-3 w-3" /></button>
+                            <span className="font-black text-[13px] min-w-[12px] text-center">{qty}</span>
+                            <button onClick={() => setQty(a.id, qty + 1)} className="h-7 w-7 rounded-md bg-primary text-white flex items-center justify-center active:scale-90"><Plus className="h-3 w-3" /></button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setQty(a.id, 1)}
+                            className="h-9 px-4 rounded-lg bg-primary text-white text-[12px] font-black shadow-sm transition-all active:scale-95"
+                          >
+                            + Add
+                          </button>
+                        )}
+                     </div>
                    </Surface>
                  );
                })}
@@ -1127,9 +1078,9 @@ function ServiceDetail() {
                              <div className="mt-1 font-black text-primary text-[14px]">₹{p}</div>
                            </div>
                            <div className="flex items-center gap-3">
-                             {qty > 0 && <button onClick={() => setQty(a.id, qty - 1)} className="h-8 w-8 rounded-full border border-black/5 flex items-center justify-center text-primary"><Minus className="h-4 w-4" /></button>}
-                             <span className={cn("font-black w-4 text-center", qty === 0 && "hidden")}>{qty}</span>
-                             <button onClick={() => setQty(a.id, qty + 1)} className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center"><Plus className="h-4 w-4" /></button>
+                              {qty > 0 && <button onClick={() => setQty(a.id, qty - 1)} className="h-8 w-8 rounded-full border border-black/5 flex items-center justify-center text-primary active:scale-90"><Minus className="h-4 w-4" /></button>}
+                              <span className={cn("font-black w-4 text-center", qty === 0 && "hidden")}>{qty}</span>
+                              <button onClick={() => setQty(a.id, qty + 1)} className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center active:scale-90"><Plus className="h-4 w-4" /></button>
                            </div>
                          </Surface>
                        );
@@ -1141,36 +1092,124 @@ function ServiceDetail() {
           </Section>
         )}
 
-        <Section className="mt-8" title={<span className="text-[15px] font-black">Price summary</span>}>
-          <Surface className="border-none bg-black/[0.02] p-4 space-y-2.5">
-            <div className="flex justify-between text-[13px]">
-              <span className="font-medium text-muted-foreground">{service.name}</span>
-              <span className="font-black">₹{purchaseMode === 'included_wash' ? 0 : (previewReady ? previewBase : 0)}</span>
+        {/* Cart Section: Your services */}
+        {(previewReady || selectedAddons.length > 0) && (
+          <Section title={<span className="text-[15px] font-black">Your services</span>}>
+            <Surface className="border-none bg-white p-4 space-y-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-black text-foreground">
+                    {purchaseMode === 'included_wash' ? 'Daily Shine — Included wash' : service.name}
+                  </div>
+                  <div className="text-[12px] font-medium text-muted-foreground/60 mt-0.5">
+                    {vehicle?.make} {vehicle?.model}
+                  </div>
+                </div>
+                <div className="text-[14px] font-black text-foreground">
+                  {purchaseMode === 'included_wash' ? 'Included' : `₹${previewBase}`}
+                </div>
+              </div>
+
+              {selectedAddons.map(({ id, quantity }) => {
+                const addon = addonsQ.data?.find(a => a.id === id);
+                if (!addon) return null;
+                const p = (isSUV ? addon.price_sedan_suv : addon.price_hatchback) * quantity;
+                return (
+                  <div key={id} className="flex justify-between items-start gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[14px] font-black text-foreground">
+                        {addon.name} {quantity > 1 ? `(x${quantity})` : ''}
+                      </div>
+                    </div>
+                    <div className="text-[14px] font-black text-foreground">₹{p}</div>
+                  </div>
+                );
+              })}
+            </Surface>
+          </Section>
+        )}
+
+        {/* Bill Details Section */}
+        <Section>
+          <button 
+            onClick={() => setBillExpanded(!billExpanded)}
+            className="w-full flex items-center justify-between py-1"
+          >
+            <span className="text-[15px] font-black">Bill details</span>
+            <div className="flex items-center gap-2">
+              {!billExpanded && <span className="text-[15px] font-black text-primary">₹{previewPayable}</span>}
+              <ChevronRight className={cn("h-4 w-4 transition-transform", billExpanded && "rotate-90")} />
             </div>
-            {previewAddon > 0 && (
+          </button>
+          
+          {billExpanded && (
+            <Surface className="mt-4 border-none bg-black/[0.02] p-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex justify-between text-[13px]">
-                <span className="font-medium text-muted-foreground">Add-ons</span>
-                <span className="font-black">₹{previewAddon}</span>
+                <span className="font-medium text-muted-foreground">Services total</span>
+                <span className="font-black">₹{purchaseMode === 'included_wash' ? (previewAddon) : (previewBase + previewAddon)}</span>
               </div>
-            )}
-            {previewDiscount > 0 && (
-              <div className="flex justify-between text-[13px] text-success">
-                <span className="font-medium">Discount applied</span>
-                <span className="font-black">-₹{previewDiscount}</span>
+              {previewDiscount > 0 && (
+                <div className="flex justify-between text-[13px] text-success">
+                  <span className="font-medium">Discount</span>
+                  <span className="font-black">-₹{previewDiscount}</span>
+                </div>
+              )}
+              {/* Add GST/Other fees only if they exist in preview */}
+              <div className="pt-2.5 border-t border-black/5 flex justify-between text-[14px]">
+                <span className="font-black">Grand total</span>
+                <span className="font-black text-primary">₹{previewPayable}</span>
               </div>
-            )}
-            <div className="pt-2.5 border-t border-black/5 flex justify-between text-[14px]">
-              <span className="font-black">Total</span>
-              <span className="font-black text-primary">₹{previewPayable}</span>
+            </Surface>
+          )}
+        </Section>
+
+        {/* Location Section */}
+        <Section>
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[14px] font-black">Serving at {address?.label || 'Home'}</div>
+                <div className="text-[12px] font-medium text-muted-foreground/60 truncate max-w-[200px]">
+                  {address?.address_line}, {address?.area}
+                </div>
+              </div>
             </div>
-          </Surface>
+            <button 
+              onClick={() => setAddrDrawerOpen(true)}
+              className="text-[13px] font-black text-primary active:opacity-70 px-2 py-1"
+            >
+              Change
+            </button>
+          </div>
+        </Section>
+
+        {/* Payment Method Section */}
+        <Section>
+          <button 
+            onClick={() => setPayDrawerOpen(true)}
+            className="w-full flex items-center justify-between py-1"
+          >
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-[15px] font-black">Payment method</span>
+              <div className="flex items-center gap-1.5 text-[13px] font-bold text-muted-foreground/60">
+                <span>{selectedPaymentMethod.icon} {selectedPaymentMethod.name}</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+          </button>
         </Section>
       </div>
 
+      {/* Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5 safe-bottom">
         <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
           <div className="min-w-0">
-            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Payable</div>
+            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
+              {purchaseMode === 'included_wash' ? 'Included' : 'Total'}
+            </div>
             <div className="text-[20px] font-black text-foreground">₹{previewPayable}</div>
           </div>
           
@@ -1183,7 +1222,13 @@ function ServiceDetail() {
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <div className="flex items-center gap-2">
-                <span>{purchaseMode === 'included_wash' ? 'Schedule wash' : `Pay ₹${previewPayable}`}</span>
+                <span>
+                  {purchaseMode === 'included_wash' 
+                    ? 'Schedule wash' 
+                    : purchaseMode === 'new_subscription' 
+                      ? 'Subscribe' 
+                      : `Pay ₹${previewPayable}`}
+                </span>
                 <ChevronRight className="h-5 w-5" />
               </div>
             )}
@@ -1191,22 +1236,191 @@ function ServiceDetail() {
         </div>
       </div>
 
+      {/* Drawers & Dialogs */}
+      <Drawer open={vehDrawerOpen} onOpenChange={setVehDrawerOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>Select Vehicle</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 py-2 space-y-2 overflow-y-auto">
+            {(vehiclesQ.data || []).map(v => (
+              <DrawerClose key={v.id} asChild>
+                <button 
+                  onClick={() => {
+                    setVehicleId(v.id);
+                    localStorage.setItem("uw_customer_vehicle", v.id);
+                  }}
+                  className={cn("w-full text-left p-4 rounded-xl border flex items-center justify-between", vehicleId === v.id ? "border-primary bg-primary/5 shadow-sm" : "border-black/5")}
+                >
+                  <div>
+                    <div className="font-black text-[15px]">{v.make} {v.model}</div>
+                    <div className="text-xs font-medium text-muted-foreground/60">{v.registration_number}</div>
+                  </div>
+                  {vehicleId === v.id && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </button>
+              </DrawerClose>
+            ))}
+          </div>
+          <DrawerFooter>
+            <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95"><Link to="/c/vehicles/add">Add another car</Link></Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={addrDrawerOpen} onOpenChange={setAddrDrawerOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>Select Location</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 py-2 space-y-2 overflow-y-auto">
+            {uniqueAddresses.map(addr => (
+              <DrawerClose key={addr.id} asChild>
+                <button 
+                  onClick={() => setAddressId(addr.id)}
+                  className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-black/5")}
+                >
+                  <div className="font-black text-[15px]">{addr.label}</div>
+                  <div className="text-xs font-medium text-muted-foreground/60">{addr.address_line}, {addr.area}</div>
+                </button>
+              </DrawerClose>
+            ))}
+          </div>
+          <DrawerFooter>
+            <Button onClick={() => setAddrDialogOpen(true)} variant="outline" className="h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95">Add new address</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={payDrawerOpen} onOpenChange={setPayDrawerOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>Select Payment Method</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 py-6 space-y-6 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Recommended</div>
+              {[
+                { id: 'gpay', name: 'Google Pay UPI', icon: '🟢' },
+                { id: 'phonepe', name: 'PhonePe UPI', icon: '🟣' },
+                { id: 'paytm', name: 'Paytm UPI', icon: '🔵' },
+              ].map((m) => (
+                <DrawerClose key={m.id} asChild>
+                  <button 
+                    onClick={() => setSelectedPaymentMethod(m)}
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-black/[0.02] border border-black/[0.04] active:bg-black/[0.06]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{m.icon}</span>
+                      <span className="text-[14px] font-black">{m.name}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/20" />
+                  </button>
+                </DrawerClose>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Cards</div>
+              <button className="w-full flex items-center justify-between p-4 rounded-xl bg-black/[0.02] border border-black/[0.04] active:bg-black/[0.06]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">💳</span>
+                  <span className="text-[14px] font-black">Add credit or debit card</span>
+                </div>
+                <Plus className="h-4 w-4 text-primary" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Other UPI</div>
+              <button className="w-full flex items-center justify-between p-4 rounded-xl bg-black/[0.02] border border-black/[0.04] active:bg-black/[0.06]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔗</span>
+                  <span className="text-[14px] font-black">UPI ID</span>
+                </div>
+                <Plus className="h-4 w-4 text-primary" />
+              </button>
+            </div>
+          </div>
+          <DrawerFooter className="pb-8">
+            <p className="text-[11px] text-center text-muted-foreground/60 px-6">
+              Payments are secured via Razorpay. Your details are never stored on Urban Wash servers.
+            </p>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
       <AddressDialog 
-        open={addrOpen} 
-        onOpenChange={setAddrOpen} 
+        open={addrDialogOpen} 
+        onOpenChange={setAddrDialogOpen} 
         onCreated={(id) => { 
           setAddressId(id); 
           qc.invalidateQueries({ queryKey: ["customer-addresses"] }); 
         }} 
       />
-      <BookAWashSheet 
-        open={bookOpen} 
-        onOpenChange={setBookOpen} 
-        vehicleId={vehicleId || null} 
-        userId={userId || null} 
-      />
     </div>
   );
+}
+
+
+function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; onCreated: (id: string) => void }) {
+  const [label, setLabel] = useState("Home");
+  const [line, setLine] = useState("");
+  const [area, setArea] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (line.trim().length < 4) { toast.error("Enter a valid address"); return; }
+    let savedGeo: any = {};
+    try { savedGeo = JSON.parse(localStorage.getItem("uw_customer_geo") ?? "{}"); } catch {}
+    const exact = validateExactGps(savedGeo.lat, savedGeo.lng);
+    if (!exact) { toast.error(GPS_INVALID_MESSAGE); return; }
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setSaving(false); return; }
+    const { data, error } = await (supabase as any).from("customer_addresses").insert({
+      user_id: u.user.id, label, address_line: line.trim(), area: area.trim(),
+      pincode: pincode || savedGeo.pincode || null, parking_notes: notes || null,
+      latitude: exact.latitude, longitude: exact.longitude, is_default: true,
+    }).select("id").single();
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Address saved");
+    onCreated(data.id);
+    onOpenChange(false);
+    setLine(""); setArea(""); setPincode(""); setNotes("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-[32px] border-none shadow-2xl">
+        <DialogHeader className="pb-2"><DialogTitle className="text-xl font-black">Add new address</DialogTitle></DialogHeader>
+        <div className="space-y-5 py-2">
+          <div className="flex gap-2 p-1 bg-black/5 rounded-2xl">
+            {["Home", "Work", "Other"].map((l) => (
+              <button key={l} onClick={() => setLabel(l)}
+                className={cn("flex-1 py-2.5 text-[13px] font-black rounded-xl transition-all", 
+                  label === l ? "bg-white text-primary shadow-sm" : "text-muted-foreground/60"
+                )}>{l}</button>
+            ))}
+          </div>
+          <div className="space-y-1.5"><Label className="text-[13px] font-black ml-1">Flat / House / Street</Label><Input value={line} className="h-12 rounded-xl bg-black/5 border-none" onChange={(e) => setLine(e.target.value)} placeholder="A-203, Greens Apt" /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5"><Label className="text-[13px] font-black ml-1">Area</Label><Input value={area} className="h-12 rounded-xl bg-black/5 border-none" onChange={(e) => setArea(e.target.value)} placeholder="Sector 18" /></div>
+            <div className="space-y-1.5"><Label className="text-[13px] font-black ml-1">Pincode</Label><Input value={pincode} className="h-12 rounded-xl bg-black/5 border-none" onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} placeholder="400001" /></div>
+          </div>
+          <div className="space-y-1.5"><Label className="text-[13px] font-black ml-1">Parking notes (optional)</Label><Textarea value={notes} className="rounded-xl bg-black/5 border-none min-h-[80px]" onChange={(e) => setNotes(e.target.value)} placeholder="Wait at the gate..." /></div>
+        </div>
+        <DialogFooter className="pt-4 sm:justify-between gap-3">
+          <Button variant="ghost" className="h-12 rounded-xl font-black text-muted-foreground transition-transform active:scale-95" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={save} className="h-12 rounded-xl font-black px-8 transition-transform active:scale-95" disabled={saving}>{saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save address"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 }
 
 
