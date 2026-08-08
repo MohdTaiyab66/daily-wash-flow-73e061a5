@@ -958,7 +958,7 @@ export const getMarketplaceQueueDetail = createServerFn({ method: "GET" }).middl
 export const adminCancelQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string; reason?: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { error } = await supabase.rpc("admin_cancel_queue", { p_queue_id: data.queue_id, p_reason: data.reason ?? null });
     if (error) throw new Error(error.message);
     return { ok: true };
