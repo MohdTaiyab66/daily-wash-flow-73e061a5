@@ -133,7 +133,7 @@ export function ListRow({
   );
 
   const cls = cn(
-    "uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-accent/40",
+    "uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all active:bg-accent/40 active:scale-[0.98]",
     disabled ? "pointer-events-none opacity-50" : "",
     className,
   );
