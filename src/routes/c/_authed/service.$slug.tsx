@@ -34,6 +34,16 @@ import { SectionTitle, Section, Surface, StatusChip } from "@/components/custome
 import { cn } from "@/lib/utils";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 
 
@@ -948,7 +958,7 @@ function ServiceDetail() {
               <div className="h-12 w-12 rounded-full bg-accent" />
               <div>
                 <div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div>
-                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</div>
+                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category === "sedan_suv" ? "Sedan / SUV" : vehicle?.category === "hatchback_compact_sedan" ? "Hatchback / Compact Sedan" : vehicle?.category}</div>
               </div>
             </div>
             <button className="text-[13px] font-semibold text-primary">Change ›</button>
@@ -957,18 +967,41 @@ function ServiceDetail() {
 
         {/* ADDRESS SECTION */}
         <Section title={<><MapPin className="h-4 w-4 text-primary" /> Service location</>}>
-           <div className="space-y-2">
-            {uniqueAddresses.slice(0, 1).map((a) => (
-              <div key={a.id} className="flex items-start gap-3 rounded-2xl border border-primary bg-primary/5 p-3 text-left">
-                <div className="mt-1 h-4 w-4 rounded-full border-2 border-primary bg-primary ring-offset-2 ring-1 ring-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold">{a.label}</div>
-                  <div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div>
-                </div>
-                <button onClick={() => setAddrOpen(true)} className="text-[13px] font-semibold text-primary">Change ›</button>
-              </div>
-            ))}
-          </div>
+          <Surface className="flex items-start gap-3 p-3">
+             <div className="mt-1 h-4 w-4 rounded-full border-2 border-primary bg-primary" />
+             <div className="min-w-0 flex-1">
+               <div className="text-[14px] font-semibold">
+                 {uniqueAddresses.find(a => a.id === addressId)?.label ?? "Default"}
+               </div>
+               <div className="text-[12px] text-muted-foreground truncate">
+                 {uniqueAddresses.find(a => a.id === addressId)?.address_line ?? "Select your address"}
+               </div>
+             </div>
+             <Drawer>
+               <DrawerTrigger asChild>
+                 <button className="text-[13px] font-semibold text-primary shrink-0">Change ›</button>
+               </DrawerTrigger>
+               <DrawerContent className="max-h-[80vh]">
+                 <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
+                 <div className="px-4 py-2 space-y-2 overflow-y-auto">
+                    {uniqueAddresses.map(addr => (
+                      <DrawerClose key={addr.id} asChild>
+                        <button 
+                          onClick={() => setAddressId(addr.id)}
+                          className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-border")}
+                        >
+                          <div className="font-semibold">{addr.label}</div>
+                          <div className="text-xs text-muted-foreground">{addr.address_line}, {addr.area}</div>
+                        </button>
+                      </DrawerClose>
+                    ))}
+                 </div>
+                 <DrawerFooter>
+                   <DrawerClose asChild><Button variant="outline">Close</Button></DrawerClose>
+                 </DrawerFooter>
+               </DrawerContent>
+             </Drawer>
+          </Surface>
         </Section>
 
         {/* TIME SELECTION */}
@@ -987,24 +1020,65 @@ function ServiceDetail() {
         </Section>
 
         {/* ADD-ONS */}
-        <Section title={<><Sparkles className="h-4 w-4 text-primary" /> Enhance your plan</>} action={<button className="text-[13px] font-semibold text-primary">View all ›</button>}>
+        <Section 
+          title={<><Sparkles className="h-4 w-4 text-primary" /> Make it even better</>} 
+          action={
+            <Drawer>
+              <DrawerTrigger asChild>
+                <button className="text-[13px] font-semibold text-primary">View all ›</button>
+              </DrawerTrigger>
+              <DrawerContent className="max-h-[85vh]">
+                <DrawerHeader>
+                  <DrawerTitle>Additional Services</DrawerTitle>
+                  <DrawerDescription>One-time treatments for your vehicle</DrawerDescription>
+                </DrawerHeader>
+                <div className="px-4 pb-12 space-y-3 overflow-y-auto">
+                   {addonsQ.data?.map((a) => {
+                     const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                     const qty = addonQty[a.id] || 0;
+                     return (
+                      <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
+                         <div className="min-w-0 flex-1">
+                           <div className="text-[15px] font-bold">{a.name}</div>
+                           <div className="text-[12px] text-muted-foreground line-clamp-1">{a.description}</div>
+                           <div className="mt-1 text-[13px] font-bold text-primary">₹{p}</div>
+                         </div>
+                         <div className="ml-4 shrink-0">
+                           {qty > 0 ? (
+                              <div className="flex items-center gap-2 bg-primary/5 rounded-full p-1 border border-primary/20">
+                                  <button onClick={() => setQty(a.id, qty - 1)} className="grid h-7 w-7 place-items-center rounded-full bg-white border border-border"><Minus className="h-3 w-3" /></button>
+                                  <span className="text-[13px] font-bold w-4 text-center">{qty}</span>
+                                  <button onClick={() => setQty(a.id, qty + 1)} className="grid h-7 w-7 place-items-center rounded-full bg-white border border-border"><Plus className="h-3 w-3" /></button>
+                              </div>
+                           ) : (
+                              <Button size="sm" variant="outline" className="rounded-full h-8 px-4 font-bold border-primary text-primary" onClick={() => setQty(a.id, 1)}>Add</Button>
+                           )}
+                         </div>
+                      </div>
+                     )
+                   })}
+                </div>
+              </DrawerContent>
+            </Drawer>
+          }
+        >
            {addonsQ.data?.slice(0, 2).map((a) => {
              const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
              const qty = addonQty[a.id] || 0;
              return (
-              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3">
+              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-white p-4 shadow-sm">
                  <div>
-                   <div className="text-[14px] font-semibold">{a.name}</div>
+                   <div className="text-[14px] font-bold">{a.name}</div>
                    <div className="text-[12px] text-muted-foreground">₹{p}</div>
                  </div>
                  {qty > 0 ? (
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Minus className="h-3 w-3" /></button>
-                        <span className="text-sm font-bold">{qty}</span>
-                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Plus className="h-3 w-3" /></button>
+                    <div className="flex items-center gap-3 bg-primary/5 rounded-full p-1 border border-primary/20">
+                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-7 w-7 place-items-center rounded-full bg-white border border-border shadow-sm"><Minus className="h-3 w-3" /></button>
+                        <span className="text-[13px] font-bold w-4 text-center">{qty}</span>
+                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-7 w-7 place-items-center rounded-full bg-white border border-border shadow-sm"><Plus className="h-3 w-3" /></button>
                     </div>
                  ) : (
-                    <button className="text-sm font-semibold text-primary" onClick={() => setQty(a.id, 1)}>+ Add</button>
+                    <button className="text-[13px] font-bold text-primary px-3 py-1.5 rounded-full hover:bg-primary/5 transition-colors" onClick={() => setQty(a.id, 1)}>+ Add</button>
                  )}
               </div>
              )

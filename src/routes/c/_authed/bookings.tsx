@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
 import { statusTone, StatusChip } from "@/components/customer/ui/kit";
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/c/_authed/bookings")({
   component: BookingsRoute,
 });
 
-type Tab = "upcoming" | "previous";
+type Tab = "upcoming" | "completed" | "cancelled";
 type Row = {
   id: string;
   scheduled_date: string;
@@ -71,9 +72,13 @@ function BookingsPage() {
         .limit(50);
       if (error) throw error;
       const rows = (data ?? []) as Row[];
-      return tab === "upcoming"
-        ? rows.filter((r) => r.scheduled_date >= today && !["completed", "cancelled"].includes(r.status))
-        : rows.filter((r) => r.scheduled_date < today || ["completed", "cancelled"].includes(r.status));
+      if (tab === "upcoming") {
+        return rows.filter((r) => r.scheduled_date >= today && !["completed", "cancelled"].includes(r.status.toLowerCase()));
+      }
+      if (tab === "completed") {
+        return rows.filter((r) => r.status.toLowerCase() === "completed");
+      }
+      return rows.filter((r) => ["cancelled", "canceled", "failed", "rejected"].includes(r.status.toLowerCase()));
     },
   });
 
@@ -114,18 +119,24 @@ function BookingsPage() {
         />
       ) : (
         <>
-          <div className="mt-5 rounded-full border border-border bg-accent p-1 flex">
-            {(["upcoming", "previous"] as Tab[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 rounded-full py-2 text-[13px] font-bold capitalize transition-all ${
-                  tab === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {(["upcoming", "completed", "cancelled"] as Tab[]).map((t) => {
+              const active = tab === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={cn(
+                    "uw-pressable flex-none rounded-full px-5 py-2.5 text-[13px] font-bold capitalize transition-all border",
+                    active 
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                      : "bg-card text-muted-foreground border-border/60 hover:border-border"
+                  )}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-8">
@@ -134,11 +145,13 @@ function BookingsPage() {
             ) : items.length === 0 ? (
               <EmptyState
                 icon={CalendarDays}
-                title={tab === "upcoming" ? "No upcoming bookings" : "No past bookings"}
+                title={tab === "upcoming" ? "No upcoming bookings" : tab === "completed" ? "No completed services" : "No cancelled bookings"}
                 description={
                   tab === "upcoming"
                     ? "Book a wash and it will appear here with live status."
-                    : "Completed and cancelled services will be listed here."
+                    : tab === "completed"
+                    ? "Once your services are completed, you'll find them here."
+                    : "Any cancelled or failed bookings will be listed here."
                 }
                 action={
                   <Button asChild className="h-11 rounded-full px-7 font-semibold">
@@ -147,7 +160,7 @@ function BookingsPage() {
                 }
               />
             ) : (
-              <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card">
+              <div className="mt-4 space-y-3">
                 {items.map((b) => {
                   const st = statusTone(b.status);
                   const when = new Date(`${b.scheduled_date}T00:00:00`);
@@ -158,13 +171,13 @@ function BookingsPage() {
                     <button
                       key={b.id}
                       onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                      className="uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-muted/50"
+                      className="uw-pressable flex w-full items-center gap-4 rounded-3xl border border-border/50 bg-card p-4 text-left shadow-sm active:bg-muted/50 transition-all"
                     >
-                      <div className="w-12 shrink-0">
-                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-accent/30">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
                           {dateLabel.split(" ")[1] ?? ""}
                         </div>
-                        <div className="text-[18px] font-bold leading-tight">{dateLabel.split(" ")[0]}</div>
+                        <div className="text-[18px] font-black leading-tight text-foreground">{dateLabel.split(" ")[0]}</div>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[15px] font-semibold">

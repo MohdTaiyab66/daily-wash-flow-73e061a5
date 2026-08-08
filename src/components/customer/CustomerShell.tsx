@@ -32,18 +32,22 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   key={n.to}
                   to={n.to}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-0.5 text-[11px] font-medium transition-colors ${
-                    active ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  className={cn(
+                    "flex flex-1 flex-col items-center gap-1.5 py-1 text-[11px] font-bold transition-all",
+                    active ? "text-primary" : "text-muted-foreground/60"
+                  )}
                 >
                   <span
-                    className={`grid h-7 w-16 place-items-center rounded-full transition-all duration-150 ${
-                      active ? "bg-accent" : "bg-transparent"
-                    }`}
+                    className={cn(
+                      "grid h-8 w-14 place-items-center rounded-full transition-all duration-200",
+                      active ? "bg-primary/10" : "bg-transparent"
+                    )}
                   >
-                    <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.8} />
+                    <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
                   </span>
-                  {n.label}
+                  <span className={cn("transition-colors", active ? "opacity-100" : "opacity-80")}>
+                    {n.label}
+                  </span>
                 </Link>
               );
             })}

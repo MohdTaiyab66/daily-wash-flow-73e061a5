@@ -10,12 +10,14 @@ import {
   Sparkles,
   Droplets,
   AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { ListGroup, Section, Surface } from "@/components/customer/ui/kit";
 
 export const Route = createFileRoute("/c/_authed/notifications")({
   ssr: false,
@@ -33,18 +35,17 @@ type Notif = {
   created_at: string;
 };
 
-/** Presentation-only mapping from notification type to icon + tint. */
-const TYPE_STYLE: Record<string, { icon: LucideIcon; cls: string }> = {
-  partner_assigned: { icon: Car, cls: "bg-primary/12 text-primary" },
-  service_started: { icon: Droplets, cls: "bg-primary/12 text-primary" },
-  service_completed: { icon: Sparkles, cls: "bg-success/12 text-success" },
-  service_skipped: { icon: AlertTriangle, cls: "bg-warning/20 text-warning-foreground" },
-  payment_success: { icon: CreditCard, cls: "bg-success/12 text-success" },
-  payment_failed: { icon: CreditCard, cls: "bg-destructive/10 text-destructive" },
+const TYPE_STYLE: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
+  partner_assigned: { icon: Car, color: "text-primary", bg: "bg-primary/10" },
+  service_started: { icon: Droplets, color: "text-primary", bg: "bg-primary/10" },
+  service_completed: { icon: Sparkles, color: "text-success", bg: "bg-success/10" },
+  service_skipped: { icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10" },
+  payment_success: { icon: CreditCard, color: "text-success", bg: "bg-success/10" },
+  payment_failed: { icon: CreditCard, color: "text-destructive", bg: "bg-destructive/10" },
 };
 
 function styleFor(type: string | null) {
-  return TYPE_STYLE[type ?? ""] ?? { icon: Bell, cls: "bg-muted text-muted-foreground" };
+  return TYPE_STYLE[type ?? ""] ?? { icon: Bell, color: "text-muted-foreground", bg: "bg-muted" };
 }
 
 function clockTime(iso: string) {
@@ -78,9 +79,6 @@ function NotificationsPage() {
     },
   });
 
-  // Opening the centre marks everything read — the bell badge clears with it.
-  // We snapshot the ids that were unread on arrival so the user still sees
-  // which items are new for this visit.
   const wasUnread = useRef<Set<string>>(new Set());
   useEffect(() => {
     const unread = (q.data ?? []).filter((n) => !n.read_at);
@@ -109,81 +107,119 @@ function NotificationsPage() {
 
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-notifications"] })}>
-      <div className="px-5 pt-6">
-        <div className="flex items-center gap-3">
-          <Link
-            to="/c/home"
-            aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border/70 bg-card"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-[22px] font-bold tracking-tight">Notifications</h1>
-          {items.length > 0 && (
-            <span className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground">
-              <CheckCheck className="h-4 w-4 text-success" /> All read
-            </span>
-          )}
+      <div className="min-h-screen bg-[#FFF9F3] pb-10">
+        <div className="sticky top-0 z-20 bg-[#FFF9F3]/95 px-5 pt-6 pb-4 backdrop-blur">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                to="/c/home"
+                className="grid h-10 w-10 place-items-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
+              >
+                <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
+              </Link>
+              <h1 className="text-[24px] font-black tracking-tight text-[#1a1a1a]">Notifications</h1>
+            </div>
+            {items.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-success">
+                <CheckCheck className="h-3 w-3" /> All read
+              </span>
+            )}
+          </div>
         </div>
 
-        {q.isLoading && <div className="mt-6"><SkeletonList count={4} /></div>}
-
-        {!q.isLoading && items.length === 0 && (
-          <EmptyState
-            className="mt-14"
-            icon={Bell}
-            tone="primary"
-            title="You're all caught up"
-            description="We'll let you know when something important happens."
-          />
-        )}
-
-        {groups.map(([bucket, rows]) => (
-          <section key={bucket} className="mt-6">
-            <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {bucket}
-            </h2>
-            <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card">
-              {rows.map((n) => {
-                const { icon: Icon, cls } = styleFor(n.type);
-                const fresh = wasUnread.current.has(n.id);
-                const clickable = !!n.link;
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    disabled={!clickable}
-                    onClick={() => clickable && navigate({ to: n.link as any })}
-                    className={`uw-pressable flex w-full items-start gap-3 px-4 py-3.5 text-left ${
-                      clickable ? "active:bg-muted/50" : "cursor-default"
-                    }`}
-                  >
-                    <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full ${cls}`}>
-                      <Icon className="h-[18px] w-[18px]" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-semibold">
-                          {n.title ?? "Update"}
-                        </span>
-                        {fresh && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="New" />}
-                      </span>
-                      {n.body && (
-                        <span className="mt-0.5 block line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-                          {n.body}
-                        </span>
-                      )}
-                      <span className="mt-1 block text-[11.5px] text-muted-foreground/80">
-                        {clockTime(n.created_at)}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
+        <div className="px-5">
+            <div className="mt-8 space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Surface key={i} className="h-24 animate-pulse bg-white/50"><div /></Surface>
+              ))}
             </div>
-          </section>
-        ))}
+
+          {!q.isLoading && items.length === 0 && (
+            <EmptyState
+              className="mt-12"
+              icon={Bell}
+              tone="primary"
+              title="You're all caught up"
+              description="Important updates about your service and bookings will appear here."
+            />
+          )}
+
+          <div className="space-y-8 mt-4">
+            {groups.map(([bucket, rows]) => (
+              <Section 
+                key={bucket} 
+                title={<span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{bucket}</span>}
+              >
+                <ListGroup className="bg-transparent border-none space-y-3">
+                  {rows.map((n) => {
+                    const { icon: Icon, color, bg } = styleFor(n.type);
+                    const fresh = wasUnread.current.has(n.id);
+                    const clickable = !!n.link;
+                    
+                    return (
+                      <Surface
+                        key={n.id}
+                        className={cn(
+                          "p-0 overflow-hidden transition-all active:scale-[0.98]",
+                          fresh ? "border-primary/20 bg-primary/[0.02]" : "border-black/5 bg-white"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          disabled={!clickable}
+                          onClick={() => clickable && navigate({ to: n.link as any })}
+                          className={cn(
+                            "flex w-full items-start gap-4 p-4 text-left",
+                            !clickable && "cursor-default"
+                          )}
+                        >
+                          <div className={cn("mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl", bg, color)}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className={cn(
+                                "text-[15px] leading-tight tracking-tight",
+                                fresh ? "font-black text-[#1a1a1a]" : "font-bold text-[#1a1a1a]/80"
+                              )}>
+                                {n.title ?? "Update"}
+                              </h3>
+                              <span className="shrink-0 text-[11px] font-bold text-muted-foreground/50">
+                                {clockTime(n.created_at)}
+                              </span>
+                            </div>
+                            
+                            {n.body && (
+                              <p className="mt-1.5 line-clamp-2 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+                                {n.body}
+                              </p>
+                            )}
+                            
+                            {clickable && (
+                              <div className="mt-3 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-primary">
+                                View details <ChevronRight className="h-3 w-3" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {fresh && (
+                            <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_8px_rgba(255,107,0,0.5)]" />
+                          )}
+                        </button>
+                      </Surface>
+                    );
+                  })}
+                </ListGroup>
+              </Section>
+            ))}
+          </div>
+        </div>
       </div>
     </PullToRefresh>
   );
+}
+
+function cn(...classes: any[]) {
+  return classes.filter(Boolean).join(" ");
 }

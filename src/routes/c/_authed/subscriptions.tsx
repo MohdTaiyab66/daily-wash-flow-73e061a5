@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2, ChevronRight } from "lucide-react";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { supabase } from "@/integrations/supabase/client";
-import { SkeletonCard, SkeletonRow } from "@/components/customer/ui/Skeletons";
+import { SkeletonCard, SkeletonRow, Shimmer } from "@/components/customer/ui/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -279,12 +279,12 @@ function MyPlanPage() {
   });
 
   return (
-    <div className="px-5 pt-6 pb-12">
+    <div className="min-h-screen bg-[#FFF9F3] px-6 pb-12 pt-8">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-bold tracking-tight">My Plan</h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {vehicleLabel ? `Your Daily Shine plan` : "Track your Daily Shine service."}
+          <h1 className="text-[28px] font-black tracking-tight text-[#1a1a1a]">My Plan</h1>
+          <p className="mt-1 text-[13px] font-medium text-muted-foreground">
+            {vehicleLabel ? `Your Daily Shine membership` : "Manage your car subscription."}
           </p>
         </div>
         {hasVehicles && (
@@ -297,11 +297,13 @@ function MyPlanPage() {
       </div>
 
       {!hasVehicles && !vehiclesQ.isLoading && (
-        <div className="mt-8 flex flex-col items-center rounded-2xl border border-dashed border-border p-10 text-center">
-          <Car className="h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-3 text-base font-semibold">Add a vehicle to get started</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Daily Shine is per-vehicle. Add a car to subscribe.</p>
-          <Button asChild className="mt-5 rounded-full">
+        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center shadow-sm">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-muted/30 text-muted-foreground">
+            <Car className="h-8 w-8" />
+          </div>
+          <h3 className="mt-4 text-[17px] font-bold">No vehicles yet</h3>
+          <p className="mt-1.5 text-[13px] text-muted-foreground">Add a car to subscribe to Daily Shine.</p>
+          <Button asChild className="mt-6 rounded-full px-8 h-12 font-bold shadow-lg shadow-primary/20">
             <Link to="/c/vehicles/add">Add vehicle</Link>
           </Button>
         </div>
@@ -311,16 +313,14 @@ function MyPlanPage() {
         <>
           {activeSub && <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />}
 
-          {/* Service outcome notices (unavailable / dirty) only make sense
-              for an active, paid subscription. Never for pending payments. */}
           {activeSub && (
             <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
           )}
 
           {bookingsQ.isLoading && (
-            <div className="mt-6 space-y-3">
-              <SkeletonCard />
-              <SkeletonRow />
+            <div className="mt-6 space-y-4">
+              <Shimmer className="h-48 w-full rounded-3xl" />
+              <Shimmer className="h-20 w-full rounded-3xl" />
             </div>
           )}
 
@@ -334,55 +334,106 @@ function MyPlanPage() {
         </>
       )}
 
-
-
       {hasVehicles && activeSub && (
-        <>
-          {/* Active plan hero */}
-          <div className="mt-5 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-accent via-card to-card p-5 shadow-sm">
+        <div className="mt-6 space-y-6">
+          {/* Plan Hero Card */}
+          <div className="relative overflow-hidden rounded-[32px] border border-primary/20 bg-white p-6 shadow-sm">
+            {/* Glossy overlay effect */}
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
+            
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Active plan</p>
-                {vehicleLabel && (
-                  <p className="mt-0.5 text-[11px] font-medium text-muted-foreground uppercase tracking-tight">
-                    {vehicleLabel} · {selectedVehicle?.registration_number ?? ""}
-                  </p>
-                )}
-                <h2 className="mt-1 truncate text-[21px] font-bold tracking-tight">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Started {planStart?.toLocaleDateString()} · Renews {planEnd?.toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
+                    <Sparkles className="h-3 w-3" />
+                    Daily Shine
+                  </span>
+                  <StatusChip tone="success" className="bg-success/10 text-success text-[10px] font-black uppercase tracking-wider">
+                    {activeSub.status.replaceAll("_", " ")}
+                  </StatusChip>
+                </div>
+                <h2 className="mt-3 text-[24px] font-black tracking-tight text-[#1a1a1a]">
+                  {activeSub.service_catalog?.name ?? "Daily Shine"}
+                </h2>
+                <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                  <span className="text-primary font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}</span>
+                  <span>/ month</span>
+                  <span className="mx-1 opacity-30">·</span>
+                  <span>{daysLeft} days left</span>
+                </div>
               </div>
-              <span className="shrink-0 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-medium capitalize text-success">
-                {activeSub.status.replaceAll("_", " ")}
-              </span>
             </div>
 
-            {/* Progress */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Day {elapsed} of {totalDays}</span>
-                <span className={expiringSoon ? "font-semibold text-primary" : ""}>
-                  {daysLeft} day{daysLeft === 1 ? "" : "s"} left
-                </span>
+            {/* Progress Section */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                <span>Usage</span>
+                <span className="text-[#1a1a1a]">Day {elapsed} of {totalDays}</span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+              <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-muted/30">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700"
                   style={{ width: `${(elapsed / totalDays) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="mt-4 border-t border-border/50 pt-4 flex items-center justify-between">
-              <span className="text-[17px] font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
+            <div className="mt-6 flex items-center justify-between border-t border-border/40 pt-5">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Next renewal</span>
+                <span className="text-[13px] font-bold text-[#1a1a1a]">{planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</span>
+              </div>
               <button 
                 onClick={() => setManageOpen(true)}
-                className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary"
+                className="flex items-center gap-1 text-[13px] font-black text-primary transition-opacity active:opacity-60"
               >
-                Manage plan <ChevronRight className="h-4 w-4" />
+                Manage <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+          </div>
+
+          {/* Attractive Quick Actions Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setBookOpen(true)}
+              className="uw-pressable flex flex-col items-center gap-3 rounded-[28px] border border-primary/10 bg-accent/30 p-5 text-center transition-all shadow-sm"
+            >
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+                <CalendarPlus className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-[15px] font-black text-[#1a1a1a]">Book Wash</div>
+                <div className="text-[11px] font-bold text-primary/70 uppercase tracking-tighter">Included wash</div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => setBuilderOpen(true)}
+              className="uw-pressable flex flex-col items-center gap-3 rounded-[28px] border border-border/60 bg-white p-5 text-center shadow-sm"
+            >
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
+                <Settings2 className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-[15px] font-black text-[#1a1a1a]">Modify</div>
+                <div className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Adjust plan</div>
+              </div>
+            </button>
+          </div>
+
+          {/* Pause/Cancel row */}
+          <div className="flex gap-3">
+             <button
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border/60 bg-white py-3.5 text-[13px] font-bold text-muted-foreground/80 shadow-sm transition-colors active:bg-muted/30"
+            >
+              <Pause className="h-4 w-4" /> Pause
+            </button>
+             <button
+              onClick={() => setCancelDialogOpen(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-destructive/10 bg-destructive/5 py-3.5 text-[13px] font-bold text-destructive shadow-sm transition-colors active:bg-destructive/10"
+            >
+              <XCircle className="h-4 w-4" /> Cancel
+            </button>
           </div>
 
           {cancelScheduled && subRow?.renewal_date && (
@@ -467,7 +518,7 @@ function MyPlanPage() {
 
 
           {/* Counters */}
-        </>
+        </div>
       )}
 
       <ScheduleWashDialog
