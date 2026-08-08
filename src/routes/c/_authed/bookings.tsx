@@ -16,7 +16,7 @@ export const Route = createFileRoute("/c/_authed/bookings")({
   component: BookingsRoute,
 });
 
-type Tab = "upcoming" | "previous";
+type Tab = "upcoming" | "completed" | "cancelled";
 type Row = {
   id: string;
   scheduled_date: string;
