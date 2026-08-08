@@ -154,10 +154,11 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const logAttempt = async (row: Record<string, unknown>) => {
+      const userId = (context as any).userId;
       try {
         await supabaseAdmin.from("payment_attempts").insert({
           booking_id: data.bookingId,
-          user_id: context.userId,
+          user_id: userId,
           provider: "razorpay",
           provider_order_id: data.razorpayOrderId,
           provider_payment_id: data.razorpayPaymentId,
