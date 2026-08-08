@@ -305,7 +305,7 @@ export type AssignmentIntegrityReport = {
 export const validateTodayAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: a } = await supabase
       .from("assignments")
