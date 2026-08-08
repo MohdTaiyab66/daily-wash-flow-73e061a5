@@ -126,8 +126,8 @@ export const getPartnerRoutePreview = createServerFn({ method: "GET" })
 export const getMarketplaceSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .from("marketplace_settings")
+    const supabase = (context as any).supabase;
+    const { data, error } = await (supabase as any)
       .select("*")
       .eq("id", true)
       .maybeSingle();
