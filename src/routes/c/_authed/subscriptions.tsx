@@ -358,9 +358,9 @@ function MyPlanPage() {
                 <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
                   <span className="text-primary font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}</span>
                   <span>/ month</span>
-                  {subRow?.is_addon && <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded-full">Add-on Wash</span>}
                   <span className="mx-1 opacity-30">·</span>
                   <span>{daysLeft} days left</span>
+
 
                 </div>
               </div>
