@@ -188,8 +188,8 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
 export const getMyLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("wallet_ledger")
+    const supabase = (context as any).supabase;
+    const { data } = await supabase
       .select("id,entry_type,amount,balance_after,description,created_at")
       .order("created_at", { ascending: false })
       .limit(100);
