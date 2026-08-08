@@ -311,6 +311,27 @@ function CustomerHome() {
             </div>
           </Section>
 
+          <Section title="My Car">
+            <Surface 
+              onClick={() => setVehicleSheetOpen(true)}
+              className="flex items-center gap-4 border-primary/10 bg-gradient-to-br from-white to-[#FFF9F3]"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Car className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[15px] font-black tracking-tight text-foreground">
+                  {activeVehicle?.make} {activeVehicle?.model}
+                </h3>
+                <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">
+                  {activeVehicle?.registration_number} · Switch car
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+            </Surface>
+          </Section>
+
+
           {planActive || planPending ? (
             <Section title="My Plan">
               <UWPlanCard 
