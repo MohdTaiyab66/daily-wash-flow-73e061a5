@@ -113,224 +113,291 @@ function BookingDetail() {
 
 
   return (
-    <div className="pb-10">
+  return (
+    <div className="min-h-screen bg-[#FFF9F3] pb-10">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-3 px-5 py-3">
-          <button onClick={() => navigate({ to: "/c/bookings" })} className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card">
-            <ArrowLeft className="h-4 w-4" />
+      <div className="sticky top-0 z-30 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate({ to: "/c/bookings" })} 
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
+          >
+            <ArrowLeft className="h-6 w-6 text-[#1a1a1a]" />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] text-muted-foreground">Booking #{String(b.id).slice(0, 8).toUpperCase()}</div>
-            <h1 className="truncate text-base font-semibold tracking-tight">{b.service_catalog?.name ?? "Service"}</h1>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/50">Booking #{String(b.id).slice(0, 8).toUpperCase()}</p>
+            <h1 className="truncate text-xl font-black tracking-tight text-[#1a1a1a]">{b.service_catalog?.name ?? "Service"}</h1>
           </div>
-          <StatusBadge status={b.status} />
+          <div className="shrink-0">
+             <StatusBadge status={b.status} />
+          </div>
         </div>
       </div>
 
-      <div className="px-5">
-        {/* Schedule strip */}
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
+      <div className="px-5 space-y-4">
+        {/* Hero Card - Status & Quick Info */}
+        <div className="mt-4 overflow-hidden rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Scheduled</div>
-              <div className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                {formatDate(b.scheduled_date)}
+              <div className="flex items-center gap-2">
+                 <Calendar className="h-4 w-4 text-primary" />
+                 <span className="text-[15px] font-black text-[#1a1a1a]">{formatDate(b.scheduled_date)}</span>
               </div>
               {b.preferred_before_time && (
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" /> {b.preferred_before_time}
+                <div className="mt-1 flex items-center gap-2 text-[13px] font-bold text-muted-foreground/60">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Before {b.preferred_before_time}</span>
                 </div>
               )}
             </div>
             {canModify && (
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="rounded-full" onClick={() => setRescheduleOpen(true)}>
-                  <Pencil className="mr-1 h-3.5 w-3.5" /> Reschedule
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="rounded-xl h-10 border-black/5 bg-[#FFF9F3] font-black text-[12px]" 
+                  onClick={() => setRescheduleOpen(true)}
+                >
+                  Reschedule
                 </Button>
-                <Button size="sm" variant="ghost" className="rounded-full text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>
-                  <X className="mr-1 h-3.5 w-3.5" /> Cancel
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="rounded-xl h-10 text-destructive font-black text-[12px] hover:bg-destructive/5" 
+                  onClick={() => setCancelOpen(true)}
+                >
+                  Cancel
                 </Button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Timeline */}
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5" /> Service timeline
-          </div>
-          {isCancelled ? (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
-              This booking was cancelled.
-            </div>
-          ) : (
-            <ol className="space-y-3">
-              {TIMELINE.map((step, i) => {
-                const done = i < activeIdx;
-                const current = i === activeIdx;
-                return (
-                  <li key={step.key} className="relative flex gap-3">
-                    <div className="flex flex-col items-center">
-                      {done ? (
-                        <CheckCircle2 className="h-5 w-5 text-success" />
-                      ) : current ? (
-                        <span className="grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground">
-                          <span className="h-2 w-2 animate-pulse rounded-full bg-current" />
+          {/* Progress Visualizer */}
+          {!isCancelled && (
+            <div className="mt-8 border-t border-black/5 pt-8">
+               <div className="flex items-center justify-between">
+                  {TIMELINE.map((step, i) => {
+                    const done = i < activeIdx;
+                    const current = i === activeIdx;
+                    return (
+                      <div key={step.key} className="relative flex flex-col items-center flex-1">
+                        {/* Connector line */}
+                        {i < TIMELINE.length - 1 && (
+                          <div className={cn(
+                            "absolute left-1/2 top-4 h-[2px] w-full",
+                            i < activeIdx ? "bg-primary" : "bg-black/5"
+                          )} />
+                        )}
+                        
+                        <div className={cn(
+                          "relative z-10 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-500",
+                          done ? "bg-primary text-white scale-110" : 
+                          current ? "bg-primary/20 text-primary ring-4 ring-primary/10" : 
+                          "bg-black/5 text-muted-foreground/30"
+                        )}>
+                          {done ? (
+                            <CheckCircle2 className="h-5 w-5" />
+                          ) : current ? (
+                            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                          ) : (
+                            <div className="h-2 w-2 rounded-full bg-current" />
+                          )}
+                        </div>
+                        <span className={cn(
+                          "mt-3 text-[10px] font-black uppercase tracking-wider text-center px-1",
+                          current ? "text-primary" : "text-muted-foreground/40"
+                        )}>
+                          {step.label}
                         </span>
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground/40" />
-                      )}
-                      {i < TIMELINE.length - 1 && (
-                        <span className={`mt-0.5 h-6 w-px ${done ? "bg-success" : "bg-border"}`} />
-                      )}
-                    </div>
-                    <div className="-mt-0.5 pb-1">
-                      <div className={`text-sm font-medium ${current ? "text-foreground" : done ? "text-foreground" : "text-muted-foreground"}`}>
-                        {step.label}
                       </div>
-                      <div className="text-[11px] text-muted-foreground">{step.desc}</div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </div>
-
-        {/* Vehicle + Address */}
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm">
-          {b.customer_vehicles && (
-            <Line icon={<Car className="h-4 w-4" />}>
-              <span className="font-medium">{b.customer_vehicles.make} {b.customer_vehicles.model}</span>
-              <span className="ml-1 text-muted-foreground">· {b.customer_vehicles.registration_number}</span>
-            </Line>
-          )}
-          {b.customer_addresses && (
-            <div className="mt-3">
-              <Line icon={<MapPin className="h-4 w-4" />}>
-                {b.customer_addresses.address_line}, {b.customer_addresses.area} {b.customer_addresses.pincode ?? ""}
-              </Line>
-            </div>
-          )}
-          {b.notes && (
-            <div className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Notes: </span>{b.notes}
+                    );
+                  })}
+               </div>
             </div>
           )}
         </div>
 
-        {/* Payment summary */}
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <Receipt className="h-3.5 w-3.5" /> Payment
-            </div>
-            <button onClick={() => setReceiptOpen(true)} className="text-[11px] font-medium text-primary hover:underline">
-              View receipt
-            </button>
-          </div>
-          <div className="space-y-1.5 text-sm">
-            <Row label="Base"><span>₹{b.base_amount}</span></Row>
-            {Number(b.addon_amount) > 0 && <Row label="Add-ons"><span>₹{b.addon_amount}</span></Row>}
-            {Number(b.discount_amount) > 0 && <Row label="Discount"><span className="text-success">−₹{b.discount_amount}</span></Row>}
-            <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
-              <span className="font-semibold">Total</span>
-              <span className="text-lg font-semibold">₹{b.total_amount}</span>
-            </div>
-            <div className="flex items-center justify-between pt-1 text-[11px] text-muted-foreground">
-              <span>Method: {b.razorpay_payment_id ? "Razorpay" : "Pay after service"}</span>
-              <PaymentBadge status={b.payment_status} />
-            </div>
-          </div>
-
-          {addons.data && addons.data.length > 0 && (
-            <div className="mt-4 border-t border-border pt-3">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Add-ons</div>
-              <ul className="space-y-1.5 text-sm">
-                {addons.data.map((a: any) => {
-                  const qq = a.quantity ?? 1;
-                  return (
-                    <li key={a.id} className="flex items-center justify-between">
-                      <span>{a.addon_name}{qq > 1 ? ` × ${qq}` : ""}</span>
-                      <span className="text-muted-foreground">₹{Number(a.price) * qq}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Completion details (visible only after service is completed) */}
-        {isCompleted && (
-          <div className="mt-4 rounded-2xl border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Service completed</h3>
-              {completedAt && (
-                <span className="text-xs text-muted-foreground">
-                  {completedAt.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
-                </span>
-              )}
-            </div>
-            {photosVisible ? (
-              <div className="mt-3">
-                {completion.data && completion.data.photos.length > 0 ? (
-                  <>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Before</p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
-                        <a key={`b-${i}`} href={p.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg bg-muted">
-                          <img src={p.url} alt="Before" className="h-full w-full object-cover" />
-                        </a>
-                      ))}
+        {/* Details Section */}
+        <div className="grid grid-cols-1 gap-4">
+           {/* Vehicle & Address */}
+           <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
+             <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-4">Details</h3>
+             
+             <div className="space-y-6">
+                {b.customer_vehicles && (
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF9F3] text-primary">
+                      <Car className="h-5 w-5" />
                     </div>
-                    <p className="mt-3 mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">After</p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {["front","rear","left","right"].map((ang) => {
-                        const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
-                        return (
-                          <div key={ang} className="aspect-square overflow-hidden rounded-lg bg-muted">
-                            {p ? (
-                              <a href={p.url} target="_blank" rel="noreferrer">
-                                <img src={p.url} alt={ang} className="h-full w-full object-cover" />
-                              </a>
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-[10px] uppercase text-muted-foreground">{ang}</div>
-                            )}
-                          </div>
-                        );
-                      })}
+                    <div>
+                      <p className="text-[15px] font-black text-[#1a1a1a]">
+                        {b.customer_vehicles.make} {b.customer_vehicles.model}
+                      </p>
+                      <p className="text-[13px] font-bold text-muted-foreground/60">{b.customer_vehicles.registration_number}</p>
                     </div>
-                  </>
-                ) : completion.isLoading ? (
-                  <div className="h-20 animate-pulse rounded-lg bg-muted" />
-                ) : (
-                  <p className="text-xs text-muted-foreground">No photos uploaded.</p>
+                  </div>
                 )}
-              </div>
-            ) : (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Photos are available for 48 hours after completion. Contact support if you need them again.
-              </p>
-            )}
+
+                {b.customer_addresses && (
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF9F3] text-primary">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-black text-[#1a1a1a] leading-tight">
+                        {b.customer_addresses.address_line}
+                      </p>
+                      <p className="mt-1 text-[13px] font-bold text-muted-foreground/60">
+                        {b.customer_addresses.area}, {b.customer_addresses.pincode}
+                      </p>
+                    </div>
+                  </div>
+                )}
+             </div>
+
+             {b.notes && (
+               <div className="mt-6 rounded-2xl bg-[#FFF9F3] p-4 border border-black/5">
+                 <p className="text-[11px] font-bold uppercase tracking-widest text-primary/60 mb-1">Notes to partner</p>
+                 <p className="text-[13px] font-bold text-[#1a1a1a]">{b.notes}</p>
+               </div>
+             )}
+           </div>
+
+           {/* Payment Details */}
+           <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
+             <div className="flex items-center justify-between mb-4">
+               <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Payment Summary</h3>
+               <button onClick={() => setReceiptOpen(true)} className="text-[11px] font-black text-primary uppercase tracking-widest">
+                 View Receipt
+               </button>
+             </div>
+
+             <div className="space-y-3">
+                <div className="flex items-center justify-between text-[14px] font-bold text-muted-foreground/70">
+                  <span>Base Amount</span>
+                  <span>₹{b.base_amount}</span>
+                </div>
+                
+                {(addons.data?.length ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-[14px] font-bold text-muted-foreground/70">
+                    <span>Add-ons</span>
+                    <span>₹{b.addon_amount}</span>
+                  </div>
+                )}
+
+                {Number(b.discount_amount) > 0 && (
+                  <div className="flex items-center justify-between text-[14px] font-bold text-success">
+                    <span>Discount</span>
+                    <span>−₹{b.discount_amount}</span>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t border-black/5 flex items-center justify-between">
+                  <span className="text-[16px] font-black text-[#1a1a1a]">Total Amount</span>
+                  <span className="text-[20px] font-black text-[#1a1a1a]">₹{b.total_amount}</span>
+                </div>
+
+                <div className="mt-2 flex items-center gap-2">
+                   <PaymentBadge status={b.payment_status} />
+                   <span className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                     via {b.razorpay_payment_id ? "Razorpay" : "Pay after service"}
+                   </span>
+                </div>
+             </div>
+           </div>
+        </div>
+
+        {/* Service Completion Artifacts */}
+        {isCompleted && (
+          <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
+             <div className="flex items-center justify-between mb-6">
+                <div>
+                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Proof of work</h3>
+                   <p className="text-[15px] font-black text-success">Service Completed</p>
+                </div>
+                {completedAt && (
+                  <div className="text-right">
+                    <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</p>
+                    <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</p>
+                  </div>
+                )}
+             </div>
+
+             {photosVisible ? (
+               <div className="space-y-6">
+                 {completion.data && completion.data.photos.length > 0 ? (
+                   <>
+                     <div>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Before Service</p>
+                        <div className="grid grid-cols-4 gap-3">
+                          {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
+                            <a key={`b-${i}`} href={p.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5">
+                              <img src={p.url} alt="Before" className="h-full w-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                     </div>
+                     <div>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">After Service</p>
+                        <div className="grid grid-cols-4 gap-3">
+                          {["front","rear","left","right"].map((ang) => {
+                            const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
+                            return (
+                              <div key={ang} className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 relative group">
+                                {p ? (
+                                  <a href={p.url} target="_blank" rel="noreferrer">
+                                    <img src={p.url} alt={ang} className="h-full w-full object-cover" />
+                                  </a>
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">{ang}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                     </div>
+                   </>
+                 ) : completion.isLoading ? (
+                   <div className="grid grid-cols-4 gap-3">
+                      {[1,2,3,4].map(i => <div key={i} className="aspect-square animate-pulse rounded-2xl bg-black/5" />)}
+                   </div>
+                 ) : (
+                   <div className="rounded-2xl bg-[#FFF9F3] p-8 text-center border border-dashed border-black/10">
+                     <p className="text-[13px] font-bold text-muted-foreground/60">No photos were uploaded for this service.</p>
+                   </div>
+                 )}
+               </div>
+             ) : (
+               <div className="rounded-2xl bg-[#FFF9F3] p-6 border border-black/5">
+                 <p className="text-[13px] font-bold text-muted-foreground/60 leading-relaxed">
+                   Service photos are archived after 48 hours. If you need them for your records, please contact our support team.
+                 </p>
+               </div>
+             )}
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-4 flex gap-2">
-          <Button variant="outline" className="flex-1 rounded-xl">
-            <Phone className="mr-1.5 h-4 w-4" /> Call support
-          </Button>
-          {canComplain && (
-            <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setComplaintOpen(true)}>
-              <MessageCircleWarning className="mr-1.5 h-4 w-4" /> Raise complaint
-            </Button>
-          )}
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3 pt-4">
+           <Button 
+             variant="outline" 
+             className="h-14 rounded-2xl bg-white border-black/5 shadow-sm font-black text-[#1a1a1a] transition-all active:scale-[0.98]"
+           >
+             <Phone className="mr-2 h-5 w-5 text-primary" />
+             Call Support
+           </Button>
+           
+           {canComplain && (
+             <Button 
+               variant="outline" 
+               className="h-14 rounded-2xl bg-white border-black/5 shadow-sm font-black text-destructive transition-all active:scale-[0.98] hover:bg-destructive/5" 
+               onClick={() => setComplaintOpen(true)}
+             >
+               <MessageCircleWarning className="mr-2 h-5 w-5" />
+               Report an Issue
+             </Button>
+           )}
         </div>
-
       </div>
 
       <RescheduleDialog
