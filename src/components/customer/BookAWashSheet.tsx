@@ -560,6 +560,37 @@ export function BookAWashSheet({
                 <span className="font-black text-success">✓ Included</span>
               </div>
 
+              {/* Premium Add-ons Suggestion */}
+              <div className="space-y-4 pb-4">
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Make it even better</Label>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-tight">Premium upgrades</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-orange-500">
+                      <Droplets className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-black text-[#1a1a1a]">Body Polish</div>
+                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹199</div>
+                    </div>
+                  </button>
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-500">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-black text-[#1a1a1a]">Deep Clean</div>
+                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹499</div>
+                    </div>
+                  </button>
+                </div>
+                <p className="px-1 text-[11px] font-medium leading-relaxed text-muted-foreground/40 italic">
+                  *Upgrades require separate booking and payment.
+                </p>
+              </div>
+
               {/* Error Banner */}
               {error && (
                 <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive border border-destructive/10">
