@@ -336,18 +336,21 @@ export function BookAWashSheet({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
-      <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto bg-background p-0 sm:rounded-[28px]" aria-describedby="book-a-wash-desc">
+      <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-[#FFF9F3] p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-background/80 px-6 py-4 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Book a wash</h2>
-            <p className="text-[13px] text-muted-foreground">Use your included premium wash</p>
+            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Book a wash</h2>
+            <div className="mt-1 flex items-center gap-2">
+               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Premium Wash Included</p>
+            </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors active:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9F3] shadow-sm border border-black/5 transition-transform active:scale-90"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-[#1a1a1a]" />
           </button>
         </div>
 
