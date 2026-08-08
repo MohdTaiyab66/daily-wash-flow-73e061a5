@@ -47,6 +47,9 @@ function BookingDetail() {
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [initialPhotoIndex, setInitialPhotoIndex] = useState(0);
+
 
   const q = useQuery({
     queryKey: ["customer-booking", id],
@@ -333,9 +336,17 @@ function BookingDetail() {
                         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Before Service</p>
                         <div className="grid grid-cols-4 gap-3">
                           {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
-                            <a key={`b-${i}`} href={p.url} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5">
+                            <button 
+                              key={`b-${i}`} 
+                              onClick={() => {
+                                const fullIndex = completion.data!.photos.indexOf(p);
+                                setInitialPhotoIndex(fullIndex);
+                                setViewerOpen(true);
+                              }}
+                              className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
+                            >
                               <img src={p.url} alt="Before" className="h-full w-full object-cover" />
-                            </a>
+                            </button>
                           ))}
                         </div>
                      </div>
@@ -345,19 +356,43 @@ function BookingDetail() {
                           {["front","rear","left","right"].map((ang) => {
                             const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
                             return (
-                              <div key={ang} className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 relative group">
+                              <button 
+                                key={ang} 
+                                onClick={() => {
+                                  if (p) {
+                                    const fullIndex = completion.data!.photos.indexOf(p);
+                                    setInitialPhotoIndex(fullIndex);
+                                    setViewerOpen(true);
+                                  }
+                                }}
+                                className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 relative group active:scale-95 transition-transform"
+                              >
                                 {p ? (
-                                  <a href={p.url} target="_blank" rel="noreferrer">
-                                    <img src={p.url} alt={ang} className="h-full w-full object-cover" />
-                                  </a>
+                                  <img src={p.url} alt={ang} className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">{ang}</div>
                                 )}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
                      </div>
+                     
+                     <ServicePhotoViewer
+                        open={viewerOpen}
+                        onOpenChange={setViewerOpen}
+                        photos={completion.data.photos.map(p => ({
+                          stage: p.stage,
+                          angle: p.angle,
+                          storage_path: p.url.split('?')[0].split('/').pop() || '', // Simplified for UI recovery
+                          captured_at: p.captured_at,
+                          url: p.url // Pass signed URL directly to avoid re-signing
+                        }))}
+                        initialIndex={initialPhotoIndex}
+                        serviceName={b.service_catalog?.name ?? "Wash"}
+                        serviceDate={completion.data.completed_at || undefined}
+                     />
+
                    </>
                  ) : completion.isLoading ? (
                    <div className="grid grid-cols-4 gap-3">

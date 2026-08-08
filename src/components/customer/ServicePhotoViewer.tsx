@@ -39,21 +39,34 @@ export function ServicePhotoViewer({
     if (!open || !photos.length) return;
 
     const fetchUrls = async () => {
-      const paths = photos.map(p => p.storage_path);
-      const { data, error } = await supabase.storage
+      const pathsToFetch = photos.filter(p => !p.url).map(p => p.storage_path);
+      
+      if (pathsToFetch.length === 0) {
+        const urlMap: Record<string, string> = {};
+        photos.forEach(p => { if (p.url) urlMap[p.storage_path] = p.url; });
+        setSignedUrls(urlMap);
+        return;
+      }
+
+      const { data } = await supabase.storage
         .from("service-photos")
-        .createSignedUrls(paths, 3600);
+        .createSignedUrls(pathsToFetch, 3600);
 
       if (data) {
         const urlMap: Record<string, string> = {};
-        data.forEach((item, idx) => {
-          if (item.signedUrl) {
-            urlMap[photos[idx].storage_path] = item.signedUrl;
+        photos.forEach(p => { if (p.url) urlMap[p.storage_path] = p.url; });
+        
+        let fetchIdx = 0;
+        photos.forEach(p => {
+          if (!p.url && data[fetchIdx]?.signedUrl) {
+            urlMap[p.storage_path] = data[fetchIdx].signedUrl;
+            fetchIdx++;
           }
         });
         setSignedUrls(urlMap);
       }
     };
+
 
     fetchUrls();
   }, [open, photos]);

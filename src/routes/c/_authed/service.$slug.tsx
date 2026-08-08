@@ -110,10 +110,12 @@ function ServiceDetail() {
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [notes, setNotes] = useState("");
   const [addrOpen, setAddrOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+
   // Payment-specific state: inline retry banner + pending checkout context.
   type PendingCheckout = {
     bookingId: string;
@@ -333,7 +335,18 @@ function ServiceDetail() {
         p_coupon_code: appliedCoupon?.code ?? null,
       });
       if (error) throw error;
-      return normalizeBookingPreview(data);
+      
+      const normalized = normalizeBookingPreview(data);
+      
+      // HARD GUARD: If vehicle has an active sub, base amount MUST be 0
+      // unless we are renewing or it's a specific paid upgrade.
+      if (vehicleSubQ.data?.status === 'active' && !isIncludedBooking) {
+        normalized.base_amount = 0;
+        normalized.payable = Number(normalized.addon_amount ?? 0);
+      }
+      
+      return normalized;
+
     },
   });
 
@@ -400,6 +413,11 @@ function ServiceDetail() {
     };
     setConfirmError(null);
     if (submitting || paying) return;
+    if (vehicleSubQ.data?.status === 'active' && previewBase > 0) {
+      fail("This vehicle already has an active Daily Shine subscription.");
+      return;
+    }
+
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
