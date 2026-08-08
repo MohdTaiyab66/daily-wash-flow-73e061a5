@@ -519,8 +519,10 @@ function MyPlanPage() {
 
           {/* Counters */}
         </div>
-      </>
-    )}
+      )}
+    </div>
+  );
+}
 
       <ScheduleWashDialog
         key={scheduleOpen ? (selectedVehicleId ?? "no-vehicle") : "closed"}
