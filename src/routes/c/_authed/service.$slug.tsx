@@ -1219,6 +1219,13 @@ function ServiceDetail() {
       </div>
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
+      <BookAWashSheet 
+        open={bookOpen} 
+        onOpenChange={setBookOpen} 
+        vehicleId={vehicleId || undefined} 
+        userId={userId || undefined} 
+      />
+
     </div>
   );
 
