@@ -406,7 +406,7 @@ function AuthPage() {
                   ))}
                 </div>
                 <p className="mt-3 text-[11px] text-white/40">
-                  The 6-digit code expires in 5 minutes.
+                  The {otpLength}-digit code expires in 5 minutes.
                 </p>
 
               </div>
