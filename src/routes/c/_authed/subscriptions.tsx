@@ -58,8 +58,6 @@ type AddonRow = {
 function MyPlanPage() {
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   const [bookOpen, setBookOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
