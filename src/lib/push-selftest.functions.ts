@@ -115,7 +115,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
         return res;
       }
 
-      const userId = context.userId;
+      const userId = (context as any).userId;
 
       if (data.scenario === "assignment") {
         res.channelId = "assignments_v4";
