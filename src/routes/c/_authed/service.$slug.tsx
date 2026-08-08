@@ -34,6 +34,16 @@ import { SectionTitle, Section, Surface, StatusChip } from "@/components/custome
 import { cn } from "@/lib/utils";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 
 
