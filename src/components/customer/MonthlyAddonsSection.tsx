@@ -259,7 +259,7 @@ export function MonthlyAddonsSection({
                   isPaid
                     ? "border-primary/50 bg-primary/5"
                     : isPending
-                      ? "border-amber-500/50 bg-amber-500/5"
+                      ? "border-warning/50 bg-warning/10"
                       : "border-border"
                 }`}
               >
@@ -317,11 +317,11 @@ export function MonthlyAddonsSection({
                 </div>
 
                 {isPending && (
-                  <div className="mt-3 rounded-xl border border-amber-500/40 bg-background p-2.5">
+                  <div className="mt-3 rounded-xl border border-warning/40 bg-background p-2.5">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[12px] font-semibold text-amber-700">Payment pending</div>
+                        <div className="text-[12px] font-semibold text-warning-foreground">Payment pending</div>
                         <p className="text-[11px] text-muted-foreground">
                           This add-on activates only after payment is confirmed.
                         </p>

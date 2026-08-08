@@ -375,7 +375,7 @@ function StatusBadge({ status }: { status: string }) {
     Completed: "bg-success/10 text-success ring-success/30",
     "In progress": "bg-primary/10 text-primary ring-primary/30",
     Scheduled: "bg-blue-500/10 text-blue-700 ring-blue-500/30",
-    "Awaiting payment": "bg-amber-500/10 text-amber-700 ring-amber-500/30",
+    "Awaiting payment": "bg-warning/15 text-warning-foreground ring-warning/30",
     Cancelled: "bg-destructive/10 text-destructive ring-destructive/30",
     Refunded: "bg-muted text-muted-foreground ring-border",
   };
@@ -391,7 +391,7 @@ function StatusBadge({ status }: { status: string }) {
 function PaymentBadge({ status }: { status: string | null }) {
   const s = status ?? "pending";
   const map: Record<string, string> = {
-    pending: "text-amber-700",
+    pending: "text-warning-foreground",
     paid: "text-success",
     failed: "text-destructive",
     refunded: "text-muted-foreground",
