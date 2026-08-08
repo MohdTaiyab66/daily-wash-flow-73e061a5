@@ -506,7 +506,7 @@ function ServiceDetail() {
           setAddressId(createdAddress.id);
           qc.invalidateQueries({ queryKey: ["customer-addresses"] });
         } else {
-          setAddrDrawerOpen(true);
+          setAddrDialogOpen(true);
           throw new Error("Exact GPS is required before booking. Please use current location and save GPS again.");
         }
       }
@@ -514,7 +514,8 @@ function ServiceDetail() {
       const selectedAddress = addressesQ.data?.find((a) => a.id === bookingAddressId);
       if (selectedAddress) servicePoint = validateExactGps((selectedAddress as any).latitude, (selectedAddress as any).longitude);
       if (!servicePoint) {
-        setAddrDrawerOpen(true);
+        setAddrDialogOpen(true);
+
 
         throw new Error("Exact GPS is required before booking. Please update this address using current location.");
       }
