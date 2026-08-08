@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
 import logo from "@/assets/logo.jpeg";
 import hero from "@/assets/hero-car-wash.jpg";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/auth")({
   ssr: false,
