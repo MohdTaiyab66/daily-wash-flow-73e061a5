@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/_authed/bookings/$id")({
   ssr: false,
