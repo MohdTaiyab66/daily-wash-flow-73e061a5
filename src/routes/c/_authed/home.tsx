@@ -331,7 +331,7 @@ function CustomerHome() {
           {planActive || planPending ? (
             <Link to="/c/subscriptions" className="mt-5 block">
               <Surface
-                className={`uw-pressable flex items-center gap-3.5 shadow-sm ${planPending ? "border-warning/40 bg-warning/[0.05]" : "border-success/30 bg-success/[0.04]"}`}
+                className={`uw-pressable flex items-center gap-3.5 border shadow-sm ${planPending ? "border-warning/40 bg-warning/[0.05]" : "border-success/30 bg-success/[0.04]"}`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${planPending ? "bg-warning/20 text-warning-foreground" : "bg-success/12 text-success"}`}>
                   <Sparkles className="h-5 w-5" />
