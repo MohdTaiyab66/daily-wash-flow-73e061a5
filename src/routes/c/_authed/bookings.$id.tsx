@@ -113,7 +113,6 @@ function BookingDetail() {
 
 
   return (
-  return (
     <div className="min-h-screen bg-[#FFF9F3] pb-10">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
