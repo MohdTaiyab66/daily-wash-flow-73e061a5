@@ -287,26 +287,33 @@ function CustomerAuth() {
         )}
 
         {step === "name" && (
-          <div className="mt-12 animate-fade-in">
-            <h1 className="text-3xl font-bold tracking-tight">Welcome to Urban Wash</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Tell us your name to finish setting up your account.
+          <div className="mt-12 animate-in fade-in slide-in-from-right-4 duration-500">
+            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Welcome!</h1>
+            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+              Just a final step — what should we call you?
             </p>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your full name"
-              autoComplete="name"
-              className="mt-8 h-14 rounded-2xl text-base"
-            />
+            <div className="mt-10">
+              <Label className="text-[13px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">Full Name</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Rahul Sharma"
+                autoComplete="name"
+                className="mt-2 h-15 rounded-2xl border-black/5 bg-white text-lg font-bold shadow-sm focus-visible:ring-4 focus-visible:ring-primary/5 transition-all"
+              />
+            </div>
             <Button
               size="lg"
-              className="mt-5 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+              className="mt-8 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
               onClick={signUp}
               disabled={loading || name.trim().length < 2}
             >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? "Creating your account…" : "Create my account"}
+              {loading ? (
+                <div className="flex items-center gap-3">
+                   <Loader2 className="h-5 w-5 animate-spin" />
+                   <span>Creating Account...</span>
+                </div>
+              ) : "Get Started ✓"}
             </Button>
           </div>
         )}
