@@ -138,6 +138,8 @@ export function BookAWashSheet({
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
 
+  console.log("BookAWashSheet render", { open, phase, error });
+
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [addressPickerOpen, setAddressPickerOpen] = useState(false);
 
