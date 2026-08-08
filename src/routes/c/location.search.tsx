@@ -205,49 +205,64 @@ function LocationSearch() {
   const showEmpty = q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#FFF9F3] flex flex-col">
       {/* Header */}
       <div className="px-5 pt-8 pb-4 flex items-center gap-4">
-        <button onClick={() => navigate({ to: "/c/location" })} className="p-1 -ml-1" aria-label="Back">
-          <ArrowLeft className="h-6 w-6" />
+        <button 
+           onClick={() => navigate({ to: "/c/location" })} 
+           className="grid h-10 w-10 place-items-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
+        >
+          <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
         </button>
-        <h1 className="text-lg font-semibold tracking-tight">Address Selection</h1>
+        <h1 className="text-[22px] font-black tracking-tight text-[#1a1a1a]">Location</h1>
       </div>
 
       {/* Search box */}
       <div className="px-5">
-        <div className="flex items-center gap-2 rounded-xl border border-input bg-card px-4 py-3">
-          <Search className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-5 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+          <Search className="h-5 w-5 text-primary" />
           <Input
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search area, landmark, colony…"
-            className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto text-base"
+            placeholder="Search area or landmark..."
+            className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/40"
           />
           {q && (
-            <button onClick={() => setQ("")} aria-label="Clear" className="p-1 -mr-1">
-              <X className="h-4 w-4 text-muted-foreground" />
+            <button 
+               onClick={() => setQ("")} 
+               className="grid h-6 w-6 place-items-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Use current location — always visible just below the search box */}
-      <div className="px-5 pt-3">
+      {/* Use current location */}
+      <div className="px-5 pt-4">
         <button
           onClick={useGPS}
           disabled={locating || selecting}
-          className="w-full flex items-center gap-3 py-3 text-left"
+          className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl bg-primary/5 border border-primary/10 text-left transition-all active:scale-[0.98]"
         >
-          {locating ? (
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          ) : (
-            <Navigation className="h-5 w-5 text-primary" />
-          )}
-          <span className="font-semibold text-primary">Use current location</span>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-white shadow-sm">
+             {locating ? (
+               <Loader2 className="h-5 w-5 animate-spin text-primary" />
+             ) : (
+               <Navigation className="h-5 w-5 text-primary fill-primary/10" />
+             )}
+          </div>
+          <div>
+             <span className="block text-[15px] font-black text-[#1a1a1a]">Use current location</span>
+             <span className="block text-[12px] font-bold text-primary/60 uppercase tracking-wider">Fastest way</span>
+          </div>
         </button>
-        <div className="border-t border-dashed border-border" />
+        <div className="mt-6 mb-2 flex items-center gap-3 px-1">
+           <div className="h-px flex-1 bg-black/5" />
+           <span className="text-[11px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">or search</span>
+           <div className="h-px flex-1 bg-black/5" />
+        </div>
       </div>
 
       {/* Suggestions / list */}
