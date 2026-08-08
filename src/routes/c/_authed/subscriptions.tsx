@@ -319,7 +319,7 @@ function MyPlanPage() {
           )}
 
           {!bookingsQ.isLoading && !activeSub && pendingSub && (
-            <PendingPaymentCard booking={pendingSub} />
+            <PendingPaymentCard booking={pendingSub} vehicleId={selectedVehicleId} />
           )}
 
           {!bookingsQ.isLoading && !activeSub && !pendingSub && (
@@ -570,7 +570,7 @@ function MyPlanPage() {
   );
 }
 
-function PendingPaymentCard({ booking }: { booking: Booking }) {
+function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | null }) {
   const slug = booking.service_catalog?.slug ?? "daily-shine";
   const planName = booking.service_catalog?.name ?? "Daily Shine";
   const statusLabel = booking.status === "cancelled"

@@ -85,9 +85,11 @@ const ONE_TIME_OPTIONS: {
 export function MonthlyAddonsSection({
   subscriptionId,
   userId,
+  vehicleId,
 }: {
   subscriptionId: string | null;
   userId: string | null;
+  vehicleId?: string | null;
 }) {
   const qc = useQueryClient();
   const createOrder = useServerFn(createRazorpayOrder);
