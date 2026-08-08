@@ -617,7 +617,7 @@ export function BookAWashSheet({
 
         {/* Sticky CTA Bar */}
         {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
+          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] safe-area-bottom">
             <Button
               data-testid="book-wash-button"
               onClick={() => void confirm()}
@@ -630,11 +630,11 @@ export function BookAWashSheet({
                    <span>Scheduling...</span>
                 </div>
               ) : (
-                "Schedule a wash"
+                "Book this wash →"
               )}
             </Button>
             <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-              Included with your plan · ₹0
+              Included with Daily Shine · ₹0
             </p>
           </div>
         )}
