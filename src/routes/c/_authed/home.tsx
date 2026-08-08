@@ -262,7 +262,8 @@ function CustomerHome() {
         />
 
 
-        <div className="px-5 space-y-6">
+        <div className="px-5 space-y-7">
+
           {/* Hero Section */}
           <UWFeaturedCarousel 
             items={[
