@@ -165,7 +165,7 @@ export const updateMarketplaceSettings = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
-    const { error } = await (context.supabase as any)
+    const { error } = await (supabase as any)
       .from("marketplace_settings")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", true);
