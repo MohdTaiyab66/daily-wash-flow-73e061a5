@@ -298,7 +298,7 @@ function MyPlanPage() {
 
       {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center shadow-sm">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-muted/30 text-muted-foreground">
+          <div className="UW_NO_VEHICLES_CARD grid h-16 w-16 place-items-center rounded-full bg-muted/30 text-muted-foreground">
             <Car className="h-8 w-8" />
           </div>
           <h3 className="mt-4 text-[17px] font-bold">No vehicles yet</h3>
@@ -311,12 +311,6 @@ function MyPlanPage() {
 
       {hasVehicles && (
         <>
-          {activeSub && <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />}
-
-          {activeSub && (
-            <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
-          )}
-
           {bookingsQ.isLoading && (
             <div className="mt-6 space-y-4">
               <Shimmer className="h-48 w-full rounded-3xl" />
