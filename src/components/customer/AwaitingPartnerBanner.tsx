@@ -309,12 +309,3 @@ export function AwaitingPartnerBanner({
   );
 }
 
-function yearsWithUrbanWash(iso: string) {
-  const years = Math.max(0, (Date.now() - new Date(iso).getTime()) / (365.25 * 86400000));
-  if (years < 1) {
-    const months = Math.max(1, Math.round(years * 12));
-    return `${months} mo with Urban Wash`;
-  }
-  const y = Math.floor(years);
-  return `${y}+ yr${y === 1 ? "" : "s"} with Urban Wash`;
-}
