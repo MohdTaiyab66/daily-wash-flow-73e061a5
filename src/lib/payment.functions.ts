@@ -62,7 +62,8 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
     if (booking.payment_status === "paid") throw new Error("Booking is already paid");
 
     // P0-DUP-01: Block Razorpay order creation if the vehicle already has an
