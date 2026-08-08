@@ -976,7 +976,7 @@ export const adminRetryQueue = createServerFn({ method: "POST" }).middleware([re
 export const adminForceAssignQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string; partner_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { data: res, error } = await supabase.rpc("admin_force_assign_queue", {
       p_queue_id: data.queue_id, p_partner_id: data.partner_id,
     });
