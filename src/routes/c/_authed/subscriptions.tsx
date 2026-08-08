@@ -334,7 +334,7 @@ function MyPlanPage() {
           <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
 
           {/* Service Notice Card (if any) */}
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} vehicleId={selectedVehicleId} />
 
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
@@ -611,7 +611,7 @@ function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleI
   );
 }
 
-function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
+function ServiceNoticeCard({ notice, onScheduleIncluded, vehicleId }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void; vehicleId: string | null }) {
   if (!notice) return null;
   const isDirty = notice?.type === "vehicle_dirty";
   return (
