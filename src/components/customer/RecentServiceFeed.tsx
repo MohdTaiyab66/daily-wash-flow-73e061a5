@@ -329,6 +329,8 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
       />
     </div>
   );
+}
+
 function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<string>("quality");
