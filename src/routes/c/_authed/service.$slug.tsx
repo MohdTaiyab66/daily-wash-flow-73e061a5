@@ -957,18 +957,41 @@ function ServiceDetail() {
 
         {/* ADDRESS SECTION */}
         <Section title={<><MapPin className="h-4 w-4 text-primary" /> Service location</>}>
-           <div className="space-y-2">
-            {uniqueAddresses.slice(0, 1).map((a) => (
-              <div key={a.id} className="flex items-start gap-3 rounded-2xl border border-primary bg-primary/5 p-3 text-left">
-                <div className="mt-1 h-4 w-4 rounded-full border-2 border-primary bg-primary ring-offset-2 ring-1 ring-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold">{a.label}</div>
-                  <div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div>
-                </div>
-                <button onClick={() => setAddrOpen(true)} className="text-[13px] font-semibold text-primary">Change ›</button>
-              </div>
-            ))}
-          </div>
+          <Surface className="flex items-start gap-3 p-3">
+             <div className="mt-1 h-4 w-4 rounded-full border-2 border-primary bg-primary" />
+             <div className="min-w-0 flex-1">
+               <div className="text-[14px] font-semibold">
+                 {uniqueAddresses.find(a => a.id === addressId)?.label ?? "Default"}
+               </div>
+               <div className="text-[12px] text-muted-foreground truncate">
+                 {uniqueAddresses.find(a => a.id === addressId)?.address_line ?? "Select your address"}
+               </div>
+             </div>
+             <Drawer>
+               <DrawerTrigger asChild>
+                 <button className="text-[13px] font-semibold text-primary shrink-0">Change ›</button>
+               </DrawerTrigger>
+               <DrawerContent className="max-h-[80vh]">
+                 <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
+                 <div className="px-4 py-2 space-y-2 overflow-y-auto">
+                    {uniqueAddresses.map(addr => (
+                      <DrawerClose key={addr.id} asChild>
+                        <button 
+                          onClick={() => setAddressId(addr.id)}
+                          className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-border")}
+                        >
+                          <div className="font-semibold">{addr.label}</div>
+                          <div className="text-xs text-muted-foreground">{addr.address_line}, {addr.area}</div>
+                        </button>
+                      </DrawerClose>
+                    ))}
+                 </div>
+                 <DrawerFooter>
+                   <DrawerClose asChild><Button variant="outline">Close</Button></DrawerClose>
+                 </DrawerFooter>
+               </DrawerContent>
+             </Drawer>
+          </Surface>
         </Section>
 
         {/* TIME SELECTION */}
