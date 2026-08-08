@@ -22,11 +22,8 @@ export const Route = createFileRoute("/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-const OTP_LENGTH = 6; // Server-issued one-time code (see src/lib/staff-auth.functions.ts).
-
-// DEV ONLY - Hardcoded OTP. Remove before production.
-// Partner app only: any mobile number is accepted and the code is always "1234".
-const DEV_PARTNER_OTP = "1234";
+const OTP_LENGTH = 4; // Use 4-digit OTP for both Admin and Partner in development/preview.
+const DEV_OTP = "1234";
 
 // Phone-as-email pattern (phone provider is disabled on this project).
 
@@ -49,8 +46,8 @@ function AuthPage() {
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  // DEV ONLY - Hardcoded OTP. Remove before production. (Admin keeps the real 6-digit flow.)
-  const otpLength = isAdminLogin ? OTP_LENGTH : DEV_PARTNER_OTP.length;
+  // DEV ONLY - Hardcoded OTP. Both Admin and Partner use the 4-digit flow.
+  const otpLength = OTP_LENGTH;
   const [otpDigits, setOtpDigits] = useState<string[]>(() => Array(otpLength).fill(""));
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -122,13 +119,7 @@ function AuthPage() {
         return;
       }
       setStep("otp");
-      toast.success(
-        !isAdminLogin
-          ? `Dev mode: use ${DEV_PARTNER_OTP}`
-          : res.delivery === "push"
-          ? "Code sent to your registered Urban Wash device."
-          : "Code generated. Contact Urban Wash support to receive it.",
-      );
+      toast.success(`Dev mode: use ${DEV_OTP}`);
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
     } catch (e: any) {
       toast.error(e?.message || "Could not send the code. Please try again.");
@@ -351,9 +342,7 @@ function AuthPage() {
             </h2>
             <p className="mt-1 text-xs text-white/55">
               {step === "phone" && "We'll text you a one-time password."}
-              {step === "otp" && (isAdminLogin
-              ? `Enter the ${otpLength}-digit code sent to +91 ${phone}.`
-              : `Dev mode — enter ${DEV_PARTNER_OTP} to continue.`)}
+              {step === "otp" && `Dev mode — enter ${DEV_OTP} to continue.`}
               {step === "name" && "Tell us your name to finish signing up."}
             </p>
           </div>
@@ -417,7 +406,7 @@ function AuthPage() {
                   ))}
                 </div>
                 <p className="mt-3 text-[11px] text-white/40">
-                  The 6-digit code expires in 5 minutes.
+                  The {otpLength}-digit code expires in 5 minutes.
                 </p>
 
               </div>
