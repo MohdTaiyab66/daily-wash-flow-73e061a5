@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Calendar, Sparkles, MapPin, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 type Photo = {
   stage: string;
