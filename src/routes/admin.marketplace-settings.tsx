@@ -43,12 +43,12 @@ function MarketplaceSettingsPage() {
     },
   });
 
-  const [newImage, setNewImage] = useState({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+  const [newImage, setNewImage] = useState({ image_url: "", title: "", subtitle: "", sort_order: 0, status: "draft" as const });
 
   const handleAdd = () => {
     if (!newImage.image_url) return toast.error("Image URL is required");
     upsertMutation.mutate(newImage);
-    setNewImage({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+    setNewImage({ image_url: "", title: "", subtitle: "", sort_order: 0, status: "draft" });
   };
 
   return (
@@ -129,6 +129,14 @@ function MarketplaceSettingsPage() {
                       />
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant={img.status === "published" ? "default" : "outline"}
+                        size="sm"
+                        className="h-8"
+                        onClick={() => upsertMutation.mutate({ ...img, status: img.status === "published" ? "draft" : "published" })}
+                      >
+                        {img.status === "published" ? "Published" : "Draft"}
+                      </Button>
                       <Switch 
                         checked={img.is_active} 
                         onCheckedChange={val => upsertMutation.mutate({ ...img, is_active: val })}

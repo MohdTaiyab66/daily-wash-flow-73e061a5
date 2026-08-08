@@ -23,6 +23,7 @@ export const upsertPromoImage = createServerFn({ method: "POST" })
     subtitle: z.string().optional(),
     sort_order: z.number().optional(),
     is_active: z.boolean().optional(),
+    status: z.enum(["draft", "published"]).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

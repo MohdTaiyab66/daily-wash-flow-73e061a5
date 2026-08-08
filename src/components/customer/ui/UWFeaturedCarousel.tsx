@@ -82,7 +82,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden"
+            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
             onClick={() => onItemClick?.(item)}
           >
             <img 
@@ -105,7 +105,10 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 <div className="text-white">
                   <span className="text-[18px] font-black">₹{item.price}</span>
                 </div>
-                <button className="flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-black text-white shadow-lg shadow-primary/30 transition-transform active:scale-95">
+                <button 
+                  className="flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-black text-white shadow-lg shadow-primary/30 transition-transform active:scale-90"
+                  onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                >
                   Book now <ChevronRight className="h-4 w-4" />
                 </button>
               </div>

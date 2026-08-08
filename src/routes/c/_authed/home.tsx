@@ -249,6 +249,7 @@ function CustomerHome() {
         .from("daily_shine_promo_images")
         .select("*")
         .eq("is_active", true)
+        .eq("status", "published")
         .order("sort_order");
       if (error) throw error;
       return data;
