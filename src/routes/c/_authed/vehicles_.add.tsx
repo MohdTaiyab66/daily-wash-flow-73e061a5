@@ -55,6 +55,7 @@ function AddVehicle() {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string | null>(null);
   const [selected, setSelected] = useState<CatalogRow | null>(null);
+  const [success, setSuccess] = useState(false);
   
   // Details state
   const [color, setColor] = useState("");
@@ -168,9 +169,8 @@ function AddVehicle() {
       }
     },
     onSuccess: () => {
-      toast.success("Vehicle added successfully");
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
-      navigate({ to: "/c/home" });
+      setSuccess(true);
     },
     onError: (e: any) => toast.error(e.message || "Failed to add vehicle"),
   });
@@ -222,22 +222,40 @@ function AddVehicle() {
 
   return (
     <div className="min-h-screen bg-[#FFF9F3] flex flex-col">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-4">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back</span>
-        </button>
-        <PageTitle>{selected ? "Vehicle details" : brand ? brand : "Add your vehicle"}</PageTitle>
-        <Muted className="mt-1">
-          {selected 
-            ? "Almost done! Just a few more details." 
-            : "Find your car and we'll automatically apply the right pricing."}
-        </Muted>
-      </header>
+      {success ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in zoom-in duration-500">
+          <div className="h-24 w-24 rounded-[32px] bg-success flex items-center justify-center text-white shadow-xl shadow-success/20 mb-8">
+            <Check className="h-12 w-12" strokeWidth={3} />
+          </div>
+          <h2 className="text-[24px] font-black text-[#1a1a1a] text-center leading-tight">Vehicle added!</h2>
+          <p className="mt-2 text-[15px] font-medium text-muted-foreground text-center">
+            {selected?.make} {selected?.model} is now in your garage.
+          </p>
+          <Button 
+            onClick={() => navigate({ to: "/c/home" })}
+            className="mt-12 w-full h-14 rounded-2xl bg-[#1a1a1a] text-white font-black shadow-lg active:scale-95 transition-transform"
+          >
+            Go to Home
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Header */}
+          <header className="px-5 pt-6 pb-4">
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+            <PageTitle>{selected ? "Vehicle details" : brand ? brand : "Add your vehicle"}</PageTitle>
+            <Muted className="mt-1">
+              {selected 
+                ? "Almost done! Just a few more details." 
+                : "Find your car and we'll automatically apply the right pricing."}
+            </Muted>
+          </header>
 
       <main className="flex-1 px-5 pb-32">
         {!selected ? (
