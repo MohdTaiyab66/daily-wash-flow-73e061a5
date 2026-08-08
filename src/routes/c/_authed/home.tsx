@@ -37,6 +37,7 @@ import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
+import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
 
 
 
