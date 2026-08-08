@@ -76,69 +76,86 @@ function ProfilePage() {
   const phone = p?.phone ?? "";
 
   return (
-    <div className="px-5 pb-8 pt-6">
-      <h1 className="text-[26px] font-bold tracking-tight">Profile</h1>
-
-      {/* Identity */}
-      <div className="mt-5 flex items-center gap-4">
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-accent text-primary">
-          <UserIcon className="h-7 w-7" />
+    <div className="min-h-screen bg-[#FFF9F3] pb-12">
+      {/* Header */}
+      <div className="px-6 pt-8">
+        <h1 className="text-[28px] font-black tracking-tight text-[#1a1a1a]">Profile</h1>
+        
+        {/* Identity Hub */}
+        <div className="mt-6 flex items-center gap-4 rounded-3xl bg-card p-5 shadow-sm border border-border/50">
+          <div className="relative">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-primary">
+              <UserIcon className="h-8 w-8" strokeWidth={2.5} />
+            </div>
+            <div className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-success border-2 border-white shadow-sm">
+              <Check className="h-3.5 w-3.5 text-white" />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            {q.isLoading ? (
+              <div className="space-y-2">
+                <Shimmer className="h-5 w-32 rounded-lg" />
+                <Shimmer className="h-3.5 w-24 rounded-full" />
+              </div>
+            ) : (
+              <>
+                <div className="truncate text-[20px] font-bold tracking-tight text-[#1a1a1a]">{name}</div>
+                <div className="mt-0.5 text-[13px] font-medium text-muted-foreground">{phone || "No phone added"}</div>
+              </>
+            )}
+          </div>
+          <Link
+            to="/c/profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 text-muted-foreground transition-colors active:bg-muted"
+          >
+            <Pencil className="h-4 w-4" />
+          </Link>
         </div>
-        <div className="min-w-0 flex-1">
-          {q.isLoading ? (
-            <>
-              <Shimmer className="h-5 w-36 rounded-lg" />
-              <Shimmer className="mt-2 h-3.5 w-28 rounded-full" />
-            </>
-          ) : (
-            <>
-              <div className="truncate text-[19px] font-bold tracking-tight">{name}</div>
-              <div className="mt-0.5 text-[13px] text-muted-foreground">{phone || "—"}</div>
-            </>
-          )}
-        </div>
-        <Link
-          to="/c/vehicles"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card px-4 text-[13px] font-semibold"
-        >
-          <Pencil className="h-3.5 w-3.5" /> Edit
-        </Link>
       </div>
 
-      <Section title="Your account">
-        <ListGroup>
-          <ListRow icon={Car} title="Vehicles" to="/c/vehicles" />
-          <ListRow icon={ClipboardList} title="Bookings" to="/c/bookings" />
-          <ListRow icon={Bell} title="Notifications" to="/c/notifications" />
-          <ListRow icon={Car} title="Saved packages" to="/c/profile" />
-          <ListRow icon={Gift} title="Refer & earn" subtitle="Up to ₹100 per friend" to="/c/referrals" />
-        </ListGroup>
-      </Section>
+      <div className="mt-4 space-y-2 px-6">
+        <Section title="Account" className="mt-6">
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
+            <ListRow icon={Car} title="My Vehicles" subtitle="Manage your cars & tiers" to="/c/vehicles" className="border-b border-border/40" />
+            <ListRow icon={ClipboardList} title="Service History" subtitle="Washes, photos & reports" to="/c/bookings" className="border-b border-border/40" />
+            <ListRow icon={MapPin} title="Saved Addresses" subtitle="Manage service locations" to="/c/profile" className="border-b border-border/40" />
+            <ListRow icon={Gift} title="Refer & Earn" subtitle="Get ₹100 for every friend" to="/c/referrals" />
+          </div>
+        </Section>
 
-      <Section title="Help & support">
-        <ListGroup>
-          <ListRow icon={Headphones} title="Help centre" chevron />
-          <ListRow icon={MapPin} title="Saved addresses" chevron />
-        </ListGroup>
-      </Section>
+        <Section title="Settings & Privacy" className="mt-6">
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
+            <ListRow icon={Bell} title="Notifications" to="/c/notifications" className="border-b border-border/40" />
+            <ListRow icon={Shield} title="Privacy Policy" to="/c/profile" className="border-b border-border/40" />
+            <ListRow icon={FileText} title="Terms of Service" to="/c/profile" />
+          </div>
+        </Section>
 
-      <Section title="More">
-        <ListGroup>
-          <ListRow icon={Info} title="About Urban Wash" />
-          <ListRow icon={FileText} title="Terms of service" />
-          <ListRow icon={Shield} title="Privacy policy" />
-          <ListRow icon={Trash2} title="Request account deletion" />
-        </ListGroup>
-      </Section>
+        <Section title="Support" className="mt-6">
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-sm">
+            <ListRow icon={Headphones} title="Help Centre" to="/c/profile" className="border-b border-border/40" />
+            <ListRow icon={Info} title="About Urban Wash" to="/c/profile" />
+          </div>
+        </Section>
 
-      <button
-        onClick={() => setLogoutOpen(true)}
-        className="uw-pressable mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 py-3 text-[14px] font-semibold text-destructive"
-      >
-        <LogOut className="h-4 w-4" /> Log out
-      </button>
+        <div className="mt-8 space-y-3">
+          <button
+            onClick={() => setLogoutOpen(true)}
+            className="uw-pressable flex w-full items-center justify-center gap-2.5 rounded-full bg-destructive/5 py-4 text-[15px] font-bold text-destructive transition-colors active:bg-destructive/10"
+          >
+            <LogOut className="h-4.5 w-4.5" />
+            Log out
+          </button>
+          
+          <button className="flex w-full items-center justify-center py-2 text-[12px] font-semibold text-muted-foreground/50 transition-colors hover:text-muted-foreground">
+            Request account deletion
+          </button>
+        </div>
 
-      <p className="mt-6 text-center text-[11.5px] text-muted-foreground">Urban Wash</p>
+        <p className="mt-6 text-center text-[12px] font-bold tracking-widest text-muted-foreground/30 uppercase">
+          Version 2.4.0
+        </p>
+      </div>
 
       {/* Destructive action always asks first. */}
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
