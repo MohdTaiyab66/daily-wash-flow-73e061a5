@@ -82,7 +82,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         .maybeSingle();
       if (openSub) {
         await supabaseAdmin.from("subscription_block_log").insert({
-          user_id: context.userId,
+          user_id: userId,
           vehicle_id: (booking as any).vehicle_id,
           service_id: (booking as any).service_id ?? null,
           existing_subscription_id: (openSub as any).id,
