@@ -269,9 +269,10 @@ export const getLiveBroadcasts = createServerFn({ method: "GET" })
 export const getMarketplaceHealth = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    const { userId, supabase } = context as any;
+    const isAdmin = await rpc(context, "has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
-    const { data, error } = await (context.supabase as any).from("mp_health").select("*").maybeSingle();
+    const { data, error } = await (supabase as any).from("mp_health").select("*").maybeSingle();
     if (error) throw new Error(error.message);
     return data;
   });
