@@ -276,7 +276,7 @@ function CustomerHome() {
 
         <div className="px-5 space-y-7">
           {/* Active Vehicle Section - Compact Context Row */}
-          <Section className="mt-2">
+          <Section className="mt-[-8px]">
             {vehiclesQ.isLoading ? (
               <SkeletonCard className="h-16" />
             ) : activeVehicle ? (
@@ -297,11 +297,10 @@ function CustomerHome() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
                       <h2 className="truncate text-[15px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
-                      {vehicles.length > 1 && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground/40" />
                     </div>
                     <p className="truncate text-[11px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/20" />
                 </div>
               </Surface>
             ) : (
