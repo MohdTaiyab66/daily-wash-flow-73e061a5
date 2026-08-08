@@ -322,16 +322,23 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
 }
 
 
-function PhotoStrip({ photos }: { photos: Photo[] }) {
+function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
   return (
     <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-      {photos.slice(0, 8).map((p, i) => <SignedPhoto key={i} path={p.storage_path} stage={p.stage} />)}
+      {photos.slice(0, 8).map((p, i) => (
+        <SignedPhoto 
+          key={i} 
+          path={p.storage_path} 
+          stage={p.stage} 
+          onClick={() => onPhotoClick(i)} 
+        />
+      ))}
     </div>
   );
 }
 
-function SignedPhoto({ path, stage }: { path: string; stage: string }) {
+function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -342,12 +349,19 @@ function SignedPhoto({ path, stage }: { path: string; stage: string }) {
     return () => { cancelled = true; };
   }, [path]);
   return (
-    <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative aspect-square overflow-hidden rounded-md bg-muted",
+        onClick && "cursor-pointer active:scale-95 transition-transform"
+      )}
+    >
       {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
       <span className="absolute bottom-0.5 left-0.5 rounded bg-foreground/60 px-1 text-[8px] uppercase text-background">{stage}</span>
     </div>
   );
 }
+
 
 function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
   const [open, setOpen] = useState(false);
