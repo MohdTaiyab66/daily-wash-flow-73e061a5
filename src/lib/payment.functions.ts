@@ -449,7 +449,8 @@ export const acquireCheckoutHold = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => holdInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await (context.supabase as any).rpc("acquire_checkout_hold", {
+    const supabase = (context as any).supabase;
+    const { data: result, error } = await (supabase as any).rpc("acquire_checkout_hold", {
       p_booking_id: data.bookingId,
       p_holder_id: data.holderId,
       p_ttl_seconds: data.ttlSeconds ?? 300,
