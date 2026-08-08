@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
-import { statusTone, StatusChip } from "@/components/customer/ui/kit";
+import { statusTone, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { UWBookingCard } from "@/components/customer/ui/UWBookingCard";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
+
 
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
@@ -88,26 +91,20 @@ function BookingsPage() {
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
       <div className="min-h-screen bg-[#FFF9F3] pb-24">
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Bookings</h1>
-              <p className="mt-1 text-[13px] font-bold text-muted-foreground/50 uppercase tracking-widest">Service History</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasVehicles && (
-                <VehicleSelector
-                  vehicles={vehiclesQ.data ?? []}
-                  value={selectedVehicleId}
-                  onChange={setSelectedVehicleId}
-                />
-              )}
-            </div>
-          </div>
+        {/* Compact Marketplace Header */}
+        <div className="bg-[#FFF9F3] pt-2">
+          <UWHeader 
+            greeting="Service" 
+            firstName="History" 
+            unread={0}
+            area={vehiclesQ.data?.find(v => v.id === selectedVehicleId)?.registration_number ?? "My Bookings"}
+            onAreaClick={() => {}}
+          />
+        </div>
 
-          {/* Tabs */}
-          <div className="mt-8 flex gap-3 overflow-x-auto no-scrollbar">
+        {/* Tabs - Marketplace Style */}
+        <div className="sticky top-0 z-20 bg-[#FFF9F3]/80 backdrop-blur-md px-5 py-3">
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar">
             {(["upcoming", "completed", "cancelled"] as Tab[]).map((t) => {
               const active = tab === t;
               return (
@@ -115,10 +112,10 @@ function BookingsPage() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={cn(
-                    "flex-none rounded-2xl px-6 py-3 text-[14px] font-black capitalize transition-all",
+                    "flex-none rounded-full px-5 py-2 text-[13px] font-bold capitalize transition-all",
                     active 
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                      : "bg-white text-[#1a1a1a] shadow-sm border border-black/5"
+                      ? "bg-black text-white shadow-md shadow-black/10" 
+                      : "bg-white text-foreground/70 border border-border/50"
                   )}
                 >
                   {t}
@@ -127,6 +124,7 @@ function BookingsPage() {
             })}
           </div>
         </div>
+
 
         <div className="px-5">
           {!hasVehicles && !vehiclesQ.isLoading ? (
@@ -171,7 +169,7 @@ function BookingsPage() {
                   />
                 </div>
               ) : (
-                <div className="space-y-4 pb-10">
+                <div className="mt-4 space-y-3 pb-10">
                   {items.map((b) => {
                     const st = statusTone(b.status);
                     const when = new Date(`${b.scheduled_date}T00:00:00`);
@@ -180,48 +178,31 @@ function BookingsPage() {
                       : when.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
                     
                     const isSubscription = b.service_catalog?.slug?.includes("daily-shine");
+                    
+                    // Simple mock mapping for redesign visual impact
+                    const getServicePhoto = (slug: string) => {
+                      if (slug.includes('daily-shine')) return "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=200&auto=format&fit=crop";
+                      if (slug.includes('interior')) return "https://images.unsplash.com/photo-1599256631168-1cf0a544838b?q=80&w=200&auto=format&fit=crop";
+                      return "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=200&auto=format&fit=crop";
+                    };
 
                     return (
-                      <button
+                      <UWBookingCard
                         key={b.id}
+                        id={b.id}
+                        name={b.service_catalog?.name ?? "Service"}
+                        date={dateLabel}
+                        price={b.total_amount}
+                        time={b.preferred_before_time ? `Before ${b.preferred_before_time}` : undefined}
+                        status={{ label: st.label, tone: st.tone }}
+                        isSubscription={isSubscription}
+                        image={getServicePhoto(b.service_catalog?.slug ?? "")}
                         onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                        className="group flex w-full items-center gap-4 rounded-[32px] border border-black/5 bg-white p-5 text-left shadow-sm transition-all active:scale-[0.98] hover:shadow-md"
-                      >
-                        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#FFF9F3] border border-black/5">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">
-                            {dateLabel.split(" ")[1] ?? ""}
-                          </span>
-                          <span className="text-[20px] font-black leading-tight text-[#1a1a1a]">
-                            {dateLabel.split(" ")[0]}
-                          </span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                             <span className="truncate text-[16px] font-black text-[#1a1a1a]">
-                               {b.service_catalog?.name ?? "Service"}
-                             </span>
-                             {isSubscription && (
-                               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-                                 <Sparkles className="h-3 w-3 text-primary" />
-                               </div>
-                             )}
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-[13px] font-bold text-muted-foreground/60">
-                            <span>₹{b.total_amount}</span>
-                            <div className="h-1 w-1 rounded-full bg-black/10" />
-                            <span>{b.preferred_before_time ? `Before ${b.preferred_before_time}` : "Flexible time"}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                           <StatusChip tone={st.tone} className="rounded-xl px-3 py-1 font-black text-[10px] uppercase tracking-wider">{st.label}</StatusChip>
-                           <ChevronRight className="h-5 w-5 text-muted-foreground/30 transition-transform group-hover:translate-x-1" />
-                        </div>
-                      </button>
+                      />
                     );
                   })}
                 </div>
+
               )}
             </div>
           )}

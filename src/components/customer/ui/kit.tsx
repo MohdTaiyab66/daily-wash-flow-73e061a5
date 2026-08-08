@@ -58,23 +58,29 @@ export function Surface({
   children,
   className,
   raised,
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
   raised?: boolean;
+  onClick?: () => void;
 }) {
+  const Component = onClick ? "button" : "div";
   return (
-    <div
+    <Component
+      onClick={onClick}
       className={cn(
-        "rounded-2xl border border-border/70 bg-card p-4",
+        "rounded-[22px] border border-border/70 bg-card p-4 transition-all",
         raised && "shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-16px_rgba(0,0,0,0.18)]",
+        onClick && "uw-pressable active:scale-[0.98]",
         className,
       )}
     >
       {children}
-    </div>
+    </Component>
   );
 }
+
 
 /** Grouped list container — rows are divided, not individually carded. */
 export function ListGroup({ children, className }: { children: ReactNode; className?: string }) {

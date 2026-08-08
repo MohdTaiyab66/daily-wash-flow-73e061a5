@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2, ChevronRight } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2, ChevronRight, ChevronDown } from "lucide-react";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
+
 import { supabase } from "@/integrations/supabase/client";
 import { SkeletonCard, SkeletonRow, Shimmer } from "@/components/customer/ui/Skeletons";
 import { Button } from "@/components/ui/button";
@@ -297,10 +299,14 @@ function MyPlanPage() {
     <div className="min-h-screen bg-[#FFF9F3] px-6 pb-12 pt-8">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[28px] font-black tracking-tight text-[#1a1a1a]">My Plan</h1>
-          <p className="mt-1 text-[13px] font-medium text-muted-foreground">
-            {vehicleLabel ? `Your Daily Shine membership` : "Manage your car subscription."}
-          </p>
+          <h1 className="text-[28px] font-black tracking-tight text-foreground">My Plan</h1>
+          <div className="mt-1 flex items-center gap-1.5" onClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}>
+            <p className="text-[13px] font-medium text-muted-foreground">
+              {vehicleLabel ? vehicleLabel : "Manage your car subscription"}
+            </p>
+            {hasVehicles && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+          </div>
+
         </div>
         {hasVehicles && (
           <VehicleSelector
@@ -342,22 +348,25 @@ function MyPlanPage() {
           )}
 
           {activeSub && (
-             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-3 border border-success/10">
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                <span className="text-[12px] font-black text-success uppercase tracking-wider">Your Daily Shine plan is active</span>
-             </div>
+            <div className="mt-6 space-y-5">
+              <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+              <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
+              
+              <UWPlanCard 
+                status={activeSub.payment_status === 'paid' ? 'active' : 'pending'}
+                name={activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
+                price={Number(subRow?.amount ?? activeSub.total_amount ?? 0)}
+                daysLeft={daysLeft}
+                isExpiring={expiringSoon}
+                onClick={() => setManageOpen(true)}
+              />
+            </div>
           )}
         </>
       )}
 
       {hasVehicles && activeSub && !!selectedVehicleId && (
         <div className="mt-6 space-y-5">
-          {/* Flat Service Status Header */}
-          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-
-          {/* Service Notice Card (if any) */}
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
-
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
@@ -387,6 +396,7 @@ function MyPlanPage() {
                 Manage <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+
 
             {/* Usage Progress - Compact */}
             <div className="mt-5">
