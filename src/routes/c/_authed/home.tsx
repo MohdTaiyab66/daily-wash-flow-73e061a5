@@ -130,7 +130,7 @@ function CustomerHome() {
   });
 
   const userId = profileQ.data?.id ?? null;
-  const firstName = (profileQ.data?.fullName ?? "").trim().split(/\s+/)[0] || "there";
+  
 
 
   const unreadQ = useQuery({
