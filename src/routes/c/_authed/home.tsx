@@ -245,7 +245,7 @@ function CustomerHome() {
   const imagesQ = useQuery({
     queryKey: ["customer-promo-images"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("daily_shine_promo_images")
         .select("*")
         .eq("is_active", true)

@@ -6,7 +6,7 @@ export const listPromoImages = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from("daily_shine_promo_images")
       .select("*")
       .order("sort_order");
@@ -16,7 +16,7 @@ export const listPromoImages = createServerFn({ method: "GET" })
 
 export const upsertPromoImage = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((d) => z.object({
+  .inputValidator((d: unknown) => z.object({
     id: z.string().optional(),
     image_url: z.string().url(),
     title: z.string().optional(),
@@ -26,7 +26,7 @@ export const upsertPromoImage = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: result, error } = await supabaseAdmin
+    const { data: result, error } = await (supabaseAdmin as any)
       .from("daily_shine_promo_images")
       .upsert({
         ...data,
@@ -40,10 +40,10 @@ export const upsertPromoImage = createServerFn({ method: "POST" })
 
 export const deletePromoImage = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((d) => z.object({ id: z.string() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from("daily_shine_promo_images")
       .delete()
       .eq("id", data.id);
