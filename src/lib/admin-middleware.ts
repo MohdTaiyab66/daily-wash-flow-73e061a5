@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const requireAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-    const { supabase, userId } = context as { supabase: any; userId: string };
+    const { supabase, userId } = context as any;
     const { data, error } = await supabase.rpc("has_role", {
       _user_id: userId,
       _role: "admin",
