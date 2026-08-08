@@ -251,7 +251,7 @@ function AuthPage() {
             </div>
             <div className="text-center">
               <div className="text-xl font-bold tracking-tight">Urban Wash</div>
-              <div className="mt-1 text-xs uppercase tracking-[0.3em] text-orange-400">Partner</div>
+              <div className="mt-1 text-xs uppercase tracking-[0.3em] text-orange-400">{isAdminLogin ? "Admin" : "Partner"}</div>
             </div>
           </div>
         </div>
@@ -289,7 +289,7 @@ function AuthPage() {
           </div>
           <div className="text-center">
             <div className="text-[14px] font-semibold tracking-tight">Urban Wash</div>
-            <div className="text-[10px] uppercase tracking-[0.32em] text-orange-400">Partner</div>
+            <div className="text-[10px] uppercase tracking-[0.32em] text-orange-400">{isAdminLogin ? "Admin" : "Partner"}</div>
           </div>
         </div>
 
@@ -465,7 +465,7 @@ function AuthPage() {
 
         {!isAdminLogin && (
           <div className="mt-auto flex items-center justify-between pt-10 text-[9px] text-white/25">
-            <a href="tel:+919999999999" className="hover:text-white/60 transition">Partner Support</a>
+            <a href="tel:+919999999999" className="hover:text-white/60 transition">{isAdminLogin ? "Admin Support" : "Partner Support"}</a>
             <span className="font-mono">v{PARTNER_APP_VERSION}</span>
           </div>
         )}
