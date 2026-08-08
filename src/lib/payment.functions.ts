@@ -209,7 +209,8 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         throw new Error(`Razorpay payment is ${payment.status ?? "not captured"}`);
       }
 
-      const { data: result, error } = await (context.supabase as any).rpc("activate_paid_booking", {
+      const { supabase } = context as any;
+      const { data: result, error } = await (supabase as any).rpc("activate_paid_booking", {
         p_booking_id: data.bookingId,
         p_provider_order_id: data.razorpayOrderId,
         p_provider_payment_id: data.razorpayPaymentId,
