@@ -221,42 +221,22 @@ function MyPlanPage() {
   });
 
   const latestNoticeQ = useQuery({
-    queryKey: ["customer-latest-service-notice", userId, selectedVehicleId],
-    enabled: !!userId && !!selectedVehicleId,
+    queryKey: ["customer-latest-service-notice", selectedVehicleId],
+    enabled: !!selectedVehicleId,
     queryFn: async () => {
-      // Fetch latest notice specifically for the selected vehicle.
-      // Notifications are stamped with service_id in metadata.
       const { data, error } = await (supabase as any)
-        .from("customer_notifications")
-        .select("id,type,title,body,link,metadata,created_at,read_at")
-        .eq("user_id", userId)
-        .in("type", ["vehicle_unavailable", "vehicle_dirty"])
-        // Use jsonb containment to filter by vehicle_id in metadata, 
-        // or check service_id's association.
+        .from("dirty_vehicle_reports")
+        .select(`
+          id,
+          created_at,
+          service:services!inner(vehicle_id)
+        `)
+        .eq("services.vehicle_id", selectedVehicleId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(1);
 
       if (error) throw error;
-      
-      const notifications = (data ?? []) as any[];
-      
-      // We need to verify which of these notifications belong to the current vehicle.
-      // Since notifications link to services, we filter by those that match selectedVehicleId.
-      for (const n of notifications) {
-        const sid = n.metadata?.service_id;
-        if (!sid) continue;
-        
-        const { data: svc } = await supabase
-          .from("services")
-          .select("vehicle_id")
-          .eq("id", sid)
-          .single();
-          
-        if (svc?.vehicle_id === selectedVehicleId) {
-          return n;
-        }
-      }
-      return null;
+      return data?.[0] || null;
     },
   });
 
