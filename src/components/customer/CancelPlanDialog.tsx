@@ -45,31 +45,31 @@ export function CancelPlanDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!mut.isPending) { onOpenChange(v); if (!v) setConfirming(false); } }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-[32px] border-none shadow-2xl p-8">
         <DialogHeader>
-          <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive">
-            <AlertTriangle className="h-6 w-6" />
+          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[20px] bg-destructive/5 text-destructive">
+            <AlertTriangle className="h-8 w-8" />
           </div>
-          <DialogTitle className="text-center">Cancel {planName}?</DialogTitle>
-          <DialogDescription className="text-center text-sm">
-            Your plan will end on <span className="font-semibold text-foreground">{endsOn}</span>.
+          <DialogTitle className="text-center text-xl font-black tracking-tight">Cancel {planName}?</DialogTitle>
+          <DialogDescription className="text-center text-[14px] font-medium leading-relaxed text-muted-foreground/70 mt-2">
+            Your plan will end on <span className="font-black text-[#1a1a1a]">{endsOn}</span>.
             The current month remains active — you keep all included washes until then.
             No more renewals after that.
           </DialogDescription>
         </DialogHeader>
 
         {!confirming ? (
-          <DialogFooter className="mt-2 flex flex-col-reverse gap-2 sm:flex-col-reverse">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full">Keep my plan</Button>
-            <Button variant="destructive" onClick={() => setConfirming(true)} className="w-full">Continue to cancel</Button>
+          <DialogFooter className="mt-6 flex flex-col gap-3 sm:flex-col">
+            <Button variant="destructive" onClick={() => setConfirming(true)} className="h-14 w-full rounded-2xl font-black shadow-lg shadow-destructive/10 transition-transform active:scale-95">Continue to cancel</Button>
+            <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-14 w-full rounded-2xl font-bold text-muted-foreground/60 transition-transform active:scale-95">Keep my plan</Button>
           </DialogFooter>
         ) : (
-          <DialogFooter className="mt-2 flex flex-col-reverse gap-2 sm:flex-col-reverse">
-            <Button variant="outline" onClick={() => setConfirming(false)} className="w-full" disabled={mut.isPending}>
-              Never mind
+          <DialogFooter className="mt-6 flex flex-col gap-3 sm:flex-col">
+            <Button variant="destructive" onClick={() => mut.mutate()} className="h-14 w-full rounded-2xl font-black shadow-lg shadow-destructive/20 transition-transform active:scale-95" disabled={mut.isPending}>
+              {mut.isPending ? <><Loader2 className="mr-1.5 h-5 w-5 animate-spin" /> Cancelling…</> : "Confirm cancel"}
             </Button>
-            <Button variant="destructive" onClick={() => mut.mutate()} className="w-full" disabled={mut.isPending}>
-              {mut.isPending ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Cancelling…</> : "Confirm cancel"}
+            <Button variant="ghost" onClick={() => setConfirming(false)} className="h-14 w-full rounded-2xl font-bold text-muted-foreground/60 transition-transform active:scale-95" disabled={mut.isPending}>
+              Never mind
             </Button>
           </DialogFooter>
         )}

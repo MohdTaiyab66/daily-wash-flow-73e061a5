@@ -11,18 +11,18 @@ export function NoSubscriptionState({
 }) {
   const navigate = useNavigate();
   return (
-    <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border p-10 text-center">
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10">
-        <Sparkles className="h-7 w-7 text-primary" />
+    <div className="mt-8 flex flex-col items-center rounded-[32px] border border-black/5 bg-white p-10 text-center shadow-sm">
+      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/5 text-primary mb-6">
+        <Sparkles className="h-8 w-8" />
       </div>
-      <h3 className="mt-4 text-base font-semibold">No Active Subscription</h3>
-      <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+      <h3 className="text-[17px] font-black tracking-tight text-[#1a1a1a]">No Active Subscription</h3>
+      <p className="mt-2 max-w-[240px] text-[13px] font-medium leading-relaxed text-muted-foreground/60">
         {vehicleLabel ? `${vehicleLabel} doesn't` : "This vehicle doesn't"} have an active Daily Shine
-        subscription yet.
+        membership yet.
       </p>
       <Button
         size="lg"
-        className="mt-6 h-11 rounded-full px-8 text-sm font-semibold"
+        className="mt-8 h-14 w-full rounded-2xl px-8 text-[15px] font-black shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
         onClick={() =>
           navigate({
             to: "/c/service/$slug",
