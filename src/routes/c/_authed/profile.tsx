@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   LogOut,
-  ChevronRight,
   Car,
   Bell,
   MapPin,
@@ -163,6 +162,3 @@ function ProfilePage() {
     </div>
   );
 }
-
-/** Kept for the chevron affordance on non-navigating rows. */
-export const _ChevronRight = ChevronRight;
