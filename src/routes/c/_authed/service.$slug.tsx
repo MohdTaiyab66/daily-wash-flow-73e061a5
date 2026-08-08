@@ -2,7 +2,9 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check, Clock } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check, Clock, CheckCircle2 } from "lucide-react";
+import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   createRazorpayOrder,
