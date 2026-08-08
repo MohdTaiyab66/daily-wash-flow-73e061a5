@@ -36,7 +36,7 @@ import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 
 
-export const Route = createFileRoute("/c/_authed/service/$slug")({
+export const Route = createFileRoute("/c/_authed/service/")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
