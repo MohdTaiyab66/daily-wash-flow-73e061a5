@@ -572,6 +572,7 @@ export function BookAWashSheet({
           )}
         </div>
 
+
         {/* Sticky CTA Bar */}
         {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
           <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
