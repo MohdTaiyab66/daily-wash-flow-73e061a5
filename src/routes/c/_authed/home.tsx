@@ -30,7 +30,9 @@ import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/Edit
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
 import { SkeletonCard, Shimmer } from "@/components/customer/ui/Skeletons";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
