@@ -464,6 +464,7 @@ function CustomerHome() {
         {!showCatalog && (
           <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
         )}
+      </div>
     </PullToRefresh>
   );
 }
