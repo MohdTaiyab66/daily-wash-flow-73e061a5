@@ -334,11 +334,8 @@ function MyPlanPage() {
           {activeSub && (
             <div className="mt-6 space-y-5">
               <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-              <ServiceNoticeCard 
-                notice={latestNoticeQ.data ?? null} 
-                onScheduleIncluded={() => setBookOpen(true)} 
-                vehicleId={selectedVehicleId} 
-              />
+              {/* Unified dirty vehicle report logic handles ServiceNoticeCard functionality now */}
+              
               
               <UWPlanCard 
                 status={activeSub.payment_status === 'paid' ? 'active' : 'pending'}
@@ -369,12 +366,12 @@ function MyPlanPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
-                    Your vehicle was reported as extra dirty. A premium wash is recommended.
+                    {vehicleLabel} was reported as extra dirty. A premium wash is recommended.
                   </p>
                   <div className="mt-4">
                     <Button 
                       onClick={() => setBookOpen(true)}
-                      className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                      className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20 active:scale-95"
                     >
                       Schedule a wash
                     </Button>

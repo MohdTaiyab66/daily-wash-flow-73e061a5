@@ -398,7 +398,7 @@ function CustomerHome() {
 
           {showCatalog && (
             <>
-              {latestNoticeQ.data && (
+              {latestNoticeQ.data && activeVehicle && (
                 <Surface className="border-primary/20 p-5 bg-white mb-6">
                   <div className="flex items-start gap-4">
                     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -412,12 +412,12 @@ function CustomerHome() {
                         </span>
                       </div>
                       <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
-                        Your vehicle was reported as extra dirty. A premium wash is recommended.
+                        {activeVehicle.make} {activeVehicle.model} was reported as extra dirty. A premium wash is recommended.
                       </p>
                       <div className="mt-4">
                         <Button 
                           onClick={() => setBookOpen(true)}
-                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20 active:scale-95"
                         >
                           Schedule a wash
                         </Button>
