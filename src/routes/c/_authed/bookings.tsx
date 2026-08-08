@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
-import { statusTone, StatusChip } from "@/components/customer/ui/kit";
+import { statusTone, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { UWBookingCard } from "@/components/customer/ui/UWBookingCard";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
+
 
 export const Route = createFileRoute("/c/_authed/bookings")({
   ssr: false,
