@@ -191,7 +191,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     <Card className="overflow-hidden p-0">
       <div className="flex items-start gap-3 p-4">
         <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-          isUnavailable ? "bg-amber-500/15 text-amber-600"
+          isUnavailable ? "bg-warning/20 text-warning-foreground"
             : isMissed ? "bg-destructive/10 text-destructive"
             : isPending ? "bg-muted text-muted-foreground"
             : hasDirty ? "bg-orange-500/15 text-orange-600"
@@ -233,7 +233,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             </div>
           )}
           {isUnavailable && (
-            <div className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-700">
+            <div className="mt-2 rounded-lg bg-warning/15 px-2.5 py-1.5 text-[11px] text-warning-foreground">
               <span className="font-medium">{reasonLabel(service.unavailable_reason)}.</span>
               {service.unavailable_notes ? <> {service.unavailable_notes}</> : null}
               <div className="mt-0.5">No wash was deducted from your plan.</div>
@@ -305,7 +305,7 @@ function SignedPhoto({ path, stage }: { path: string; stage: string }) {
   return (
     <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
       {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
-      <span className="absolute bottom-0.5 left-0.5 rounded bg-black/50 px-1 text-[8px] uppercase text-white">{stage}</span>
+      <span className="absolute bottom-0.5 left-0.5 rounded bg-foreground/60 px-1 text-[8px] uppercase text-background">{stage}</span>
     </div>
   );
 }

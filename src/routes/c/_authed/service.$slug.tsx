@@ -1088,7 +1088,7 @@ function ServiceDetail() {
           ) : (
             <>
               {isEntitlementExhausted && (
-                <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <div className="mb-3 rounded-xl border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-warning-foreground">
                   {exhaustedEntitlementMessage(preview)}
                 </div>
               )}
@@ -1115,7 +1115,7 @@ function ServiceDetail() {
             <div
               role="status"
               data-testid="payment-offline-banner"
-              className="mb-2 rounded-lg border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-800"
+              className="mb-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-[11px] leading-snug text-warning-foreground"
             >
               You're offline. Your selection and pending order are saved — we'll re-check the payment
               automatically when you're back online.
@@ -1125,7 +1125,7 @@ function ServiceDetail() {
             <div
               role="alert"
               data-testid="payment-hold-banner"
-              className="mb-2 rounded-lg border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-900"
+              className="mb-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-[11px] leading-snug text-warning-foreground"
             >
               {holdBlocked}
             </div>
@@ -1224,7 +1224,7 @@ function ServiceDetail() {
           ) : null}
 
           {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
-            <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
+            <div className="mb-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-[12px] leading-snug text-warning-foreground">
               This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
               <Link to="/c/home" className="font-semibold underline">browse extra services</Link>.
             </div>
@@ -1332,7 +1332,7 @@ function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpe
             <div><Label>Pincode</Label><Input value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} maxLength={6} /></div>
           </div>
           <div><Label>Parking notes (optional)</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <p className="rounded-lg bg-warning/15 px-3 py-2 text-xs text-warning-foreground">
             Exact GPS is mandatory for Daily Shine navigation. Use the location screen so your partner never gets an area centroid.
           </p>
         </div>

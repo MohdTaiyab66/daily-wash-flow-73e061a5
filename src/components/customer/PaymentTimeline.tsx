@@ -48,7 +48,7 @@ function toneFor(stage: CheckoutStage) {
   if (stage === "failed" || stage === "unpaid" || stage === "cancelled")
     return "text-destructive border-destructive/40 bg-destructive/10";
   if (stage === "timeout" || stage === "offline")
-    return "text-amber-700 border-amber-400/50 bg-amber-400/10";
+    return "text-warning-foreground border-warning/50 bg-warning/15";
   return "text-muted-foreground border-border bg-muted/40";
 }
 

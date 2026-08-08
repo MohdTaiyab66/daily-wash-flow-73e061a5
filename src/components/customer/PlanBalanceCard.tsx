@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Infinity as InfinityIcon, Droplets, Wrench, Plus } from "lucide-react";
+import { Infinity as InfinityIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Meter } from "@/components/customer/ui/kit";
 
 type Row = {
   benefit_type: string;
@@ -14,14 +15,8 @@ type Row = {
 
 /**
  * Customer-facing plan balance.
- * Collapses the 7 raw benefit rows into 4 lines the customer actually cares about:
- *   • Daily Exterior           (from `exterior_daily`)
- *   • Included Wash            (from `interior` — the monthly Interior+Exterior wash)
- *   • Extra Exterior           (only shown if a monthly add-on is active — remaining > 0 or allocated > 0 excluding the baseline)
- *   • Extra Interior           (same rule)
- *
- * Everything else (Hydrophobic, Paper Mats, Fragrance, Tyre Polish) is hidden
- * from the customer view — those are partner/ops-facing benefits.
+ * Collapses the raw benefit rows into the few lines the customer cares about.
+ * Data/query behaviour is unchanged — presentation is a compact meter list.
  */
 export function PlanBalanceCard({ vehicleId }: { vehicleId: string | null }) {
   const q = useQuery({
@@ -47,50 +42,48 @@ export function PlanBalanceCard({ vehicleId }: { vehicleId: string | null }) {
   const extraExterior = byType.get("extra_exterior");
   const extraInterior = byType.get("extra_interior");
 
-  type Line = { label: string; row: Row | undefined; icon: typeof Sparkles };
+  type Line = { label: string; row: Row | undefined };
   const lines: Line[] = [
-    { label: "Daily Exterior", row: dailyExterior, icon: Droplets },
-    { label: "Included Wash", row: includedWash, icon: Sparkles },
+    { label: "Exterior wash", row: dailyExterior },
+    { label: "Interior wash", row: includedWash },
   ];
-  if (extraExterior) lines.push({ label: "Extra Exterior", row: extraExterior, icon: Plus });
-  if (extraInterior) lines.push({ label: "Extra Interior", row: extraInterior, icon: Wrench });
+  if (extraExterior) lines.push({ label: "Extra exterior", row: extraExterior });
+  if (extraInterior) lines.push({ label: "Extra interior", row: extraInterior });
 
   const visible = lines.filter((l) => l.row);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">This month</h3>
-      </div>
-      <ul className="space-y-2">
-        {visible.map(({ label, row, icon: Icon }) => {
+    <div className="rounded-2xl border border-border/70 bg-card p-4">
+      <h3 className="text-[15px] font-semibold">This month</h3>
+      <ul className="mt-3.5 space-y-4">
+        {visible.map(({ label, row }) => {
           const r = row!;
+          const total = r.total_allocated ?? 0;
+          const used = Math.max(0, total - (r.remaining ?? 0));
           const exhausted = !r.unlimited && (r.remaining ?? 0) <= 0;
           return (
-            <li
-              key={r.benefit_type}
-              className={`flex items-center justify-between rounded-xl border px-3 py-2.5 ${
-                exhausted ? "border-destructive/40 bg-destructive/5" : "border-border bg-background"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className={`grid h-8 w-8 place-items-center rounded-lg ${exhausted ? "bg-destructive/10 text-destructive" : "bg-accent text-primary"}`}>
-                  <Icon className="h-4 w-4" />
+            <li key={r.benefit_type}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[14px] font-medium">{label}</span>
+                <span
+                  className={`text-[13px] font-semibold tabular-nums ${
+                    exhausted ? "text-muted-foreground" : "text-foreground"
+                  }`}
+                >
+                  {r.unlimited ? (
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <InfinityIcon className="h-3.5 w-3.5" /> Unlimited
+                    </span>
+                  ) : (
+                    <>
+                      {used} / {total}
+                    </>
+                  )}
                 </span>
-                <span className="text-sm font-medium">{label}</span>
               </div>
-              <span className={`text-sm font-semibold tabular-nums ${exhausted ? "text-destructive" : "text-foreground"}`}>
-                {r.unlimited ? (
-                  <span className="inline-flex items-center gap-1 text-primary">
-                    <InfinityIcon className="h-3.5 w-3.5" /> Unlimited
-                  </span>
-                ) : (
-                  <>
-                    {r.remaining} / {r.total_allocated}
-                  </>
-                )}
-              </span>
+              {!r.unlimited && (
+                <Meter className="mt-2" value={used} max={total} tone={exhausted ? "success" : "brand"} />
+              )}
             </li>
           );
         })}

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Car, Droplets, Shield, Sparkles, SprayCan, Wrench, Calendar, Check } from "lucide-react";
+import { CheckCircle2, Car, Droplets, Shield, Sparkles, SprayCan, Wrench, Calendar, Check, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type PlanInclusion = {
@@ -45,31 +46,56 @@ export function usePlanInclusions(planSlug: string | null | undefined) {
   });
 }
 
+/**
+ * Collapsible "What's included" list. Collapsed by default so the plan screen
+ * stays short — the data and query are unchanged.
+ */
 export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | undefined }) {
   const { data, isLoading } = usePlanInclusions(planSlug);
+  const [open, setOpen] = useState(false);
   if (!planSlug) return null;
-  if (isLoading) return <div className="mt-4 h-20 animate-pulse rounded-2xl bg-muted" />;
+  if (isLoading) return <div className="mt-4 h-14 animate-pulse rounded-2xl bg-muted" />;
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-      <h3 className="text-sm font-semibold tracking-tight">What's included</h3>
-      <ul className="mt-3 space-y-2">
-        {data.map((inc) => {
-          const Icon = inclusionIcon(inc.icon);
-          return (
-            <li key={inc.id} className="flex items-start gap-2 text-sm">
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <div className="min-w-0">
-                <p className="font-medium">{inc.title}</p>
-                {inc.description && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{inc.description}</p>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="mt-4 overflow-hidden rounded-2xl border border-border/70 bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold">What's included</span>
+          {!open && (
+            <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground">
+              {data.slice(0, 3).map((i) => i.title).join(" · ")}
+              {data.length > 3 ? ` +${data.length - 3} more` : ""}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <ul className="animate-fade-in space-y-3 border-t border-border/60 px-4 py-4">
+          {data.map((inc) => {
+            const Icon = inclusionIcon(inc.icon);
+            return (
+              <li key={inc.id} className="flex items-start gap-2.5">
+                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-[14px] font-medium leading-snug">{inc.title}</p>
+                  {inc.description && (
+                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">{inc.description}</p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

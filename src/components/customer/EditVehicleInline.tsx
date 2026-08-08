@@ -750,7 +750,7 @@ export function ChangePhotoDialog({
 
         {stage === "crop" && sourceUrl && (
           <div className="space-y-3">
-            <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border bg-black">
+            <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border bg-foreground">
               <Cropper
                 image={sourceUrl}
                 crop={crop}
@@ -813,7 +813,7 @@ export function ChangePhotoDialog({
                 </div>
                 <Progress value={Math.round(uploadProgress * 100)} aria-hidden />
                 {uploadStalled && (
-                  <p className="text-[11px] text-amber-600">
+                  <p className="text-[11px] text-warning-foreground">
                     Upload seems slow. You can wait or cancel and retry.
                   </p>
                 )}

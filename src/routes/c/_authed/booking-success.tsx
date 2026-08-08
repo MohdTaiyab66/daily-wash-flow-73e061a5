@@ -31,7 +31,7 @@ function BookingSuccess() {
       <div className="flex flex-col items-center text-center">
         <span className="relative grid h-24 w-24 place-items-center rounded-full bg-success/12">
           <span className="absolute inset-0 rounded-full bg-success/30 animate-success-ring" aria-hidden />
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-success text-white animate-success-pop">
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-success text-success-foreground animate-success-pop">
             <Check className="h-8 w-8" strokeWidth={3} />
           </span>
         </span>
