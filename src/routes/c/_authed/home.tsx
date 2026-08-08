@@ -394,14 +394,14 @@ function CustomerHome() {
           ) : (
             <>
               {latestNoticeQ.data && latestNoticeQ.data.type === "vehicle_dirty" && (
-                <div className="rounded-[28px] border border-primary/20 bg-white p-5 shadow-sm">
+                <Surface className="border-primary/20 p-5">
                   <div className="flex items-start gap-4">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
                       <ShieldAlert className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-[15px] font-black tracking-tight text-[#1a1a1a]">Vehicle needs extra attention</h3>
+                        <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs extra attention</h3>
                         <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
                           {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
@@ -419,61 +419,10 @@ function CustomerHome() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Surface>
               )}
 
-              {planActive || planPending ? (
-                <Link to="/c/subscriptions" className="block">
-                  <Surface className={`relative overflow-hidden border-2 bg-white transition-all active:scale-[0.98] ${planPending ? "border-warning/30" : "border-success/20"}`}>
-                    <div className={`absolute -right-6 -top-6 h-20 w-20 rounded-full blur-3xl ${planPending ? "bg-warning/10" : "bg-success/10"}`} />
-                    <div className="flex items-center gap-4">
-                      <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${planPending ? "bg-warning/10 text-warning-foreground" : "bg-success/10 text-success"}`}><Sparkles className="h-6 w-6" /></div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-[16px] font-black text-[#1a1a1a]">Daily Shine</h3>
-                          {planPending ? <StatusChip tone="warning" className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5">Pending</StatusChip> : <StatusChip tone="success" className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5">Active</StatusChip>}
-                        </div>
-                        <p className="mt-0.5 truncate text-[12px] font-medium text-muted-foreground">{planPending ? "Payment required to activate" : "Everything looks great for today"}</p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground/40" />
-                    </div>
-                  </Surface>
-                </Link>
-              ) : subscription && (a?.daily_shine) ? (
-                <Link to="/c/service/$slug" params={{ slug: subscription.slug }} search={{ vehicleId: vehicleId ?? undefined }} className="block">
-                  <Surface className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-[#FFF5ED] to-white p-5 shadow-sm transition-all active:scale-[0.98]">
-                    <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5 blur-2xl" />
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <span className="inline-flex h-6 items-center rounded-full bg-primary/10 px-2.5 text-[10px] font-black uppercase tracking-widest text-primary">✨ Recommended</span>
-                        <h3 className="mt-3 text-[20px] font-black tracking-tight text-[#1a1a1a]">Keep it clean, daily.</h3>
-                        <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/80">Exterior cleaning every morning + monthly deep interior.</p>
-                      </div>
-                      <div className="grid h-10 w-10 place-items-center rounded-xl bg-white shadow-sm"><Sparkles className="h-5 w-5 text-primary" /></div>
-                    </div>
-                    <div className="mt-5 flex items-center justify-between border-t border-primary/5 pt-4">
-                      <div><span className="text-[22px] font-black text-[#1a1a1a]">₹{priceFor(subscription)}</span><span className="ml-1 text-[12px] font-bold text-muted-foreground/60">/month</span></div>
-                      <span className="inline-flex h-10 items-center rounded-full bg-primary px-6 text-[13px] font-black text-white shadow-lg shadow-primary/20">Get Daily Shine</span>
-                    </div>
-                  </Surface>
-                </Link>
-              ) : null}
-
-              {oneTime.length > 0 && (
-                <Section title={<span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">One-time services</span>} action={bodyLabel && <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/40">Prices for {bodyLabel}</span>}>
-                  {servicesQ.isLoading ? <div className="space-y-3">{[1, 2, 3].map(i => <SkeletonCard key={i} className="h-20" />)}</div> : (
-                    <ListGroup className="border-black/5 bg-white shadow-none">
-                      {oneTime.map((s) => {
-                        const Icon = SERVICE_ICON[s.slug] ?? Droplets;
-                        const allowed = isServiceAllowed(s.slug, a);
-                        return <ListRow key={s.id} icon={Icon} title={s.name} subtitle={s.description} disabled={!allowed} to={allowed ? "/c/service/$slug" : undefined} params={{ slug: s.slug }} className="active:bg-[#F9FAFB] py-4" trailing={allowed ? <span className="shrink-0 text-[15px] font-black text-[#1a1a1a]">₹{priceFor(s)}</span> : <StatusChip tone="warning" className="text-[9px] font-black uppercase px-2">Soon</StatusChip>} />;
-                      })}
-                    </ListGroup>
-                  )}
-                </Section>
-              )}
-
-              <div className="py-4 flex items-center justify-center gap-6">
+              <div className="py-2 flex items-center justify-center gap-6">
                 <TrustItem label="Expert Care" />
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Photo Proof" />
@@ -481,6 +430,7 @@ function CustomerHome() {
                 <TrustItem label="Safe & Secure" />
               </div>
             </>
+
           )}
         </div>
 
