@@ -183,7 +183,7 @@ export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Error("Forbidden");
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
-    const { data: broadcasts } = await (context.supabase as any)
+    const { data: broadcasts } = await (supabase as any)
       .from("marketplace_broadcasts")
       .select("id,status,current_round,current_incentive,created_at,updated_at,winning_partner_id")
       .gte("created_at", since);
