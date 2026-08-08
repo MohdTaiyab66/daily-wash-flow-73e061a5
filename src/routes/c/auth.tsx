@@ -159,15 +159,15 @@ function CustomerAuth() {
         </div>
 
         {step === "phone" && (
-          <div className="mt-12 animate-fade-in">
-            <h1 className="text-3xl font-bold tracking-tight">Log in or sign up</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              We'll send a one-time code to verify your number.
+          <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Get started</h1>
+            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+              Enter your mobile number to log in or create your account.
             </p>
 
-            <div className="mt-8 flex items-center rounded-2xl border border-input bg-card px-4 py-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-              <span className="text-base font-semibold text-foreground">+91</span>
-              <span className="mx-3 h-5 w-px bg-border" />
+            <div className="mt-10 flex items-center rounded-2xl border border-black/5 bg-white px-5 py-5 shadow-sm focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+              <span className="text-base font-black text-[#1a1a1a]">+91</span>
+              <span className="mx-4 h-6 w-px bg-black/5" />
               <Input
                 inputMode="numeric"
                 autoComplete="tel"
@@ -175,7 +175,7 @@ function CustomerAuth() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                 placeholder="Mobile number"
-                className="h-auto border-0 bg-transparent p-0 text-base tracking-wide shadow-none focus-visible:ring-0"
+                className="h-auto border-0 bg-transparent p-0 text-lg font-bold tracking-wider shadow-none focus-visible:ring-0 placeholder:font-medium placeholder:text-muted-foreground/40"
               />
             </div>
 
@@ -183,37 +183,39 @@ function CustomerAuth() {
               size="lg"
               onClick={sendOtp}
               disabled={phone.length !== 10}
-              className="mt-5 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+              className="mt-6 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
             >
               Continue
             </Button>
 
-            <div className="mt-7 flex items-center gap-3">
+            <div className="mt-8 flex items-center gap-3 justify-center">
               <Checkbox
                 id="ref"
                 checked={hasReferral}
                 onCheckedChange={(v) => setHasReferral(v === true)}
+                className="h-5 w-5 rounded-md border-black/10"
               />
-              <label htmlFor="ref" className="text-sm font-medium">Have a referral code?</label>
+              <label htmlFor="ref" className="text-sm font-bold text-muted-foreground/80">Have a referral code?</label>
             </div>
             {hasReferral && (
               <Input
                 value={referral}
                 onChange={(e) => setReferral(e.target.value.toUpperCase())}
-                placeholder="Enter referral code"
-                className="mt-3 h-12 rounded-2xl animate-fade-in"
+                placeholder="Enter code"
+                className="mt-4 h-13 rounded-xl border-black/5 bg-white text-center font-bold tracking-widest animate-in fade-in slide-in-from-top-2 duration-300"
               />
             )}
 
-            <div className="mt-auto" />
-            <p className="mt-12 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-success" /> Your number is never shared
-            </p>
-            <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
-              By continuing, you agree to our{" "}
-              <Link to="/trust" className="font-semibold underline underline-offset-2">Terms of Service</Link> &{" "}
-              <Link to="/trust" className="font-semibold underline underline-offset-2">Privacy Policy</Link>
-            </p>
+            <div className="mt-16 flex flex-col items-center">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/40">
+                <ShieldCheck className="h-3.5 w-3.5 text-success" /> SECURE & PRIVATE
+              </p>
+              <p className="mt-4 max-w-[240px] text-center text-[11px] font-medium leading-relaxed text-muted-foreground/50">
+                By continuing, you agree to our{" "}
+                <Link to="/trust" className="font-bold text-primary underline underline-offset-4">Terms</Link> &{" "}
+                <Link to="/trust" className="font-bold text-primary underline underline-offset-4">Privacy Policy</Link>
+              </p>
+            </div>
           </div>
         )}
 
