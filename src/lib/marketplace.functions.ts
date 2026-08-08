@@ -96,7 +96,7 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
 export const getPartnerRoutePreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: a } = await (supabase as any)
       .from("assignments")
