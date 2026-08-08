@@ -552,13 +552,13 @@ export function BookAWashSheet({
 
               {/* Error Banner */}
               {error && (
-                <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive">
+                <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive border border-destructive/10">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div className="space-y-1">
-                    <p className="font-bold">{error}</p>
+                    <p className="font-black">{error}</p>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 font-bold underline underline-offset-2"
+                      className="inline-flex items-center gap-1 font-black underline underline-offset-4"
                       onClick={() => void confirm()}
                     >
                       <RotateCcw className="h-3.5 w-3.5" /> Try again
@@ -566,52 +566,33 @@ export function BookAWashSheet({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
 
-              {/* Summary & CTA */}
-              <div className="space-y-4 pt-4">
-                <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <div className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/50">Booking summary</div>
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      <span>Premium Interior + Exterior wash</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>{formatDateHuman(date)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-primary" />
-                      <span>{selectedAddress?.label || "Address"} · {selectedAddress?.area}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Clock className="h-3.5 w-3.5 text-primary" />
-                      <span>{slot} arrival</span>
-                    </div>
-                  </div>
+        {/* Sticky CTA Bar */}
+        {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
+          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
+            <Button
+              data-testid="book-wash-button"
+              onClick={() => void confirm()}
+              disabled={phase !== "idle" || !addressId || !date || isMonday}
+              className="h-15 w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+            >
+              {phase === "booking" ? (
+                <div className="flex items-center gap-3">
+                   <Loader2 className="h-5 w-5 animate-spin" />
+                   <span>Booking...</span>
                 </div>
-
-                <div className="space-y-3 pb-4">
-                  <Button
-                    data-testid="book-wash-button"
-                    onClick={() => void confirm()}
-                    disabled={phase !== "idle" || !addressId || !date || isMonday}
-                    className="uw-pressable h-14 w-full rounded-full text-base font-bold shadow-lg shadow-primary/20"
-                  >
-                    {phase === "booking" ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      "Book this wash →"
-                    )}
-                  </Button>
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="w-full text-center text-[14px] font-semibold text-muted-foreground/60 transition-colors hover:text-muted-foreground active:text-primary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+              ) : (
+                "Book this wash →"
+              )}
+            </Button>
+            <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+              ₹0 Payable · Part of subscription
+            </p>
+          </div>
+        )}
             </div>
           )}
         </div>
