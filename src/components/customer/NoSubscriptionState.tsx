@@ -26,7 +26,7 @@ export function NoSubscriptionState({
           navigate({
             to: "/c/service/$slug",
             params: { slug: "daily-shine" },
-            search: (prev) => ({ ...prev, vehicleId: vehicleId ?? undefined }),
+            search: (prev: any) => ({ ...prev, vehicleId: vehicleId ?? undefined }),
           })
         }
       >
