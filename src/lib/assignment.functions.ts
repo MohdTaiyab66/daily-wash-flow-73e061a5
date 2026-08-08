@@ -108,8 +108,10 @@ export const getMyAssignment = createServerFn({ method: "GET" })
 export const getRouteVisibility = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .rpc("get_route_visibility", { p_partner: context.userId });
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId;
+    const { data, error } = await (supabase as any)
+      .rpc("get_route_visibility", { p_partner: userId });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
     if (!row || !row.assignment_id) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null, override: row?.override ?? "auto" };
