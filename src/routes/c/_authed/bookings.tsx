@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, HelpCircle, ChevronRight, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
 import { statusTone, StatusChip } from "@/components/customer/ui/kit";
