@@ -67,6 +67,25 @@ const log = (event: string, payload?: Record<string, unknown>) => {
 /**
  * Daily Shine skips Mondays. Pick tomorrow, or the next non-Monday if tomorrow is Monday.
  */
+function formatDateHuman(iso: string) {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (isNaN(d.getTime())) return iso;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.floor((d.getTime() - today.getTime()) / 86400000);
+
+  const formatter = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "long",
+  });
+  const dateStr = formatter.format(d);
+
+  if (diff === 0) return `Today · ${dateStr}`;
+  if (diff === 1) return `Tomorrow · ${dateStr}`;
+  return dateStr;
+}
+
 function nextServiceableDate(): string {
   try {
     const d = new Date();
