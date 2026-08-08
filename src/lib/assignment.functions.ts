@@ -163,8 +163,9 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { assignment_id: string }) => d)
   .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; code: string; message: string }> => {
-    const { userId } = context;
-    const { error } = await context.supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId;
+    const { error } = await supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
     if (error) {
       const msg = error.message || "";
       const err: CancelError = { code: "ASSIGNMENT_CANNOT_BE_CANCELLED", message: msg };
