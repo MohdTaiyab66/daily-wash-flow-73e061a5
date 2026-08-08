@@ -20,7 +20,7 @@ export function UWHeader({
   onAreaClick 
 }: UWHeaderProps) {
   return (
-    <div className="sticky top-0 z-20 bg-background/95 px-5 pt-6 pb-4 backdrop-blur-xl">
+    <div className="sticky top-0 z-20 bg-[#FFF9F3]/95 px-5 pt-6 pb-4 backdrop-blur-xl">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2" onClick={onAreaClick}>
