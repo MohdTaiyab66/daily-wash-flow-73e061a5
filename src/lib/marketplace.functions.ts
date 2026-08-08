@@ -45,11 +45,11 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     const vehIds = Array.from(new Set(rows.map((r) => r.vehicle_id).filter(Boolean))) as string[];
     const [subsRes, vehRes] = await Promise.all([
       subIds.length
-        ? (context.supabase as any).from("subscriptions")
+        ? (supabase as any).from("subscriptions")
             .select("id, amount, start_date, renewal_date").in("id", subIds)
         : Promise.resolve({ data: [] as any[] }),
       vehIds.length
-        ? (context.supabase as any).from("customer_vehicles")
+        ? (supabase as any).from("customer_vehicles")
             .select("id, make, model, registration_number").in("id", vehIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
