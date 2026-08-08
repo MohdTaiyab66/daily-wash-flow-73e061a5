@@ -30,7 +30,7 @@ import {
   type CheckoutEvent,
   type CheckoutStage,
 } from "@/lib/pending-checkout-store";
-import { PageTitle, SectionTitle, Muted, Section, Surface, ListGroup, ListRow, StatusChip, Meter } from "@/components/customer/ui/kit";
+import { SectionTitle, Section, Surface, StatusChip } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
