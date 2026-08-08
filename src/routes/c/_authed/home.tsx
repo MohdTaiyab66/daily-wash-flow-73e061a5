@@ -229,19 +229,20 @@ function CustomerHome() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("dirty_vehicle_reports")
-        .select("id,created_at,service:service_id(vehicle_id)")
+        .select(`
+          id,
+          created_at,
+          service:services!inner(vehicle_id)
+        `)
         .eq("is_resolved", false)
+        .eq("services.vehicle_id", activeVehicle.id)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(1);
 
       if (error) throw error;
-      const reports = (data ?? []) as any[];
-      
-      // Filter reports for the active vehicle
-      const report = reports.find(r => r.service?.vehicle_id === activeVehicle.id);
-      return report || null;
+      return data?.[0] || null;
     },
   });
 
