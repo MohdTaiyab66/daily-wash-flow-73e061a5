@@ -513,6 +513,8 @@ function AddVehicle() {
             By adding, you agree to our vehicle classification terms
           </p>
         </div>
+        )}
+      </>
       )}
     </div>
   );
