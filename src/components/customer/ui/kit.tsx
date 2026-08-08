@@ -79,7 +79,7 @@ export function Surface({
 /** Grouped list container — rows are divided, not individually carded. */
 export function ListGroup({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card", className)}>
+    <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border bg-card shadow-sm" className={className}>
       {children}
     </div>
   );
@@ -117,8 +117,8 @@ export function ListRow({
     <>
       {leading ??
         (Icon ? (
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/70 text-primary">
-            <Icon className="h-[18px] w-[18px]" />
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-primary">
+            <Icon className="h-4 w-4" />
           </span>
         ) : null)}
       <span className="min-w-0 flex-1">
@@ -133,8 +133,8 @@ export function ListRow({
   );
 
   const cls = cn(
-    "uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left",
-    disabled ? "pointer-events-none opacity-50" : "active:bg-muted/50",
+    "uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-accent/40",
+    disabled ? "pointer-events-none opacity-50" : "",
     className,
   );
 

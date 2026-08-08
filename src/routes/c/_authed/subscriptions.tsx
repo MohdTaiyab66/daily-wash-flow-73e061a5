@@ -281,7 +281,7 @@ function MyPlanPage() {
         <div className="min-w-0">
           <h1 className="text-[26px] font-bold tracking-tight">My Plan</h1>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {vehicleLabel ? `Tracking ${vehicleLabel}` : "Track your Daily Shine service."}
+            {vehicleLabel ? `Your Daily Shine plan` : "Track your Daily Shine service."}
           </p>
         </div>
         {hasVehicles && (
@@ -336,14 +336,13 @@ function MyPlanPage() {
       {hasVehicles && activeSub && (
         <>
           {/* Active plan hero */}
-          <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-primary/12 via-accent/45 to-card p-5">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-accent via-card to-card p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Active plan</p>
                 {vehicleLabel && (
-                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                    <Car className="h-3 w-3" /> {vehicleLabel}
-                    {selectedVehicle?.registration_number ? ` · ${selectedVehicle.registration_number}` : ""}
+                  <p className="mt-0.5 text-[11px] font-medium text-muted-foreground uppercase tracking-tight">
+                    {vehicleLabel} · {selectedVehicle?.registration_number ?? ""}
                   </p>
                 )}
                 <h2 className="mt-1 truncate text-[21px] font-bold tracking-tight">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
@@ -372,44 +371,15 @@ function MyPlanPage() {
               </div>
             </div>
 
-            <div className="mt-4 border-t border-border pt-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
-                {expiringSoon && !cancelScheduled && (
-                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
-                    <RefreshCw className="h-3.5 w-3.5" /> Renew
-                  </Button>
-                )}
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
-                  <Settings2 className="h-3.5 w-3.5" /> Modify
-                </Button>
-                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
-                  <Pause className="h-3.5 w-3.5" /> Pause
-                </Button>
-                {cancelScheduled ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 gap-1 text-xs"
-                    onClick={() => undoMut.mutate()}
-                    disabled={undoMut.isPending}
-                  >
-                    <Undo2 className="h-3.5 w-3.5" /> Undo
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 gap-1 border-destructive/40 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => setCancelDialogOpen(true)}
-                    disabled={!subRow}
-                  >
-                    <XCircle className="h-3.5 w-3.5" /> Cancel
-                  </Button>
-                )}
-              </div>
+            <div className="mt-4 border-t border-border/50 pt-4 flex items-center justify-between">
+              <span className="text-[17px] font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
+              <button 
+                onClick={() => setManageOpen(true)}
+                className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary"
+              >
+                Manage plan <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
             </div>
           </div>
 
