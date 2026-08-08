@@ -281,7 +281,8 @@ export const logPaymentAttempt = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
 
     let attemptNo = data.attemptNo ?? 1;
     if (!data.attemptNo) {
