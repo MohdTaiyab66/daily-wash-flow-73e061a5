@@ -593,9 +593,7 @@ export function BookAWashSheet({
             </p>
           </div>
         )}
-            </div>
-          )}
-        </div>
+      </div>
 
         {/* Date Picker Drawer */}
         <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
