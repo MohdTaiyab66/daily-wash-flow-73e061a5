@@ -352,14 +352,6 @@ function LocationSearch() {
         </div>
       )}
 
-      {selecting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
-          <div className="flex items-center gap-2 rounded-xl bg-card px-4 py-3 shadow-lg ring-1 ring-border">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm font-medium">Loading location…</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
