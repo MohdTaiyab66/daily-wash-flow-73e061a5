@@ -317,8 +317,8 @@ function BookingDetail() {
                 </div>
                 {completedAt && (
                   <div className="text-right">
-                    <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</p>
-                    <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</p>
+                    <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                    <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</p>
                   </div>
                 )}
              </div>
