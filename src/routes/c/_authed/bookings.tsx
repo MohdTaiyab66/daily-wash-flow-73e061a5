@@ -81,7 +81,10 @@ function BookingsPage() {
       if (tab === "completed") {
         return rows.filter((r) => r.status.toLowerCase() === "completed");
       }
-      return rows.filter((r) => ["cancelled", "canceled", "failed", "rejected"].includes(r.status.toLowerCase()));
+      if (tab === "cancelled") {
+        return rows.filter((r) => ["cancelled", "canceled", "failed", "rejected"].includes(r.status.toLowerCase()));
+      }
+      return rows;
     },
   });
 

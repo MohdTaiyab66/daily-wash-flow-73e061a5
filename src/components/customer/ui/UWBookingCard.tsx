@@ -28,9 +28,9 @@ export function UWBookingCard({
   onClick,
 }: UWBookingCardProps) {
   // Extract day and month from "DD MMM"
-  const dateParts = date.split(" ");
-  const day = dateParts[0];
-  const month = dateParts[1];
+  const dateParts = date?.split(" ") || [];
+  const day = dateParts[0] || "--";
+  const month = dateParts[1] || "";
 
   return (
     <Surface
