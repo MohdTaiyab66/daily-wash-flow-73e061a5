@@ -58,11 +58,13 @@ export function ServicePhotoViewer({
         
         let fetchIdx = 0;
         photos.forEach(p => {
-          if (!p.url && data[fetchIdx]?.signedUrl) {
-            urlMap[p.storage_path] = data[fetchIdx].signedUrl;
+          const signed = data[fetchIdx]?.signedUrl;
+          if (!p.url && signed) {
+            urlMap[p.storage_path] = signed;
             fetchIdx++;
           }
         });
+
         setSignedUrls(urlMap);
       }
     };
