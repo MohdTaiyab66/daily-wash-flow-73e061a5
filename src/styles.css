@@ -60,7 +60,7 @@
   --uw-ink: oklch(0.18 0.01 270);
 
   /* Warm off-white app canvas (~#FAF9F7) so white cards read as elevated. */
-  --background: oklch(0.976 0.004 75);
+  --background: oklch(0.985 0.005 85); /* #FFF9F3 (warm off-white) */
   --foreground: oklch(0.21 0.008 270);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 270);
@@ -68,9 +68,9 @@
   --popover-foreground: oklch(0.18 0.01 270);
   --primary: var(--uw-orange);
   --primary-foreground: oklch(0.99 0.005 80);
-  --secondary: oklch(0.96 0.005 80);
+  --secondary: oklch(0.975 0.005 85);
   --secondary-foreground: var(--uw-ink);
-  --muted: oklch(0.965 0.005 80);
+  --muted: oklch(0.97 0.005 85);
   --muted-foreground: oklch(0.50 0.01 270);
   --accent: var(--uw-orange-soft);
   --accent-foreground: var(--uw-orange-deep);
@@ -93,8 +93,8 @@
   --vehicle-brown: oklch(0.48 0.08 55);
   --vehicle-beige: oklch(0.84 0.04 78);
   --vehicle-gold: oklch(0.76 0.12 82);
-  --border: oklch(0.935 0.004 80);
-  --input: oklch(0.925 0.004 80);
+  --border: oklch(0.95 0.004 85);
+  --input: oklch(0.94 0.004 85);
   --ring: var(--uw-orange);
   --chart-1: var(--uw-orange);
   --chart-2: oklch(0.62 0.18 145);

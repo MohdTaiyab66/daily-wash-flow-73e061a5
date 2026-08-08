@@ -14,7 +14,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background pb-[calc(84px+env(safe-area-inset-bottom))]">
       <div className="mx-auto max-w-md">{children}</div>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-md items-center justify-around px-3 py-2">
           {nav.map((n) => {
             const Icon = n.icon;
@@ -30,7 +30,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
               >
                 <span
                   className={`grid h-7 w-16 place-items-center rounded-full transition-all duration-150 ${
-                    active ? "bg-primary/12" : "bg-transparent"
+                    active ? "bg-accent" : "bg-transparent"
                   }`}
                 >
                   <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.8} />
