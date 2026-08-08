@@ -469,19 +469,17 @@ export function BookAWashSheet({
                 </div>
                 <div className="mt-4 px-1">
                   <button 
-                    onClick={() => onOpenChange(false)}
-                    className="text-[12px] font-black text-primary/60 hover:text-primary transition-colors block text-center"
-                  >
-                    Buy more washes
-                  </button>
-                    to="/c/service/$slug"
-                    params={{ slug: "daily-shine" }}
-                    search={{ vehicleId: vehicleId ?? undefined }}
-                    className="flex items-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      onOpenChange(false);
+                      setTimeout(() => {
+                        window.location.href = `/c/service/${INCLUDED.slug}?vehicleId=${vehicleId}`;
+                      }, 100);
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
                   >
                     Need another wash? <span className="underline underline-offset-4">Buy more</span>
                     <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  </button>
                 </div>
               </div>
 
