@@ -185,6 +185,32 @@ function CustomerHome() {
   const planActive = subStatus === "active";
   const planPending = subStatus === "payment_pending";
 
+  const bookingsQ = useQuery({
+    queryKey: ["customer-bookings-all", userId, selectedVehicleId],
+    enabled: !!selectedVehicleId,
+    queryFn: async (): Promise<any[]> => {
+      const { data, error } = await (supabase as any)
+        .from("bookings")
+        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, vehicle_id, service_catalog:service_id(name, service_type, slug)")
+        .eq("vehicle_id", selectedVehicleId)
+        .order("scheduled_date", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const allBookings = bookingsQ.data ?? [];
+  const activeSub = allBookings.find(
+    (b) => b.service_catalog?.service_type === "subscription" && b.payment_status === "paid" && b.status !== "cancelled"
+  );
+  
+  const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
+  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
+  const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - new Date().getTime()) / 86400000)) : 0;
+  const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+
+
   const latestNoticeQ = useQuery({
     queryKey: ["customer-latest-service-notice", activeVehicle?.id],
     enabled: !!activeVehicle?.id,
