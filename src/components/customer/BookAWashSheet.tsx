@@ -681,7 +681,6 @@ export function BookAWashSheet({
             </div>
           </DrawerContent>
         </Drawer>
-      </DialogContent>
     </Dialog>
   );
 }
