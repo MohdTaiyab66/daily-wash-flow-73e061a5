@@ -255,7 +255,7 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = context;
+    const userId = (context as any).userId;
     const today = new Date().toISOString().slice(0, 10);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: released } = await supabaseAdmin
