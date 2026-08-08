@@ -356,7 +356,8 @@ export const getBookingPaymentStatus = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
 
     const { data: latest } = await supabaseAdmin
       .from("payment_attempts")
