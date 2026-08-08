@@ -245,6 +245,10 @@ function CustomerHome() {
     },
   });
 
+  useEffect(() => {
+    latestNoticeQ.refetch();
+  }, [activeVehicle?.id]);
+
   const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
 
   return (
