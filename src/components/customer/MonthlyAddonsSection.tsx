@@ -385,6 +385,7 @@ export function MonthlyAddonsSection({
                 key={opt.slug}
                 to="/c/service/$slug"
                 params={{ slug: opt.slug }}
+                search={{ vehicleId: vehicleId ?? undefined }}
                 className="flex flex-col items-start rounded-2xl border border-border bg-background p-3 transition-colors hover:border-primary/40"
               >
                 <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-primary">

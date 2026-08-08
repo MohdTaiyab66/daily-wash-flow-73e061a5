@@ -598,7 +598,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
       <div className="mt-4">
         <Button asChild className="h-11 w-full rounded-2xl text-sm font-semibold">
           {slug ? (
-            <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+            <Link to="/c/service/$slug" params={{ slug }} search={{ vehicleId: vehicleId ?? undefined }}>Retry payment</Link>
           ) : (
             <Link to="/c/home">Go to home</Link>
           )}
@@ -627,7 +627,7 @@ function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id
           {isDirty ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <Button asChild size="sm" className="h-8 rounded-full text-xs">
-                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }}>Book Premium Wash</Link>
+                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }} search={{ vehicleId: vehicleId ?? undefined }}>Book Premium Wash</Link>
               </Button>
               <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={onScheduleIncluded}>Schedule Included Wash</Button>
             </div>
@@ -1188,6 +1188,7 @@ function RecommendedAddon({ name, price, icon: Icon }: { name: string; price: nu
     <Link
       to="/c/service/$slug"
       params={{ slug: "daily-shine" }}
+      search={{ vehicleId: vehicleId ?? undefined }}
       className="group flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-primary">

@@ -250,7 +250,7 @@ function CustomerHome() {
                   </Surface>
                 </Link>
               ) : subscription && (a?.daily_shine) ? (
-                <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="block">
+                <Link to="/c/service/$slug" params={{ slug: subscription.slug }} search={{ vehicleId: vehicleId ?? undefined }} className="block">
                   <Surface className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-[#FFF5ED] to-white p-5 shadow-sm transition-all active:scale-[0.98]">
                     <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5 blur-2xl" />
                     <div className="flex items-start justify-between">
