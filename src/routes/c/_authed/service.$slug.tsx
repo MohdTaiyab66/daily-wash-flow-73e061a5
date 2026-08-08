@@ -958,7 +958,7 @@ function ServiceDetail() {
               <div className="h-12 w-12 rounded-full bg-accent" />
               <div>
                 <div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div>
-                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</div>
+                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category === "sedan_suv" ? "Sedan / SUV" : vehicle?.category === "hatchback_compact_sedan" ? "Hatchback / Compact Sedan" : vehicle?.category}</div>
               </div>
             </div>
             <button className="text-[13px] font-semibold text-primary">Change ›</button>
