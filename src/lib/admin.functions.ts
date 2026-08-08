@@ -967,7 +967,7 @@ export const adminCancelQueue = createServerFn({ method: "POST" }).middleware([r
 export const adminRetryQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { data: res, error } = await supabase.rpc("admin_retry_queue", { p_queue_id: data.queue_id });
     if (error) throw new Error(error.message);
     return res;
