@@ -395,7 +395,7 @@ function CustomerHome() {
           {showCatalog && (
             <>
               {latestNoticeQ.data && (
-                <Surface className="border-primary/20 p-5 bg-white">
+                <Surface className="border-primary/20 p-5 bg-white mb-6">
                   <div className="flex items-start gap-4">
                     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
                       <ShieldAlert className="h-6 w-6" />
