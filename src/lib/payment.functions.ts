@@ -113,7 +113,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         amount: amountPaise,
         currency: "INR",
         receipt: `uw_${data.bookingId.slice(0, 24)}`,
-        notes: { booking_id: data.bookingId, user_id: context.userId },
+        notes: { booking_id: data.bookingId, user_id: userId },
       }),
     });
 
