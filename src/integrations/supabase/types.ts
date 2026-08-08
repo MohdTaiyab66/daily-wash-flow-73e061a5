@@ -4758,6 +4758,68 @@ export type Database = {
           },
         ]
       }
+      subscription_offer_partner_state: {
+        Row: {
+          created_at: string
+          declined_at: string | null
+          last_offered_at: string | null
+          next_retry_at: string | null
+          offers_sent: number
+          partner_id: string
+          queue_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          declined_at?: string | null
+          last_offered_at?: string | null
+          next_retry_at?: string | null
+          offers_sent?: number
+          partner_id: string
+          queue_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          declined_at?: string | null
+          last_offered_at?: string | null
+          next_retry_at?: string | null
+          offers_sent?: number
+          partner_id?: string
+          queue_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_offer_partner_state_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_assignment_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_offer_partner_state_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignment_pipeline_trace"
+            referencedColumns: ["queue_id"]
+          },
+          {
+            foreignKeyName: "subscription_offer_partner_state_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "v_offer_debug"
+            referencedColumns: ["queue_id"]
+          },
+          {
+            foreignKeyName: "subscription_offer_partner_state_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_pipeline_timeline"
+            referencedColumns: ["queue_id"]
+          },
+        ]
+      }
       subscription_offers: {
         Row: {
           created_at: string
