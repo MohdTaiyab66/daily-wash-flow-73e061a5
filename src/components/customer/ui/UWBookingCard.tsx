@@ -10,7 +10,7 @@ interface UWBookingCardProps {
   time?: string;
   status: {
     label: string;
-    tone: "primary" | "success" | "warning" | "danger" | "neutral" | "info";
+    tone: "primary" | "success" | "warning" | "danger" | "neutral" | "info" | "brand";
   };
   image?: string;
   isSubscription?: boolean;
