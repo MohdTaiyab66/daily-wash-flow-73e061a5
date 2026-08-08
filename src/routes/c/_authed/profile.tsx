@@ -100,7 +100,7 @@ function ProfilePage() {
               </div>
             ) : (
               <>
-                <div className="truncate text-[20px] font-bold tracking-tight text-[#1a1a1a]">{name}</div>
+                <div className="truncate text-[20px] font-black tracking-tight text-[#1a1a1a]">{name}</div>
                 <div className="mt-0.5 text-[13px] font-medium text-muted-foreground">{phone || "No phone added"}</div>
               </>
             )}
