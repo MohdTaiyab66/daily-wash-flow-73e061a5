@@ -157,6 +157,14 @@ export function RecentServiceFeed({
 
 
 function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmitted: () => void }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [initialPhotoIndex, setInitialPhotoIndex] = useState(0);
+
+  const openViewer = (index: number) => {
+    setInitialPhotoIndex(index);
+    setViewerOpen(true);
+  };
+
   const completed = new Date(service.completed_at);
   const windowEnd = new Date(service.complaint_window_ends_at);
   const [now, setNow] = useState(Date.now());
