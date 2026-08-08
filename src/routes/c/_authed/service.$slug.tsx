@@ -115,8 +115,6 @@ function ServiceDetail() {
   const [date, setDate] = useState<string>(() => nextBookableDateIso());
   const [slot, setSlot] = useState<string>(TIME_SLOTS[3]);
   const [notes, setNotes] = useState("");
-  const [addrOpen, setAddrOpen] = useState(false);
-  const [bookOpen, setBookOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
@@ -124,6 +122,10 @@ function ServiceDetail() {
   const [userId, setUserId] = useState<string | null>(null);
   const [vehDrawerOpen, setVehDrawerOpen] = useState(false);
   const [addrDrawerOpen, setAddrDrawerOpen] = useState(false);
+  const [payDrawerOpen, setPayDrawerOpen] = useState(false);
+  const [billExpanded, setBillExpanded] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: 'phonepe', name: 'PhonePe UPI', icon: '🟣' });
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
