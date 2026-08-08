@@ -228,11 +228,102 @@ function CustomerHome() {
 
 
         <div className="px-5 space-y-6">
-          <Section title={<span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">Your active car</span>} className="mt-2">
+          {/* Hero Section */}
+          <UWFeaturedCarousel 
+            items={[
+              {
+                id: "1",
+                title: "Your car, clean every morning.",
+                subtitle: "Doorstep detailing without the hassle.",
+                price: 999,
+                image: "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=1200&auto=format&fit=crop",
+                link: "/c/service/daily-shine"
+              },
+              {
+                id: "2",
+                title: "Deep Interior Detailing",
+                subtitle: "Eliminate germs, restore freshness.",
+                price: 799,
+                image: "https://images.unsplash.com/photo-1599256631168-1cf0a544838b?q=80&w=1200&auto=format&fit=crop",
+                link: "/c/service/interior-deep-clean"
+              },
+              {
+                id: "3",
+                title: "Ceramic Wax Body Polish",
+                subtitle: "Protection that lasts for months.",
+                price: 499,
+                image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1200&auto=format&fit=crop",
+                link: "/c/service/body-polish"
+              }
+            ]}
+            onItemClick={(item) => navigate({ to: item.link as any })}
+          />
+
+          <Section title="Car care services">
+            <div className="grid grid-cols-2 gap-4">
+              {servicesQ.isLoading ? (
+                [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
+              ) : oneTime.map((s) => (
+                <UWServiceCard
+                  key={s.id}
+                  name={s.name}
+                  price={priceFor(s)}
+                  image={s.banner_url || undefined}
+                  badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                  onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
+                />
+              ))}
+            </div>
+          </Section>
+
+          {planActive || planPending ? (
+            <Section title="My Plan">
+              <UWPlanCard 
+                status={planActive ? 'active' : 'pending'}
+                name={activeSub?.service_catalog?.name ?? "Daily Shine Subscription"}
+                price={priceFor(subscription!)}
+                daysLeft={daysLeft}
+                isExpiring={expiringSoon}
+                onClick={() => navigate({ to: "/c/subscriptions" })}
+              />
+            </Section>
+          ) : subscription && (a?.daily_shine) ? (
+            <Section title="Daily Shine">
+              <Surface 
+                onClick={() => navigate({ to: "/c/service/$slug", params: { slug: subscription.slug }, search: { vehicleId: vehicleId ?? undefined } })}
+                className="relative overflow-hidden border-primary/20 bg-black p-6 shadow-xl"
+              >
+                <div className="absolute inset-0 opacity-40">
+                  <img src="https://images.unsplash.com/photo-1552933529-e359b24772ff?q=80&w=800&auto=format&fit=crop" alt="Daily Shine" className="h-full w-full object-cover" />
+                </div>
+                <div className="relative z-10 flex flex-col items-start gap-4">
+                  <span className="flex h-6 items-center rounded-full bg-primary px-3 text-[10px] font-black uppercase tracking-widest text-white">✨ Recommended</span>
+                  <div>
+                    <h3 className="text-[22px] font-black tracking-tight text-white">Keep it clean, daily.</h3>
+                    <p className="mt-1 text-[13px] font-medium text-white/70">Doorstep cleaning every single morning.</p>
+                  </div>
+                  <div className="flex items-center justify-between w-full mt-4">
+                    <div>
+                      <span className="text-[24px] font-black text-white">₹{priceFor(subscription)}</span>
+                      <span className="ml-1 text-[12px] font-bold text-white/60">/mo</span>
+                    </div>
+                    <button className="flex h-10 items-center rounded-full bg-white px-6 text-[13px] font-black text-black shadow-lg">
+                      Explore →
+                    </button>
+                  </div>
+                </div>
+              </Surface>
+            </Section>
+          ) : null}
+
+          <Section title="Your active car">
             {vehiclesQ.isLoading ? <SkeletonCard className="h-28" /> : activeVehicle ? (
-              <Surface className="overflow-hidden p-0 bg-white border-primary/10">
+              <Surface 
+                className="overflow-hidden p-0 bg-white"
+                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+              >
                 <div className="flex w-full items-center gap-4 p-4">
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB] group">
+                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
                     <VehicleAvatar 
                       imageUrl={catalogImageQ.data} 
                       make={activeVehicle.make} 
@@ -240,37 +331,28 @@ function CustomerHome() {
                       color={activeVehicle.color} 
                       className="h-full w-full object-contain p-1" 
                     />
-                    <button 
-                      onClick={() => setPhotoOpen(true)}
-                      className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-md transition-transform active:scale-90"
-                    >
-                      {activeVehicle.image_path ? <Pencil className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                    </button>
                   </div>
-                  <button 
-                    type="button" 
-                    onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))} 
-                    className="uw-pressable min-w-0 flex-1 text-left"
-                  >
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <h2 className="truncate text-[17px] font-black tracking-tight text-[#1a1a1a]">{activeVehicle.make} {activeVehicle.model}</h2>
                       {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />}
                     </div>
                     <p className="mt-0.5 truncate text-[12px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between border-t border-border/40 bg-[#F9FAFB]/50 px-4 py-3">
-                  <button onClick={() => setEditOpen(true)} className="text-[13px] font-black text-[#1a1a1a] flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5 text-primary" /> Details</button>
-                  <Link to="/c/vehicles/add" className="text-[13px] font-black text-primary flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> New car</Link>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/20" />
                 </div>
               </Surface>
             ) : (
-              <Link to="/c/vehicles/add" className="uw-pressable flex items-center gap-4 rounded-[24px] border border-dashed border-primary/30 bg-primary/5 p-5 transition-all active:scale-[0.98]">
+              <Surface 
+                onClick={() => navigate({ to: "/c/vehicles/add" })}
+                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-5"
+              >
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
                 <div><span className="block text-[16px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
-              </Link>
+              </Surface>
             )}
           </Section>
+
 
           {!showCatalog ? (
             <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
