@@ -229,14 +229,13 @@ function CustomerHome() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("dirty_vehicle_reports")
         .select(`
           id,
           created_at,
           service:services!inner(vehicle_id)
         `)
-        .eq("is_resolved", false)
         .eq("services.vehicle_id", activeVehicle.id)
         .order("created_at", { ascending: false })
         .limit(1);
