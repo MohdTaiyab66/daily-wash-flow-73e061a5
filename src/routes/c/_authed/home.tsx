@@ -117,14 +117,21 @@ function CustomerHome() {
 
   const profileQ = useQuery({
     queryKey: ["customer-profile-name"],
-    queryFn: async (): Promise<string | null> => {
+    queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const { data } = await (supabase as any).from("customer_profiles").select("full_name").eq("user_id", u.user.id).maybeSingle();
-      return (data?.full_name as string | undefined) ?? null;
+      return {
+        id: u.user.id,
+        fullName: (data?.full_name as string | undefined) ?? null
+      };
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const userId = profileQ.data?.id ?? null;
+  const firstName = (profileQ.data?.fullName ?? "").trim().split(/\s+/)[0] || "there";
+
 
   const unreadQ = useQuery({
     queryKey: ["customer-notifications-unread"],
