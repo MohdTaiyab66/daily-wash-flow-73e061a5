@@ -35,6 +35,7 @@ import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel"
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
 import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 
 
