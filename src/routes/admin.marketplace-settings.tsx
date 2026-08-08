@@ -13,6 +13,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/marketplace-settings")({
+  beforeLoad: async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) throw new Error("Unauthorized");
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: sess.session.user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden: Admin access required");
+  },
   component: MarketplaceSettingsPage,
 });
 
@@ -43,12 +53,12 @@ function MarketplaceSettingsPage() {
     },
   });
 
-  const [newImage, setNewImage] = useState({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+  const [newImage, setNewImage] = useState({ image_url: "", title: "", subtitle: "", sort_order: 0, status: "draft" as const });
 
   const handleAdd = () => {
     if (!newImage.image_url) return toast.error("Image URL is required");
     upsertMutation.mutate(newImage);
-    setNewImage({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+    setNewImage({ image_url: "", title: "", subtitle: "", sort_order: 0, status: "draft" });
   };
 
   return (
@@ -129,6 +139,14 @@ function MarketplaceSettingsPage() {
                       />
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant={img.status === "published" ? "default" : "outline"}
+                        size="sm"
+                        className="h-8"
+                        onClick={() => upsertMutation.mutate({ ...img, status: img.status === "published" ? "draft" : "published" })}
+                      >
+                        {img.status === "published" ? "Published" : "Draft"}
+                      </Button>
                       <Switch 
                         checked={img.is_active} 
                         onCheckedChange={val => upsertMutation.mutate({ ...img, is_active: val })}
@@ -145,7 +163,10 @@ function MarketplaceSettingsPage() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><GripVertical className="h-3 w-3" /> Order: {img.sort_order}</span>
-                    <span className="truncate flex-1">{img.image_url}</span>
+                    <span className="truncate flex-1">{img.image_url.slice(0, 40)}...</span>
+                  </div>
+                  <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/40 pt-2">
+                    ID: {img.id.slice(0, 8)} • Service: {img.service_id ? 'Scoped' : 'Global Daily Shine'}
                   </div>
                 </div>
               </div>

@@ -223,8 +223,8 @@ function CustomerHome() {
 
 
   const latestNoticeQ = useQuery({
-    queryKey: ["customer-latest-service-notice", activeVehicle?.id],
-    enabled: !!activeVehicle?.id,
+    queryKey: ["customer-latest-service-notice", selectedVehicleId],
+    enabled: !!selectedVehicleId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("dirty_vehicle_reports")
@@ -233,7 +233,7 @@ function CustomerHome() {
           created_at,
           service:services!inner(vehicle_id)
         `)
-        .eq("services.vehicle_id", activeVehicle.id)
+        .eq("services.vehicle_id", selectedVehicleId)
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -249,6 +249,7 @@ function CustomerHome() {
         .from("daily_shine_promo_images")
         .select("*")
         .eq("is_active", true)
+        .eq("status", "published")
         .order("sort_order");
       if (error) throw error;
       return data;
@@ -257,7 +258,7 @@ function CustomerHome() {
 
   useEffect(() => {
     latestNoticeQ.refetch();
-  }, [activeVehicle?.id]);
+  }, [selectedVehicleId]);
 
   const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
 
@@ -287,10 +288,18 @@ function CustomerHome() {
             })) : [
               {
                 id: "1",
-                title: "Your car, clean every morning.",
-                subtitle: "Doorstep detailing without the hassle.",
+                title: "Daily shine, zero hassle.",
+                subtitle: "Every morning before you go.",
                 price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-                image: "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=1200&auto=format&fit=crop",
+                image: "https://daily-wash-flow.lovable.app/lovable-assets/daily-shine-hero.png",
+                link: "/c/service/daily-shine"
+              },
+              {
+                id: "2",
+                title: "We come to you, you stay stress-free.",
+                subtitle: "Doorstep car cleaning at your convenience.",
+                price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+                image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1200&auto=format&fit=crop",
                 link: "/c/service/daily-shine"
               }
             ]}

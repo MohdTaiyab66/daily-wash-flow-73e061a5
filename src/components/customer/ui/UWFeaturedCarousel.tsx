@@ -54,12 +54,14 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   };
 
   const next = useCallback(() => {
-    setIndex((prev) => (prev + 1) % items.length);
+    if (!document.hidden) {
+      setIndex((prev) => (prev + 1) % items.length);
+    }
   }, [items.length]);
 
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
-    const timer = setInterval(next, 5000);
+    const timer = setInterval(next, 4000);
     return () => clearInterval(timer);
   }, [isPaused, items.length, next]);
 
@@ -82,13 +84,14 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden"
+            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
             onClick={() => onItemClick?.(item)}
           >
             <img 
               src={item.image} 
               alt={item.title} 
-              className="h-full w-full object-cover opacity-60"
+              className="h-full w-full object-cover opacity-60 transition-opacity duration-500"
+              loading={items.indexOf(item) === 0 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
@@ -105,7 +108,10 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 <div className="text-white">
                   <span className="text-[18px] font-black">₹{item.price}</span>
                 </div>
-                <button className="flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-black text-white shadow-lg shadow-primary/30 transition-transform active:scale-95">
+                <button 
+                  className="flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-black text-white shadow-lg shadow-primary/30 transition-transform active:scale-90"
+                  onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                >
                   Book now <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
