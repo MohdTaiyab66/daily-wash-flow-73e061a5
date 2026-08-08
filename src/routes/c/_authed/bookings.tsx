@@ -169,7 +169,7 @@ function BookingsPage() {
                   />
                 </div>
               ) : (
-                <div className="space-y-4 pb-10">
+                <div className="mt-4 space-y-3 pb-10">
                   {items.map((b) => {
                     const st = statusTone(b.status);
                     const when = new Date(`${b.scheduled_date}T00:00:00`);
@@ -178,48 +178,31 @@ function BookingsPage() {
                       : when.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
                     
                     const isSubscription = b.service_catalog?.slug?.includes("daily-shine");
+                    
+                    // Simple mock mapping for redesign visual impact
+                    const getServicePhoto = (slug: string) => {
+                      if (slug.includes('daily-shine')) return "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=200&auto=format&fit=crop";
+                      if (slug.includes('interior')) return "https://images.unsplash.com/photo-1599256631168-1cf0a544838b?q=80&w=200&auto=format&fit=crop";
+                      return "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=200&auto=format&fit=crop";
+                    };
 
                     return (
-                      <button
+                      <UWBookingCard
                         key={b.id}
+                        id={b.id}
+                        name={b.service_catalog?.name ?? "Service"}
+                        date={dateLabel}
+                        price={b.total_amount}
+                        time={b.preferred_before_time ? `Before ${b.preferred_before_time}` : undefined}
+                        status={{ label: st.label, tone: st.tone }}
+                        isSubscription={isSubscription}
+                        image={getServicePhoto(b.service_catalog?.slug ?? "")}
                         onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                        className="group flex w-full items-center gap-4 rounded-[32px] border border-black/5 bg-white p-5 text-left shadow-sm transition-all active:scale-[0.98] hover:shadow-md"
-                      >
-                        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#FFF9F3] border border-black/5">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">
-                            {dateLabel.split(" ")[1] ?? ""}
-                          </span>
-                          <span className="text-[20px] font-black leading-tight text-[#1a1a1a]">
-                            {dateLabel.split(" ")[0]}
-                          </span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                             <span className="truncate text-[16px] font-black text-[#1a1a1a]">
-                               {b.service_catalog?.name ?? "Service"}
-                             </span>
-                             {isSubscription && (
-                               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-                                 <Sparkles className="h-3 w-3 text-primary" />
-                               </div>
-                             )}
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-[13px] font-bold text-muted-foreground/60">
-                            <span>₹{b.total_amount}</span>
-                            <div className="h-1 w-1 rounded-full bg-black/10" />
-                            <span>{b.preferred_before_time ? `Before ${b.preferred_before_time}` : "Flexible time"}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                           <StatusChip tone={st.tone} className="rounded-xl px-3 py-1 font-black text-[10px] uppercase tracking-wider">{st.label}</StatusChip>
-                           <ChevronRight className="h-5 w-5 text-muted-foreground/30 transition-transform group-hover:translate-x-1" />
-                        </div>
-                      </button>
+                      />
                     );
                   })}
                 </div>
+
               )}
             </div>
           )}
