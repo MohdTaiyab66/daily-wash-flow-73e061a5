@@ -351,6 +351,35 @@ function MyPlanPage() {
 
       {hasVehicles && activeSub && !!selectedVehicleId && (
         <div className="mt-6 space-y-5">
+          {latestNoticeQ.data && (
+            <Surface className="border-primary/20 bg-white p-5 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
+                    <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                      {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+                    Your vehicle was reported as extra dirty. A premium wash is recommended.
+                  </p>
+                  <div className="mt-4">
+                    <Button 
+                      onClick={() => setBookOpen(true)}
+                      className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                    >
+                      Schedule a wash
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Surface>
+          )}
+
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
