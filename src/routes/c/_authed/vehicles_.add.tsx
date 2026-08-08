@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
-import { ArrowLeft, Search, Loader2, Check, X, Car, AlertCircle } from "lucide-react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { ArrowLeft, Search, Loader2, Check, X, Car, AlertCircle, ChevronRight, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { 
+  PageTitle, 
+  Section, 
+  SectionTitle, 
+  Surface, 
+  Muted 
+} from "@/components/customer/ui/kit";
+import { cn } from "@/lib/utils";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/add")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Add Vehicle — Urban Wash" }] }),
+  head: () => ({ meta: [{ title: "Add Your Vehicle — Urban Wash" }] }),
   component: AddVehicle,
 });
 
@@ -27,48 +45,8 @@ type CatalogRow = {
   popularity?: number | null;
 };
 
-const CATEGORIES = [
-  { key: "all", label: "All" },
-  { key: "hatchback_compact_sedan", label: "Small car tier" },
-  { key: "sedan_suv", label: "Large car tier" },
-] as const;
-
-function highlight(text: string, term: string) {
-  if (!term) return text;
-  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = text.split(new RegExp(`(${safe})`, "ig"));
-  return parts.map((p, i) =>
-    p.toLowerCase() === term.toLowerCase() ? (
-      <mark key={i} className="rounded bg-primary/20 px-0.5 text-foreground">
-        {p}
-      </mark>
-    ) : (
-      <span key={i}>{p}</span>
-    ),
-  );
-}
-
-/** Modern fuzzy search: matches make, model, aliases by prefix + substring, scored. */
-function scoreRow(row: CatalogRow, term: string): number {
-  if (!term) return row.popularity ?? 0;
-  const t = term.toLowerCase();
-  const make = row.make.toLowerCase();
-  const model = row.model.toLowerCase();
-  const full = `${make} ${model}`;
-  const aliases = (row.aliases ?? []).map((a) => a.toLowerCase());
-  let score = 0;
-  if (model.startsWith(t)) score += 1000;
-  if (make.startsWith(t)) score += 800;
-  for (const a of aliases) if (a.startsWith(t)) score += 700;
-  if (model.includes(t)) score += 300;
-  if (make.includes(t)) score += 200;
-  if (full.includes(t)) score += 150;
-  for (const a of aliases) if (a.includes(t)) score += 250;
-  // Token prefix match (any word starts with term)
-  for (const tok of full.split(/\s+/)) if (tok.startsWith(t)) score += 100;
-  if (score > 0) score += (row.popularity ?? 0) / 10;
-  return score;
-}
+// Popular brands determined by catalog data audit
+const POPULAR_BRANDS = ["Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Kia"];
 
 function AddVehicle() {
   const navigate = useNavigate();
@@ -76,20 +54,26 @@ function AddVehicle() {
   const [userId, setUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string | null>(null);
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number]["key"]>("all");
   const [selected, setSelected] = useState<CatalogRow | null>(null);
+  
+  // Details state
   const [color, setColor] = useState("");
   const [reg, setReg] = useState("");
   const [year, setYear] = useState("");
   const [variant, setVariant] = useState("");
   const [parking, setParking] = useState("");
+  const [isPhotoStep, setIsPhotoStep] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
   const catalogQ = useQuery({
-    queryKey: ["vehicle-catalog-all-v2"],
+    queryKey: ["vehicle-catalog-all-v3"],
     queryFn: async (): Promise<CatalogRow[]> => {
       const { data, error } = await supabase
         .from("vehicle_catalog")
@@ -111,45 +95,45 @@ function AddVehicle() {
     return Array.from(s).sort();
   }, [catalogQ.data]);
 
+  const brandsByAlpha = useMemo(() => {
+    const groups: Record<string, string[]> = {};
+    brands.forEach(b => {
+      const char = b[0].toUpperCase();
+      if (!groups[char]) groups[char] = [];
+      groups[char].push(b);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [brands]);
+
+  const popularVehicles = useMemo(() => {
+    return (catalogQ.data ?? []).slice(0, 6);
+  }, [catalogQ.data]);
+
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    const rows = (catalogQ.data ?? []).filter((r) => {
+    if (!term && !brand) return [];
+    
+    return (catalogQ.data ?? []).filter((r) => {
       if (brand && r.make !== brand) return false;
-      if (cat !== "all" && r.category !== cat) return false;
       if (!term) return true;
-      return scoreRow(r, term) > 0;
-    });
-    if (term) {
-      rows.sort((a, b) => scoreRow(b, term) - scoreRow(a, term));
-      return rows.slice(0, 40);
-    }
-    return rows;
-  }, [catalogQ.data, query, brand, cat]);
-
-  const grouped = useMemo(() => {
-    const m = new Map<string, CatalogRow[]>();
-    filtered.forEach((r) => {
-      const arr = m.get(r.make) ?? [];
-      arr.push(r);
-      m.set(r.make, arr);
-    });
-    return Array.from(m.entries());
-  }, [filtered]);
-
-  const hasFilters = brand !== null || cat !== "all" || query.trim().length > 0;
-  const isSearching = query.trim().length > 0;
+      const full = `${r.make} ${r.model}`.toLowerCase();
+      return full.includes(term) || (r.aliases ?? []).some(a => a.toLowerCase().includes(term));
+    }).slice(0, 40);
+  }, [catalogQ.data, query, brand]);
 
   const save = useMutation({
     mutationFn: async () => {
       if (!selected) throw new Error("Pick a car first");
       if (reg.trim().length < 4) throw new Error("Enter a valid registration number");
-      const { data: u, error: ue } = await supabase.auth.getUser();
-      if (ue) throw new Error(ue.message);
+      
+      const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("You're signed out. Please sign in again.");
+
       const noteParts: string[] = [];
       if (variant.trim()) noteParts.push(`Variant: ${variant.trim()}`);
       if (year.trim()) noteParts.push(`Year: ${year.trim()}`);
       if (parking.trim()) noteParts.push(parking.trim());
+
       const payload = {
         user_id: u.user.id,
         make: selected.make,
@@ -159,347 +143,357 @@ function AddVehicle() {
         registration_number: reg.trim().toUpperCase(),
         parking_notes: noteParts.join(" • ") || null,
       };
-      const { error } = await supabase.from("customer_vehicles").insert(payload);
-      if (error) {
-        // Surface a friendly message for the most common failures.
-        if (error.code === "23505")
-          throw new Error("You've already added this registration number.");
-        if (error.code === "42501" || error.message?.toLowerCase().includes("row-level security")) {
-          throw new Error("Permission denied. Please sign out and sign in again.");
+
+      const { data: vehicle, error } = await supabase
+        .from("customer_vehicles")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (photo && vehicle) {
+        const ext = photo.name.split('.').pop();
+        const path = `${u.user.id}/${vehicle.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("vehicle-images")
+          .upload(path, photo);
+        
+        if (!upErr) {
+          await supabase
+            .from("customer_vehicles")
+            .update({ image_path: path })
+            .eq("id", vehicle.id);
         }
-        throw new Error(error.message || "Could not save vehicle");
       }
     },
     onSuccess: () => {
-      toast.success("Vehicle added");
+      toast.success("Vehicle added successfully");
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
       navigate({ to: "/c/home" });
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to add"),
+    onError: (e: any) => toast.error(e.message || "Failed to add vehicle"),
   });
 
-  const clearFilters = () => {
-    setBrand(null);
-    setCat("all");
-    setQuery("");
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
   };
 
-  const renderResults = (compact = false) => {
-    if (catalogQ.isLoading) {
-      return (
-        <div className="space-y-2">
-          {Array.from({ length: compact ? 3 : 5 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
-          ))}
-        </div>
-      );
+  const handleBack = () => {
+    if (selected) {
+      setSelected(null);
+      setBrand(null);
+    } else if (brand) {
+      setBrand(null);
+    } else {
+      navigate({ to: "/c/home" });
     }
+  };
 
-    if (filtered.length === 0) {
-      return (
-        <div className="rounded-3xl border border-dashed border-border p-8 text-center">
-          <Car className="mx-auto h-8 w-8 text-muted-foreground" />
-          <p className="mt-3 text-sm font-medium">No matches</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {query.trim() ? `Nothing called "${query.trim()}"` : "Nothing in this filter combo."}
-            {brand ? ` under ${brand}` : ""}.
-          </p>
-          {hasFilters && (
-            <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
-              Clear filters
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className={compact ? "rounded-3xl border border-border bg-card p-3 shadow-sm" : "space-y-4"}
-      >
-        <div className="mb-2 text-[11px] text-muted-foreground">
-          {filtered.length} model{filtered.length === 1 ? "" : "s"} across {grouped.length} brand
-          {grouped.length === 1 ? "" : "s"}
-        </div>
-        <div className="space-y-3">
-          {grouped.map(([make, rows]) => (
-            <div key={make}>
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {make}
-              </div>
-              <div className="space-y-1.5">
-                {rows.map((c) => {
-                  const body = vehicleBodyLabel(c.make, c.model, c.category);
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelected(c)}
-                      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
-                    >
-                      <VehicleAvatar
-                        imageUrl={c.image_url}
-                        make={c.make}
-                        model={c.model}
-                        className="h-12 w-14 rounded-xl"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold">
-                          {highlight(`${c.make} ${c.model}`, query.trim())}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {c.model.toUpperCase()} — {body}
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-xs text-primary">Select</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+  // Rendering Helper for Vehicle List Items
+  const VehicleRow = ({ c }: { c: CatalogRow }) => (
+    <button
+      onClick={() => setSelected(c)}
+      className="flex w-full items-center gap-4 py-3 border-b border-border/40 last:border-0 active:bg-accent/40 transition-colors text-left"
+    >
+      <div className="h-12 w-16 bg-muted/50 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+        <VehicleAvatar
+          imageUrl={c.image_url}
+          make={c.make}
+          model={c.model}
+          className="h-10 w-12 object-contain"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-[15px]">{c.make} {c.model}</div>
+        <div className="text-[12px] text-muted-foreground uppercase tracking-tight">
+          {vehicleBodyLabel(c.make, c.model, c.category)}
         </div>
       </div>
-    );
-  };
+      <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+    </button>
+  );
 
   return (
-    <div className="px-5 pt-6 pb-32">
-      <button
-        onClick={() => navigate({ to: "/c/vehicles" })}
-        className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back
-      </button>
-      <h1 className="text-2xl font-semibold tracking-tight">Add a vehicle</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Filter by brand or search — we'll set the right pricing tier.
-      </p>
+    <div className="min-h-screen bg-[#FFF9F3] flex flex-col">
+      {/* Header */}
+      <header className="px-5 pt-6 pb-4">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        <PageTitle>{selected ? "Vehicle details" : brand ? brand : "Add your vehicle"}</PageTitle>
+        <Muted className="mt-1">
+          {selected 
+            ? "Almost done! Just a few more details." 
+            : "Find your car and we'll automatically apply the right pricing."}
+        </Muted>
+      </header>
 
-      {userId === null && (
-        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            You appear to be signed out.{" "}
-            <Link to="/c/auth" className="underline">
-              Sign in
-            </Link>{" "}
-            to save your vehicle.
-          </div>
-        </div>
-      )}
+      <main className="flex-1 px-5 pb-32">
+        {!selected ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Search Bar */}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
+              </div>
+              <Input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (brand) setBrand(null);
+                }}
+                placeholder="Search your car"
+                className="h-14 pl-12 pr-12 rounded-2xl border-border/60 bg-white shadow-sm focus-visible:ring-primary/20 transition-all text-base"
+              />
+              {query && (
+                <button 
+                  onClick={() => setQuery("")}
+                  className="absolute inset-y-0 right-4 flex items-center text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+              {!query && (
+                <div className="mt-2 ml-1">
+                  <Muted className="text-[12px]">Try "Creta", "Swift" or "Fortuner"</Muted>
+                </div>
+              )}
+            </div>
 
-      {catalogQ.error && (
-        <div className="mt-4 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            Couldn't load the vehicle list.{" "}
-            {catalogQ.error instanceof Error
-              ? catalogQ.error.message
-              : "Check connection and retry."}
-          </div>
-        </div>
-      )}
+            {/* Content Switcher: Search Results vs Initial Grid */}
+            {(query.length > 0 || brand) ? (
+              <div className="space-y-2">
+                <SectionTitle className="mb-4">
+                  {brand ? `Models for ${brand}` : "Search results"}
+                </SectionTitle>
+                {catalogQ.isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)}
+                  </div>
+                ) : filtered.length > 0 ? (
+                  <div className="space-y-1">
+                    {filtered.map(c => <VehicleRow key={c.id} c={c} />)}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center space-y-3">
+                    <div className="bg-muted/50 h-16 w-16 rounded-full flex items-center justify-center mx-auto">
+                      <Car className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                    <div>
+                      <SectionTitle>No exact match</SectionTitle>
+                      <Muted>We couldn't find that model. Try searching by brand instead.</Muted>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Popular Brands */}
+                <Section 
+                  title="Popular brands" 
+                  className="mt-0"
+                  action={
+                    <Drawer>
+                      <DrawerTrigger asChild>
+                        <button className="text-primary text-[14px] font-semibold flex items-center gap-0.5">
+                          View all <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </DrawerTrigger>
+                      <DrawerContent className="max-h-[85vh]">
+                        <DrawerHeader className="pb-2 border-b">
+                          <DrawerTitle className="text-center">Choose a brand</DrawerTitle>
+                          <DrawerDescription className="text-center">Select your car manufacturer</DrawerDescription>
+                        </DrawerHeader>
+                        <div className="overflow-y-auto px-4 pb-12 pt-2">
+                           {brandsByAlpha.map(([char, list]) => (
+                             <div key={char} className="mb-6">
+                               <div className="text-[12px] font-bold text-muted-foreground mb-2 px-2">{char}</div>
+                               <div className="grid grid-cols-1 gap-1">
+                                 {list.map(b => (
+                                   <DrawerClose key={b} asChild>
+                                     <button 
+                                       onClick={() => setBrand(b)}
+                                       className="w-full text-left px-3 py-3 rounded-xl hover:bg-accent active:bg-accent/60 transition-colors font-medium"
+                                     >
+                                       {b}
+                                     </button>
+                                   </DrawerClose>
+                                 ))}
+                               </div>
+                             </div>
+                           ))}
+                        </div>
+                      </DrawerContent>
+                    </Drawer>
+                  }
+                >
+                  <div className="grid grid-cols-3 gap-2">
+                    {POPULAR_BRANDS.map(b => (
+                      <button
+                        key={b}
+                        onClick={() => setBrand(b)}
+                        className="h-11 rounded-full bg-white border border-border/50 text-[13px] font-semibold hover:border-primary/40 hover:bg-primary/5 transition-all shadow-sm active:scale-[0.98]"
+                      >
+                        {b.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                </Section>
 
-      {!selected ? (
-        <>
-          {/* Search */}
-          <div className="relative mt-5">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search e.g. Fortuner, Swift, Creta, Model Y"
-              className="h-12 rounded-2xl pl-10 pr-10"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
+                {/* Popular Vehicles */}
+                <Section title="Popular vehicles">
+                  <div className="space-y-1">
+                    {catalogQ.isLoading ? (
+                      [1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)
+                    ) : (
+                      popularVehicles.map(c => <VehicleRow key={c.id} c={c} />)
+                    )}
+                  </div>
+                </Section>
+              </>
             )}
           </div>
-          {isSearching && <div className="mt-2">{renderResults(true)}</div>}
+        ) : (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            {/* Selected Vehicle Overview */}
+            <Surface className="border-primary/10 bg-white p-3 flex items-center gap-4">
+               <div className="h-16 w-20 bg-muted/30 rounded-xl flex items-center justify-center shrink-0">
+                  <VehicleAvatar
+                    imageUrl={selected.image_url}
+                    make={selected.make}
+                    model={selected.model}
+                    className="h-12 w-16"
+                  />
+               </div>
+               <div className="flex-1 min-w-0">
+                  <div className="font-bold text-lg">{selected.make} {selected.model}</div>
+                  <div className="text-[12px] text-muted-foreground font-medium uppercase tracking-wider">
+                    {vehicleBodyLabel(selected.make, selected.model, selected.category)}
+                  </div>
+               </div>
+               <button 
+                  onClick={() => setSelected(null)}
+                  className="h-8 w-8 rounded-full bg-accent/50 flex items-center justify-center text-primary"
+               >
+                  <X className="h-4 w-4" />
+               </button>
+            </Surface>
 
-          {/* Active filter summary + one-tap clear */}
-          {hasFilters && (
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              {query.trim() && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
-                  "{query.trim()}"
-                  <button onClick={() => setQuery("")} className="opacity-60 hover:opacity-100">
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {brand && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
-                  {brand}
-                  <button onClick={() => setBrand(null)} className="opacity-60 hover:opacity-100">
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {cat !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium">
-                  {CATEGORIES.find((c) => c.key === cat)?.label}
-                  <button onClick={() => setCat("all")} className="opacity-60 hover:opacity-100">
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              <button
-                onClick={clearFilters}
-                className="ml-auto rounded-full border border-border px-3 py-1 text-[11px] font-semibold text-primary hover:bg-accent"
-              >
-                Clear all
-              </button>
-            </div>
-          )}
+            {/* Input Form */}
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Registration number</Label>
+                <Input 
+                  value={reg}
+                  onChange={(e) => setReg(e.target.value.toUpperCase())}
+                  placeholder="e.g. UP 32 AB 1234"
+                  className="h-13 rounded-xl border-border/60 bg-white text-base font-semibold tracking-wide uppercase placeholder:normal-case placeholder:font-normal"
+                />
+              </div>
 
-          {/* Category chips */}
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                onClick={() => setCat(c.key)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  cat === c.key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Brand chips */}
-          <div className="mt-3">
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Brand
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setBrand(null)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                  brand === null
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                All brands
-              </button>
-              {brands.map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setBrand(b === brand ? null : b)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                    brand === b
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground"
-                  }`}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Results */}
-          {!isSearching && <div className="mt-4">{renderResults(false)}</div>}
-        </>
-      ) : (
-        <div className="mt-5 space-y-4">
-          <div className="rounded-2xl border border-primary/30 bg-accent/40 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <VehicleAvatar
-                imageUrl={selected.image_url}
-                make={selected.make}
-                model={selected.model}
-                color={color}
-                className="h-14 w-16 rounded-2xl"
-              />
-              <div>
-                <div className="text-base font-semibold">
-                  {selected.make} {selected.model}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-bold text-foreground/80 ml-1">Color (Optional)</Label>
+                  <Input 
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    placeholder="White"
+                    className="h-13 rounded-xl border-border/60 bg-white"
+                  />
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Auto-classified: {selected.model.toUpperCase()} —{" "}
-                  {vehicleBodyLabel(selected.make, selected.model, selected.category)}
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-bold text-foreground/80 ml-1">Year (Optional)</Label>
+                  <Input 
+                    value={year}
+                    onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="2022"
+                    inputMode="numeric"
+                    className="h-13 rounded-xl border-border/60 bg-white"
+                  />
                 </div>
               </div>
-              <Check className="h-5 w-5 text-primary" />
-            </div>
-            <button
-              className="mt-2 text-xs text-muted-foreground underline"
-              onClick={() => setSelected(null)}
-            >
-              Change car
-            </button>
-          </div>
 
-          <div>
-            <Label>Registration number</Label>
-            <Input
-              value={reg}
-              onChange={(e) => setReg(e.target.value.toUpperCase())}
-              placeholder="UP 32 AB 1234"
-              className="mt-1.5"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Year (optional)</Label>
-              <Input
-                value={year}
-                onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
-                placeholder="2022"
-                inputMode="numeric"
-                className="mt-1.5"
-              />
-            </div>
-            <div>
-              <Label>Colour (optional)</Label>
-              <Input
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                placeholder="White"
-                className="mt-1.5"
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Variant / trim (optional)</Label>
-            <Input
-              value={variant}
-              onChange={(e) => setVariant(e.target.value)}
-              placeholder="VXi, ZX+, Sportz, etc."
-              className="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label>Parking notes (optional)</Label>
-            <Input
-              value={parking}
-              onChange={(e) => setParking(e.target.value)}
-              placeholder="B-block basement, slot 14"
-              className="mt-1.5"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Vehicle photo</Label>
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment" 
+                    className="hidden" 
+                    ref={fileInputRef} 
+                    onChange={handlePhotoChange}
+                  />
+                  {photoPreview ? (
+                    <div className="relative h-44 w-full rounded-2xl overflow-hidden border-2 border-primary/20 bg-white shadow-sm">
+                      <img src={photoPreview} className="h-full w-full object-cover" alt="Vehicle" />
+                      <button 
+                        onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                        className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/50 text-white backdrop-blur-md flex items-center justify-center"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-32 rounded-2xl border-2 border-dashed border-border/60 bg-white hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-2 group"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                        <Camera className="h-5 w-5" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[14px] font-bold">Add vehicle photo</div>
+                        <Muted className="text-[11px]">Help us identify your car at the spot</Muted>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
 
+              <div className="space-y-2">
+                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Parking instructions (Optional)</Label>
+                <Input 
+                  value={parking}
+                  onChange={(e) => setParking(e.target.value)}
+                  placeholder="e.g. B-block basement, slot 14"
+                  className="h-13 rounded-xl border-border/60 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Sticky Bottom Button */}
+      {selected && (
+        <div className="fixed inset-x-0 bottom-0 p-5 bg-gradient-to-t from-[#FFF9F3] via-[#FFF9F3] to-transparent pt-10">
           <Button
             size="lg"
-            className="w-full"
+            className="w-full h-14 rounded-2xl shadow-lg shadow-primary/20 text-base font-bold gap-2 animate-in slide-in-from-bottom-4 duration-500"
+            disabled={save.isPending || reg.trim().length < 4 || !userId}
             onClick={() => save.mutate()}
-            disabled={save.isPending || !userId}
           >
-            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save vehicle
+            {save.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>Add vehicle <ArrowLeft className="h-5 w-5 rotate-180" /></>
+            )}
           </Button>
+          <p className="text-center text-[11px] text-muted-foreground mt-3">
+            By adding, you agree to our vehicle classification terms
+          </p>
         </div>
       )}
     </div>
