@@ -227,7 +227,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-    <div className="px-5 pt-6">
+    <div className="px-5 pt-6 bg-[#FFF9F3] min-h-screen">
       {/* Greeting */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
@@ -236,7 +236,7 @@ function CustomerHome() {
             <Shimmer className="mt-1.5 h-6 w-32 rounded-lg" />
           ) : (
             <h1 className="truncate text-[26px] font-bold leading-tight tracking-tight">
-              {"'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                            \n                                            ok"}
+              {firstName}
             </h1>
           )}
           <button
@@ -254,7 +254,7 @@ function CustomerHome() {
         <Link
           to="/c/notifications"
           aria-label="Notifications"
-          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border/70 bg-card"
+          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-card shadow-sm"
         >
           <Bell className="h-[18px] w-[18px]" />
           {unread > 0 && (
@@ -269,7 +269,7 @@ function CustomerHome() {
       {vehiclesQ.isLoading ? (
         <SkeletonCard className="mt-5" />
       ) : activeVehicle ? (
-        <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-card">
+        <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
           <button
             type="button"
             onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
@@ -280,11 +280,11 @@ function CustomerHome() {
               make={activeVehicle.make}
               model={activeVehicle.model}
               color={activeVehicle.color}
-              className="h-14 w-20 shrink-0 rounded-xl bg-muted"
+              className="h-16 w-24 shrink-0 rounded-xl bg-muted object-cover"
             />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your car</p>
-              <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-tight">
+              <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-foreground">
                 {activeVehicle.make} {activeVehicle.model}
               </h2>
               <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
@@ -293,7 +293,7 @@ function CustomerHome() {
             </div>
             {vehicles.length > 1 && <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
           </button>
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2.5">
+          <div className="flex items-center justify-between border-t border-border/50 bg-accent/20 px-4 py-2.5">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
@@ -331,7 +331,7 @@ function CustomerHome() {
           {planActive || planPending ? (
             <Link to="/c/subscriptions" className="mt-5 block">
               <Surface
-                className={`uw-pressable flex items-center gap-3.5 ${planPending ? "border-warning/50 bg-warning/[0.07]" : ""}`}
+                className={`uw-pressable flex items-center gap-3.5 border shadow-sm ${planPending ? "border-warning/40 bg-warning/[0.05]" : "border-success/30 bg-success/[0.04]"}`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${planPending ? "bg-warning/20 text-warning-foreground" : "bg-success/12 text-success"}`}>
                   <Sparkles className="h-5 w-5" />
@@ -356,7 +356,7 @@ function CustomerHome() {
             </Link>
           ) : subscription && a.daily_shine ? (
             <Link to="/c/service/$slug" params={{ slug: subscription.slug }} className="mt-5 block">
-              <Surface raised className="uw-pressable bg-gradient-to-br from-accent/70 via-card to-card">
+              <Surface raised className="uw-pressable border-primary/20 bg-gradient-to-br from-accent via-card to-card">
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Daily plan</p>
@@ -372,7 +372,7 @@ function CustomerHome() {
                     <span className="text-[20px] font-bold">₹{priceFor(subscription)}</span>
                     <span className="ml-1 text-[13px] text-muted-foreground">/month</span>
                   </p>
-                  <span className="inline-flex h-9 items-center rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground">
+                  <span className="inline-flex h-9 items-center rounded-full bg-primary px-5 text-[13px] font-bold text-primary-foreground shadow-sm active:scale-95 transition-transform">
                     View plan
                   </span>
                 </div>

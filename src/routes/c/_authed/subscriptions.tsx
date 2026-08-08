@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2 } from "lucide-react";
+import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2, ChevronRight } from "lucide-react";
+import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { supabase } from "@/integrations/supabase/client";
 import { SkeletonCard, SkeletonRow } from "@/components/customer/ui/Skeletons";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import { PackageBuilderSheet } from "@/components/customer/PackageBuilderSheet";
 import { SavedPackagesCard } from "@/components/customer/SavedPackagesCard";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPreview } from "@/lib/entitlements";
+import { Meter } from "@/components/customer/ui/kit";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
@@ -59,6 +61,7 @@ function MyPlanPage() {
   const [scheduleKind, setScheduleKind] = useState<"any" | "interior" | "exterior" | "dusting">("any");
   const [bookOpen, setBookOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
@@ -281,7 +284,7 @@ function MyPlanPage() {
         <div className="min-w-0">
           <h1 className="text-[26px] font-bold tracking-tight">My Plan</h1>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {vehicleLabel ? `Tracking ${vehicleLabel}` : "Track your Daily Shine service."}
+            {vehicleLabel ? `Your Daily Shine plan` : "Track your Daily Shine service."}
           </p>
         </div>
         {hasVehicles && (
@@ -336,14 +339,13 @@ function MyPlanPage() {
       {hasVehicles && activeSub && (
         <>
           {/* Active plan hero */}
-          <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-primary/12 via-accent/45 to-card p-5">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-accent via-card to-card p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Active plan</p>
                 {vehicleLabel && (
-                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                    <Car className="h-3 w-3" /> {vehicleLabel}
-                    {selectedVehicle?.registration_number ? ` · ${selectedVehicle.registration_number}` : ""}
+                  <p className="mt-0.5 text-[11px] font-medium text-muted-foreground uppercase tracking-tight">
+                    {vehicleLabel} · {selectedVehicle?.registration_number ?? ""}
                   </p>
                 )}
                 <h2 className="mt-1 truncate text-[21px] font-bold tracking-tight">{activeSub.service_catalog?.name ?? "Daily Shine"}</h2>
@@ -372,44 +374,14 @@ function MyPlanPage() {
               </div>
             </div>
 
-            <div className="mt-4 border-t border-border pt-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
-                {expiringSoon && !cancelScheduled && (
-                  <Button size="sm" className="h-8 gap-1 rounded-full text-xs">
-                    <RefreshCw className="h-3.5 w-3.5" /> Renew
-                  </Button>
-                )}
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
-                  <Settings2 className="h-3.5 w-3.5" /> Modify
-                </Button>
-                <Button size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled>
-                  <Pause className="h-3.5 w-3.5" /> Pause
-                </Button>
-                {cancelScheduled ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 gap-1 text-xs"
-                    onClick={() => undoMut.mutate()}
-                    disabled={undoMut.isPending}
-                  >
-                    <Undo2 className="h-3.5 w-3.5" /> Undo
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 gap-1 border-destructive/40 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => setCancelDialogOpen(true)}
-                    disabled={!subRow}
-                  >
-                    <XCircle className="h-3.5 w-3.5" /> Cancel
-                  </Button>
-                )}
-              </div>
+            <div className="mt-4 border-t border-border/50 pt-4 flex items-center justify-between">
+              <span className="text-[17px] font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}/mo</span>
+              <button 
+                onClick={() => setManageOpen(true)}
+                className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary"
+              >
+                Manage plan <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
 
@@ -438,58 +410,54 @@ function MyPlanPage() {
           <PlanInclusionsCard planSlug={activePlanSlug} />
 
           {/* Per-vehicle remaining benefits */}
-          <div className="mt-4">
-            <PlanBalanceCard vehicleId={selectedVehicleId} />
-          </div>
 
 
 
 
           {/* This month's washes */}
-          <div className="mt-5">
-            <h3 className="text-[15px] font-semibold tracking-tight">Wash activity</h3>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <WashCard
-                title="Interior wash"
-                icon={Wrench}
-                count={interiorCount}
-                target={4}
-                lastDate={interiorLast}
-              />
-              <WashCard
-                title="Exterior wash"
-                icon={Droplets}
-                count={exteriorCount}
-                target={20}
-                lastDate={exteriorLast}
-              />
+          <div className="mt-6">
+            <h3 className="text-[15px] font-bold tracking-tight">This month's usage</h3>
+            <div className="mt-4 space-y-5 rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[13px] font-medium">
+                  <span>Exterior wash</span>
+                  <span className="text-muted-foreground">{exteriorCount} / 25</span>
+                </div>
+                <Meter value={exteriorCount} max={25} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[13px] font-medium">
+                  <span>Interior wash</span>
+                  <span className="text-muted-foreground">{interiorCount} / 1</span>
+                </div>
+                <Meter value={interiorCount} max={1} />
+              </div>
             </div>
           </div>
 
           {/* Book a wash — gated flow (Phase 3) */}
-          <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4">
+          <div className="mt-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-[15px] font-semibold tracking-tight">Book a wash</h3>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  Only what's left on your plan is shown.
+                <h3 className="text-[15px] font-bold tracking-tight">Need to book a wash?</h3>
+                <p className="mt-1 text-[12.5px] text-muted-foreground">
+                  You still have included washes available.
                 </p>
               </div>
               <CalendarPlus className="h-5 w-5 shrink-0 text-primary" />
             </div>
             <Button
               onClick={() => setBookOpen(true)}
-              className="mt-3 h-11 w-full rounded-2xl text-sm font-semibold"
+              className="mt-4 h-11 w-full rounded-full text-sm font-bold shadow-sm"
             >
-              <Sparkles className="mr-1.5 h-4 w-4" />
               Book a wash
             </Button>
             <button
               type="button"
               onClick={() => openSchedule("any")}
-              className="mt-2 inline-flex w-full items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="mt-3 inline-flex w-full items-center justify-center gap-1 text-[12.5px] font-medium text-primary hover:underline"
             >
-              Need something else? Book a one-time premium service
+              Explore one-time services <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
@@ -499,75 +467,6 @@ function MyPlanPage() {
 
 
           {/* Counters */}
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <StatCard icon={CheckCircle2} label="Completed" value={completedCount} tone="success" />
-            <StatCard icon={Clock} label="Upcoming" value={pendingCount} tone="primary" />
-          </div>
-
-
-
-
-          {/* Add-ons — monthly (recurring) + one-time */}
-          <MonthlyAddonsSection subscriptionId={subRow?.id ?? null} userId={userId} />
-
-          {(addonsQ.data ?? []).length > 0 && (
-            <div className="mt-3 space-y-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Your purchased add-ons
-              </div>
-              {(addonsQ.data ?? []).map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
-                  <span className="font-medium">{a.addon_name}</span>
-                  <span className="text-xs text-muted-foreground">₹{a.price}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Package builder + saved packages */}
-          <SavedPackagesCard onBuild={() => setBuilderOpen(true)} />
-
-
-
-
-
-          {/* Recent services */}
-          <div className="mt-5">
-            <h3 className="text-[15px] font-semibold tracking-tight">Recent services</h3>
-            <div className="mt-2 space-y-2">
-              {recent.length === 0 && (
-                <p className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  No services yet.
-                </p>
-              )}
-              {recent.map((b) => (
-                <Link
-                  key={b.id}
-                  to="/c/bookings/$id"
-                  params={{ id: b.id }}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/40"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{b.service_catalog?.name ?? "Service"}</div>
-                    <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Calendar className="h-3 w-3" /> {b.scheduled_date}
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${
-                      b.status === "completed"
-                        ? "bg-success/15 text-success"
-                        : b.status === "cancelled"
-                          ? "bg-destructive/15 text-destructive"
-                          : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {b.status.replaceAll("_", " ")}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
         </>
       )}
 
@@ -602,6 +501,71 @@ function MyPlanPage() {
         basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? 1199)}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
+
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-md rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Manage your plan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            <button 
+              className="uw-pressable flex w-full items-center justify-between p-4 rounded-2xl border border-border bg-card text-left"
+              onClick={() => { setManageOpen(false); /* Logic for modify would go here */ toast.info("Modify plan coming soon"); }}
+            >
+              <div className="flex items-center gap-3">
+                <Settings2 className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Modify plan</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <button 
+              className="uw-pressable flex w-full items-center justify-between p-4 rounded-2xl border border-border bg-card text-left"
+              onClick={() => { setManageOpen(false); toast.info("Pause subscription coming soon"); }}
+            >
+              <div className="flex items-center gap-3">
+                <Pause className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Pause subscription</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <button 
+              className="uw-pressable flex w-full items-center justify-between p-4 rounded-2xl border border-border bg-card text-left text-destructive"
+              onClick={() => { setManageOpen(false); setCancelDialogOpen(true); }}
+            >
+              <div className="flex items-center gap-3">
+                <XCircle className="h-5 w-5" />
+                <span className="font-semibold">Cancel subscription</span>
+              </div>
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            
+            <Section title="Add-ons & Packages" className="mt-4">
+              <div className="space-y-2">
+                <button 
+                  className="uw-pressable flex w-full items-center justify-between p-4 rounded-2xl border border-border bg-card text-left"
+                  onClick={() => { setManageOpen(false); /* Scroll to or open monthly addons */ }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Plus className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">Monthly add-ons</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+                <button 
+                  className="uw-pressable flex w-full items-center justify-between p-4 rounded-2xl border border-border bg-card text-left"
+                  onClick={() => { setManageOpen(false); setBuilderOpen(true); }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Car className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">My packages</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+            </Section>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -114,13 +114,13 @@ function BookingsPage() {
         />
       ) : (
         <>
-          <div className="mt-5 rounded-full border border-border bg-card p-1 flex">
+          <div className="mt-5 rounded-full border border-border bg-accent p-1 flex">
             {(["upcoming", "previous"] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 rounded-full py-2.5 text-sm font-medium capitalize transition-colors ${
-                  tab === t ? "bg-foreground text-background" : "text-muted-foreground"
+                className={`flex-1 rounded-full py-2 text-[13px] font-bold capitalize transition-all ${
+                  tab === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 {t}
