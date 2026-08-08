@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
+import { statusTone, StatusChip } from "@/components/customer/ui/kit";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
 
@@ -83,7 +84,7 @@ function BookingsPage() {
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
     <div className="px-5 pt-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">My Bookings</h1>
+        <h1 className="text-[26px] font-bold tracking-tight">Bookings</h1>
         <div className="flex items-center gap-2">
           {hasVehicles && (
             <VehicleSelector
@@ -146,28 +147,39 @@ function BookingsPage() {
                 }
               />
             ) : (
-              <div className="space-y-3">
-                {items.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                    className="uw-pressable flex w-full items-center justify-between rounded-3xl border border-border bg-card p-4 text-left hover:border-primary/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold">{b.service_catalog?.name ?? "Service"}</div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
-                        {b.scheduled_date}{b.preferred_before_time ? ` · ${b.preferred_before_time}` : ""}
+              <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card">
+                {items.map((b) => {
+                  const st = statusTone(b.status);
+                  const when = new Date(`${b.scheduled_date}T00:00:00`);
+                  const dateLabel = isNaN(when.getTime())
+                    ? b.scheduled_date
+                    : when.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
+                      className="uw-pressable flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-muted/50"
+                    >
+                      <div className="w-12 shrink-0">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {dateLabel.split(" ")[1] ?? ""}
+                        </div>
+                        <div className="text-[18px] font-bold leading-tight">{dateLabel.split(" ")[0]}</div>
                       </div>
-                      <div className="mt-1 text-xs font-medium">₹{b.total_amount}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium capitalize text-accent-foreground">
-                        {b.status.replaceAll("_", " ")}
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </button>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[15px] font-semibold">
+                          {b.service_catalog?.name ?? "Service"}
+                        </div>
+                        <div className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+                          ₹{b.total_amount}
+                          {b.preferred_before_time ? ` · before ${b.preferred_before_time}` : ""}
+                        </div>
+                      </div>
+                      <StatusChip tone={st.tone}>{st.label}</StatusChip>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
