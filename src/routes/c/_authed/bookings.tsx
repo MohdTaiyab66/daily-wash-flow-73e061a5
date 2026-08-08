@@ -175,10 +175,14 @@ function BookingsPage() {
                 <div className="mt-4 space-y-3 pb-10">
                   {items.map((b) => {
                     const st = statusTone(b.status);
-                    const when = new Date(`${b.scheduled_date}T00:00:00`);
-                    const dateLabel = isNaN(when.getTime())
-                      ? b.scheduled_date
-                      : when.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                    
+                    let dateLabel = b.scheduled_date;
+                    if (b.scheduled_date) {
+                      const when = new Date(`${b.scheduled_date}T00:00:00`);
+                      if (!isNaN(when.getTime())) {
+                        dateLabel = when.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                      }
+                    }
                     
                     const isSubscription = b.service_catalog?.slug?.includes("daily-shine");
                     
