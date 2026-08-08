@@ -19,11 +19,19 @@ export function PremiumHero({
     <Surface className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white to-[#FFF5ED] p-0">
       {/* Top Layer: Service Category & Price */}
       <div className="px-5 pt-5 pb-4 flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-[11px] font-black text-primary uppercase tracking-wider">
-            {isIncluded ? 'Included with Daily Shine' : 'Premium Service'}
-          </span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-[11px] font-black text-primary uppercase tracking-wider">
+              {isIncluded ? 'Included with Daily Shine' : 'Premium Service'}
+            </span>
+          </div>
+          {vehicleSubActive && !isIncluded && (
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-success uppercase tracking-wider">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Daily Shine active</span>
+            </div>
+          )}
         </div>
         <div className="flex flex-col items-end shrink-0">
           <div className="text-[24px] font-black text-primary leading-none">₹{previewPayable}</div>
@@ -49,26 +57,20 @@ export function PremiumHero({
             <MapPin className="h-3.5 w-3.5 text-primary/60" />
             <span>Doorstep</span>
           </div>
-          {vehicleSubActive && (
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-success uppercase tracking-wider">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Daily Shine active</span>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Bottom Layer: Context Selector (Vehicle & Address) */}
       <button 
-        onClick={onVehicleClick} // Both trigger the same consolidated context feeling, but we'll prioritize vehicle drawer
+        onClick={onVehicleClick}
         className="w-full text-left px-5 py-4 bg-black/[0.02] border-t border-black/[0.04] flex items-center justify-between active:bg-black/[0.05] transition-colors"
       >
-        <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[13px] font-bold text-foreground/80 truncate">
+        <div className="flex items-center gap-4 min-w-0 flex-1 divide-x divide-black/10">
+          <div className="flex items-center gap-2 text-[13px] font-bold text-foreground/80 truncate pr-4">
             <Car className="h-3.5 w-3.5 text-muted-foreground/40" />
             <span className="truncate">{vehicle?.make} {vehicle?.model} · {vehicle?.registration_number}</span>
           </div>
-          <div className="flex items-center gap-2 text-[12px] font-medium text-muted-foreground/60 truncate">
+          <div className="flex items-center gap-2 text-[13px] font-bold text-foreground/80 truncate pl-4">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground/40" />
             <span className="truncate">{address?.label} · {address?.area}</span>
           </div>
