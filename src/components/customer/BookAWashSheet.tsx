@@ -137,6 +137,9 @@ export function BookAWashSheet({
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
 
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [addressPickerOpen, setAddressPickerOpen] = useState(false);
+
   const entQ = useQuery({
     queryKey: ["vehicle-entitlements", vehicleId],
     enabled: !!vehicleId && open,
