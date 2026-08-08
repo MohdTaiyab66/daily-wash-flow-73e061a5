@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, Plus, Loader2, CheckCircle2, ShoppingBag, AlertTriangle, RotateCcw, Info, Calendar, MapPin, Clock, X, ChevronRight, Check } from "lucide-react";
+import { Sparkles, Plus, Loader2, CheckCircle2, ShoppingBag, AlertTriangle, RotateCcw, Info, Calendar, MapPin, Clock, X, ChevronRight, Check, Droplets } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -113,8 +113,8 @@ function bumpOffMonday(iso: string): string {
 /** The only customer-bookable benefit. Daily Exterior is automatic. */
 const INCLUDED = {
   benefitType: "interior",
-  label: "Included Wash",
-  hint: "Full interior + exterior — once a month",
+  label: "Premium Wash",
+  hint: "Full interior + exterior — included in plan",
   slug: "daily-shine-interior",
 };
 
@@ -343,10 +343,10 @@ export function BookAWashSheet({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Book a wash</h2>
+            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
             <div className="mt-1 flex items-center gap-2">
                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Premium Wash Included</p>
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Your included wash is available</p>
             </div>
           </div>
           <button
@@ -449,26 +449,34 @@ export function BookAWashSheet({
                       Free ✓
                     </div>
                   </div>
-                  <div className="mt-6 flex items-baseline gap-2">
-                    <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
-                      {includedRow?.unlimited ? "∞" : includedRemaining}
-                    </span>
-                    <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                      wash{includedRemaining !== 1 ? "es" : ""} left
-                    </span>
+                  <div className="mt-6 flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
+                        {includedRow?.unlimited ? "∞" : includedRemaining}
+                      </span>
+                      <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                        wash{includedRemaining !== 1 ? "es" : ""} left
+                      </span>
+                    </div>
+                    <div className="flex -space-x-2">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary">
+                          <Droplets className="h-4 w-4" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 px-1">
-                  <button
-                    onClick={() => {
-                      onOpenChange(false);
-                      window.location.href = "/c/service/daily-shine";
-                    }}
+                  <Link
+                    to="/c/service/$slug"
+                    params={{ slug: "daily-shine" }}
+                    search={{ vehicleId: vehicleId ?? undefined }}
                     className="flex items-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
                   >
                     Need another wash? <span className="underline underline-offset-4">Buy more</span>
                     <ChevronRight className="h-4 w-4" />
-                  </button>
+                  </Link>
                 </div>
               </div>
 
@@ -552,6 +560,37 @@ export function BookAWashSheet({
                 <span className="font-black text-success">✓ Included</span>
               </div>
 
+              {/* Premium Add-ons Suggestion */}
+              <div className="space-y-4 pb-4">
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Make it even better</Label>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-tight">Premium upgrades</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-orange-500">
+                      <Droplets className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-black text-[#1a1a1a]">Body Polish</div>
+                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹199</div>
+                    </div>
+                  </button>
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-500">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-black text-[#1a1a1a]">Deep Clean</div>
+                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹499</div>
+                    </div>
+                  </button>
+                </div>
+                <p className="px-1 text-[11px] font-medium leading-relaxed text-muted-foreground/40 italic">
+                  *Upgrades require separate booking and payment.
+                </p>
+              </div>
+
               {/* Error Banner */}
               {error && (
                 <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive border border-destructive/10">
@@ -585,14 +624,14 @@ export function BookAWashSheet({
               {phase === "booking" ? (
                 <div className="flex items-center gap-3">
                    <Loader2 className="h-5 w-5 animate-spin" />
-                   <span>Booking...</span>
+                   <span>Scheduling...</span>
                 </div>
               ) : (
-                "Book this wash →"
+                "Schedule a wash"
               )}
             </Button>
             <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-              ₹0 Payable · Part of subscription
+              Included with your plan · ₹0
             </p>
           </div>
         )}
