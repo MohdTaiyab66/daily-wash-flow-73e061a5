@@ -1183,7 +1183,7 @@ function StatCard({
   );
 }
 
-function RecommendedAddon({ name, price, icon: Icon }: { name: string; price: number; icon: any }) {
+function RecommendedAddon({ name, price, icon: Icon, vehicleId }: { name: string; price: number; icon: any; vehicleId: string | null }) {
   return (
     <Link
       to="/c/service/$slug"

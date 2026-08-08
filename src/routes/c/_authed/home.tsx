@@ -141,6 +141,7 @@ function CustomerHome() {
   });
 
   const vehicles = vehiclesQ.data ?? [];
+  const vehicleId = selectedVehicleId;
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
   const category = activeVehicle?.category ?? "hatchback_compact_sedan";
   const bodyLabel = activeVehicle ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category) : "";
