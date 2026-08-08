@@ -470,38 +470,35 @@ export function BookAWashSheet({
               </div>
 
               {/* Selection Summary */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4">
                 {/* When */}
                 <div className="space-y-2">
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">When</span>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">When</Label>
                   <button
                     onClick={() => setDatePickerOpen(true)}
-                    className="uw-pressable flex w-full flex-col items-start gap-1 rounded-2xl border border-border bg-card p-4 text-left shadow-sm"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-semibold">
+                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a]">
                       <Calendar className="h-4 w-4 text-primary" />
                       {formatDateHuman(date) || "Select date"}
                     </div>
                     {isMonday && (
-                      <div className="text-[11px] font-medium text-destructive">Monday is our rest day</div>
+                      <div className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Monday rest day</div>
                     )}
                   </button>
                 </div>
 
                 {/* Where */}
                 <div className="space-y-2">
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">Where</span>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Where</Label>
                   <button
                     onClick={() => setAddressPickerOpen(true)}
-                    className="uw-pressable flex w-full flex-col items-start gap-1 rounded-2xl border border-border bg-card p-4 text-left shadow-sm"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-semibold">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="truncate">{selectedAddress?.label || "Select location"}</span>
+                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a] w-full">
+                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                      <span className="truncate">{selectedAddress?.label || "Select area"}</span>
                     </div>
-                    {selectedAddress && (
-                      <div className="truncate text-[11px] text-muted-foreground">{selectedAddress.area}</div>
-                    )}
                   </button>
                 </div>
               </div>
