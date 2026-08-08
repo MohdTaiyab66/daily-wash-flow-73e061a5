@@ -458,10 +458,9 @@ function CustomerHome() {
             <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
             <TrustItem label="Safe & Secure" />
           </div>
-        </div>
-      )}
         </>
       )}
+    </div>
 
       {/* Vehicle switcher sheet */}
       <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
