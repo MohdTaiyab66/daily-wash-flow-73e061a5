@@ -181,80 +181,124 @@ function VehiclesPage() {
 
 
   return (
-    <div className="px-5 pt-6 pb-24">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">My vehicles</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Tap to edit · swipe left to delete.
-          </p>
+    <div className="min-h-screen bg-[#FFF9F3] pb-24">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+             <button 
+               onClick={() => navigate({ to: "/c/home" })} 
+               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
+             >
+               <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
+             </button>
+             <div>
+                <h1 className="text-2xl font-black tracking-tight text-[#1a1a1a]">My Garage</h1>
+                <p className="mt-0.5 text-[11px] font-bold text-muted-foreground/50 uppercase tracking-widest">Manage Vehicles</p>
+             </div>
+          </div>
+          <Button asChild className="h-11 rounded-2xl bg-primary px-5 font-black text-[13px] shadow-lg shadow-primary/20 transition-all active:scale-95">
+            <Link to="/c/vehicles/add">
+              <Plus className="mr-1.5 h-4 w-4" /> Add Car
+            </Link>
+          </Button>
         </div>
-        <Button asChild size="sm">
-          <Link to="/c/vehicles/add">
-            <Plus className="mr-1 h-4 w-4" /> Add
-          </Link>
-        </Button>
       </div>
 
-      <div className="mt-5 space-y-3">
-        {q.isLoading && <SkeletonList count={2} />}
-        {!q.isLoading && (q.data ?? []).length === 0 && (
-          <EmptyState
-            icon={Car}
-            tone="primary"
-            title="No vehicles yet"
-            description="Add your car to get pricing, book washes and track service history."
-            action={
-              <Button asChild className="h-11 rounded-full px-7 font-semibold">
-                <Link to="/c/vehicles/add">Add your first vehicle</Link>
-              </Button>
-            }
-          />
+      <div className="px-5 mt-4 space-y-4">
+        {q.isLoading && (
+          <div className="space-y-4">
+             <div className="h-28 animate-pulse rounded-[32px] bg-white border border-black/5" />
+             <div className="h-28 animate-pulse rounded-[32px] bg-white border border-black/5" />
+          </div>
         )}
+        
+        {!q.isLoading && (q.data ?? []).length === 0 && (
+          <div className="mt-12">
+            <EmptyState
+              icon={Car}
+              tone="primary"
+              title="Garage is empty"
+              description="Add your car to see tailored pricing and book professional services."
+              action={
+                <Button asChild className="h-14 rounded-2xl px-8 font-black shadow-lg shadow-primary/20 transition-all active:scale-95">
+                  <Link to="/c/vehicles/add">Add your car</Link>
+                </Button>
+              }
+            />
+          </div>
+        )}
+
         {(q.data ?? []).map((v) => (
           <SwipeableVehicleRow key={v.id} v={v} onRequestDelete={() => setTarget(v)} />
         ))}
+        
+        {/* Info Card */}
+        {!q.isLoading && (q.data ?? []).length > 0 && (
+          <div className="mt-8 flex items-center gap-3 rounded-[28px] bg-primary/5 p-4 border border-primary/10">
+             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ShieldCheck className="h-5 w-5" />
+             </div>
+             <p className="text-[12px] font-bold text-primary/70 leading-snug">
+               Your vehicles are stored securely. Swipe left on any car to remove it from your garage.
+             </p>
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!target} onOpenChange={(o) => { if (!o && !deleting) setTarget(null); }}>
-        <AlertDialogContent className="rounded-3xl">
+        <AlertDialogContent className="rounded-[40px] border-none bg-white p-8 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>{block ? "Can’t delete this vehicle" : "Delete vehicle?"}</AlertDialogTitle>
-            <AlertDialogDescription>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+               <Trash2 className="h-8 w-8" />
+            </div>
+            <AlertDialogTitle className="text-center text-2xl font-black text-[#1a1a1a]">
+              {block ? "Can’t delete car" : "Delete vehicle?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-[15px] font-bold text-muted-foreground/70 leading-relaxed px-2">
               {block ? (
                 <span data-testid="vehicle-delete-block-reason">
-                  <span className="font-medium text-destructive">{block.title}</span>
-                  <span className="mt-1 block">{block.detail}</span>
+                  <span className="text-destructive">{block.title}</span>
+                  <span className="mt-2 block">{block.detail}</span>
                 </span>
               ) : checking ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Checking for active services…
+                <span className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" /> 
+                  Verifying active services…
                 </span>
               ) : (
                 <>
-                  Are you sure you want to permanently remove
-                  {target ? ` ${target.nickname?.trim() || `${target.make} ${target.model}`}` : " this vehicle"}?
-                  This action cannot be undone.
+                  Are you sure you want to remove 
+                  <span className="text-[#1a1a1a]"> {target ? ` ${target.nickname?.trim() || `${target.make} ${target.model}`}` : " this vehicle"}</span>?
+                  This will also remove its service history.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>{block ? "Close" : "Cancel"}</AlertDialogCancel>
+          <AlertDialogFooter className="mt-8 flex-col gap-3 sm:flex-col">
             {!block && (
               <AlertDialogAction
                 onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
                 disabled={deleting || checking}
                 data-testid="vehicle-delete-confirm"
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="h-14 w-full rounded-2xl bg-destructive text-white font-black shadow-lg shadow-destructive/20 transition-all active:scale-95"
               >
-                {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete vehicle
+                {deleting ? (
+                   <div className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Deleting...</span>
+                   </div>
+                ) : "Yes, remove vehicle"}
               </AlertDialogAction>
             )}
+            <AlertDialogCancel 
+              disabled={deleting}
+              className="h-14 w-full rounded-2xl border-none bg-[#FFF9F3] text-[#1a1a1a] font-black transition-all active:scale-95 m-0"
+            >
+              {block ? "Got it" : "Cancel"}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
-
       </AlertDialog>
     </div>
   );
