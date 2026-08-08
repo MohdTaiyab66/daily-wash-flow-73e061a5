@@ -184,7 +184,8 @@ export const adminSetCustomerPayment = createServerFn({ method: "POST" }).middle
 export const adminSetVehicleDiscountApproval = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { vehicle_id: string; approved: boolean }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase.rpc as any)("admin_set_vehicle_discount_approval", {
+    const supabase = (context as any).supabase;
+    const { error } = await supabase.rpc("admin_set_vehicle_discount_approval", {
       p_vehicle_id: data.vehicle_id,
       p_approved: data.approved,
     });
