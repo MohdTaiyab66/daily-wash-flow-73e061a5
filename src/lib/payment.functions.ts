@@ -389,8 +389,9 @@ export const getUserPaymentAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => userAttemptsInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error: roleError } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
+    const { userId, supabase } = context as any;
+    const { data: isAdmin, error: roleError } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
       _role: "admin",
     });
     if (roleError) throw new Error(roleError.message);
