@@ -313,13 +313,6 @@ function ServiceDetail() {
   const isDailyShine = service?.service_type === "subscription" || service?.slug?.startsWith("daily-shine");
   const isVehicleSubActive = vehicleSubQ.data?.status === 'active';
 
-  const purchaseMode = useMemo(() => {
-    if (!service) return 'new_subscription';
-    if (isIncludedBooking) return 'included_wash';
-    if (isVehicleSubActive) return 'paid_add_on';
-    if (service.service_type === 'subscription') return 'new_subscription';
-    return 'one_time_service';
-  }, [service, isIncludedBooking, isVehicleSubActive]);
 
   useEffect(() => {
     if (isDailyShine && isMondayIso(date)) {
@@ -386,6 +379,17 @@ function ServiceDetail() {
   const isIncludedBooking = !!preview?.used_entitlement;
   const isEntitlementExhausted = !!preview?.exhausted;
   const addonItemsCount = Object.values(addonQty).reduce((a, b) => a + b, 0);
+
+  const purchaseMode = useMemo(() => {
+    if (!service) return 'new_subscription';
+    if (isIncludedBooking) return 'included_wash';
+    if (isVehicleSubActive) {
+      if (isDailyShine) return 'included_wash'; // If active and service is DS, it's either included or renew
+      return 'paid_add_on';
+    }
+    if (service.service_type === 'subscription') return 'new_subscription';
+    return 'one_time_service';
+  }, [service, isIncludedBooking, isVehicleSubActive, isDailyShine]);
 
   // Multi-vehicle coupon: only unlocked when booking for a non-first car.
   // Admin can explicitly approve a first-vehicle exception for edge cases.
