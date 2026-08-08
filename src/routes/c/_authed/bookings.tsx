@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CalendarDays, HelpCircle, ChevronRight, Car } from "lucide-react";
+import { CalendarDays, HelpCircle, ChevronRight, Car, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -87,39 +87,27 @@ function BookingsPage() {
 
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
-    <div className="px-5 pt-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[26px] font-bold tracking-tight">Bookings</h1>
-        <div className="flex items-center gap-2">
-          {hasVehicles && (
-            <VehicleSelector
-              vehicles={vehiclesQ.data ?? []}
-              value={selectedVehicleId}
-              onChange={setSelectedVehicleId}
-            />
-          )}
-          <Button variant="outline" size="sm" className="rounded-full">
-            <HelpCircle className="mr-1.5 h-4 w-4" /> Help
-          </Button>
-        </div>
-      </div>
+      <div className="min-h-screen bg-[#FFF9F3] pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-20 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Bookings</h1>
+              <p className="mt-1 text-[13px] font-bold text-muted-foreground/50 uppercase tracking-widest">Service History</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasVehicles && (
+                <VehicleSelector
+                  vehicles={vehiclesQ.data ?? []}
+                  value={selectedVehicleId}
+                  onChange={setSelectedVehicleId}
+                />
+              )}
+            </div>
+          </div>
 
-      {!hasVehicles && !vehiclesQ.isLoading ? (
-        <EmptyState
-          className="mt-10"
-          icon={Car}
-          tone="primary"
-          title="No vehicle added"
-          description="Add your car to see and manage its bookings."
-          action={
-            <Button asChild className="h-11 rounded-full px-7 font-semibold">
-              <Link to="/c/vehicles/add">Add vehicle</Link>
-            </Button>
-          }
-        />
-      ) : (
-        <>
-          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {/* Tabs */}
+          <div className="mt-8 flex gap-3 overflow-x-auto no-scrollbar">
             {(["upcoming", "completed", "cancelled"] as Tab[]).map((t) => {
               const active = tab === t;
               return (
@@ -127,10 +115,10 @@ function BookingsPage() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={cn(
-                    "uw-pressable flex-none rounded-full px-5 py-2.5 text-[13px] font-bold capitalize transition-all border",
+                    "flex-none rounded-2xl px-6 py-3 text-[14px] font-black capitalize transition-all",
                     active 
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm" 
-                      : "bg-card text-muted-foreground border-border/60 hover:border-border"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
+                      : "bg-white text-[#1a1a1a] shadow-sm border border-black/5"
                   )}
                 >
                   {t}
@@ -138,67 +126,107 @@ function BookingsPage() {
               );
             })}
           </div>
+        </div>
 
-          <div className="mt-8">
-            {q.isLoading ? (
-              <SkeletonList count={3} />
-            ) : items.length === 0 ? (
+        <div className="px-5">
+          {!hasVehicles && !vehiclesQ.isLoading ? (
+            <div className="mt-12">
               <EmptyState
-                icon={CalendarDays}
-                title={tab === "upcoming" ? "No upcoming bookings" : tab === "completed" ? "No completed services" : "No cancelled bookings"}
-                description={
-                  tab === "upcoming"
-                    ? "Book a wash and it will appear here with live status."
-                    : tab === "completed"
-                    ? "Once your services are completed, you'll find them here."
-                    : "Any cancelled or failed bookings will be listed here."
-                }
+                icon={Car}
+                tone="primary"
+                title="No vehicle added"
+                description="Add your car to see and manage its bookings."
                 action={
-                  <Button asChild className="h-11 rounded-full px-7 font-semibold">
-                    <Link to="/c/home">Browse services</Link>
+                  <Button asChild className="h-14 rounded-2xl px-8 font-black shadow-lg shadow-primary/20 transition-all active:scale-95">
+                    <Link to="/c/vehicles/add">Add vehicle</Link>
                   </Button>
                 }
               />
-            ) : (
-              <div className="mt-4 space-y-3">
-                {items.map((b) => {
-                  const st = statusTone(b.status);
-                  const when = new Date(`${b.scheduled_date}T00:00:00`);
-                  const dateLabel = isNaN(when.getTime())
-                    ? b.scheduled_date
-                    : when.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-                  return (
-                    <button
-                      key={b.id}
-                      onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
-                      className="uw-pressable flex w-full items-center gap-4 rounded-3xl border border-border/50 bg-card p-4 text-left shadow-sm active:bg-muted/50 transition-all"
-                    >
-                      <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-accent/30">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
-                          {dateLabel.split(" ")[1] ?? ""}
+            </div>
+          ) : (
+            <div className="mt-4">
+              {q.isLoading ? (
+                <div className="space-y-4">
+                   <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />
+                   <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />
+                   <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />
+                </div>
+              ) : items.length === 0 ? (
+                <div className="mt-12">
+                  <EmptyState
+                    icon={CalendarDays}
+                    title={tab === "upcoming" ? "No plans for today?" : tab === "completed" ? "No service history" : "All clear here"}
+                    description={
+                      tab === "upcoming"
+                        ? "Book a wash now and get your ride shining like new."
+                        : tab === "completed"
+                        ? "Your completed services will appear here for easy tracking."
+                        : "Cancelled or failed bookings are moved here."
+                    }
+                    action={
+                      <Button asChild className="h-14 rounded-2xl px-8 font-black shadow-lg shadow-primary/20 transition-all active:scale-95">
+                        <Link to="/c/home">Book a Wash</Link>
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4 pb-10">
+                  {items.map((b) => {
+                    const st = statusTone(b.status);
+                    const when = new Date(`${b.scheduled_date}T00:00:00`);
+                    const dateLabel = isNaN(when.getTime())
+                      ? b.scheduled_date
+                      : when.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                    
+                    const isSubscription = b.service_catalog?.slug?.includes("daily-shine");
+
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => navigate({ to: "/c/bookings/$id", params: { id: b.id } })}
+                        className="group flex w-full items-center gap-4 rounded-[32px] border border-black/5 bg-white p-5 text-left shadow-sm transition-all active:scale-[0.98] hover:shadow-md"
+                      >
+                        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#FFF9F3] border border-black/5">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">
+                            {dateLabel.split(" ")[1] ?? ""}
+                          </span>
+                          <span className="text-[20px] font-black leading-tight text-[#1a1a1a]">
+                            {dateLabel.split(" ")[0]}
+                          </span>
                         </div>
-                        <div className="text-[18px] font-black leading-tight text-foreground">{dateLabel.split(" ")[0]}</div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-semibold">
-                          {b.service_catalog?.name ?? "Service"}
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                             <span className="truncate text-[16px] font-black text-[#1a1a1a]">
+                               {b.service_catalog?.name ?? "Service"}
+                             </span>
+                             {isSubscription && (
+                               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                 <Sparkles className="h-3 w-3 text-primary" />
+                               </div>
+                             )}
+                          </div>
+                          <div className="mt-1 flex items-center gap-2 text-[13px] font-bold text-muted-foreground/60">
+                            <span>₹{b.total_amount}</span>
+                            <div className="h-1 w-1 rounded-full bg-black/10" />
+                            <span>{b.preferred_before_time ? `Before ${b.preferred_before_time}` : "Flexible time"}</span>
+                          </div>
                         </div>
-                        <div className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-                          ₹{b.total_amount}
-                          {b.preferred_before_time ? ` · before ${b.preferred_before_time}` : ""}
+
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                           <StatusChip tone={st.tone} className="rounded-xl px-3 py-1 font-black text-[10px] uppercase tracking-wider">{st.label}</StatusChip>
+                           <ChevronRight className="h-5 w-5 text-muted-foreground/30 transition-transform group-hover:translate-x-1" />
                         </div>
-                      </div>
-                      <StatusChip tone={st.tone}>{st.label}</StatusChip>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </PullToRefresh>
   );
 }

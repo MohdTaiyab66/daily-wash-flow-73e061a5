@@ -57,12 +57,18 @@ function CustomerSplash() {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-primary px-6 text-primary-foreground">
-      <div className="-mt-16 flex flex-col items-center animate-scale-in">
-        <img src={logo} alt="Urban Wash" className="h-20 w-20 rounded-3xl object-cover shadow-xl" />
-        <h1 className="mt-6 text-5xl font-bold tracking-tight">Urban Wash</h1>
-        <div className="mt-3 h-px w-40 bg-primary-foreground/30" />
-        <p className="mt-4 text-center text-base font-medium opacity-95">Making Every Ride Shine</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#FFF9F3] px-6">
+      <div className="-mt-16 flex flex-col items-center animate-in zoom-in-95 duration-1000">
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+          <img src={logo} alt="Urban Wash" className="relative h-28 w-28 rounded-[32px] object-cover shadow-2xl shadow-primary/20" />
+        </div>
+        <h1 className="mt-8 text-4xl font-black tracking-tight text-[#1a1a1a]">Urban Wash</h1>
+        <div className="mt-4 flex items-center gap-2">
+          <div className="h-1 w-1 rounded-full bg-primary" />
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Lucknow</p>
+          <div className="h-1 w-1 rounded-full bg-primary" />
+        </div>
       </div>
     </div>
   );

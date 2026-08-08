@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { traceVehicle } from "@/lib/vehicle-trace";
 import { cn } from "@/lib/utils";
@@ -136,6 +137,8 @@ export function BookAWashSheet({
   const [addressId, setAddressId] = useState<string>("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
+
+  console.log("BookAWashSheet render", { open, phase, error });
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [addressPickerOpen, setAddressPickerOpen] = useState(false);
@@ -336,168 +339,180 @@ export function BookAWashSheet({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
-      <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto bg-background p-0 sm:rounded-[28px]" aria-describedby="book-a-wash-desc">
+      <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-[#FFF9F3] p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-background/80 px-6 py-4 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Book a wash</h2>
-            <p className="text-[13px] text-muted-foreground">Use your included premium wash</p>
+            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Book a wash</h2>
+            <div className="mt-1 flex items-center gap-2">
+               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Premium Wash Included</p>
+            </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors active:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9F3] shadow-sm border border-black/5 transition-transform active:scale-90"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-[#1a1a1a]" />
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-5">
+        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-24">
           {/* Info context */}
-          <div className="flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-[12px] text-accent-foreground">
-            <Info className="h-3.5 w-3.5" />
-            <span>Daily exterior cleaning happens automatically. This booking is for your included premium wash.</span>
+          <div className="flex items-start gap-3 rounded-3xl bg-primary/5 p-4 border border-primary/10">
+            <Info className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+            <p className="text-[12px] font-medium leading-relaxed text-[#1a1a1a]/70">
+              <span className="font-bold text-primary">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
+            </p>
           </div>
 
-          {loading && <div className="h-32 animate-pulse rounded-2xl bg-muted" />}
+          {loading && (
+            <div className="space-y-4">
+              <div className="h-40 animate-pulse rounded-[32px] bg-white border border-black/5 shadow-sm" />
+              <div className="h-20 animate-pulse rounded-[24px] bg-white border border-black/5 shadow-sm" />
+            </div>
+          )}
 
           {!loading && (entQ.isError || subQ.isError) && (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
-              <AlertTriangle className="mx-auto h-6 w-6 text-destructive" />
-              <p className="mt-3 text-[15px] font-semibold text-destructive">Couldn't load your plan</p>
+            <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-destructive/5 mb-6">
+                 <AlertTriangle className="h-7 w-7 text-destructive" />
+              </div>
+              <p className="text-[16px] font-black text-[#1a1a1a]">Couldn't load your plan</p>
               <Button
                 variant="outline"
-                className="mt-4 rounded-full border-destructive/20 text-destructive hover:bg-destructive/10"
+                className="mt-6 h-12 rounded-2xl border-black/5 font-bold"
                 onClick={() => {
                   entQ.refetch();
                   subQ.refetch();
                 }}
               >
-                <RotateCcw className="mr-1.5 h-4 w-4" /> Retry
+                <RotateCcw className="mr-2 h-4 w-4" /> Retry
               </Button>
             </div>
           )}
 
           {!loading && !entQ.isError && !subQ.isError && noActivePlan && (
-            <Surface raised className="text-center">
-              <p className="text-[15px] font-semibold">No active plan on this vehicle</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Subscribe to Daily Shine to start booking washes.
+            <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-primary/5 mb-6">
+                 <Sparkles className="h-7 w-7 text-primary" />
+              </div>
+              <p className="text-[16px] font-black text-[#1a1a1a]">No active plan</p>
+              <p className="mt-2 text-[13px] font-medium text-muted-foreground/60">
+                Subscribe to Daily Shine to start booking premium washes.
               </p>
-              <Button asChild className="mt-5 w-full rounded-full" onClick={() => onOpenChange(false)}>
+              <Button asChild className="mt-8 h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
                 <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
                   See Daily Shine
                 </Link>
               </Button>
-            </Surface>
+            </div>
           )}
 
           {!loading && !entQ.isError && !subQ.isError && usedUpIncluded && (
-            <div className="space-y-4">
-              <Surface raised className="bg-destructive/5 border-destructive/10 text-center">
-                <p className="text-[15px] font-semibold">No included washes remaining</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your Daily Exterior wash continues every day. Need another full wash?
+            <div className="space-y-6">
+              <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-destructive/5 mb-6">
+                   <AlertTriangle className="h-7 w-7 text-destructive" />
+                </div>
+                <p className="text-[16px] font-black text-[#1a1a1a]">No washes left</p>
+                <p className="mt-2 text-[13px] font-medium text-muted-foreground/60 leading-relaxed">
+                  You've already enjoyed your included wash for this cycle. Daily exterior cleaning continues as usual.
                 </p>
-              </Surface>
+              </div>
               <div className="space-y-3">
-                <Button asChild className="w-full rounded-full" onClick={() => onOpenChange(false)}>
+                <Button asChild className="h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
                   <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
-                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    <ShoppingBag className="mr-2 h-5 w-5" />
                     Buy more washes
                   </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full rounded-full" onClick={() => onOpenChange(false)}>
-                  <Link to="/c/home">Browse one-time services</Link>
                 </Button>
               </div>
             </div>
           )}
 
           {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Wash Card */}
               <div>
-                <Surface className="relative overflow-hidden border-primary/20 bg-accent/20 px-5 py-5">
+                <div className="relative overflow-hidden rounded-[32px] bg-white border border-black/5 p-6 shadow-sm">
+                  <div className="absolute top-0 right-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-primary/5 blur-3xl" />
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2 font-bold text-primary">
-                        <Sparkles className="h-4 w-4" />
-                        <span>Included premium wash</span>
+                      <div className="flex items-center gap-2 font-black text-primary">
+                        <Sparkles className="h-5 w-5" />
+                        <span className="text-[16px]">Included Wash</span>
                       </div>
-                      <div className="mt-1 text-[13px] text-muted-foreground">Interior + Exterior</div>
+                      <p className="mt-1 text-[13px] font-medium text-muted-foreground/60">Full Interior + Exterior</p>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[12px] font-bold text-primary">
-                      <Check className="h-3.5 w-3.5" />
-                      Included
+                    <div className="rounded-full bg-success/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-success">
+                      Free ✓
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="text-[24px] font-black text-primary leading-none">
+                  <div className="mt-6 flex items-baseline gap-2">
+                    <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
                       {includedRow?.unlimited ? "∞" : includedRemaining}
                     </span>
-                    <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">
-                      wash{includedRemaining !== 1 ? "es" : ""} remaining
+                    <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                      wash{includedRemaining !== 1 ? "es" : ""} left
                     </span>
                   </div>
-                </Surface>
-                <div className="mt-3">
+                </div>
+                <div className="mt-4 px-1">
                   <button
                     onClick={() => {
                       onOpenChange(false);
-                      // Navigate manually if Link doesn't trigger well in Dialog
                       window.location.href = "/c/service/daily-shine";
                     }}
-                    className="flex items-center gap-1 text-[13px] font-semibold text-primary transition-opacity active:opacity-60"
+                    className="flex items-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
                   >
-                    Need another wash? Buy more <ChevronRight className="h-3.5 w-3.5" />
+                    Need another wash? <span className="underline underline-offset-4">Buy more</span>
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
               {/* Selection Summary */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4">
                 {/* When */}
                 <div className="space-y-2">
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">When</span>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">When</Label>
                   <button
                     onClick={() => setDatePickerOpen(true)}
-                    className="uw-pressable flex w-full flex-col items-start gap-1 rounded-2xl border border-border bg-card p-4 text-left shadow-sm"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-semibold">
+                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a]">
                       <Calendar className="h-4 w-4 text-primary" />
                       {formatDateHuman(date) || "Select date"}
                     </div>
                     {isMonday && (
-                      <div className="text-[11px] font-medium text-destructive">Monday is our rest day</div>
+                      <div className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Monday rest day</div>
                     )}
                   </button>
                 </div>
 
                 {/* Where */}
                 <div className="space-y-2">
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">Where</span>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Where</Label>
                   <button
                     onClick={() => setAddressPickerOpen(true)}
-                    className="uw-pressable flex w-full flex-col items-start gap-1 rounded-2xl border border-border bg-card p-4 text-left shadow-sm"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-semibold">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="truncate">{selectedAddress?.label || "Select location"}</span>
+                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a] w-full">
+                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                      <span className="truncate">{selectedAddress?.label || "Select area"}</span>
                     </div>
-                    {selectedAddress && (
-                      <div className="truncate text-[11px] text-muted-foreground">{selectedAddress.area}</div>
-                    )}
                   </button>
                 </div>
               </div>
 
               {/* Time Slots */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <span className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground/70">Preferred time</span>
-                  <p className="mt-1 text-[12px] text-muted-foreground">When should we arrive?</p>
+                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Preferred time</Label>
+                  <p className="mt-1 ml-1 text-[12px] font-medium text-muted-foreground/60">Choose your arrival window</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3">
                   {SLOT_OPTIONS.map((s) => {
                     const isSelected = slot === s;
                     return (
@@ -506,46 +521,46 @@ export function BookAWashSheet({
                         type="button"
                         onClick={() => setSlot(s)}
                         className={cn(
-                          "uw-pressable relative flex h-12 items-center justify-center rounded-xl border px-3 text-[13px] font-semibold transition-all",
+                          "relative flex h-14 items-center justify-center rounded-2xl border text-[14px] font-black transition-all active:scale-[0.98]",
                           isSelected
-                            ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                            : "border-border bg-card hover:bg-muted"
+                            ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                            : "border-black/5 bg-white text-[#1a1a1a] shadow-sm hover:bg-black/5"
                         )}
                       >
                         {s}
                         {isSelected && (
-                          <div className="absolute top-1 right-1">
-                            <Check className="h-3 w-3" />
+                          <div className="absolute top-2 right-2">
+                            <Check className="h-3.5 w-3.5" />
                           </div>
                         )}
                       </button>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>Partner may arrive anytime within the window.</span>
+                <div className="flex items-center gap-2 rounded-2xl bg-black/5 px-4 py-3 text-[11px] font-bold text-muted-foreground/60">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Our partner may arrive anytime within this window.</span>
                 </div>
               </div>
 
-              {/* Included Indicator */}
-              <div className="flex items-center justify-between rounded-xl bg-success/5 px-4 py-3 text-[13px]">
-                <div className="flex items-center gap-2 text-success">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="font-semibold">Included with Daily Shine</span>
+              {/* Success Indicator */}
+              <div className="flex items-center justify-between rounded-2xl bg-success/10 px-5 py-4 text-[13px] border border-success/10">
+                <div className="flex items-center gap-2.5 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-black uppercase tracking-wider">Plan Benefit</span>
                 </div>
-                <span className="font-bold text-success/80">No payment needed</span>
+                <span className="font-black text-success">✓ Included</span>
               </div>
 
               {/* Error Banner */}
               {error && (
-                <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive">
+                <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 p-4 text-[13px] text-destructive border border-destructive/10">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div className="space-y-1">
-                    <p className="font-bold">{error}</p>
+                    <p className="font-black">{error}</p>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 font-bold underline underline-offset-2"
+                      className="inline-flex items-center gap-1 font-black underline underline-offset-4"
                       onClick={() => void confirm()}
                     >
                       <RotateCcw className="h-3.5 w-3.5" /> Try again
@@ -553,58 +568,38 @@ export function BookAWashSheet({
                   </div>
                 </div>
               )}
-
-              {/* Summary & CTA */}
-              <div className="space-y-4 pt-4">
-                <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 p-4">
-                  <div className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/50">Booking summary</div>
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      <span>Premium Interior + Exterior wash</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
-                      <span>{formatDateHuman(date)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-primary" />
-                      <span>{selectedAddress?.label || "Address"} · {selectedAddress?.area}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold">
-                      <Clock className="h-3.5 w-3.5 text-primary" />
-                      <span>{slot} arrival</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pb-4">
-                  <Button
-                    data-testid="book-wash-button"
-                    onClick={() => void confirm()}
-                    disabled={phase !== "idle" || !addressId || !date || isMonday}
-                    className="uw-pressable h-14 w-full rounded-full text-base font-bold shadow-lg shadow-primary/20"
-                  >
-                    {phase === "booking" ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      "Book this wash →"
-                    )}
-                  </Button>
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="w-full text-center text-[14px] font-semibold text-muted-foreground/60 transition-colors hover:text-muted-foreground active:text-primary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </div>
 
-        {/* Date Picker Drawer */}
-        <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+
+        {/* Sticky CTA Bar */}
+        {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
+          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
+            <Button
+              data-testid="book-wash-button"
+              onClick={() => void confirm()}
+              disabled={phase !== "idle" || !addressId || !date || isMonday}
+              className="h-15 w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+            >
+              {phase === "booking" ? (
+                <div className="flex items-center gap-3">
+                   <Loader2 className="h-5 w-5 animate-spin" />
+                   <span>Booking...</span>
+                </div>
+              ) : (
+                "Book this wash →"
+              )}
+            </Button>
+            <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+              ₹0 Payable · Part of subscription
+            </p>
+          </div>
+        )}
+      </DialogContent>
+
+      {/* Date Picker Drawer */}
+      <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
               <DrawerTitle>Choose date</DrawerTitle>
@@ -686,7 +681,6 @@ export function BookAWashSheet({
             </div>
           </DrawerContent>
         </Drawer>
-      </DialogContent>
     </Dialog>
   );
 }
