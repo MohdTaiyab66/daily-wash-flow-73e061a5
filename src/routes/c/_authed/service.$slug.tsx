@@ -1222,9 +1222,10 @@ function ServiceDetail() {
       <BookAWashSheet 
         open={bookOpen} 
         onOpenChange={setBookOpen} 
-        vehicleId={vehicleId || undefined} 
-        userId={userId || undefined} 
+        vehicleId={vehicleId || null} 
+        userId={userId || null} 
       />
+
 
     </div>
   );
