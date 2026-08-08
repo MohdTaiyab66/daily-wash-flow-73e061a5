@@ -227,7 +227,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-    <div className="px-5 pt-6">
+    <div className="px-5 pt-6 bg-[#FFF9F3] min-h-screen">
       {/* Greeting */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
@@ -284,7 +284,7 @@ function CustomerHome() {
             />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your car</p>
-              <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-tight">
+              <h2 className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-foreground">
                 {activeVehicle.make} {activeVehicle.model}
               </h2>
               <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
