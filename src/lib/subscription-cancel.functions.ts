@@ -27,7 +27,7 @@ export const undoCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { subscriptionId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data: row, error } = await supabase
       .from("subscriptions")
       .update({ cancel_at_period_end: false, cancelled_at: null })
