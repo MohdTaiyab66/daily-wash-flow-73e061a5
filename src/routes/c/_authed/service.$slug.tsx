@@ -418,6 +418,11 @@ function ServiceDetail() {
       return;
     }
 
+    if (vehicleSubQ.data?.status === 'active' && previewBase > 0) {
+      fail("This vehicle already has an active Daily Shine subscription.");
+      return;
+    }
+
     if (!service) { fail("Service is still loading. Please try again."); return; }
     if (!vehicle) { fail("Add or select a vehicle first."); return; }
     if (!date) { fail("Choose a service date."); return; }
@@ -938,36 +943,65 @@ function ServiceDetail() {
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-32">
       <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm">
+        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm transition-transform active:scale-90">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-[17px] font-bold tracking-tight text-foreground">{service.name}</h1>
-          <p className="truncate text-[13px] text-muted-foreground">Your car, clean every day</p>
+          <PageTitle className="text-[17px]">{service.name}</PageTitle>
+          <Muted className="truncate">{vehicleSubQ.data?.status === 'active' ? 'Active on this vehicle' : 'Your car, clean every day'}</Muted>
         </div>
+        {vehicleSubQ.data?.status === 'active' && (
+          <div className="ml-auto">
+            <StatusChip tone="success" className="font-black uppercase tracking-widest text-[9px]">Active Plan</StatusChip>
+          </div>
+        )}
       </header>
 
       <div className="px-5 pb-6">
-        {/* PREMIUM HERO */}
-        <Surface className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white to-[#FFF5ED]">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0">
-              <h2 className="text-[20px] font-bold text-foreground">{service.name}</h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">Daily exterior cleaning + 1 premium monthly interior & exterior wash.</p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-[28px] font-bold text-primary">₹999</span>
-                <span className="text-[13px] text-muted-foreground">/ month</span>
+        {vehicleSubQ.data?.status === 'active' ? (
+          <Surface className="relative overflow-hidden border-success/20 bg-success/5 mb-6 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-success font-black">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="text-[17px]">Daily Shine is Active</span>
+                </div>
+                <p className="mt-1 text-[13px] font-medium text-success/70">You already have a subscription for this vehicle.</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="outline" className="rounded-xl border-success/20 bg-white text-success font-bold text-[12px]">
+                    <Link to="/c/subscriptions">View My Plan</Link>
+                  </Button>
+                  <Button size="sm" onClick={() => setBookOpen(true)} className="rounded-xl bg-success text-white font-bold text-[12px] hover:bg-success/90">
+                    Book Included Wash
+                  </Button>
+                </div>
               </div>
+              <Sparkles className="h-10 w-10 text-success/20" />
             </div>
-            <div className="rounded-full bg-[#FFE6D6] px-3 py-1 text-[11px] font-bold text-primary">✨ BEST VALUE</div>
-          </div>
-          
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-black/5 pt-4">
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Car className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">26 Daily</div><div className="text-[10px] text-muted-foreground">Exterior</div></div>
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Sparkles className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">1 Premium</div><div className="text-[10px] text-muted-foreground">Monthly</div></div>
-             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><MapPin className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">Doorstep</div><div className="text-[10px] text-muted-foreground">Service</div></div>
-          </div>
-        </Surface>
+          </Surface>
+        ) : (
+          <Surface className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white to-[#FFF5ED]">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <h2 className="text-[20px] font-black text-foreground">{service.name}</h2>
+                <p className="mt-1 text-[13px] font-medium text-muted-foreground/70">{service.description || "Premium doorstep car care"}</p>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-[28px] font-black text-primary">₹{previewPayable}</span>
+                  <span className="text-[14px] font-bold text-muted-foreground/50">/ month</span>
+                </div>
+              </div>
+              <div className="rounded-full bg-[#FFE6D6] px-3 py-1 text-[11px] font-black text-primary uppercase tracking-widest">Best Value</div>
+            </div>
+            
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-black/5 pt-4">
+               <BenefitItem icon={Car} label="26 Daily" sub="Exterior" />
+               <BenefitItem icon={Sparkles} label="1 Premium" sub="Monthly" />
+               <BenefitItem icon={MapPin} label="Doorstep" sub="Service" />
+            </div>
+            <div className="absolute right-0 top-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-primary/5 blur-3xl" />
+          </Surface>
+        )}
+
 
         <Section title={<><Car className="h-4 w-4 text-primary" /> Your vehicle</>}>
           <Drawer>
