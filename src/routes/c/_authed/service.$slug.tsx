@@ -908,7 +908,7 @@ function ServiceDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F3] pb-[120px]">
+    <div className="min-h-screen bg-[#FFF9F3] pb-32">
       <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
         <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm">
           <ArrowLeft className="h-4 w-4" />
@@ -920,81 +920,75 @@ function ServiceDetail() {
       </header>
 
       <div className="px-5 pb-6">
-        <Surface className="relative overflow-hidden border-primary/10">
+        {/* PREMIUM HERO */}
+        <Surface className="relative overflow-hidden border-primary/10 bg-gradient-to-br from-white to-[#FFF5ED]">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
               <h2 className="text-[20px] font-bold text-foreground">{service.name}</h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">{service.description}</p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-[24px] font-bold text-primary">₹{isSUV ? service.price_sedan_suv : service.price_hatchback}</span>
+              <p className="mt-1 text-[13px] text-muted-foreground">Daily exterior cleaning + 1 premium monthly interior & exterior wash.</p>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-[28px] font-bold text-primary">₹999</span>
                 <span className="text-[13px] text-muted-foreground">/ month</span>
               </div>
             </div>
-            <StatusChip tone="brand">BEST VALUE</StatusChip>
+            <div className="rounded-full bg-[#FFE6D6] px-3 py-1 text-[11px] font-bold text-primary">✨ BEST VALUE</div>
+          </div>
+          
+          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-black/5 pt-4">
+             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Car className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">26 Daily</div><div className="text-[10px] text-muted-foreground">Exterior</div></div>
+             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Sparkles className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">1 Premium</div><div className="text-[10px] text-muted-foreground">Monthly</div></div>
+             <div className="text-center"><div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><MapPin className="h-4 w-4" /></div><div className="text-[11px] font-semibold text-foreground">Doorstep</div><div className="text-[10px] text-muted-foreground">Service</div></div>
           </div>
         </Surface>
 
-        <Section title="What's included">
-          <Surface className="py-3">
-             <ul className="space-y-2">
-                {service.benefits?.slice(0, 3).map((b, i) => (
-                  <li key={i} className="flex items-center gap-2 text-[14px] text-foreground">
-                    <Check className="h-4 w-4 text-success" /> {b}
-                  </li>
-                ))}
-             </ul>
-             <button className="mt-3 text-[13px] font-semibold text-primary">View all benefits ›</button>
-          </Surface>
-        </Section>
-
-        <Section title="Your vehicle">
+        {/* VEHICLE SECTION */}
+        <Section title={<><Car className="h-4 w-4 text-primary" /> Your vehicle</>}>
           <Surface className="flex items-center justify-between p-3">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-accent" />
               <div>
                 <div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div>
-                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category}</div>
+                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</div>
               </div>
             </div>
             <button className="text-[13px] font-semibold text-primary">Change ›</button>
           </Surface>
         </Section>
 
-        <Section title="Service address">
-          <div className="space-y-2">
-            {uniqueAddresses.map((a) => (
-              <button key={a.id} onClick={() => setAddressId(a.id)}
-                className={cn("flex w-full items-start gap-3 rounded-2xl border bg-card p-3 text-left transition-all", 
-                  addressId === a.id ? "border-primary ring-1 ring-primary/20" : "border-border")}>
-                <div className={cn("mt-1 h-4 w-4 rounded-full border-2 transition-colors", 
-                  addressId === a.id ? "border-primary bg-primary ring-offset-2 ring-1 ring-primary" : "border-border")} />
+        {/* ADDRESS SECTION */}
+        <Section title={<><MapPin className="h-4 w-4 text-primary" /> Service location</>}>
+           <div className="space-y-2">
+            {uniqueAddresses.slice(0, 1).map((a) => (
+              <div key={a.id} className="flex items-start gap-3 rounded-2xl border border-primary bg-primary/5 p-3 text-left">
+                <div className="mt-1 h-4 w-4 rounded-full border-2 border-primary bg-primary ring-offset-2 ring-1 ring-primary" />
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-semibold">{a.label}</div>
                   <div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div>
                 </div>
-              </button>
+                <button onClick={() => setAddrOpen(true)} className="text-[13px] font-semibold text-primary">Change ›</button>
+              </div>
             ))}
-            <button onClick={() => setAddrOpen(true)} className="flex w-full items-center gap-2 py-2 text-[14px] font-medium text-primary">
-              <Plus className="h-4 w-4" /> Add a new service address
-            </button>
           </div>
         </Section>
 
-        <Section title="Your first service">
-          <div className="mb-3 text-[14px] font-medium">Tomorrow · {date}</div>
+        {/* TIME SELECTION */}
+        <Section title={<><Calendar className="h-4 w-4 text-primary" /> Your first service</>}>
+          <div className="mb-4 text-[14px] font-bold text-foreground">Tomorrow · 9 Aug</div>
           <div className="grid grid-cols-3 gap-2">
             {TIME_SLOTS.map((s) => (
               <button key={s} onClick={() => setSlot(s)}
-                className={cn("rounded-full border py-2 text-[12px] font-medium transition-all", 
+                className={cn("rounded-xl border py-2 text-[12px] font-medium transition-all", 
                   slot === s ? "border-primary bg-primary/10 text-primary" : "border-border bg-card")}>
                 {s}
               </button>
             ))}
           </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">🕐 Your partner may arrive anytime within this window.</p>
         </Section>
 
-        <Section title="Make it even better" action={<button className="text-[13px] font-semibold text-primary">View all ›</button>}>
-           {addonsQ.data?.slice(0, 3).map((a) => {
+        {/* ADD-ONS */}
+        <Section title={<><Sparkles className="h-4 w-4 text-primary" /> Enhance your plan</>} action={<button className="text-[13px] font-semibold text-primary">View all ›</button>}>
+           {addonsQ.data?.slice(0, 2).map((a) => {
              const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
              const qty = addonQty[a.id] || 0;
              return (
@@ -1010,55 +1004,36 @@ function ServiceDetail() {
                         <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Plus className="h-3 w-3" /></button>
                     </div>
                  ) : (
-                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => setQty(a.id, 1)}>+ Add</Button>
+                    <button className="text-sm font-semibold text-primary" onClick={() => setQty(a.id, 1)}>+ Add</button>
                  )}
               </div>
              )
            })}
         </Section>
-        
-        {eligibleCoupon && !appliedCoupon && (
-           <Section>
-            <Surface className="flex items-center justify-between bg-primary/5">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">🎉</span>
-                <div>
-                   <div className="text-[14px] font-semibold">You unlock {eligibleCoupon.percent}% off</div>
-                   <div className="text-[12px] text-muted-foreground">For having multiple cars</div>
-                </div>
-              </div>
-              <Button size="sm" className="rounded-full" onClick={applyBestCoupon}>Apply</Button>
-            </Surface>
-           </Section>
-        )}
 
-        <Section title="Price summary">
-           <Surface className="space-y-2 text-[14px]">
+        {/* PRICE SUMMARY */}
+        <Section title="Your total">
+           <Surface className="space-y-3 text-[14px]">
               <div className="flex justify-between text-muted-foreground"><span>Daily Shine</span><span>₹{previewBase}</span></div>
               <div className="flex justify-between text-muted-foreground"><span>Add-ons</span><span>₹{previewAddon}</span></div>
-              {previewDiscount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
-              <div className="flex justify-between pt-2 text-[16px] font-bold border-t border-border"><span>Total</span><span>₹{previewPayable}</span></div>
+              {previewDiscount > 0 && <div className="flex justify-between text-success font-semibold"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
+              <div className="flex justify-between pt-3 text-[16px] font-bold border-t border-border"><span>Total per month</span><span>₹{previewPayable}</span></div>
            </Surface>
         </Section>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-5 py-4 backdrop-blur shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-          {paymentError && (
-             <div className="mb-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-[12px] text-destructive">
-                {paymentError.message}
-             </div>
-          )}
-        <Button size="lg" className="h-14 w-full rounded-2xl text-[16px] font-bold" onClick={() => confirm()} disabled={submitting || paying}>
+        <Button size="lg" className="h-14 w-full rounded-2xl text-[16px] font-bold shadow-lg" onClick={() => confirm()} disabled={submitting || paying}>
            {submitting || paying ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
            ) : (
-              <>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span>Pay ₹{previewPayable}</span>
-                  <span className="text-[10px] font-normal opacity-80">Secure payment via Razorpay</span>
-                </div>
-                <ChevronRight className="ml-auto h-5 w-5" />
-              </>
+              <div className="flex w-full items-center justify-between px-2">
+                 <div className="flex flex-col items-start gap-0.5">
+                    <span className="text-[16px]">Pay ₹{previewPayable}</span>
+                    <span className="text-[10px] font-normal opacity-70">Secure payment via Razorpay</span>
+                 </div>
+                 <ChevronRight className="h-5 w-5" />
+              </div>
            )}
         </Button>
       </div>
@@ -1066,6 +1041,7 @@ function ServiceDetail() {
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
   );
+
 }
 
 function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
