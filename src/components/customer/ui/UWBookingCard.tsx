@@ -82,7 +82,9 @@ export function UWBookingCard({
           status.tone === "warning" && "bg-yellow-100 text-yellow-700",
           status.tone === "danger" && "bg-red-100 text-red-700",
           status.tone === "neutral" && "bg-gray-100 text-gray-700",
+          status.tone === "brand" && "bg-orange-100 text-orange-700",
           status.tone === "info" && "bg-blue-100 text-blue-700",
+
         )}>
           {status.label}
         </div>
