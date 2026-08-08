@@ -159,139 +159,138 @@ function EditVehiclePage() {
   const v = q.data;
 
   return (
-    <div className="px-5 pt-6 pb-32">
-      <button
-        onClick={() => navigate({ to: "/c/vehicles" })}
-        className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back
-      </button>
-
-      <h1 className="text-2xl font-semibold tracking-tight">Edit vehicle</h1>
-
-      {/* Read-only vehicle identity — cannot be changed here. */}
-      <div className="mt-5 flex items-center gap-3 rounded-3xl border border-border bg-card p-4">
-        <VehicleAvatar
-          imageUrl={imgQ.data}
-          make={v.make}
-          model={v.model}
-          color={color}
-          category={v.category}
-          className="h-16 w-20 rounded-2xl"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-base font-semibold">{v.make} {v.model}</div>
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            {v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}
-          </div>
-        </div>
-        <Button asChild size="sm" variant="outline" className="rounded-full">
-          <Link to="/c/vehicles/$id/photo" params={{ id: v.id }}>
-            <Camera className="mr-1 h-3.5 w-3.5" /> Photo
-          </Link>
-        </Button>
-      </div>
-
-      <div className="mt-6 space-y-5">
-        <div>
-          <Label>Nickname</Label>
-          <Input
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Family car, Office car…"
-            className="mt-1.5"
-            maxLength={40}
-          />
-        </div>
-
-        <div>
-          <Label>Colour</Label>
-          <Input
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="White"
-            className="mt-1.5"
-          />
-        </div>
-
-        <div>
-          <Label>Parking instructions</Label>
-          <Textarea
-            value={parking}
-            onChange={(e) => setParking(e.target.value)}
-            placeholder="B-block basement, slot 14. Ask guard for key."
-            className="mt-1.5"
-            rows={3}
-          />
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Helps our team reach your car without calling.
-          </p>
-        </div>
-
-        <div
-          data-testid="default-vehicle-card"
-          data-is-default={isDefault ? "true" : "false"}
-          className={`flex items-center justify-between rounded-2xl border p-4 transition ${
-            isDefault ? "border-primary bg-primary/5" : "border-border bg-card"
-          }`}
+    <div className="min-h-screen bg-[#FFF9F3] flex flex-col">
+      <header className="px-5 pt-6 pb-4">
+        <button
+          onClick={() => navigate({ to: "/c/vehicles" })}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
-          <div className="flex items-center gap-3">
-            <span className={`grid h-9 w-9 place-items-center rounded-xl ${isDefault ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-              <Star className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="text-sm font-semibold">
-                {isDefault ? "Default vehicle" : "Not your default"}
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {isDefault ? "Selected first on Home & Bookings." : "Tap to make this your default."}
-              </div>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        <PageTitle>Edit vehicle</PageTitle>
+        <Muted className="mt-1">
+          Update your vehicle details or preferences.
+        </Muted>
+      </header>
+
+      <main className="flex-1 px-5 pb-32 space-y-6">
+        {/* Vehicle Identity Surface */}
+        <Surface className="border-primary/10 bg-white p-3 flex items-center gap-4">
+          <div className="h-16 w-20 bg-muted/30 rounded-xl flex items-center justify-center shrink-0">
+            <VehicleAvatar
+              imageUrl={imgQ.data}
+              make={v.make}
+              model={v.model}
+              className="h-12 w-16"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-lg leading-tight truncate">{v.make} {v.model}</div>
+            <div className="text-[12px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+              {v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}
             </div>
           </div>
-          {isDefault ? (
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-              Current
-            </span>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              data-testid="set-as-default-button"
-              onClick={() => setDefault.mutate()}
-              disabled={setDefault.isPending}
-            >
-              {setDefault.isPending ? (
-                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Star className="mr-1 h-3.5 w-3.5" />
-              )}
-              Set as default
-            </Button>
-          )}
-        </div>
-      </div>
+          <Button asChild size="icon" variant="secondary" className="h-9 w-9 rounded-full shrink-0">
+            <Link to="/c/vehicles/$id/photo" params={{ id: v.id }}>
+              <Camera className="h-4 w-4" />
+            </Link>
+          </Button>
+        </Surface>
 
-      <div className="mt-8 space-y-3">
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label className="text-[13px] font-bold text-foreground/80 ml-1">Nickname (Optional)</Label>
+            <Input
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="e.g. Family car, Office car"
+              className="h-13 rounded-xl border-border/60 bg-white"
+              maxLength={40}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[13px] font-bold text-foreground/80 ml-1">Color</Label>
+            <Input
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              placeholder="White"
+              className="h-13 rounded-xl border-border/60 bg-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[13px] font-bold text-foreground/80 ml-1">Parking instructions (Optional)</Label>
+            <Textarea
+              value={parking}
+              onChange={(e) => setParking(e.target.value)}
+              placeholder="e.g. B-block basement, slot 14"
+              className="rounded-xl border-border/60 bg-white min-h-[100px] resize-none"
+            />
+            <p className="text-[11px] text-muted-foreground ml-1">
+              Helps our team reach your car without calling.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => !isDefault && setDefault.mutate()}
+            disabled={setDefault.isPending}
+            className={cn(
+              "w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200",
+              isDefault 
+                ? "border-primary bg-primary/5 shadow-sm" 
+                : "border-border/60 bg-white hover:border-primary/30"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                isDefault ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground"
+              )}>
+                <Star className="h-5 w-5" fill={isDefault ? "currentColor" : "none"} />
+              </div>
+              <div className="text-left">
+                <div className="text-[14px] font-bold">Default vehicle</div>
+                <Muted className="text-[11px]">Selected first on Home & Bookings</Muted>
+              </div>
+            </div>
+            {isDefault ? (
+              <StatusChip tone="brand">Current</StatusChip>
+            ) : (
+              <ChevronRight className="h-5 w-5 text-muted-foreground/40" />
+            )}
+          </button>
+        </div>
+
+        <div className="pt-4 pb-12">
+          <Button
+            variant="ghost"
+            className="w-full text-destructive hover:bg-destructive/5 hover:text-destructive h-12 rounded-xl font-medium"
+            onClick={() => {
+              if (confirm(`Remove ${v.make} ${v.model}? This cannot be undone.`)) del.mutate();
+            }}
+            disabled={del.isPending}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Remove vehicle
+          </Button>
+        </div>
+      </main>
+
+      {/* Sticky Bottom Button */}
+      <div className="fixed inset-x-0 bottom-0 p-5 bg-gradient-to-t from-[#FFF9F3] via-[#FFF9F3] to-transparent pt-10">
         <Button
           size="lg"
-          className="w-full"
-          onClick={() => save.mutate()}
+          className="w-full h-14 rounded-2xl shadow-lg shadow-primary/20 text-base font-bold gap-2"
           disabled={save.isPending}
+          onClick={() => save.mutate()}
         >
-          {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save changes
-        </Button>
-        <Button
-          size="lg"
-          variant="ghost"
-          className="w-full text-destructive hover:bg-destructive/5 hover:text-destructive"
-          onClick={() => {
-            if (confirm(`Remove ${v.make} ${v.model}? This cannot be undone.`)) del.mutate();
-          }}
-          disabled={del.isPending}
-        >
-          <Trash2 className="mr-2 h-4 w-4" /> Remove vehicle
+          {save.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            "Save changes"
+          )}
         </Button>
       </div>
     </div>
