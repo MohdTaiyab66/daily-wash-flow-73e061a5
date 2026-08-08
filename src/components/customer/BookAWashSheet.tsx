@@ -346,7 +346,7 @@ export function BookAWashSheet({
             <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
             <div className="mt-1 flex items-center gap-2">
                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Your included wash is available</p>
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Included premium wash</p>
             </div>
           </div>
           <button
@@ -468,7 +468,12 @@ export function BookAWashSheet({
                   </div>
                 </div>
                 <div className="mt-4 px-1">
-                  <Link
+                  <button 
+                    onClick={() => onOpenChange(false)}
+                    className="text-[12px] font-black text-primary/60 hover:text-primary transition-colors block text-center"
+                  >
+                    Buy more washes
+                  </button>
                     to="/c/service/$slug"
                     params={{ slug: "daily-shine" }}
                     search={{ vehicleId: vehicleId ?? undefined }}
