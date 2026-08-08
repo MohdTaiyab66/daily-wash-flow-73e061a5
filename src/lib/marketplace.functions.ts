@@ -205,7 +205,7 @@ export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
       : 0;
 
     // Offer-level counters (accepted/declined/superseded/expired/pending) in the same window
-    const { data: offerCounts } = await (context.supabase as any)
+    const { data: offerCounts } = await (supabase as any)
       .from("marketplace_offers")
       .select("response", { count: "exact", head: false })
       .gte("sent_at", since);
