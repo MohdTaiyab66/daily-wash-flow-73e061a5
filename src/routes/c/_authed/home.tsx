@@ -374,8 +374,27 @@ function CustomerHome() {
             </Surface>
           )}
 
-          <Section title="Car care services">
-            <div className="grid grid-cols-2 gap-4">
+          <Section 
+            title="Car care services"
+            className="mt-6"
+          >
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-none">
+              {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat, i) => (
+                <button
+                  key={cat}
+                  className={cn(
+                    "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all",
+                    i === 0 
+                      ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                      : "bg-white text-muted-foreground border border-border/50"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-1">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
               ) : oneTime.map((s) => (
