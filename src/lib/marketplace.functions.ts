@@ -19,7 +19,7 @@ export const declineMarketplaceOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => idInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await (context.supabase as any).rpc("mp_decline_offer", {
+    const { data: res, error } = await ((context as any).supabase as any).rpc("mp_decline_offer", {
       p_broadcast_id: data.broadcastId,
     });
     if (error) throw new Error(error.message);
