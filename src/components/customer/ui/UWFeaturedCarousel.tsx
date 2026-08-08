@@ -124,7 +124,12 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((_, i) => (
           <button
             key={i}
-            onClick={() => setIndex(i)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIndex(i);
+              setIsPaused(true);
+              setTimeout(() => setIsPaused(false), 5000);
+            }}
             className={cn(
               "h-1 rounded-full transition-all duration-300",
               i === index ? "w-4 bg-primary" : "w-1.5 bg-white/30"

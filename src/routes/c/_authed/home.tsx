@@ -87,6 +87,7 @@ function CustomerHome() {
   const navigate = useNavigate();
   const [area, setArea] = useState<string>("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("Popular");
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -182,6 +183,15 @@ function CustomerHome() {
   const services = servicesQ.data ?? [];
   const subscription = services.find((s) => s.service_type === "subscription");
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
+
+  const filteredServices = oneTime.filter((s) => {
+    if (selectedCategory === "Popular") return s.sort_order < 10; // Simple heuristic for popular
+    if (selectedCategory === "Wash") return s.slug.includes("wash");
+    if (selectedCategory === "Interior") return s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
+    if (selectedCategory === "Polish") return s.slug.includes("polish") || s.slug.includes("scratch");
+    if (selectedCategory === "Detailing") return s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
+    return true;
+  });
 
   const availability = useAreaAvailability();
   const a = availability.data;
@@ -382,12 +392,13 @@ function CustomerHome() {
             className="mt-6"
           >
             <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-none">
-              {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat, i) => (
+              {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                 <button
                   key={cat}
+                  onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all",
-                    i === 0 
+                    "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all duration-200",
+                    selectedCategory === cat 
                       ? "bg-primary text-white shadow-lg shadow-primary/20" 
                       : "bg-white text-muted-foreground border border-border/50"
                   )}
@@ -400,7 +411,7 @@ function CustomerHome() {
             <div className="grid grid-cols-2 gap-4 mt-1">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
-              ) : oneTime.map((s) => (
+              ) : filteredServices.map((s) => (
                 <UWServiceCard
                   key={s.id}
                   name={s.name}
