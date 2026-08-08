@@ -251,7 +251,7 @@ export const getLiveBroadcasts = createServerFn({ method: "GET" })
     const { userId, supabase } = context as any;
     const isAdmin = await rpc(context, "has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
-    const { data, error } = await (context.supabase as any)
+    const { data, error } = await (supabase as any)
       .from("marketplace_broadcasts")
       .select(
         `id, status, current_round, current_incentive, current_radius_m,
