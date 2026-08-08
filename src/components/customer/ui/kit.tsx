@@ -79,7 +79,7 @@ export function Surface({
 /** Grouped list container — rows are divided, not individually carded. */
 export function ListGroup({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border bg-card shadow-sm" className={className}>
+    <div className={cn("divide-y divide-border/50 overflow-hidden rounded-2xl border border-border bg-card shadow-sm", className)}>
       {children}
     </div>
   );
