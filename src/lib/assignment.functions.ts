@@ -128,7 +128,8 @@ export const modifyAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { assignment_id: string; delta: number }) => d)
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("modify_assignment", {
+    const supabase = (context as any).supabase;
+    const { data: result, error } = await supabase.rpc("modify_assignment", {
       p_assignment_id: data.assignment_id,
       p_delta: data.delta,
     });
