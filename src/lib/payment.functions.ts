@@ -130,7 +130,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const paymentSeed = {
         booking_id: data.bookingId,
-        user_id: context.userId,
+        user_id: userId,
         provider: "razorpay",
         provider_order_id: payload.id,
         amount: Number(booking.total_amount ?? 0),
