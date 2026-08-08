@@ -34,6 +34,8 @@ import {
 } from "@/lib/pending-checkout-store";
 import { SectionTitle, Section, Surface, StatusChip, PageTitle, Muted } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
+import { PremiumHero } from "@/components/customer/PremiumHero";
+
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
 import {
