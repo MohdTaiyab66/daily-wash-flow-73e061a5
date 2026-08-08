@@ -44,7 +44,7 @@ export const getActiveSubscriptionForVehicle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { vehicleId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data: row, error } = await supabase
       .from("subscriptions")
       .select("id, status, renewal_date, cancel_at_period_end, cancelled_at, amount, plan_slug")
