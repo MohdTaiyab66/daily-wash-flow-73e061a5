@@ -345,6 +345,7 @@ function CustomerHome() {
             ]}
             onItemClick={(item) => navigate({ to: item.link as any })}
           />
+        </div>
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
           {latestNoticeQ.data && activeVehicle && (
