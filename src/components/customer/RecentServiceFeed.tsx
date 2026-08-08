@@ -83,6 +83,7 @@ export function RecentServiceFeed({
     const invalidate = () => {
       qc.invalidateQueries({ queryKey: ["my-recent-services", userId] });
       qc.invalidateQueries({ queryKey: ["my-service-history", userId] });
+      qc.invalidateQueries({ queryKey: ["customer-latest-service-notice", userId] });
     };
     const ch = supabase
       .channel("customer-service-feed")
@@ -168,7 +169,19 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
 
   const completed = new Date(service.completed_at);
   const [now, setNow] = useState(Date.now());
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    const handler = (e: any) => {
+      if (e.detail?.serviceId === service.service_id) {
+        setViewerOpen(true);
+      }
+    };
+    window.addEventListener("uwOpenServicePhotos", handler);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("uwOpenServicePhotos", handler);
+    };
+  }, [service.service_id]);
   const windowEnd = new Date(service.complaint_window_ends_at);
   const msLeft = windowEnd.getTime() - now;
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
