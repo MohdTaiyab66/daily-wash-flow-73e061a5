@@ -299,7 +299,7 @@ export const logPaymentAttempt = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin.from("payment_attempts").insert({
       booking_id: data.bookingId,
-      user_id: context.userId,
+      user_id: userId,
       provider: "razorpay",
       provider_order_id: data.providerOrderId ?? null,
       provider_payment_id: data.providerPaymentId ?? null,
