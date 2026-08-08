@@ -275,8 +275,47 @@ function CustomerHome() {
 
 
         <div className="px-5 space-y-7">
+          {/* Active Vehicle Section - Compact Context Row */}
+          <Section className="mt-2">
+            {vehiclesQ.isLoading ? (
+              <SkeletonCard className="h-16" />
+            ) : activeVehicle ? (
+              <Surface 
+                className="overflow-hidden p-3 border-primary/10 bg-white"
+                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+              >
+                <div className="flex w-full items-center gap-3">
+                  <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-[#F8F9FB]">
+                    <VehicleAvatar 
+                      imageUrl={catalogImageQ.data} 
+                      make={activeVehicle.make} 
+                      model={activeVehicle.model} 
+                      color={activeVehicle.color} 
+                      className="h-full w-full object-contain p-1" 
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <h2 className="truncate text-[15px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
+                      {vehicles.length > 1 && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+                    </div>
+                    <p className="truncate text-[11px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/20" />
+                </div>
+              </Surface>
+            ) : (
+              <Surface 
+                onClick={() => navigate({ to: "/c/vehicles/add" })}
+                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-5 w-5" /></div>
+                <div><span className="block text-[14px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
+              </Surface>
+            )}
+          </Section>
 
-          {/* Hero Section */}
+          {/* Featured Daily Shine Carousel */}
           <UWFeaturedCarousel 
             items={imagesQ.data?.length ? imagesQ.data.map((img: any) => ({
               id: img.id,
@@ -306,6 +345,36 @@ function CustomerHome() {
             onItemClick={(item) => navigate({ to: item.link as any })}
           />
 
+          {/* Vehicle Notice (Dirty) - Isolated below featured */}
+          {latestNoticeQ.data && activeVehicle && (
+            <Surface className="border-primary/20 p-5 bg-white mb-2">
+              <div className="flex items-start gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
+                    <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                      {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/80">
+                    A cleaner reported that your vehicle needs extra attention. Would you like to schedule a deep clean?
+                  </p>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    className="mt-4 w-full"
+                    onClick={() => setBookOpen(true)}
+                  >
+                    Schedule a wash
+                  </Button>
+                </div>
+              </div>
+            </Surface>
+          )}
+
           <Section title="Car care services">
             <div className="grid grid-cols-2 gap-4">
               {servicesQ.isLoading ? (
@@ -322,103 +391,6 @@ function CustomerHome() {
               ))}
             </div>
           </Section>
-
-          {planActive || planPending ? (
-            <Section title="My Plan">
-              <UWPlanCard 
-                status={planActive ? 'active' : 'pending'}
-                name={activeSub?.service_catalog?.name ?? "Daily Shine Subscription"}
-                price={priceFor(subscription!)}
-                daysLeft={daysLeft}
-                isExpiring={expiringSoon}
-                onClick={() => navigate({ to: "/c/subscriptions" })}
-              />
-            </Section>
-          ) : (subscription && a?.daily_shine) ? (
-            <Section title="Daily Shine">
-              <Surface 
-                onClick={() => navigate({ to: "/c/service/$slug", params: { slug: subscription.slug }, search: { vehicleId: vehicleId ?? undefined } })}
-                className="relative overflow-hidden border-primary/20 bg-black p-6 shadow-xl h-48"
-              >
-                <div className="absolute inset-0 opacity-40">
-                  <img src="https://images.unsplash.com/photo-1552933529-e359b24772ff?q=80&w=800&auto=format&fit=crop" alt="Daily Shine" className="h-full w-full object-cover" />
-                </div>
-                <div className="relative z-10 flex flex-col justify-between h-full">
-                  <div>
-                    <span className="inline-flex h-6 items-center rounded-full bg-primary px-3 text-[10px] font-black uppercase tracking-widest text-white">✨ Recommended</span>
-                    <h3 className="mt-3 text-[22px] font-black tracking-tight text-white leading-tight">Keep it clean, daily.</h3>
-                  </div>
-                  <div className="flex items-center justify-between w-full">
-                    <div>
-                      <span className="text-[24px] font-black text-white">₹{priceFor(subscription)}</span>
-                      <span className="ml-1 text-[12px] font-bold text-white/60">/mo</span>
-                    </div>
-                    <span className="flex h-10 items-center rounded-full bg-white px-6 text-[13px] font-black text-black shadow-lg">
-                      Get Plan
-                    </span>
-                  </div>
-                </div>
-              </Surface>
-            </Section>
-          ) : null}
-
-          <Section title="Active car">
-
-            {vehiclesQ.isLoading ? <SkeletonCard className="h-28" /> : activeVehicle ? (
-              <Surface 
-                className="overflow-hidden p-0 border-primary/10 bg-white"
-                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-              >
-                <div className="flex w-full items-center gap-4 p-4">
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
-                    <VehicleAvatar 
-                      imageUrl={catalogImageQ.data} 
-                      make={activeVehicle.make} 
-                      model={activeVehicle.model} 
-                      color={activeVehicle.color} 
-                      className="h-full w-full object-contain p-1" 
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <h2 className="truncate text-[17px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
-                      {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />}
-                    </div>
-                    <p className="mt-0.5 truncate text-[12px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/20" />
-                </div>
-              </Surface>
-            ) : (
-              <Surface 
-                onClick={() => navigate({ to: "/c/vehicles/add" })}
-                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-5"
-              >
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
-                <div><span className="block text-[16px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
-              </Surface>
-            )}
-          </Section>
-
-
-
-
-
-
-
-          {showCatalog && (
-            <>
-              {latestNoticeQ.data && activeVehicle && (
-                <Surface className="border-primary/20 p-5 bg-white mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                      <ShieldAlert className="h-6 w-6" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
-                        <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
-                          {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
                       <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
