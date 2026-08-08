@@ -982,9 +982,7 @@ function ServiceDetail() {
         <div className="min-w-0 flex-1">
           <h1 className="text-[17px] font-black text-foreground truncate leading-none mb-1">{service.name}</h1>
           <Muted className="truncate text-[11px] font-bold uppercase tracking-wider opacity-60">
-            {purchaseMode === 'paid_add_on' ? 'Additional premium service' : 
-             purchaseMode === 'included_wash' ? 'Included wash' :
-             'One-time service'}
+            Additional premium service
           </Muted>
         </div>
       </header>
@@ -1005,7 +1003,9 @@ function ServiceDetail() {
         {/* Vehicle Drawer */}
         <Drawer open={vehDrawerOpen} onOpenChange={setVehDrawerOpen}>
           <DrawerContent className="max-h-[80vh]">
-            <DrawerHeader><DrawerTitle>Select Vehicle</DrawerTitle></DrawerHeader>
+            <DrawerHeader className="pb-2">
+              <DrawerTitle>Select Vehicle</DrawerTitle>
+            </DrawerHeader>
             <div className="px-4 py-2 space-y-2 overflow-y-auto">
               {(vehiclesQ.data || []).map(v => (
                 <DrawerClose key={v.id} asChild>
@@ -1034,7 +1034,9 @@ function ServiceDetail() {
         {/* Address Drawer */}
         <Drawer open={addrDrawerOpen} onOpenChange={setAddrDrawerOpen}>
           <DrawerContent className="max-h-[80vh]">
-            <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
+            <DrawerHeader className="pb-2">
+              <DrawerTitle>Select Location</DrawerTitle>
+            </DrawerHeader>
             <div className="px-4 py-2 space-y-2 overflow-y-auto">
               {uniqueAddresses.map(addr => (
                 <DrawerClose key={addr.id} asChild>
@@ -1054,7 +1056,7 @@ function ServiceDetail() {
           </DrawerContent>
         </Drawer>
 
-        <Section className="mt-8" title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">When would you like it?</span></>}>
+        <Section className="mt-8" title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Choose a time</span></>}>
           <div className="mb-4 text-[14px] font-black text-foreground px-1">
             {date === new Date().toISOString().split("T")[0] ? "Today" : "Tomorrow"} · {new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </div>
@@ -1067,11 +1069,11 @@ function ServiceDetail() {
               </button>
             ))}
           </div>
-          <p className="mt-3 text-[11px] font-medium text-muted-foreground/60">🕐 Your partner may arrive anytime within this window.</p>
+          <p className="mt-3 text-[11px] font-medium text-muted-foreground/60">Your partner may arrive anytime within this window.</p>
         </Section>
 
         {addonsQ.data && addonsQ.data.length > 0 && (
-          <Section className="mt-8" title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Make it even better</span></>}>
+          <Section className="mt-8" title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Add more to your service</span></>}>
             <div className="space-y-3">
                {addonsQ.data.slice(0, 3).map((a) => {
                  const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
@@ -1134,9 +1136,9 @@ function ServiceDetail() {
         )}
 
         <Section className="mt-8" title={<span className="text-[15px] font-black">Price summary</span>}>
-          <Surface className="border-none bg-black/[0.02] p-4 space-y-3">
+          <Surface className="border-none bg-black/[0.02] p-4 space-y-2.5">
             <div className="flex justify-between text-[13px]">
-              <span className="font-medium text-muted-foreground">Service price</span>
+              <span className="font-medium text-muted-foreground">{service.name}</span>
               <span className="font-black">₹{purchaseMode === 'included_wash' ? 0 : (previewReady ? previewBase : 0)}</span>
             </div>
             {previewAddon > 0 && (
@@ -1151,8 +1153,8 @@ function ServiceDetail() {
                 <span className="font-black">-₹{previewDiscount}</span>
               </div>
             )}
-            <div className="pt-3 border-t border-black/5 flex justify-between text-[15px]">
-              <span className="font-black">Total payable</span>
+            <div className="pt-2.5 border-t border-black/5 flex justify-between text-[14px]">
+              <span className="font-black">Total</span>
               <span className="font-black text-primary">₹{previewPayable}</span>
             </div>
           </Surface>
