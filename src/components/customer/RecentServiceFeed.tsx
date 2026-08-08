@@ -325,7 +325,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         }
         initialIndex={initialPhotoIndex}
         serviceName={service.service_name ?? "Daily Shine"}
-        serviceDate={service.completed_at}
+        serviceDate={service.scheduled_date}
       />
     </div>
   );
