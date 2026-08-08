@@ -128,13 +128,11 @@ function NotificationsPage() {
         </div>
 
         <div className="px-5">
-          {q.isLoading && (
             <div className="mt-8 space-y-4">
               {[1, 2, 3, 4].map((i) => (
-                <Surface key={i} className="h-24 animate-pulse bg-white/50" />
+                <Surface key={i} className="h-24 animate-pulse bg-white/50"><div /></Surface>
               ))}
             </div>
-          )}
 
           {!q.isLoading && items.length === 0 && (
             <EmptyState
