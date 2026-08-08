@@ -32,7 +32,7 @@ export const registerPushToken = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
-    const userId = context.userId;
+    const userId = (context as any).userId;
     const now = new Date().toISOString();
 
     const row = {
