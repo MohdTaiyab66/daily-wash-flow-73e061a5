@@ -348,22 +348,25 @@ function MyPlanPage() {
           )}
 
           {activeSub && (
-             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-3 border border-success/10">
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                <span className="text-[12px] font-black text-success uppercase tracking-wider">Your Daily Shine plan is active</span>
-             </div>
+            <div className="mt-6 space-y-5">
+              <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+              <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
+              
+              <UWPlanCard 
+                status={activeSub.payment_status === 'paid' ? 'active' : 'pending'}
+                name={activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
+                price={Number(subRow?.amount ?? activeSub.total_amount ?? 0)}
+                daysLeft={daysLeft}
+                isExpiring={expiringSoon}
+                onClick={() => setManageOpen(true)}
+              />
+            </div>
           )}
         </>
       )}
 
       {hasVehicles && activeSub && !!selectedVehicleId && (
         <div className="mt-6 space-y-5">
-          {/* Flat Service Status Header */}
-          <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-
-          {/* Service Notice Card (if any) */}
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
-
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
@@ -393,6 +396,7 @@ function MyPlanPage() {
                 Manage <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+
 
             {/* Usage Progress - Compact */}
             <div className="mt-5">
