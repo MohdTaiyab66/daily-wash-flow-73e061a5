@@ -113,8 +113,8 @@ function bumpOffMonday(iso: string): string {
 /** The only customer-bookable benefit. Daily Exterior is automatic. */
 const INCLUDED = {
   benefitType: "interior",
-  label: "Included Wash",
-  hint: "Full interior + exterior — once a month",
+  label: "Premium Wash",
+  hint: "Full interior + exterior — included in plan",
   slug: "daily-shine-interior",
 };
 
@@ -343,10 +343,10 @@ export function BookAWashSheet({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Book a wash</h2>
+            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
             <div className="mt-1 flex items-center gap-2">
                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Premium Wash Included</p>
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Your included wash is available</p>
             </div>
           </div>
           <button
@@ -585,14 +585,14 @@ export function BookAWashSheet({
               {phase === "booking" ? (
                 <div className="flex items-center gap-3">
                    <Loader2 className="h-5 w-5 animate-spin" />
-                   <span>Booking...</span>
+                   <span>Scheduling...</span>
                 </div>
               ) : (
-                "Book this wash →"
+                "Schedule a wash"
               )}
             </Button>
             <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-              ₹0 Payable · Part of subscription
+              Included with your plan · ₹0
             </p>
           </div>
         )}

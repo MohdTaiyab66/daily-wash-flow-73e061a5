@@ -325,6 +325,13 @@ function MyPlanPage() {
           {!bookingsQ.isLoading && !activeSub && !pendingSub && (
             <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
           )}
+
+          {activeSub && (
+             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-3 border border-success/10">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span className="text-[12px] font-black text-success uppercase tracking-wider">Your Daily Shine plan is active</span>
+             </div>
+          )}
         </>
       )}
 
@@ -603,8 +610,8 @@ function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleI
             <Link to="/c/home">Go to home</Link>
           )}
         </Button>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          No service, credits or partner assignment will start until payment succeeds.
+        <p className="mt-2 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+          Secure payment required before service
         </p>
       </div>
     </div>
@@ -614,26 +621,57 @@ function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleI
 function ServiceNoticeCard({ notice, onScheduleIncluded, vehicleId }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void; vehicleId: string | null }) {
   if (!notice) return null;
   const isDirty = notice?.type === "vehicle_dirty";
+  
   return (
-    <div className={`mt-5 rounded-2xl border p-4 ${isDirty ? "border-primary/30 bg-primary/10" : "border-warning/40 bg-warning/15"}`}>
-      <div className="flex items-start gap-3">
-        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isDirty ? "bg-primary/15 text-primary" : "bg-warning/20 text-warning-foreground"}`}>
-          {isDirty ? <ShieldAlert className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
+    <div className={cn(
+      "mt-5 overflow-hidden rounded-[28px] border bg-white shadow-sm transition-all active:scale-[0.99]",
+      isDirty ? "border-primary/20" : "border-warning/20"
+    )}>
+      <div className="flex items-start gap-4 p-5">
+        <div className={cn(
+          "grid h-12 w-12 shrink-0 place-items-center rounded-2xl shadow-sm",
+          isDirty ? "bg-primary/10 text-primary" : "bg-amber-50 text-amber-600"
+        )}>
+          {isDirty ? <ShieldAlert className="h-6 w-6" /> : <BellRing className="h-6 w-6" />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{notice.title}</p>
-          {notice.body && <p className="mt-1 text-xs text-muted-foreground">{notice.body}</p>}
-          <p className="mt-1 text-[10px] text-muted-foreground">Received {new Date(notice.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</p>
-          {isDirty ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button asChild size="sm" className="h-8 rounded-full text-xs">
-                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }} search={{ vehicleId: vehicleId ?? undefined }}>Book Premium Wash</Link>
+          <div className="flex items-center justify-between">
+            <h3 className="text-[15px] font-black tracking-tight text-[#1a1a1a]">
+              {isDirty ? "Vehicle needs extra attention" : notice.title}
+            </h3>
+            <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+              {new Date(notice.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+            {isDirty 
+              ? "Your partner reported that your vehicle needs a little extra attention."
+              : notice.body}
+          </p>
+          
+          <div className="mt-4 flex flex-col gap-2">
+            {isDirty ? (
+              <>
+                <Button 
+                  onClick={onScheduleIncluded}
+                  className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                >
+                  Schedule a wash
+                </Button>
+                <button 
+                  onClick={() => {/* View photos logic */}}
+                  className="flex items-center justify-center gap-1.5 py-2 text-[13px] font-black text-primary/60"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  📷 View service photos
+                </button>
+              </>
+            ) : (
+              <Button variant="outline" className="h-11 w-full rounded-2xl border-black/5 text-[14px] font-black">
+                Acknowledged
               </Button>
-              <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={onScheduleIncluded}>Schedule Included Wash</Button>
-            </div>
-          ) : (
-            <Button size="sm" variant="outline" className="mt-3 h-8 rounded-full text-xs">Acknowledged</Button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
