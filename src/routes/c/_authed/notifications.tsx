@@ -1,12 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { ArrowLeft, Bell, CheckCheck } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  ArrowLeft,
+  Bell,
+  Car,
+  CheckCheck,
+  CreditCard,
+  Sparkles,
+  Droplets,
+  AlertTriangle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/customer/ui/EmptyState";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/c/_authed/notifications")({
   ssr: false,
@@ -24,15 +33,32 @@ type Notif = {
   created_at: string;
 };
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.round(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  return d === 1 ? "yesterday" : `${d}d ago`;
+/** Presentation-only mapping from notification type to icon + tint. */
+const TYPE_STYLE: Record<string, { icon: LucideIcon; cls: string }> = {
+  partner_assigned: { icon: Car, cls: "bg-primary/12 text-primary" },
+  service_started: { icon: Droplets, cls: "bg-primary/12 text-primary" },
+  service_completed: { icon: Sparkles, cls: "bg-success/12 text-success" },
+  service_skipped: { icon: AlertTriangle, cls: "bg-warning/20 text-warning-foreground" },
+  payment_success: { icon: CreditCard, cls: "bg-success/12 text-success" },
+  payment_failed: { icon: CreditCard, cls: "bg-destructive/10 text-destructive" },
+};
+
+function styleFor(type: string | null) {
+  return TYPE_STYLE[type ?? ""] ?? { icon: Bell, cls: "bg-muted text-muted-foreground" };
+}
+
+function clockTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function bucketOf(iso: string): "Today" | "Yesterday" | "Earlier" {
+  const d = new Date(iso);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const t = d.getTime();
+  if (t >= startOfToday) return "Today";
+  if (t >= startOfToday - 86400000) return "Yesterday";
+  return "Earlier";
 }
 
 function NotificationsPage() {
@@ -53,9 +79,13 @@ function NotificationsPage() {
   });
 
   // Opening the centre marks everything read — the bell badge clears with it.
+  // We snapshot the ids that were unread on arrival so the user still sees
+  // which items are new for this visit.
+  const wasUnread = useRef<Set<string>>(new Set());
   useEffect(() => {
     const unread = (q.data ?? []).filter((n) => !n.read_at);
     if (unread.length === 0) return;
+    unread.forEach((n) => wasUnread.current.add(n.id));
     void (async () => {
       await supabase
         .from("customer_notifications")
@@ -67,74 +97,92 @@ function NotificationsPage() {
 
   const items = q.data ?? [];
 
+  const groups = useMemo(() => {
+    const order: Array<"Today" | "Yesterday" | "Earlier"> = ["Today", "Yesterday", "Earlier"];
+    const map = new Map<string, Notif[]>();
+    items.forEach((n) => {
+      const b = bucketOf(n.created_at);
+      map.set(b, [...(map.get(b) ?? []), n]);
+    });
+    return order.filter((b) => map.has(b)).map((b) => [b, map.get(b)!] as const);
+  }, [items]);
+
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-notifications"] })}>
-      <div className="px-5 pb-8 pt-6">
+      <div className="px-5 pt-6">
         <div className="flex items-center gap-3">
           <Link
             to="/c/home"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card"
             aria-label="Back"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border/70 bg-card"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="text-xl font-bold tracking-tight">Notifications</h1>
-          {items.some((n) => !n.read_at) && (
-            <CheckCheck className="ml-auto h-4 w-4 text-success" aria-label="All marked read" />
+          <h1 className="text-[22px] font-bold tracking-tight">Notifications</h1>
+          {items.length > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground">
+              <CheckCheck className="h-4 w-4 text-success" /> All read
+            </span>
           )}
         </div>
 
-        <div className="mt-5 space-y-2.5">
-          {q.isLoading && <SkeletonList count={4} />}
+        {q.isLoading && <div className="mt-6"><SkeletonList count={4} /></div>}
 
-          {!q.isLoading && items.length === 0 && (
-            <EmptyState
-              icon={Bell}
-              tone="primary"
-              title="No notifications yet"
-              description="Service updates, partner arrivals and plan reminders will show up here."
-              action={
-                <Button asChild className="h-11 rounded-full px-7 font-semibold">
-                  <Link to="/c/home">Explore services</Link>
-                </Button>
-              }
-            />
-          )}
+        {!q.isLoading && items.length === 0 && (
+          <EmptyState
+            className="mt-14"
+            icon={Bell}
+            tone="primary"
+            title="You're all caught up"
+            description="We'll let you know when something important happens."
+          />
+        )}
 
-          {items.map((n) => {
-            const unread = !n.read_at;
-            const clickable = !!n.link;
-            return (
-              <button
-                key={n.id}
-                type="button"
-                disabled={!clickable}
-                onClick={() => clickable && navigate({ to: n.link as any })}
-                className={`uw-pressable flex w-full gap-3 rounded-3xl border p-4 text-left ${
-                  unread ? "border-primary/30 bg-primary/[0.04]" : "border-border bg-card"
-                } ${clickable ? "" : "cursor-default"}`}
-              >
-                <span
-                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${unread ? "bg-primary" : "bg-transparent"}`}
-                  aria-hidden
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline justify-between gap-3">
-                    <span className="truncate text-sm font-semibold">{n.title ?? "Update"}</span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {timeAgo(n.created_at)}
+        {groups.map(([bucket, rows]) => (
+          <section key={bucket} className="mt-6">
+            <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {bucket}
+            </h2>
+            <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card">
+              {rows.map((n) => {
+                const { icon: Icon, cls } = styleFor(n.type);
+                const fresh = wasUnread.current.has(n.id);
+                const clickable = !!n.link;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    disabled={!clickable}
+                    onClick={() => clickable && navigate({ to: n.link as any })}
+                    className={`uw-pressable flex w-full items-start gap-3 px-4 py-3.5 text-left ${
+                      clickable ? "active:bg-muted/50" : "cursor-default"
+                    }`}
+                  >
+                    <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full ${cls}`}>
+                      <Icon className="h-[18px] w-[18px]" />
                     </span>
-                  </span>
-                  {n.body && (
-                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                      {n.body}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-semibold">
+                          {n.title ?? "Update"}
+                        </span>
+                        {fresh && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="New" />}
+                      </span>
+                      {n.body && (
+                        <span className="mt-0.5 block line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+                          {n.body}
+                        </span>
+                      )}
+                      <span className="mt-1 block text-[11.5px] text-muted-foreground/80">
+                        {clockTime(n.created_at)}
+                      </span>
                     </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </PullToRefresh>
   );
