@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ServicePhotoViewer } from "@/components/customer/ServicePhotoViewer";
+
 
 export const Route = createFileRoute("/c/_authed/bookings/$id")({
   ssr: false,
