@@ -200,7 +200,7 @@ export const getMyLedger = createServerFn({ method: "GET" })
 export const getEndOfDaySummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: services } = await supabase
       .from("services")
