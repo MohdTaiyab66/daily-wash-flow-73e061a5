@@ -342,7 +342,7 @@ function MyPlanPage() {
           <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
 
           {/* Service Notice Card (if any) */}
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} vehicleId={selectedVehicleId} />
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
 
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
