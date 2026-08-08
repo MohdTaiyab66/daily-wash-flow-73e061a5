@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calendar, Pause, Sparkles, CheckCircle2, Clock, Plus, RefreshCw, Droplets, Wrench, CalendarPlus, Loader2, BellRing, ShieldAlert, Car, Settings2, XCircle, Undo2, ChevronRight } from "lucide-react";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
 import { supabase } from "@/integrations/supabase/client";
-import { SkeletonCard, SkeletonRow } from "@/components/customer/ui/Skeletons";
+import { SkeletonCard, SkeletonRow, Shimmer } from "@/components/customer/ui/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
