@@ -354,63 +354,75 @@ export function BookAWashSheet({
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-5">
+        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-24">
           {/* Info context */}
-          <div className="flex items-center gap-2 rounded-xl bg-accent/30 px-3 py-2 text-[12px] text-accent-foreground">
-            <Info className="h-3.5 w-3.5" />
-            <span>Daily exterior cleaning happens automatically. This booking is for your included premium wash.</span>
+          <div className="flex items-start gap-3 rounded-3xl bg-primary/5 p-4 border border-primary/10">
+            <Info className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+            <p className="text-[12px] font-medium leading-relaxed text-[#1a1a1a]/70">
+              <span className="font-bold text-primary">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
+            </p>
           </div>
 
-          {loading && <div className="h-32 animate-pulse rounded-2xl bg-muted" />}
+          {loading && (
+            <div className="space-y-4">
+              <div className="h-40 animate-pulse rounded-[32px] bg-white border border-black/5 shadow-sm" />
+              <div className="h-20 animate-pulse rounded-[24px] bg-white border border-black/5 shadow-sm" />
+            </div>
+          )}
 
           {!loading && (entQ.isError || subQ.isError) && (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
-              <AlertTriangle className="mx-auto h-6 w-6 text-destructive" />
-              <p className="mt-3 text-[15px] font-semibold text-destructive">Couldn't load your plan</p>
+            <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-destructive/5 mb-6">
+                 <AlertTriangle className="h-7 w-7 text-destructive" />
+              </div>
+              <p className="text-[16px] font-black text-[#1a1a1a]">Couldn't load your plan</p>
               <Button
                 variant="outline"
-                className="mt-4 rounded-full border-destructive/20 text-destructive hover:bg-destructive/10"
+                className="mt-6 h-12 rounded-2xl border-black/5 font-bold"
                 onClick={() => {
                   entQ.refetch();
                   subQ.refetch();
                 }}
               >
-                <RotateCcw className="mr-1.5 h-4 w-4" /> Retry
+                <RotateCcw className="mr-2 h-4 w-4" /> Retry
               </Button>
             </div>
           )}
 
           {!loading && !entQ.isError && !subQ.isError && noActivePlan && (
-            <Surface raised className="text-center">
-              <p className="text-[15px] font-semibold">No active plan on this vehicle</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Subscribe to Daily Shine to start booking washes.
+            <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-primary/5 mb-6">
+                 <Sparkles className="h-7 w-7 text-primary" />
+              </div>
+              <p className="text-[16px] font-black text-[#1a1a1a]">No active plan</p>
+              <p className="mt-2 text-[13px] font-medium text-muted-foreground/60">
+                Subscribe to Daily Shine to start booking premium washes.
               </p>
-              <Button asChild className="mt-5 w-full rounded-full" onClick={() => onOpenChange(false)}>
+              <Button asChild className="mt-8 h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
                 <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
                   See Daily Shine
                 </Link>
               </Button>
-            </Surface>
+            </div>
           )}
 
           {!loading && !entQ.isError && !subQ.isError && usedUpIncluded && (
-            <div className="space-y-4">
-              <Surface raised className="bg-destructive/5 border-destructive/10 text-center">
-                <p className="text-[15px] font-semibold">No included washes remaining</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your Daily Exterior wash continues every day. Need another full wash?
+            <div className="space-y-6">
+              <div className="rounded-[32px] border border-black/5 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-[20px] bg-destructive/5 mb-6">
+                   <AlertTriangle className="h-7 w-7 text-destructive" />
+                </div>
+                <p className="text-[16px] font-black text-[#1a1a1a]">No washes left</p>
+                <p className="mt-2 text-[13px] font-medium text-muted-foreground/60 leading-relaxed">
+                  You've already enjoyed your included wash for this cycle. Daily exterior cleaning continues as usual.
                 </p>
-              </Surface>
+              </div>
               <div className="space-y-3">
-                <Button asChild className="w-full rounded-full" onClick={() => onOpenChange(false)}>
+                <Button asChild className="h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
                   <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
-                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    <ShoppingBag className="mr-2 h-5 w-5" />
                     Buy more washes
                   </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full rounded-full" onClick={() => onOpenChange(false)}>
-                  <Link to="/c/home">Browse one-time services</Link>
                 </Button>
               </div>
             </div>
