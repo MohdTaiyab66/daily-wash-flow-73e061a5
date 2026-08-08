@@ -153,7 +153,10 @@ function MarketplaceSettingsPage() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><GripVertical className="h-3 w-3" /> Order: {img.sort_order}</span>
-                    <span className="truncate flex-1">{img.image_url}</span>
+                    <span className="truncate flex-1">{img.image_url.slice(0, 40)}...</span>
+                  </div>
+                  <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/40 pt-2">
+                    ID: {img.id.slice(0, 8)} • Service: {img.service_id ? 'Scoped' : 'Global Daily Shine'}
                   </div>
                 </div>
               </div>

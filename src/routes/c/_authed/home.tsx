@@ -288,10 +288,18 @@ function CustomerHome() {
             })) : [
               {
                 id: "1",
-                title: "Your car, clean every morning.",
-                subtitle: "Doorstep detailing without the hassle.",
+                title: "Daily shine, zero hassle.",
+                subtitle: "Every morning before you go.",
                 price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-                image: "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=1200&auto=format&fit=crop",
+                image: "https://daily-wash-flow.lovable.app/lovable-assets/daily-shine-hero.png",
+                link: "/c/service/daily-shine"
+              },
+              {
+                id: "2",
+                title: "We come to you, you stay stress-free.",
+                subtitle: "Doorstep car cleaning at your convenience.",
+                price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+                image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1200&auto=format&fit=crop",
                 link: "/c/service/daily-shine"
               }
             ]}
