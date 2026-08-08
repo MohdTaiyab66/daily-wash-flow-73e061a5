@@ -312,7 +312,7 @@ function ServiceDetail() {
         </Section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5 safe-area-bottom">
         <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
           <div><div className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Total Payable</div><div className="text-[20px] font-black">₹{previewPayable}</div></div>
           <Button onClick={confirm} disabled={submitting || paying || !previewReady} className="flex-1 h-14 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/20 active:scale-[0.98]">
