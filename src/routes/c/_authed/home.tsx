@@ -311,25 +311,43 @@ function CustomerHome() {
             </div>
           </Section>
 
-          <Section title="My Car">
-            <Surface 
-              onClick={() => setVehicleSheetOpen(true)}
-              className="flex items-center gap-4 border-primary/10 bg-gradient-to-br from-white to-[#FFF9F3]"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Car className="h-6 w-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[15px] font-black tracking-tight text-foreground">
-                  {activeVehicle?.make} {activeVehicle?.model}
-                </h3>
-                <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">
-                  {activeVehicle?.registration_number} · Switch car
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
-            </Surface>
+          <Section title="Active car">
+            {vehiclesQ.isLoading ? <SkeletonCard className="h-28" /> : activeVehicle ? (
+              <Surface 
+                className="overflow-hidden p-0 border-primary/10 bg-white"
+                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+              >
+                <div className="flex w-full items-center gap-4 p-4">
+                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
+                    <VehicleAvatar 
+                      imageUrl={catalogImageQ.data} 
+                      make={activeVehicle.make} 
+                      model={activeVehicle.model} 
+                      color={activeVehicle.color} 
+                      className="h-full w-full object-contain p-1" 
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="truncate text-[17px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
+                      {vehicles.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40" />}
+                    </div>
+                    <p className="mt-0.5 truncate text-[12px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/20" />
+                </div>
+              </Surface>
+            ) : (
+              <Surface 
+                onClick={() => navigate({ to: "/c/vehicles/add" })}
+                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-5"
+              >
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
+                <div><span className="block text-[16px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
+              </Surface>
+            )}
           </Section>
+
 
 
           {planActive || planPending ? (
