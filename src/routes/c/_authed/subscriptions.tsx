@@ -240,6 +240,10 @@ function MyPlanPage() {
     },
   });
 
+  useEffect(() => {
+    latestNoticeQ.refetch();
+  }, [selectedVehicleId]);
+
   // Recent service list must only reflect paid activity. Never surface
   // service/booking cards for unpaid subscription attempts.
   const paidAll = all.filter((b) => b.payment_status === "paid");
