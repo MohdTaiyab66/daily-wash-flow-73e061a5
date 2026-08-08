@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getMyAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: a } = await supabase
       .from("assignments")
@@ -108,8 +108,10 @@ export const getMyAssignment = createServerFn({ method: "GET" })
 export const getRouteVisibility = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .rpc("get_route_visibility", { p_partner: context.userId });
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId;
+    const { data, error } = await (supabase as any)
+      .rpc("get_route_visibility", { p_partner: userId });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
     if (!row || !row.assignment_id) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null, override: row?.override ?? "auto" };
@@ -126,7 +128,8 @@ export const modifyAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { assignment_id: string; delta: number }) => d)
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("modify_assignment", {
+    const supabase = (context as any).supabase;
+    const { data: result, error } = await supabase.rpc("modify_assignment", {
       p_assignment_id: data.assignment_id,
       p_delta: data.delta,
     });
@@ -160,8 +163,9 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { assignment_id: string }) => d)
   .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; code: string; message: string }> => {
-    const { userId } = context;
-    const { error } = await context.supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId;
+    const { error } = await supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
     if (error) {
       const msg = error.message || "";
       const err: CancelError = { code: "ASSIGNMENT_CANNOT_BE_CANCELLED", message: msg };
@@ -184,8 +188,8 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
 export const getMyLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("wallet_ledger")
+    const supabase = (context as any).supabase;
+    const { data } = await supabase
       .select("id,entry_type,amount,balance_after,description,created_at")
       .order("created_at", { ascending: false })
       .limit(100);
@@ -196,7 +200,7 @@ export const getMyLedger = createServerFn({ method: "GET" })
 export const getEndOfDaySummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: services } = await supabase
       .from("services")
@@ -251,7 +255,7 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = context;
+    const userId = (context as any).userId;
     const today = new Date().toISOString().slice(0, 10);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: released } = await supabaseAdmin
@@ -301,7 +305,7 @@ export type AssignmentIntegrityReport = {
 export const validateTodayAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: a } = await supabase
       .from("assignments")

@@ -8,7 +8,7 @@ export const acceptMarketplaceOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => idInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await (context.supabase as any).rpc("mp_accept_offer", {
+    const { data: res, error } = await ((context as any).supabase as any).rpc("mp_accept_offer", {
       p_broadcast_id: data.broadcastId,
     });
     if (error) throw new Error(error.message);
@@ -19,7 +19,7 @@ export const declineMarketplaceOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => idInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await (context.supabase as any).rpc("mp_decline_offer", {
+    const { data: res, error } = await ((context as any).supabase as any).rpc("mp_decline_offer", {
       p_broadcast_id: data.broadcastId,
     });
     if (error) throw new Error(error.message);
@@ -32,8 +32,9 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     // Server-authoritative: this RPC sweeps expired/superseded/closed offers
     // first, then returns ONLY rows that are pending, current-round, and have
     // round_expires_at > server-now. The client must not filter further.
-    const { data, error } = await (context.supabase as any).rpc("get_partner_open_offers", {
-      p_partner_id: context.userId,
+    const { supabase, userId } = context as any;
+    const { data, error } = await (supabase as any).rpc("get_partner_open_offers", {
+      p_partner_id: userId,
     });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
@@ -44,11 +45,11 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     const vehIds = Array.from(new Set(rows.map((r) => r.vehicle_id).filter(Boolean))) as string[];
     const [subsRes, vehRes] = await Promise.all([
       subIds.length
-        ? (context.supabase as any).from("subscriptions")
+        ? (supabase as any).from("subscriptions")
             .select("id, amount, start_date, renewal_date").in("id", subIds)
         : Promise.resolve({ data: [] as any[] }),
       vehIds.length
-        ? (context.supabase as any).from("customer_vehicles")
+        ? (supabase as any).from("customer_vehicles")
             .select("id, make, model, registration_number").in("id", vehIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
@@ -95,7 +96,7 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
 export const getPartnerRoutePreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const today = new Date().toISOString().slice(0, 10);
     const { data: a } = await (supabase as any)
       .from("assignments")
@@ -125,8 +126,8 @@ export const getPartnerRoutePreview = createServerFn({ method: "GET" })
 export const getMarketplaceSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .from("marketplace_settings")
+    const supabase = (context as any).supabase;
+    const { data, error } = await (supabase as any)
       .select("*")
       .eq("id", true)
       .maybeSingle();
@@ -158,12 +159,13 @@ export const updateMarketplaceSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => settingsInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
+    const { supabase, userId } = context as any;
+    const { data: isAdmin } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
-    const { error } = await (context.supabase as any)
+    const { error } = await (supabase as any)
       .from("marketplace_settings")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", true);
@@ -174,13 +176,14 @@ export const updateMarketplaceSettings = createServerFn({ method: "POST" })
 export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
+    const { supabase, userId } = context as any;
+    const { data: isAdmin } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
-    const { data: broadcasts } = await (context.supabase as any)
+    const { data: broadcasts } = await (supabase as any)
       .from("marketplace_broadcasts")
       .select("id,status,current_round,current_incentive,created_at,updated_at,winning_partner_id")
       .gte("created_at", since);
@@ -202,7 +205,7 @@ export const getMarketplaceAnalytics = createServerFn({ method: "GET" })
       : 0;
 
     // Offer-level counters (accepted/declined/superseded/expired/pending) in the same window
-    const { data: offerCounts } = await (context.supabase as any)
+    const { data: offerCounts } = await (supabase as any)
       .from("marketplace_offers")
       .select("response", { count: "exact", head: false })
       .gte("sent_at", since);
@@ -245,9 +248,10 @@ async function rpc(context: any, fn: string, args: Record<string, unknown>) {
 export const getLiveBroadcasts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    const { userId, supabase } = context as any;
+    const isAdmin = await rpc(context, "has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
-    const { data, error } = await (context.supabase as any)
+    const { data, error } = await (supabase as any)
       .from("marketplace_broadcasts")
       .select(
         `id, status, current_round, current_incentive, current_radius_m,
@@ -265,9 +269,10 @@ export const getLiveBroadcasts = createServerFn({ method: "GET" })
 export const getMarketplaceHealth = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const isAdmin = await rpc(context, "has_role", { _user_id: context.userId, _role: "admin" });
+    const { userId, supabase } = context as any;
+    const isAdmin = await rpc(context, "has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
-    const { data, error } = await (context.supabase as any).from("mp_health").select("*").maybeSingle();
+    const { data, error } = await (supabase as any).from("mp_health").select("*").maybeSingle();
     if (error) throw new Error(error.message);
     return data;
   });

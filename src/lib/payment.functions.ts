@@ -62,7 +62,8 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
     if (booking.payment_status === "paid") throw new Error("Booking is already paid");
 
     // P0-DUP-01: Block Razorpay order creation if the vehicle already has an
@@ -81,7 +82,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         .maybeSingle();
       if (openSub) {
         await supabaseAdmin.from("subscription_block_log").insert({
-          user_id: context.userId,
+          user_id: userId,
           vehicle_id: (booking as any).vehicle_id,
           service_id: (booking as any).service_id ?? null,
           existing_subscription_id: (openSub as any).id,
@@ -112,7 +113,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         amount: amountPaise,
         currency: "INR",
         receipt: `uw_${data.bookingId.slice(0, 24)}`,
-        notes: { booking_id: data.bookingId, user_id: context.userId },
+        notes: { booking_id: data.bookingId, user_id: userId },
       }),
     });
 
@@ -129,7 +130,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const paymentSeed = {
         booking_id: data.bookingId,
-        user_id: context.userId,
+        user_id: userId,
         provider: "razorpay",
         provider_order_id: payload.id,
         amount: Number(booking.total_amount ?? 0),
@@ -153,10 +154,11 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const logAttempt = async (row: Record<string, unknown>) => {
+      const userId = (context as any).userId;
       try {
         await supabaseAdmin.from("payment_attempts").insert({
           booking_id: data.bookingId,
-          user_id: context.userId,
+          user_id: userId,
           provider: "razorpay",
           provider_order_id: data.razorpayOrderId,
           provider_payment_id: data.razorpayPaymentId,
@@ -184,7 +186,8 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         .eq("id", data.bookingId)
         .maybeSingle();
       if (bookingError) throw new Error(bookingError.message);
-      if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+      const { userId } = context as any;
+      if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
 
       const authHeader = `Basic ${btoa(`${keyId}:${keySecret}`)}`;
       const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${data.razorpayPaymentId}`, {
@@ -206,7 +209,8 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         throw new Error(`Razorpay payment is ${payment.status ?? "not captured"}`);
       }
 
-      const { data: result, error } = await (context.supabase as any).rpc("activate_paid_booking", {
+      const { supabase } = context as any;
+      const { data: result, error } = await (supabase as any).rpc("activate_paid_booking", {
         p_booking_id: data.bookingId,
         p_provider_order_id: data.razorpayOrderId,
         p_provider_payment_id: data.razorpayPaymentId,
@@ -223,7 +227,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       // Phase 2 shadow: fire the new orchestrator in parallel with legacy.
       // Never blocks or alters production activation.
       try {
-        await (context.supabase as any).rpc("ds_on_payment_verified", { p_booking_id: data.bookingId });
+        await (supabase as any).rpc("ds_on_payment_verified", { p_booking_id: data.bookingId });
       } catch (e) {
         console.warn("[ds-shadow] ds_on_payment_verified failed (non-fatal)", e);
       }
@@ -277,7 +281,8 @@ export const logPaymentAttempt = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
 
     let attemptNo = data.attemptNo ?? 1;
     if (!data.attemptNo) {
@@ -294,7 +299,7 @@ export const logPaymentAttempt = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin.from("payment_attempts").insert({
       booking_id: data.bookingId,
-      user_id: context.userId,
+      user_id: userId,
       provider: "razorpay",
       provider_order_id: data.providerOrderId ?? null,
       provider_payment_id: data.providerPaymentId ?? null,
@@ -351,7 +356,8 @@ export const getBookingPaymentStatus = createServerFn({ method: "POST" })
       .eq("id", data.bookingId)
       .maybeSingle();
     if (bookingError) throw new Error(bookingError.message);
-    if (!booking || booking.user_id !== context.userId) throw new Error("Booking not found");
+    const { userId } = context as any;
+    if (!booking || booking.user_id !== userId) throw new Error("Booking not found");
 
     const { data: latest } = await supabaseAdmin
       .from("payment_attempts")
@@ -383,8 +389,9 @@ export const getUserPaymentAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => userAttemptsInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error: roleError } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
+    const { userId, supabase } = context as any;
+    const { data: isAdmin, error: roleError } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
       _role: "admin",
     });
     if (roleError) throw new Error(roleError.message);
@@ -442,7 +449,8 @@ export const acquireCheckoutHold = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => holdInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await (context.supabase as any).rpc("acquire_checkout_hold", {
+    const supabase = (context as any).supabase;
+    const { data: result, error } = await (supabase as any).rpc("acquire_checkout_hold", {
       p_booking_id: data.bookingId,
       p_holder_id: data.holderId,
       p_ttl_seconds: data.ttlSeconds ?? 300,
@@ -460,7 +468,8 @@ export const releaseCheckoutHold = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => releaseHoldInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as any).rpc("release_checkout_hold", {
+    const supabase = (context as any).supabase;
+    const { error } = await (supabase as any).rpc("release_checkout_hold", {
       p_booking_id: data.bookingId,
       p_holder_id: data.holderId,
     });

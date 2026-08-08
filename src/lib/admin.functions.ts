@@ -184,7 +184,8 @@ export const adminSetCustomerPayment = createServerFn({ method: "POST" }).middle
 export const adminSetVehicleDiscountApproval = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { vehicle_id: string; approved: boolean }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase.rpc as any)("admin_set_vehicle_discount_approval", {
+    const supabase = (context as any).supabase;
+    const { error } = await supabase.rpc("admin_set_vehicle_discount_approval", {
       p_vehicle_id: data.vehicle_id,
       p_approved: data.approved,
     });
@@ -957,7 +958,7 @@ export const getMarketplaceQueueDetail = createServerFn({ method: "GET" }).middl
 export const adminCancelQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string; reason?: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { error } = await supabase.rpc("admin_cancel_queue", { p_queue_id: data.queue_id, p_reason: data.reason ?? null });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -966,7 +967,7 @@ export const adminCancelQueue = createServerFn({ method: "POST" }).middleware([r
 export const adminRetryQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { data: res, error } = await supabase.rpc("admin_retry_queue", { p_queue_id: data.queue_id });
     if (error) throw new Error(error.message);
     return res;
@@ -975,7 +976,7 @@ export const adminRetryQueue = createServerFn({ method: "POST" }).middleware([re
 export const adminForceAssignQueue = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { queue_id: string; partner_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context as { supabase: any };
+    const supabase = (context as any).supabase;
     const { data: res, error } = await supabase.rpc("admin_force_assign_queue", {
       p_queue_id: data.queue_id, p_partner_id: data.partner_id,
     });

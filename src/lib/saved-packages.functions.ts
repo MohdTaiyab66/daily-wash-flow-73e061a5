@@ -27,7 +27,7 @@ export type SavedPackage = {
 export const listSavedPackages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data, error } = await (supabase as any)
       .from("customer_saved_packages")
       .select("id, name, base_plan_slug, base_plan_price, addons, total_monthly, created_at")
@@ -48,7 +48,7 @@ export const saveCustomerPackage = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const name = data.name.trim();
     if (!name) throw new Error("Please enter a package name");
     if (name.length > 60) throw new Error("Name is too long");
@@ -79,7 +79,7 @@ export const deleteSavedPackage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { error } = await (supabase as any)
       .from("customer_saved_packages")
       .delete()

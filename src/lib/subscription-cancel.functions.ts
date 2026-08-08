@@ -10,7 +10,7 @@ export const requestCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { subscriptionId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data: row, error } = await supabase
       .from("subscriptions")
       .update({ cancel_at_period_end: true, cancelled_at: new Date().toISOString() })
@@ -27,7 +27,7 @@ export const undoCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { subscriptionId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data: row, error } = await supabase
       .from("subscriptions")
       .update({ cancel_at_period_end: false, cancelled_at: null })
@@ -44,7 +44,7 @@ export const getActiveSubscriptionForVehicle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { vehicleId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { data: row, error } = await supabase
       .from("subscriptions")
       .select("id, status, renewal_date, cancel_at_period_end, cancelled_at, amount, plan_slug")
