@@ -190,7 +190,10 @@ function ServiceDetail() {
     } catch (e: any) { toast.error(e.message); } finally { setSubmitting(false); }
   };
 
-  const setQty = (id: string, q: number) => setAddonQty((prev) => ({ ...prev, [id]: Math.max(0, q) }));
+  const setQty = (id: string, q: number) => {
+    if (q > 1) return; // Prevent multiple quantities for services/add-ons in this flow
+    setAddonQty((prev) => ({ ...prev, [id]: Math.max(0, q) }));
+  };
 
   const uniqueAddresses = useMemo(() => {
     const seen = new Set<string>();
@@ -243,7 +246,15 @@ function ServiceDetail() {
                     <div className="text-[14px] font-black">{a.name}</div>
                     <div className="text-[12px] font-bold text-primary">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
                   </div>
-                  <button onClick={() => setQty(a.id, (addonQty[a.id] || 0) + 1)} className="h-9 px-4 rounded-lg bg-primary text-white text-[12px] font-black">+ Add</button>
+                  <button 
+                    onClick={() => setQty(a.id, addonQty[a.id] ? 0 : 1)} 
+                    className={cn(
+                      "h-9 px-4 rounded-lg text-[12px] font-black transition-colors",
+                      addonQty[a.id] ? "bg-success text-white" : "bg-primary text-white"
+                    )}
+                  >
+                    {addonQty[a.id] ? <Check className="h-4 w-4" /> : "+ Add"}
+                  </button>
                 </Surface>
               ))}
             </div>
@@ -303,8 +314,10 @@ function ServiceDetail() {
 
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5">
         <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
-          <div><div className="text-[11px] font-bold text-muted-foreground">Total</div><div className="text-[20px] font-black">₹{previewPayable}</div></div>
-          <Button onClick={confirm} disabled={submitting || paying || !previewReady} className="flex-1 h-14 rounded-2xl bg-primary text-white font-black">{submitting || paying ? <Loader2 className="animate-spin" /> : <span>{purchaseMode === 'included_wash' ? 'Schedule wash' : `Pay ₹${previewPayable}`}</span>}</Button>
+          <div><div className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Total Payable</div><div className="text-[20px] font-black">₹{previewPayable}</div></div>
+          <Button onClick={confirm} disabled={submitting || paying || !previewReady} className="flex-1 h-14 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/20 active:scale-[0.98]">
+            {submitting || paying ? <Loader2 className="animate-spin" /> : <span>{purchaseMode === 'included_wash' ? 'Confirm Booking' : `Pay ₹${previewPayable}`}</span>}
+          </Button>
         </div>
       </div>
 

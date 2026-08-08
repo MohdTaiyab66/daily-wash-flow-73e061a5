@@ -350,7 +350,11 @@ function MyPlanPage() {
           {activeSub && (
             <div className="mt-6 space-y-5">
               <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-              <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
+              <ServiceNoticeCard 
+                notice={latestNoticeQ.data ?? null} 
+                onScheduleIncluded={() => setBookOpen(true)} 
+                vehicleId={selectedVehicleId} 
+              />
               
               <UWPlanCard 
                 status={activeSub.payment_status === 'paid' ? 'active' : 'pending'}

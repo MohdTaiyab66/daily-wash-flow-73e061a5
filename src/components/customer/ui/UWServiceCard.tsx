@@ -69,12 +69,13 @@ export function UWServiceCard({
           
           <button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onAdd?.();
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-90",
+              "flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-75",
               isAdded 
                 ? "bg-success text-white" 
                 : "bg-primary/10 text-primary hover:bg-primary/20"

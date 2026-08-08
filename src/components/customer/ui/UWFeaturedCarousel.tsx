@@ -35,14 +35,12 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
 
   return (
     <div 
-      className={cn("relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9]", className)}
+      className={cn("relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9] touch-pan-y", className)}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
     >
       <div 
-        className="flex h-full transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)"
+        className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${index * 100}%)` }}
       >
         {items.map((item) => (
