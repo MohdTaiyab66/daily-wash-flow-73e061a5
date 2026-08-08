@@ -96,19 +96,8 @@ function nextBookableDateIso(start = new Date()) {
   return toIsoDate(d);
 }
 
-function BenefitItem({ icon: Icon, label, sub }: { icon: any; label: string; sub: string }) {
-  return (
-    <div className="text-center">
-      <div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="text-[11px] font-black text-foreground">{label}</div>
-      <div className="text-[10px] font-medium text-muted-foreground/60">{sub}</div>
-    </div>
-  );
-}
-
 // Razorpay is handled exclusively by the shared payment service
+
 
 // (src/lib/razorpay-checkout.ts). No checkout logic lives in this screen.
 
