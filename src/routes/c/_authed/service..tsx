@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X, Check } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, Car, ChevronRight, Loader2, MapPin, Plus, RefreshCw, Sparkles, Minus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createRazorpayOrder,
@@ -30,15 +30,13 @@ import {
   type CheckoutEvent,
   type CheckoutStage,
 } from "@/lib/pending-checkout-store";
-import { SectionTitle, Section, Surface, StatusChip } from "@/components/customer/ui/kit";
-import { cn } from "@/lib/utils";
 import { PaymentTimeline } from "@/components/customer/PaymentTimeline";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 
 
 
-export const Route = createFileRoute("/c/_authed/service/$slug")({
+export const Route = createFileRoute("/c/_authed/service/")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
@@ -885,16 +883,6 @@ function ServiceDetail() {
 
 
 
-  const uniqueAddresses = useMemo(() => {
-    const seen = new Set<string>();
-    return (addressesQ.data ?? []).filter((addr) => {
-      const key = `${addr.address_line.trim().toLowerCase()}|${addr.area.trim().toLowerCase()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [addressesQ.data]);
-
   if (serviceQ.isLoading) {
     return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
   }
@@ -908,164 +896,378 @@ function ServiceDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F3] pb-[120px]">
-      <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm">
+    <div className="pb-32">
+      {/* Banner */}
+      <div className="relative h-44 w-full overflow-hidden bg-gradient-to-br from-primary/20 via-accent to-card">
+        <button onClick={() => navigate({ to: "/c/home" })}
+          className="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-card/90 backdrop-blur">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="min-w-0">
-          <h1 className="text-[17px] font-bold tracking-tight text-foreground">{service.name}</h1>
-          <p className="truncate text-[13px] text-muted-foreground">Your car, clean every day</p>
-        </div>
-      </header>
-
-      <div className="px-5 pb-6">
-        <Surface className="relative overflow-hidden border-primary/10">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0">
-              <h2 className="text-[20px] font-bold text-foreground">{service.name}</h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">{service.description}</p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-[24px] font-bold text-primary">₹{isSUV ? service.price_sedan_suv : service.price_hatchback}</span>
-                <span className="text-[13px] text-muted-foreground">/ month</span>
-              </div>
-            </div>
-            <StatusChip tone="brand">BEST VALUE</StatusChip>
+        {service.banner_url ? (
+          <img src={service.banner_url} alt={service.name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-primary">
+            <Sparkles className="h-14 w-14" />
           </div>
-        </Surface>
+        )}
+      </div>
 
-        <Section title="What's included">
-          <Surface className="py-3">
-             <ul className="space-y-2">
-                {service.benefits?.slice(0, 3).map((b, i) => (
-                  <li key={i} className="flex items-center gap-2 text-[14px] text-foreground">
-                    <Check className="h-4 w-4 text-success" /> {b}
-                  </li>
-                ))}
-             </ul>
-             <button className="mt-3 text-[13px] font-semibold text-primary">View all benefits ›</button>
-          </Surface>
-        </Section>
+      <div className="px-5 pt-5">
+        <h1 className="text-2xl font-semibold tracking-tight">{service.name}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{service.description}</p>
 
-        <Section title="Your vehicle">
-          <Surface className="flex items-center justify-between p-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-accent" />
-              <div>
-                <div className="text-[14px] font-semibold">{vehicle?.make} {vehicle?.model}</div>
-                <div className="text-[12px] text-muted-foreground">{vehicle?.registration_number} · {vehicle?.category}</div>
-              </div>
-            </div>
-            <button className="text-[13px] font-semibold text-primary">Change ›</button>
-          </Surface>
-        </Section>
-
-        <Section title="Service address">
-          <div className="space-y-2">
-            {uniqueAddresses.map((a) => (
-              <button key={a.id} onClick={() => setAddressId(a.id)}
-                className={cn("flex w-full items-start gap-3 rounded-2xl border bg-card p-3 text-left transition-all", 
-                  addressId === a.id ? "border-primary ring-1 ring-primary/20" : "border-border")}>
-                <div className={cn("mt-1 h-4 w-4 rounded-full border-2 transition-colors", 
-                  addressId === a.id ? "border-primary bg-primary ring-offset-2 ring-1 ring-primary" : "border-border")} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold">{a.label}</div>
-                  <div className="text-[12px] text-muted-foreground">{a.address_line}, {a.area}</div>
-                </div>
-              </button>
+        {service.benefits?.length ? (
+          <ul className="mt-4 space-y-1.5">
+            {service.benefits.map((b, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span>{b}</span>
+              </li>
             ))}
-            <button onClick={() => setAddrOpen(true)} className="flex w-full items-center gap-2 py-2 text-[14px] font-medium text-primary">
-              <Plus className="h-4 w-4" /> Add a new service address
-            </button>
-          </div>
-        </Section>
+          </ul>
+        ) : null}
 
-        <Section title="Your first service">
-          <div className="mb-3 text-[14px] font-medium">Tomorrow · {date}</div>
-          <div className="grid grid-cols-3 gap-2">
+        {/* Vehicle */}
+        <SectionCard icon={<Car className="h-4 w-4" />} title="Vehicle" hint={vehicle ? "Change" : "Add"}>
+          {vehiclesQ.data?.length ? (
+            <select value={vehicleId ?? ""} onChange={(e) => { setVehicleId(e.target.value); localStorage.setItem("uw_customer_vehicle", e.target.value); }}
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm">
+              {vehiclesQ.data.map((v) => (
+                <option key={v.id} value={v.id}>{v.make} {v.model} · {v.registration_number}</option>
+              ))}
+            </select>
+          ) : (
+            <Button asChild variant="outline" size="sm"><Link to="/c/vehicles/add"><Plus className="mr-1 h-4 w-4" /> Add vehicle</Link></Button>
+          )}
+        </SectionCard>
+
+        {/* Address */}
+        <SectionCard icon={<MapPin className="h-4 w-4" />} title="Service address">
+          {addressesQ.data?.length ? (
+            <div className="space-y-2">
+              {addressesQ.data.map((a) => (
+                <button key={a.id} onClick={() => setAddressId(a.id)}
+                  className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left text-sm ${
+                    addressId === a.id ? "border-primary bg-accent" : "border-border hover:bg-muted"
+                  }`}>
+                  <div className="flex-1">
+                    <div className="font-medium">{a.label || "Address"}</div>
+                    <div className="text-xs text-muted-foreground">{a.address_line}, {a.area} {a.pincode ?? ""}</div>
+                  </div>
+                </button>
+              ))}
+              <Button onClick={() => setAddrOpen(true)} variant="outline" size="sm" className="w-full">
+                <Plus className="mr-1 h-4 w-4" /> Add new address
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={() => setAddrOpen(true)} variant="outline" size="sm"><Plus className="mr-1 h-4 w-4" /> Add address</Button>
+          )}
+        </SectionCard>
+
+        {/* Add-ons */}
+        {previewReady && !isIncludedBooking && addonsQ.data && addonsQ.data.length > 0 && (
+          <SectionCard icon={<Sparkles className="h-4 w-4" />} title="Add-ons" hint="Tap + to add more">
+            <div className="space-y-2">
+              {addonsQ.data.map((a) => {
+                const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                const q = addonQty[a.id] ?? 0;
+                const active = q > 0;
+                return (
+                  <div key={a.id}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 ${
+                      active ? "border-primary bg-accent" : "border-border"
+                    }`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium">{a.name}</div>
+                      {a.description && <div className="mt-0.5 text-[11px] text-muted-foreground">{a.description}</div>}
+                      <div className="mt-1 text-[11px] text-muted-foreground">+₹{p} each{q > 1 ? ` · ₹${p * q} total` : ""}</div>
+                    </div>
+                    {q === 0 ? (
+                      <Button type="button" size="sm" variant="outline" onClick={() => setQty(a.id, 1)} className="shrink-0 rounded-full">
+                        <Plus className="h-3.5 w-3.5" /> Add
+                      </Button>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-2 rounded-full border border-primary bg-card px-1 py-0.5">
+                        <button type="button" onClick={() => setQty(a.id, q - 1)} aria-label="Decrease"
+                          className="grid h-7 w-7 place-items-center rounded-full hover:bg-muted">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[1.25rem] text-center text-sm font-semibold">{q}</span>
+                        <button type="button" onClick={() => setQty(a.id, q + 1)} aria-label="Increase"
+                          className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground hover:opacity-90">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
+        )}
+
+
+        {/* Date + Slot */}
+        <SectionCard icon={<Calendar className="h-4 w-4" />} title="When">
+          <Input
+            type="date"
+            min={toIsoDate(new Date())}
+            value={date}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (isDailyShine && isMondayIso(next)) {
+                toast.error("Daily Shine does not run on Mondays. Please pick another date.");
+                setDate(nextBookableDateIso(new Date(`${next}T12:00:00`)));
+                return;
+              }
+              setDate(next);
+            }}
+          />
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {TIME_SLOTS.map((s) => (
               <button key={s} onClick={() => setSlot(s)}
-                className={cn("rounded-full border py-2 text-[12px] font-medium transition-all", 
-                  slot === s ? "border-primary bg-primary/10 text-primary" : "border-border bg-card")}>
+                className={`rounded-xl border py-2 text-xs font-medium ${
+                  slot === s ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
+                }`}>
                 {s}
               </button>
             ))}
           </div>
-        </Section>
+        </SectionCard>
 
-        <Section title="Make it even better" action={<button className="text-[13px] font-semibold text-primary">View all ›</button>}>
-           {addonsQ.data?.slice(0, 3).map((a) => {
-             const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-             const qty = addonQty[a.id] || 0;
-             return (
-              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3">
-                 <div>
-                   <div className="text-[14px] font-semibold">{a.name}</div>
-                   <div className="text-[12px] text-muted-foreground">₹{p}</div>
-                 </div>
-                 {qty > 0 ? (
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Minus className="h-3 w-3" /></button>
-                        <span className="text-sm font-bold">{qty}</span>
-                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background"><Plus className="h-3 w-3" /></button>
-                    </div>
-                 ) : (
-                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => setQty(a.id, 1)}>+ Add</Button>
-                 )}
+        {/* Multi-car discount */}
+        {previewReady && !isIncludedBooking && <SectionCard
+          icon={<Sparkles className="h-4 w-4" />}
+          title="Multi-car discount"
+          hint={`${vehicleCount} car${vehicleCount === 1 ? "" : "s"} on account`}
+        >
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between rounded-xl border border-success/40 bg-success/10 px-3 py-2 text-sm">
+              <div>
+                <div className="font-semibold text-success">{appliedCoupon.percent}% off applied</div>
+                <div className="text-[11px] text-muted-foreground">Multi-car discount auto-applied</div>
               </div>
-             )
-           })}
-        </Section>
-        
-        {eligibleCoupon && !appliedCoupon && (
-           <Section>
-            <Surface className="flex items-center justify-between bg-primary/5">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">🎉</span>
-                <div>
-                   <div className="text-[14px] font-semibold">You unlock {eligibleCoupon.percent}% off</div>
-                   <div className="text-[12px] text-muted-foreground">For having multiple cars</div>
-                </div>
+              <Button type="button" size="sm" variant="ghost" onClick={removeCoupon}>Remove</Button>
+            </div>
+          ) : eligibleCoupon ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">You unlock {eligibleCoupon.percent}% off</div>
+                <div className="text-[11px] text-muted-foreground">For having {vehicleCount} cars on Daily Shine</div>
               </div>
-              <Button size="sm" className="rounded-full" onClick={applyBestCoupon}>Apply</Button>
-            </Surface>
-           </Section>
-        )}
-
-        <Section title="Price summary">
-           <Surface className="space-y-2 text-[14px]">
-              <div className="flex justify-between text-muted-foreground"><span>Daily Shine</span><span>₹{previewBase}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Add-ons</span><span>₹{previewAddon}</span></div>
-              {previewDiscount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
-              <div className="flex justify-between pt-2 text-[16px] font-bold border-t border-border"><span>Total</span><span>₹{previewPayable}</span></div>
-           </Surface>
-        </Section>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-5 py-4 backdrop-blur shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-          {paymentError && (
-             <div className="mb-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-[12px] text-destructive">
-                {paymentError.message}
-             </div>
+              <Button type="button" size="sm" onClick={applyBestCoupon} className="shrink-0 rounded-full">Apply coupon</Button>
+            </div>
+          ) : isFirstVehicle && vehicleCount >= 2 && !vehicle?.discount_approved ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
+              Coupons apply only when you book service for an additional car — not your first one.
+              Switch the car above to a different vehicle to unlock your multi-car discount.
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
+              Add another car to unlock multi-car discounts on the next car: 2 cars → 10%, 3 cars → 15%, 4 cars → 20%.
+              <div className="mt-2">
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <Link to="/c/vehicles/add">Add another car</Link>
+                </Button>
+              </div>
+            </div>
           )}
-        <Button size="lg" className="h-14 w-full rounded-2xl text-[16px] font-bold" onClick={() => confirm()} disabled={submitting || paying}>
-           {submitting || paying ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-           ) : (
-              <>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span>Pay ₹{previewPayable}</span>
-                  <span className="text-[10px] font-normal opacity-80">Secure payment via Razorpay</span>
+        </SectionCard>}
+
+        {/* Summary */}
+        <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
+          {!previewReady ? (
+            <Row label="Checking plan"><span>…</span></Row>
+          ) : isIncludedBooking ? (
+            <>
+              <Row label={INCLUDED_PLAN_MESSAGE}><span className="text-success">₹0</span></Row>
+              <div className="mt-2 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs font-medium text-success">
+                ₹0 Payable
+              </div>
+            </>
+          ) : (
+            <>
+              {isEntitlementExhausted && (
+                <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  {exhaustedEntitlementMessage(preview)}
                 </div>
-                <ChevronRight className="ml-auto h-5 w-5" />
-              </>
-           )}
-        </Button>
+              )}
+              <Row label="Base"><span>₹{previewBase}</span></Row>
+              {previewAddon > 0 && <Row label={`Add-ons (${addonItemsCount})`}><span>₹{previewAddon}</span></Row>}
+            </>
+          )}
+          {!isIncludedBooking && appliedCoupon && previewDiscount > 0 && (
+            <Row label={`Coupon ${appliedCoupon.code} (${discountPct}%)`}>
+              <span className="text-success">−₹{previewDiscount}</span>
+            </Row>
+          )}
+          <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2">
+            <span className="font-semibold">{isIncludedBooking ? "Payable" : "Total"}</span>
+            <span className="text-lg font-semibold">{!previewReady ? "…" : `₹${previewPayable}`}</span>
+          </div>
+        </div>
       </div>
+
+      {/* Sticky checkout bar */}
+      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto max-w-md px-5 py-3">
+          {offline ? (
+            <div
+              role="status"
+              data-testid="payment-offline-banner"
+              className="mb-2 rounded-lg border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-800"
+            >
+              You're offline. Your selection and pending order are saved — we'll re-check the payment
+              automatically when you're back online.
+            </div>
+          ) : null}
+          {holdBlocked ? (
+            <div
+              role="alert"
+              data-testid="payment-hold-banner"
+              className="mb-2 rounded-lg border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-900"
+            >
+              {holdBlocked}
+            </div>
+          ) : null}
+          <PaymentTimeline events={timeline} />
+          {recovering ? (
+            <div
+              data-testid="payment-recovery-checking"
+              className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              Checking your last payment status…
+            </div>
+          ) : null}
+
+          {!recovering && resumable && !paymentError ? (
+            <div
+              role="status"
+              data-testid="payment-resume-banner"
+              className="mb-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] leading-snug"
+            >
+              <div className="font-medium">Unfinished payment for this booking</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                Your booking is saved and still unpaid — ₹{Math.round(resumable.amount / 100)} for {resumable.serviceName}.
+                Resume to reopen the same payment (Order {resumable.orderId.slice(-6)}).
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={onRetryPayment}
+                  disabled={paying}
+                  data-testid="payment-resume-btn"
+                  className="h-7 rounded-full px-3 text-[11px]"
+                >
+                  {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                  Resume payment
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={onDiscardResumable}
+                  className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                  data-testid="payment-resume-discard"
+                >
+                  <X className="mr-1 h-3 w-3" /> Start over
+                </Button>
+              </div>
+            </div>
+          ) : null}
+          {paymentError ? (
+
+            <div
+              role="alert"
+              data-testid="payment-error-banner"
+              className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-snug text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Payment couldn’t complete</div>
+                <div className="mt-0.5 text-[11px] text-destructive/90">{paymentError.message}</div>
+                {pendingCheckout ? (
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    Attempt {pendingCheckout.attemptNo} · Order {pendingCheckout.orderId.slice(-6)}
+                  </div>
+                ) : null}
+                <div className="mt-2 flex items-center gap-2">
+                  {paymentError.canRetry && pendingCheckout ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={onRetryPayment}
+                      disabled={paying}
+                      data-testid="payment-retry-btn"
+                      className="h-7 rounded-full px-3 text-[11px]"
+                    >
+                      {paying ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                      Retry checkout
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={onDismissPaymentError}
+                    className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                    data-testid="payment-error-dismiss"
+                  >
+                    <X className="mr-1 h-3 w-3" /> Dismiss
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {service?.service_type === "subscription" && !isIncludedBooking && vehicleSubQ.data ? (
+            <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-900">
+              This vehicle already has an active Daily Shine subscription. You can still buy extra washes and premium services —{" "}
+              <Link to="/c/home" className="font-semibold underline">browse extra services</Link>.
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-xl font-semibold">{!previewReady ? "Checking…" : isIncludedBooking ? "₹0 Payable" : `₹${previewPayable}`}</div>
+              <div className="text-[10px] text-muted-foreground">
+                {isIncludedBooking ? INCLUDED_PLAN_MESSAGE : previewPayable > 0 ? "Secure Razorpay checkout" : "Pay after service · receipt created after confirm"}
+              </div>
+              {confirmError ? <div className="mt-1 max-w-[12rem] text-[11px] font-medium text-destructive">{confirmError}</div> : null}
+            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                void confirm().catch((e: any) => {
+                  console.error("[uw-checkout] unhandled checkout error", e);
+                  setSubmitting(false);
+                  setConfirmError(e?.message || "Something went wrong. Please try again.");
+                });
+              }}
+              disabled={submitting || paying || !previewReady || (service?.service_type === "subscription" && !isIncludedBooking && !!vehicleSubQ.data)}
+              size="lg"
+              className="rounded-full px-6"
+              data-testid="pay-button"
+            >
+              {(submitting || paying) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isIncludedBooking ? "Book Included Service" : previewPayable > 0 ? "Pay" : "Confirm"} <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+
 
       <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
   );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="mt-1.5 flex items-baseline justify-between"><span className="text-muted-foreground">{label}</span>{children}</div>;
 }
 
 function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
