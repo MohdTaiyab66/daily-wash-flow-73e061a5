@@ -213,7 +213,7 @@ export function AwaitingPartnerBanner({
 
   if (state === "unassignable") {
     return (
-      <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+      <div className="mt-6 rounded-3xl border border-destructive/20 bg-destructive/5 p-5 text-[13px] font-medium leading-relaxed text-destructive/80">
         We're unable to assign a partner automatically. Our team will take care of this for you shortly.
       </div>
     );
@@ -221,12 +221,12 @@ export function AwaitingPartnerBanner({
 
   const tone =
     state === "completed"
-      ? "border-success/30 bg-success/5"
+      ? "border-success/10 bg-success/5"
       : state === "in_progress"
-      ? "border-primary/40 bg-primary/5"
+      ? "border-primary/10 bg-primary/5"
       : state === "assigned"
-      ? "border-success/30 bg-success/5"
-      : "border-primary/30 bg-primary/5";
+      ? "border-success/10 bg-success/5"
+      : "border-primary/10 bg-primary/5";
 
   const titleMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "Subscription activated · Waiting for area assignment",
@@ -258,13 +258,13 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("mt-4 rounded-2xl border p-4", tone)}>
+    <div className={cn("mt-6 rounded-[32px] border p-5 shadow-sm bg-white", tone)}>
       {serviceWindow && (
-        <div className="mb-3 flex items-center gap-2 rounded-xl bg-background/70 px-3 py-2.5">
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/80 p-3 border border-black/5 shadow-sm">
           <Clock className="h-4 w-4 text-primary" />
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Today's service window</p>
-            <p className="text-sm font-semibold">{serviceWindow}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Today's window</p>
+            <p className="text-[14px] font-black text-[#1a1a1a]">{serviceWindow}</p>
           </div>
         </div>
       )}
@@ -276,26 +276,26 @@ export function AwaitingPartnerBanner({
           <Icon className={cn("mt-0.5 h-5 w-5", iconCls)} />
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{titleMap[state]}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{copyMap[state]}</p>
+          <p className="text-[15px] font-black tracking-tight text-[#1a1a1a]">{titleMap[state]}</p>
+          <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">{copyMap[state]}</p>
 
           {partner && state !== "searching" && (
-            <div className="mt-3 rounded-xl bg-background/60 p-3">
+            <div className="mt-4 rounded-2xl bg-[#FFF9F3] p-4 border border-black/5">
               <div className="flex items-center gap-3">
                 {partner.profile_photo_url ? (
                   <img
                     src={partner.profile_photo_url}
                     alt={partner.full_name}
-                    className="h-10 w-10 rounded-full object-cover"
+                    className="h-12 w-12 rounded-xl object-cover shadow-sm"
                   />
                 ) : (
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-success/20 text-sm font-semibold text-success">
+                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-success/10 text-[16px] font-black text-success">
                     {partner.full_name?.[0] ?? "P"}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{partner.full_name}</p>
-                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <p className="truncate text-[15px] font-black text-[#1a1a1a]">{partner.full_name}</p>
+                  <p className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground/60">
                     <span className="inline-flex items-center gap-1">
                       <Star className="h-3 w-3 fill-current" /> {Number(partner.rating ?? 5).toFixed(1)}
                     </span>

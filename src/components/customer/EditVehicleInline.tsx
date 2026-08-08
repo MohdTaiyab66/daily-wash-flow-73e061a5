@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export type EditableVehicle = {
   id: string;
@@ -226,11 +227,11 @@ export function EditVehicleDialog({
 
   return (
     <Dialog open={open} onOpenChange={attemptClose}>
-      <DialogContent className="max-w-md" aria-describedby="edit-veh-desc">
+      <DialogContent className="max-w-md rounded-[32px] border-none p-8 shadow-2xl" aria-describedby="edit-veh-desc">
         <DialogHeader>
-          <DialogTitle>Edit {vehicle.make} {vehicle.model}</DialogTitle>
-          <DialogDescription id="edit-veh-desc">
-            Update registration, nickname, colour and parking notes. Press Escape to cancel.
+          <DialogTitle className="text-xl font-black tracking-tight text-[#1a1a1a]">Edit {vehicle.make} {vehicle.model}</DialogTitle>
+          <DialogDescription id="edit-veh-desc" className="text-[13px] font-medium text-muted-foreground/60 mt-1">
+            Update registration, nickname, colour and parking notes.
           </DialogDescription>
         </DialogHeader>
 
@@ -320,16 +321,16 @@ export function EditVehicleDialog({
             </p>
           </Field>
 
-          <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+          <label className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-4 text-[14px] font-bold shadow-sm transition-colors active:bg-[#FFF9F3]">
             <input
               type="checkbox"
-              className="h-4 w-4"
+              className="h-5 w-5 rounded-md border-black/10 text-primary focus:ring-primary/20"
               checked={form.is_default}
               onChange={(e) => setField("is_default", e.target.checked)}
               disabled={save.isPending}
               aria-label="Set as default vehicle"
             />
-            <Star className="h-4 w-4 text-primary" aria-hidden />
+            <Star className={cn("h-4 w-4", form.is_default ? "text-primary fill-current" : "text-muted-foreground/30")} aria-hidden />
             <span>Set as default vehicle</span>
           </label>
 
@@ -346,13 +347,12 @@ export function EditVehicleDialog({
             </div>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => attemptClose(false)} disabled={save.isPending}>
-              Cancel
+          <DialogFooter className="mt-6 flex flex-col gap-3 sm:flex-col">
+            <Button type="submit" className="h-14 w-full rounded-2xl text-[16px] font-black shadow-lg shadow-primary/20 transition-transform active:scale-95" disabled={save.isPending || (!dirty && !saveError)}>
+              {save.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (saveError ? "Retry save" : "Save changes")}
             </Button>
-            <Button type="submit" disabled={save.isPending || (!dirty && !saveError)}>
-              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-              {saveError ? "Retry save" : "Save changes"}
+            <Button type="button" variant="ghost" className="h-14 w-full rounded-2xl font-bold text-muted-foreground/60 transition-transform active:scale-95" onClick={() => attemptClose(false)} disabled={save.isPending}>
+              Cancel
             </Button>
           </DialogFooter>
         </form>
