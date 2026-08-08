@@ -265,11 +265,39 @@ function LocationSearch() {
         </div>
       </div>
 
-      {/* Suggestions / list */}
-      <div className="flex-1 px-5 pt-2 pb-6 overflow-y-auto">
+      {/* Search results */}
+      <div className="flex-1 overflow-y-auto px-5 pb-8">
         {loadingSuggestions && (
-          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
+            <p className="mt-4 text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">Searching...</p>
+          </div>
+        )}
+
+        {showEmpty && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="grid h-20 w-20 place-items-center rounded-full bg-white shadow-sm mb-6">
+              <Search className="h-8 w-8 text-muted-foreground/20" />
+            </div>
+            <p className="text-[15px] font-black text-[#1a1a1a]">No results found</p>
+            <p className="mt-2 text-[13px] font-medium text-muted-foreground/60">Try searching for a different area or landmark</p>
+            {!notified && (
+              <div className="mt-8 w-full max-w-[280px] rounded-3xl border border-black/5 bg-white p-6 shadow-sm">
+                <p className="text-[13px] font-bold text-[#1a1a1a]">Notify me at launch</p>
+                <div className="mt-4 flex gap-2">
+                  <Input
+                    value={notifyPhone}
+                    onChange={(e) => setNotifyPhone(e.target.value.replace(/\D/g, ""))}
+                    placeholder="9876543210"
+                    maxLength={10}
+                    className="h-11 rounded-xl border-black/5 bg-[#FFF9F3] text-center font-bold"
+                  />
+                  <Button onClick={submitWaitlist} size="icon" className="h-11 w-11 shrink-0 rounded-xl shadow-lg shadow-primary/20">
+                    <BellRing className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -278,55 +306,51 @@ function LocationSearch() {
             key={s.placeId}
             onClick={() => chooseSuggestion(s)}
             disabled={selecting}
-            className="w-full flex items-start gap-3 py-3.5 border-b border-border/60 text-left hover:bg-accent/40 disabled:opacity-60"
+            className="w-full flex items-start gap-4 py-5 border-b border-black/5 text-left transition-all active:bg-black/5"
           >
-            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white shadow-sm">
+              <MapPin className="h-5 w-5 text-[#1a1a1a]" />
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-[15px] truncate">{s.primary}</div>
+              <span className="block text-[15px] font-black text-[#1a1a1a] truncate">
+                {s.primary}
+              </span>
               {s.secondary && (
-                <div className="text-xs text-muted-foreground truncate mt-0.5">{s.secondary}</div>
+                <span className="mt-1 block text-[13px] font-medium text-muted-foreground/60 line-clamp-2 leading-relaxed">
+                  {s.secondary}
+                </span>
               )}
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground mt-1" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground/30 mt-3" />
           </button>
         ))}
 
-        {showEmpty && (
-          <div className="mt-6 rounded-2xl bg-muted/50 ring-1 ring-border p-6 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-accent">
-              <MapPin className="h-5 w-5 text-primary" />
+        {q.trim().length < 2 && !loadingSuggestions && (
+          <div className="mt-8 rounded-3xl border border-black/5 bg-white p-8 text-center shadow-sm">
+            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-primary/5 mx-auto mb-6">
+              <MapPin className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="mt-3 text-base font-semibold">No matches for "{q}"</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Drop your number — we'll text you when we launch service in your area.
+            <p className="text-[15px] font-black text-[#1a1a1a]">Find your vehicle</p>
+            <p className="mt-2 text-[13px] font-medium leading-relaxed text-muted-foreground/60">
+              Enter your apartment, society, or office name to get service at your doorstep.
             </p>
-            {!notified ? (
-              <div className="mt-4 flex gap-2">
-                <div className="flex flex-1">
-                  <span className="inline-flex items-center rounded-l-lg border border-r-0 border-input bg-card px-2.5 text-xs text-muted-foreground">+91</span>
-                  <Input
-                    value={notifyPhone}
-                    onChange={(e) => setNotifyPhone(e.target.value.replace(/\D/g, ""))}
-                    placeholder="98765 43210"
-                    inputMode="numeric"
-                    maxLength={10}
-                    className="rounded-l-none rounded-r-lg"
-                  />
-                </div>
-                <Button onClick={submitWaitlist}><BellRing className="mr-1 h-4 w-4" />Notify</Button>
-              </div>
-            ) : (
-              <p className="mt-3 text-sm font-semibold text-primary">You're on the list ✓</p>
-            )}
           </div>
         )}
-
-        {q.trim().length < 2 && !loadingSuggestions && (
-          <p className="pt-6 text-center text-xs text-muted-foreground">
-            Type at least 2 characters to search for your area or landmark.
-          </p>
-        )}
       </div>
+
+      {selecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FFF9F3]/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+              <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-white shadow-xl">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            </div>
+            <p className="mt-6 text-[13px] font-black text-primary uppercase tracking-[0.2em]">Confirming Location</p>
+          </div>
+        </div>
+      )}
 
       {selecting && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
