@@ -75,7 +75,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         .from("subscriptions")
         .select("id")
         .eq("vehicle_id", (booking as any).vehicle_id)
-        .in("status", ["active", "awaiting_partner_assignment", "assigned"])
+        .in("status", ["active", "awaiting_partner_assignment", "assigned", "payment_pending"])
         .neq("booking_id", data.bookingId)
         .limit(1)
         .maybeSingle();
@@ -89,7 +89,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
           reason: "duplicate_active_subscription",
           meta: { booking_id: data.bookingId },
         });
-        throw new Error("This vehicle already has an active Daily Shine subscription.");
+        throw new Error("This vehicle already has an active or pending Daily Shine subscription.");
       }
     }
 
