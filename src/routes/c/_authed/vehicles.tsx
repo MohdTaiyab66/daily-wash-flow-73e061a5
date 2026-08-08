@@ -113,6 +113,7 @@ async function vehicleDeletionBlockReason(vehicleId: string): Promise<DeleteBloc
 
 function VehiclesPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [target, setTarget] = useState<Vehicle | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [checking, setChecking] = useState(false);
