@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock, Star, Search, UserCheck, Loader2, PlayCircle, CheckCircle2 } from "lucide-react";
+import { StatusChip } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 
 /**
