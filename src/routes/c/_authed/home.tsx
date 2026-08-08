@@ -223,8 +223,8 @@ function CustomerHome() {
 
 
   const latestNoticeQ = useQuery({
-    queryKey: ["customer-latest-service-notice", activeVehicle?.id],
-    enabled: !!activeVehicle?.id,
+    queryKey: ["customer-latest-service-notice", selectedVehicleId],
+    enabled: !!selectedVehicleId,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("dirty_vehicle_reports")
@@ -233,7 +233,7 @@ function CustomerHome() {
           created_at,
           service:services!inner(vehicle_id)
         `)
-        .eq("services.vehicle_id", activeVehicle.id)
+        .eq("services.vehicle_id", selectedVehicleId)
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -258,7 +258,7 @@ function CustomerHome() {
 
   useEffect(() => {
     latestNoticeQ.refetch();
-  }, [activeVehicle?.id]);
+  }, [selectedVehicleId]);
 
   const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
 

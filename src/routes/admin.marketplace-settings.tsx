@@ -13,6 +13,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/marketplace-settings")({
+  beforeLoad: async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) throw new Error("Unauthorized");
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: sess.session.user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden: Admin access required");
+  },
   component: MarketplaceSettingsPage,
 });
 

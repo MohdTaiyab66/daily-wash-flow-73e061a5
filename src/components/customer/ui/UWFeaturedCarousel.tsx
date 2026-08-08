@@ -54,12 +54,14 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   };
 
   const next = useCallback(() => {
-    setIndex((prev) => (prev + 1) % items.length);
+    if (!document.hidden) {
+      setIndex((prev) => (prev + 1) % items.length);
+    }
   }, [items.length]);
 
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
-    const timer = setInterval(next, 5000);
+    const timer = setInterval(next, 4000);
     return () => clearInterval(timer);
   }, [isPaused, items.length, next]);
 
@@ -88,7 +90,8 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
             <img 
               src={item.image} 
               alt={item.title} 
-              className="h-full w-full object-cover opacity-60"
+              className="h-full w-full object-cover opacity-60 transition-opacity duration-500"
+              loading={items.indexOf(item) === 0 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
