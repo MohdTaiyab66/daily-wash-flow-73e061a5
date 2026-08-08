@@ -421,20 +421,6 @@ function CustomerHome() {
                   </div>
                 </Surface>
               )}
-                        Your partner reported that your vehicle needs a little extra attention.
-                      </p>
-                      <div className="mt-4">
-                        <Button 
-                          asChild
-                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
-                        >
-                          <Link to="/c/subscriptions">Resolve & Schedule wash</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Surface>
-              )}
 
               <div className="py-2 flex items-center justify-center gap-6">
                 <TrustItem label="Expert Care" />
@@ -444,7 +430,6 @@ function CustomerHome() {
                 <TrustItem label="Safe & Secure" />
               </div>
             </>
-
           )}
         </div>
 
