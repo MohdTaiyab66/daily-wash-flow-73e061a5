@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/c/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Log in — Urban Wash" }] }),
-  validateSearch: z.object({ redirect: z.string().optional().catch(undefined) }),
+  validateSearch: (search) => z.object({ redirect: z.string().optional().catch(undefined) }).parse(search),
   component: CustomerAuth,
 });
 
