@@ -171,9 +171,6 @@ function EditVehiclePage() {
           <span className="text-sm font-medium">Back</span>
         </button>
         <PageTitle>Edit vehicle</PageTitle>
-        <Muted className="mt-1">
-          Update your vehicle details or preferences.
-        </Muted>
       </header>
 
       <main className="flex-1 px-5 pb-32 space-y-6">
