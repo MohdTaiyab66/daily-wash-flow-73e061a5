@@ -45,7 +45,6 @@ type CatalogRow = {
   popularity?: number | null;
 };
 
-// Popular brands determined by catalog data audit
 const POPULAR_BRANDS = ["Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Kia"];
 
 function AddVehicle() {
@@ -55,14 +54,13 @@ function AddVehicle() {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string | null>(null);
   const [selected, setSelected] = useState<CatalogRow | null>(null);
+  const [success, setSuccess] = useState(false);
   
-  // Details state
   const [color, setColor] = useState("");
   const [reg, setReg] = useState("");
   const [year, setYear] = useState("");
   const [variant, setVariant] = useState("");
   const [parking, setParking] = useState("");
-  const [isPhotoStep, setIsPhotoStep] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -168,9 +166,8 @@ function AddVehicle() {
       }
     },
     onSuccess: () => {
-      toast.success("Vehicle added successfully");
       qc.invalidateQueries({ queryKey: ["customer-vehicles"] });
-      navigate({ to: "/c/home" });
+      setSuccess(true);
     },
     onError: (e: any) => toast.error(e.message || "Failed to add vehicle"),
   });
@@ -196,7 +193,6 @@ function AddVehicle() {
     }
   };
 
-  // Rendering Helper for Vehicle List Items
   const VehicleRow = ({ c }: { c: CatalogRow }) => (
     <button
       onClick={() => setSelected(c)}
@@ -222,279 +218,286 @@ function AddVehicle() {
 
   return (
     <div className="min-h-screen bg-[#FFF9F3] flex flex-col">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-4">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back</span>
-        </button>
-        <PageTitle>{selected ? "Vehicle details" : brand ? brand : "Add your vehicle"}</PageTitle>
-        <Muted className="mt-1">
-          {selected 
-            ? "Almost done! Just a few more details." 
-            : "Find your car and we'll automatically apply the right pricing."}
-        </Muted>
-      </header>
+      {success ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 animate-in fade-in zoom-in duration-500">
+          <div className="h-24 w-24 rounded-[32px] bg-success flex items-center justify-center text-white shadow-xl shadow-success/20 mb-8">
+            <Check className="h-12 w-12" strokeWidth={3} />
+          </div>
+          <h2 className="text-[24px] font-black text-[#1a1a1a] text-center leading-tight">Vehicle added!</h2>
+          <p className="mt-2 text-[15px] font-medium text-muted-foreground text-center">
+            {selected?.make} {selected?.model} is now in your garage.
+          </p>
+          <Button 
+            onClick={() => navigate({ to: "/c/home" })}
+            className="mt-12 w-full h-14 rounded-2xl bg-[#1a1a1a] text-white font-black shadow-lg active:scale-95 transition-transform"
+          >
+            Go to Home
+          </Button>
+        </div>
+      ) : (
+        <>
+          <header className="px-5 pt-6 pb-4">
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+            <PageTitle>{selected ? "Vehicle details" : brand ? brand : "Add your vehicle"}</PageTitle>
+            <Muted className="mt-1">
+              {selected 
+                ? "Almost done! Just a few more details." 
+                : "Find your car and we'll automatically apply the right pricing."}
+            </Muted>
+          </header>
 
-      <main className="flex-1 px-5 pb-32">
-        {!selected ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* Search Bar */}
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
-              </div>
-              <Input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  if (brand) setBrand(null);
-                }}
-                placeholder="Search your car"
-                className="h-14 pl-12 pr-12 rounded-2xl border-border/60 bg-white shadow-sm focus-visible:ring-primary/20 transition-all text-base"
-              />
-              {query && (
-                <button 
-                  onClick={() => setQuery("")}
-                  className="absolute inset-y-0 right-4 flex items-center text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-              {!query && (
-                <div className="mt-2 ml-1">
-                  <Muted className="text-[12px]">Try "Creta", "Swift" or "Fortuner"</Muted>
-                </div>
-              )}
-            </div>
-
-            {/* Content Switcher: Search Results vs Initial Grid */}
-            {(query.length > 0 || brand) ? (
-              <div className="space-y-2">
-                <SectionTitle className="mb-4">
-                  {brand ? `Models for ${brand}` : "Search results"}
-                </SectionTitle>
-                {catalogQ.isLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)}
+          <main className="flex-1 px-5 pb-32">
+            {!selected ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
                   </div>
-                ) : filtered.length > 0 ? (
-                  <div className="space-y-1">
-                    {filtered.map(c => <VehicleRow key={c.id} c={c} />)}
+                  <Input
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      if (brand) setBrand(null);
+                    }}
+                    placeholder="Search your car"
+                    className="h-14 pl-12 pr-12 rounded-2xl border-border/60 bg-white shadow-sm focus-visible:ring-primary/20 transition-all text-base"
+                  />
+                  {query && (
+                    <button 
+                      onClick={() => setQuery("")}
+                      className="absolute inset-y-0 right-4 flex items-center text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
+                  {!query && (
+                    <div className="mt-2 ml-1">
+                      <Muted className="text-[12px]">Try "Creta", "Swift" or "Fortuner"</Muted>
+                    </div>
+                  )}
+                </div>
+
+                {(query.length > 0 || brand) ? (
+                  <div className="space-y-2">
+                    <SectionTitle className="mb-4">
+                      {brand ? `Models for ${brand}` : "Search results"}
+                    </SectionTitle>
+                    {catalogQ.isLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)}
+                      </div>
+                    ) : filtered.length > 0 ? (
+                      <div className="space-y-1">
+                        {filtered.map(c => <VehicleRow key={c.id} c={c} />)}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center space-y-3">
+                        <div className="bg-muted/50 h-16 w-16 rounded-full flex items-center justify-center mx-auto">
+                          <Car className="h-8 w-8 text-muted-foreground/40" />
+                        </div>
+                        <div>
+                          <SectionTitle>No exact match</SectionTitle>
+                          <Muted>We couldn't find that model. Try searching by brand instead.</Muted>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="py-12 text-center space-y-3">
-                    <div className="bg-muted/50 h-16 w-16 rounded-full flex items-center justify-center mx-auto">
-                      <Car className="h-8 w-8 text-muted-foreground/40" />
-                    </div>
-                    <div>
-                      <SectionTitle>No exact match</SectionTitle>
-                      <Muted>We couldn't find that model. Try searching by brand instead.</Muted>
-                    </div>
-                  </div>
+                  <>
+                    <Section 
+                      title="Popular brands" 
+                      className="mt-0"
+                      action={
+                        <Drawer>
+                          <DrawerTrigger asChild>
+                            <button className="text-primary text-[14px] font-semibold flex items-center gap-0.5">
+                              View all <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </DrawerTrigger>
+                          <DrawerContent className="max-h-[85vh]">
+                            <DrawerHeader className="pb-2 border-b">
+                              <DrawerTitle className="text-center">Choose a brand</DrawerTitle>
+                              <DrawerDescription className="text-center">Select your car manufacturer</DrawerDescription>
+                            </DrawerHeader>
+                            <div className="overflow-y-auto px-4 pb-12 pt-2">
+                               {brandsByAlpha.map(([char, list]) => (
+                                 <div key={char} className="mb-6">
+                                   <div className="text-[12px] font-bold text-muted-foreground mb-2 px-2">{char}</div>
+                                   <div className="grid grid-cols-1 gap-1">
+                                     {list.map(b => (
+                                       <DrawerClose key={b} asChild>
+                                         <button 
+                                           onClick={() => setBrand(b)}
+                                           className="w-full text-left px-3 py-3 rounded-xl hover:bg-accent active:bg-accent/60 transition-colors font-medium"
+                                         >
+                                           {b}
+                                         </button>
+                                       </DrawerClose>
+                                     ))}
+                                   </div>
+                                 </div>
+                               ))}
+                            </div>
+                          </DrawerContent>
+                        </Drawer>
+                      }
+                    >
+                      <div className="grid grid-cols-3 gap-2">
+                        {POPULAR_BRANDS.map(b => (
+                          <button
+                            key={b}
+                            onClick={() => setBrand(b)}
+                            className="h-11 rounded-full bg-white border border-border/50 text-[13px] font-semibold hover:border-primary/40 hover:bg-primary/5 transition-all shadow-sm active:scale-[0.98]"
+                          >
+                            {b.split(' ')[0]}
+                          </button>
+                        ))}
+                      </div>
+                    </Section>
+
+                    <Section title="Popular vehicles">
+                      <div className="space-y-1">
+                        {catalogQ.isLoading ? (
+                          [1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)
+                        ) : (
+                          popularVehicles.map(c => <VehicleRow key={c.id} c={c} />)
+                        )}
+                      </div>
+                    </Section>
+                  </>
                 )}
               </div>
             ) : (
-              <>
-                {/* Popular Brands */}
-                <Section 
-                  title="Popular brands" 
-                  className="mt-0"
-                  action={
-                    <Drawer>
-                      <DrawerTrigger asChild>
-                        <button className="text-primary text-[14px] font-semibold flex items-center gap-0.5">
-                          View all <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </DrawerTrigger>
-                      <DrawerContent className="max-h-[85vh]">
-                        <DrawerHeader className="pb-2 border-b">
-                          <DrawerTitle className="text-center">Choose a brand</DrawerTitle>
-                          <DrawerDescription className="text-center">Select your car manufacturer</DrawerDescription>
-                        </DrawerHeader>
-                        <div className="overflow-y-auto px-4 pb-12 pt-2">
-                           {brandsByAlpha.map(([char, list]) => (
-                             <div key={char} className="mb-6">
-                               <div className="text-[12px] font-bold text-muted-foreground mb-2 px-2">{char}</div>
-                               <div className="grid grid-cols-1 gap-1">
-                                 {list.map(b => (
-                                   <DrawerClose key={b} asChild>
-                                     <button 
-                                       onClick={() => setBrand(b)}
-                                       className="w-full text-left px-3 py-3 rounded-xl hover:bg-accent active:bg-accent/60 transition-colors font-medium"
-                                     >
-                                       {b}
-                                     </button>
-                                   </DrawerClose>
-                                 ))}
-                               </div>
-                             </div>
-                           ))}
-                        </div>
-                      </DrawerContent>
-                    </Drawer>
-                  }
-                >
-                  <div className="grid grid-cols-3 gap-2">
-                    {POPULAR_BRANDS.map(b => (
-                      <button
-                        key={b}
-                        onClick={() => setBrand(b)}
-                        className="h-11 rounded-full bg-white border border-border/50 text-[13px] font-semibold hover:border-primary/40 hover:bg-primary/5 transition-all shadow-sm active:scale-[0.98]"
-                      >
-                        {b.split(' ')[0]}
-                      </button>
-                    ))}
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <Surface className="border-primary/10 bg-white p-3 flex items-center gap-4">
+                   <div className="h-16 w-20 bg-muted/30 rounded-xl flex items-center justify-center shrink-0">
+                      <VehicleAvatar
+                        imageUrl={selected.image_url}
+                        make={selected.make}
+                        model={selected.model}
+                        className="h-12 w-16"
+                      />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                      <div className="font-bold text-lg">{selected.make} {selected.model}</div>
+                      <div className="text-[12px] text-muted-foreground font-medium uppercase tracking-wider">
+                        {vehicleBodyLabel(selected.make, selected.model, selected.category)}
+                      </div>
+                   </div>
+                   <button 
+                      onClick={() => setSelected(null)}
+                      className="h-8 w-8 rounded-full bg-accent/50 flex items-center justify-center text-primary"
+                   >
+                      <X className="h-4 w-4" />
+                   </button>
+                </Surface>
+
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold text-foreground/80 ml-1">Registration number</Label>
+                    <Input 
+                      value={reg}
+                      onChange={(e) => setReg(e.target.value.toUpperCase())}
+                      placeholder="e.g. UP 32 AB 1234"
+                      className="h-13 rounded-xl border-border/60 bg-white text-base font-semibold tracking-wide uppercase placeholder:normal-case placeholder:font-normal"
+                    />
                   </div>
-                </Section>
 
-                {/* Popular Vehicles */}
-                <Section title="Popular vehicles">
-                  <div className="space-y-1">
-                    {catalogQ.isLoading ? (
-                      [1, 2, 3].map(i => <div key={i} className="h-16 w-full bg-muted/40 animate-pulse rounded-2xl" />)
-                    ) : (
-                      popularVehicles.map(c => <VehicleRow key={c.id} c={c} />)
-                    )}
-                  </div>
-                </Section>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            {/* Selected Vehicle Overview */}
-            <Surface className="border-primary/10 bg-white p-3 flex items-center gap-4">
-               <div className="h-16 w-20 bg-muted/30 rounded-xl flex items-center justify-center shrink-0">
-                  <VehicleAvatar
-                    imageUrl={selected.image_url}
-                    make={selected.make}
-                    model={selected.model}
-                    className="h-12 w-16"
-                  />
-               </div>
-               <div className="flex-1 min-w-0">
-                  <div className="font-bold text-lg">{selected.make} {selected.model}</div>
-                  <div className="text-[12px] text-muted-foreground font-medium uppercase tracking-wider">
-                    {vehicleBodyLabel(selected.make, selected.model, selected.category)}
-                  </div>
-               </div>
-               <button 
-                  onClick={() => setSelected(null)}
-                  className="h-8 w-8 rounded-full bg-accent/50 flex items-center justify-center text-primary"
-               >
-                  <X className="h-4 w-4" />
-               </button>
-            </Surface>
-
-            {/* Input Form */}
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Registration number</Label>
-                <Input 
-                  value={reg}
-                  onChange={(e) => setReg(e.target.value.toUpperCase())}
-                  placeholder="e.g. UP 32 AB 1234"
-                  className="h-13 rounded-xl border-border/60 bg-white text-base font-semibold tracking-wide uppercase placeholder:normal-case placeholder:font-normal"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-bold text-foreground/80 ml-1">Color (Optional)</Label>
-                  <Input 
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    placeholder="White"
-                    className="h-13 rounded-xl border-border/60 bg-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-bold text-foreground/80 ml-1">Year (Optional)</Label>
-                  <Input 
-                    value={year}
-                    onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="2022"
-                    inputMode="numeric"
-                    className="h-13 rounded-xl border-border/60 bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Vehicle photo</Label>
-                <div className="relative">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment" 
-                    className="hidden" 
-                    ref={fileInputRef} 
-                    onChange={handlePhotoChange}
-                  />
-                  {photoPreview ? (
-                    <div className="relative h-44 w-full rounded-2xl overflow-hidden border-2 border-primary/20 bg-white shadow-sm">
-                      <img src={photoPreview} className="h-full w-full object-cover" alt="Vehicle" />
-                      <button 
-                        onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                        className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/50 text-white backdrop-blur-md flex items-center justify-center"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[13px] font-bold text-foreground/80 ml-1">Color (Optional)</Label>
+                      <Input 
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        placeholder="White"
+                        className="h-13 rounded-xl border-border/60 bg-white"
+                      />
                     </div>
-                  ) : (
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-32 rounded-2xl border-2 border-dashed border-border/60 bg-white hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-2 group"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                        <Camera className="h-5 w-5" />
-                      </div>
-                      <div className="text-center">
-                        <div className="text-[14px] font-bold">Add vehicle photo</div>
-                        <Muted className="text-[11px]">Help us identify your car at the spot</Muted>
-                      </div>
-                    </button>
-                  )}
+                    <div className="space-y-2">
+                      <Label className="text-[13px] font-bold text-foreground/80 ml-1">Year (Optional)</Label>
+                      <Input 
+                        value={year}
+                        onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        placeholder="2022"
+                        inputMode="numeric"
+                        className="h-13 rounded-xl border-border/60 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold text-foreground/80 ml-1">Vehicle photo</Label>
+                    <div className="relative">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment" 
+                        className="hidden" 
+                        ref={fileInputRef} 
+                        onChange={handlePhotoChange}
+                      />
+                      {photoPreview ? (
+                        <div className="relative h-44 w-full rounded-2xl overflow-hidden border-2 border-primary/20 bg-white shadow-sm">
+                          <img src={photoPreview} className="h-full w-full object-cover" alt="Vehicle" />
+                          <button 
+                            onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-sm"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full h-32 rounded-2xl border-2 border-dashed border-border/60 bg-white flex flex-col items-center justify-center gap-2 hover:border-primary/40 transition-colors"
+                        >
+                          <Camera className="h-8 w-8 text-muted-foreground/40" />
+                          <span className="text-[13px] font-medium text-muted-foreground">Take a photo of your car</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold text-foreground/80 ml-1">Parking instructions (Optional)</Label>
+                    <Input 
+                      value={parking}
+                      onChange={(e) => setParking(e.target.value)}
+                      placeholder="e.g. B-block basement, slot 14"
+                      className="h-13 rounded-xl border-border/60 bg-white"
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-[13px] font-bold text-foreground/80 ml-1">Parking instructions (Optional)</Label>
-                <Input 
-                  value={parking}
-                  onChange={(e) => setParking(e.target.value)}
-                  placeholder="e.g. B-block basement, slot 14"
-                  className="h-13 rounded-xl border-border/60 bg-white"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Sticky Bottom Button */}
-      {selected && (
-        <div className="fixed inset-x-0 bottom-0 p-5 bg-gradient-to-t from-[#FFF9F3] via-[#FFF9F3] to-transparent pt-10">
-          <Button
-            size="lg"
-            className="w-full h-14 rounded-2xl shadow-lg shadow-primary/20 text-base font-bold gap-2 animate-in slide-in-from-bottom-4 duration-500"
-            disabled={save.isPending || reg.trim().length < 4 || !userId}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>Add vehicle <ArrowLeft className="h-5 w-5 rotate-180" /></>
             )}
-          </Button>
-          <p className="text-center text-[11px] text-muted-foreground mt-3">
-            By adding, you agree to our vehicle classification terms
-          </p>
-        </div>
+          </main>
+
+          {selected && (
+            <div className="fixed inset-x-0 bottom-0 p-5 bg-gradient-to-t from-[#FFF9F3] via-[#FFF9F3] to-transparent pt-10">
+              <Button
+                size="lg"
+                className="w-full h-14 rounded-2xl shadow-lg shadow-primary/20 text-base font-bold gap-2 animate-in slide-in-from-bottom-4 duration-500"
+                disabled={save.isPending || reg.trim().length < 4 || !userId}
+                onClick={() => save.mutate()}
+              >
+                {save.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>Add vehicle <ArrowLeft className="h-5 w-5 rotate-180" /></>
+                )}
+              </Button>
+              <p className="text-center text-[11px] text-muted-foreground mt-3">
+                By adding, you agree to our vehicle classification terms
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

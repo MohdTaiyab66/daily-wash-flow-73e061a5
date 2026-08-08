@@ -346,7 +346,7 @@ export function BookAWashSheet({
             <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
             <div className="mt-1 flex items-center gap-2">
                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Your included wash is available</p>
+               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Included premium wash</p>
             </div>
           </div>
           <button
@@ -468,15 +468,18 @@ export function BookAWashSheet({
                   </div>
                 </div>
                 <div className="mt-4 px-1">
-                  <Link
-                    to="/c/service/$slug"
-                    params={{ slug: "daily-shine" }}
-                    search={{ vehicleId: vehicleId ?? undefined }}
-                    className="flex items-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
+                  <button 
+                    onClick={() => {
+                      onOpenChange(false);
+                      setTimeout(() => {
+                        window.location.href = `/c/service/${INCLUDED.slug}?vehicleId=${vehicleId}`;
+                      }, 100);
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
                   >
                     Need another wash? <span className="underline underline-offset-4">Buy more</span>
                     <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -614,7 +617,7 @@ export function BookAWashSheet({
 
         {/* Sticky CTA Bar */}
         {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
+          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] safe-area-bottom">
             <Button
               data-testid="book-wash-button"
               onClick={() => void confirm()}
@@ -627,11 +630,11 @@ export function BookAWashSheet({
                    <span>Scheduling...</span>
                 </div>
               ) : (
-                "Schedule a wash"
+                "Book this wash →"
               )}
             </Button>
             <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-              Included with your plan · ₹0
+              Included with Daily Shine · ₹0
             </p>
           </div>
         )}

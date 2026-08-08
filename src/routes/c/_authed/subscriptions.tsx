@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -59,6 +59,7 @@ type AddonRow = {
 
 function MyPlanPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -221,44 +222,30 @@ function MyPlanPage() {
   });
 
   const latestNoticeQ = useQuery({
-    queryKey: ["customer-latest-service-notice", userId, selectedVehicleId],
-    enabled: !!userId && !!selectedVehicleId,
+    queryKey: ["customer-latest-service-notice", selectedVehicleId],
+    enabled: !!selectedVehicleId,
     queryFn: async () => {
-      // Fetch latest notice specifically for the selected vehicle.
-      // Notifications are stamped with service_id in metadata.
       const { data, error } = await (supabase as any)
-        .from("customer_notifications")
-        .select("id,type,title,body,link,metadata,created_at,read_at")
-        .eq("user_id", userId)
-        .in("type", ["vehicle_unavailable", "vehicle_dirty"])
-        // Use jsonb containment to filter by vehicle_id in metadata, 
-        // or check service_id's association.
+        .from("dirty_vehicle_reports")
+        .select(`
+          id,
+          created_at,
+          service:services!inner(vehicle_id)
+        `)
+        .eq("services.vehicle_id", selectedVehicleId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(1);
 
       if (error) throw error;
-      
-      const notifications = (data ?? []) as any[];
-      
-      // We need to verify which of these notifications belong to the current vehicle.
-      // Since notifications link to services, we filter by those that match selectedVehicleId.
-      for (const n of notifications) {
-        const sid = n.metadata?.service_id;
-        if (!sid) continue;
-        
-        const { data: svc } = await supabase
-          .from("services")
-          .select("vehicle_id")
-          .eq("id", sid)
-          .single();
-          
-        if (svc?.vehicle_id === selectedVehicleId) {
-          return n;
-        }
-      }
-      return null;
+      return data?.[0] || null;
     },
   });
+
+  useEffect(() => {
+    latestNoticeQ.refetch();
+    // Force a router re-evaluation to ensure layout reflects new selection
+    router.invalidate();
+  }, [selectedVehicleId]);
 
   // Recent service list must only reflect paid activity. Never surface
   // service/booking cards for unpaid subscription attempts.
@@ -350,7 +337,8 @@ function MyPlanPage() {
           {activeSub && (
             <div className="mt-6 space-y-5">
               <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-              <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => setBookOpen(true)} vehicleId={selectedVehicleId} />
+              {/* Unified dirty vehicle report logic handles ServiceNoticeCard functionality now */}
+              
               
               <UWPlanCard 
                 status={activeSub.payment_status === 'paid' ? 'active' : 'pending'}
@@ -367,6 +355,35 @@ function MyPlanPage() {
 
       {hasVehicles && activeSub && !!selectedVehicleId && (
         <div className="mt-6 space-y-5">
+          {latestNoticeQ.data && (
+            <Surface className="border-primary/20 bg-white p-5 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
+                    <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                      {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+                    {vehicleLabel} was reported as extra dirty. A premium wash is recommended.
+                  </p>
+                  <div className="mt-4">
+                    <Button 
+                      onClick={() => setBookOpen(true)}
+                      className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20 active:scale-95"
+                    >
+                      Schedule a wash
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Surface>
+          )}
+
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">

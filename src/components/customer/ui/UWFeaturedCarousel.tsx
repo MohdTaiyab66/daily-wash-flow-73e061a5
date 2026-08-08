@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,38 @@ interface UWFeaturedCarouselProps {
 export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeaturedCarouselProps) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
+
+  // Min distance for swipe
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    const distance = touchStart.current - touchEnd.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      setIndex((prev) => (prev + 1) % items.length);
+      setIsPaused(true);
+      setTimeout(() => setIsPaused(false), 5000);
+    }
+    if (isRightSwipe) {
+      setIndex((prev) => (prev - 1 + items.length) % items.length);
+      setIsPaused(true);
+      setTimeout(() => setIsPaused(false), 5000);
+    }
+  };
 
   const next = useCallback(() => {
     setIndex((prev) => (prev + 1) % items.length);
@@ -35,14 +67,16 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
 
   return (
     <div 
-      className={cn("relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9]", className)}
+      ref={containerRef}
+      className={cn("relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9] touch-pan-y", className)}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       <div 
-        className="flex h-full transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)"
+        className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${index * 100}%)` }}
       >
         {items.map((item) => (

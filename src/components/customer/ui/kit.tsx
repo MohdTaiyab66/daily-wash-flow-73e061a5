@@ -160,7 +160,7 @@ export function ListRow({
 
 /* --------------------------------- status -------------------------------- */
 
-export type Tone = "success" | "warning" | "danger" | "neutral" | "brand";
+export type Tone = "success" | "warning" | "danger" | "neutral" | "brand" | "info";
 
 const TONE: Record<Tone, string> = {
   success: "bg-success/12 text-success",
@@ -168,6 +168,7 @@ const TONE: Record<Tone, string> = {
   danger: "bg-destructive/10 text-destructive",
   neutral: "bg-muted text-muted-foreground",
   brand: "bg-primary/12 text-primary",
+  info: "bg-blue-100 text-blue-700",
 };
 
 export function StatusChip({

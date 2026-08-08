@@ -35,6 +35,7 @@ import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel"
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
 import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
 import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 
 
 
@@ -88,6 +89,7 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -228,25 +230,24 @@ function CustomerHome() {
       if (!u.user) return null;
       
       const { data, error } = await (supabase as any)
-        .from("customer_notifications")
-        .select("id,type,title,body,link,metadata,created_at,read_at")
-        .eq("user_id", u.user.id)
-        .in("type", ["vehicle_unavailable", "vehicle_dirty"])
+        .from("dirty_vehicle_reports")
+        .select(`
+          id,
+          created_at,
+          service:services!inner(vehicle_id)
+        `)
+        .eq("services.vehicle_id", activeVehicle.id)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(1);
 
       if (error) throw error;
-      const notifications = (data ?? []) as any[];
-      
-      for (const n of notifications) {
-        const sid = n.metadata?.service_id;
-        if (!sid) continue;
-        const { data: svc } = await supabase.from("services").select("vehicle_id").eq("id", sid).single();
-        if (svc?.vehicle_id === activeVehicle.id) return n;
-      }
-      return null;
+      return data?.[0] || null;
     },
   });
+
+  useEffect(() => {
+    latestNoticeQ.refetch();
+  }, [activeVehicle?.id]);
 
   const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
 
@@ -395,32 +396,30 @@ function CustomerHome() {
 
 
 
-          {!showCatalog ? (
-            <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
-          ) : (
+          {showCatalog && (
             <>
-              {latestNoticeQ.data && latestNoticeQ.data.type === "vehicle_dirty" && (
-                <Surface className="border-primary/20 p-5">
+              {latestNoticeQ.data && activeVehicle && (
+                <Surface className="border-primary/20 p-5 bg-white mb-6">
                   <div className="flex items-start gap-4">
                     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
                       <ShieldAlert className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs extra attention</h3>
+                        <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
                         <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
                           {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
                       <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
-                        Your partner reported that your vehicle needs a little extra attention.
+                        {activeVehicle.make} {activeVehicle.model} was reported as extra dirty. A premium wash is recommended.
                       </p>
                       <div className="mt-4">
                         <Button 
-                          asChild
-                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                          onClick={() => setBookOpen(true)}
+                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20 active:scale-95"
                         >
-                          <Link to="/c/subscriptions">Resolve & Schedule wash</Link>
+                          Schedule a wash
                         </Button>
                       </div>
                     </div>
@@ -428,7 +427,7 @@ function CustomerHome() {
                 </Surface>
               )}
 
-              <div className="py-2 flex items-center justify-center gap-6">
+              <div className="py-2 flex items-center justify-center gap-6 safe-area-bottom">
                 <TrustItem label="Expert Care" />
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Photo Proof" />
@@ -436,7 +435,6 @@ function CustomerHome() {
                 <TrustItem label="Safe & Secure" />
               </div>
             </>
-
           )}
         </div>
 
@@ -460,6 +458,17 @@ function CustomerHome() {
 
         <EditVehicleDialog vehicle={(activeVehicle ?? null) as any} open={editOpen} onOpenChange={setEditOpen} />
         <ChangePhotoDialog vehicle={(activeVehicle ?? null) as any} open={photoOpen} onOpenChange={setPhotoOpen} />
+        
+        <BookAWashSheet
+          open={bookOpen}
+          onOpenChange={setBookOpen}
+          vehicleId={selectedVehicleId}
+          userId={userId}
+        />
+        
+        {!showCatalog && (
+          <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
+        )}
       </div>
     </PullToRefresh>
   );
