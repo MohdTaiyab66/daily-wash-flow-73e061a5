@@ -11,7 +11,7 @@ export const initiateMaskedCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { service_id: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     // Verify the partner actually owns this service (RLS will also enforce).
     const { data: svc, error } = await supabase
       .from("services")
