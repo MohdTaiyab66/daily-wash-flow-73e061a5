@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -178,7 +179,35 @@ function CustomerHome() {
   const planActive = subStatus === "active";
   const planPending = subStatus === "payment_pending";
 
-  const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch()]);
+  const latestNoticeQ = useQuery({
+    queryKey: ["customer-latest-service-notice", activeVehicle?.id],
+    enabled: !!activeVehicle?.id,
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      
+      const { data, error } = await (supabase as any)
+        .from("customer_notifications")
+        .select("id,type,title,body,link,metadata,created_at,read_at")
+        .eq("user_id", u.user.id)
+        .in("type", ["vehicle_unavailable", "vehicle_dirty"])
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      const notifications = (data ?? []) as any[];
+      
+      for (const n of notifications) {
+        const sid = n.metadata?.service_id;
+        if (!sid) continue;
+        const { data: svc } = await supabase.from("services").select("vehicle_id").eq("id", sid).single();
+        if (svc?.vehicle_id === activeVehicle.id) return n;
+      }
+      return null;
+    },
+  });
+
+  const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
@@ -253,6 +282,35 @@ function CustomerHome() {
             <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
           ) : (
             <>
+              {latestNoticeQ.data && latestNoticeQ.data.type === "vehicle_dirty" && (
+                <div className="rounded-[28px] border border-primary/20 bg-white p-5 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                      <ShieldAlert className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[15px] font-black tracking-tight text-[#1a1a1a]">Vehicle needs extra attention</h3>
+                        <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                          {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
+                        Your partner reported that your vehicle needs a little extra attention.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          asChild
+                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20"
+                        >
+                          <Link to="/c/subscriptions">Resolve & Schedule wash</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {planActive || planPending ? (
                 <Link to="/c/subscriptions" className="block">
                   <Surface className={`relative overflow-hidden border-2 bg-white transition-all active:scale-[0.98] ${planPending ? "border-warning/30" : "border-success/20"}`}>
