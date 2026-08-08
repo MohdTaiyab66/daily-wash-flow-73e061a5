@@ -1,17 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { listPromoImages, upsertPromoImage, deletePromoImage } from "@/lib/promo.functions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  getMarketplaceSettings,
-  updateMarketplaceSettings,
-  getMarketplaceAnalytics,
-} from "@/lib/marketplace.functions";
+import { Loader2, Plus, Trash2, ArrowLeft, GripVertical, Image as ImageIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/marketplace-settings")({
   component: MarketplaceSettingsPage,
@@ -19,177 +18,141 @@ export const Route = createFileRoute("/admin/marketplace-settings")({
 
 function MarketplaceSettingsPage() {
   const qc = useQueryClient();
-  const fetchSettings = useServerFn(getMarketplaceSettings);
-  const saveSettings = useServerFn(updateMarketplaceSettings);
-  const fetchAnalytics = useServerFn(getMarketplaceAnalytics);
+  const listFn = useServerFn(listPromoImages);
+  const upsertFn = useServerFn(upsertPromoImage);
+  const deleteFn = useServerFn(deletePromoImage);
 
-  const settingsQ = useQuery({ queryKey: ["mp-settings"], queryFn: () => fetchSettings() });
-  const analyticsQ = useQuery({ queryKey: ["mp-analytics"], queryFn: () => fetchAnalytics() });
-
-  const [form, setForm] = useState<any>(null);
-  useEffect(() => {
-    if (settingsQ.data) setForm({ ...settingsQ.data });
-  }, [settingsQ.data]);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        base_incentive: Number(form.base_incentive),
-        round_increments: (form.round_increments as any[]).map(Number),
-        max_incentive: Number(form.max_incentive),
-        round_duration_sec: Number(form.round_duration_sec),
-        max_rounds: Number(form.max_rounds),
-        broadcast_enabled: !!form.broadcast_enabled,
-        expand_radius_enabled: !!form.expand_radius_enabled,
-        radius_per_round_m: (form.radius_per_round_m as any[]).map((n) => Math.round(Number(n))),
-        neighbour_polygon_expansion: !!form.neighbour_polygon_expansion,
-        auto_assign_final_round: !!form.auto_assign_final_round,
-        notification_sound: String(form.notification_sound ?? "uw_offer"),
-        vibration_enabled: !!form.vibration_enabled,
-        heads_up_enabled: !!form.heads_up_enabled,
-        full_screen_enabled: !!form.full_screen_enabled,
-        countdown_seconds: Number(form.countdown_seconds ?? 90),
-        notification_priority: (form.notification_priority ?? "max") as "high" | "max",
-      };
-      await saveSettings({ data: payload });
-    },
-    onSuccess: () => {
-      toast.success("Marketplace settings saved");
-      qc.invalidateQueries({ queryKey: ["mp-settings"] });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
+  const { data: images, isLoading } = useQuery({
+    queryKey: ["admin-promo-images"],
+    queryFn: () => listFn(),
   });
 
-  if (!form) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  const upsertMutation = useMutation({
+    mutationFn: (data: any) => upsertFn({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-promo-images"] });
+      toast.success("Saved successfully");
+    },
+  });
 
-  const a = analyticsQ.data;
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-promo-images"] });
+      toast.success("Deleted");
+    },
+  });
+
+  const [newImage, setNewImage] = useState({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+
+  const handleAdd = () => {
+    if (!newImage.image_url) return toast.error("Image URL is required");
+    upsertMutation.mutate(newImage);
+    setNewImage({ image_url: "", title: "", subtitle: "", sort_order: 0 });
+  };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Marketplace V2 — Broadcast Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Controls the Daily Shine broadcast marketplace: incentive rounds, radius expansion, timeouts.
-        </p>
+    <div className="max-w-4xl p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Link to="/admin/marketplace" className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1a1a1a]">Featured Photography</h1>
       </div>
 
-      {a && (
-        <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4 text-xs sm:grid-cols-4">
-          <Stat label="Broadcasts (30d)" value={a.total} />
-          <Stat label="Assigned" value={a.assigned} />
-          <Stat label="Cancelled" value={a.cancelled ?? 0} />
-          <Stat label="Expired / alert" value={a.expired} />
-          <Stat label="Conversion" value={`${a.conversion}%`} />
-          <Stat label="Avg accept time" value={`${a.avg_accept_seconds}s`} />
-          <Stat label="Avg incentive" value={`₹${a.avg_incentive}`} />
-          <Stat label="Round 1 wins" value={a.accepted_by_round[1] ?? 0} />
-          <Stat label="Offers accepted" value={a.offers?.accepted ?? 0} />
-          <Stat label="Offers declined" value={a.offers?.declined ?? 0} />
-          <Stat label="Offers expired" value={a.offers?.expired ?? 0} />
-          <Stat label="Offers superseded" value={a.offers?.superseded ?? 0} />
-        </div>
-      )}
+      <div className="space-y-6">
+        <Card className="p-6">
+          <h2 className="text-lg font-bold mb-4">Add Daily Shine Creative</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Image URL</Label>
+              <Input 
+                value={newImage.image_url} 
+                onChange={e => setNewImage(prev => ({ ...prev, image_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sort Order</Label>
+              <Input 
+                type="number"
+                value={newImage.sort_order} 
+                onChange={e => setNewImage(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Main Title (Baked in look)</Label>
+              <Input 
+                value={newImage.title} 
+                onChange={e => setNewImage(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Your car, clean every morning"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Subtitle</Label>
+              <Input 
+                value={newImage.subtitle} 
+                onChange={e => setNewImage(prev => ({ ...prev, subtitle: e.target.value }))}
+                placeholder="Doorstep detailing..."
+              />
+            </div>
+          </div>
+          <Button onClick={handleAdd} className="mt-4 bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" /> Add Image
+          </Button>
+        </Card>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Base earning per customer (₹)">
-            <Input type="number" value={form.base_incentive} onChange={(e) => setForm({ ...form, base_incentive: e.target.value })} />
-          </Field>
-          <Field label="Maximum incentive (₹)">
-            <Input type="number" value={form.max_incentive} onChange={(e) => setForm({ ...form, max_incentive: e.target.value })} />
-          </Field>
-          <Field label="Round duration (seconds)">
-            <Input type="number" value={form.round_duration_sec} onChange={(e) => setForm({ ...form, round_duration_sec: e.target.value })} />
-          </Field>
-          <Field label="Maximum rounds">
-            <Input type="number" value={form.max_rounds} onChange={(e) => setForm({ ...form, max_rounds: e.target.value })} />
-          </Field>
-          <Field label="Round increments (comma-separated ₹)">
-            <Input
-              value={(form.round_increments ?? []).join(",")}
-              onChange={(e) => setForm({ ...form, round_increments: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-            />
-          </Field>
-          <Field label="Radius per round (comma-separated metres)">
-            <Input
-              value={(form.radius_per_round_m ?? []).join(",")}
-              onChange={(e) => setForm({ ...form, radius_per_round_m: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-            />
-          </Field>
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold">Manage Published Creative</h2>
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : images?.map((img: any) => (
+            <Card key={img.id} className="overflow-hidden">
+              <div className="flex flex-col sm:flex-row gap-4 p-4">
+                <div className="w-full sm:w-48 h-28 shrink-0 rounded-lg overflow-hidden bg-muted">
+                  <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Input 
+                        value={img.title || ""} 
+                        onChange={e => upsertMutation.mutate({ ...img, title: e.target.value })}
+                        className="font-bold border-none p-0 h-auto focus-visible:ring-0 bg-transparent"
+                        placeholder="No title"
+                      />
+                      <Input 
+                        value={img.subtitle || ""} 
+                        onChange={e => upsertMutation.mutate({ ...img, subtitle: e.target.value })}
+                        className="text-sm text-muted-foreground border-none p-0 h-auto focus-visible:ring-0 bg-transparent"
+                        placeholder="No subtitle"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={img.is_active} 
+                        onCheckedChange={val => upsertMutation.mutate({ ...img, is_active: val })}
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => deleteMutation.mutate(img.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><GripVertical className="h-3 w-3" /> Order: {img.sort_order}</span>
+                    <span className="truncate flex-1">{img.image_url}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Toggle label="Broadcast mode" checked={!!form.broadcast_enabled} onChange={(v) => setForm({ ...form, broadcast_enabled: v })} />
-          <Toggle label="Expand radius per round" checked={!!form.expand_radius_enabled} onChange={(v) => setForm({ ...form, expand_radius_enabled: v })} />
-          <Toggle label="Include neighbour polygons" checked={!!form.neighbour_polygon_expansion} onChange={(v) => setForm({ ...form, neighbour_polygon_expansion: v })} />
-          <Toggle label="Auto-assign after final round" checked={!!form.auto_assign_final_round} onChange={(v) => setForm({ ...form, auto_assign_final_round: v })} />
-        </div>
-
-      </section>
-
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-5">
-        <div>
-          <h2 className="text-base font-semibold">Partner notification</h2>
-          <p className="text-xs text-muted-foreground">
-            Controls the Uber-style heads-up shown on partner phones when a new customer is available.
-            Changes to sound require a new Android install to take effect.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Countdown (seconds)">
-            <Input type="number" value={form.countdown_seconds ?? 90} onChange={(e) => setForm({ ...form, countdown_seconds: e.target.value })} />
-          </Field>
-          <Field label="Sound file (res/raw/*.mp3)">
-            <Input value={form.notification_sound ?? "uw_offer"} onChange={(e) => setForm({ ...form, notification_sound: e.target.value })} />
-          </Field>
-          <Field label="Priority">
-            <select
-              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              value={form.notification_priority ?? "max"}
-              onChange={(e) => setForm({ ...form, notification_priority: e.target.value })}
-            >
-              <option value="max">MAX (Uber / Rapido)</option>
-              <option value="high">HIGH</option>
-            </select>
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Toggle label="Heads-up notification" checked={!!form.heads_up_enabled} onChange={(v) => setForm({ ...form, heads_up_enabled: v })} />
-          <Toggle label="Full-screen over lock screen" checked={!!form.full_screen_enabled} onChange={(v) => setForm({ ...form, full_screen_enabled: v })} />
-          <Toggle label="Vibration" checked={!!form.vibration_enabled} onChange={(v) => setForm({ ...form, vibration_enabled: v })} />
-        </div>
-      </section>
-
-      <div className="flex justify-end">
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save settings"}
-        </Button>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      {children}
-    </div>
-  );
-}
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
-      <span className="text-sm">{label}</span>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="rounded-lg bg-background p-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 text-lg font-semibold">{value}</div>
     </div>
   );
 }

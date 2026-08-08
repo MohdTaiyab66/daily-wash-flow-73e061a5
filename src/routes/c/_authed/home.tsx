@@ -226,9 +226,6 @@ function CustomerHome() {
     queryKey: ["customer-latest-service-notice", activeVehicle?.id],
     enabled: !!activeVehicle?.id,
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      
       const { data, error } = await (supabase as any)
         .from("dirty_vehicle_reports")
         .select(`
@@ -242,6 +239,19 @@ function CustomerHome() {
 
       if (error) throw error;
       return data?.[0] || null;
+    },
+  });
+
+  const imagesQ = useQuery({
+    queryKey: ["customer-promo-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_shine_promo_images")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -267,30 +277,21 @@ function CustomerHome() {
 
           {/* Hero Section */}
           <UWFeaturedCarousel 
-            items={[
+            items={imagesQ.data?.length ? imagesQ.data.map((img: any) => ({
+              id: img.id,
+              title: img.title || "Daily Shine",
+              subtitle: img.subtitle || "Your car, clean every morning.",
+              price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+              image: img.image_url,
+              link: "/c/service/daily-shine"
+            })) : [
               {
                 id: "1",
                 title: "Your car, clean every morning.",
                 subtitle: "Doorstep detailing without the hassle.",
-                price: 999,
+                price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
                 image: "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=1200&auto=format&fit=crop",
                 link: "/c/service/daily-shine"
-              },
-              {
-                id: "2",
-                title: "Deep Interior Detailing",
-                subtitle: "Eliminate germs, restore freshness.",
-                price: 799,
-                image: "https://images.unsplash.com/photo-1599256631168-1cf0a544838b?q=80&w=1200&auto=format&fit=crop",
-                link: "/c/service/interior-deep-clean"
-              },
-              {
-                id: "3",
-                title: "Ceramic Wax Body Polish",
-                subtitle: "Protection that lasts for months.",
-                price: 499,
-                image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1200&auto=format&fit=crop",
-                link: "/c/service/body-polish"
               }
             ]}
             onItemClick={(item) => navigate({ to: item.link as any })}

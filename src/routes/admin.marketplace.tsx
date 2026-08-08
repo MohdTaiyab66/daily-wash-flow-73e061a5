@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/marketplace")({
   component: MarketplacePage,
@@ -89,8 +90,15 @@ function MarketplacePage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Daily Shine Marketplace</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Live view of subscription assignment queue, partner offers, and lock state.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Daily Shine Marketplace</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Live view of subscription assignment queue, partner offers, and lock state.</p>
+        </div>
+        <Button asChild variant="outline" className="rounded-full">
+          <Link to="/admin/marketplace-settings">Manage Creative</Link>
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="mt-10 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
