@@ -52,7 +52,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Error('Unauthorized: No request headers available');
     }
 
-    const authHeader = request.headers.get('authorization');
+    let authHeader = request.headers.get('authorization');
 
     if (!authHeader) {
       // In SSR/Vite dev, the standard request headers might be buffered or missing
@@ -65,11 +65,13 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
         try {
           const session = JSON.parse(decodeURIComponent(match[1]));
           if (session?.access_token) {
-            return session.access_token;
+            authHeader = `Bearer ${session.access_token}`;
           }
         } catch {}
       }
-      
+    }
+
+    if (!authHeader) {
       throw new Error('Unauthorized: No authorization header provided');
     }
 
