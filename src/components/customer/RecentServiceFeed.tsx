@@ -212,7 +212,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     return map[raw] ?? raw.replaceAll("_", " ").replace(/\.$/, "");
   };
 
-  const reason = isUnavailable ? cleanReason(service.unavailable_reason) : hasDirty ? cleanReason(service.dirty_report?.reason) : null;
+  const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
@@ -388,5 +388,53 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
+  if (!photos.length) return null;
+  return (
+    <div className="mt-4 grid grid-cols-4 gap-2">
+      {photos.slice(0, 3).map((p, i) => (
+        <SignedPhoto 
+          key={i} 
+          path={p.storage_path} 
+          stage={p.stage} 
+          onClick={() => onPhotoClick(i)} 
+        />
+      ))}
+      {photos.length > 3 && (
+        <button 
+          onClick={() => onPhotoClick(3)}
+          className="uw-pressable relative aspect-square overflow-hidden rounded-xl bg-black/5 text-[12px] font-black text-primary active:scale-95"
+        >
+          +{photos.length - 3}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage.from("service-photos").createSignedUrl(path, 600);
+      if (!cancelled) setUrl(data?.signedUrl ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [path]);
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "relative aspect-square overflow-hidden rounded-xl bg-black/5",
+        onClick && "cursor-pointer active:scale-95 transition-transform shadow-sm"
+      )}
+    >
+      {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
+      <span className="absolute bottom-1 left-1 rounded-md bg-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black/80">{stage}</span>
+    </div>
   );
 }
