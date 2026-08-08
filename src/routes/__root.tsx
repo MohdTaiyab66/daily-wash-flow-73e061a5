@@ -65,12 +65,23 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             Try again
           </button>
-          <a
-            href="/"
+          <button
+            onClick={() => {
+              // Isolated Customer/Partner Home logic
+              const path = window.location.pathname;
+              if (path.startsWith('/c/')) {
+                router.navigate({ to: '/c/home' });
+              } else if (path.startsWith('/auth') || path.startsWith('/partner') || path.startsWith('/app')) {
+                router.navigate({ to: '/auth' }); // Correct partner start
+              } else {
+                router.navigate({ to: '/' });
+              }
+              reset();
+            }}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
-          </a>
+          </button>
         </div>
       </div>
     </div>

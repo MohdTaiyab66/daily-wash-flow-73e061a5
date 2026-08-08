@@ -334,7 +334,7 @@ function MyPlanPage() {
         </>
       )}
 
-      {hasVehicles && activeSub && (
+      {hasVehicles && activeSub && !!selectedVehicleId && (
         <div className="mt-6 space-y-5">
           {/* Flat Service Status Header */}
           <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
@@ -588,7 +588,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
     <div
       role="status"
       aria-live="polite"
-      className="mt-5 overflow-hidden rounded-2xl border border-warning/40 bg-warning/15 p-5"
+      className="UW_PENDING_PAYMENT_CARD mt-5 overflow-hidden rounded-2xl border border-warning/40 bg-warning/15 p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -603,7 +603,11 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
       </div>
       <div className="mt-4">
         <Button asChild className="h-11 w-full rounded-2xl text-sm font-semibold">
-          <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+          {slug ? (
+            <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+          ) : (
+            <Link to="/c/home">Go to home</Link>
+          )}
         </Button>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
           No service, credits or partner assignment will start until payment succeeds.
@@ -615,7 +619,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
 
 function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
   if (!notice) return null;
-  const isDirty = notice.type === "vehicle_dirty";
+  const isDirty = notice?.type === "vehicle_dirty";
   return (
     <div className={`mt-5 rounded-2xl border p-4 ${isDirty ? "border-primary/30 bg-primary/10" : "border-warning/40 bg-warning/15"}`}>
       <div className="flex items-start gap-3">
