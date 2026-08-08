@@ -59,7 +59,8 @@
   --uw-orange-soft: oklch(0.965 0.022 58);
   --uw-ink: oklch(0.18 0.01 270);
 
-  --background: oklch(0.99 0.003 80);
+  /* Warm off-white app canvas (~#FAF9F7) so white cards read as elevated. */
+  --background: oklch(0.976 0.004 75);
   --foreground: oklch(0.18 0.01 270);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 270);
