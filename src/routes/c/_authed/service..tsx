@@ -37,7 +37,7 @@ import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
 
 
-export const Route = createFileRoute("/c/_authed/service/")({
+export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
   validateSearch: z.object({ vehicleId: z.string().optional().catch(undefined) }),
   head: () => ({ meta: [{ title: "Book service — Urban Wash" }] }),
