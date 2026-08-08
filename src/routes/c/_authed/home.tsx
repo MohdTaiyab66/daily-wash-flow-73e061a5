@@ -363,9 +363,9 @@ function CustomerHome() {
                     A cleaner reported that your vehicle needs extra attention. Would you like to schedule a deep clean?
                   </p>
                   <Button 
-                    variant="primary" 
+                    variant="default" 
                     size="sm" 
-                    className="mt-4 w-full"
+                    className="mt-4 w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-11 text-[14px] font-black shadow-lg shadow-primary/20"
                     onClick={() => setBookOpen(true)}
                   >
                     Schedule a wash
