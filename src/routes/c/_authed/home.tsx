@@ -315,8 +315,9 @@ function CustomerHome() {
             )}
           </Section>
 
-          {/* Featured Daily Shine Carousel */}
-          <UWFeaturedCarousel 
+          <div className="mt-[-16px]">
+            <UWFeaturedCarousel 
+
             items={imagesQ.data?.length ? imagesQ.data.map((img: any) => ({
               id: img.id,
               title: img.title || "Daily Shine",
