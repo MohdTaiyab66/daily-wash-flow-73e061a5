@@ -1,13 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Surface } from "./kit";
 
 /**
- * Shared customer-app empty state.
- *
- * Presentation only — it never fetches or mutates. Every "nothing here yet"
- * surface (vehicles, bookings, subscription, notifications) renders through
- * this so the illustration, copy rhythm and CTA placement stay identical.
+ * Shared customer-app empty state. Redesigned for MD3 premium look.
  */
 export function EmptyState({
   icon: Icon,
@@ -27,26 +24,38 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex animate-fade-in flex-col items-center rounded-3xl border border-dashed border-border bg-card/40 px-6 py-12 text-center",
+        "flex animate-in fade-in zoom-in-95 duration-500 flex-col items-center px-8 py-16 text-center",
         className,
       )}
     >
-      <span
-        className={cn(
-          "relative grid h-20 w-20 place-items-center rounded-3xl",
-          tone === "primary" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+      <div className="relative mb-8">
+        {/* Glow effect for primary tone */}
+        {tone === "primary" && (
+          <div className="absolute inset-0 -m-4 bg-primary/10 blur-2xl rounded-full" />
         )}
-      >
-        <span className="absolute inset-0 rounded-3xl bg-current opacity-[0.06]" aria-hidden />
-        <Icon className="h-9 w-9" strokeWidth={1.6} />
-      </span>
-      <h3 className="mt-5 text-base font-semibold tracking-tight">{title}</h3>
+        <Surface 
+          className={cn(
+            "relative grid h-24 w-24 place-items-center rounded-[32px] border-none shadow-sm",
+            tone === "primary" ? "bg-primary text-white" : "bg-white text-muted-foreground/40",
+          )}
+        >
+          <Icon className="h-10 w-10" strokeWidth={1.5} />
+        </Surface>
+        
+        {/* Decorative elements */}
+        <div className="absolute -right-2 -top-2 h-4 w-4 rounded-full bg-primary/20 animate-pulse" />
+        <div className="absolute -left-1 -bottom-1 h-3 w-3 rounded-full bg-primary/10" />
+      </div>
+
+      <h3 className="text-[20px] font-black tracking-tight text-[#1a1a1a]">{title}</h3>
+      
       {description && (
-        <p className="mt-1.5 max-w-[16rem] text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2.5 max-w-[18rem] text-[14px] font-medium leading-relaxed text-muted-foreground/70">
           {description}
         </p>
       )}
-      {action && <div className="mt-6">{action}</div>}
+      
+      {action && <div className="mt-10 w-full max-w-[200px]">{action}</div>}
     </div>
   );
 }
