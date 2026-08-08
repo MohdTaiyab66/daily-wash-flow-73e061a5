@@ -79,7 +79,7 @@ export const deleteSavedPackage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context as any;
     const { error } = await (supabase as any)
       .from("customer_saved_packages")
       .delete()
