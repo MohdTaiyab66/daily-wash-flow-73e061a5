@@ -27,10 +27,10 @@ export function UWServiceCard({
 }: UWServiceCardProps) {
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200", className)}
       raised
     >
-      <div className="relative aspect-[1.1/1] w-full bg-muted overflow-hidden">
+      <div className="relative aspect-[1.1/1] w-full bg-[#F8F9FB] overflow-hidden">
         {image ? (
           <img 
             src={image} 
@@ -38,7 +38,7 @@ export function UWServiceCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-muted-foreground/10 bg-[#F8F9FB]">
+          <div className="h-full w-full flex items-center justify-center text-muted-foreground/10">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Urban Wash</span>
           </div>
         )}

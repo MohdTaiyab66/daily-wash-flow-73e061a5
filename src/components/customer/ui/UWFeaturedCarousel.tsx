@@ -81,7 +81,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${index * 100}%)` }}
       >
-        {items.map((item) => (
+        {items.map((item, i) => (
           <div 
             key={item.id} 
             className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
@@ -90,8 +90,8 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
             <img 
               src={item.image} 
               alt={item.title} 
-              className="h-full w-full object-cover opacity-60 transition-opacity duration-500"
-              loading={items.indexOf(item) === 0 ? "eager" : "lazy"}
+              className="h-full w-full object-cover opacity-70 transition-opacity duration-500"
+              loading={i === 0 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
@@ -124,7 +124,12 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((_, i) => (
           <button
             key={i}
-            onClick={() => setIndex(i)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIndex(i);
+              setIsPaused(true);
+              setTimeout(() => setIsPaused(false), 5000);
+            }}
             className={cn(
               "h-1 rounded-full transition-all duration-300",
               i === index ? "w-4 bg-primary" : "w-1.5 bg-white/30"
