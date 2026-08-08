@@ -122,6 +122,8 @@ function ServiceDetail() {
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [vehDrawerOpen, setVehDrawerOpen] = useState(false);
+  const [addrDrawerOpen, setAddrDrawerOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -969,24 +971,22 @@ function ServiceDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F3] pb-32">
-      <header className="sticky top-0 z-20 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
-        <button onClick={() => navigate({ to: "/c/home" })} className="grid h-9 w-9 place-items-center rounded-full bg-card shadow-sm transition-transform active:scale-90">
+    <div className="min-h-screen bg-[#FFF9F3] pb-40">
+      <header className="sticky top-0 z-30 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
+        <button 
+          onClick={() => navigate({ to: "/c/home" })} 
+          className="grid h-8 w-8 place-items-center rounded-full bg-card shadow-sm transition-transform active:scale-90"
+        >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="min-w-0">
-          <PageTitle className="text-[17px]">{service.name}</PageTitle>
-          <Muted className="truncate">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[17px] font-black text-foreground truncate leading-none mb-1">{service.name}</h1>
+          <Muted className="truncate text-[11px] font-bold uppercase tracking-wider opacity-60">
             {purchaseMode === 'paid_add_on' ? 'Additional premium service' : 
-             purchaseMode === 'included_wash' ? 'Included with Daily Shine' :
-             'Premium doorstep car care'}
+             purchaseMode === 'included_wash' ? 'Included wash' :
+             'One-time service'}
           </Muted>
         </div>
-        {vehicleSubQ.data?.status === 'active' && (
-          <div className="ml-auto">
-            <StatusChip tone="success" className="font-black uppercase tracking-widest text-[9px]">Active Plan</StatusChip>
-          </div>
-        )}
       </header>
 
       <div className="px-5 pb-6">
@@ -995,95 +995,67 @@ function ServiceDetail() {
           vehicleSubActive={isVehicleSubActive} 
           previewPayable={previewPayable}
           purchaseMode={purchaseMode}
+          vehicle={vehicle}
+          address={address}
+          onVehicleClick={() => setVehDrawerOpen(true)}
+          onAddressClick={() => setAddrDrawerOpen(true)}
           onBookIncluded={() => setBookOpen(true)}
         />
 
+        {/* Vehicle Drawer */}
+        <Drawer open={vehDrawerOpen} onOpenChange={setVehDrawerOpen}>
+          <DrawerContent className="max-h-[80vh]">
+            <DrawerHeader><DrawerTitle>Select Vehicle</DrawerTitle></DrawerHeader>
+            <div className="px-4 py-2 space-y-2 overflow-y-auto">
+              {(vehiclesQ.data || []).map(v => (
+                <DrawerClose key={v.id} asChild>
+                  <button 
+                    onClick={() => {
+                      setVehicleId(v.id);
+                      localStorage.setItem("uw_customer_vehicle", v.id);
+                    }}
+                    className={cn("w-full text-left p-4 rounded-xl border flex items-center justify-between", vehicleId === v.id ? "border-primary bg-primary/5 shadow-sm" : "border-black/5")}
+                  >
+                    <div>
+                      <div className="font-black text-[15px]">{v.make} {v.model}</div>
+                      <div className="text-xs font-medium text-muted-foreground/60">{v.registration_number}</div>
+                    </div>
+                    {vehicleId === v.id && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </button>
+                </DrawerClose>
+              ))}
+            </div>
+            <DrawerFooter>
+              <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95"><Link to="/c/vehicles/add">Add another car</Link></Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
+        {/* Address Drawer */}
+        <Drawer open={addrDrawerOpen} onOpenChange={setAddrDrawerOpen}>
+          <DrawerContent className="max-h-[80vh]">
+            <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
+            <div className="px-4 py-2 space-y-2 overflow-y-auto">
+              {uniqueAddresses.map(addr => (
+                <DrawerClose key={addr.id} asChild>
+                  <button 
+                    onClick={() => setAddressId(addr.id)}
+                    className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-black/5")}
+                  >
+                    <div className="font-black text-[15px]">{addr.label}</div>
+                    <div className="text-xs font-medium text-muted-foreground/60">{addr.address_line}, {addr.area}</div>
+                  </button>
+                </DrawerClose>
+              ))}
+            </div>
+            <DrawerFooter>
+              <Button onClick={() => setAddrOpen(true)} variant="outline" className="h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95">Add new address</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
-        <Section title={<><Car className="h-4 w-4 text-primary" /> Your vehicle</>}>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Surface className="flex items-center justify-between p-3 active:scale-[0.98] transition-transform">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center">
-                    <Car className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-black">{vehicle?.make} {vehicle?.model || "Select Car"}</div>
-                    <div className="text-[12px] font-medium text-muted-foreground/60">{vehicle?.registration_number || "No vehicle selected"}</div>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Surface>
-            </DrawerTrigger>
-            <DrawerContent className="max-h-[80vh]">
-              <DrawerHeader><DrawerTitle>Select Vehicle</DrawerTitle></DrawerHeader>
-              <div className="px-4 py-2 space-y-2 overflow-y-auto">
-                {(vehiclesQ.data || []).map(v => (
-                  <DrawerClose key={v.id} asChild>
-                    <button 
-                      onClick={() => setVehicleId(v.id)}
-                      className={cn("w-full text-left p-4 rounded-xl border flex items-center justify-between", vehicleId === v.id ? "border-primary bg-primary/5 shadow-sm" : "border-black/5")}
-                    >
-                      <div>
-                        <div className="font-black text-[15px]">{v.make} {v.model}</div>
-                        <div className="text-xs font-medium text-muted-foreground/60">{v.registration_number}</div>
-                      </div>
-                      {vehicleId === v.id && <div className="h-2 w-2 rounded-full bg-primary" />}
-                    </button>
-                  </DrawerClose>
-                ))}
-              </div>
-              <DrawerFooter>
-                <Button asChild variant="outline" className="w-full h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95"><Link to="/c/vehicles/add">Add another car</Link></Button>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        </Section>
-
-        <Section title={<><MapPin className="h-4 w-4 text-primary" /> Service location</>}>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Surface className="flex items-start gap-3 p-3 active:scale-[0.98] transition-transform">
-                <div className="mt-1 h-5 w-5 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center shrink-0">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-black">
-                    {uniqueAddresses.find(a => a.id === addressId)?.label ?? "Default Location"}
-                  </div>
-                  <div className="text-[12px] font-medium text-muted-foreground/60 truncate">
-                    {uniqueAddresses.find(a => a.id === addressId)?.address_line ?? "Select your address"}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-              </Surface>
-            </DrawerTrigger>
-            <DrawerContent className="max-h-[80vh]">
-              <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
-              <div className="px-4 py-2 space-y-2 overflow-y-auto">
-                {uniqueAddresses.map(addr => (
-                  <DrawerClose key={addr.id} asChild>
-                    <button 
-                      onClick={() => setAddressId(addr.id)}
-                      className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-black/5")}
-                    >
-                      <div className="font-black text-[15px]">{addr.label}</div>
-                      <div className="text-xs font-medium text-muted-foreground/60">{addr.address_line}, {addr.area}</div>
-                    </button>
-                  </DrawerClose>
-                ))}
-              </div>
-              <DrawerFooter>
-                <Button onClick={() => setAddrOpen(true)} variant="outline" className="h-12 rounded-xl font-bold border-black/5 transition-transform active:scale-95">Add new address</Button>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        </Section>
-
-        <Section title={<><Calendar className="h-4 w-4 text-primary" /> Your first service</>}>
-          <div className="mb-4 text-[14px] font-black text-foreground px-1 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        <Section className="mt-8" title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">When would you like it?</span></>}>
+          <div className="mb-4 text-[14px] font-black text-foreground px-1">
             {date === new Date().toISOString().split("T")[0] ? "Today" : "Tomorrow"} · {new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -1095,139 +1067,140 @@ function ServiceDetail() {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] font-medium text-muted-foreground/60">🕐 Your partner may arrive anytime within this window.</p>
+          <p className="mt-3 text-[11px] font-medium text-muted-foreground/60">🕐 Your partner may arrive anytime within this window.</p>
         </Section>
 
-        <Section 
-          title={<><Sparkles className="h-4 w-4 text-primary" /> Make it even better</>} 
-          action={
-            <Drawer>
-              <DrawerTrigger asChild>
-                <button className="text-[13px] font-black text-primary transition-transform active:scale-95">View all ›</button>
-              </DrawerTrigger>
-              <DrawerContent className="max-h-[85vh]">
-                <DrawerHeader>
-                  <DrawerTitle>Additional Services</DrawerTitle>
-                  <DrawerDescription>One-time treatments for your vehicle</DrawerDescription>
-                </DrawerHeader>
-                <div className="px-4 pb-12 space-y-3 overflow-y-auto">
-                   {addonsQ.data?.map((a) => {
-                     const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-                     const qty = addonQty[a.id] || 0;
-                     return (
-                      <div key={a.id} className="flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                         <div className="min-w-0 flex-1">
-                           <div className="text-[15px] font-black text-[#1a1a1a]">{a.name}</div>
-                           <div className="text-[12px] font-medium text-muted-foreground/60 line-clamp-1">{a.description}</div>
-                           <div className="mt-1 text-[13px] font-black text-primary">₹{p}</div>
-                         </div>
-                         <div className="ml-4 shrink-0">
-                           {qty > 0 ? (
-                              <div className="flex items-center gap-2 bg-primary/5 rounded-full p-1 border border-primary/20 shadow-inner">
-                                  <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Minus className="h-3 w-3" /></button>
-                                  <span className="text-[13px] font-black w-4 text-center">{qty}</span>
-                                  <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Plus className="h-3 w-3" /></button>
-                              </div>
-                           ) : (
-                              <Button size="sm" variant="outline" className="rounded-full h-9 px-5 font-black border-primary/20 text-primary hover:bg-primary/5 active:scale-95 transition-transform" onClick={() => setQty(a.id, 1)}>+ Add</Button>
-                           )}
-                         </div>
-                      </div>
-                     )
-                   })}
-                </div>
-              </DrawerContent>
-            </Drawer>
-          }
-        >
-           {addonsQ.data?.slice(0, 2).map((a) => {
-             const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
-             const qty = addonQty[a.id] || 0;
-             return (
-              <div key={a.id} className="mb-2 flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
-                 <div>
-                   <div className="text-[14px] font-black text-[#1a1a1a]">{a.name}</div>
-                   <div className="text-[12px] font-medium text-muted-foreground/60">₹{p}</div>
-                 </div>
-                 {qty > 0 ? (
-                    <div className="flex items-center gap-3 bg-primary/5 rounded-full p-1 border border-primary/20 shadow-inner">
-                        <button onClick={() => setQty(a.id, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Minus className="h-3 w-3" /></button>
-                        <span className="text-[13px] font-black w-4 text-center">{qty}</span>
-                        <button onClick={() => setQty(a.id, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full bg-white border border-black/5 shadow-sm active:scale-90 transition-transform"><Plus className="h-3 w-3" /></button>
-                    </div>
-                 ) : (
-                    <button className="text-[13px] font-black text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary/5 active:scale-95 transition-transform" onClick={() => setQty(a.id, 1)}>+ Add</button>
-                 )}
-              </div>
-             )
-           })}
-        </Section>
+        {addonsQ.data && addonsQ.data.length > 0 && (
+          <Section className="mt-8" title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Make it even better</span></>}>
+            <div className="space-y-3">
+               {addonsQ.data.slice(0, 3).map((a) => {
+                 const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                 const qty = addonQty[a.id] || 0;
+                 return (
+                   <Surface key={a.id} className="flex items-center justify-between p-3 border-black/5">
+                     <div className="min-w-0 flex-1">
+                       <div className="text-[14px] font-black">{a.name}</div>
+                       <div className="text-[12px] font-bold text-primary">₹{p}</div>
+                     </div>
+                     <button
+                       onClick={() => setQty(a.id, qty > 0 ? 0 : 1)}
+                       className={cn(
+                         "h-9 px-4 rounded-lg text-[12px] font-black transition-all active:scale-95",
+                         qty > 0 
+                           ? "bg-success/10 text-success border border-success/20" 
+                           : "bg-primary text-white shadow-sm"
+                       )}
+                     >
+                       {qty > 0 ? "✓ Added" : "+ Add"}
+                     </button>
+                   </Surface>
+                 );
+               })}
+            </div>
+            {addonsQ.data.length > 3 && (
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <button className="mt-4 w-full py-2 text-[13px] font-black text-primary active:opacity-70">View all add-ons ›</button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[85vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Additional Services</DrawerTitle>
+                    <DrawerDescription>One-time treatments for your vehicle</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pb-12 space-y-3 overflow-y-auto">
+                     {addonsQ.data.map((a) => {
+                       const p = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                       const qty = addonQty[a.id] || 0;
+                       return (
+                         <Surface key={a.id} className="flex items-center justify-between p-4">
+                           <div className="min-w-0 flex-1">
+                             <div className="font-black text-[15px]">{a.name}</div>
+                             <p className="text-xs text-muted-foreground/60 leading-tight mt-0.5">{a.description}</p>
+                             <div className="mt-1 font-black text-primary text-[14px]">₹{p}</div>
+                           </div>
+                           <div className="flex items-center gap-3">
+                             {qty > 0 && <button onClick={() => setQty(a.id, qty - 1)} className="h-8 w-8 rounded-full border border-black/5 flex items-center justify-center text-primary"><Minus className="h-4 w-4" /></button>}
+                             <span className={cn("font-black w-4 text-center", qty === 0 && "hidden")}>{qty}</span>
+                             <button onClick={() => setQty(a.id, qty + 1)} className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center"><Plus className="h-4 w-4" /></button>
+                           </div>
+                         </Surface>
+                       );
+                     })}
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            )}
+          </Section>
+        )}
 
-        {/* PRICE SUMMARY */}
-        <Section title="Price summary">
-           <Surface className="space-y-3 p-4">
-              {purchaseMode !== 'paid_add_on' && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>{service.name}</span>
-                  <span>₹{previewBase}</span>
-                </div>
-              )}
-              {purchaseMode === 'paid_add_on' && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>{service.name}</span>
-                  <span>₹{previewBase || (isSUV ? service.price_sedan_suv : service.price_hatchback)}</span>
-                </div>
-              )}
-              {previewAddon > 0 && (
-                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
-                  <span>Add-ons</span>
-                  <span>₹{previewAddon}</span>
-                </div>
-              )}
-              {previewDiscount > 0 && <div className="flex justify-between text-[14px] font-black text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
-              <div className="flex justify-between pt-3 text-[17px] font-black border-t border-black/5 text-[#1a1a1a]">
-                <span>Total Payable</span>
-                <span>₹{previewPayable}</span>
+        <Section className="mt-8" title={<span className="text-[15px] font-black">Price summary</span>}>
+          <Surface className="border-none bg-black/[0.02] p-4 space-y-3">
+            <div className="flex justify-between text-[13px]">
+              <span className="font-medium text-muted-foreground">Service price</span>
+              <span className="font-black">₹{purchaseMode === 'included_wash' ? 0 : (previewReady ? previewBase : 0)}</span>
+            </div>
+            {previewAddon > 0 && (
+              <div className="flex justify-between text-[13px]">
+                <span className="font-medium text-muted-foreground">Add-ons</span>
+                <span className="font-black">₹{previewAddon}</span>
               </div>
-           </Surface>
+            )}
+            {previewDiscount > 0 && (
+              <div className="flex justify-between text-[13px] text-success">
+                <span className="font-medium">Discount applied</span>
+                <span className="font-black">-₹{previewDiscount}</span>
+              </div>
+            )}
+            <div className="pt-3 border-t border-black/5 flex justify-between text-[15px]">
+              <span className="font-black">Total payable</span>
+              <span className="font-black text-primary">₹{previewPayable}</span>
+            </div>
+          </Surface>
         </Section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-5 pt-4 pb-8 backdrop-blur shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
-        <div className="mx-auto max-w-md">
-          <Button size="lg" className="h-16 w-full rounded-2xl text-[17px] font-black shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform" onClick={() => confirm()} disabled={submitting || paying}>
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5 safe-bottom">
+        <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Payable</div>
+            <div className="text-[20px] font-black text-foreground">₹{previewPayable}</div>
+          </div>
+          
+          <Button 
+            onClick={confirm}
+            disabled={submitting || paying || !previewReady}
+            className="flex-1 h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-[16px] shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50"
+          >
             {submitting || paying ? (
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <div className="flex w-full items-center justify-between px-2">
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[13px] opacity-70 font-medium">Total Payable</span>
-                  <span className="text-[18px]">₹{previewPayable}</span>
-                </div>
-                <div className="flex items-center gap-1 font-black">
-                  {purchaseMode === 'new_subscription' ? 'Subscribe' : 
-                   purchaseMode === 'included_wash' ? 'Schedule wash' : 
-                   `Pay ₹${previewPayable}`} <ChevronRight className="h-5 w-5" />
-                </div>
+              <div className="flex items-center gap-2">
+                <span>{purchaseMode === 'included_wash' ? 'Schedule wash' : `Pay ₹${previewPayable}`}</span>
+                <ChevronRight className="h-5 w-5" />
               </div>
             )}
           </Button>
         </div>
       </div>
 
-      <AddressDialog open={addrOpen} onOpenChange={setAddrOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
+      <AddressDialog 
+        open={addrOpen} 
+        onOpenChange={setAddrOpen} 
+        onCreated={(id) => { 
+          setAddressId(id); 
+          qc.invalidateQueries({ queryKey: ["customer-addresses"] }); 
+        }} 
+      />
       <BookAWashSheet 
         open={bookOpen} 
         onOpenChange={setBookOpen} 
         vehicleId={vehicleId || null} 
         userId={userId || null} 
       />
-
-
     </div>
   );
-
 }
+
 
 function SectionCard({ icon, title, hint, children }: { icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode }) {
   return (
