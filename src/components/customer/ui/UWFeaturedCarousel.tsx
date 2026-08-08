@@ -68,7 +68,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       ref={containerRef}
-      className={cn("relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9] touch-pan-y", className)}
+      className={cn("featured-carousel relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9] touch-pan-y", className)}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={onTouchStart}
@@ -82,7 +82,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="relative h-full w-full shrink-0 overflow-hidden"
+            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden"
             onClick={() => onItemClick?.(item)}
           >
             <img 
