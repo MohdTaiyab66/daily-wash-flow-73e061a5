@@ -299,10 +299,14 @@ function MyPlanPage() {
     <div className="min-h-screen bg-[#FFF9F3] px-6 pb-12 pt-8">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[28px] font-black tracking-tight text-[#1a1a1a]">My Plan</h1>
-          <p className="mt-1 text-[13px] font-medium text-muted-foreground">
-            {vehicleLabel ? `Your Daily Shine membership` : "Manage your car subscription."}
-          </p>
+          <h1 className="text-[28px] font-black tracking-tight text-foreground">My Plan</h1>
+          <div className="mt-1 flex items-center gap-1.5" onClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}>
+            <p className="text-[13px] font-medium text-muted-foreground">
+              {vehicleLabel ? vehicleLabel : "Manage your car subscription"}
+            </p>
+            {hasVehicles && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+          </div>
+
         </div>
         {hasVehicles && (
           <VehicleSelector
