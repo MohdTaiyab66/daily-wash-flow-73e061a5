@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, Plus, Loader2, CheckCircle2, ShoppingBag, AlertTriangle, RotateCcw, Info, Calendar, MapPin, Clock, X, ChevronRight, Check } from "lucide-react";
+import { Sparkles, Plus, Loader2, CheckCircle2, ShoppingBag, AlertTriangle, RotateCcw, Info, Calendar, MapPin, Clock, X, ChevronRight, Check, Droplets } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -449,13 +449,22 @@ export function BookAWashSheet({
                       Free ✓
                     </div>
                   </div>
-                  <div className="mt-6 flex items-baseline gap-2">
-                    <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
-                      {includedRow?.unlimited ? "∞" : includedRemaining}
-                    </span>
-                    <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                      wash{includedRemaining !== 1 ? "es" : ""} left
-                    </span>
+                  <div className="mt-6 flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
+                        {includedRow?.unlimited ? "∞" : includedRemaining}
+                      </span>
+                      <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                        wash{includedRemaining !== 1 ? "es" : ""} left
+                      </span>
+                    </div>
+                    <div className="flex -space-x-2">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary">
+                          <Droplets className="h-4 w-4" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 px-1">
