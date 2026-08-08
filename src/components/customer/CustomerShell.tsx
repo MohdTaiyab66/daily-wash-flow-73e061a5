@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Sparkles, Calendar, User } from "lucide-react";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function CustomerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
