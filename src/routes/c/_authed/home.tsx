@@ -335,24 +335,14 @@ function CustomerHome() {
               price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
               image: img.image_url,
               link: "/c/service/daily-shine"
-            })) : [
-              {
-                id: "1",
-                title: "Daily shine, zero hassle.",
-                subtitle: "Every morning before you go.",
-                price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-                image: "https://daily-wash-flow.lovable.app/lovable-assets/daily-shine-hero.png",
-                link: "/c/service/daily-shine"
-              },
-              {
-                id: "2",
-                title: "We come to you, you stay stress-free.",
-                subtitle: "Doorstep car cleaning at your convenience.",
-                price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-                image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1200&auto=format&fit=crop",
-                link: "/c/service/daily-shine"
-              }
-            ]}
+            })) : DEFAULT_PROMO_IMAGES.map(img => ({
+              id: img.id,
+              title: img.title,
+              subtitle: img.subtitle,
+              price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+              image: img.image_url,
+              link: "/c/service/daily-shine"
+            }))}
             onItemClick={(item) => navigate({ to: item.link as any })}
           />
         </div>
