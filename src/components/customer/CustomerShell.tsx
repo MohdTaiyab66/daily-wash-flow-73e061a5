@@ -12,7 +12,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
     { to: "/c/profile", label: "Profile", icon: User },
   ] as const;
 
-  const isCheckout = pathname.startsWith("/c/service/") || pathname === "/c/vehicles/add";
+  const isCheckout = pathname.startsWith("/c/service/") || pathname.startsWith("/c/vehicles/add") || pathname.includes("/vehicles/");
   
   return (
     <div className={cn(
