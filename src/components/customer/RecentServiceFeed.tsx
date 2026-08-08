@@ -257,13 +257,43 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       </div>
 
-      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} />}
+      {!isUnavailable && !isMissed && <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />}
       {(isUnavailable || hasDirty) && (
         <div className="grid grid-cols-4 gap-1 bg-muted/40 px-4 py-2">
-          {service.unavailable_photo && <SignedPhoto path={service.unavailable_photo} stage="proof" />}
-          {dirtyPhotos.map((p) => <SignedPhoto key={p} path={p} stage="dirty" />)}
+          {service.unavailable_photo && (
+            <SignedPhoto 
+              path={service.unavailable_photo} 
+              stage="proof" 
+              onClick={() => openViewer(0)} 
+            />
+          )}
+          {dirtyPhotos.map((p, i) => (
+            <SignedPhoto 
+              key={p} 
+              path={p} 
+              stage="dirty" 
+              onClick={() => openViewer(service.unavailable_photo ? i + 1 : i)} 
+            />
+          ))}
         </div>
       )}
+
+      <ServicePhotoViewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        photos={
+          isUnavailable || hasDirty
+            ? [
+                ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at }] : []),
+                ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at }))
+              ]
+            : service.photos
+        }
+        initialIndex={initialPhotoIndex}
+        serviceName={service.service_name ?? "Daily Shine"}
+        serviceDate={service.completed_at}
+      />
+
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         <div className="inline-flex items-center gap-1.5 text-[11px]">
