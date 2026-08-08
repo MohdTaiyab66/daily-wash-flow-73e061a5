@@ -32,8 +32,9 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     // Server-authoritative: this RPC sweeps expired/superseded/closed offers
     // first, then returns ONLY rows that are pending, current-round, and have
     // round_expires_at > server-now. The client must not filter further.
-    const { data, error } = await (context.supabase as any).rpc("get_partner_open_offers", {
-      p_partner_id: context.userId,
+    const { supabase, userId } = context as any;
+    const { data, error } = await (supabase as any).rpc("get_partner_open_offers", {
+      p_partner_id: userId,
     });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
