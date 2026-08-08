@@ -81,7 +81,7 @@ function MyPlanPage() {
       qc.invalidateQueries({ queryKey: ["customer-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["sub-queue", userId] });
-      qc.invalidateQueries({ queryKey: ["customer-latest-service-notice", userId] });
+      qc.invalidateQueries({ queryKey: ["customer-latest-service-notice", userId, selectedVehicleId] });
     };
     const ch = supabase
       .channel(`cust-live-${userId}`)
@@ -219,21 +219,42 @@ function MyPlanPage() {
   });
 
   const latestNoticeQ = useQuery({
-    queryKey: ["customer-latest-service-notice", userId],
-    enabled: !!userId,
+    queryKey: ["customer-latest-service-notice", userId, selectedVehicleId],
+    enabled: !!userId && !!selectedVehicleId,
     queryFn: async () => {
+      // Fetch latest notice specifically for the selected vehicle.
+      // Notifications are stamped with service_id in metadata.
       const { data, error } = await (supabase as any)
         .from("customer_notifications")
         .select("id,type,title,body,link,metadata,created_at,read_at")
         .eq("user_id", userId)
         .in("type", ["vehicle_unavailable", "vehicle_dirty"])
+        // Use jsonb containment to filter by vehicle_id in metadata, 
+        // or check service_id's association.
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(20);
+
       if (error) throw error;
-      return data as null | {
-        id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null;
-      };
+      
+      const notifications = (data ?? []) as any[];
+      
+      // We need to verify which of these notifications belong to the current vehicle.
+      // Since notifications link to services, we filter by those that match selectedVehicleId.
+      for (const n of notifications) {
+        const sid = n.metadata?.service_id;
+        if (!sid) continue;
+        
+        const { data: svc } = await supabase
+          .from("services")
+          .select("vehicle_id")
+          .eq("id", sid)
+          .single();
+          
+        if (svc?.vehicle_id === selectedVehicleId) {
+          return n;
+        }
+      }
+      return null;
     },
   });
 
@@ -646,7 +667,12 @@ function ServiceNoticeCard({ notice, onScheduleIncluded, vehicleId }: { notice: 
                   Schedule a wash
                 </Button>
                 <button 
-                  onClick={() => {/* View photos logic */}}
+                  onClick={() => {
+                    const sid = notice.metadata?.service_id;
+                    if (sid) {
+                       window.dispatchEvent(new CustomEvent("uwOpenServicePhotos", { detail: { serviceId: sid } }));
+                    }
+                  }}
                   className="flex items-center justify-center gap-1.5 py-2 text-[13px] font-black text-primary/60"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
