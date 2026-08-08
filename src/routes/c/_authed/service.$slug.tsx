@@ -111,6 +111,11 @@ function ServiceDetail() {
   const [billExpanded, setBillExpanded] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: 'phonepe', name: 'PhonePe UPI', icon: '🟣' });
   const [paying, setPaying] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   // Data fetching
   const serviceQ = useQuery({ queryKey: ["service", slug], queryFn: async () => { const { data } = await (supabase as any).from("service_catalog").select("*").eq("slug", slug).eq("active", true).maybeSingle(); return data as Service | null; } });
@@ -120,7 +125,8 @@ function ServiceDetail() {
   const vehicleSubQ = useQuery({ queryKey: ["vehicle-open-subscription", vehicleId], enabled: !!vehicleId, queryFn: async () => { const { data } = await (supabase as any).from("subscriptions").select("id,status").eq("vehicle_id", vehicleId).in("status", ["active", "awaiting_partner_assignment", "assigned"]).limit(1).maybeSingle(); return data ?? null; } });
 
   const service = serviceQ.data;
-  const vehicle = vehiclesQ.data?.find((v) => v.id === vehicleId);
+  const vehicles = vehiclesQ.data ?? [];
+  const vehicle = vehicles.find((v) => v.id === vehicleId);
   const address = addressesQ.data?.find((a) => a.id === addressId);
   const isSUV = vehicle?.category === "sedan_suv";
   const isDailyShine = service?.service_type === "subscription" || service?.slug?.startsWith("daily-shine");
@@ -157,16 +163,30 @@ function ServiceDetail() {
   }, [service, preview?.used_entitlement, isVehicleSubActive, isDailyShine]);
 
   const confirm = async () => {
+    if (submitting || paying || !previewReady) return;
     setSubmitting(true);
     try {
-      // Logic for address confirmation etc.
-      // ... (simplified for this write block, in real app keep the existing logic)
-      
       const { data: bookingId, error } = await (supabase as any).rpc("confirm_customer_booking", {
-        p_service_id: service!.id, p_vehicle_id: vehicle!.id, p_address_id: addressId, p_scheduled_date: date, p_scheduled_time: slot, p_addons: selectedAddons,
+        p_service_id: service!.id, p_vehicle_id: vehicle!.id, p_address_id: addressId, p_scheduled_date: date, p_scheduled_time: slot, p_addons: selectedAddons, p_notes: notes || null,
       });
       if (error) throw error;
-      await navigate({ to: "/c/booking-success", search: { bookingId: String(bookingId) } });
+      
+      const { data: booking } = await supabase.from("bookings").select("total_amount, payment_status").eq("id", bookingId).single();
+      const payable = Number(booking?.total_amount ?? 0);
+      if (payable <= 0) {
+        toast.success("Booking confirmed!");
+        await navigate({ to: "/c/booking-success", search: { bookingId: String(bookingId), service: service?.name, date, vehicle: `${vehicle?.make} ${vehicle?.model}` } });
+        return;
+      }
+
+      const order = await createOrder({ data: { bookingId: String(bookingId) } });
+      const result = await openRazorpayCheckout({
+        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency, description: service?.name || "Service", bookingId: String(bookingId),
+      });
+      if (result.status === "success") {
+        await verifyPayment({ data: { bookingId: String(bookingId), razorpayOrderId: result.orderId, razorpayPaymentId: result.paymentId, razorpaySignature: result.signature } });
+        await navigate({ to: "/c/booking-success", search: { bookingId: String(bookingId), plan: isDailyShine ? true : undefined } });
+      }
     } catch (e: any) { toast.error(e.message); } finally { setSubmitting(false); }
   };
 
@@ -182,6 +202,8 @@ function ServiceDetail() {
     });
   }, [addressesQ.data]);
 
+  if (serviceQ.isLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-40">
       <header className="sticky top-0 z-30 flex items-center gap-4 bg-[#FFF9F3]/95 px-5 py-4 backdrop-blur">
@@ -190,16 +212,177 @@ function ServiceDetail() {
       </header>
 
       <div className="px-5 pb-6 space-y-8">
-        {service && <PremiumHero service={service} vehicleSubActive={isVehicleSubActive} previewPayable={previewPayable} purchaseMode={purchaseMode} vehicle={vehicle} address={address} onVehicleClick={() => setVehDrawerOpen(true)} onAddressClick={() => setAddrDrawerOpen(true)} />}
+        {service && (
+          <PremiumHero 
+            service={service} 
+            vehicleSubActive={isVehicleSubActive} 
+            previewPayable={previewPayable} 
+            purchaseMode={purchaseMode} 
+            vehicle={vehicle} 
+            address={address} 
+            onVehicleClick={() => setVehDrawerOpen(true)} 
+            onAddressClick={() => setAddrDrawerOpen(true)} 
+          />
+        )}
 
-        {/* ... Sections for Schedule, Add-ons, Your services, Bill details, Location, Payment ... */}
-        {/* ... (Implementation details omitted for brevity, but will include full structure in final file) ... */}
+        <Section title={<><Clock className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Choose a time</span></>}>
+          <div className="mb-4 text-[14px] font-black text-foreground px-1">{date} · {slot}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {TIME_SLOTS.map((s) => (
+              <button key={s} onClick={() => setSlot(s)} className={cn("rounded-xl border py-3 text-[12px] font-black", slot === s ? "border-primary bg-primary/10 text-primary" : "border-black/5 bg-white text-muted-foreground")}>{s}</button>
+            ))}
+          </div>
+        </Section>
+
+        {addonsQ.data && addonsQ.data.length > 0 && (
+          <Section title={<><Sparkles className="h-4 w-4 text-primary" /> <span className="text-[15px] font-black">Add more to your service</span></>}>
+            <div className="space-y-3">
+              {addonsQ.data.slice(0, 3).map((a) => (
+                <Surface key={a.id} className="flex items-center justify-between p-3 border-black/5">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-black">{a.name}</div>
+                    <div className="text-[12px] font-bold text-primary">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
+                  </div>
+                  <button onClick={() => setQty(a.id, (addonQty[a.id] || 0) + 1)} className="h-9 px-4 rounded-lg bg-primary text-white text-[12px] font-black">+ Add</button>
+                </Surface>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        <Section title={<span className="text-[15px] font-black">Your services</span>}>
+          <Surface className="border-none bg-white p-4 space-y-4">
+            <div className="flex justify-between items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-black">{purchaseMode === 'included_wash' ? 'Daily Shine — Included wash' : service?.name}</div>
+                <div className="text-[12px] font-medium text-muted-foreground/60">{vehicle?.make} {vehicle?.model}</div>
+              </div>
+              <div className="text-[14px] font-black">{purchaseMode === 'included_wash' ? 'Included' : `₹${previewBase}`}</div>
+            </div>
+            {selectedAddons.map(({ id, quantity }) => {
+              const addon = addonsQ.data?.find(a => a.id === id);
+              if (!addon) return null;
+              return (
+                <div key={id} className="flex justify-between items-start gap-4">
+                  <div className="text-[14px] font-black">{addon.name} (x{quantity})</div>
+                  <div className="text-[14px] font-black">₹{(isSUV ? addon.price_sedan_suv : addon.price_hatchback) * quantity}</div>
+                </div>
+              );
+            })}
+          </Surface>
+        </Section>
+
+        <Section>
+          <button onClick={() => setBillExpanded(!billExpanded)} className="w-full flex items-center justify-between py-1">
+            <span className="text-[15px] font-black">Bill details</span>
+            <div className="flex items-center gap-2">{!billExpanded && <span className="text-[15px] font-black text-primary">₹{previewPayable}</span>}<ChevronRight className={cn("h-4 w-4 transition-transform", billExpanded && "rotate-90")} /></div>
+          </button>
+          {billExpanded && (
+            <Surface className="mt-4 border-none bg-black/[0.02] p-4 space-y-2.5">
+              <div className="flex justify-between text-[13px]"><span className="font-medium text-muted-foreground">Services total</span><span className="font-black">₹{previewBase + previewAddon}</span></div>
+              {previewDiscount > 0 && <div className="flex justify-between text-[13px] text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
+              <div className="pt-2.5 border-t border-black/5 flex justify-between text-[14px] font-black"><span>Grand total</span><span className="text-primary">₹{previewPayable}</span></div>
+            </Surface>
+          )}
+        </Section>
+
+        <Section>
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-start gap-3"><MapPin className="mt-1 h-4 w-4 text-primary" /><div><div className="text-[14px] font-black">Serving at {address?.label || 'Home'}</div><div className="text-[12px] font-medium text-muted-foreground/60">{address?.address_line}</div></div></div>
+            <button onClick={() => setAddrDrawerOpen(true)} className="text-[13px] font-black text-primary">Change</button>
+          </div>
+        </Section>
+
+        <Section>
+          <button onClick={() => setPayDrawerOpen(true)} className="w-full flex items-center justify-between py-1">
+            <div><div className="text-[15px] font-black">Payment method</div><div className="text-[13px] font-bold text-muted-foreground/60">{selectedPaymentMethod.icon} {selectedPaymentMethod.name}</div></div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+          </button>
+        </Section>
       </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-black/5 px-5 py-5">
+        <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
+          <div><div className="text-[11px] font-bold text-muted-foreground">Total</div><div className="text-[20px] font-black">₹{previewPayable}</div></div>
+          <Button onClick={confirm} disabled={submitting || paying || !previewReady} className="flex-1 h-14 rounded-2xl bg-primary text-white font-black">{submitting || paying ? <Loader2 className="animate-spin" /> : <span>{purchaseMode === 'included_wash' ? 'Schedule wash' : `Pay ₹${previewPayable}`}</span>}</Button>
+        </div>
+      </div>
+
+      {/* Drawers */}
+      <Drawer open={vehDrawerOpen} onOpenChange={setVehDrawerOpen}>
+        <DrawerContent className="p-4">
+          <DrawerHeader><DrawerTitle>Select Vehicle</DrawerTitle></DrawerHeader>
+          <div className="space-y-2">
+            {vehicles.map(v => (
+              <button key={v.id} onClick={() => { setVehicleId(v.id); setVehDrawerOpen(false); }} className={cn("w-full text-left p-4 rounded-xl border", vehicleId === v.id ? "border-primary bg-primary/5" : "border-black/5")}>
+                <div className="font-black">{v.make} {v.model}</div><div className="text-xs">{v.registration_number}</div>
+              </button>
+            ))}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={addrDrawerOpen} onOpenChange={setAddrDrawerOpen}>
+        <DrawerContent className="p-4">
+          <DrawerHeader><DrawerTitle>Select Location</DrawerTitle></DrawerHeader>
+          <div className="space-y-2">
+            {uniqueAddresses.map(addr => (
+              <button key={addr.id} onClick={() => { setAddressId(addr.id); setAddrDrawerOpen(false); }} className={cn("w-full text-left p-4 rounded-xl border", addressId === addr.id ? "border-primary bg-primary/5" : "border-black/5")}>
+                <div className="font-black">{addr.label}</div><div className="text-xs">{addr.address_line}</div>
+              </button>
+            ))}
+            <Button onClick={() => setAddrDialogOpen(true)} variant="outline" className="w-full">Add new address</Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={payDrawerOpen} onOpenChange={setPayDrawerOpen}>
+        <DrawerContent className="p-4">
+          <DrawerHeader><DrawerTitle>Select Payment Method</DrawerTitle></DrawerHeader>
+          <div className="space-y-3">
+            {[ { id: 'gpay', name: 'Google Pay UPI', icon: '🟢' }, { id: 'phonepe', name: 'PhonePe UPI', icon: '🟣' }, { id: 'paytm', name: 'Paytm UPI', icon: '🔵' } ].map((m) => (
+              <button key={m.id} onClick={() => { setSelectedPaymentMethod(m); setPayDrawerOpen(false); }} className="w-full flex items-center gap-3 p-4 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                <span className="text-xl">{m.icon}</span><span className="font-black">{m.name}</span>
+              </button>
+            ))}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <AddressDialog open={addrDialogOpen} onOpenChange={setAddrDialogOpen} onCreated={(id) => { setAddressId(id); qc.invalidateQueries({ queryKey: ["customer-addresses"] }); }} />
     </div>
   );
 }
 
 function AddressDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; onCreated: (id: string) => void }) {
-  // ... Dialog implementation ...
-  return <div />;
+  const [label, setLabel] = useState("Home");
+  const [line, setLine] = useState("");
+  const [area, setArea] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    if (line.trim().length < 4) { toast.error("Enter a valid address"); return; }
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setSaving(false); return; }
+    const { data, error } = await (supabase as any).from("customer_addresses").insert({ user_id: u.user.id, label, address_line: line.trim(), area: area.trim(), pincode, is_default: true }).select("id").single();
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Address saved");
+    onCreated(data.id);
+    onOpenChange(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Add new address</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-4">
+          <Input value={line} onChange={(e) => setLine(e.target.value)} placeholder="Flat / House / Street" />
+          <Input value={area} onChange={(e) => setArea(e.target.value)} placeholder="Area" />
+          <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Pincode" />
+        </div>
+        <DialogFooter><Button onClick={save} disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : "Save"}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
