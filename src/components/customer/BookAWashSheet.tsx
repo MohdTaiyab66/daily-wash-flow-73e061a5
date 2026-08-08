@@ -402,7 +402,7 @@ export function BookAWashSheet({
                 Subscribe to Daily Shine to start booking premium washes.
               </p>
               <Button asChild className="mt-8 h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
-                <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
+                <Link to="/c/service/$slug" params={{ slug: "daily-shine" }} search={{ vehicleId: vehicleId ?? undefined }}>
                   See Daily Shine
                 </Link>
               </Button>
@@ -422,7 +422,7 @@ export function BookAWashSheet({
               </div>
               <div className="space-y-3">
                 <Button asChild className="h-14 w-full rounded-2xl font-black shadow-lg shadow-primary/20" onClick={() => onOpenChange(false)}>
-                  <Link to="/c/service/$slug" params={{ slug: "daily-shine" }}>
+                  <Link to="/c/service/$slug" params={{ slug: "daily-shine" }} search={{ vehicleId: vehicleId ?? undefined }}>
                     <ShoppingBag className="mr-2 h-5 w-5" />
                     Buy more washes
                   </Link>

@@ -16,7 +16,7 @@ import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
-  validateSearch: z.object({ redirect: z.string().startsWith("/").optional().catch(undefined) }),
+  validateSearch: (search) => z.object({ redirect: z.string().startsWith("/").optional().catch(undefined) }).parse(search),
   component: AuthPage,
 });
 

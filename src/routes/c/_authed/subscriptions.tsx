@@ -319,7 +319,7 @@ function MyPlanPage() {
           )}
 
           {!bookingsQ.isLoading && !activeSub && pendingSub && (
-            <PendingPaymentCard booking={pendingSub} />
+            <PendingPaymentCard booking={pendingSub} vehicleId={selectedVehicleId} />
           )}
 
           {!bookingsQ.isLoading && !activeSub && !pendingSub && (
@@ -334,7 +334,7 @@ function MyPlanPage() {
           <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
 
           {/* Service Notice Card (if any) */}
-          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} />
+          <ServiceNoticeCard notice={latestNoticeQ.data ?? null} onScheduleIncluded={() => openSchedule("any")} vehicleId={selectedVehicleId} />
 
           {/* Compact Active Plan Surface */}
           <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
@@ -570,7 +570,7 @@ function MyPlanPage() {
   );
 }
 
-function PendingPaymentCard({ booking }: { booking: Booking }) {
+function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | null }) {
   const slug = booking.service_catalog?.slug ?? "daily-shine";
   const planName = booking.service_catalog?.name ?? "Daily Shine";
   const statusLabel = booking.status === "cancelled"
@@ -598,7 +598,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
       <div className="mt-4">
         <Button asChild className="h-11 w-full rounded-2xl text-sm font-semibold">
           {slug ? (
-            <Link to="/c/service/$slug" params={{ slug }}>Retry payment</Link>
+            <Link to="/c/service/$slug" params={{ slug }} search={{ vehicleId: vehicleId ?? undefined }}>Retry payment</Link>
           ) : (
             <Link to="/c/home">Go to home</Link>
           )}
@@ -611,7 +611,7 @@ function PendingPaymentCard({ booking }: { booking: Booking }) {
   );
 }
 
-function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void }) {
+function ServiceNoticeCard({ notice, onScheduleIncluded, vehicleId }: { notice: null | { id: string; type: string; title: string; body: string | null; link: string | null; metadata: any; created_at: string; read_at: string | null }; onScheduleIncluded: () => void; vehicleId: string | null }) {
   if (!notice) return null;
   const isDirty = notice?.type === "vehicle_dirty";
   return (
@@ -627,7 +627,7 @@ function ServiceNoticeCard({ notice, onScheduleIncluded }: { notice: null | { id
           {isDirty ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <Button asChild size="sm" className="h-8 rounded-full text-xs">
-                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }}>Book Premium Wash</Link>
+                <Link to="/c/service/$slug" params={{ slug: "one-time-wash-premium" }} search={{ vehicleId: vehicleId ?? undefined }}>Book Premium Wash</Link>
               </Button>
               <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={onScheduleIncluded}>Schedule Included Wash</Button>
             </div>
@@ -1183,11 +1183,12 @@ function StatCard({
   );
 }
 
-function RecommendedAddon({ name, price, icon: Icon }: { name: string; price: number; icon: any }) {
+function RecommendedAddon({ name, price, icon: Icon, vehicleId }: { name: string; price: number; icon: any; vehicleId: string | null }) {
   return (
     <Link
       to="/c/service/$slug"
       params={{ slug: "daily-shine" }}
+      search={{ vehicleId: vehicleId ?? undefined }}
       className="group flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-primary">
