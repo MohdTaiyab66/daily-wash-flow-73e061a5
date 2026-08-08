@@ -220,13 +220,13 @@ function CustomerAuth() {
         )}
 
         {step === "otp" && (
-          <div className="mt-12 animate-fade-in">
-            <h1 className="text-3xl font-bold tracking-tight">Verify your number</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Code sent to <span className="font-semibold text-foreground">+91 {phone}</span>
+          <div className="mt-12 animate-in fade-in slide-in-from-right-4 duration-500">
+            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Verification</h1>
+            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+              Enter the code sent to <span className="font-bold text-[#1a1a1a]">+91 {phone}</span>
             </p>
 
-            <div className="mt-8">
+            <div className="mt-10">
               <OtpInput
                 value={otp}
                 onChange={setOtp}
@@ -237,43 +237,50 @@ function CustomerAuth() {
             </div>
 
             {SHOW_DEMO_OTP && (
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                Demo OTP: <span className="font-mono font-semibold">1234</span>
+              <p className="mt-6 text-center text-[13px] font-bold text-primary/40 tracking-wider">
+                DEMO CODE: <span className="font-mono text-primary">1234</span>
               </p>
             )}
 
             <Button
               size="lg"
-              className="mt-6 h-14 w-full rounded-2xl text-base font-semibold transition-transform active:scale-[0.98]"
+              className="mt-10 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
               onClick={() => void verifyOtp()}
               disabled={loading || otp.length !== OTP_LENGTH}
             >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? "Verifying…" : "Verify"}
+              {loading ? (
+                <div className="flex items-center gap-3">
+                   <Loader2 className="h-5 w-5 animate-spin" />
+                   <span>Verifying...</span>
+                </div>
+              ) : "Verify & Continue"}
             </Button>
 
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-8 text-center">
               {resendIn > 0 ? (
-                <span className="text-muted-foreground">
-                  Resend OTP in <span className="font-semibold tabular-nums text-foreground">{resendIn}s</span>
-                </span>
+                <p className="text-[13px] font-bold text-muted-foreground/50">
+                  Resend code in <span className="tabular-nums text-primary">{resendIn}s</span>
+                </p>
               ) : (
-                <button onClick={resendOtp} className="font-semibold text-primary underline underline-offset-4">
-                  Resend OTP
+                <button 
+                   onClick={resendOtp} 
+                   className="text-[14px] font-black text-primary hover:opacity-80 transition-opacity"
+                >
+                  Resend Code
                 </button>
               )}
             </div>
 
-            <div className="mt-8 rounded-2xl border border-border bg-card p-4 text-center">
-              <p className="text-xs font-semibold">Trouble receiving OTP?</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Check your network, then request a new code.
+            <div className="mt-12 rounded-3xl border border-black/5 bg-white p-6 text-center shadow-sm">
+              <p className="text-[13px] font-bold text-[#1a1a1a]">Didn't get the code?</p>
+              <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                Wait for the timer to finish, or check if the number is correct.
               </p>
               <button
                 onClick={backToPhone}
-                className="mt-3 text-xs font-semibold text-primary underline underline-offset-4"
+                className="mt-4 text-[12px] font-black uppercase tracking-wider text-primary hover:opacity-80 transition-opacity"
               >
-                Change mobile number
+                Edit number
               </button>
             </div>
           </div>
