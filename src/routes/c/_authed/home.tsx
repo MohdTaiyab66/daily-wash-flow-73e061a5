@@ -343,34 +343,34 @@ function CustomerHome() {
                 onClick={() => navigate({ to: "/c/subscriptions" })}
               />
             </Section>
-          ) : subscription && (a?.daily_shine) ? (
+          ) : (subscription && a?.daily_shine) ? (
             <Section title="Daily Shine">
               <Surface 
                 onClick={() => navigate({ to: "/c/service/$slug", params: { slug: subscription.slug }, search: { vehicleId: vehicleId ?? undefined } })}
-                className="relative overflow-hidden border-primary/20 bg-black p-6 shadow-xl"
+                className="relative overflow-hidden border-primary/20 bg-black p-6 shadow-xl h-48"
               >
                 <div className="absolute inset-0 opacity-40">
                   <img src="https://images.unsplash.com/photo-1552933529-e359b24772ff?q=80&w=800&auto=format&fit=crop" alt="Daily Shine" className="h-full w-full object-cover" />
                 </div>
-                <div className="relative z-10 flex flex-col items-start gap-4">
-                  <span className="flex h-6 items-center rounded-full bg-primary px-3 text-[10px] font-black uppercase tracking-widest text-white">✨ Recommended</span>
+                <div className="relative z-10 flex flex-col justify-between h-full">
                   <div>
-                    <h3 className="text-[22px] font-black tracking-tight text-white">Keep it clean, daily.</h3>
-                    <p className="mt-1 text-[13px] font-medium text-white/70">Doorstep cleaning every single morning.</p>
+                    <span className="inline-flex h-6 items-center rounded-full bg-primary px-3 text-[10px] font-black uppercase tracking-widest text-white">✨ Recommended</span>
+                    <h3 className="mt-3 text-[22px] font-black tracking-tight text-white leading-tight">Keep it clean, daily.</h3>
                   </div>
-                  <div className="flex items-center justify-between w-full mt-4">
+                  <div className="flex items-center justify-between w-full">
                     <div>
                       <span className="text-[24px] font-black text-white">₹{priceFor(subscription)}</span>
                       <span className="ml-1 text-[12px] font-bold text-white/60">/mo</span>
                     </div>
-                    <button className="flex h-10 items-center rounded-full bg-white px-6 text-[13px] font-black text-black shadow-lg">
-                      Explore →
-                    </button>
+                    <span className="flex h-10 items-center rounded-full bg-white px-6 text-[13px] font-black text-black shadow-lg">
+                      Get Plan
+                    </span>
                   </div>
                 </div>
               </Surface>
             </Section>
           ) : null}
+
 
           <Section title="Your active car">
             {vehiclesQ.isLoading ? <SkeletonCard className="h-28" /> : activeVehicle ? (
