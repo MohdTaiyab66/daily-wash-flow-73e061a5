@@ -159,8 +159,9 @@ export const updateMarketplaceSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => settingsInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
+    const { supabase, userId } = context as any;
+    const { data: isAdmin } = await (supabase as any).rpc("has_role", {
+      _user_id: userId,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
