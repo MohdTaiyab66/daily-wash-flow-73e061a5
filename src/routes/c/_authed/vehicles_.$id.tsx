@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Camera, Loader2, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Star, Trash2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
+import { PageTitle, Muted, Surface, StatusChip } from "@/components/customer/ui/kit";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/$id")({
   ssr: false,
