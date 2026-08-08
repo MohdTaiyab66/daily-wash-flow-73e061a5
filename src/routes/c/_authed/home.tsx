@@ -391,32 +391,14 @@ function CustomerHome() {
               ))}
             </div>
           </Section>
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/70">
-                        {activeVehicle.make} {activeVehicle.model} was reported as extra dirty. A premium wash is recommended.
-                      </p>
-                      <div className="mt-4">
-                        <Button 
-                          onClick={() => setBookOpen(true)}
-                          className="h-11 w-full rounded-2xl bg-primary text-[14px] font-black shadow-lg shadow-primary/20 active:scale-95"
-                        >
-                          Schedule a wash
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Surface>
-              )}
-
-              <div className="py-2 flex items-center justify-center gap-6 safe-area-bottom">
-                <TrustItem label="Expert Care" />
-                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                <TrustItem label="Photo Proof" />
-                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                <TrustItem label="Safe & Secure" />
-              </div>
-            </>
+          {showCatalog && (
+            <div className="py-2 flex items-center justify-center gap-6 safe-area-bottom">
+              <TrustItem label="Expert Care" />
+              <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+              <TrustItem label="Photo Proof" />
+              <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+              <TrustItem label="Safe & Secure" />
+            </div>
           )}
         </div>
 
