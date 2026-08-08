@@ -311,6 +311,15 @@ function ServiceDetail() {
   const address = addressesQ.data?.find((a) => a.id === addressId);
   const isSUV = vehicle?.category === "sedan_suv";
   const isDailyShine = service?.service_type === "subscription" || service?.slug?.startsWith("daily-shine");
+  const isVehicleSubActive = vehicleSubQ.data?.status === 'active';
+
+  const purchaseMode = useMemo(() => {
+    if (!service) return 'new_subscription';
+    if (isIncludedBooking) return 'included_wash';
+    if (isVehicleSubActive) return 'paid_add_on';
+    if (service.service_type === 'subscription') return 'new_subscription';
+    return 'one_time_service';
+  }, [service, isIncludedBooking, isVehicleSubActive]);
 
   useEffect(() => {
     if (isDailyShine && isMondayIso(date)) {
@@ -352,9 +361,12 @@ function ServiceDetail() {
       
       // HARD GUARD: If vehicle has an active sub, base amount MUST be 0
       // unless we are renewing or it's a specific paid upgrade.
-      if (vehicleSubQ.data?.status === 'active' && !isIncludedBooking) {
+      if (isVehicleSubActive && !isIncludedBooking && isDailyShine) {
         normalized.base_amount = 0;
         normalized.payable = Number(normalized.addon_amount ?? 0);
+      } else if (isVehicleSubActive && !isIncludedBooking && !isDailyShine) {
+        // One-time service while sub active: total is just the service price + addons
+        normalized.payable = Number(normalized.total_amount ?? 0);
       }
       
       return normalized;
@@ -960,7 +972,11 @@ function ServiceDetail() {
         </button>
         <div className="min-w-0">
           <PageTitle className="text-[17px]">{service.name}</PageTitle>
-          <Muted className="truncate">{vehicleSubQ.data?.status === 'active' ? 'Active on this vehicle' : 'Your car, clean every day'}</Muted>
+          <Muted className="truncate">
+            {purchaseMode === 'paid_add_on' ? 'Additional premium service' : 
+             purchaseMode === 'included_wash' ? 'Included with Daily Shine' :
+             'Premium doorstep car care'}
+          </Muted>
         </div>
         {vehicleSubQ.data?.status === 'active' && (
           <div className="ml-auto">
@@ -972,8 +988,9 @@ function ServiceDetail() {
       <div className="px-5 pb-6">
         <PremiumHero 
           service={service} 
-          vehicleSubActive={vehicleSubQ.data?.status === 'active'} 
+          vehicleSubActive={isVehicleSubActive} 
           previewPayable={previewPayable}
+          purchaseMode={purchaseMode}
           onBookIncluded={() => setBookOpen(true)}
         />
 
@@ -1143,12 +1160,31 @@ function ServiceDetail() {
         </Section>
 
         {/* PRICE SUMMARY */}
-        <Section title="Your total">
+        <Section title="Price summary">
            <Surface className="space-y-3 p-4">
-              <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70"><span>Daily Shine</span><span>₹{previewBase}</span></div>
-              <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70"><span>Add-ons</span><span>₹{previewAddon}</span></div>
+              {purchaseMode !== 'paid_add_on' && (
+                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
+                  <span>{service.name}</span>
+                  <span>₹{previewBase}</span>
+                </div>
+              )}
+              {purchaseMode === 'paid_add_on' && (
+                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
+                  <span>{service.name}</span>
+                  <span>₹{previewBase || (isSUV ? service.price_sedan_suv : service.price_hatchback)}</span>
+                </div>
+              )}
+              {previewAddon > 0 && (
+                <div className="flex justify-between text-[14px] font-medium text-muted-foreground/70">
+                  <span>Add-ons</span>
+                  <span>₹{previewAddon}</span>
+                </div>
+              )}
               {previewDiscount > 0 && <div className="flex justify-between text-[14px] font-black text-success"><span>Discount</span><span>-₹{previewDiscount}</span></div>}
-              <div className="flex justify-between pt-3 text-[17px] font-black border-t border-black/5 text-[#1a1a1a]"><span>Total per month</span><span>₹{previewPayable}</span></div>
+              <div className="flex justify-between pt-3 text-[17px] font-black border-t border-black/5 text-[#1a1a1a]">
+                <span>Total Payable</span>
+                <span>₹{previewPayable}</span>
+              </div>
            </Surface>
         </Section>
       </div>
@@ -1165,7 +1201,9 @@ function ServiceDetail() {
                   <span className="text-[18px]">₹{previewPayable}</span>
                 </div>
                 <div className="flex items-center gap-1 font-black">
-                  Subscribe <ChevronRight className="h-5 w-5" />
+                  {purchaseMode === 'new_subscription' ? 'Subscribe' : 
+                   purchaseMode === 'included_wash' ? 'Schedule wash' : 
+                   `Pay ₹${previewPayable}`} <ChevronRight className="h-5 w-5" />
                 </div>
               </div>
             )}
