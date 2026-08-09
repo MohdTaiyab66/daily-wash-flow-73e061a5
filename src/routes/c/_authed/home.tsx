@@ -277,16 +277,23 @@ function CustomerHome() {
         .select("id, service_slug, image_url, status, updated_at")
         .order("updated_at", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("[ServiceImages] Database query error:", error);
+        throw error;
+      }
       
-      // 2. Log RAW database state for debugging (this will show even if status is wrong)
-      console.log("[ServiceImages] RAW DB records:", data?.map(d => ({
-        slug: d.service_slug,
-        status: d.status,
-        url: d.image_url?.substring(0, 30) + "..."
-      })));
+      // CRITICAL: Log exact database state to identify if data is missing or wrong
+      console.log(`[ServiceImages] DB Result count: ${data?.length || 0}`);
+      if (data && data.length > 0) {
+        console.table(data.map(d => ({
+          slug: d.service_slug,
+          status: d.status,
+          url_preview: d.image_url?.substring(0, 40) + "..."
+        })));
+      }
 
       const published = data?.filter(img => img.status === "published") || [];
+      console.log(`[ServiceImages] Published count: ${published.length}`);
       
       const uniqueImages = new Map();
       published.forEach(img => {
@@ -306,12 +313,13 @@ function CustomerHome() {
         updated_at: meta.updatedAt
       }));
 
-      console.log("[ServiceImages] FINAL mapping sent to components:", result);
+      console.log("[ServiceImages] Final resolved mapping:", result);
       return result;
     },
-    staleTime: 5000,
+    staleTime: 1000, // Very aggressive for debugging
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
+    refetchInterval: 5000, // Polling every 5s for debugging
+  });
   });
 
   const getServiceImage = (slug: string) => {
