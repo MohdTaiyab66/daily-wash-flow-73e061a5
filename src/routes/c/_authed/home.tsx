@@ -320,7 +320,6 @@ function CustomerHome() {
     refetchOnWindowFocus: true,
     refetchInterval: 5000, // Polling every 5s for debugging
   });
-  });
 
   const getServiceImage = (slug: string) => {
     // 1. Try to find an Admin-published image for THIS exact slug
