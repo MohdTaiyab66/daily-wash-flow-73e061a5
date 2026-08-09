@@ -268,6 +268,25 @@ function CustomerHome() {
     },
   });
 
+  const serviceImagesQ = useQuery({
+    queryKey: ["customer-service-images"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("service_images")
+        .select("*")
+        .eq("status", "published");
+      if (error) throw error;
+      return data as Array<{ service_slug: string; image_url: string }>;
+    },
+  });
+
+  const getServiceImage = (slug: string) => {
+    const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
+    if (custom) return custom.image_url;
+    return undefined; // Fallback to placeholder in UWServiceCard
+  };
+
+
   useEffect(() => {
     latestNoticeQ.refetch();
   }, [selectedVehicleId]);
@@ -410,11 +429,12 @@ function CustomerHome() {
                   key={s.id}
                   name={s.name}
                   price={priceFor(s)}
-                  image={s.banner_url || undefined}
+                  image={getServiceImage(s.slug) || s.banner_url || undefined}
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />
               ))}
+
             </div>
           </Section>
           {showCatalog && (
