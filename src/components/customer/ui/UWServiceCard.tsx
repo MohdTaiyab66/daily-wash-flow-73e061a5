@@ -1,6 +1,7 @@
 import { Plus, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Surface } from "./kit";
+import { useState } from "react";
 
 interface UWServiceCardProps {
   name: string;
@@ -13,7 +14,6 @@ interface UWServiceCardProps {
   isLoading?: boolean;
   slug?: string;
   className?: string;
-  
 }
 
 export function UWServiceCard({
@@ -28,6 +28,8 @@ export function UWServiceCard({
   slug,
   className,
 }: UWServiceCardProps) {
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(image ? 'loading' : 'error');
+
   return (
     <Surface 
       className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200", className)}
@@ -35,35 +37,59 @@ export function UWServiceCard({
     >
       <div className="relative aspect-[1.1/1] w-full bg-[#F8F9FB] overflow-hidden">
         {image ? (
-          <img 
-            src={image} 
-            alt={name} 
-            data-slug={slug}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-            onLoad={() => {
-              // console.log(`[UW_SERVICE_PHOTO] ${slug} LOAD SUCCESS: ${image}`);
-            }}
-            onError={(e) => {
-              // console.error(`[UW_SERVICE_PHOTO] ${slug} LOAD ERROR: ${image}`);
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.style.display = 'none';
-            }}
-          />
+          <>
+            <img 
+              src={image} 
+              alt={name} 
+              data-slug={slug}
+              className={cn(
+                "h-full w-full object-cover transition-opacity duration-500",
+                loadStatus === 'success' ? "opacity-100" : "opacity-0"
+              )} 
+              onLoad={() => {
+                setLoadStatus('success');
+                console.log(`[UW_SERVICE_IMAGE] LOAD SUCCESS: ${slug} URL: ${image}`);
+              }}
+              onError={(e) => {
+                setLoadStatus('error');
+                console.error(`[UW_SERVICE_IMAGE] LOAD ERROR: ${slug} URL: ${image}`);
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+              }}
+            />
+            {/* Debug UI Overlay (Temporary) */}
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 p-2 text-center pointer-events-none">
+              <span className="text-[7px] font-mono text-white break-all leading-[1] opacity-60 mb-1">
+                {slug}
+              </span>
+              <span className={cn(
+                "text-[8px] font-bold px-1.5 py-0.5 rounded",
+                loadStatus === 'loading' ? "bg-yellow-500 text-black" : 
+                loadStatus === 'success' ? "bg-green-500 text-white" : "bg-red-500 text-white"
+              )}>
+                {loadStatus.toUpperCase()}
+              </span>
+              {loadStatus === 'error' && (
+                <span className="text-[6px] text-white/80 mt-1 font-mono break-all line-clamp-2">
+                  {image}
+                </span>
+              )}
+            </div>
+          </>
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
+            <span className="text-[8px] mt-1">{slug}</span>
           </div>
         )}
         
         {badge && (
-          <div className="absolute top-2 left-2 rounded-full bg-primary/90 px-2 py-0.5 backdrop-blur-sm">
+          <div className="absolute top-2 left-2 rounded-full bg-primary/90 px-2 py-0.5 backdrop-blur-sm z-[60]">
             <span className="text-[9px] font-black uppercase tracking-widest text-white">
               {badge}
             </span>
           </div>
         )}
-
       </div>
       
       <div className="flex flex-col flex-1 p-3">
