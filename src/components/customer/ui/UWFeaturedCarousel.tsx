@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BUILD_VERSION } from "@/lib/build-info";
 
 interface CarouselItem {
   id: string;
@@ -9,6 +10,7 @@ interface CarouselItem {
   price: number;
   image: string;
   link: string;
+  slideNumber?: number;
 }
 
 interface UWFeaturedCarouselProps {
@@ -20,6 +22,7 @@ interface UWFeaturedCarouselProps {
 export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeaturedCarouselProps) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [loadErrors, setLoadErrors] = useState<Record<string, boolean>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStart = useRef<number | null>(null);
   const touchEnd = useRef<number | null>(null);
@@ -70,7 +73,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       ref={containerRef}
-      className={cn("featured-carousel relative w-full overflow-hidden rounded-[26px] bg-black aspect-[16/9] touch-pan-y", className)}
+      className={cn("featured-carousel relative w-full overflow-hidden rounded-[26px] bg-[#1a1a1a] aspect-[16/9] touch-pan-y", className)}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={onTouchStart}
@@ -81,43 +84,77 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${index * 100}%)` }}
       >
-        {items.map((item, i) => (
-          <div 
-            key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
-            onClick={() => onItemClick?.(item)}
-          >
-            <img 
-              src={item.image} 
-              alt={item.title} 
-              className="h-full w-full object-cover opacity-70 transition-opacity duration-500"
-              loading={i === 0 ? "eager" : "lazy"}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
-                FEATURED SERVICE
-              </span>
-              <h3 className="text-[22px] font-black text-white leading-tight tracking-tight">
-                {item.title}
-              </h3>
-              <p className="mt-1 text-[13px] font-medium text-white/70">
-                {item.subtitle}
-              </p>
-              
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-white">
-                  <span className="text-[18px] font-black">₹{item.price}</span>
+        {items.map((item, i) => {
+          const hasError = loadErrors[item.id];
+          const isStatic = item.image.includes('images.unsplash.com');
+          
+          return (
+            <div 
+              key={item.id} 
+              className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
+              onClick={() => onItemClick?.(item)}
+            >
+              {hasError ? (
+                <div className="flex h-full w-full flex-col items-center justify-center bg-destructive/10 text-destructive p-4 text-center">
+                  <AlertCircle className="h-10 w-10 mb-2" />
+                  <span className="text-[14px] font-black uppercase">IMAGE LOAD ERROR</span>
+                  <span className="text-[10px] mt-2 font-mono break-all opacity-70">{item.image}</span>
                 </div>
-                <button 
-                  className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90"
-                  onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
-                >
-                  Book now <ChevronRight className="h-4 w-4" />
-                </button>
+              ) : (
+                <img 
+                  src={item.image} 
+                  alt={item.title} 
+                  className={cn(
+                    "h-full w-full object-cover transition-opacity duration-500",
+                    isStatic ? "opacity-70" : "opacity-100"
+                  )}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  onLoad={() => {
+                    console.log(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_SUCCESS slide=${item.slideNumber || i+1} url=${item.image}`);
+                  }}
+                  onError={(e) => {
+                    console.error(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_ERROR slide=${item.slideNumber || i+1} url=${item.image}`);
+                    setLoadErrors(prev => ({ ...prev, [item.id]: true }));
+                  }}
+                />
+              )}
+
+              {/* Debug Overlay */}
+              <div className="absolute top-2 left-2 z-50 bg-black/80 p-2 rounded-lg border border-white/20 pointer-events-none">
+                <div className="text-[8px] font-mono text-white leading-tight">
+                  <div className="text-[#FF6B00] font-black">BUILD: {BUILD_VERSION}</div>
+                  <div>SLIDE: {item.slideNumber || i+1}</div>
+                  <div>SOURCE: {isStatic ? "STATIC" : "DATABASE"}</div>
+                  <div className="max-w-[150px] truncate">URL: {item.image}</div>
+                </div>
+              </div>
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
+                  FEATURED SERVICE
+                </span>
+                <h3 className="text-[22px] font-black text-white leading-tight tracking-tight">
+                  {item.title}
+                </h3>
+                <p className="mt-1 text-[13px] font-medium text-white/70">
+                  {item.subtitle}
+                </p>
+                
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-white">
+                    <span className="text-[18px] font-black">₹{item.price}</span>
+                  </div>
+                  <button 
+                    className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90"
+                    onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                  >
+                    Book now <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="absolute bottom-4 left-6 flex gap-1.5">
@@ -140,3 +177,4 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
     </div>
   );
 }
+
