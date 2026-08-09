@@ -182,7 +182,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
             disabled={!isDirty || isSaving || !currentUrl} 
             size="sm" 
             className={cn("h-8 px-4 text-[11px] font-black rounded-lg", isDirty ? "bg-[#ff6b00] text-white" : "bg-muted/50 text-muted-foreground")}
-            onClick={() => onSave({ id: slide?.id, image_url: currentUrl, status })}
+            onClick={handleSave}
           >
             {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : isDirty ? "PUBLISH" : "SAVED"}
           </Button>
