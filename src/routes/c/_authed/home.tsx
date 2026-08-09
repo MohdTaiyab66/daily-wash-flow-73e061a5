@@ -186,7 +186,7 @@ function CustomerHome() {
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
   const filteredServices = oneTime.filter((s) => {
-    if (selectedCategory === "Popular") return s.sort_order < 10; // Simple heuristic for popular
+    if (selectedCategory === "Popular") return true; // Popular = ALL active/published services
     if (selectedCategory === "Wash") return s.slug.includes("wash");
     if (selectedCategory === "Interior") return s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
     if (selectedCategory === "Polish") return s.slug.includes("polish") || s.slug.includes("scratch");
@@ -382,7 +382,7 @@ function CustomerHome() {
             title="Car care services"
             className="mt-6"
           >
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-none">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
               {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                 <button
                   key={cat}
@@ -391,7 +391,7 @@ function CustomerHome() {
                     "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all duration-200",
                     selectedCategory === cat 
                       ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                      : "bg-white text-muted-foreground border border-border/50"
+                      : "bg-white text-[#1a1a1a] border border-border/50"
                   )}
                 >
                   {cat}
@@ -399,7 +399,7 @@ function CustomerHome() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-1">
+            <div className="grid grid-cols-2 gap-4 mt-[16px]">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
               ) : filteredServices.map((s) => (
