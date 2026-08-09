@@ -282,17 +282,15 @@ function CustomerHome() {
         throw error;
       }
       
-      // CRITICAL: Log exact database state to identify if data is missing or wrong
-      console.log(`[ServiceImages] DB Result count: ${data?.length || 0}`);
-      if (data && data.length > 0) {
-        console.table(data.map(d => ({
-          slug: d.service_slug,
-          status: d.status,
-          url_preview: d.image_url?.substring(0, 40) + "..."
-        })));
-      }
+      const rawData = data || [];
+      console.log(`[ServiceImages] DB Result count: ${rawData.length}`);
+      
+      // Use standard logging if console.table is messy in some environments
+      rawData.forEach(d => {
+        console.log(`[ServiceImages] DB Row: slug=${d.service_slug}, status=${d.status}, url=${d.image_url?.substring(0, 30)}...`);
+      });
 
-      const published = data?.filter(img => img.status === "published") || [];
+      const published = rawData.filter(img => img.status === "published");
       console.log(`[ServiceImages] Published count: ${published.length}`);
       
       const uniqueImages = new Map();
@@ -316,9 +314,9 @@ function CustomerHome() {
       console.log("[ServiceImages] Final resolved mapping:", result);
       return result;
     },
-    staleTime: 1000, // Very aggressive for debugging
+    staleTime: 1000,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000, // Polling every 5s for debugging
+    refetchInterval: 5000,
   });
 
   const getServiceImage = (slug: string) => {
