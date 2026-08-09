@@ -42,7 +42,7 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
       .upsert({
         ...data,
         updated_at: new Date().toISOString(),
-      })
+      }, { onConflict: 'slide_number' })
       .select()
       .single();
       
