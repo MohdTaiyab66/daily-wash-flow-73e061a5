@@ -261,11 +261,10 @@ function CustomerHome() {
     queryKey: ["customer-promo-images"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("daily_shine_promo_images")
+        .from("daily_shine_carousel")
         .select("*")
-        .eq("is_active", true)
         .eq("status", "published")
-        .order("sort_order");
+        .order("slide_number");
       if (error) throw error;
       return data;
     },
@@ -352,12 +351,13 @@ function CustomerHome() {
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
+                const bust = img.updated_at ? `?v=${new Date(img.updated_at).getTime()}` : '';
                 return {
                   id: img.id,
                   title: img.title || linkedService?.name || "Daily Shine",
                   subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
                   price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
-                  image: img.image_url,
+                  image: img.image_url + bust,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
                 };
               })}

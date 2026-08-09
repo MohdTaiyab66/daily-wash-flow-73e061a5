@@ -45,6 +45,7 @@ import { Route as AdminImportRouteImport } from './routes/admin.import'
 import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
 import { Route as AdminExpansionRequestsRouteImport } from './routes/admin.expansion-requests'
 import { Route as AdminDarRouteImport } from './routes/admin.dar'
+import { Route as AdminDailyShineCarouselRouteImport } from './routes/admin.daily-shine-carousel'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCustomerMapRouteImport } from './routes/admin.customer-map'
 import { Route as AdminCoverageRouteImport } from './routes/admin.coverage'
@@ -279,6 +280,11 @@ const AdminExpansionRequestsRoute = AdminExpansionRequestsRouteImport.update({
 const AdminDarRoute = AdminDarRouteImport.update({
   id: '/dar',
   path: '/dar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDailyShineCarouselRoute = AdminDailyShineCarouselRouteImport.update({
+  id: '/daily-shine-carousel',
+  path: '/daily-shine-carousel',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
@@ -591,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/daily-shine-carousel': typeof AdminDailyShineCarouselRoute
   '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
@@ -681,6 +688,7 @@ export interface FileRoutesByTo {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/daily-shine-carousel': typeof AdminDailyShineCarouselRoute
   '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
@@ -774,6 +782,7 @@ export interface FileRoutesById {
   '/admin/coverage': typeof AdminCoverageRoute
   '/admin/customer-map': typeof AdminCustomerMapRoute
   '/admin/customers': typeof AdminCustomersRouteWithChildren
+  '/admin/daily-shine-carousel': typeof AdminDailyShineCarouselRoute
   '/admin/dar': typeof AdminDarRoute
   '/admin/expansion-requests': typeof AdminExpansionRequestsRoute
   '/admin/fraud': typeof AdminFraudRoute
@@ -868,6 +877,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/daily-shine-carousel'
     | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
@@ -958,6 +968,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/daily-shine-carousel'
     | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
@@ -1050,6 +1061,7 @@ export interface FileRouteTypes {
     | '/admin/coverage'
     | '/admin/customer-map'
     | '/admin/customers'
+    | '/admin/daily-shine-carousel'
     | '/admin/dar'
     | '/admin/expansion-requests'
     | '/admin/fraud'
@@ -1409,6 +1421,13 @@ declare module '@tanstack/react-router' {
       path: '/dar'
       fullPath: '/admin/dar'
       preLoaderRoute: typeof AdminDarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/daily-shine-carousel': {
+      id: '/admin/daily-shine-carousel'
+      path: '/daily-shine-carousel'
+      fullPath: '/admin/daily-shine-carousel'
+      preLoaderRoute: typeof AdminDailyShineCarouselRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/customers': {
@@ -1873,6 +1892,7 @@ interface AdminRouteChildren {
   AdminCoverageRoute: typeof AdminCoverageRoute
   AdminCustomerMapRoute: typeof AdminCustomerMapRoute
   AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
+  AdminDailyShineCarouselRoute: typeof AdminDailyShineCarouselRoute
   AdminDarRoute: typeof AdminDarRoute
   AdminExpansionRequestsRoute: typeof AdminExpansionRequestsRoute
   AdminFraudRoute: typeof AdminFraudRoute
@@ -1913,6 +1933,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCoverageRoute: AdminCoverageRoute,
   AdminCustomerMapRoute: AdminCustomerMapRoute,
   AdminCustomersRoute: AdminCustomersRouteWithChildren,
+  AdminDailyShineCarouselRoute: AdminDailyShineCarouselRoute,
   AdminDarRoute: AdminDarRoute,
   AdminExpansionRequestsRoute: AdminExpansionRequestsRoute,
   AdminFraudRoute: AdminFraudRoute,
