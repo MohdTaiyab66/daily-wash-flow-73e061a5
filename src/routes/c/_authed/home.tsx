@@ -292,6 +292,7 @@ function CustomerHome() {
     },
     staleTime: 5000,
     refetchOnWindowFocus: true,
+    refetchInterval: 10000,
   });
 
   const getServiceImage = (slug: string) => {
