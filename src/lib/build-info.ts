@@ -1,4 +1,4 @@
-export const BUILD_VERSION = "DAILY-SHINE-CAROUSEL-FIX-FINAL-04";
+export const BUILD_VERSION = "DAILY-SHINE-CAROUSEL-FIX-FINAL-05";
 export const DAILY_SHINE_CAROUSEL_BUCKET = "daily-shine-carousel";
 
 

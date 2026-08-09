@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronRight } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface CarouselItem {
@@ -96,18 +96,6 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
               loading={i === 0 ? "eager" : "lazy"}
             />
 
-            {/* Restored Daily Shine Booking Button - Visual Overlay */}
-            <div className="absolute bottom-6 right-6 z-10">
-              <button 
-                className="flex h-11 items-center gap-2 rounded-full bg-[#FF6B00] px-6 text-[14px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-all active:scale-95"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onItemClick?.(item);
-                }}
-              >
-                Book now <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
           </div>
         ))}
       </div>
