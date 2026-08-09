@@ -19,7 +19,7 @@ export const upsertServiceImage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     id: z.string().optional(),
     service_slug: z.string(),
-    image_url: z.string().url(),
+    image_url: z.string(),
     status: z.enum(["draft", "published"]).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
