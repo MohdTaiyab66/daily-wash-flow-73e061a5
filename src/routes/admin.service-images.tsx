@@ -14,6 +14,7 @@ import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X 
 import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/service-images")({
   beforeLoad: async () => {
@@ -297,6 +298,3 @@ function ServiceImagesAdminPage() {
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
-}
