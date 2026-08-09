@@ -301,7 +301,14 @@ function CustomerHome() {
     latestNoticeQ.refetch();
   }, [selectedVehicleId]);
 
-  const refreshAll = () => Promise.all([vehiclesQ.refetch(), servicesQ.refetch(), subStatusQ.refetch(), unreadQ.refetch(), latestNoticeQ.refetch()]);
+  const refreshAll = () => Promise.all([
+    vehiclesQ.refetch(), 
+    servicesQ.refetch(), 
+    subStatusQ.refetch(), 
+    unreadQ.refetch(), 
+    latestNoticeQ.refetch(),
+    serviceImagesQ.refetch()
+  ]);
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
