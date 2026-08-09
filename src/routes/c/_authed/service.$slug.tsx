@@ -114,6 +114,8 @@ function ServiceDetail() {
       }));
     },
     staleTime: 5000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000,
   });
 
   const getServiceImage = (serviceSlug: string) => {
