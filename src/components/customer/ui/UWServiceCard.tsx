@@ -11,6 +11,7 @@ interface UWServiceCardProps {
   onAdd?: () => void;
   isAdded?: boolean;
   isLoading?: boolean;
+  slug?: string;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export function UWServiceCard({
   onAdd,
   isAdded,
   isLoading,
+  slug,
   className
 }: UWServiceCardProps) {
   return (

@@ -271,34 +271,51 @@ function CustomerHome() {
   const serviceImagesQ = useQuery({
     queryKey: ["customer-service-images"],
     queryFn: async () => {
+      // 1. Fetch ALL images for tracing
       const { data, error } = await supabase
         .from("service_images")
-        .select("service_slug, image_url, updated_at")
-        .eq("status", "published")
+        .select("id, service_slug, image_url, status, updated_at")
         .order("updated_at", { ascending: false });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("[ServiceImages] Database query error:", error);
+        throw error;
+      }
+      
+      const published = data?.filter(img => img.status === "published") || [];
       
       const uniqueImages = new Map();
-      data?.forEach(img => {
+      published.forEach(img => {
         if (!uniqueImages.has(img.service_slug)) {
-          uniqueImages.set(img.service_slug, img.image_url);
+          uniqueImages.set(img.service_slug, {
+            url: img.image_url,
+            id: img.id,
+            updatedAt: img.updated_at
+          });
         }
       });
       
-      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
+      const result = Array.from(uniqueImages.entries()).map(([service_slug, meta]) => ({
         service_slug,
-        image_url
+        image_url: meta.url,
+        record_id: meta.id,
+        updated_at: meta.updatedAt
       }));
+
+      return result;
     },
-    staleTime: 5000,
+    staleTime: 10000,
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   const getServiceImage = (slug: string) => {
+    // 1. Try to find an Admin-published image for THIS exact slug
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
+    
     if (custom) return custom.image_url;
     
+    // 2. Fallback to static mapping ONLY if no custom image exists
     const mapping: Record<string, string> = {
       "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
       "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
@@ -459,6 +476,7 @@ function CustomerHome() {
                   name={s.name}
                   price={priceFor(s)}
                   image={getServiceImage(s.slug)}
+                  slug={s.slug} // Pass slug for internal debugging if needed
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />

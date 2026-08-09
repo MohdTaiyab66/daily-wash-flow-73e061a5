@@ -194,12 +194,16 @@ function ServiceImagesAdminPage() {
       return;
     }
 
-    upsertMutation.mutate({
+    const finalData = {
       id: existing?.id,
       service_slug: slug,
       image_url: change?.url || existing.image_url,
       status: change?.status || existing?.status || "published"
-    });
+    };
+
+    console.log(`[ServiceImages] Publishing change for slug "${slug}":`, finalData);
+    
+    upsertMutation.mutate(finalData);
     
     setLocalChanges(prev => {
         const newChanges = { ...prev };
