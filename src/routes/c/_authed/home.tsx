@@ -360,21 +360,34 @@ function CustomerHome() {
           <div className="mt-[-12px]">
             {/* DAILY_SHINE_RENDER_TEST: Marker for APK verification */}
             <UWFeaturedCarousel 
-              items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any) => {
+              items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
-                const bust = img.updated_at ? `?v=${new Date(img.updated_at).getTime()}` : '';
+                const bust = img.updated_at ? `&v=${new Date(img.updated_at).getTime()}` : `&v=${Date.now()}`;
+                
+                // Ensure image URL is valid and has cache busting
+                let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
+                if (finalImage && finalImage.includes('supabase.co')) {
+                  const separator = finalImage.includes('?') ? '&' : '?';
+                  finalImage = `${finalImage}${separator}bust=${bust}`;
+                }
+
+                console.log(`[UW_CAROUSEL_DEBUG] slide=${img.slide_number || idx + 1} url=${finalImage}`);
+
                 return {
-                  id: img.id,
+                  id: img.id || `static-${idx}`,
                   title: img.title || linkedService?.name || "Daily Shine",
                   subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
                   price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
-                  image: img.image_url + bust,
-                  link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
+                  image: finalImage,
+                  link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
+                  slideNumber: img.slide_number || idx + 1
                 };
               })}
               onItemClick={(item) => navigate({ to: item.link as any })}
             />
           </div>
+
+
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
           {latestNoticeQ.data && activeVehicle && (
