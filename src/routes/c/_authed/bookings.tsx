@@ -188,10 +188,10 @@ function BookingsPage() {
                     
                     // Simple mock mapping for redesign visual impact
                     const getServicePhoto = (slug: string) => {
-                      if (slug.includes('daily-shine')) return "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=200&auto=format&fit=crop";
-                      if (slug.includes('interior')) return "https://images.unsplash.com/photo-1599256631168-1cf0a544838b?q=80&w=200&auto=format&fit=crop";
-                      return "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=200&auto=format&fit=crop";
+                      return undefined; // NO FALLBACKS IN HISTORY EITHER DURING TEST
                     };
+
+
 
                     return (
                       <UWBookingCard

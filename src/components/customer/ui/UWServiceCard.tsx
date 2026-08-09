@@ -13,6 +13,7 @@ interface UWServiceCardProps {
   isLoading?: boolean;
   slug?: string;
   className?: string;
+  debugInfo?: { source: string; url: string | null };
 }
 
 export function UWServiceCard({
@@ -25,7 +26,8 @@ export function UWServiceCard({
   isAdded,
   isLoading,
   slug,
-  className
+  className,
+  debugInfo
 }: UWServiceCardProps) {
   return (
     <Surface 
@@ -40,21 +42,21 @@ export function UWServiceCard({
             data-slug={slug}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
             onLoad={() => {
-              if (slug === 'body-polish') {
-                console.log(`[ServiceCard DEBUG] Body Polish IMAGE LOAD SUCCESS: ${image}`);
-              }
+              console.log(`[UW_SERVICE_PHOTO] ${slug} LOAD SUCCESS: ${image}`);
             }}
             onError={(e) => {
+              console.error(`[UW_SERVICE_PHOTO] ${slug} LOAD ERROR: ${image}`);
               const target = e.target as HTMLImageElement;
-              console.error(`[ServiceCard DEBUG] IMAGE LOAD ERROR for ${slug}: ${image}`);
               target.onerror = null;
-              target.src = "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800";
-              target.className = "h-full w-full object-cover opacity-40 grayscale";
+              target.style.display = 'none';
             }}
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-muted-foreground/10">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Urban Wash</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
+            {debugInfo && (
+               <span className="text-[8px] mt-1 font-mono">{slug}</span>
+            )}
           </div>
         )}
         
@@ -63,6 +65,15 @@ export function UWServiceCard({
             <span className="text-[9px] font-black uppercase tracking-widest text-white">
               {badge}
             </span>
+          </div>
+        )}
+
+        {/* Debug Overlay */}
+        {debugInfo && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[7px] text-white font-mono break-all pointer-events-none">
+            src: {debugInfo.source}<br/>
+            slug: {slug}<br/>
+            img: {debugInfo.url?.split('/').pop() || 'none'}
           </div>
         )}
       </div>

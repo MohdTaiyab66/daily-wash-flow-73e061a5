@@ -39,6 +39,8 @@ import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/c
 import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
+import { BUILD_VERSION } from "@/lib/build-info";
+
 
 
 
@@ -272,12 +274,9 @@ function CustomerHome() {
   const serviceImagesQ = useServiceImages();
 
   const resolvedServiceImage = (slug: string) => {
-    const img = getServiceImage(slug, serviceImagesQ.data);
-    if (slug === 'body-polish') {
-      console.log(`[Home DEBUG] Body Polish RESOLVER: ${img}`);
-    }
-    return img;
+    return getServiceImage(slug, serviceImagesQ.data);
   };
+
 
 
   useEffect(() => {
@@ -304,6 +303,9 @@ function CustomerHome() {
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
+        <div className="px-5 py-2 text-[8px] font-mono text-muted-foreground/40 text-center">
+          Build: {BUILD_VERSION} | DB: {import.meta.env.VITE_SUPABASE_URL?.split('.')[0].split('//')[1]}
+        </div>
 
         <div className="px-5 space-y-7">
           {/* Active Vehicle Section - Compact Context Row */}
@@ -347,7 +349,6 @@ function CustomerHome() {
 
           <div className="mt-[-16px]">
             <UWFeaturedCarousel 
-
             items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
               const linkedService = services.find(s => s.slug === img.service_slug);
               return {
@@ -358,17 +359,11 @@ function CustomerHome() {
                 image: img.image_url,
                 link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
               };
-            }) : DEFAULT_PROMO_IMAGES.map(img => ({
-              id: img.id,
-              title: img.title,
-              subtitle: img.subtitle,
-              price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-              image: img.image_url,
-              link: "/c/service/daily-shine"
-            }))}
+            }) : []}
             onItemClick={(item) => navigate({ to: item.link as any })}
           />
         </div>
+
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
           {latestNoticeQ.data && activeVehicle && (
@@ -429,8 +424,10 @@ function CustomerHome() {
                   key={s.id}
                   name={s.name}
                   price={priceFor(s)}
-                  image={resolvedServiceImage(s.slug)}
+                  image={resolvedServiceImage(s.slug).url || undefined}
                   slug={s.slug}
+                  debugInfo={resolvedServiceImage(s.slug) as any}
+
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />
