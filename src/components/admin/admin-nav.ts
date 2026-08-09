@@ -69,10 +69,12 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     label: "Services",
     items: [
       { to: "/admin/addons", label: "Add-ons Catalogue", icon: Layers },
+      { to: "/admin/service-images", label: "Service Photography", icon: Camera },
       { to: "/admin/plan-inclusions", label: "Plan Inclusions", icon: Sparkles },
       { to: "/admin/payment-modes", label: "Payment Modes", icon: IndianRupee },
     ],
   },
+
   {
     id: "maps",
     label: "Maps & Routing",
