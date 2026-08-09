@@ -86,7 +86,10 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
       >
         {items.map((item, i) => {
           const hasError = loadErrors[item.id];
-          const isStatic = item.image.includes('images.unsplash.com');
+          // If it's from Unsplash or our dedicated carousel bucket, it's a banner with embedded text
+          const isBanner = item.image.includes('images.unsplash.com') || item.image.includes('daily-shine-carousel');
+          
+
           
           return (
             <div 
