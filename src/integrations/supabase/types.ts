@@ -1377,6 +1377,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_shine_carousel: {
+        Row: {
+          id: string
+          image_url: string
+          service_slug: string | null
+          slide_number: number
+          status: string
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          image_url: string
+          service_slug?: string | null
+          slide_number: number
+          status?: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          image_url?: string
+          service_slug?: string | null
+          slide_number?: number
+          status?: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_shine_promo_images: {
         Row: {
           created_at: string | null

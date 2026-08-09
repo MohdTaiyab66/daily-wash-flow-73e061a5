@@ -35,7 +35,7 @@ function DailyShineCarouselPage() {
   });
 
   const upsertMutation = useMutation({
-    mutationFn: (data: any) => upsertFn({ data }),
+    mutationFn: (mutationData: any) => upsertFn({ data: mutationData }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-carousel-slides"] });
       toast.success("Slide saved and published");
@@ -44,7 +44,7 @@ function DailyShineCarouselPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (mutationId: string) => deleteFn({ data: { id: mutationId } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-carousel-slides"] });
       toast.success("Slide removed");
