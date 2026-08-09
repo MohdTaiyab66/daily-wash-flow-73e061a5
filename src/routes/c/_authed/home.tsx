@@ -273,12 +273,27 @@ function CustomerHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_images")
-        .select("service_slug, image_url")
-        .eq("status", "published");
+        .select("service_slug, image_url, updated_at")
+        .eq("status", "published")
+        .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data as Array<{ service_slug: string; image_url: string }>;
+      
+      // Cache busting strategy: append timestamp if needed, but Supabase URLs are usually stable
+      // If the same file is overwritten, storage might return same URL. 
+      // We rely on the DB returning the latest record for that slug.
+      const uniqueImages = new Map();
+      data?.forEach(img => {
+        if (!uniqueImages.has(img.service_slug)) {
+          uniqueImages.set(img.service_slug, img.image_url);
+        }
+      });
+      
+      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
+        service_slug,
+        image_url
+      }));
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 5000, // Reduced to 5 seconds for more responsive updates
     refetchOnWindowFocus: true,
   });
 
@@ -286,7 +301,7 @@ function CustomerHome() {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     if (custom) return custom.image_url;
     
-    // Static mapping for common services if not in DB
+    // Static mapping ONLY as fallback
     const mapping: Record<string, string> = {
       "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
       "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
