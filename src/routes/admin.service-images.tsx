@@ -89,12 +89,20 @@ function ServiceImagesAdminPage() {
 
       console.log(`[ServiceImages] Uploading to bucket 'service-photography' at path '${filePath}'`);
       
-      const { data, error } = await supabase.storage
-        .from('service-photography')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      let uploadResult;
+      try {
+        uploadResult = await supabase.storage
+          .from('service-photography')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+      } catch (err: any) {
+        console.error("[ServiceImages] Caught Promise Rejection during upload:", err);
+        throw new Error("Connection failed: " + (err.message || "Is the bucket missing?"));
+      }
+
+      const { data, error } = uploadResult;
 
       if (error) {
         console.error("[ServiceImages] Supabase Storage Error details:", {
