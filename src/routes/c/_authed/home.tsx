@@ -486,6 +486,12 @@ function CustomerHome() {
         {!showCatalog && (
           <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
         )}
+
+        <div className="mt-12 mb-8 px-6 text-center">
+          <span className="text-[10px] font-medium text-muted-foreground/30 tracking-widest uppercase">
+            UW BUILD: {BUILD_VERSION}
+          </span>
+        </div>
       </div>
     </PullToRefresh>
   );
