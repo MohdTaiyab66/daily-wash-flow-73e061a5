@@ -112,22 +112,29 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                   </div>
                 </div>
               ) : (
-                <img 
-                  src={item.image} 
-                  alt={item.title} 
-                  className={cn(
-                    "h-full w-full object-cover transition-opacity duration-500",
-                    isStatic ? "opacity-70" : "opacity-100"
-                  )}
-                  loading={i === 0 ? "eager" : "lazy"}
-                  onLoad={() => {
-                    console.log(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_SUCCESS slide=${item.slideNumber || i+1} url=${item.image}`);
-                  }}
-                  onError={(e) => {
-                    console.error(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_ERROR slide=${item.slideNumber || i+1} url=${item.image}`);
-                    setLoadErrors(prev => ({ ...prev, [item.id]: true }));
-                  }}
-                />
+                <div className="absolute inset-0">
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    className={cn(
+                      "h-full w-full object-cover transition-opacity duration-500",
+                      isStatic ? "opacity-70" : "opacity-100"
+                    )}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    onLoad={() => {
+                      console.log(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_SUCCESS slide=${item.slideNumber || i+1} url=${item.image}`);
+                    }}
+                    onError={(e) => {
+                      console.error(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_ERROR slide=${item.slideNumber || i+1} url=${item.image}`);
+                      setLoadErrors(prev => ({ ...prev, [item.id]: true }));
+                    }}
+                  />
+                  {/* Subtle gradient for readability ONLY if not a static promo with embedded text */}
+                  <div className={cn(
+                    "absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent",
+                    isStatic && "hidden" // If it's a static banner like the screenshot, it already has text
+                  )} />
+                </div>
               )}
 
               {/* Debug Overlay */}
@@ -140,28 +147,32 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 </div>
               </div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
-                  FEATURED SERVICE
-                </span>
-                <h3 className="text-[22px] font-black text-white leading-tight tracking-tight">
-                  {item.title}
-                </h3>
-                <p className="mt-1 text-[13px] font-medium text-white/70">
-                  {item.subtitle}
-                </p>
-                
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-white">
-                    <span className="text-[18px] font-black">₹{item.price}</span>
-                  </div>
-                  <button 
-                    className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90"
-                    onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
-                  >
-                    Book now <ChevronRight className="h-4 w-4" />
-                  </button>
+              {/* Only render text overlay if it's NOT a static banner (which already contains text) */}
+              {!isStatic && (
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
+                    FEATURED SERVICE
+                  </span>
+                  <h3 className="text-[22px] font-black text-white leading-tight tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-[13px] font-medium text-white/70">
+                    {item.subtitle}
+                  </p>
                 </div>
+              )}
+
+              {/* Always show price/button overlay as these are actionable UI */}
+              <div className="absolute inset-x-0 bottom-0 p-6 flex items-center justify-between z-10 pointer-events-none">
+                <div className="text-white">
+                  <span className="text-[18px] font-black">₹{item.price}</span>
+                </div>
+                <button 
+                  className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90 pointer-events-auto"
+                  onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                >
+                  Book now <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             </div>
           );
