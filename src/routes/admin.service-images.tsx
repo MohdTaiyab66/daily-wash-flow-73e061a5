@@ -262,6 +262,14 @@ function ServicePhotographyCard({
   const currentStatus = local?.status || saved?.status || "published";
   const isDirty = local !== undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Verify hook order - this is top level within the card component.
+  useEffect(() => {
+    if (service.slug === 'body-polish') {
+      console.log(`[ServiceImages DEBUG] Admin Card for Body Polish: ${saved?.image_url || 'no image'}`);
+    }
+  }, [service.slug, saved]);
+
 
   return (
     <Card className="overflow-hidden border-border/40 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
