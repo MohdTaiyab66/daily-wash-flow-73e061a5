@@ -194,6 +194,8 @@ function ServiceImagesAdminPage() {
       return;
     }
 
+    console.log(`[ServiceImages] Publishing change for slug "${slug}" with URL: ${change?.url || existing.image_url}`);
+    
     upsertMutation.mutate({
       id: existing?.id,
       service_slug: slug,

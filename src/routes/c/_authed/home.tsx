@@ -309,6 +309,16 @@ function CustomerHome() {
 
   const getServiceImage = (slug: string) => {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
+    
+    // TRACING LOG: Check if a specific service slug matches any published image
+    if (slug.includes("body") || slug.includes("deep") || slug.includes("dust")) {
+      console.log(`[ServiceImages] Matching slug "${slug}":`, { 
+        found: !!custom, 
+        url: custom?.image_url,
+        availableSlugs: serviceImagesQ.data?.map(i => i.service_slug)
+      });
+    }
+
     if (custom) return custom.image_url;
     
     const mapping: Record<string, string> = {

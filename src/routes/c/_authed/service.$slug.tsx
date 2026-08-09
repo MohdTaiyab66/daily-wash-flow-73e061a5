@@ -120,6 +120,10 @@ function ServiceDetail() {
 
   const getServiceImage = (serviceSlug: string) => {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === serviceSlug);
+    
+    // TRACING LOG
+    console.log(`[ServiceImages] Checkout Match for "${serviceSlug}":`, { found: !!custom, url: custom?.image_url });
+
     if (custom) return custom.image_url;
     
     const mapping: Record<string, string> = {
