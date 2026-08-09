@@ -1379,6 +1379,7 @@ export type Database = {
       }
       daily_shine_carousel: {
         Row: {
+          bucket_name: string | null
           id: string
           image_url: string
           service_slug: string | null
@@ -1389,6 +1390,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bucket_name?: string | null
           id?: string
           image_url: string
           service_slug?: string | null
@@ -1399,6 +1401,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bucket_name?: string | null
           id?: string
           image_url?: string
           service_slug?: string | null

@@ -21,6 +21,7 @@ export const listCarouselSlides = createServerFn({ method: "GET" })
       title?: string;
       subtitle?: string;
       service_slug?: string;
+      bucket_name?: string;
     }>;
   });
 
@@ -34,13 +35,61 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
     title: z.string().optional(),
     subtitle: z.string().optional(),
     service_slug: z.string().optional(),
+    bucket_name: z.string().optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const bucket = data.bucket_name || 'service-photography';
+    
+    // VERIFICATION FLOW (Requirement 3)
+    console.log(`[UW_CAROUSEL_VERIFY] Verifying slide ${data.slide_number} in bucket ${bucket}: ${data.image_url}`);
+    
+    try {
+      // 1. Verify storage object exists
+      const { data: fileData, error: downloadError } = await (supabaseAdmin as any).storage
+        .from(bucket)
+        .download(data.image_url);
+        
+      if (downloadError || !fileData) {
+        throw new Error(`Storage object verification failed: ${downloadError?.message || 'Object not found'}`);
+      }
+      
+      console.log(`[UW_CAROUSEL_VERIFY] Object exists. Size: ${fileData.size} bytes`);
+      
+      // 2. Generate and Verify Public URL
+      const { data: urlData } = (supabaseAdmin as any).storage
+        .from(bucket)
+        .getPublicUrl(data.image_url);
+        
+      const publicUrl = urlData.publicUrl;
+      console.log(`[UW_CAROUSEL_VERIFY] Testing public URL: ${publicUrl}`);
+      
+      const response = await fetch(publicUrl, { method: 'HEAD' });
+      if (!response.ok) {
+        throw new Error(`Public URL verification failed: HTTP ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.startsWith('image/')) {
+        throw new Error(`Public URL verification failed: Invalid content-type ${contentType}`);
+      }
+      
+      console.log(`[UW_CAROUSEL_VERIFY] Public URL verified. Status 200, Content-Type: ${contentType}`);
+      
+    } catch (err: any) {
+      console.error(`[UW_CAROUSEL_VERIFY] Verification FAILED for slide ${data.slide_number}`, err);
+      if (data.status === 'published') {
+        throw new Error(`Image verification failed: ${err.message}. Please check if the bucket is public and the image exists.`);
+      }
+    }
+
+    // ONLY THEN SAVE DATABASE RECORD
     const { data: result, error } = await (supabaseAdmin as any)
       .from("daily_shine_carousel")
       .upsert({
         ...data,
+        bucket_name: bucket,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'slide_number' })
       .select()
