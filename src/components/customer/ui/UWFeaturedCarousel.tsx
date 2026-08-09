@@ -83,7 +83,11 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
             className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer overflow-hidden"
             onClick={() => onItemClick?.(item)}
           >
-            {/* The image IS the card. Full-bleed, same aspect ratio. No blurs. */}
+            {/* 
+              Requirement: IMAGE IS THE ENTIRE CARD. 
+              Aspect ratio is fixed to 1.87/1 to match the measured card dimensions.
+              object-cover ensures the creative fills the space without distortion.
+            */}
             <img 
               src={item.image} 
               alt={item.title || "Urban Wash Daily Shine"} 
@@ -91,10 +95,10 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
               loading={i === 0 ? "eager" : "lazy"}
             />
 
-            {/* Restored Book Now button - positioned over the creative */}
+            {/* Restored Daily Shine Booking Button - Visual Overlay */}
             <div className="absolute bottom-6 right-6 z-10">
               <button 
-                className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-5 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-95"
+                className="flex h-11 items-center gap-2 rounded-full bg-[#FF6B00] px-6 text-[14px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-all active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   onItemClick?.(item);
@@ -107,7 +111,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         ))}
       </div>
 
-      {/* Pagination indicators - matching Screenshot 2 dots */}
+      {/* Pagination indicators - matching target design */}
       {items.length > 1 && (
         <div className="absolute bottom-4 left-6 flex gap-2 z-20 pointer-events-none">
           {items.map((_, i) => (
@@ -124,6 +128,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
     </div>
   );
 }
+
 
 
 
