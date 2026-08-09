@@ -1,7 +1,7 @@
 import { MapPin, Car, Sparkles, ChevronDown, CheckCircle2 } from "lucide-react";
 import { Surface, Muted } from "./ui/kit";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PremiumHeroProps {
@@ -25,45 +25,8 @@ export function PremiumHero({
   onVehicleClick,
   onAddressClick
 }: PremiumHeroProps) {
-  const serviceImagesQ = useQuery({
-    queryKey: ["customer-service-images"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("service_images")
-        .select("service_slug, image_url, status, updated_at")
-        .eq("status", "published")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      const uniqueImages = new Map();
-      data?.forEach(img => {
-        if (!uniqueImages.has(img.service_slug)) {
-          uniqueImages.set(img.service_slug, img.image_url);
-        }
-      });
-      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
-        service_slug,
-        image_url
-      }));
-    },
-    staleTime: 5000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000,
-  });
-
-  const getServiceImage = (serviceSlug: string) => {
-    const custom = serviceImagesQ.data?.find(img => img.service_slug === serviceSlug);
-    if (custom) return custom.image_url;
-    
-    const mapping: Record<string, string> = {
-      "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
-      "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
-      "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
-      "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
-    };
-    return mapping[serviceSlug];
-  };
-
-  const currentImage = getServiceImage(service?.slug);
+  const serviceImagesQ = useServiceImages();
+  const currentImage = getServiceImage(service?.slug, serviceImagesQ.data);
   const isIncluded = purchaseMode === 'included_wash';
 
   return (
