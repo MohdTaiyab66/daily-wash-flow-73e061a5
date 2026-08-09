@@ -418,7 +418,7 @@ function CustomerHome() {
             </div>
           </Section>
           {showCatalog && (
-            <div className="py-2 flex items-center justify-center gap-6 safe-area-bottom">
+            <div className="py-8 flex items-center justify-center gap-6 safe-area-bottom">
               <TrustItem label="Expert Care" />
               <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
               <TrustItem label="Photo Proof" />
