@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CarouselItem {
@@ -82,25 +83,39 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
             className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer overflow-hidden"
             onClick={() => onItemClick?.(item)}
           >
+            {/* The image IS the card. Full-bleed, same aspect ratio. No blurs. */}
             <img 
               src={item.image} 
               alt={item.title || "Urban Wash Daily Shine"} 
-              className="w-full h-full object-contain block"
+              className="w-full h-full object-cover block"
               loading={i === 0 ? "eager" : "lazy"}
             />
+
+            {/* Restored Book Now button - positioned over the creative */}
+            <div className="absolute bottom-6 right-6 z-10">
+              <button 
+                className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-5 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onItemClick?.(item);
+                }}
+              >
+                Book now <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Pagination indicators - simplified and overlaid cleanly */}
+      {/* Pagination indicators - matching Screenshot 2 dots */}
       {items.length > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
+        <div className="absolute bottom-4 left-6 flex gap-2 z-20 pointer-events-none">
           {items.map((_, i) => (
             <div
               key={i}
               className={cn(
-                "h-1 w-1 rounded-full transition-all duration-300",
-                i === index ? "w-3 bg-[#FF6B00]" : "bg-black/20"
+                "h-1.5 w-1.5 rounded-full transition-all duration-300",
+                i === index ? "w-4 bg-[#FF6B00]" : "bg-white/50 shadow-sm"
               )}
             />
           ))}
@@ -109,5 +124,6 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
     </div>
   );
 }
+
 
 
