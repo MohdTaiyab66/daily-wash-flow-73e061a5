@@ -37,12 +37,18 @@ export function UWServiceCard({
           <img 
             src={image} 
             alt={name} 
+            data-slug={slug}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            onLoad={() => {
+              if (slug === 'body-polish') {
+                console.log(`[ServiceCard DEBUG] Body Polish IMAGE LOAD SUCCESS: ${image}`);
+              }
+            }}
             onError={(e) => {
-              // Fallback for broken images
               const target = e.target as HTMLImageElement;
+              console.error(`[ServiceCard DEBUG] IMAGE LOAD ERROR for ${slug}: ${image}`);
               target.onerror = null;
-              target.src = "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800"; // Clean automotive placeholder
+              target.src = "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800";
               target.className = "h-full w-full object-cover opacity-40 grayscale";
             }}
           />
