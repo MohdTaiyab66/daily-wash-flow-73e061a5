@@ -435,8 +435,39 @@ function CustomerHome() {
                 </Surface>
               </Section>
 
-            </>
-          )}
+                {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
+                {latestNoticeQ.data && activeVehicle && (
+                  <Section className="mt-[-24px] mb-8">
+                    <Surface className="border-primary/20 p-5 bg-white shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                          <ShieldAlert className="h-6 w-6" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
+                            <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                              {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/80">
+                            A cleaner reported that your vehicle needs extra attention. Would you like to schedule a deep clean?
+                          </p>
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="mt-4 w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-11 text-[14px] font-black shadow-lg shadow-primary/20"
+                            onClick={() => setBookOpen(true)}
+                          >
+                            Schedule a wash
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  </Section>
+                )}
+              </>
+            )}
         </div>
 
         <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
