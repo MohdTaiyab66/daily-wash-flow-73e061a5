@@ -308,8 +308,10 @@ function CustomerHome() {
         />
 
         <div className="px-5 space-y-4 mt-2">
-          {/* Active Vehicle Section - Now at the top hierarchy */}
-          <Section>
+          {/* Location + Notification header handled by UWHeader */}
+
+          {/* 1. Vehicle Selector - Immediately below Location Header */}
+          <Section className="mt-0">
             {vehiclesQ.isLoading ? (
               <SkeletonCard className="h-16" />
             ) : activeVehicle ? (
@@ -347,6 +349,7 @@ function CustomerHome() {
             )}
           </Section>
 
+          {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
           <div className="mt-[-4px]">
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
