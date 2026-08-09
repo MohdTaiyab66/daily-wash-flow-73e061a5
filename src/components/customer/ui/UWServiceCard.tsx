@@ -51,7 +51,6 @@ export function UWServiceCard({
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
-            <span className="text-[8px] mt-1">{slug}</span>
           </div>
         )}
         
