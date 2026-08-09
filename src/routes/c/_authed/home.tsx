@@ -311,7 +311,6 @@ function CustomerHome() {
   const getServiceImage = (slug: string) => {
     // 1. Try to find an Admin-published image for THIS exact slug
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
-    
     if (custom) return custom.image_url;
     
     // 2. Fallback to static mapping ONLY if no custom image exists
@@ -320,6 +319,8 @@ function CustomerHome() {
       "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
       "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
       "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
+      "body-polish": "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&q=80&w=800",
+      "dusting": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800",
     };
     return mapping[slug];
   };
