@@ -63,7 +63,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       className={cn(
-        "featured-carousel relative w-full overflow-hidden rounded-[28px] bg-[#1a1a1a] aspect-[1.87/1] touch-pan-y", 
+        "featured-carousel relative w-full overflow-hidden rounded-[28px] bg-white aspect-[1.87/1] touch-pan-y", 
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -79,33 +79,27 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item, i) => (
           <div 
             key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.99] transition-transform duration-200"
+            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer"
             onClick={() => onItemClick?.(item)}
           >
             <img 
               src={item.image} 
               alt={item.title} 
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className="h-full w-full object-cover block"
               loading={i === 0 ? "eager" : "lazy"}
             />
           </div>
         ))}
       </div>
 
-      {/* Pagination indicators - kept outside the image flow but over the bottom */}
-      <div className="absolute bottom-4 left-6 flex gap-1.5 z-20">
+      {/* Pagination indicators - matching Screenshot 2 dots */}
+      <div className="absolute bottom-4 left-6 flex gap-2 z-20">
         {items.map((_, i) => (
-          <button
+          <div
             key={i}
-            onClick={(e) => {
-              e.stopPropagation();
-              setIndex(i);
-              setIsPaused(true);
-              setTimeout(() => setIsPaused(false), 5000);
-            }}
             className={cn(
-              "h-1 rounded-full transition-all duration-300",
-              i === index ? "w-4 bg-[#FF6B00]" : "w-1.5 bg-white/50"
+              "h-1.5 w-1.5 rounded-full transition-all duration-300",
+              i === index ? "w-4 bg-[#FF6B00]" : "bg-white/50"
             )}
           />
         ))}
