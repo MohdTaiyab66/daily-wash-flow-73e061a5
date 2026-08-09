@@ -36,6 +36,13 @@ export function UWServiceCard({
             src={image} 
             alt={name} 
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            onError={(e) => {
+              // Fallback for broken images
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800"; // Clean automotive placeholder
+              target.className = "h-full w-full object-cover opacity-40 grayscale";
+            }}
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-muted-foreground/10">
