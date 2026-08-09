@@ -329,14 +329,17 @@ function CustomerHome() {
           <div className="mt-[-16px]">
             <UWFeaturedCarousel 
 
-            items={imagesQ.data?.length ? imagesQ.data.map((img: any) => ({
-              id: img.id,
-              title: img.title || "Daily Shine",
-              subtitle: img.subtitle || "Your car, clean every morning.",
-              price: priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-              image: img.image_url,
-              link: "/c/service/daily-shine"
-            })) : DEFAULT_PROMO_IMAGES.map(img => ({
+            items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
+              const linkedService = services.find(s => s.slug === img.service_slug);
+              return {
+                id: img.id,
+                title: img.title || linkedService?.name || "Daily Shine",
+                subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
+                price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+                image: img.image_url,
+                link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
+              };
+            }) : DEFAULT_PROMO_IMAGES.map(img => ({
               id: img.id,
               title: img.title,
               subtitle: img.subtitle,
