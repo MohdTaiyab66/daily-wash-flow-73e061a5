@@ -63,7 +63,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       className={cn(
-        "featured-carousel relative w-full overflow-hidden rounded-[20px] bg-white aspect-[1.87/1] touch-pan-y", 
+        "featured-carousel relative w-full overflow-hidden rounded-[20px] bg-white aspect-[1.87/1] touch-pan-y shadow-sm", 
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -79,13 +79,13 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item, i) => (
           <div 
             key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer"
+            className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer overflow-hidden"
             onClick={() => onItemClick?.(item)}
           >
             <img 
               src={item.image} 
               alt={item.title || "Urban Wash Daily Shine"} 
-              className="h-full w-full object-contain block"
+              className="w-full h-full object-contain block"
               loading={i === 0 ? "eager" : "lazy"}
             />
           </div>
@@ -100,7 +100,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
               key={i}
               className={cn(
                 "h-1 w-1 rounded-full transition-all duration-300",
-                i === index ? "w-3 bg-[#FF6B00]" : "bg-white/40 shadow-sm"
+                i === index ? "w-3 bg-[#FF6B00]" : "bg-black/20"
               )}
             />
           ))}
