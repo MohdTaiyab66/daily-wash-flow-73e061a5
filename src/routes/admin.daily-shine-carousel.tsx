@@ -97,12 +97,24 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       setUploading(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `slide-${slideNumber}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const { error } = await supabase.storage.from('daily-shine-carousel').upload(fileName, file);
+      
+      const { error } = await supabase.storage
+        .from('daily-shine-carousel')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: true
+        });
+        
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage.from('daily-shine-carousel').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage
+        .from('daily-shine-carousel')
+        .getPublicUrl(fileName);
+        
       setLocalUrl(urlData.publicUrl);
+      toast.success("Image uploaded. Click Publish to save.");
     } catch (e: any) {
+      console.error("[CAROUSEL_UPLOAD_ERROR]", e);
       toast.error("Upload failed: " + e.message);
     } finally {
       setUploading(false);
