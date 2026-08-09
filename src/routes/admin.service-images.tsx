@@ -97,14 +97,21 @@ function ServiceImagesAdminPage() {
         });
 
       if (error) {
-        console.error("[ServiceImages] Supabase Storage Error:", error);
+        console.error("[ServiceImages] Supabase Storage Error details:", {
+          message: error.message,
+          name: error.name,
+          status: (error as any).status,
+          statusCode: (error as any).statusCode
+        });
         throw error;
       }
 
       console.log("[ServiceImages] Upload successful, getting public URL...");
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
+      
+      const publicUrl = urlData.publicUrl;
 
       console.log(`[ServiceImages] Public URL generated: ${publicUrl}`);
 
