@@ -188,8 +188,9 @@ function BookingsPage() {
                     
                     // Simple mock mapping for redesign visual impact
                     const getServicePhoto = (slug: string) => {
-                      return null; // NO FALLBACKS IN HISTORY EITHER DURING TEST
+                      return undefined; // NO FALLBACKS IN HISTORY EITHER DURING TEST
                     };
+
 
 
                     return (
