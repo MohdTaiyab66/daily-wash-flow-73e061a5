@@ -70,6 +70,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { to: "/admin/addons", label: "Add-ons Catalogue", icon: Layers },
       { to: "/admin/service-images", label: "Service Photography", icon: Camera },
+      { to: "/admin/daily-shine-carousel", label: "Daily Shine Carousel", icon: Sparkles },
       { to: "/admin/plan-inclusions", label: "Plan Inclusions", icon: Sparkles },
       { to: "/admin/payment-modes", label: "Payment Modes", icon: IndianRupee },
     ],
