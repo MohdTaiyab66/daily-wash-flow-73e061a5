@@ -63,7 +63,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       className={cn(
-        "featured-carousel relative w-full overflow-hidden rounded-[28px] bg-white aspect-[1.87/1] touch-pan-y", 
+        "featured-carousel relative w-full overflow-hidden rounded-[20px] bg-white aspect-[1.87/1] touch-pan-y", 
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -79,31 +79,33 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
         {items.map((item, i) => (
           <div 
             key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer"
+            className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer"
             onClick={() => onItemClick?.(item)}
           >
             <img 
               src={item.image} 
-              alt={item.title} 
-              className="h-full w-full object-cover block"
+              alt={item.title || "Urban Wash Daily Shine"} 
+              className="h-full w-full object-contain block"
               loading={i === 0 ? "eager" : "lazy"}
             />
           </div>
         ))}
       </div>
 
-      {/* Pagination indicators - matching Screenshot 2 dots */}
-      <div className="absolute bottom-4 left-6 flex gap-2 z-20">
-        {items.map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "h-1.5 w-1.5 rounded-full transition-all duration-300",
-              i === index ? "w-4 bg-[#FF6B00]" : "bg-white/50"
-            )}
-          />
-        ))}
-      </div>
+      {/* Pagination indicators - simplified and overlaid cleanly */}
+      {items.length > 1 && (
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
+          {items.map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "h-1 w-1 rounded-full transition-all duration-300",
+                i === index ? "w-3 bg-[#FF6B00]" : "bg-white/40 shadow-sm"
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
