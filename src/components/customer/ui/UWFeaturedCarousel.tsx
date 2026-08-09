@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronRight, AlertCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BUILD_VERSION } from "@/lib/build-info";
 
@@ -98,7 +98,18 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 <div className="flex h-full w-full flex-col items-center justify-center bg-destructive/10 text-destructive p-4 text-center">
                   <AlertCircle className="h-10 w-10 mb-2" />
                   <span className="text-[14px] font-black uppercase">IMAGE LOAD ERROR</span>
-                  <span className="text-[10px] mt-2 font-mono break-all opacity-70">{item.image}</span>
+                  <div className="mt-4 flex flex-col gap-2 w-full max-w-[200px] mx-auto">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(item.image, '_blank');
+                      }}
+                      className="bg-destructive text-white px-3 py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink className="h-3 w-3" /> TEST URL
+                    </button>
+                    <span className="text-[8px] font-mono break-all opacity-70 bg-white/10 p-2 rounded">{item.image}</span>
+                  </div>
                 </div>
               ) : (
                 <img 
@@ -177,4 +188,3 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
     </div>
   );
 }
-
