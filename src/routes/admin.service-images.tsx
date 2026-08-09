@@ -212,7 +212,6 @@ function ServiceImagesAdminPage() {
                 </div>
 
                 <div className="p-5 space-y-4">
-                  <div>
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-bold text-base text-[#1a1a1a] truncate">{service.name}</h3>
                       <div className={cn(
