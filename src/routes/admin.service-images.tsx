@@ -84,8 +84,6 @@ function ServiceImagesAdminPage() {
     mutationFn: (data: any) => upsertFn({ data }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-service-images"] });
-      // CRITICAL: Invalidate customer-side cache too if on same window, 
-      // though usually admin and customer are separate contexts.
       qc.invalidateQueries({ queryKey: ["customer-service-images"] });
       toast.success("Changes saved and published");
     },
@@ -98,6 +96,7 @@ function ServiceImagesAdminPage() {
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-service-images"] });
+      qc.invalidateQueries({ queryKey: ["customer-service-images"] });
       toast.success("Image removed");
     },
   });
@@ -105,7 +104,6 @@ function ServiceImagesAdminPage() {
   const imageMap = useMemo(() => {
     const map = new Map();
     if (images && Array.isArray(images)) {
-      // Sort images by updated_at desc to ensure the map holds the latest record for each slug
       const sorted = [...images].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       sorted.forEach(img => {
         if (img && img.service_slug && !map.has(img.service_slug)) {
@@ -121,7 +119,6 @@ function ServiceImagesAdminPage() {
 
   const handleUpload = async (slug: string, file: File) => {
     try {
-      console.log(`[ServiceImages] Starting upload for ${slug}...`);
       setUploading(prev => ({ ...prev, [slug]: true }));
       
       if (!file.type.startsWith('image/')) {
@@ -130,53 +127,22 @@ function ServiceImagesAdminPage() {
 
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${slug}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`; // Removed "services/" prefix to match bucket root RLS check if needed, but path usually starts after bucket name
+      const filePath = `${fileName}`;
 
-      console.log(`[ServiceImages] Uploading to bucket 'service-photography' at path '${filePath}'`);
-      
-      let uploadResult;
-      try {
-        uploadResult = await supabase.storage
-          .from('service-photography')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
-      } catch (err: any) {
-        console.error("[ServiceImages] Caught Promise Rejection during upload:", err);
-        throw new Error("Connection failed: " + (err.message || "Is the bucket missing?"));
-      }
-
-      const { data, error } = uploadResult;
-
-      if (error) {
-        console.error("[ServiceImages] Supabase Storage Error details:", {
-          message: error.message,
-          name: error.name,
-          status: (error as any).status,
-          statusCode: (error as any).statusCode
+      const { data, error } = await supabase.storage
+        .from('service-photography')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
         });
-        throw error;
-      }
 
-      console.log("[ServiceImages] Upload successful, getting public URL...");
+      if (error) throw error;
+
       const { data: urlData } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
       
       const publicUrl = urlData.publicUrl;
-
-      console.log(`[ServiceImages] Public URL generated: ${publicUrl}`);
-      
-      // Ensure the URL is actually accessible
-      try {
-        const checkRes = await fetch(publicUrl, { method: 'HEAD' });
-        if (!checkRes.ok) {
-          console.warn(`[ServiceImages] Generated URL might not be accessible: ${checkRes.status}`);
-        }
-      } catch (e) {
-        console.warn(`[ServiceImages] Could not verify URL accessibility:`, e);
-      }
 
       setLocalChanges(prev => ({
         ...prev,
@@ -215,8 +181,6 @@ function ServiceImagesAdminPage() {
       status: change?.status || existing?.status || "published"
     };
 
-    console.log(`[ServiceImages] Publishing change for slug "${slug}":`, finalData);
-    
     upsertMutation.mutate(finalData);
     
     setLocalChanges(prev => {
@@ -267,6 +231,7 @@ function ServiceImagesAdminPage() {
       )}
     </div>
   );
+}
 
 interface ServicePhotographyCardProps {
   service: any;
@@ -419,5 +384,3 @@ function ServicePhotographyCard({
     </Card>
   );
 }
-
-
