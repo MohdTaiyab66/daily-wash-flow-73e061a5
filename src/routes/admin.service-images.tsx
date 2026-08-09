@@ -150,6 +150,16 @@ function ServiceImagesAdminPage() {
       const publicUrl = urlData.publicUrl;
 
       console.log(`[ServiceImages] Public URL generated: ${publicUrl}`);
+      
+      // Ensure the URL is actually accessible
+      try {
+        const checkRes = await fetch(publicUrl, { method: 'HEAD' });
+        if (!checkRes.ok) {
+          console.warn(`[ServiceImages] Generated URL might not be accessible: ${checkRes.status}`);
+        }
+      } catch (e) {
+        console.warn(`[ServiceImages] Could not verify URL accessibility:`, e);
+      }
 
       setLocalChanges(prev => ({
         ...prev,

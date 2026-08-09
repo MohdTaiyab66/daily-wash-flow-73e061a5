@@ -271,13 +271,14 @@ function CustomerHome() {
   const serviceImagesQ = useQuery({
     queryKey: ["customer-service-images"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("service_images")
-        .select("*")
+        .select("service_slug, image_url")
         .eq("status", "published");
       if (error) throw error;
       return data as Array<{ service_slug: string; image_url: string }>;
     },
+    staleTime: 60000, // Cache for 1 minute
   });
 
   const getServiceImage = (slug: string) => {
