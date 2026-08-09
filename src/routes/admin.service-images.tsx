@@ -271,6 +271,7 @@ function ServicePhotographyCard({
   }, [service.slug, saved]);
 
 
+
   return (
     <Card className="overflow-hidden border-border/40 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
       <div 
