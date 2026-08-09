@@ -425,7 +425,7 @@ function CustomerHome() {
                   price={priceFor(s)}
                   image={resolvedServiceImage(s.slug).url || undefined}
                   slug={s.slug}
-                  debugInfo={resolvedServiceImage(s.slug) as any}
+                  // Removed debugInfo
 
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
