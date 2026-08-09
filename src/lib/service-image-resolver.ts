@@ -41,6 +41,19 @@ export const getServiceImage = (slug: string, imageMap?: Record<string, any>) =>
   if (imageMap && imageMap[slug]) {
     return { url: imageMap[slug].url, source: 'ADMIN' };
   }
-  // NO PHOTOGRAPHIC FALLBACKS DURING DEBUGGING
+  
+  // Premium static fallbacks for consistency
+  const FALLBACKS: Record<string, string> = {
+    'daily-shine-subscription': 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?q=80&w=1000&auto=format&fit=crop',
+    'one-time-wash-basic': 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=1000&auto=format&fit=crop',
+    'one-time-wash-premium': 'https://images.unsplash.com/photo-1552933529-e359b24772ff?q=80&w=1000&auto=format&fit=crop',
+    'interior-deep-clean': 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=1000&auto=format&fit=crop',
+    'body-polish': 'https://images.unsplash.com/photo-1601362840469-51e4d8d59085?q=80&w=1000&auto=format&fit=crop'
+  };
+
+  if (FALLBACKS[slug]) {
+    return { url: FALLBACKS[slug], source: 'PREMIUM_FALLBACK' };
+  }
+
   return { url: null, source: 'NONE' };
 };
