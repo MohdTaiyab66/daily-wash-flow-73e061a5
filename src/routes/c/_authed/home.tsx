@@ -273,22 +273,34 @@ function CustomerHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_images")
-        .select("service_slug, image_url, updated_at")
+        .select("id, service_slug, image_url, updated_at")
         .eq("status", "published")
         .order("updated_at", { ascending: false });
       if (error) throw error;
       
       const uniqueImages = new Map();
       data?.forEach(img => {
+        // Use service_slug as key, but if multiple records exist, we already ordered by updated_at DESC
         if (!uniqueImages.has(img.service_slug)) {
-          uniqueImages.set(img.service_slug, img.image_url);
+          uniqueImages.set(img.service_slug, {
+            url: img.image_url,
+            id: img.id,
+            updatedAt: img.updated_at
+          });
         }
       });
       
-      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
+      const result = Array.from(uniqueImages.entries()).map(([service_slug, meta]) => ({
         service_slug,
-        image_url
+        image_url: meta.url,
+        record_id: meta.id,
+        updated_at: meta.updatedAt
       }));
+
+      // CRITICAL TRACING LOG
+      console.log("[ServiceImages] Resolved Customer Images:", result);
+      
+      return result;
     },
     staleTime: 5000,
     refetchOnWindowFocus: true,
