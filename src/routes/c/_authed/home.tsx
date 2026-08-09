@@ -282,16 +282,7 @@ function CustomerHome() {
         throw error;
       }
       
-      const rawData = data || [];
-      console.log(`[ServiceImages] DB Result count: ${rawData.length}`);
-      
-      // Use standard logging if console.table is messy in some environments
-      rawData.forEach(d => {
-        console.log(`[ServiceImages] DB Row: slug=${d.service_slug}, status=${d.status}, url=${d.image_url?.substring(0, 30)}...`);
-      });
-
-      const published = rawData.filter(img => img.status === "published");
-      console.log(`[ServiceImages] Published count: ${published.length}`);
+      const published = data?.filter(img => img.status === "published") || [];
       
       const uniqueImages = new Map();
       published.forEach(img => {
@@ -311,30 +302,17 @@ function CustomerHome() {
         updated_at: meta.updatedAt
       }));
 
-      console.log("[ServiceImages] Final resolved mapping:", result);
       return result;
     },
-    staleTime: 1000,
+    staleTime: 10000,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const getServiceImage = (slug: string) => {
     // 1. Try to find an Admin-published image for THIS exact slug
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     
-    // TRACING LOG: Log EVERY matching attempt to see where it breaks
-    console.log(`[ServiceImages] home.tsx lookup: "${slug}" -> ${custom ? "FOUND URL" : "NOT FOUND (using fallback)"}`);
-    
-    if (slug.includes("body") || slug.includes("deep") || slug.includes("dust") || slug.includes("polish")) {
-      console.log(`[ServiceImages] home.tsx match for "${slug}":`, { 
-        found: !!custom, 
-        url: custom?.image_url,
-        count: serviceImagesQ.data?.length,
-        availableSlugs: serviceImagesQ.data?.map(i => i.service_slug)
-      });
-    }
-
     if (custom) return custom.image_url;
     
     // 2. Fallback to static mapping ONLY if no custom image exists
