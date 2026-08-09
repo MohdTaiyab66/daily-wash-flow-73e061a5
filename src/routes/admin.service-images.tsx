@@ -132,12 +132,15 @@ function ServiceImagesAdminPage() {
       const { data, error } = await supabase.storage
         .from('service-photography')
         .upload(filePath, file, {
+          contentType: file.type, // EXPLICIT CONTENT TYPE IS CRITICAL
           cacheControl: '3600',
           upsert: true
         });
 
       if (error) throw error;
 
+      // DO NOT USE getPublicUrl if public=false.
+      // But we will use it because we WANT it to be public.
       const { data: urlData } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
