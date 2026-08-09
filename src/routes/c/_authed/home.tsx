@@ -365,8 +365,8 @@ function CustomerHome() {
                 const bust = img.updated_at ? `&v=${new Date(img.updated_at).getTime()}` : `&v=${Date.now()}`;
                 
                 // Ensure image URL is valid and has cache busting
-                let finalImage = img.image_url;
-                if (finalImage) {
+                let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
+                if (finalImage && finalImage.includes('supabase.co')) {
                   const separator = finalImage.includes('?') ? '&' : '?';
                   finalImage = `${finalImage}${separator}bust=${bust}`;
                 }
@@ -378,7 +378,7 @@ function CustomerHome() {
                   title: img.title || linkedService?.name || "Daily Shine",
                   subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
                   price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
-                  image: finalImage || DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length].image,
+                  image: finalImage,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
                   slideNumber: img.slide_number || idx + 1
                 };
@@ -386,6 +386,7 @@ function CustomerHome() {
               onItemClick={(item) => navigate({ to: item.link as any })}
             />
           </div>
+
 
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
