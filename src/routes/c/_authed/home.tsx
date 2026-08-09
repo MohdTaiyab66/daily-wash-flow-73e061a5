@@ -302,29 +302,23 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-[#FFF9F3] pb-24">
         <UWHeader 
-          greeting={greeting} 
-          firstName={firstName} 
           area={area} 
           unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
-        <div className="px-5 py-2 text-[8px] font-mono text-muted-foreground/40 text-center">
-          Build: {BUILD_VERSION} | DB: {import.meta.env.VITE_SUPABASE_URL?.split('.')[0].split('//')[1]}
-        </div>
-
-        <div className="px-5 space-y-5">
-          {/* Active Vehicle Section - Compact Context Row */}
-          <Section className="mt-[-12px]">
+        <div className="px-5 space-y-5 mt-2">
+          {/* Active Vehicle Section - Now at the top hierarchy */}
+          <Section>
             {vehiclesQ.isLoading ? (
               <SkeletonCard className="h-16" />
             ) : activeVehicle ? (
               <Surface 
-                className="overflow-hidden p-3 border-primary/10 bg-white"
+                className="overflow-hidden p-3 border-none bg-white shadow-sm"
                 onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
               >
                 <div className="flex w-full items-center gap-3">
-                  <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-[#F8F9FB]">
+                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
                     <VehicleAvatar 
                       imageUrl={catalogImageQ.data} 
                       make={activeVehicle.make} 
@@ -335,10 +329,10 @@ function CustomerHome() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <h2 className="truncate text-[15px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
-                      <ChevronDown className="h-3 w-3 text-muted-foreground/40" />
+                      <h2 className="truncate text-[16px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/30" />
                     </div>
-                    <p className="truncate text-[11px] font-bold text-muted-foreground/70 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
+                    <p className="truncate text-[11px] font-bold text-muted-foreground/60 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
                   </div>
                 </div>
               </Surface>
@@ -353,8 +347,7 @@ function CustomerHome() {
             )}
           </Section>
 
-          <div className="mt-[-12px]">
-            {/* DAILY_SHINE_RENDER_TEST: Marker for APK verification */}
+          <div className="mt-[-8px]">
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
@@ -365,8 +358,6 @@ function CustomerHome() {
                   const separator = finalImage.includes('?') ? '&' : '?';
                   finalImage = `${finalImage}${separator}v=${bust}`;
                 }
-
-                console.log(`[UW_CAROUSEL_DEBUG] slide=${img.slide_number || idx + 1} url=${finalImage}`);
 
                 return {
                   id: img.id || `static-${idx}`,

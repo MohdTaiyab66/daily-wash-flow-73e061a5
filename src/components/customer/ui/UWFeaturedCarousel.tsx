@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronRight, AlertCircle, ExternalLink } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BUILD_VERSION } from "@/lib/build-info";
 
 interface CarouselItem {
   id: string;
@@ -27,7 +26,6 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   const touchStart = useRef<number | null>(null);
   const touchEnd = useRef<number | null>(null);
 
-  // Min distance for swipe
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -42,18 +40,13 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   const onTouchEnd = () => {
     if (!touchStart.current || !touchEnd.current) return;
     const distance = touchStart.current - touchEnd.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    if (isLeftSwipe) {
+    if (distance > minSwipeDistance) {
       setIndex((prev) => (prev + 1) % items.length);
-      setIsPaused(true);
-      setTimeout(() => setIsPaused(false), 5000);
-    }
-    if (isRightSwipe) {
+    } else if (distance < -minSwipeDistance) {
       setIndex((prev) => (prev - 1 + items.length) % items.length);
-      setIsPaused(true);
-      setTimeout(() => setIsPaused(false), 5000);
     }
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 5000);
   };
 
   const next = useCallback(() => {
@@ -86,7 +79,6 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
       >
         {items.map((item, i) => {
           const hasError = loadErrors[item.id];
-          // If it's from Unsplash or our dedicated carousel bucket, it's a banner with embedded text
           const isBanner = item.image.includes('images.unsplash.com') || item.image.includes('daily-shine-carousel');
           
           return (
@@ -95,61 +87,26 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
               className="featured-carousel-item relative h-full w-full shrink-0 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-200"
               onClick={() => onItemClick?.(item)}
             >
-              {hasError ? (
-                <div className="flex h-full w-full flex-col items-center justify-center bg-destructive/10 text-destructive p-4 text-center">
-                  <AlertCircle className="h-10 w-10 mb-2" />
-                  <span className="text-[14px] font-black uppercase">IMAGE LOAD ERROR</span>
-                  <div className="mt-4 flex flex-col gap-2 w-full max-w-[200px] mx-auto">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(item.image, '_blank');
-                      }}
-                      className="bg-destructive text-white px-3 py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2"
-                    >
-                      <ExternalLink className="h-3 w-3" /> TEST URL
-                    </button>
-                    <span className="text-[8px] font-mono break-all opacity-70 bg-white/10 p-2 rounded">{item.image}</span>
-                  </div>
-                </div>
-              ) : (
+              {!hasError && (
                 <div className="absolute inset-0">
                   <img 
                     src={item.image} 
                     alt={item.title} 
-                    className={cn(
-                      "h-full w-full object-cover transition-opacity duration-500",
-                      isBanner ? "opacity-100" : "opacity-100"
-                    )}
+                    className="h-full w-full object-cover"
                     loading={i === 0 ? "eager" : "lazy"}
-                    onLoad={() => {
-                      console.log(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_SUCCESS slide=${item.slideNumber || i+1} url=${item.image}`);
-                    }}
-                    onError={(e) => {
-                      console.error(`[UW_CAROUSEL_DEBUG] IMAGE_LOAD_ERROR slide=${item.slideNumber || i+1} url=${item.image}`);
+                    onError={() => {
                       setLoadErrors(prev => ({ ...prev, [item.id]: true }));
                     }}
                   />
-                  {/* Premium gradient overlay for readability - always show slightly if text is present */}
                   <div className={cn(
                     "absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent",
-                    isBanner ? "opacity-60" : "opacity-100"
+                    isBanner ? "opacity-40" : "opacity-100"
                   )} />
                 </div>
               )}
 
-              {/* Debug Overlay */}
-              <div className="absolute top-2 left-2 z-50 bg-black/80 p-2 rounded-lg border border-white/20 pointer-events-none">
-                <div className="text-[8px] font-mono text-white leading-tight">
-                  <div className="text-[#FF6B00] font-black">BUILD: {BUILD_VERSION}</div>
-                  <div>SLIDE: {item.slideNumber || i+1}</div>
-                  <div>SOURCE: {isBanner ? "BANNER" : "DATABASE"}</div>
-                  <div className="max-w-[150px] truncate">URL: {item.image}</div>
-                </div>
-              </div>
-
-              {/* Only render text overlay if it's NOT a banner (which already contains text) */}
-              {!isBanner && (
+              {/* Only render text overlay if it's NOT a banner */}
+              {!isBanner && !hasError && (
                 <div className="absolute inset-0 p-6 flex flex-col justify-end pb-20">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
                     FEATURED SERVICE
@@ -163,23 +120,20 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 </div>
               )}
 
-              {/* Always show price/button overlay as these are actionable UI */}
-              <div className="absolute inset-x-0 bottom-0 p-6 flex items-center justify-between z-10 pointer-events-none">
-                <div className="text-white">
-                  <span className="text-[18px] font-black">₹{item.price}</span>
+              {/* Price and Action Button */}
+              {!hasError && (
+                <div className="absolute inset-x-0 bottom-0 p-6 flex items-center justify-between z-10 pointer-events-none">
+                  <div className="text-white">
+                    <span className="text-[22px] font-black">₹{item.price}</span>
+                  </div>
+                  <button 
+                    className="flex h-11 items-center gap-2 rounded-full bg-[#FF6B00] px-6 text-[14px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-95 pointer-events-auto"
+                    onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                  >
+                    Book now <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
-                <button 
-                  className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90 pointer-events-auto"
-                  onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
-                >
-                  Book now <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="bg-black/90 p-8 rounded-xl text-white text-xs max-w-[80%] whitespace-pre-wrap font-mono">
-                  {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                            \n                                            I have implemented the requested Daily Shine Carousel UI overhaul. The photograph now fills the entire card professionally using a full-bleed object-fit: cover implementation, and I have removed the duplicated blurred background technique. To ensure a premium look, I've also added logic to suppress redundant text overlays for promotional banners that already contain embedded artwork.\n\nKey Design Updates:\n\nFull-Bleed Image: The uploaded creative now covers 100% of the card area (top-to-bottom, left-to-right).\n\nSharp Presentation: Removed all blurs and filters; the photograph remains crisp.\n\nUnified Card Layout: Maintained the premium aspect-[16/9] ratio with consistent rounded corners and professional Urban Wash overlays (Price, Book Now button, and Pagination).\n\nEmbedded Text Protection: Automatically detects banners (from the carousel bucket or fallback Unsplash assets) and hides the duplicate title/subtitle layer while preserving the actionable UI.\n\nBuild Marker: Incremented to DAILY-SHINE-CAROUSEL-UI-02 for verification in the Android app.\n\nThe carousel is now a professional, high-impact promotional banner.`}
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
