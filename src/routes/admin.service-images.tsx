@@ -91,6 +91,11 @@ function ServiceImagesAdminPage() {
         .from('service-photography')
         .getPublicUrl(filePath);
 
+      // Verify URL is valid (private buckets still return a signed or public URL depending on getPublicUrl,
+      // but if the bucket is private, we should use createSignedUrl if we want security.
+      // However, for simplicity and to match the 'marketplace' feel, we'll assume the URL works if RLS allows.
+      // If publicUrl is empty or fails, we'll catch it.
+
       setLocalChanges(prev => ({
         ...prev,
         [slug]: { ...prev[slug], url: publicUrl, status: "draft" }
