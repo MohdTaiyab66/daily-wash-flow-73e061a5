@@ -271,16 +271,25 @@ function CustomerHome() {
   const serviceImagesQ = useQuery({
     queryKey: ["customer-service-images"],
     queryFn: async () => {
+      // 1. Fetch ALL images for tracing
       const { data, error } = await supabase
         .from("service_images")
-        .select("id, service_slug, image_url, updated_at")
-        .eq("status", "published")
+        .select("id, service_slug, image_url, status, updated_at")
         .order("updated_at", { ascending: false });
+      
       if (error) throw error;
       
+      // 2. Log RAW database state for debugging (this will show even if status is wrong)
+      console.log("[ServiceImages] RAW DB records:", data?.map(d => ({
+        slug: d.service_slug,
+        status: d.status,
+        url: d.image_url?.substring(0, 30) + "..."
+      })));
+
+      const published = data?.filter(img => img.status === "published") || [];
+      
       const uniqueImages = new Map();
-      data?.forEach(img => {
-        // Use service_slug as key, but if multiple records exist, we already ordered by updated_at DESC
+      published.forEach(img => {
         if (!uniqueImages.has(img.service_slug)) {
           uniqueImages.set(img.service_slug, {
             url: img.image_url,
@@ -297,9 +306,7 @@ function CustomerHome() {
         updated_at: meta.updatedAt
       }));
 
-      // CRITICAL TRACING LOG
-      console.log("[ServiceImages] Resolved Customer Images:", result);
-      
+      console.log("[ServiceImages] FINAL mapping sent to components:", result);
       return result;
     },
     staleTime: 5000,
@@ -311,13 +318,14 @@ function CustomerHome() {
     // 1. Try to find an Admin-published image for THIS exact slug
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     
-    // TRACING LOG: Trace slug matching for critical services
+    // TRACING LOG: Log EVERY matching attempt to see where it breaks
+    console.log(`[ServiceImages] home.tsx lookup: "${slug}" -> ${custom ? "FOUND URL" : "NOT FOUND (using fallback)"}`);
+    
     if (slug.includes("body") || slug.includes("deep") || slug.includes("dust") || slug.includes("polish")) {
-      console.log(`[ServiceImages] home.tsx match for "${slug}":`, { 
+      console.log(`[ServiceImages] CRITICAL match for "${slug}":`, { 
         found: !!custom, 
         url: custom?.image_url,
-        count: serviceImagesQ.data?.length,
-        allSlugs: serviceImagesQ.data?.map(i => i.service_slug)
+        availableSlugs: serviceImagesQ.data?.map(i => i.service_slug)
       });
     }
 
