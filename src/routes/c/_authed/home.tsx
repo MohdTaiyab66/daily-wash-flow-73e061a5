@@ -307,7 +307,7 @@ function CustomerHome() {
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
-        <div className="px-5 space-y-5 mt-2">
+        <div className="px-5 space-y-4 mt-2">
           {/* Active Vehicle Section - Now at the top hierarchy */}
           <Section>
             {vehiclesQ.isLoading ? (
@@ -347,7 +347,7 @@ function CustomerHome() {
             )}
           </Section>
 
-          <div className="mt-[-8px]">
+          <div className="mt-[-4px]">
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
@@ -361,9 +361,9 @@ function CustomerHome() {
 
                 return {
                   id: img.id || `static-${idx}`,
-                  title: img.title || linkedService?.name || "Daily Shine",
-                  subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
-                  price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
+                  title: "", // Empty to avoid overlaying title text
+                  subtitle: "", // Empty to avoid overlaying subtitle text
+                  price: 0, // 0 to avoid overlaying price text
                   image: finalImage,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
                   slideNumber: img.slide_number || idx + 1
