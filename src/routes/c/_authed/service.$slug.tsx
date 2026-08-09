@@ -129,10 +129,10 @@ function ServiceDetail() {
     return mapping[serviceSlug];
   };
 
-  const createOrder = useServerFn(createOrderFn);
-  const verifyPayment = useServerFn(verifyPaymentFn);
-  const logAttemptFn = useServerFn(logAttemptFnImport);
-  const getStatusFn = useServerFn(getStatusFnImport);
+  const createOrder = useServerFn(createRazorpayOrder);
+  const verifyPayment = useServerFn(verifyRazorpayPayment);
+  const logAttemptFn = useServerFn(logPaymentAttempt);
+  const getStatusFn = useServerFn(getBookingPaymentStatus);
 
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
