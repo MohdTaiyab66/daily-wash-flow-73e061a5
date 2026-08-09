@@ -266,7 +266,18 @@ function CustomerHome() {
         .eq("status", "published")
         .order("slide_number");
       if (error) throw error;
-      return data;
+      
+      // Transform paths to public URLs if they are not already full URLs
+      return data.map((img: any) => {
+        let imageUrl = img.image_url;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          const { data: urlData } = supabase.storage
+            .from('daily-shine-carousel')
+            .getPublicUrl(imageUrl);
+          imageUrl = urlData.publicUrl;
+        }
+        return { ...img, image_url: imageUrl };
+      });
     },
   });
 

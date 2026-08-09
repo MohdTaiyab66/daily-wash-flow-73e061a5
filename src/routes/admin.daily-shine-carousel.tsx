@@ -86,6 +86,7 @@ function DailyShineCarouselPage() {
 function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: any) {
   const [uploading, setUploading] = useState(false);
   const [localUrl, setLocalUrl] = useState<string | null>(null);
+  const [storedPath, setStoredPath] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published">(slide?.status || "published");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,16 +98,39 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       setUploading(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `slide-${slideNumber}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const { error } = await supabase.storage.from('daily-shine-carousel').upload(fileName, file);
+      
+      const { error } = await supabase.storage
+        .from('daily-shine-carousel')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: true
+        });
+        
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage.from('daily-shine-carousel').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage
+        .from('daily-shine-carousel')
+        .getPublicUrl(fileName);
+        
+      setStoredPath(fileName);
       setLocalUrl(urlData.publicUrl);
+      toast.success("Image uploaded. Click Publish to save.");
     } catch (e: any) {
+      console.error("[CAROUSEL_UPLOAD_ERROR]", e);
       toast.error("Upload failed: " + e.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleSave = () => {
+    onSave({ 
+      id: slide?.id, 
+      image_url: storedPath || slide?.image_url, 
+      status 
+    });
+    setStoredPath(null);
+    setLocalUrl(null);
   };
 
   return (
@@ -126,7 +150,11 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
         onClick={() => !uploading && fileInputRef.current?.click()}
       >
         {currentUrl ? (
-          <img src={currentUrl} alt={`Slide ${slideNumber}`} className="w-full h-full object-cover" />
+          <img 
+            src={currentUrl.startsWith('http') ? currentUrl : supabase.storage.from('daily-shine-carousel').getPublicUrl(currentUrl).data.publicUrl} 
+            alt={`Slide ${slideNumber}`} 
+            className="w-full h-full object-cover" 
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/30 space-y-2">
             <ImageIcon className="h-10 w-10" />
@@ -170,7 +198,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
             disabled={!isDirty || isSaving || !currentUrl} 
             size="sm" 
             className={cn("h-8 px-4 text-[11px] font-black rounded-lg", isDirty ? "bg-[#ff6b00] text-white" : "bg-muted/50 text-muted-foreground")}
-            onClick={() => onSave({ id: slide?.id, image_url: currentUrl, status })}
+            onClick={handleSave}
           >
             {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : isDirty ? "PUBLISH" : "SAVED"}
           </Button>
