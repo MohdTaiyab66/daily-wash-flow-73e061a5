@@ -327,9 +327,10 @@ function CustomerHome() {
     console.log(`[ServiceImages] home.tsx lookup: "${slug}" -> ${custom ? "FOUND URL" : "NOT FOUND (using fallback)"}`);
     
     if (slug.includes("body") || slug.includes("deep") || slug.includes("dust") || slug.includes("polish")) {
-      console.log(`[ServiceImages] CRITICAL match for "${slug}":`, { 
+      console.log(`[ServiceImages] home.tsx match for "${slug}":`, { 
         found: !!custom, 
         url: custom?.image_url,
+        count: serviceImagesQ.data?.length,
         availableSlugs: serviceImagesQ.data?.map(i => i.service_slug)
       });
     }
