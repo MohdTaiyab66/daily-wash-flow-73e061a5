@@ -307,7 +307,7 @@ function CustomerHome() {
           Build: {BUILD_VERSION} | DB: {import.meta.env.VITE_SUPABASE_URL?.split('.')[0].split('//')[1]}
         </div>
 
-        <div className="px-5 space-y-7">
+        <div className="px-5 space-y-5">
           {/* Active Vehicle Section - Compact Context Row */}
           <Section className="mt-[-12px]">
             {vehiclesQ.isLoading ? (
