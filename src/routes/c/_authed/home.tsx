@@ -271,10 +271,10 @@ function CustomerHome() {
   const serviceImagesQ = useQuery({
     queryKey: ["customer-service-images"],
     queryFn: async () => {
-      // 1. Fetch ALL images for tracing
       const { data, error } = await supabase
         .from("service_images")
         .select("id, service_slug, image_url, status, updated_at")
+        .eq("status", "published")
         .order("updated_at", { ascending: false });
       
       if (error) {
@@ -282,10 +282,8 @@ function CustomerHome() {
         throw error;
       }
       
-      const published = data?.filter(img => img.status === "published") || [];
-      
       const uniqueImages = new Map();
-      published.forEach(img => {
+      data?.forEach(img => {
         if (!uniqueImages.has(img.service_slug)) {
           uniqueImages.set(img.service_slug, {
             url: img.image_url,
@@ -302,11 +300,12 @@ function CustomerHome() {
         updated_at: meta.updatedAt
       }));
 
+      console.log("[ServiceImages] Resolved Unique Customer Images:", result);
       return result;
     },
-    staleTime: 10000,
+    staleTime: 5000,
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   });
 
   const getServiceImage = (slug: string) => {
