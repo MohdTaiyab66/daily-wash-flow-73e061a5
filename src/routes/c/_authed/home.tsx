@@ -348,8 +348,9 @@ function CustomerHome() {
           </Section>
 
           <div className="mt-[-12px]">
+            {/* DAILY_SHINE_RENDER_TEST: Marker for APK verification */}
             <UWFeaturedCarousel 
-              items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
+              items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
                 return {
                   id: img.id,
@@ -359,7 +360,7 @@ function CustomerHome() {
                   image: img.image_url,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
                 };
-              }) : []}
+              })}
               onItemClick={(item) => navigate({ to: item.link as any })}
             />
           </div>
@@ -485,6 +486,12 @@ function CustomerHome() {
         {!showCatalog && (
           <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
         )}
+
+        <div className="mt-12 mb-8 px-6 text-center">
+          <span className="text-[10px] font-medium text-muted-foreground/30 tracking-widest uppercase">
+            UW BUILD: {BUILD_VERSION}
+          </span>
+        </div>
       </div>
     </PullToRefresh>
   );
