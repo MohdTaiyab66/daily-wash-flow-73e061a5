@@ -308,19 +308,22 @@ function CustomerHome() {
   });
 
   const getServiceImage = (slug: string) => {
+    // 1. Try to find an Admin-published image for THIS exact slug
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     
-    // TRACING LOG: Check if a specific service slug matches any published image
-    if (slug.includes("body") || slug.includes("deep") || slug.includes("dust")) {
-      console.log(`[ServiceImages] Matching slug "${slug}":`, { 
+    // TRACING LOG: Trace slug matching for critical services
+    if (slug.includes("body") || slug.includes("deep") || slug.includes("dust") || slug.includes("polish")) {
+      console.log(`[ServiceImages] home.tsx match for "${slug}":`, { 
         found: !!custom, 
         url: custom?.image_url,
-        availableSlugs: serviceImagesQ.data?.map(i => i.service_slug)
+        count: serviceImagesQ.data?.length,
+        allSlugs: serviceImagesQ.data?.map(i => i.service_slug)
       });
     }
 
     if (custom) return custom.image_url;
     
+    // 2. Fallback to static mapping ONLY if no custom image exists
     const mapping: Record<string, string> = {
       "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
       "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
