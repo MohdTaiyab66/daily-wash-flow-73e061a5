@@ -24,8 +24,13 @@ export function UWServiceCard({
   onAdd,
   isAdded,
   isLoading,
+  slug,
   className
 }: UWServiceCardProps) {
+  // DEV LOGGING: Trace specific card render
+  if (slug?.includes("body") || slug?.includes("deep") || slug?.includes("dust")) {
+    console.log(`[ServiceCard] Rendering "${name}" (${slug}) with image: ${image?.substring(0, 50)}...`);
+  }
   return (
     <Surface 
       className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200", className)}
