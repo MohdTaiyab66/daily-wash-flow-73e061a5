@@ -71,9 +71,9 @@ function DailyShineCarouselPage() {
             <CarouselSlideCard 
               key={num}
               slideNumber={num}
-              slide={slides?.find(s => s.slide_number === num)}
-              onSave={(data) => upsertMutation.mutate({ ...data, slide_number: num })}
-              onDelete={(id) => deleteMutation.mutate(id)}
+              slide={slides?.find((s: any) => s.slide_number === num)}
+              onSave={(data: any) => upsertMutation.mutate({ ...data, slide_number: num })}
+              onDelete={(id: string) => deleteMutation.mutate(id)}
               isSaving={upsertMutation.isPending}
             />
           ))}
