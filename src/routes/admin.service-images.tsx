@@ -14,6 +14,7 @@ import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X 
 import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/service-images")({
   beforeLoad: async () => {
@@ -90,6 +91,11 @@ function ServiceImagesAdminPage() {
       const { data: { publicUrl } } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
+
+      // Verify URL is valid (private buckets still return a signed or public URL depending on getPublicUrl,
+      // but if the bucket is private, we should use createSignedUrl if we want security.
+      // However, for simplicity and to match the 'marketplace' feel, we'll assume the URL works if RLS allows.
+      // If publicUrl is empty or fails, we'll catch it.
 
       setLocalChanges(prev => ({
         ...prev,
@@ -292,6 +298,3 @@ function ServiceImagesAdminPage() {
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
-}

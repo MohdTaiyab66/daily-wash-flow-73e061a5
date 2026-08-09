@@ -3821,6 +3821,33 @@ export type Database = {
         }
         Relationships: []
       }
+      service_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          service_slug: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          service_slug: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          service_slug?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       service_leads: {
         Row: {
           address_id: string | null
