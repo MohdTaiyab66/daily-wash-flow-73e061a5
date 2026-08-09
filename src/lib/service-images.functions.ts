@@ -10,7 +10,15 @@ export const listServiceImages = createServerFn({ method: "GET" })
       .from("service_images")
       .select("*")
       .order("updated_at", { ascending: false });
-    if (error) throw error;
+    
+    if (error) {
+      console.error("[ServiceImages] Fetch Error:", error);
+      throw error;
+    }
+
+    // Trace duplicates and log data
+    console.log("[ServiceImages] Admin Raw Data:", data?.map((d: any) => ({ slug: d.service_slug, status: d.status, updated: d.updated_at })));
+    
     return data as Array<{ id: string; service_slug: string; image_url: string; status: "draft" | "published"; updated_at: string }>;
   });
 
@@ -24,15 +32,31 @@ export const upsertServiceImage = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    // Check if a record already exists for this slug to prevent uncontrolled duplicates
+    const { data: existing } = await (supabaseAdmin as any)
+      .from("service_images")
+      .select("id")
+      .eq("service_slug", data.service_slug)
+      .limit(1)
+      .maybeSingle();
+
+    const recordId = data.id || existing?.id;
+
     const { data: result, error } = await (supabaseAdmin as any)
       .from("service_images")
       .upsert({
+        ...(recordId ? { id: recordId } : {}),
         ...data,
         updated_at: new Date().toISOString(),
       })
       .select()
       .single();
-    if (error) throw error;
+      
+    if (error) {
+      console.error("[ServiceImages] Upsert Error:", error);
+      throw error;
+    }
     return result;
   });
 

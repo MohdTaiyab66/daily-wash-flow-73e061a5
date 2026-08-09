@@ -16,13 +16,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ServiceImages] UI Crash caught by boundary:", error, errorInfo);
@@ -30,9 +30,15 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-10 text-center">
-          <h2 className="text-xl font-bold text-destructive">Something went wrong in the Service Photography manager.</h2>
-          <Button className="mt-4" onClick={() => window.location.reload()}>Reload Page</Button>
+        <div className="p-10 text-center bg-white rounded-xl shadow-lg border border-destructive/20 m-6">
+          <h2 className="text-xl font-bold text-destructive">Photography Manager Error</h2>
+          <p className="mt-2 text-muted-foreground text-sm max-w-md mx-auto">
+            {this.state.error?.message || "An unexpected rendering error occurred."}
+          </p>
+          <div className="flex gap-3 justify-center mt-6">
+            <Button variant="outline" onClick={() => this.setState({ hasError: false, error: null })}>Try Again</Button>
+            <Button onClick={() => window.location.reload()}>Reload Page</Button>
+          </div>
         </div>
       );
     }
@@ -98,7 +104,15 @@ function ServiceImagesAdminPage() {
 
   const imageMap = useMemo(() => {
     const map = new Map();
-    images?.forEach(img => map.set(img.service_slug, img));
+    if (images && Array.isArray(images)) {
+      // Sort images by updated_at desc to ensure the map holds the latest record for each slug
+      const sorted = [...images].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      sorted.forEach(img => {
+        if (img && img.service_slug && !map.has(img.service_slug)) {
+          map.set(img.service_slug, img);
+        }
+      });
+    }
     return map;
   }, [images]);
 
@@ -197,7 +211,7 @@ function ServiceImagesAdminPage() {
     const finalData = {
       id: existing?.id,
       service_slug: slug,
-      image_url: change?.url || existing.image_url,
+      image_url: change?.url || existing?.image_url,
       status: change?.status || existing?.status || "published"
     };
 
@@ -233,8 +247,8 @@ function ServiceImagesAdminPage() {
           {catalogServices?.filter(s => s.active).map((service) => {
             const saved = imageMap.get(service.slug);
             const local = localChanges[service.slug];
-            const currentUrl = local?.url ?? saved?.image_url ?? "";
-            const currentStatus = local?.status ?? saved?.status ?? "published";
+            const currentUrl = local?.url || saved?.image_url || "";
+            const currentStatus = local?.status || saved?.status || "published";
             const isDirty = local !== undefined;
             const isUploading = uploading[service.slug];
             const fileInputRef = useRef<HTMLInputElement>(null);

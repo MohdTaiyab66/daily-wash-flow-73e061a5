@@ -98,7 +98,7 @@ function ServiceDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_images")
-        .select("service_slug, image_url, updated_at")
+        .select("service_slug, image_url, status, updated_at")
         .eq("status", "published")
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -121,9 +121,6 @@ function ServiceDetail() {
   const getServiceImage = (serviceSlug: string) => {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === serviceSlug);
     
-    // TRACING LOG
-    console.log(`[ServiceImages] Checkout Match for "${serviceSlug}":`, { found: !!custom, url: custom?.image_url });
-
     if (custom) return custom.image_url;
     
     const mapping: Record<string, string> = {
