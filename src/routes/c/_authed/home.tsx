@@ -362,13 +362,13 @@ function CustomerHome() {
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
-                const bust = img.updated_at ? `&v=${new Date(img.updated_at).getTime()}` : `&v=${Date.now()}`;
+                const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                 
                 // Ensure image URL is valid and has cache busting
                 let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
                 if (finalImage && finalImage.includes('supabase.co')) {
                   const separator = finalImage.includes('?') ? '&' : '?';
-                  finalImage = `${finalImage}${separator}bust=${bust}`;
+                  finalImage = `${finalImage}${separator}v=${bust}`;
                 }
 
                 console.log(`[UW_CAROUSEL_DEBUG] slide=${img.slide_number || idx + 1} url=${finalImage}`);
