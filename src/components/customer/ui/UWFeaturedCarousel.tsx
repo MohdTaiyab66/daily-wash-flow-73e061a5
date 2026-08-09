@@ -85,13 +85,14 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
           >
             {/* 
               Requirement: IMAGE IS THE ENTIRE CARD. 
-              Aspect ratio is fixed to 1.87/1 to match the measured card dimensions.
-              object-cover ensures the creative fills the space without distortion.
+              Aspect ratio is fixed to 1.87/1.
+              Using object-contain ensures the ENTIRE creative is visible without any cropping,
+              even if the current uploaded image ratio doesn't perfectly match 1.87:1 yet.
             */}
             <img 
               src={item.image} 
               alt={item.title || "Urban Wash Daily Shine"} 
-              className="w-full h-full object-cover block"
+              className="w-full h-full object-contain block"
               loading={i === 0 ? "eager" : "lazy"}
             />
 
