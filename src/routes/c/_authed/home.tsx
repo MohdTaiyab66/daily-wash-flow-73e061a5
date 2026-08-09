@@ -435,13 +435,21 @@ function CustomerHome() {
             </div>
           </Section>
           {showCatalog && (
-            <div className="py-8 flex items-center justify-center gap-6 safe-area-bottom">
-              <TrustItem label="Expert Care" />
-              <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-              <TrustItem label="Photo Proof" />
-              <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-              <TrustItem label="Safe & Secure" />
-            </div>
+            <>
+              <div className="py-8 flex items-center justify-center gap-6 safe-area-bottom">
+                <TrustItem label="Expert Care" />
+                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                <TrustItem label="Photo Proof" />
+                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                <TrustItem label="Safe & Secure" />
+              </div>
+              <Section className="pb-10">
+                <Surface className="bg-primary/5 border-primary/10 p-5">
+                  <div className="text-[14px] font-black text-[#1a1a1a]">Trust Urban Wash</div>
+                  <div className="mt-1 text-[12px] font-medium text-muted-foreground/70 text-balance">Premium doorstep car care you can trust every day.</div>
+                </Surface>
+              </Section>
+            </>
           )}
         </div>
 
