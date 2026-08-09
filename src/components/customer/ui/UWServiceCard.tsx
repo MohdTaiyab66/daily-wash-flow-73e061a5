@@ -68,14 +68,6 @@ export function UWServiceCard({
           </div>
         )}
 
-        {/* Debug Overlay */}
-        {debugInfo && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[7px] text-white font-mono break-all pointer-events-none">
-            src: {debugInfo.source}<br/>
-            slug: {slug}<br/>
-            img: {debugInfo.url?.split('/').pop() || 'none'}
-          </div>
-        )}
       </div>
       
       <div className="flex flex-col flex-1 p-3">
