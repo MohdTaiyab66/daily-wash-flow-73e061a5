@@ -86,6 +86,7 @@ function DailyShineCarouselPage() {
 function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: any) {
   const [uploading, setUploading] = useState(false);
   const [localUrl, setLocalUrl] = useState<string | null>(null);
+  const [storedPath, setStoredPath] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published">(slide?.status || "published");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,6 +112,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
         .from('daily-shine-carousel')
         .getPublicUrl(fileName);
         
+      setStoredPath(fileName);
       setLocalUrl(urlData.publicUrl);
       toast.success("Image uploaded. Click Publish to save.");
     } catch (e: any) {
@@ -119,6 +121,16 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleSave = () => {
+    onSave({ 
+      id: slide?.id, 
+      image_url: storedPath || slide?.image_url, 
+      status 
+    });
+    setStoredPath(null);
+    setLocalUrl(null);
   };
 
   return (
@@ -138,7 +150,11 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
         onClick={() => !uploading && fileInputRef.current?.click()}
       >
         {currentUrl ? (
-          <img src={currentUrl} alt={`Slide ${slideNumber}`} className="w-full h-full object-cover" />
+          <img 
+            src={currentUrl.startsWith('http') ? currentUrl : supabase.storage.from('daily-shine-carousel').getPublicUrl(currentUrl).data.publicUrl} 
+            alt={`Slide ${slideNumber}`} 
+            className="w-full h-full object-cover" 
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/30 space-y-2">
             <ImageIcon className="h-10 w-10" />
