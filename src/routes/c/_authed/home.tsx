@@ -39,7 +39,8 @@ import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/c
 import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
-import { BUILD_VERSION } from "@/lib/build-info";
+import { BUILD_VERSION, DAILY_SHINE_CAROUSEL_BUCKET } from "@/lib/build-info";
+
 
 
 
@@ -272,8 +273,9 @@ function CustomerHome() {
         let imageUrl = img.image_url;
         if (imageUrl && !imageUrl.startsWith('http')) {
           const { data: urlData } = supabase.storage
-            .from(img.bucket_name || 'service-photography')
+            .from(DAILY_SHINE_CAROUSEL_BUCKET)
             .getPublicUrl(imageUrl);
+
           imageUrl = urlData.publicUrl;
         }
         return { ...img, image_url: imageUrl };

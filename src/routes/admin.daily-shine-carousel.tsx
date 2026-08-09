@@ -9,6 +9,8 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { DAILY_SHINE_CAROUSEL_BUCKET } from "@/lib/build-info";
+
 
 export const Route = createFileRoute("/admin/daily-shine-carousel")({
   beforeLoad: async () => {
@@ -100,7 +102,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       const fileName = `slide-${slideNumber}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
       const { error } = await supabase.storage
-        .from('service-photography')
+        .from(DAILY_SHINE_CAROUSEL_BUCKET)
         .upload(fileName, file, {
           contentType: file.type,
           upsert: true
@@ -109,7 +111,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       if (error) throw error;
 
       const { data: urlData } = supabase.storage
-        .from('service-photography')
+        .from(DAILY_SHINE_CAROUSEL_BUCKET)
         .getPublicUrl(fileName);
         
       setStoredPath(fileName);
@@ -151,7 +153,8 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       >
         {currentUrl ? (
           <img 
-            src={currentUrl.startsWith('http') ? currentUrl : supabase.storage.from('service-photography').getPublicUrl(currentUrl).data.publicUrl} 
+            src={currentUrl.startsWith('http') ? currentUrl : supabase.storage.from(DAILY_SHINE_CAROUSEL_BUCKET).getPublicUrl(currentUrl).data.publicUrl} 
+
             alt={`Slide ${slideNumber}`} 
             className="w-full h-full object-cover" 
           />

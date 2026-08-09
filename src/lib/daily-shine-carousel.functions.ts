@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAdmin } from "@/lib/admin-middleware";
 import { z } from "zod";
+import { DAILY_SHINE_CAROUSEL_BUCKET } from "@/lib/build-info";
+
 
 export const listCarouselSlides = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
@@ -40,7 +42,7 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    const bucket = data.bucket_name || 'service-photography';
+    const bucket = DAILY_SHINE_CAROUSEL_BUCKET;
     
     // VERIFICATION FLOW (Requirement 3)
     console.log(`[UW_CAROUSEL_VERIFY] Verifying slide ${data.slide_number} in bucket ${bucket}: ${data.image_url}`);
