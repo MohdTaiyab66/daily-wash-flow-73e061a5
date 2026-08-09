@@ -76,26 +76,37 @@ function ServiceImagesAdminPage() {
 
   const handleUpload = async (slug: string, file: File) => {
     try {
+      console.log(`[ServiceImages] Starting upload for ${slug}...`);
       setUploading(prev => ({ ...prev, [slug]: true }));
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${slug}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `services/${fileName}`;
+      if (!file.type.startsWith('image/')) {
+        throw new Error("Invalid file type. Please select an image.");
+      }
 
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = `${slug}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`; // Removed "services/" prefix to match bucket root RLS check if needed, but path usually starts after bucket name
+
+      console.log(`[ServiceImages] Uploading to bucket 'service-photography' at path '${filePath}'`);
+      
       const { data, error } = await supabase.storage
         .from('service-photography')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[ServiceImages] Supabase Storage Error:", error);
+        throw error;
+      }
 
+      console.log("[ServiceImages] Upload successful, getting public URL...");
       const { data: { publicUrl } } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
 
-      // Verify URL is valid (private buckets still return a signed or public URL depending on getPublicUrl,
-      // but if the bucket is private, we should use createSignedUrl if we want security.
-      // However, for simplicity and to match the 'marketplace' feel, we'll assume the URL works if RLS allows.
-      // If publicUrl is empty or fails, we'll catch it.
+      console.log(`[ServiceImages] Public URL generated: ${publicUrl}`);
 
       setLocalChanges(prev => ({
         ...prev,
@@ -104,7 +115,8 @@ function ServiceImagesAdminPage() {
       
       toast.success("Photo uploaded as draft");
     } catch (error: any) {
-      toast.error("Upload failed: " + error.message);
+      console.error("[ServiceImages] Fatal Upload Error:", error);
+      toast.error("Upload failed: " + (error.message || "Unknown error"));
     } finally {
       setUploading(prev => ({ ...prev, [slug]: false }));
     }
