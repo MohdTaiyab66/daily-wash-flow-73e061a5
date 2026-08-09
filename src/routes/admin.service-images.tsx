@@ -78,6 +78,9 @@ function ServiceImagesAdminPage() {
     mutationFn: (data: any) => upsertFn({ data }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-service-images"] });
+      // CRITICAL: Invalidate customer-side cache too if on same window, 
+      // though usually admin and customer are separate contexts.
+      qc.invalidateQueries({ queryKey: ["customer-service-images"] });
       toast.success("Changes saved and published");
     },
     onError: (err: any) => {

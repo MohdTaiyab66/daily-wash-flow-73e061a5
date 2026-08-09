@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Car, Sparkles, Minus, Plus, Check, Clock, CheckCircle2, MapPin, ChevronRight, Loader2 } from "lucide-react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createRazorpayOrder,
@@ -48,7 +49,7 @@ import {
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
-    vehicleId: typeof search.vehicleId === "string" ? search.vehicleId : undefined,
+    vehicleId: z.string().optional().parse(search.vehicleId),
   }),
   head: () => ({ meta: [{ title: "Book service — Urban Wash" }] }),
   component: ServiceDetail,
@@ -91,6 +92,43 @@ function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
   const navigate = useNavigate();
   const qc = useQueryClient();
+
+  const serviceImagesQ = useQuery({
+    queryKey: ["customer-service-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_images")
+        .select("service_slug, image_url, updated_at")
+        .eq("status", "published")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      const uniqueImages = new Map();
+      data?.forEach(img => {
+        if (!uniqueImages.has(img.service_slug)) {
+          uniqueImages.set(img.service_slug, img.image_url);
+        }
+      });
+      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
+        service_slug,
+        image_url
+      }));
+    },
+    staleTime: 5000,
+  });
+
+  const getServiceImage = (serviceSlug: string) => {
+    const custom = serviceImagesQ.data?.find(img => img.service_slug === serviceSlug);
+    if (custom) return custom.image_url;
+    
+    const mapping: Record<string, string> = {
+      "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
+      "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
+      "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
+      "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
+    };
+    return mapping[serviceSlug];
+  };
+
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
   const logAttemptFn = useServerFn(logPaymentAttempt);

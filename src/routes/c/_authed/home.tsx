@@ -273,12 +273,24 @@ function CustomerHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_images")
-        .select("service_slug, image_url")
-        .eq("status", "published");
+        .select("service_slug, image_url, updated_at")
+        .eq("status", "published")
+        .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data as Array<{ service_slug: string; image_url: string }>;
+      
+      const uniqueImages = new Map();
+      data?.forEach(img => {
+        if (!uniqueImages.has(img.service_slug)) {
+          uniqueImages.set(img.service_slug, img.image_url);
+        }
+      });
+      
+      return Array.from(uniqueImages.entries()).map(([service_slug, image_url]) => ({
+        service_slug,
+        image_url
+      }));
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 5000,
     refetchOnWindowFocus: true,
   });
 
@@ -286,7 +298,6 @@ function CustomerHome() {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     if (custom) return custom.image_url;
     
-    // Static mapping for common services if not in DB
     const mapping: Record<string, string> = {
       "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
       "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
@@ -446,7 +457,7 @@ function CustomerHome() {
                   key={s.id}
                   name={s.name}
                   price={priceFor(s)}
-                  image={getServiceImage(s.slug) || s.banner_url || undefined}
+                  image={getServiceImage(s.slug)}
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />
