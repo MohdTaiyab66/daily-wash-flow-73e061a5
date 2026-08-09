@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listCarouselSlides, upsertCarouselSlide, deleteCarouselSlide } from "@/lib/daily-shine-carousel.functions";
+import { listCarouselSlides, upsertCarouselSlide, deleteCarouselSlide, getDailyShineCarouselImageUrl, normalizeCarouselStoragePath } from "@/lib/daily-shine-carousel.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X } from "lucide-react";
@@ -90,33 +90,37 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
   const [localUrl, setLocalUrl] = useState<string | null>(null);
   const [storedPath, setStoredPath] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published">(slide?.status || "published");
+  const [verificationResult, setVerificationResult] = useState<{ status: number; type: string | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const currentUrl = localUrl || slide?.image_url;
-  const isDirty = localUrl !== null || (slide && status !== slide.status);
+  const normalizedStoredPath = storedPath || normalizeCarouselStoragePath(slide?.image_url || "");
+  const currentUrl = normalizedStoredPath ? getDailyShineCarouselImageUrl(normalizedStoredPath) : null;
+  const isDirty = (storedPath !== null && storedPath !== slide?.image_url) || (slide && status !== slide.status);
 
   const handleUpload = async (file: File) => {
     try {
       setUploading(true);
+      setVerificationResult(null);
       const fileExt = file.name.split('.').pop();
-      const fileName = `slide-${slideNumber}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `slide-${slideNumber}/${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
       const { error } = await supabase.storage
         .from(DAILY_SHINE_CAROUSEL_BUCKET)
         .upload(fileName, file, {
           contentType: file.type,
-          upsert: true
+          upsert: true,
+          cacheControl: "3600",
         });
         
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from(DAILY_SHINE_CAROUSEL_BUCKET)
-        .getPublicUrl(fileName);
-        
+      // Verification Step (Requirement 6)
+      const publicUrl = getDailyShineCarouselImageUrl(fileName);
+      const resp = await fetch(publicUrl);
+      setVerificationResult({ status: resp.status, type: resp.headers.get('content-type') });
+
       setStoredPath(fileName);
-      setLocalUrl(urlData.publicUrl);
-      toast.success("Image uploaded. Click Publish to save.");
+      toast.success("Image uploaded. Check verification below then Publish.");
     } catch (e: any) {
       console.error("[CAROUSEL_UPLOAD_ERROR]", e);
       toast.error("Upload failed: " + e.message);
@@ -128,11 +132,10 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
   const handleSave = () => {
     onSave({ 
       id: slide?.id, 
-      image_url: storedPath || slide?.image_url, 
+      image_url: normalizedStoredPath, 
       status 
     });
     setStoredPath(null);
-    setLocalUrl(null);
   };
 
   return (
@@ -153,8 +156,7 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       >
         {currentUrl ? (
           <img 
-            src={currentUrl.startsWith('http') ? currentUrl : supabase.storage.from(DAILY_SHINE_CAROUSEL_BUCKET).getPublicUrl(currentUrl).data.publicUrl} 
-
+            src={`${currentUrl}${currentUrl.includes('?') ? '&' : '?'}v=${Date.now()}`}
             alt={`Slide ${slideNumber}`} 
             className="w-full h-full object-cover" 
           />
@@ -176,6 +178,25 @@ function CarouselSlideCard({ slideNumber, slide, onSave, onDelete, isSaving }: a
       </div>
 
       <div className="p-5 space-y-4">
+        {/* Debug Info (Requirement 7) */}
+        {normalizedStoredPath && (
+          <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1 overflow-hidden">
+            <div className="text-[9px] font-mono text-slate-500 uppercase font-bold">Debug Information</div>
+            <div className="grid grid-cols-4 gap-1 text-[8px] font-mono text-slate-700">
+              <span className="font-bold">BUCKET:</span>
+              <span className="col-span-3">{DAILY_SHINE_CAROUSEL_BUCKET}</span>
+              <span className="font-bold">PATH:</span>
+              <span className="col-span-3 truncate">{normalizedStoredPath}</span>
+              <span className="font-bold">URL:</span>
+              <span className="col-span-3 break-all text-blue-600">{currentUrl}</span>
+              <span className="font-bold">VERIFY:</span>
+              <span className={cn("col-span-3 font-bold", verificationResult?.status === 200 ? "text-emerald-600" : "text-amber-600")}>
+                {verificationResult ? `HTTP ${verificationResult.status} (${verificationResult.type})` : "Pending Save"}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="text-[10px] font-black uppercase text-muted-foreground/60 mb-1 block">Status</label>

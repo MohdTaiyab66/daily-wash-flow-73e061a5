@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
+import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -268,18 +269,11 @@ function CustomerHome() {
         .order("slide_number");
       if (error) throw error;
       
-      // Transform paths to public URLs if they are not already full URLs
-      return data.map((img: any) => {
-        let imageUrl = img.image_url;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          const { data: urlData } = supabase.storage
-            .from(DAILY_SHINE_CAROUSEL_BUCKET)
-            .getPublicUrl(imageUrl);
-
-          imageUrl = urlData.publicUrl;
-        }
-        return { ...img, image_url: imageUrl };
-      });
+      // Use canonical resolver for image URLs
+      return data.map((img: any) => ({
+        ...img,
+        image_url: getDailyShineCarouselImageUrl(img.image_url)
+      }));
     },
   });
 
@@ -366,7 +360,6 @@ function CustomerHome() {
                 const linkedService = services.find(s => s.slug === img.service_slug);
                 const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                 
-                // Ensure image URL is valid and has cache busting
                 let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
                 if (finalImage && finalImage.includes('supabase.co')) {
                   const separator = finalImage.includes('?') ? '&' : '?';
