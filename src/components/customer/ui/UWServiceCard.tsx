@@ -13,7 +13,7 @@ interface UWServiceCardProps {
   isLoading?: boolean;
   slug?: string;
   className?: string;
-  debugInfo?: { source: string; url: string | null };
+  
 }
 
 export function UWServiceCard({
@@ -27,7 +27,6 @@ export function UWServiceCard({
   isLoading,
   slug,
   className,
-  debugInfo
 }: UWServiceCardProps) {
   return (
     <Surface 
@@ -42,10 +41,10 @@ export function UWServiceCard({
             data-slug={slug}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
             onLoad={() => {
-              console.log(`[UW_SERVICE_PHOTO] ${slug} LOAD SUCCESS: ${image}`);
+              // console.log(`[UW_SERVICE_PHOTO] ${slug} LOAD SUCCESS: ${image}`);
             }}
             onError={(e) => {
-              console.error(`[UW_SERVICE_PHOTO] ${slug} LOAD ERROR: ${image}`);
+              // console.error(`[UW_SERVICE_PHOTO] ${slug} LOAD ERROR: ${image}`);
               const target = e.target as HTMLImageElement;
               target.onerror = null;
               target.style.display = 'none';
@@ -54,9 +53,6 @@ export function UWServiceCard({
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
-            {debugInfo && (
-               <span className="text-[8px] mt-1 font-mono">{slug}</span>
-            )}
           </div>
         )}
         

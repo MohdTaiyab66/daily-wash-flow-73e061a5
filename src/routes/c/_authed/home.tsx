@@ -355,7 +355,7 @@ function CustomerHome() {
                   id: img.id,
                   title: img.title || linkedService?.name || "Daily Shine",
                   subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
-                  price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+                  price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
                   image: img.image_url,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
                 };
