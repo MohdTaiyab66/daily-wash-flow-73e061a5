@@ -39,6 +39,8 @@ import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/c
 import { cn } from "@/lib/utils";
 import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
+import { BUILD_VERSION } from "@/lib/build-info";
+
 
 
 
@@ -272,12 +274,9 @@ function CustomerHome() {
   const serviceImagesQ = useServiceImages();
 
   const resolvedServiceImage = (slug: string) => {
-    const img = getServiceImage(slug, serviceImagesQ.data);
-    if (slug === 'body-polish') {
-      console.log(`[Home DEBUG] Body Polish RESOLVER: ${img}`);
-    }
-    return img;
+    return getServiceImage(slug, serviceImagesQ.data);
   };
+
 
 
   useEffect(() => {

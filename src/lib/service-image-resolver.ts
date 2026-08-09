@@ -37,18 +37,10 @@ export const useServiceImages = () => {
   });
 };
 
-export const STATIC_SERVICE_IMAGES: Record<string, string> = {
-  "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
-  "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
-  "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
-  "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
-  "body-polish": "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&q=80&w=800",
-  "dusting": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800",
-};
-
 export const getServiceImage = (slug: string, imageMap?: Record<string, any>) => {
   if (imageMap && imageMap[slug]) {
-    return imageMap[slug].url;
+    return { url: imageMap[slug].url, source: 'ADMIN' };
   }
-  return STATIC_SERVICE_IMAGES[slug];
+  // NO PHOTOGRAPHIC FALLBACKS DURING DEBUGGING
+  return { url: null, source: 'NONE' };
 };
