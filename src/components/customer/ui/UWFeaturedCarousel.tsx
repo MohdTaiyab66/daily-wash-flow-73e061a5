@@ -121,7 +121,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                     alt={item.title} 
                     className={cn(
                       "h-full w-full object-cover transition-opacity duration-500",
-                      isStatic ? "opacity-70" : "opacity-100"
+                      isBanner ? "opacity-70" : "opacity-100"
                     )}
                     loading={i === 0 ? "eager" : "lazy"}
                     onLoad={() => {
@@ -135,7 +135,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                   {/* Subtle gradient for readability ONLY if not a static promo with embedded text */}
                   <div className={cn(
                     "absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent",
-                    isStatic && "hidden" // If it's a static banner like the screenshot, it already has text
+                    isBanner && "hidden" // If it's a static banner like the screenshot, it already has text
                   )} />
                 </div>
               )}
@@ -145,13 +145,13 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                 <div className="text-[8px] font-mono text-white leading-tight">
                   <div className="text-[#FF6B00] font-black">BUILD: {BUILD_VERSION}</div>
                   <div>SLIDE: {item.slideNumber || i+1}</div>
-                  <div>SOURCE: {isStatic ? "STATIC" : "DATABASE"}</div>
+                  <div>SOURCE: {isBanner ? "STATIC" : "DATABASE"}</div>
                   <div className="max-w-[150px] truncate">URL: {item.image}</div>
                 </div>
               </div>
 
-              {/* Only render text overlay if it's NOT a static banner (which already contains text) */}
-              {!isStatic && (
+              {/* Only render text overlay if it's NOT a banner (which already contains text) */}
+              {!isBanner && (
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
                     FEATURED SERVICE
