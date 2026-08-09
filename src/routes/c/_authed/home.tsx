@@ -461,7 +461,7 @@ function CustomerHome() {
                   key={s.id}
                   name={s.name}
                   price={priceFor(s)}
-                  image={getServiceImage(s.slug) || s.banner_url || undefined}
+                  image={getServiceImage(s.slug)}
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />
