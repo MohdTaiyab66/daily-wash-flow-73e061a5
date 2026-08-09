@@ -283,7 +283,7 @@ function CustomerHome() {
   const getServiceImage = (slug: string) => {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     if (custom) return custom.image_url;
-    return undefined; // Fallback to placeholder in UWServiceCard
+    return undefined;
   };
 
 
