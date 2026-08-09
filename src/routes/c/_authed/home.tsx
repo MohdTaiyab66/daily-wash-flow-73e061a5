@@ -268,6 +268,25 @@ function CustomerHome() {
     },
   });
 
+  const serviceImagesQ = useQuery({
+    queryKey: ["customer-service-images"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("service_images")
+        .select("*")
+        .eq("status", "published");
+      if (error) throw error;
+      return data as Array<{ service_slug: string; image_url: string }>;
+    },
+  });
+
+  const getServiceImage = (slug: string) => {
+    const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
+    if (custom) return custom.image_url;
+    return undefined; // Fallback to placeholder in UWServiceCard
+  };
+
+
   useEffect(() => {
     latestNoticeQ.refetch();
   }, [selectedVehicleId]);
