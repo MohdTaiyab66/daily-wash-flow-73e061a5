@@ -10,7 +10,15 @@ export const listServiceImages = createServerFn({ method: "GET" })
       .from("service_images")
       .select("*")
       .order("updated_at", { ascending: false });
-    if (error) throw error;
+    
+    if (error) {
+      console.error("[ServiceImages] Fetch Error:", error);
+      throw error;
+    }
+
+    // Trace duplicates and log data
+    console.log("[ServiceImages] Admin Raw Data:", data?.map((d: any) => ({ slug: d.service_slug, status: d.status, updated: d.updated_at })));
+    
     return data as Array<{ id: string; service_slug: string; image_url: string; status: "draft" | "published"; updated_at: string }>;
   });
 
