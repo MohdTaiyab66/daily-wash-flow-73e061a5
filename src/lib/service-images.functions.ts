@@ -58,5 +58,9 @@ export const listAllCatalogServices = createServerFn({ method: "GET" })
       .select("id, slug, name, active")
       .order("sort_order");
     if (error) throw error;
+    
+    // DEV LOGGING: Trace slugs from Admin side
+    console.log("[ServiceImages] Catalog Slugs:", data?.map((s: any) => ({ name: s.name, slug: s.slug })));
+    
     return data as Array<{ id: string; slug: string; name: string; active: boolean }>;
   });
