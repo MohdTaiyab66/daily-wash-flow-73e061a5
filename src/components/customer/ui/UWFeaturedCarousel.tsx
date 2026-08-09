@@ -94,7 +94,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
               loading={i === 0 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">
                 FEATURED SERVICE
               </span>
               <h3 className="text-[22px] font-black text-white leading-tight tracking-tight">
@@ -109,7 +109,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
                   <span className="text-[18px] font-black">₹{item.price}</span>
                 </div>
                 <button 
-                  className="flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-[13px] font-black text-white shadow-lg shadow-primary/30 transition-transform active:scale-90"
+                  className="flex h-10 items-center gap-2 rounded-full bg-[#FF6B00] px-4 text-[13px] font-black text-white shadow-lg shadow-[#FF6B00]/30 transition-transform active:scale-90"
                   onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
                 >
                   Book now <ChevronRight className="h-4 w-4" />
@@ -132,7 +132,7 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
             }}
             className={cn(
               "h-1 rounded-full transition-all duration-300",
-              i === index ? "w-4 bg-primary" : "w-1.5 bg-[#9CA3AF]/50"
+              i === index ? "w-4 bg-[#FF6B00]" : "w-1.5 bg-[#9CA3AF]/50"
             )}
           />
         ))}

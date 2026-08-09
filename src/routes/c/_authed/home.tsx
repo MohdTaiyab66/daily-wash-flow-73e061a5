@@ -309,7 +309,7 @@ function CustomerHome() {
 
         <div className="px-5 space-y-7">
           {/* Active Vehicle Section - Compact Context Row */}
-          <Section className="mt-[-8px]">
+          <Section className="mt-[-12px]">
             {vehiclesQ.isLoading ? (
               <SkeletonCard className="h-16" />
             ) : activeVehicle ? (
@@ -347,7 +347,7 @@ function CustomerHome() {
             )}
           </Section>
 
-          <div className="mt-[-8px]">
+          <div className="mt-[-12px]">
             <UWFeaturedCarousel 
               items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
                 const linkedService = services.find(s => s.slug === img.service_slug);
@@ -396,7 +396,7 @@ function CustomerHome() {
 
           <Section 
             title="Car care services"
-            className="mt-6"
+            className="mt-4"
           >
             <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
               {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -406,7 +406,7 @@ function CustomerHome() {
                   className={cn(
                     "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all duration-200",
                     selectedCategory === cat 
-                      ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                      ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" 
                       : "bg-white text-[#1a1a1a] border border-border/50"
                   )}
                 >
@@ -415,7 +415,7 @@ function CustomerHome() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-[16px]">
+            <div className="grid grid-cols-2 gap-4 mt-[12px]">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
               ) : filteredServices.map((s) => (
@@ -443,12 +443,13 @@ function CustomerHome() {
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Safe & Secure" />
               </div>
-              <Section className="pb-10">
-                <Surface className="bg-primary/5 border-primary/10 p-5">
+              <Section className="pb-10 -mt-4">
+                <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-5">
                   <div className="text-[14px] font-black text-[#1a1a1a]">Trust Urban Wash</div>
                   <div className="mt-1 text-[12px] font-medium text-muted-foreground/70 text-balance">Premium doorstep car care you can trust every day.</div>
                 </Surface>
               </Section>
+
             </>
           )}
         </div>
