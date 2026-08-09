@@ -347,23 +347,22 @@ function CustomerHome() {
             )}
           </Section>
 
-          <div className="mt-[-16px]">
+          <div className="mt-[-8px]">
             <UWFeaturedCarousel 
-            items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
-              const linkedService = services.find(s => s.slug === img.service_slug);
-              return {
-                id: img.id,
-                title: img.title || linkedService?.name || "Daily Shine",
-                subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
-                price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
-                image: img.image_url,
-                link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
-              };
-            }) : []}
-            onItemClick={(item) => navigate({ to: item.link as any })}
-          />
-        </div>
-
+              items={imagesQ.data?.length ? imagesQ.data.map((img: any) => {
+                const linkedService = services.find(s => s.slug === img.service_slug);
+                return {
+                  id: img.id,
+                  title: img.title || linkedService?.name || "Daily Shine",
+                  subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
+                  price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 999, price_sedan_suv: 999 } as any),
+                  image: img.image_url,
+                  link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine"
+                };
+              }) : []}
+              onItemClick={(item) => navigate({ to: item.link as any })}
+            />
+          </div>
 
           {/* Vehicle Notice (Dirty) - Isolated below featured */}
           {latestNoticeQ.data && activeVehicle && (
