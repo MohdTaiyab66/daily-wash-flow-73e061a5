@@ -11,10 +11,34 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X } from "lucide-react";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, ErrorInfo, Component } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[ServiceImages] UI Crash caught by boundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold text-destructive">Something went wrong in the Service Photography manager.</h2>
+          <Button className="mt-4" onClick={() => window.location.reload()}>Reload Page</Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export const Route = createFileRoute("/admin/service-images")({
   beforeLoad: async () => {
@@ -26,7 +50,11 @@ export const Route = createFileRoute("/admin/service-images")({
     });
     if (!isAdmin) throw new Error("Forbidden: Admin access required");
   },
-  component: ServiceImagesAdminPage,
+  component: () => (
+    <ErrorBoundary>
+      <ServiceImagesAdminPage />
+    </ErrorBoundary>
+  ),
 });
 
 function ServiceImagesAdminPage() {
