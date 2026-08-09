@@ -244,143 +244,180 @@ function ServiceImagesAdminPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {catalogServices?.filter(s => s.active).map((service) => {
-            const saved = imageMap.get(service.slug);
-            const local = localChanges[service.slug];
-            const currentUrl = local?.url || saved?.image_url || "";
-            const currentStatus = local?.status || saved?.status || "published";
-            const isDirty = local !== undefined;
-            const isUploading = uploading[service.slug];
-            const fileInputRef = useRef<HTMLInputElement>(null);
-
-            return (
-              <Card key={service.id} className="overflow-hidden border-border/40 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
-                <div 
-                  className="relative aspect-[16/10] bg-muted group cursor-pointer overflow-hidden border-b border-border/40"
-                  onClick={() => !isUploading && fileInputRef.current?.click()}
-                >
-                  {currentUrl ? (
-                    <img src={currentUrl} alt={service.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 space-y-3">
-                      <ImageIcon className="h-12 w-12" />
-                      <span className="text-[10px] uppercase font-black tracking-widest">No Image Uploaded</span>
-                      <Button variant="outline" size="sm" className="bg-white border-dashed text-[10px] font-bold h-7">
-                        + UPLOAD PHOTO
-                      </Button>
-                    </div>
-                  )}
-
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-3 z-10">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                      <span className="text-[10px] font-bold tracking-widest uppercase">Uploading...</span>
-                    </div>
-                  )}
-
-                  {currentUrl && !isUploading && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Button variant="secondary" size="sm" className="bg-white/90 text-[10px] font-bold shadow-lg">
-                        REPLACE PHOTO
-                      </Button>
-                    </div>
-                  )}
-
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/png, image/jpeg, image/webp"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleUpload(service.slug, file);
-                    }}
-                  />
-                </div>
-
-                <div className="p-5 space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold text-base text-[#1a1a1a] truncate">{service.name}</h3>
-                      <div className={cn(
-                        "text-[9px] uppercase font-black px-2 py-0.5 rounded-full tracking-tighter flex items-center gap-1.5",
-                        currentStatus === "published" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-amber-50 text-amber-600 border border-amber-100"
-                      )}>
-                        <div className={cn("h-1.5 w-1.5 rounded-full", currentStatus === "published" ? "bg-emerald-500" : "bg-amber-500")} />
-                        {currentStatus}
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-tighter">ID: {service.slug}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2 border-t border-border/30">
-                    <div className="flex-1">
-                      <Select value={currentStatus} onValueChange={(val: any) => handleStatusChange(service.slug, val)}>
-                        <SelectTrigger className="h-8 text-[11px] font-bold bg-[#fcfcfc] border-border/40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="published" className="text-[11px] font-medium">Published</SelectItem>
-                          <SelectItem value="draft" className="text-[11px] font-medium">Draft</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                       {saved && !isDirty && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            if (window.confirm("Remove this image?")) deleteMutation.mutate(saved.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {isDirty && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:bg-muted"
-                          onClick={() => setLocalChanges(prev => {
-                            const next = { ...prev };
-                            delete next[service.slug];
-                            return next;
-                          })}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-
-                      <Button 
-                        onClick={() => handleSave(service.slug)}
-                        disabled={!isDirty || upsertMutation.isPending}
-                        size="sm"
-                        className={cn(
-                          "h-8 px-4 text-[11px] font-black tracking-tight rounded-lg",
-                          isDirty ? "bg-[#ff6b00] hover:bg-[#e66000] text-white shadow-sm" : "bg-muted/50 text-muted-foreground cursor-not-allowed"
-                        )}
-                      >
-                        {upsertMutation.isPending ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : isDirty ? (
-                          <><Save className="h-3 w-3 mr-2" /> PUBLISH</>
-                        ) : (
-                          <><Check className="h-3 w-3 mr-2" /> SAVED</>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {catalogServices?.filter(s => s.active).map((service) => (
+            <ServicePhotographyCard 
+              key={service.id}
+              service={service}
+              saved={imageMap.get(service.slug)}
+              local={localChanges[service.slug]}
+              isUploading={uploading[service.slug]}
+              onUpload={handleUpload}
+              onStatusChange={handleStatusChange}
+              onSave={handleSave}
+              onDelete={(id) => deleteMutation.mutate(id)}
+              onCancelLocal={() => setLocalChanges(prev => {
+                const next = { ...prev };
+                delete next[service.slug];
+                return next;
+              })}
+              isSaving={upsertMutation.isPending}
+            />
+          ))}
         </div>
       )}
     </div>
   );
+
+interface ServicePhotographyCardProps {
+  service: any;
+  saved: any;
+  local: any;
+  isUploading: boolean;
+  onUpload: (slug: string, file: File) => void;
+  onStatusChange: (slug: string, status: "draft" | "published") => void;
+  onSave: (slug: string) => void;
+  onDelete: (id: string) => void;
+  onCancelLocal: () => void;
+  isSaving: boolean;
 }
+
+function ServicePhotographyCard({
+  service,
+  saved,
+  local,
+  isUploading,
+  onUpload,
+  onStatusChange,
+  onSave,
+  onDelete,
+  onCancelLocal,
+  isSaving
+}: ServicePhotographyCardProps) {
+  const currentUrl = local?.url || saved?.image_url || "";
+  const currentStatus = local?.status || saved?.status || "published";
+  const isDirty = local !== undefined;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <Card className="overflow-hidden border-border/40 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
+      <div 
+        className="relative aspect-[16/10] bg-muted group cursor-pointer overflow-hidden border-b border-border/40"
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+      >
+        {currentUrl ? (
+          <img src={currentUrl} alt={service.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 space-y-3">
+            <ImageIcon className="h-12 w-12" />
+            <span className="text-[10px] uppercase font-black tracking-widest">No Image Uploaded</span>
+            <Button variant="outline" size="sm" className="bg-white border-dashed text-[10px] font-bold h-7">
+              + UPLOAD PHOTO
+            </Button>
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-3 z-10">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Uploading...</span>
+          </div>
+        )}
+
+        {currentUrl && !isUploading && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <Button variant="secondary" size="sm" className="bg-white/90 text-[10px] font-bold shadow-lg">
+              REPLACE PHOTO
+            </Button>
+          </div>
+        )}
+
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/png, image/jpeg, image/webp"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onUpload(service.slug, file);
+          }}
+        />
+      </div>
+
+      <div className="p-5 space-y-4">
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-bold text-base text-[#1a1a1a] truncate">{service.name}</h3>
+            <div className={cn(
+              "text-[9px] uppercase font-black px-2 py-0.5 rounded-full tracking-tighter flex items-center gap-1.5",
+              currentStatus === "published" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-amber-50 text-amber-600 border border-amber-100"
+            )}>
+              <div className={cn("h-1.5 w-1.5 rounded-full", currentStatus === "published" ? "bg-emerald-500" : "bg-amber-500")} />
+              {currentStatus}
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-tighter">ID: {service.slug}</span>
+        </div>
+
+        <div className="flex items-center gap-3 pt-2 border-t border-border/30">
+          <div className="flex-1">
+            <Select value={currentStatus} onValueChange={(val: any) => onStatusChange(service.slug, val)}>
+              <SelectTrigger className="h-8 text-[11px] font-bold bg-[#fcfcfc] border-border/40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="published" className="text-[11px] font-medium">Published</SelectItem>
+                <SelectItem value="draft" className="text-[11px] font-medium">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+              {saved && !isDirty && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  if (window.confirm("Remove this image?")) onDelete(saved.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {isDirty && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-muted-foreground hover:bg-muted"
+                onClick={onCancelLocal}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+
+            <Button 
+              onClick={() => onSave(service.slug)}
+              disabled={!isDirty || isSaving}
+              size="sm"
+              className={cn(
+                "h-8 px-4 text-[11px] font-black tracking-tight rounded-lg",
+                isDirty ? "bg-[#ff6b00] hover:bg-[#e66000] text-white shadow-sm" : "bg-muted/50 text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              {isSaving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isDirty ? (
+                <><Save className="h-3 w-3 mr-2" /> PUBLISH</>
+              ) : (
+                <><Check className="h-3 w-3 mr-2" /> SAVED</>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 
