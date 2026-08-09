@@ -361,9 +361,9 @@ function CustomerHome() {
 
                 return {
                   id: img.id || `static-${idx}`,
-                  title: img.title || linkedService?.name || "Daily Shine",
-                  subtitle: img.subtitle || linkedService?.description || "Your car, clean every morning.",
-                  price: linkedService ? priceFor(linkedService) : priceFor(subscription || { price_hatchback: 1199, price_sedan_suv: 1199 } as any),
+                  title: "", // Empty to avoid overlaying title text
+                  subtitle: "", // Empty to avoid overlaying subtitle text
+                  price: 0, // 0 to avoid overlaying price text
                   image: finalImage,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
                   slideNumber: img.slide_number || idx + 1
