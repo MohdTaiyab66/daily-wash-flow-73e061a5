@@ -1,0 +1,1 @@
+DELETE FROM public.daily_shine_carousel;
