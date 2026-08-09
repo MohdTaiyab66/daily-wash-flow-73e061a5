@@ -272,7 +272,7 @@ function CustomerHome() {
         let imageUrl = img.image_url;
         if (imageUrl && !imageUrl.startsWith('http')) {
           const { data: urlData } = supabase.storage
-            .from('service-photography')
+            .from(img.bucket_name || 'service-photography')
             .getPublicUrl(imageUrl);
           imageUrl = urlData.publicUrl;
         }

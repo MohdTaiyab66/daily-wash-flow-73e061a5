@@ -21,7 +21,7 @@ export const listCarouselSlides = createServerFn({ method: "GET" })
       title?: string;
       subtitle?: string;
       service_slug?: string;
-      verification_status?: string;
+      bucket_name?: string;
     }>;
   });
 
@@ -35,17 +35,20 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
     title: z.string().optional(),
     subtitle: z.string().optional(),
     service_slug: z.string().optional(),
+    bucket_name: z.string().optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
+    const bucket = data.bucket_name || 'service-photography';
+    
     // VERIFICATION FLOW (Requirement 3)
-    console.log(`[UW_CAROUSEL_VERIFY] Verifying slide ${data.slide_number}: ${data.image_url}`);
+    console.log(`[UW_CAROUSEL_VERIFY] Verifying slide ${data.slide_number} in bucket ${bucket}: ${data.image_url}`);
     
     try {
       // 1. Verify storage object exists
       const { data: fileData, error: downloadError } = await (supabaseAdmin as any).storage
-        .from("service-photography") // Authoritative bucket
+        .from(bucket)
         .download(data.image_url);
         
       if (downloadError || !fileData) {
@@ -56,7 +59,7 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
       
       // 2. Generate and Verify Public URL
       const { data: urlData } = (supabaseAdmin as any).storage
-        .from("service-photography")
+        .from(bucket)
         .getPublicUrl(data.image_url);
         
       const publicUrl = urlData.publicUrl;
@@ -76,7 +79,6 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
       
     } catch (err: any) {
       console.error(`[UW_CAROUSEL_VERIFY] Verification FAILED for slide ${data.slide_number}`, err);
-      // Requirement 3: If any step fails: DO NOT publish.
       if (data.status === 'published') {
         throw new Error(`Image verification failed: ${err.message}. Please check if the bucket is public and the image exists.`);
       }
@@ -87,6 +89,7 @@ export const upsertCarouselSlide = createServerFn({ method: "POST" })
       .from("daily_shine_carousel")
       .upsert({
         ...data,
+        bucket_name: bucket,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'slide_number' })
       .select()
