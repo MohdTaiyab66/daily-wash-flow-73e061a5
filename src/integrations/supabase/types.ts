@@ -6458,7 +6458,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      fix_infra_v2: { Args: { b_id: string }; Returns: undefined }
       generate_daily_routes: { Args: { p_date?: string }; Returns: number }
       generate_services_for_queue: {
         Args: { p_queue_id: string }
