@@ -272,7 +272,7 @@ function CustomerHome() {
         let imageUrl = img.image_url;
         if (imageUrl && !imageUrl.startsWith('http')) {
           const { data: urlData } = supabase.storage
-            .from('daily-shine-carousel')
+            .from('service-photography')
             .getPublicUrl(imageUrl);
           imageUrl = urlData.publicUrl;
         }
