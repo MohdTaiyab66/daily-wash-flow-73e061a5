@@ -279,12 +279,21 @@ function CustomerHome() {
       return data as Array<{ service_slug: string; image_url: string }>;
     },
     staleTime: 60000, // Cache for 1 minute
+    refetchOnWindowFocus: true,
   });
 
   const getServiceImage = (slug: string) => {
     const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
     if (custom) return custom.image_url;
-    return undefined;
+    
+    // Static mapping for common services if not in DB
+    const mapping: Record<string, string> = {
+      "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
+      "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
+      "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
+      "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
+    };
+    return mapping[slug];
   };
 
 
