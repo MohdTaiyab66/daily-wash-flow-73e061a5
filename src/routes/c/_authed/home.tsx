@@ -350,10 +350,9 @@ function CustomerHome() {
           </Section>
 
           {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-          <div className="mt-[-4px]">
+          <div className="mt-[-8px]">
             <UWFeaturedCarousel 
               items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
-                const linkedService = services.find(s => s.slug === img.service_slug);
                 const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                 
                 let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
@@ -364,9 +363,9 @@ function CustomerHome() {
 
                 return {
                   id: img.id || `static-${idx}`,
-                  title: "", // Empty to avoid overlaying title text
-                  subtitle: "", // Empty to avoid overlaying subtitle text
-                  price: 0, // 0 to avoid overlaying price text
+                  title: "",
+                  subtitle: "",
+                  price: 0,
                   image: finalImage,
                   link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
                   slideNumber: img.slide_number || idx + 1
