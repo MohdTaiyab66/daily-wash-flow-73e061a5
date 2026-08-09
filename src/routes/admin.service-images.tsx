@@ -104,9 +104,8 @@ function ServiceImagesAdminPage() {
 
   const imageMap = useMemo(() => {
     const map = new Map();
-    // Deterministic: use latest record for each slug
     if (images && Array.isArray(images)) {
-      // Sort images by updated_at desc just in case the server function didn't catch everything or for consistency
+      // Sort images by updated_at desc to ensure the map holds the latest record for each slug
       const sorted = [...images].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       sorted.forEach(img => {
         if (img && img.service_slug && !map.has(img.service_slug)) {

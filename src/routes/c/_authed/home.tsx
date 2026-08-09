@@ -278,7 +278,7 @@ function CustomerHome() {
         .order("updated_at", { ascending: false });
       
       if (error) {
-        console.error("[ServiceImages] Database query error:", error);
+        console.error("[ServiceImages] Customer Query Error:", error);
         throw error;
       }
       
@@ -300,7 +300,7 @@ function CustomerHome() {
         updated_at: meta.updatedAt
       }));
 
-      console.log("[ServiceImages] Resolved Unique Customer Images:", result);
+      console.log("[ServiceImages] Customer Resolved Map:", Object.fromEntries(uniqueImages));
       return result;
     },
     staleTime: 5000,
