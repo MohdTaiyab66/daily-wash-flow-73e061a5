@@ -11,10 +11,34 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X } from "lucide-react";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, ErrorInfo, Component } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[ServiceImages] UI Crash caught by boundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold text-destructive">Something went wrong in the Service Photography manager.</h2>
+          <Button className="mt-4" onClick={() => window.location.reload()}>Reload Page</Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export const Route = createFileRoute("/admin/service-images")({
   beforeLoad: async () => {
@@ -26,7 +50,11 @@ export const Route = createFileRoute("/admin/service-images")({
     });
     if (!isAdmin) throw new Error("Forbidden: Admin access required");
   },
-  component: ServiceImagesAdminPage,
+  component: () => (
+    <ErrorBoundary>
+      <ServiceImagesAdminPage />
+    </ErrorBoundary>
+  ),
 });
 
 function ServiceImagesAdminPage() {
@@ -76,26 +104,52 @@ function ServiceImagesAdminPage() {
 
   const handleUpload = async (slug: string, file: File) => {
     try {
+      console.log(`[ServiceImages] Starting upload for ${slug}...`);
       setUploading(prev => ({ ...prev, [slug]: true }));
       
-      const fileExt = file.name.split('.').pop();
+      if (!file.type.startsWith('image/')) {
+        throw new Error("Invalid file type. Please select an image.");
+      }
+
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${slug}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `services/${fileName}`;
+      const filePath = `${fileName}`; // Removed "services/" prefix to match bucket root RLS check if needed, but path usually starts after bucket name
 
-      const { data, error } = await supabase.storage
-        .from('service-photography')
-        .upload(filePath, file);
+      console.log(`[ServiceImages] Uploading to bucket 'service-photography' at path '${filePath}'`);
+      
+      let uploadResult;
+      try {
+        uploadResult = await supabase.storage
+          .from('service-photography')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+      } catch (err: any) {
+        console.error("[ServiceImages] Caught Promise Rejection during upload:", err);
+        throw new Error("Connection failed: " + (err.message || "Is the bucket missing?"));
+      }
 
-      if (error) throw error;
+      const { data, error } = uploadResult;
 
-      const { data: { publicUrl } } = supabase.storage
+      if (error) {
+        console.error("[ServiceImages] Supabase Storage Error details:", {
+          message: error.message,
+          name: error.name,
+          status: (error as any).status,
+          statusCode: (error as any).statusCode
+        });
+        throw error;
+      }
+
+      console.log("[ServiceImages] Upload successful, getting public URL...");
+      const { data: urlData } = supabase.storage
         .from('service-photography')
         .getPublicUrl(filePath);
+      
+      const publicUrl = urlData.publicUrl;
 
-      // Verify URL is valid (private buckets still return a signed or public URL depending on getPublicUrl,
-      // but if the bucket is private, we should use createSignedUrl if we want security.
-      // However, for simplicity and to match the 'marketplace' feel, we'll assume the URL works if RLS allows.
-      // If publicUrl is empty or fails, we'll catch it.
+      console.log(`[ServiceImages] Public URL generated: ${publicUrl}`);
 
       setLocalChanges(prev => ({
         ...prev,
@@ -104,7 +158,8 @@ function ServiceImagesAdminPage() {
       
       toast.success("Photo uploaded as draft");
     } catch (error: any) {
-      toast.error("Upload failed: " + error.message);
+      console.error("[ServiceImages] Fatal Upload Error:", error);
+      toast.error("Upload failed: " + (error.message || "Unknown error"));
     } finally {
       setUploading(prev => ({ ...prev, [slug]: false }));
     }
