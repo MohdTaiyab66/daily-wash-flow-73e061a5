@@ -1,1 +1,1 @@
-export const BUILD_VERSION = "SERVICE-PHOTO-FIX-04";
+export const BUILD_VERSION = "SERVICE-PHOTO-FIX-05";

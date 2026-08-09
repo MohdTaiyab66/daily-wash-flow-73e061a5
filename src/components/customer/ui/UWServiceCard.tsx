@@ -37,60 +37,17 @@ export function UWServiceCard({
     >
       <div className="relative aspect-[1.1/1] w-full bg-[#F8F9FB] overflow-hidden">
         {image ? (
-          <>
-            <img 
-              src={image} 
-              alt={name} 
-              data-slug={slug}
-              className={cn(
-                "h-full w-full object-cover transition-opacity duration-500",
-                loadStatus === 'success' ? "opacity-100" : "opacity-0"
-              )} 
-              onLoad={() => {
-                setLoadStatus('success');
-                console.log(`[UW_SERVICE_IMAGE] LOAD SUCCESS: ${slug} URL: ${image}`);
-              }}
-              onError={(e) => {
-                setLoadStatus('error');
-                console.error(`[UW_SERVICE_IMAGE] LOAD ERROR: ${slug} URL: ${image}`);
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-              }}
-            />
-            {/* Debug UI Overlay (Temporary) */}
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 p-2 text-center pointer-events-none">
-              <span className="text-[7px] font-mono text-white break-all leading-[1] opacity-60 mb-1">
-                {slug}
-              </span>
-              <div className="flex flex-col gap-1">
-                <span className={cn(
-                  "text-[8px] font-bold px-1.5 py-0.5 rounded",
-                  loadStatus === 'loading' ? "bg-yellow-500 text-black" : 
-                  loadStatus === 'success' ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                )}>
-                  {loadStatus.toUpperCase()}
-                </span>
-                
-                {loadStatus === 'error' && (
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.open(image, '_blank');
-                    }}
-                    className="pointer-events-auto bg-white/20 hover:bg-white/40 text-white text-[7px] py-1 px-2 rounded-md backdrop-blur-sm"
-                  >
-                    TEST URL
-                  </button>
-                )}
-              </div>
-              {loadStatus === 'error' && (
-                <span className="text-[6px] text-white/80 mt-1 font-mono break-all line-clamp-2">
-                  {image}
-                </span>
-              )}
-            </div>
-          </>
+          <img 
+            src={image} 
+            alt={name} 
+            data-slug={slug}
+            className={cn(
+              "h-full w-full object-cover transition-opacity duration-500",
+              loadStatus === 'success' ? "opacity-100" : "opacity-0"
+            )} 
+            onLoad={() => setLoadStatus('success')}
+            onError={() => setLoadStatus('error')}
+          />
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
