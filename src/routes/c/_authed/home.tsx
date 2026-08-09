@@ -19,6 +19,7 @@ import {
   Camera,
   Image as ImageIcon,
 } from "lucide-react";
+import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -268,61 +269,14 @@ function CustomerHome() {
     },
   });
 
-  const serviceImagesQ = useQuery({
-    queryKey: ["customer-service-images"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("service_images")
-        .select("id, service_slug, image_url, status, updated_at")
-        .eq("status", "published")
-        .order("updated_at", { ascending: false });
-      
-      if (error) {
-        console.error("[ServiceImages] Customer Query Error:", error);
-        throw error;
-      }
-      
-      const uniqueImages = new Map();
-      data?.forEach(img => {
-        if (!uniqueImages.has(img.service_slug)) {
-          uniqueImages.set(img.service_slug, {
-            url: img.image_url,
-            id: img.id,
-            updatedAt: img.updated_at
-          });
-        }
-      });
-      
-      const result = Array.from(uniqueImages.entries()).map(([service_slug, meta]) => ({
-        service_slug,
-        image_url: meta.url,
-        record_id: meta.id,
-        updated_at: meta.updatedAt
-      }));
+  const serviceImagesQ = useServiceImages();
 
-      console.log("[ServiceImages] Customer Resolved Map:", Object.fromEntries(uniqueImages));
-      return result;
-    },
-    staleTime: 5000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000,
-  });
-
-  const getServiceImage = (slug: string) => {
-    // 1. Try to find an Admin-published image for THIS exact slug
-    const custom = serviceImagesQ.data?.find(img => img.service_slug === slug);
-    if (custom) return custom.image_url;
-    
-    // 2. Fallback to static mapping ONLY if no custom image exists
-    const mapping: Record<string, string> = {
-      "one-time-wash-premium": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800",
-      "one-time-wash-basic": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=800",
-      "deep-clean": "https://images.unsplash.com/photo-1552933529-e359b2477262?auto=format&fit=crop&q=80&w=800",
-      "interior-deep-clean": "https://images.unsplash.com/photo-1599256621730-535171e28e50?auto=format&fit=crop&q=80&w=800",
-      "body-polish": "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&q=80&w=800",
-      "dusting": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800",
-    };
-    return mapping[slug];
+  const resolvedServiceImage = (slug: string) => {
+    const img = getServiceImage(slug, serviceImagesQ.data);
+    if (slug === 'body-polish') {
+      console.log(`[Home DEBUG] Body Polish RESOLVER: ${img}`);
+    }
+    return img;
   };
 
 
@@ -475,8 +429,8 @@ function CustomerHome() {
                   key={s.id}
                   name={s.name}
                   price={priceFor(s)}
-                  image={getServiceImage(s.slug)}
-                  slug={s.slug} // Pass slug for internal debugging if needed
+                  image={resolvedServiceImage(s.slug)}
+                  slug={s.slug}
                   badge={s.slug.includes('premium') ? 'Premium' : undefined}
                   onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
                 />
