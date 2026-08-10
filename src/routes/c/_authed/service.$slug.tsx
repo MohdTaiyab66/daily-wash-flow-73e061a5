@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
-import { ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, Car, ShieldCheck, CalendarClock, ChevronDown } from "lucide-react";
+import { ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, Car, ShieldCheck, CalendarClock, ChevronDown, Info } from "lucide-react";
 import { getServiceImage, useServiceImages } from "@/lib/service-image-resolver";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,9 @@ export const Route = createFileRoute("/c/_authed/service/$slug")({
   validateSearch: (search: Record<string, unknown>) => ({
     vehicleId: z.string().optional().parse(search.vehicleId),
   }),
-  head: () => ({ meta: [{ title: "Daily Shine Subscription — Urban Wash" }] }),
+  head: ({ params }) => ({ 
+    meta: [{ title: `${params.slug.replace(/-/g, ' ').toUpperCase()} — Urban Wash` }] 
+  }),
   component: ServiceDetail,
 });
 
@@ -26,13 +28,14 @@ type Service = {
   id: string;
   slug: string;
   name: string;
-  description: string;
+  description: string | null;
   price_hatchback: number;
   price_sedan_suv: number;
   service_type: string;
   includes_hatchback: string[] | null;
   includes_sedan_suv: string[] | null;
-  plan_benefits: string[] | null;
+  benefits: string[] | null;
+  addons: any;
 };
 
 type Vehicle = {
@@ -68,13 +71,14 @@ function ServiceDetail() {
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState(TIME_SLOTS[3]);
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
-  const [billExpanded, setBillExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showAllAddons, setShowAllAddons] = useState(false);
 
   const serviceQ = useQuery({
     queryKey: ["service", slug],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("service_catalog").select("*").eq("slug", slug).maybeSingle();
+      const { data, error } = await supabase.from("service_catalog").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw error;
       return data as Service | null;
     }
   });
@@ -82,7 +86,7 @@ function ServiceDetail() {
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("customer_vehicles").select("*");
+      const { data } = await supabase.from("customer_vehicles").select("*");
       return (data ?? []) as Vehicle[];
     }
   });
@@ -90,7 +94,7 @@ function ServiceDetail() {
   const addressesQ = useQuery({
     queryKey: ["customer-addresses"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("customer_addresses").select("*");
+      const { data } = await supabase.from("customer_addresses").select("*");
       return (data ?? []) as Address[];
     }
   });
@@ -98,8 +102,10 @@ function ServiceDetail() {
   const addonsQ = useQuery({
     queryKey: ["service-addons", slug],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("service_addons").select("*").eq("active", true);
-      return ((data ?? []) as Addon[]).filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
+      const { data } = await supabase.from("service_addons").select("*").eq("active", true);
+      const allAddons = (data ?? []) as Addon[];
+      // Filter based on applies_to_slugs if present
+      return allAddons.filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
     }
   });
 
@@ -125,6 +131,9 @@ function ServiceDetail() {
   const imagesQ = useServiceImages();
   const imageObj = getServiceImage(slug, imagesQ.data);
 
+  const isSubscription = service?.service_type === "subscription" || slug === "daily-shine";
+  const serviceTypeLabel = isSubscription ? "SUBSCRIPTION" : "ONE-TIME SERVICE";
+
   const confirm = async () => {
     if (!service || !vehicle) {
       toast.error("Please select a vehicle to continue");
@@ -139,9 +148,10 @@ function ServiceDetail() {
     setSubmitting(true);
 
     try {
-      const { data: bId, error } = await (supabase as any).rpc("confirm_customer_booking", {
+      const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
+        p_address_id: address?.id || "",
         p_scheduled_date: new Date().toISOString().slice(0, 10),
         p_scheduled_time: slot,
         p_addons: selectedAddons.map(a => ({ id: a.id, quantity: 1 })),
@@ -187,6 +197,25 @@ function ServiceDetail() {
     );
   }
 
+  if (!serviceQ.isLoading && !service) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-[#FFF9F3] px-6 text-center">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+          <Info className="h-8 w-8 text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-charcoal">Service Unavailable</h2>
+        <p className="text-muted-foreground mt-2 mb-6">The selected service could not be found or is currently inactive.</p>
+        <Button onClick={() => navigate({ to: "/c/home" })}>Go back to Home</Button>
+      </div>
+    );
+  }
+
+  const benefits = service?.benefits || (isSubscription ? ["Daily Exterior Cleaning", "Doorstep Service", "Scheduled Service", "Quality Assurance"] : ["Professional Care", "Doorstep Service", "Quality Check", "Service Proof"]);
+  const inclusions = isSUV ? service?.includes_sedan_suv : service?.includes_hatchback;
+  const description = service?.description || (isSubscription 
+    ? "Daily Shine is Urban Wash's recurring doorstep car-care service designed to keep your vehicle clean every working day."
+    : `Professional ${service?.name} service delivered at your doorstep for maximum convenience and quality.`);
+
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-40">
       {/* Header */}
@@ -196,13 +225,15 @@ function ServiceDetail() {
             <ArrowLeft className="h-6 w-6" />
           </button>
           <div>
-            <div className="font-bold text-[14px] leading-none">DAILY SHINE</div>
-            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">Subscription details</div>
+            <div className="font-bold text-[14px] leading-none uppercase">{service?.name}</div>
+            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+              {isSubscription ? "Subscription Details" : "Service Details"}
+            </div>
           </div>
         </div>
         <div className="bg-white/60 px-3 py-1.5 rounded-full border border-black/[0.05] shadow-sm flex items-center gap-2">
           <Car className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[12px] font-black">{vehicle?.nickname || vehicle?.model || "Vehicle"} ▾</span>
+          <span className="text-[12px] font-black max-w-[80px] truncate">{vehicle?.nickname || vehicle?.model || "Vehicle"} ▾</span>
         </div>
       </header>
 
@@ -220,8 +251,8 @@ function ServiceDetail() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 text-white">
               <div className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/20 inline-block mb-1.5">PROFESSIONAL CARE</div>
-              <h2 className="text-2xl font-black leading-tight">DAILY SHINE<br/>SUBSCRIPTION</h2>
-              <p className="text-[12px] font-bold opacity-90 mt-1">A cleaner car, every single day.</p>
+              <h2 className="text-2xl font-black leading-tight uppercase">{service.name}</h2>
+              <p className="text-[12px] font-bold opacity-90 mt-1">{isSubscription ? "A cleaner car, every single day." : "Quality doorstep car care."}</p>
             </div>
           </div>
 
@@ -229,48 +260,54 @@ function ServiceDetail() {
           <Surface className="p-5 rounded-[24px] bg-white border-0 shadow-sm">
             <div className="flex justify-between items-start">
               <div>
-                <div className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Daily Shine Subscription</div>
-                <div className="text-3xl font-black text-primary mt-1">₹{basePrice}<span className="text-[14px] font-bold text-muted-foreground ml-1">/ month</span></div>
+                <div className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{service.name}</div>
+                <div className="text-3xl font-black text-primary mt-1">
+                  ₹{basePrice}
+                  {isSubscription && <span className="text-[14px] font-bold text-muted-foreground ml-1">/ month</span>}
+                  {!isSubscription && <span className="text-[14px] font-bold text-muted-foreground ml-1 uppercase"> One-Time</span>}
+                </div>
               </div>
-              <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase">Premium</div>
+              {service.slug.includes('premium') && (
+                <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase">Premium</div>
+              )}
             </div>
           </Surface>
 
-          {/* What is Daily Shine */}
-          <Section title="What is Daily Shine?">
-            <p className="text-[14px] font-bold text-charcoal/80 leading-relaxed">Daily Shine is Urban Wash's recurring doorstep car-care service designed to keep your vehicle clean every working day without the hassle of booking every wash separately.</p>
+          {/* Service Overview */}
+          <Section title="Service Overview">
+            <p className="text-[14px] font-bold text-charcoal/80 leading-relaxed">{description}</p>
           </Section>
 
           {/* Benefits */}
-          <Section title="Your Daily Shine Benefits">
+          <Section title={isSubscription ? "Your Daily Shine Benefits" : "Service Benefits"}>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: Sparkles, label: "Daily Exterior Cleaning" },
-                { icon: MapPin, label: "Doorstep Service" },
-                { icon: CalendarClock, label: "Scheduled Service" },
-                { icon: ShieldCheck, label: "Quality Assurance" }
-              ].map(b => (
-                <Surface key={b.label} className="p-4 flex flex-col gap-2 bg-white">
-                  <b.icon className="h-6 w-6 text-primary" />
-                  <div className="text-[12px] font-black leading-tight">{b.label}</div>
-                </Surface>
-              ))}
+              {benefits.map((bLabel, idx) => {
+                const Icon = [Sparkles, MapPin, CalendarClock, ShieldCheck][idx % 4] || Sparkles;
+                return (
+                  <Surface key={bLabel} className="p-4 flex flex-col gap-2 bg-white">
+                    <Icon className="h-6 w-6 text-primary" />
+                    <div className="text-[12px] font-black leading-tight">{bLabel}</div>
+                  </Surface>
+                );
+              })}
             </div>
           </Section>
 
           {/* Included */}
-          <Section title="What's included">
-            <Surface className="p-5 bg-white space-y-4">
-              {(isSUV ? service.includes_sedan_suv : service.includes_hatchback)?.map((item: string) => (
-                <div key={item} className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-success" />
+          {inclusions && inclusions.length > 0 && (
+            <Section title="What's included">
+              <Surface className="p-5 bg-white space-y-4">
+                {inclusions.map((item: string) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                      <Check className="h-3.5 w-3.5 text-success" />
+                    </div>
+                    <span className="text-[14px] font-bold">{item}</span>
                   </div>
-                  <span className="text-[14px] font-bold">{item}</span>
-                </div>
-              ))}
-            </Surface>
-          </Section>
+                ))}
+              </Surface>
+            </Section>
+          )}
 
           {/* Location */}
           <Section title="Service Location">
@@ -284,8 +321,12 @@ function ServiceDetail() {
           </Section>
 
           {/* Schedule */}
-          <Section title="Choose a schedule">
-            <div className="text-[13px] font-bold text-muted-foreground mb-3">Choose the time window that works best for your vehicle.</div>
+          <Section title={isSubscription ? "Choose your schedule" : "Choose a time"}>
+            <div className="text-[13px] font-bold text-muted-foreground mb-3">
+              {isSubscription 
+                ? "Choose the time window that works best for your recurring service."
+                : "Choose your preferred time for the service."}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {TIME_SLOTS.map(s => (
                 <button 
@@ -303,28 +344,65 @@ function ServiceDetail() {
           </Section>
 
           {/* Add-ons */}
-          <Section title="Premium Add-ons">
-            <div className="space-y-3">
-              {addonsQ.data?.slice(0, 3).map(a => {
-                const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
-                const isSelected = !!addonQty[a.id];
-                return (
-                  <Surface key={a.id} className="flex justify-between items-center p-4">
-                     <div>
-                       <div className="font-bold text-[14px]">{a.name}</div>
-                       <div className="text-[12px] font-black text-primary mt-0.5">₹{price}</div>
-                     </div>
-                     <Button 
-                       onClick={() => setAddonQty(p => ({...p, [a.id]: isSelected ? 0 : 1}))}
-                       className={cn("h-8 rounded-full px-4 text-[11px] font-black", isSelected ? "bg-success" : "bg-primary")}
-                     >
-                       {isSelected ? "ADDED" : "+ ADD"}
-                     </Button>
-                  </Surface>
-                );
-              })}
-            </div>
-            <button className="w-full mt-3 text-[12px] font-bold text-primary uppercase underline">View all add-ons</button>
+          {addonsQ.data && addonsQ.data.length > 0 && (
+            <Section title="Premium Add-ons">
+              <div className="space-y-3">
+                {(showAllAddons ? addonsQ.data : addonsQ.data.slice(0, 3)).map(a => {
+                  const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                  const isSelected = !!addonQty[a.id];
+                  return (
+                    <Surface key={a.id} className="flex justify-between items-center p-4">
+                       <div>
+                         <div className="font-bold text-[14px]">{a.name}</div>
+                         <div className="text-[12px] font-black text-primary mt-0.5">₹{price}</div>
+                       </div>
+                       <Button 
+                         onClick={() => setAddonQty(p => ({...p, [a.id]: isSelected ? 0 : 1}))}
+                         className={cn("h-8 rounded-full px-4 text-[11px] font-black", isSelected ? "bg-success" : "bg-primary")}
+                       >
+                         {isSelected ? "ADDED" : "+ ADD"}
+                       </Button>
+                    </Surface>
+                  );
+                })}
+              </div>
+              {addonsQ.data.length > 3 && !showAllAddons && (
+                <button 
+                  onClick={() => setShowAllAddons(true)}
+                  className="w-full mt-3 text-[12px] font-bold text-primary uppercase underline"
+                >
+                  View all add-ons
+                </button>
+              )}
+            </Section>
+          )}
+
+          {/* Bill Details */}
+          <Section title="Bill Details">
+            <Surface className="p-5 bg-white space-y-3">
+              <div className="flex justify-between items-center text-[14px]">
+                <span className="font-bold text-muted-foreground">{isSubscription ? "Monthly Subscription" : "Service Amount"}</span>
+                <span className="font-black">₹{basePrice}</span>
+              </div>
+              
+              {selectedAddons.length > 0 && (
+                <>
+                  {selectedAddons.map(a => (
+                    <div key={a.id} className="flex justify-between items-center text-[14px]">
+                      <span className="font-bold text-muted-foreground">{a.name}</span>
+                      <span className="font-black">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div className="h-px bg-black/[0.05] my-2" />
+              
+              <div className="flex justify-between items-center">
+                <span className="text-[15px] font-black uppercase">Total Payable</span>
+                <span className="text-[20px] font-black text-primary">₹{totalPayable}</span>
+              </div>
+            </Surface>
           </Section>
         </div>
       )}

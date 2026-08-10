@@ -99,7 +99,6 @@ import { Route as ApiPublicAdminTrialVerifyRouteImport } from './routes/api/publ
 import { Route as ApiPublicAdminTrialSeedRouteImport } from './routes/api/public/admin/trial-seed'
 import { Route as ApiPublicAdminTrialCleanupRouteImport } from './routes/api/public/admin/trial-cleanup'
 import { Route as AuthenticatedAppServiceIdRouteImport } from './routes/_authenticated/app.service.$id'
-import { Route as CAuthedServiceRouteImport } from './routes/c/_authed/service.'
 import { Route as CAuthedVehiclesIdPhotoRouteImport } from './routes/c/_authed/vehicles_.$id.photo'
 
 const TrustRoute = TrustRouteImport.update({
@@ -573,11 +572,6 @@ const AuthenticatedAppServiceIdRoute =
     path: '/service/$id',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const CAuthedServiceRoute = CAuthedServiceRouteImport.update({
-  id: '/service/',
-  path: '/service/',
-  getParentRoute: () => CAuthedRouteRoute,
-} as any)
 const CAuthedVehiclesIdPhotoRoute = CAuthedVehiclesIdPhotoRouteImport.update({
   id: '/photo',
   path: '/photo',
@@ -656,7 +650,6 @@ export interface FileRoutesByFullPath {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
-  '/c/service/': typeof CAuthedServiceRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -746,7 +739,6 @@ export interface FileRoutesByTo {
   '/c/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
-  '/c/service': typeof CAuthedServiceRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -841,7 +833,6 @@ export interface FileRoutesById {
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
-  '/c/_authed/service/': typeof CAuthedServiceRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
   '/api/public/admin/trial-cleanup': typeof ApiPublicAdminTrialCleanupRoute
   '/api/public/admin/trial-seed': typeof ApiPublicAdminTrialSeedRoute
@@ -936,7 +927,6 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app/'
-    | '/c/service/'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -1026,7 +1016,6 @@ export interface FileRouteTypes {
     | '/c/vehicles'
     | '/c/location/search'
     | '/app'
-    | '/c/service'
     | '/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -1120,7 +1109,6 @@ export interface FileRouteTypes {
     | '/c/_authed/vehicles'
     | '/c/location/search'
     | '/_authenticated/app/'
-    | '/c/_authed/service/'
     | '/_authenticated/app/service/$id'
     | '/api/public/admin/trial-cleanup'
     | '/api/public/admin/trial-seed'
@@ -1801,13 +1789,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppServiceIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/c/_authed/service/': {
-      id: '/c/_authed/service/'
-      path: '/service'
-      fullPath: '/c/service/'
-      preLoaderRoute: typeof CAuthedServiceRouteImport
-      parentRoute: typeof CAuthedRouteRoute
-    }
     '/c/_authed/vehicles_/$id/photo': {
       id: '/c/_authed/vehicles_/$id/photo'
       path: '/photo'
@@ -2001,7 +1982,6 @@ interface CAuthedRouteRouteChildren {
   CAuthedReferralsRoute: typeof CAuthedReferralsRoute
   CAuthedSubscriptionsRoute: typeof CAuthedSubscriptionsRoute
   CAuthedVehiclesRoute: typeof CAuthedVehiclesRoute
-  CAuthedServiceRoute: typeof CAuthedServiceRoute
   CAuthedServiceSlugRoute: typeof CAuthedServiceSlugRoute
   CAuthedVehiclesIdRoute: typeof CAuthedVehiclesIdRouteWithChildren
   CAuthedVehiclesAddRoute: typeof CAuthedVehiclesAddRoute
@@ -2016,7 +1996,6 @@ const CAuthedRouteRouteChildren: CAuthedRouteRouteChildren = {
   CAuthedReferralsRoute: CAuthedReferralsRoute,
   CAuthedSubscriptionsRoute: CAuthedSubscriptionsRoute,
   CAuthedVehiclesRoute: CAuthedVehiclesRoute,
-  CAuthedServiceRoute: CAuthedServiceRoute,
   CAuthedServiceSlugRoute: CAuthedServiceSlugRoute,
   CAuthedVehiclesIdRoute: CAuthedVehiclesIdRouteWithChildren,
   CAuthedVehiclesAddRoute: CAuthedVehiclesAddRoute,
