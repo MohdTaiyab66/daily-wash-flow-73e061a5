@@ -149,7 +149,7 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[68px]">
+        <div className="pt-[58px]">
           <div className="px-4">
             <div className="mt-[18px]">
               <UWFeaturedCarousel 
