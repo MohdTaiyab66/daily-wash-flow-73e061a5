@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, 
   Car, ShieldCheck, CalendarClock, ChevronDown, Info,
@@ -10,7 +10,12 @@ import {
   CheckCircle2,
   X,
   Plus,
-  Minus
+  Minus,
+  Droplets,
+  ZapIcon,
+  Wind,
+  Shield,
+  Search
 } from "lucide-react";
 import { getServiceImage, useServiceImages } from "@/lib/service-image-resolver";
 import { z } from "zod";
@@ -28,6 +33,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import useEmblaCarousel from 'embla-carousel-react';
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -52,6 +58,9 @@ type Service = {
   includes_sedan_suv: string[] | null;
   benefits: string[] | null;
   addons: any;
+  gallery_images: string[] | null;
+  inclusions_json: Array<{ label: string; icon: string }> | null;
+  benefits_json: Array<{ title: string; desc: string }> | null;
 };
 
 type Vehicle = {
@@ -88,11 +97,25 @@ function ServiceDetail() {
   const search = Route.useSearch();
   
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
-  const [slot, setSlot] = useState(TIME_SLOTS[3]);
+  const [slot, setSlot] = useState("");
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
   const [showVehicleDrawer, setShowVehicleDrawer] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, skipSnaps: false });
+
+  const onSelect = useCallback((emblaApi: any) => {
+    setCurrentPhotoIndex(emblaApi.selectedScrollSnap());
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect(emblaApi);
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+  }, [emblaApi, onSelect]);
 
   useEffect(() => {
     if (!vehicleId) {
@@ -148,8 +171,10 @@ function ServiceDetail() {
   
   const allAddons = addonsQ.data ?? [];
   const relevantAddons = useMemo(() => {
+    if (!service) return [];
+    // If it's daily shine, maybe limit add-ons or show specific ones
     return allAddons.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
-  }, [allAddons, slug]);
+  }, [allAddons, slug, service]);
 
   const selectedAddons = useMemo(() => {
     return relevantAddons.filter(a => addonQty[a.id] > 0);
@@ -159,7 +184,15 @@ function ServiceDetail() {
   const totalPayable = basePrice + addonTotal;
 
   const imagesQ = useServiceImages();
-  const imageObj = getServiceImage(slug, imagesQ.data);
+  
+  // Gallery Logic
+  const galleryImages = useMemo(() => {
+    if (service?.gallery_images && service.gallery_images.length > 0) {
+      return service.gallery_images;
+    }
+    const fallback = getServiceImage(slug, imagesQ.data).url;
+    return fallback ? [fallback] : [];
+  }, [service, slug, imagesQ.data]);
 
   const isSubscription = service?.service_type === "subscription" || slug === "daily-shine";
 
@@ -176,6 +209,12 @@ function ServiceDetail() {
     if (!activeAddress) {
       toast.error("Please set a service location");
       navigate({ to: "/c/location/search" });
+      return;
+    }
+    if (!slot) {
+      toast.error("Please select a time slot");
+      // Scroll to time slot section
+      document.getElementById('time-slots')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
     
@@ -269,7 +308,7 @@ function ServiceDetail() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-32">
-      <header className="sticky top-0 z-50 bg-[#FAF9F7]/80 backdrop-blur-md px-4 py-4 flex items-center gap-4 border-b border-black/[0.03]">
+      <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-4 py-4 flex items-center gap-4 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-1 active:scale-90 transition-transform">
           <ArrowLeft className="h-6 w-6 text-charcoal" />
         </button>
@@ -288,7 +327,7 @@ function ServiceDetail() {
           className="bg-white px-3 py-2 rounded-2xl border border-black/[0.04] shadow-sm flex items-center gap-2 shrink-0 active:scale-95 transition-transform"
         >
           <div className="w-5 h-5 flex items-center justify-center">
-            <Car className="h-4 w-4 text-primary" />
+            <Car className="h-4 w-4 text-[#EA580C]" />
           </div>
           <span className="text-[13px] font-bold text-charcoal max-w-[80px] truncate">{vehicle?.model || "Select Vehicle"}</span>
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -296,77 +335,151 @@ function ServiceDetail() {
       </header>
 
       {service && (
-        <div className="px-4 space-y-6 pt-2 max-w-md mx-auto">
-          <div className="relative overflow-hidden rounded-[24px] aspect-[16/8] bg-white shadow-sm border border-black/[0.03]">
-             {imageObj.url ? (
-                <img src={imageObj.url} className="w-full h-full object-cover" alt={service.name} />
-              ) : (
-                <div className="w-full h-full bg-primary/5 flex items-center justify-center">
-                  <Sparkles className="h-10 w-10 text-primary/15" />
+        <div className="space-y-6 pt-4 max-w-md mx-auto">
+          {/* Photo Gallery */}
+          <div className="px-4">
+            <div className="relative group">
+              <div className="overflow-hidden rounded-[28px] shadow-xl bg-white aspect-[2/1] border border-black/[0.02]" ref={emblaRef}>
+                <div className="flex h-full">
+                  {galleryImages.length > 0 ? (
+                    galleryImages.map((img, i) => (
+                      <div key={i} className="flex-[0_0_100%] min-w-0 h-full relative">
+                        <img 
+                          src={img} 
+                          className="w-full h-full object-cover select-none" 
+                          alt={`${service.name} ${i + 1}`}
+                          loading={i === 0 ? "eager" : "lazy"}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center bg-primary/5">
+                      <Sparkles className="h-12 w-12 text-primary/20" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Pagination Dots */}
+              {galleryImages.length > 1 && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                  {galleryImages.map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "h-1.5 rounded-full transition-all duration-300",
+                        currentPhotoIndex === i ? "w-4 bg-[#EA580C]" : "w-1.5 bg-white/50"
+                      )}
+                    />
+                  ))}
                 </div>
               )}
-          </div>
-
-          <div className="bg-white p-5 rounded-[24px] border border-black/[0.04] shadow-sm flex justify-between items-center">
-            <div className="flex-1 pr-4">
-              <h1 className="text-[20px] font-bold text-charcoal leading-tight">
-                {service.name}
-              </h1>
-              <p className="text-[13px] text-muted-foreground mt-1">
-                {description}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="text-[24px] font-black text-[#EA580C]">
-                ₹{basePrice}
-              </div>
-              <div className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5 bg-black/[0.03] px-2 py-0.5 rounded-full inline-block">
-                {isSubscription ? "MONTHLY" : "ONE-TIME"}
-              </div>
             </div>
           </div>
 
-          {inclusions && inclusions.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-[15px] font-bold text-charcoal px-1">Service Includes</h2>
-              <div className="grid grid-cols-4 gap-2">
-                {inclusions.slice(0, 4).map((label, idx) => {
-                  const icons = ["🚿", "🛞", "🪟", "🧺", "🧼", "✨"];
+          <div className="px-4">
+            <div className="bg-white p-6 rounded-[28px] border border-black/[0.04] shadow-md flex justify-between items-start">
+              <div className="flex-1 pr-4">
+                <h1 className="text-[22px] font-black text-charcoal leading-tight">
+                  {service.name}
+                </h1>
+                <p className="text-[14px] text-muted-foreground mt-2 leading-relaxed">
+                  {description}
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest bg-black/[0.04] px-3 py-1 rounded-full">
+                    {isSubscription ? "MONTHLY" : "ONE-TIME"}
+                  </div>
+                  {isSubscription && (
+                     <div className="flex items-center gap-1 text-[11px] font-bold text-[#EA580C]">
+                       <ShieldCheck className="h-3 w-3" />
+                       Quality Guarantee
+                     </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-[28px] font-black text-[#EA580C] leading-none">
+                  ₹{basePrice}
+                </div>
+                <div className="text-[12px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-tighter">
+                  {isSubscription ? "per month" : "starting price"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Service Inclusions */}
+          <div className="space-y-4 px-4">
+            <h2 className="text-[16px] font-black text-charcoal px-1 flex items-center gap-2">
+              <Droplets className="h-4 w-4 text-[#EA580C]" />
+              SERVICE INCLUDES
+            </h2>
+            <div className="grid grid-cols-4 gap-3">
+              {(service.inclusions_json || []).length > 0 ? (
+                service.inclusions_json?.map((item, idx) => {
+                  const Icon = item.icon === 'exterior' ? ZapIcon : 
+                              item.icon === 'interior' ? Wind : 
+                              item.icon === 'tyre' ? Shield :
+                              item.icon === 'glass' ? Search : 
+                              item.icon === 'dashboard' ? Star : Droplets;
                   return (
-                    <div key={label} className="flex flex-col items-center gap-3 py-4 px-1 text-center bg-white/40 border border-black/[0.02] rounded-[20px]">
-                      <div className="text-[24px]">{icons[idx % icons.length]}</div>
-                      <div className="text-[10px] font-bold text-charcoal leading-tight max-w-[60px]">{label}</div>
+                    <div key={idx} className="flex flex-col items-center gap-3 py-5 px-1 text-center bg-white border border-black/[0.04] rounded-[24px] shadow-sm transition-transform active:scale-95">
+                      <div className="w-10 h-10 rounded-full bg-[#EA580C]/[0.05] flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-[#EA580C]" />
+                      </div>
+                      <div className="text-[11px] font-black text-charcoal leading-tight max-w-[65px]">{item.label}</div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              ) : (
+                // Fallback for services without JSON inclusions
+                inclusions?.map((label, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-3 py-5 px-1 text-center bg-white border border-black/[0.04] rounded-[24px] shadow-sm">
+                     <div className="w-10 h-10 rounded-full bg-[#EA580C]/[0.05] flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-[#EA580C]" />
+                      </div>
+                      <div className="text-[11px] font-black text-charcoal leading-tight max-w-[65px]">{label}</div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-
-          <div className="bg-white flex items-center gap-4 p-5 rounded-[24px] border border-black/[0.04] shadow-sm">
-            <div className="h-10 w-10 rounded-full bg-[#FFF1E6] flex items-center justify-center shrink-0">
-              <MapPin className="h-5 w-5 text-[#EA580C]" />
-            </div>
-            <div className="flex-grow min-w-0">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Service Location</div>
-              <div className="text-[15px] font-bold text-charcoal truncate mt-0.5">
-                {activeAddress ? `${activeAddress.label}: ${activeAddress.area}` : "No address set"}
-              </div>
-            </div>
-            <button 
-              onClick={() => navigate({ to: "/c/location/search" })}
-              className="text-[13px] font-bold text-[#EA580C] uppercase tracking-wide active:opacity-60"
-            >
-              Change
-            </button>
           </div>
 
-          <div className="space-y-3">
-            <div className="px-1">
-              <h2 className="text-[15px] font-bold text-charcoal">Choose a time</h2>
-              <p className="text-[12px] text-muted-foreground mt-0.5">Select your preferred time slot</p>
+          {/* Location Selection */}
+          <div className="px-4">
+            <div className="bg-white flex items-center gap-4 p-5 rounded-[28px] border border-black/[0.04] shadow-md relative overflow-hidden">
+              <div className="absolute left-0 top-0 w-1.5 h-full bg-[#EA580C]" />
+              <div className="h-12 w-12 rounded-2xl bg-[#FFF1E6] flex items-center justify-center shrink-0 shadow-inner">
+                <MapPin className="h-6 w-6 text-[#EA580C]" />
+              </div>
+              <div className="flex-grow min-w-0">
+                <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Service Location</div>
+                <div className="text-[16px] font-bold text-charcoal truncate mt-0.5">
+                  {activeAddress ? `${activeAddress.label}: ${activeAddress.area}` : "No address set"}
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate({ to: "/c/location/search" })}
+                className="text-[13px] font-black text-[#EA580C] uppercase tracking-widest active:opacity-60 bg-[#EA580C]/[0.08] px-4 py-2 rounded-xl"
+              >
+                Change
+              </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+          </div>
+
+          {/* Time Selection */}
+          <div className="space-y-4 px-4" id="time-slots">
+            <div className="px-1 flex items-end justify-between">
+              <div>
+                <h2 className="text-[16px] font-black text-charcoal flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-[#EA580C]" />
+                  CHOOSE A TIME
+                </h2>
+                <p className="text-[12px] text-muted-foreground mt-0.5">Select your preferred time slot</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               {TIME_SLOTS.map(s => {
                 const isSelected = slot === s;
                 return (
@@ -374,16 +487,16 @@ function ServiceDetail() {
                     key={s} 
                     onClick={() => setSlot(s)} 
                     className={cn(
-                      "py-4 px-2 rounded-full border text-[12px] font-bold transition-all relative active:scale-95",
+                      "py-5 px-2 rounded-[24px] border-2 text-[12px] font-black transition-all relative active:scale-95 shadow-sm",
                       isSelected 
-                        ? "border-[#EA580C] bg-[#EA580C]/[0.02] text-[#EA580C]" 
+                        ? "border-[#EA580C] bg-[#FFF8F4] text-[#EA580C]" 
                         : "border-black/[0.03] bg-white text-charcoal/80"
                     )}
                   >
                     {s}
                     {isSelected && (
-                      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-4 h-4 rounded-full bg-[#EA580C] flex items-center justify-center border-2 border-[#FAF9F7]">
-                        <Check className="h-2 w-2 text-white" strokeWidth={4} />
+                      <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#EA580C] flex items-center justify-center border-2 border-white shadow-md">
+                        <Check className="h-3 w-3 text-white" strokeWidth={5} />
                       </div>
                     )}
                   </button>
@@ -392,22 +505,26 @@ function ServiceDetail() {
             </div>
           </div>
 
+          {/* Add-ons Section */}
           {relevantAddons.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 px-4">
               <div className="flex justify-between items-end px-1">
                 <div>
-                  <h2 className="text-[15px] font-bold text-charcoal">Premium Add-ons</h2>
+                  <h2 className="text-[16px] font-black text-charcoal flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-[#EA580C]" />
+                    PREMIUM ADD-ONS
+                  </h2>
                   <p className="text-[12px] text-muted-foreground mt-0.5">Enhance your wash experience</p>
                 </div>
                 <button 
                   onClick={() => setShowAddonDrawer(true)}
-                  className="text-[12px] font-bold text-[#EA580C] active:opacity-60"
+                  className="text-[13px] font-black text-[#EA580C] active:opacity-60 uppercase tracking-widest"
                 >
                   View all
                 </button>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {relevantAddons.slice(0, 3).map(a => {
                   const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                   const isSelected = !!addonQty[a.id];
@@ -416,24 +533,27 @@ function ServiceDetail() {
                       key={a.id} 
                       onClick={() => handleAddonToggle(a.id)}
                       className={cn(
-                        "flex items-center gap-4 p-4 rounded-[22px] border transition-all active:scale-[0.98] cursor-pointer",
+                        "flex items-center gap-4 p-5 rounded-[28px] border-2 transition-all active:scale-[0.98] cursor-pointer shadow-sm",
                         isSelected 
-                          ? "bg-[#FFF8F4] border-[#EA580C]/20 shadow-sm" 
-                          : "bg-white border-black/[0.04] shadow-sm"
+                          ? "bg-[#FFF8F4] border-[#EA580C]/40 shadow-md" 
+                          : "bg-white border-black/[0.04]"
                       )}
                     >
-                       <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0 text-lg">
-                         {a.name.includes("Roof") ? "🚿" : a.name.includes("Seat") ? "💺" : "✨"}
+                       <div className="w-14 h-14 rounded-[20px] bg-black/[0.02] flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                         {a.name.includes("Interior") ? <Wind className="h-6 w-6 text-[#EA580C]" /> : 
+                          a.name.includes("Roof") ? <Droplets className="h-6 w-6 text-[#EA580C]" /> : 
+                          a.name.includes("Seat") ? <Car className="h-6 w-6 text-[#EA580C]" /> : 
+                          <Sparkles className="h-6 w-6 text-[#EA580C]" />}
                        </div>
                        <div className="flex-1 min-w-0">
-                         <div className="font-bold text-[14px] text-charcoal">{a.name}</div>
-                         <div className="text-[12px] font-black text-[#EA580C] mt-0.5">₹{price}</div>
+                         <div className="font-black text-[16px] text-charcoal leading-tight">{a.name}</div>
+                         <div className="text-[16px] font-black text-[#EA580C] mt-1">₹{price}</div>
                        </div>
                        <div className={cn(
-                         "h-5 w-5 rounded-md border flex items-center justify-center transition-colors",
-                         isSelected ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10 bg-white"
+                         "h-7 w-7 rounded-xl border-2 flex items-center justify-center transition-all",
+                         isSelected ? "bg-[#EA580C] border-[#EA580C] shadow-lg shadow-[#EA580C]/20" : "border-black/10 bg-white"
                        )}>
-                         {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={4} />}
+                         {isSelected && <Check className="h-4 w-4 text-white" strokeWidth={5} />}
                        </div>
                     </div>
                   );
@@ -442,66 +562,71 @@ function ServiceDetail() {
             </div>
           )}
 
-          <div className="space-y-4">
-            <h2 className="text-[15px] font-bold text-charcoal px-1">Bill Details</h2>
-            <div className="bg-white p-6 rounded-[24px] border border-black/[0.04] shadow-sm space-y-4">
+          {/* Bill Details */}
+          <div className="space-y-4 px-4">
+            <h2 className="text-[16px] font-black text-charcoal px-1 flex items-center gap-2">
+              <ZapIcon className="h-4 w-4 text-[#EA580C]" />
+              BILL DETAILS
+            </h2>
+            <div className="bg-white p-7 rounded-[32px] border border-black/[0.04] shadow-lg space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[13px] text-muted-foreground font-medium">Service Amount</span>
-                <span className="text-[13px] font-bold text-charcoal">₹{basePrice}</span>
+                <span className="text-[14px] text-muted-foreground font-bold">Service Amount</span>
+                <span className="text-[14px] font-black text-charcoal">₹{basePrice}</span>
               </div>
               
               {selectedAddons.map(a => (
                 <div key={a.id} className="flex justify-between items-center animate-in fade-in slide-in-from-top-1 duration-200">
-                  <span className="text-[13px] text-muted-foreground font-medium">{a.name}</span>
-                  <span className="text-[13px] font-bold text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
+                  <span className="text-[14px] text-muted-foreground font-bold">{a.name}</span>
+                  <span className="text-[14px] font-black text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
                 </div>
               ))}
 
-              <div className="h-px bg-black/[0.03]" />
+              <div className="h-px bg-black/[0.06] my-2" />
               
               <div className="flex justify-between items-center">
-                <span className="text-[15px] font-bold text-charcoal uppercase tracking-wide">Total Payable</span>
-                <span className="text-[20px] font-black text-[#EA580C]">₹{totalPayable}</span>
+                <span className="text-[17px] font-black text-charcoal uppercase tracking-widest">Total Payable</span>
+                <span className="text-[24px] font-black text-[#EA580C]">₹{totalPayable}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white p-5 pb-8 border-t border-black/[0.04] flex items-center justify-between safe-area-bottom shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+      {/* Sticky Payment Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-[80] bg-white p-6 pb-9 border-t border-black/[0.06] flex items-center justify-between safe-area-bottom shadow-[0_-12px_40px_rgba(0,0,0,0.08)]">
         <div>
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">TOTAL</div>
-          <div className="text-[22px] font-black text-charcoal">₹{totalPayable}</div>
+          <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">Total Amount</div>
+          <div className="text-[26px] font-black text-charcoal leading-none">₹{totalPayable}</div>
         </div>
         
         <Button 
           disabled={submitting}
           onClick={confirm}
-          className="h-[58px] px-8 rounded-[20px] bg-[#EA580C] hover:bg-[#D44D0B] text-white font-black text-[15px] uppercase tracking-wider flex items-center gap-3 shadow-lg shadow-[#EA580C]/20 transition-all active:scale-[0.98]"
+          className="h-[62px] px-10 rounded-[24px] bg-[#EA580C] hover:bg-[#D44D0B] text-white font-black text-[16px] uppercase tracking-[0.1em] flex items-center gap-3 shadow-xl shadow-[#EA580C]/30 transition-all active:scale-[0.96]"
         >
           {submitting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
             <>
-              Proceed to Pay
-              <ChevronRight className="h-5 w-5" />
+              PROCEED TO PAY
+              <ArrowLeft className="h-5 w-5 rotate-180" strokeWidth={3} />
             </>
           )}
         </Button>
       </div>
 
       <Drawer open={showAddonDrawer} onOpenChange={setShowAddonDrawer}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="border-b border-black/[0.03] pb-4">
-            <div className="flex items-center justify-between">
-              <DrawerTitle className="text-xl font-bold">Premium Add-ons</DrawerTitle>
-              <DrawerClose className="p-2 active:scale-90">
+        <DrawerContent className="max-h-[85vh] rounded-t-[40px]">
+          <DrawerHeader className="border-b border-black/[0.04] pb-6">
+            <div className="flex items-center justify-between px-2">
+              <DrawerTitle className="text-2xl font-black text-charcoal">Premium Add-ons</DrawerTitle>
+              <DrawerClose className="p-2 active:scale-90 bg-black/[0.03] rounded-full">
                 <X className="h-6 w-6 text-muted-foreground" />
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <ScrollArea className="h-full overflow-y-auto px-4 py-6">
-            <div className="space-y-3 pb-10">
+          <ScrollArea className="h-full overflow-y-auto px-6 py-6">
+            <div className="space-y-4 pb-20">
               {relevantAddons.map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 const isSelected = !!addonQty[a.id];
@@ -510,53 +635,56 @@ function ServiceDetail() {
                     key={a.id} 
                     onClick={() => handleAddonToggle(a.id)}
                     className={cn(
-                      "flex items-center gap-4 p-5 rounded-[24px] border transition-all active:scale-[0.98] cursor-pointer",
+                      "flex items-center gap-5 p-6 rounded-[32px] border-2 transition-all active:scale-[0.98] cursor-pointer",
                       isSelected 
-                        ? "bg-[#FFF8F4] border-[#EA580C]/20" 
-                        : "bg-white border-black/[0.04]"
+                        ? "bg-[#FFF8F4] border-[#EA580C]/40 shadow-md" 
+                        : "bg-white border-black/[0.04] shadow-sm"
                     )}
                   >
-                     <div className="w-12 h-12 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0 text-2xl">
-                       {a.name.includes("Roof") ? "🚿" : a.name.includes("Seat") ? "💺" : "✨"}
+                     <div className="w-16 h-16 rounded-[24px] bg-black/[0.02] flex items-center justify-center shrink-0 shadow-inner">
+                        {a.name.includes("Interior") ? <Wind className="h-7 w-7 text-[#EA580C]" /> : 
+                          a.name.includes("Roof") ? <Droplets className="h-7 w-7 text-[#EA580C]" /> : 
+                          a.name.includes("Seat") ? <Car className="h-7 w-7 text-[#EA580C]" /> : 
+                          <Sparkles className="h-7 w-7 text-[#EA580C]" />}
                      </div>
                      <div className="flex-1 min-w-0">
-                       <div className="font-bold text-[16px] text-charcoal">{a.name}</div>
-                       {a.description && <div className="text-[12px] text-muted-foreground mt-0.5 line-clamp-1">{a.description}</div>}
-                       <div className="text-[14px] font-black text-[#EA580C] mt-1">₹{price}</div>
+                       <div className="font-black text-[18px] text-charcoal">{a.name}</div>
+                       {a.description && <div className="text-[13px] text-muted-foreground font-medium mt-1 line-clamp-2 leading-tight">{a.description}</div>}
+                       <div className="text-[18px] font-black text-[#EA580C] mt-2">₹{price}</div>
                      </div>
                      <div className={cn(
-                       "h-6 w-6 rounded-lg border flex items-center justify-center transition-colors",
-                       isSelected ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10 bg-white"
+                       "h-8 w-8 rounded-2xl border-2 flex items-center justify-center transition-all",
+                       isSelected ? "bg-[#EA580C] border-[#EA580C] shadow-lg shadow-[#EA580C]/20" : "border-black/10 bg-white"
                      )}>
-                       {isSelected && <Check className="h-4 w-4 text-white" strokeWidth={4} />}
+                       {isSelected && <Check className="h-4 w-4 text-white" strokeWidth={5} />}
                      </div>
                   </div>
                 );
               })}
             </div>
           </ScrollArea>
-          <div className="p-5 border-t border-black/[0.03] bg-white">
+          <div className="p-8 border-t border-black/[0.04] bg-white">
             <Button 
               onClick={() => setShowAddonDrawer(false)}
-              className="w-full h-14 rounded-2xl bg-[#EA580C] text-white font-bold"
+              className="w-full h-16 rounded-[24px] bg-[#EA580C] text-white font-black text-[17px] tracking-widest uppercase shadow-xl shadow-[#EA580C]/20"
             >
-              Done
+              SAVE SELECTION
             </Button>
           </div>
         </DrawerContent>
       </Drawer>
 
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
-        <DrawerContent>
-          <DrawerHeader className="border-b border-black/[0.03] pb-4">
-            <div className="flex items-center justify-between">
-              <DrawerTitle className="text-xl font-bold">Select Vehicle</DrawerTitle>
-              <DrawerClose className="p-2">
+        <DrawerContent className="rounded-t-[40px]">
+          <DrawerHeader className="border-b border-black/[0.04] pb-6">
+            <div className="flex items-center justify-between px-2">
+              <DrawerTitle className="text-2xl font-black text-charcoal">Select Vehicle</DrawerTitle>
+              <DrawerClose className="p-2 bg-black/[0.03] rounded-full">
                 <X className="h-6 w-6 text-muted-foreground" />
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <div className="px-4 py-6 space-y-3 max-h-[60vh] overflow-y-auto">
+          <div className="px-6 py-8 space-y-4 max-h-[60vh] overflow-y-auto">
             {vehicles.map(v => {
               const isSelected = v.id === vehicleId;
               return (
@@ -564,20 +692,21 @@ function ServiceDetail() {
                   key={v.id}
                   onClick={() => handleVehicleChange(v.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-[22px] border transition-all active:scale-[0.98]",
-                    isSelected ? "bg-[#FFF8F4] border-[#EA580C]/20" : "bg-white border-black/[0.04]"
+                    "w-full flex items-center gap-5 p-6 rounded-[32px] border-2 transition-all active:scale-[0.98]",
+                    isSelected ? "bg-[#FFF8F4] border-[#EA580C]/40 shadow-md" : "bg-white border-black/[0.04] shadow-sm"
                   )}
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0">
-                    <Car className={cn("h-6 w-6", isSelected ? "text-[#EA580C]" : "text-muted-foreground/40")} />
+                  <div className="w-16 h-16 rounded-[24px] bg-black/[0.02] flex items-center justify-center shrink-0 shadow-inner">
+                    <Car className={cn("h-8 w-8", isSelected ? "text-[#EA580C]" : "text-muted-foreground/30")} />
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <div className="font-bold text-[16px] text-charcoal">{v.make} {v.model}</div>
-                    <div className="text-[12px] text-muted-foreground font-medium uppercase tracking-wider">{v.registration_number}</div>
+                    <div className="font-black text-[18px] text-charcoal leading-none">{v.make}</div>
+                    <div className="font-bold text-[16px] text-muted-foreground mt-1">{v.model}</div>
+                    <div className="text-[12px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-2 opacity-40">{v.registration_number}</div>
                   </div>
                   {isSelected && (
-                    <div className="h-6 w-6 rounded-full bg-[#EA580C] flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" strokeWidth={4} />
+                    <div className="h-8 w-8 rounded-full bg-[#EA580C] flex items-center justify-center shadow-lg shadow-[#EA580C]/20">
+                      <Check className="h-4 w-4 text-white" strokeWidth={5} />
                     </div>
                   )}
                 </button>
@@ -587,13 +716,13 @@ function ServiceDetail() {
             <Button 
               variant="outline"
               onClick={() => navigate({ to: "/c/vehicles/add" })}
-              className="w-full h-14 rounded-[22px] border-dashed border-2 flex items-center justify-center gap-2 mt-2"
+              className="w-full h-16 rounded-[32px] border-dashed border-2 flex items-center justify-center gap-3 mt-4 text-[16px] font-black tracking-widest uppercase text-muted-foreground/60"
             >
               <Plus className="h-5 w-5" />
               Add New Vehicle
             </Button>
           </div>
-          <div className="p-6"></div>
+          <div className="p-8"></div>
         </DrawerContent>
       </Drawer>
     </div>

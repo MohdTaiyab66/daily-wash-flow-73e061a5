@@ -3615,6 +3615,7 @@ export type Database = {
           description: string | null
           icon_url: string | null
           id: string
+          image_path: string | null
           name: string
           payment_mode: string
           price_hatchback: number
@@ -3629,6 +3630,7 @@ export type Database = {
           description?: string | null
           icon_url?: string | null
           id?: string
+          image_path?: string | null
           name: string
           payment_mode?: string
           price_hatchback?: number
@@ -3643,6 +3645,7 @@ export type Database = {
           description?: string | null
           icon_url?: string | null
           id?: string
+          image_path?: string | null
           name?: string
           payment_mode?: string
           price_hatchback?: number
@@ -3794,13 +3797,16 @@ export type Database = {
           addons: Json
           banner_url: string | null
           benefits: string[] | null
+          benefits_json: Json | null
           category: string
           created_at: string
           description: string | null
           duration_minutes: number | null
+          gallery_images: string[] | null
           id: string
           includes_hatchback: string[]
           includes_sedan_suv: string[]
+          inclusions_json: Json | null
           name: string
           payment_mode: string
           price_hatchback: number
@@ -3816,13 +3822,16 @@ export type Database = {
           addons?: Json
           banner_url?: string | null
           benefits?: string[] | null
+          benefits_json?: Json | null
           category?: string
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gallery_images?: string[] | null
           id?: string
           includes_hatchback?: string[]
           includes_sedan_suv?: string[]
+          inclusions_json?: Json | null
           name: string
           payment_mode?: string
           price_hatchback?: number
@@ -3838,13 +3847,16 @@ export type Database = {
           addons?: Json
           banner_url?: string | null
           benefits?: string[] | null
+          benefits_json?: Json | null
           category?: string
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gallery_images?: string[] | null
           id?: string
           includes_hatchback?: string[]
           includes_sedan_suv?: string[]
+          inclusions_json?: Json | null
           name?: string
           payment_mode?: string
           price_hatchback?: number
