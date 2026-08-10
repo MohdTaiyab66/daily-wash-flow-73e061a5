@@ -33,19 +33,19 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-black transition-all",
-                    active ? "text-foreground" : "text-muted-foreground/50"
+                    "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-semibold transition-all",
+                    active ? "text-[#2D2D2D]" : "text-[#7A7A7A]"
                   )}
                 >
                   <span
                     className={cn(
                       "grid h-8 w-14 place-items-center rounded-full transition-all duration-300",
-                      active ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(255,107,0,0.25)]" : "bg-transparent"
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.3)]" : "bg-transparent text-[#7A7A7A]"
                     )}
                   >
                     <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
                   </span>
-                  <span className={cn("tracking-tight uppercase text-[9px]", active ? "opacity-100" : "opacity-60")}>
+                  <span className={cn("tracking-[0.05em] uppercase text-[9px] font-[600]", active ? "opacity-100" : "opacity-80")}>
                     {n.label}
                   </span>
 

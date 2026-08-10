@@ -32,9 +32,9 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-[184px] bg-white transition-opacity duration-200 border-none rounded-[12px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-[175px] bg-white transition-opacity duration-200 border-none rounded-[16px] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)]", className)}
     >
-      <div className="relative aspect-[1/0.8] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px]">
+      <div className="relative aspect-[1/0.75] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[16px]">
         {image ? (
           <img 
             src={image} 
@@ -48,9 +48,9 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F3F5] text-muted-foreground/30">
-            <Car className="h-6 w-6 mb-1 opacity-20" />
-            <span className="text-[8px] font-black uppercase tracking-wider opacity-40">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F3F5] text-[#2D2D2D]/20">
+            <Car className="h-7 w-7 mb-1 opacity-20" />
+            <span className="text-[9px] font-[800] uppercase tracking-wider opacity-40">Coming soon</span>
           </div>
         )}
         
@@ -63,16 +63,16 @@ export function UWServiceCard({
         )}
       </div>
       
-      <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2">
-        <div className="h-[46px] flex items-center justify-center overflow-hidden px-1">
-          <h3 className="text-[12px] font-[600] leading-[1.2] text-[#2D2D2D] line-clamp-3 text-center">
+      <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2.5">
+        <div className="h-[36px] flex items-start justify-center overflow-hidden px-0.5">
+          <h3 className="text-[13px] font-[600] leading-[1.3] text-[#2D2D2D] line-clamp-2 text-center overflow-hidden">
             {name}
           </h3>
         </div>
         
         <div className="mt-auto flex items-center justify-between gap-1">
           <div className="flex items-baseline gap-1 overflow-hidden">
-            <span className="text-[13px] font-black text-[#FF6B00] truncate">₹{price}</span>
+            <span className="text-[15px] font-[700] text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
               <span className="text-[9px] font-medium text-muted-foreground/40 line-through truncate">
                 ₹{oldPrice}
@@ -88,7 +88,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] hover:bg-[#FFE5D9]"
+              "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] shadow-[0_2px_8px_-2px_rgba(255,107,0,0.2)]"
             )}
           >
             {isLoading ? (
