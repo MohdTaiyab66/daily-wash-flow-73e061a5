@@ -112,12 +112,36 @@ function GalleryEditor({ slug }: { slug: string }) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {items?.map((item) => (
-          <div key={item.id} className="relative group aspect-square rounded-2xl overflow-hidden border">
-            <img src={item.image_url} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Button variant="destructive" size="icon" onClick={() => deleteFn({ data: { id: item.id } }).then(() => qc.invalidateQueries({ queryKey: ["gallery", slug] }))}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+          <div key={item.id} className={cn("relative group aspect-square rounded-2xl overflow-hidden border-2 transition-all", item.is_hero ? "border-[#ff6b00]" : "border-border")}>
+            <img src={item.image_url} className="w-full h-full object-cover" alt="Gallery item" />
+            
+            {item.is_hero && (
+              <div className="absolute top-2 left-2 bg-[#ff6b00] text-white text-[8px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm">
+                HERO / COVER
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity gap-2">
+              <div className="flex gap-2">
+                {!item.is_hero && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="h-8 text-[10px] font-bold"
+                    onClick={() => upsertMutation.mutate({ ...item, is_hero: true })}
+                  >
+                    SET HERO
+                  </Button>
+                )}
+                <Button 
+                  variant="destructive" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => deleteFn({ data: { id: item.id } }).then(() => qc.invalidateQueries({ queryKey: ["gallery", slug] }))}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}
