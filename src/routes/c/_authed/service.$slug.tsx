@@ -24,16 +24,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
 
+const serviceSearchSchema = z.object({
+  vehicleId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    vehicleId: z.string().optional().parse(search.vehicleId),
-  }),
+  validateSearch: (search) => serviceSearchSchema.parse(search),
   head: ({ params }) => ({ 
     meta: [{ title: `${params.slug.replace(/-/g, ' ').toUpperCase()} — Urban Wash` }] 
   }),
   component: ServiceDetail,
 });
+
 
 type Service = {
   id: string;
