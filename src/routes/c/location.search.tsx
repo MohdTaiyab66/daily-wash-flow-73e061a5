@@ -12,6 +12,9 @@ import { reverseGeocode } from "@/lib/geo.functions";
 
 export const Route = createFileRoute("/c/location/search")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    returnTo: z.string().optional().parse(search.returnTo),
+  }),
   head: () => ({ meta: [{ title: "Search location — Urban Wash" }] }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
@@ -34,6 +37,7 @@ const BIAS_RADIUS_M = 40000;
 
 function LocationSearch() {
   const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const reverse = useServerFn(reverseGeocode);
   const [q, setQ] = useState("");
   const [locating, setLocating] = useState(false);
@@ -150,7 +154,11 @@ function LocationSearch() {
             : await supabase.from("customer_addresses").insert(payload);
         }
       } catch { /* non-fatal */ }
-      navigate({ to: "/c/home" });
+      if (searchParams.returnTo) {
+        window.location.href = searchParams.returnTo;
+      } else {
+        navigate({ to: "/c/home" });
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save that location");
     }
@@ -209,7 +217,13 @@ function LocationSearch() {
       {/* Header */}
       <div className="px-5 pt-8 pb-4 flex items-center gap-4">
         <button 
-           onClick={() => navigate({ to: "/c/location" })} 
+           onClick={() => {
+             if (searchParams.returnTo) {
+               window.location.href = searchParams.returnTo;
+             } else {
+               navigate({ to: "/c/location" });
+             }
+           }} 
            className="grid h-10 w-10 place-items-center rounded-2xl bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
         >
           <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />

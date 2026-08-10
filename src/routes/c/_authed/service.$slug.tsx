@@ -251,7 +251,16 @@ function ServiceDetail() {
         <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
           <div className="flex justify-between items-center gap-2">
             <span className="text-sm font-bold text-charcoal truncate flex-1">📍 {activeAddress?.label || "Home"}</span>
-            <Button variant="link" className="text-[#EA580C] p-0 h-auto font-bold text-xs shrink-0" onClick={() => navigate({ to: "/c/location/search" })}>CHANGE</Button>
+            <Button 
+              variant="link" 
+              className="text-[#EA580C] p-0 h-auto font-bold text-xs shrink-0" 
+              onClick={() => navigate({ 
+                to: "/c/location/search", 
+                search: { returnTo: window.location.pathname + window.location.search } 
+              })}
+            >
+              CHANGE
+            </Button>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4">
             {TIME_SLOTS.map(t => (
