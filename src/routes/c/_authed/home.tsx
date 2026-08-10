@@ -381,7 +381,7 @@ function CustomerHome() {
 
           <Section 
             title="Car care services"
-            className="mt-6"
+            className="mt-6 mb-2"
           >
             <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
               {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -503,11 +503,7 @@ function CustomerHome() {
           <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
         )}
 
-        <div className="mt-12 mb-8 px-6 text-center opacity-0 pointer-events-none">
-          <span className="text-[10px] font-medium text-muted-foreground/30 tracking-widest uppercase">
-            {BUILD_VERSION}
-          </span>
-        </div>
+        {/* Debug build text removed */}
       </div>
     </PullToRefresh>
   );
@@ -515,9 +511,11 @@ function CustomerHome() {
 
 function TrustItem({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <Check className="h-3.5 w-3.5 text-[#22C55E]" strokeWidth={3} />
-      <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 flex-1">
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+        <Check className="h-3 w-3" strokeWidth={4} />
+      </div>
+      <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-wider text-center">{label}</span>
     </div>
   );
 }
