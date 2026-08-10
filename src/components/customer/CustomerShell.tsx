@@ -39,8 +39,8 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                 >
                   <span
                     className={cn(
-                      "grid h-8 w-14 place-items-center rounded-full transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.3)]" : "bg-transparent text-[#9E9E9E]"
+                      "grid h-[44px] w-[52px] place-items-center rounded-full transition-all duration-300",
+                      active ? "bg-[#FF6B00] text-white" : "bg-transparent text-[#9E9E9E]"
                     )}
                   >
                     <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
