@@ -386,32 +386,34 @@ function CustomerHome() {
                 <TrustItem label="SAFE & SECURE" />
               </div>
             )}
-                
-                <Section className="pb-8 -mt-4">
-                  <Surface 
-                    className="relative overflow-hidden bg-[#FF6B00] border-none p-8 rounded-[24px] shadow-xl text-white"
-                    onClick={() => navigate({ to: "/c/service/daily-shine" })}
-                  >
-                    <div className="relative z-10 flex flex-col gap-1">
-                      <h3 className="text-[24px] font-black leading-tight tracking-tight">Your car.<br/>Cleaner every day.</h3>
-                      <p className="mt-2 text-[14px] font-medium text-white/90 leading-relaxed max-w-[200px]">
-                        Premium doorstep car care you can trust.
-                      </p>
-                      <div className="mt-6 flex items-center gap-2 font-black text-[15px] uppercase tracking-wider bg-white/20 w-fit px-4 py-2.5 rounded-full backdrop-blur-md">
-                        Explore Daily Shine
-                        <ChevronRight className="h-4 w-4" />
-                      </div>
-                    </div>
-                    {/* Abstract visual element */}
-                    <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[140%] bg-gradient-to-l from-white/20 to-transparent rotate-12 blur-3xl pointer-events-none" />
-                    <Sparkles className="absolute bottom-6 right-6 h-12 w-12 text-white/10" />
-                  </Surface>
-
-                  <div className="mt-12 mb-8 text-center px-6">
-                    <p className="text-[12px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em]">Urban Wash</p>
-                    <p className="mt-1 text-[11px] font-medium text-muted-foreground/20 italic">Designed for those who love their cars.</p>
+            <Section className="pb-4 mt-2">
+              <Surface 
+                className="relative overflow-hidden bg-[#FF6B00] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform"
+                onClick={() => navigate({ to: "/c/service/daily-shine" })}
+              >
+                <div className="relative z-10 flex flex-col items-start gap-1">
+                  <h3 className="text-[20px] font-black leading-[1.1] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
+                  <p className="mt-1.5 text-[12px] font-medium text-white/80 leading-snug max-w-[180px]">
+                    Premium doorstep car care you can trust.
+                  </p>
+                  <div className="mt-5 flex items-center gap-1.5 font-black text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-4 py-2 rounded-full shadow-md">
+                    Explore Daily Shine
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </div>
-                </Section>
+                </div>
+                
+                {/* Visual assets overlay */}
+                <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
+                  <Sparkles className="h-20 w-20 text-white" />
+                </div>
+                <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
+              </Surface>
+
+              <div className="mt-8 mb-4 text-center px-6">
+                <p className="text-[12px] font-black text-[#1A1A1A]/40 uppercase tracking-[0.2em]">URBAN WASH</p>
+                <p className="mt-1 text-[11px] font-bold text-[#1A1A1A]/20">Designed for those who love their cars.</p>
+              </div>
+            </Section>
 
 
                 {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
@@ -490,11 +492,11 @@ function CustomerHome() {
 
 function TrustItem({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 flex-1">
-      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-        <Check className="h-3 w-3" strokeWidth={4} />
+    <div className="flex flex-col items-center gap-2 flex-1">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm border border-[#FF6B00]/10">
+        <Check className="h-4 w-4 text-[#FF6B00]" strokeWidth={4} />
       </div>
-      <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-wider text-center">{label}</span>
+      <span className="text-[9px] font-black text-[#1A1A1A]/60 uppercase tracking-widest text-center">{label}</span>
     </div>
   );
 }
