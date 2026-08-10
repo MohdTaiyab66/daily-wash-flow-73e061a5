@@ -361,12 +361,12 @@ function ServiceDetail() {
               {relevantAddons.slice(0, 3).map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
-                  <div key={a.id} className="flex items-center justify-between gap-3">
+                  <div key={a.id} className="flex items-center justify-between gap-3 p-1">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
-                        <div className="text-[13px] font-bold text-[#1a1a1a] truncate">{a.name}</div>
-                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                        <div className="text-[13px] font-black text-[#1a1a1a] truncate">{a.name}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
                     <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
@@ -407,12 +407,12 @@ function ServiceDetail() {
               {relevantAddons.map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
-                  <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
+                  <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl border border-black/5">
                     <div className="flex items-center gap-3 min-w-0 mr-4">
-                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
-                        <div className="font-bold text-[13px] truncate">{a.name}</div>
-                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                        <div className="font-black text-[13px] truncate text-[#1a1a1a]">{a.name}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
                     <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
