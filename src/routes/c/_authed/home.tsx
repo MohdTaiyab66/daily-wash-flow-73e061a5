@@ -316,7 +316,7 @@ function CustomerHome() {
           <div className="space-y-4 mt-5">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-            <div className="mt-[-2px]">
+            <div className="mt-[-6px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
