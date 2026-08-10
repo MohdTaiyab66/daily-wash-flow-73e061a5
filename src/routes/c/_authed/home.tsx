@@ -219,8 +219,9 @@ function CustomerHome() {
 
             <Section 
               title={
-                <div className="space-y-1">
+                <div className="flex flex-col gap-1.5">
                   <h2 className="text-[28px] font-[700] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
+
                   <p className="text-[14px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
