@@ -162,6 +162,10 @@ function ServiceDetail() {
       toast.error("Please complete all selections.");
       return;
     }
+    if (totalPayable <= 0 && basePrice > 0) {
+      toast.error("Invalid price calculation. Please try again.");
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
