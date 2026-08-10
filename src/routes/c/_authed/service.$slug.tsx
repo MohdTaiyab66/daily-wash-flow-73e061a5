@@ -365,7 +365,6 @@ function ServiceDetail() {
       </Drawer>
 
 
-
       {/* Payment Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-black/[0.05] flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-[80] w-full box-border gap-4">
         <div className="flex flex-col min-w-0 flex-shrink">
@@ -380,6 +379,7 @@ function ServiceDetail() {
           {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
         </Button>
       </div>
+
 
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
         <DrawerContent className="max-h-[85vh]">
