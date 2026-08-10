@@ -14,7 +14,7 @@ export function UWHeader({
   children
 }: UWHeaderProps) {
   return (
-    <div className="relative z-20 px-5 pt-[env(safe-area-inset-top,12px)] bg-[#FFF9F3]">
+    <header className="relative z-20 px-5 pt-[env(safe-area-inset-top,24px)] bg-[#FFF9F3] border-b border-[#FF6B00]/5 shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
       <div className="flex flex-col">
         {/* Row 1: Location */}
         <div className="flex items-center pb-2">
@@ -30,14 +30,11 @@ export function UWHeader({
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="h-[1px] w-full bg-[#FF6B00]/5 mb-2" />
-
         {/* Row 2: Content (Vehicle Selector) */}
         <div className="pb-3">
           {children}
         </div>
       </div>
-    </div>
+    </header>
   );
 }

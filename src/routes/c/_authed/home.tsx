@@ -168,25 +168,24 @@ function CustomerHome() {
         {/* Sticky Compact Header (Overlay) - High performance fixed position */}
         <div 
           ref={compactHeaderRef}
-          className="fixed top-0 left-0 right-0 z-50 px-5 pt-[env(safe-area-inset-top,12px)] pb-2 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] opacity-0 translate-y-[-8px] transition-all duration-[220ms] ease-out pointer-events-none"
+          className="fixed top-0 left-0 right-0 z-[60] px-5 pt-[env(safe-area-inset-top,24px)] pb-3 bg-[#FFF9F3] shadow-[0_2px_12px_rgba(0,0,0,0.05)] border-b border-[#FF6B00]/10 opacity-0 translate-y-[-8px] transition-all duration-[220ms] ease-out pointer-events-none"
         >
-          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none" />
           {activeVehicle && (
             <div 
-              className="flex items-center gap-2 py-1 cursor-pointer"
+              className="flex items-center gap-2.5 py-0.5 cursor-pointer active:opacity-70"
               onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
             >
-              <div className="h-[36px] w-[36px] shrink-0 overflow-hidden rounded-[8px] bg-[#FF6B00]/5 border border-[#FF6B00]/10">
+              <div className="h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
                 <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-0.5" />
               </div>
-              <div className="min-w-0 flex-1 flex items-baseline gap-1.5">
-                <h2 className="truncate font-[650] text-[15px] text-[#2D2D2D] leading-tight">
+              <div className="min-w-0 flex-1 flex items-baseline gap-1.5 overflow-hidden">
+                <h2 className="truncate font-[650] text-[16px] text-[#2D2D2D] leading-tight shrink-0">
                   {activeVehicle.make} {activeVehicle.model}
                 </h2>
-                <p className="truncate font-[500] text-[13px] text-[#7A7A7A] leading-tight">
+                <span className="truncate font-[500] text-[14px] text-[#7A7A7A] leading-tight">
                   · {activeVehicle.registration_number} · {bodyLabel}
-                </p>
-                <ChevronDown className="text-[#7A7A7A]/40 ml-1 h-3.5 w-3.5" />
+                </span>
+                <ChevronDown className="text-[#7A7A7A]/40 shrink-0 h-3.5 w-3.5" />
               </div>
             </div>
           )}
@@ -200,23 +199,23 @@ function CustomerHome() {
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
             <div 
-              className="flex items-center gap-4 py-1.5 cursor-pointer active:opacity-80"
+              className="flex items-center gap-4 py-1 cursor-pointer active:opacity-80"
               onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
             >
-              <div className="relative shrink-0 h-[56px] w-[56px] overflow-hidden rounded-[11px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
-                <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-1" />
+              <div className="relative shrink-0 h-[64px] w-[64px] overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
+                <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-1.5" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex flex-col">
-                    <h2 className="truncate font-[650] tracking-tight text-[#2D2D2D] text-[21px] leading-tight">
+                    <h2 className="truncate font-[650] tracking-tight text-[#2D2D2D] text-[27px] leading-tight">
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
-                    <p className="truncate font-[500] text-[#7A7A7A] text-[15px] mt-0.5 leading-tight">
+                    <p className="truncate font-[500] text-[#7A7A7A] text-[18px] mt-0.5 leading-tight">
                       {activeVehicle.registration_number} · {bodyLabel}
                     </p>
                   </div>
-                  <ChevronDown className="text-[#7A7A7A]/40 ml-2 h-4 w-4" />
+                  <ChevronDown className="text-[#7A7A7A]/40 ml-2 h-5 w-5" />
                 </div>
               </div>
             </div>
@@ -262,15 +261,15 @@ function CustomerHome() {
                   <p className="text-[15px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[32px] mb-0"
+              className="mt-[40px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[14px]">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-5 h-[44px] flex items-center justify-center text-[14px] font-[600] transition-all duration-200",
+                      "whitespace-nowrap rounded-full px-5 h-[44px] flex items-center justify-center text-[14px] font-[600] transition-all duration-200 active:scale-95",
                       selectedCategory === cat ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" : "bg-white text-[#2D2D2D] border border-border/60 shadow-sm"
                     )}
                   >
@@ -279,7 +278,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2 gap-y-3 mt-4">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[26px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
