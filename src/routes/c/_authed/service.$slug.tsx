@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
-  ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide
+  ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide,
+  Plus, Minus, ShoppingCart
 } from "lucide-react";
 import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { z } from "zod";
@@ -21,17 +22,21 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
+import { useCartStore } from "@/lib/cart-store";
+
+const serviceSearchSchema = z.object({
+  vehicleId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    vehicleId: z.string().optional().parse(search.vehicleId),
-  }),
+  validateSearch: (search) => serviceSearchSchema.parse(search),
   head: ({ params }) => ({ 
     meta: [{ title: `${params.slug.replace(/-/g, ' ').toUpperCase()} — Urban Wash` }] 
   }),
   component: ServiceDetail,
 });
+
 
 type Service = {
   id: string;
@@ -79,11 +84,12 @@ function ServiceDetail() {
   
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState("");
-  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
-  const [showVehicleDrawer, setShowVehicleDrawer] = useState(false);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const { items: cartItems, updateQuantity, setBaseService } = useCartStore();
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
@@ -135,11 +141,21 @@ function ServiceDetail() {
   const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const isSUV = vehicle?.category === "sedan_suv";
-  const basePrice = service ? (isSUV ? service.price_sedan_suv : service.price_hatchback) : 0;
+  
+  // Initialize base service in cart when loaded
+  useEffect(() => {
+    if (service) {
+      const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
+      setBaseService(service.id, service.name, price);
+    }
+  }, [service, isSUV, setBaseService]);
+
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
-  const selectedAddons = useMemo(() => relevantAddons.filter(a => addonQty[a.id] > 0), [relevantAddons, addonQty]);
-  const addonTotal = selectedAddons.reduce((sum, a) => sum + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
-  const totalPayable = basePrice + addonTotal;
+  
+  const cartAddons = cartItems.filter(i => i.type === 'addon');
+  const totalPayable = useMemo(() => cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0), [cartItems]);
+  const totalItems = useMemo(() => cartItems.reduce((sum, i) => sum + i.quantity, 0), [cartItems]);
+
 
   const galleryQ = useServiceGallery(slug);
   const galleryImages = useMemo(() => {
@@ -160,7 +176,7 @@ function ServiceDetail() {
         p_address_id: activeAddress.id,
         p_scheduled_date: new Date().toISOString().slice(0, 10),
         p_scheduled_time: slot,
-        p_addons: selectedAddons.map(a => ({ id: a.id, quantity: 1 })),
+        p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
       if (error) throw error;
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
@@ -174,7 +190,51 @@ function ServiceDetail() {
     } finally { setSubmitting(false); }
   };
 
+  const getAddonQty = (id: string) => cartItems.find(i => i.id === id)?.quantity || 0;
+
+  const QuantityControl = ({ id, name, price, type }: { id: string, name: string, price: number, type: 'base' | 'addon' }) => {
+    const qty = getAddonQty(id);
+    
+    const handleDecrease = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateQuantity(id, Math.max(type === 'base' ? 1 : 0, qty - 1));
+    };
+
+    const handleIncrease = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (qty === 0) {
+        useCartStore.getState().addItem({ id, name, price, quantity: 1, type });
+      } else {
+        updateQuantity(id, qty + 1);
+      }
+    };
+
+    return (
+      <div className="flex items-center gap-3 bg-[#F1F2F3] rounded-full px-2 py-1 border border-black/5">
+        <button 
+          onClick={handleDecrease}
+          disabled={type === 'base' && qty <= 1}
+          className={cn(
+            "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90",
+            type === 'base' && qty <= 1 ? "text-black/10" : "text-[#1a1a1a] hover:bg-black/5"
+          )}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-[13px] font-black min-w-[12px] text-center">{qty}</span>
+        <button 
+          onClick={handleIncrease}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[#EA580C] hover:bg-[#EA580C]/5 transition-all active:scale-90"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  };
+
+
   if (!service) return <div className="p-10 text-center">Loading...</div>;
+
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-[120px]">
@@ -185,9 +245,9 @@ function ServiceDetail() {
         </div>
       </header>
 
-      {/* Premium Photo Carousel: 2.3:1 Ratio, 16px radius */}
+      {/* Service Image Gallery: Responsive card */}
       <div className="px-4 pt-6 w-full box-border">
-        <div className="overflow-hidden rounded-[16px] border border-black/[0.05] shadow-sm bg-white relative w-full aspect-[2.3/1]" ref={emblaRef}>
+        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2.1/1]" ref={emblaRef}>
           <div className="flex h-full">
              {galleryImages.map((img, i) => (
                <div key={i} className="flex-[0_0_100%] w-full h-full">
@@ -203,12 +263,13 @@ function ServiceDetail() {
         )}
       </div>
 
+
       <div className="px-4 mt-6 space-y-6 max-w-full">
         {/* Service Card */}
         <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm w-full box-border">
            <div className="flex justify-between items-start gap-3 mb-2">
               <h1 className="text-[18px] font-black text-[#1a1a1a] leading-tight break-words">{service.name}</h1>
-              <div className="text-[18px] font-black text-[#EA580C] shrink-0">₹{basePrice}</div>
+              <div className="text-[18px] font-black text-[#EA580C] shrink-0">₹{cartItems.find(i => i.type === 'base')?.price || 0}</div>
            </div>
            <p className="text-[12px] font-bold text-[#EA580C] uppercase tracking-wider">{service.service_type === 'subscription' ? 'PER MONTH' : 'ONE-TIME'}</p>
            <p className="text-[13px] text-[#7A7A7A] mt-2 leading-relaxed">{service.description}</p>
@@ -220,7 +281,8 @@ function ServiceDetail() {
             {service.inclusions_json.map((item, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
-                  <Sparkles className="h-4 w-4" />
+                  <ZapIconLucide className="h-4 w-4" />
+
                 </div>
                 <span className="text-[9px] font-bold uppercase leading-tight text-[#1a1a1a] truncate w-full">{item.label}</span>
               </div>
@@ -248,32 +310,37 @@ function ServiceDetail() {
               <h3 className="text-[14px] font-black text-[#1a1a1a] uppercase">Premium Add-ons</h3>
               <Button variant="link" className="text-[#EA580C] font-bold text-[12px] p-0" onClick={() => setShowAddonDrawer(true)}>VIEW ALL</Button>
             </div>
-            <div className="space-y-3">
-              {relevantAddons.slice(0, 3).map(a => (
-                <div key={a.id} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0"><Sparkles className="h-4 w-4" /></div>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-bold text-[#1a1a1a] truncate">{a.name}</div>
-                      <div className="text-[11px] font-bold text-[#EA580C]">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
+            <div className="space-y-4">
+              {relevantAddons.slice(0, 3).map(a => {
+                const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                return (
+                  <div key={a.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-bold text-[#1a1a1a] truncate">{a.name}</div>
+                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                      </div>
                     </div>
+                    <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
                   </div>
-                  <button onClick={() => setAddonQty(prev => ({ ...prev, [a.id]: prev[a.id] ? 0 : 1 }))} className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", addonQty[a.id] ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10")}>
-                    {addonQty[a.id] && <Check className="h-3 w-3 text-white" />}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Bill */}
+        {/* Bill Details */}
         <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm w-full box-border mb-8">
           <h3 className="text-[12px] font-black text-[#7A7A7A] mb-4 uppercase tracking-widest">Bill Details</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-[13px]"><span className="text-[#1a1a1a] font-medium">Base Service</span><span className="font-bold text-[#1a1a1a]">₹{basePrice}</span></div>
-            {selectedAddons.map(a => (
-              <div key={a.id} className="flex justify-between text-[13px]"><span className="text-[#7A7A7A] truncate">{a.name}</span><span className="font-bold text-[#1a1a1a]">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span></div>
+            {cartItems.map(item => (
+              <div key={item.id} className="flex justify-between text-[13px]">
+                <span className={cn(item.type === 'base' ? "text-[#1a1a1a] font-medium" : "text-[#7A7A7A] truncate")}>
+                  {item.name} {item.quantity > 1 && `× ${item.quantity}`}
+                </span>
+                <span className="font-bold text-[#1a1a1a]">₹{item.price * item.quantity}</span>
+              </div>
             ))}
             <div className="pt-3 mt-2 border-t flex justify-between items-center text-[15px]"><span className="font-black text-[#1a1a1a]">TOTAL</span><span className="font-black text-[#EA580C]">₹{totalPayable}</span></div>
           </div>
@@ -285,20 +352,21 @@ function ServiceDetail() {
           <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase">SELECT ADD-ONS</DrawerTitle></DrawerHeader>
           <ScrollArea className="px-6 flex-1 h-full">
             <div className="space-y-4 pb-24">
-              {relevantAddons.map(a => (
-                <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><Sparkles className="h-4 w-4" /></div>
-                    <div>
-                      <div className="font-bold text-[13px]">{a.name}</div>
-                      <div className="text-[11px] font-bold text-[#EA580C]">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
+              {relevantAddons.map(a => {
+                const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                return (
+                  <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div>
+                        <div className="font-bold text-[13px]">{a.name}</div>
+                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                      </div>
                     </div>
+                    <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
                   </div>
-                  <button onClick={() => setAddonQty(prev => ({ ...prev, [a.id]: prev[a.id] ? 0 : 1 }))} className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", addonQty[a.id] ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10")}>
-                    {addonQty[a.id] && <Check className="h-3 w-3 text-white" />}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
           <div className="p-4 border-t bg-white">
@@ -308,15 +376,66 @@ function ServiceDetail() {
         </DrawerContent>
       </Drawer>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-black/[0.05] flex justify-between items-center shadow-lg z-[80] w-full box-border gap-4">
-        <div className="flex flex-col min-w-0">
-          <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-widest">TOTAL</span>
-          <div className="text-[20px] font-black text-[#1a1a1a]">₹{totalPayable}</div>
+      <Drawer open={showCartDrawer} onOpenChange={setShowCartDrawer}>
+        <DrawerContent className="h-[70vh]">
+          <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> CART</DrawerTitle></DrawerHeader>
+          <ScrollArea className="px-6 flex-1 h-full">
+            <div className="space-y-4 pb-24">
+              {cartItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <div className="font-bold text-[14px] truncate">{item.name}</div>
+                    <div className="text-[12px] font-bold text-[#EA580C]">₹{item.price} per unit</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <QuantityControl id={item.id} name={item.name} price={item.price} type={item.type} />
+                    <div className="text-[13px] font-black text-[#1a1a1a]">₹{item.price * item.quantity}</div>
+                  </div>
+                </div>
+              ))}
+              <div className="p-4 border-t border-black/5 space-y-2">
+                <div className="flex justify-between text-[14px]"><span className="text-[#7A7A7A]">Subtotal</span><span className="font-bold">₹{totalPayable}</span></div>
+                <div className="flex justify-between text-[16px] font-black"><span className="text-[#1a1a1a]">TOTAL</span><span className="text-[#EA580C]">₹{totalPayable}</span></div>
+              </div>
+            </div>
+          </ScrollArea>
+          <div className="p-4 border-t bg-white">
+             <Button className="w-full h-[52px] rounded-full bg-[#EA580C]" onClick={() => { setShowCartDrawer(false); confirm(); }}>PROCEED TO PAY</Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none">
+        {/* Compact Cart Bar */}
+        <div className="px-4 mb-2 pointer-events-auto">
+          <button 
+            onClick={() => setShowCartDrawer(true)}
+            className="w-full bg-[#1a1a1a] text-white h-[48px] rounded-[14px] px-5 flex items-center justify-between shadow-xl active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-4 w-4" />
+              <span className="text-[13px] font-black">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
+              <span className="text-[13px] font-black text-white/40 ml-2">₹{totalPayable}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-black uppercase tracking-wider">VIEW CART</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </button>
         </div>
-        <Button onClick={confirm} disabled={submitting} className="h-[52px] px-8 rounded-full bg-[#EA580C] text-white font-black text-[14px]">
-          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
-        </Button>
+
+        {/* Payment Footer */}
+        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-2xl pointer-events-auto gap-4">
+          <div className="flex flex-col min-w-0">
+            <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-widest">TOTAL</span>
+            <div className="text-[20px] font-black text-[#1a1a1a]">₹{totalPayable}</div>
+          </div>
+          <Button onClick={confirm} disabled={submitting || !slot} className={cn("h-[52px] px-10 rounded-[14px] bg-[#EA580C] text-white font-black text-[14px] active:scale-[0.96] transition-all", !slot && "opacity-50 grayscale")}>
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
+          </Button>
+        </div>
       </div>
+
     </div>
   );
 }

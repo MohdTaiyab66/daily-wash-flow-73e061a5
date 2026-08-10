@@ -16,8 +16,9 @@ export const Route = createFileRoute("/c/location")({
     // Only bounce the bare `/c/location` URL — never intercept children like
     // `/c/location/search`, otherwise we redirect-loop the child away.
     if (location.pathname === "/c/location" || location.pathname === "/c/location/") {
-      throw redirect({ to: "/c/location/search" });
+      throw redirect({ to: "/c/location/search", search: {} });
     }
+
   },
   component: () => <Outlet />,
 });
