@@ -168,12 +168,12 @@ function CustomerHome() {
         />
 
         {/* Adjust top padding to match header height */}
-        <div className="pt-[calc(78px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[calc(68px+env(safe-area-inset-top,24px))]">
           {/* Sentinel for IntersectionObserver - shifted to control transition */}
           <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
           <div className="px-5">
-            <div className="mt-[18px]">
+            <div className="mt-[24px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -198,12 +198,12 @@ function CustomerHome() {
 
             <Section 
               title={
-                <div className="space-y-1">
-                  <h2 className="text-[27px] font-[750] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
-                  <p className="text-[17.5px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
+                <div className="space-y-1.5">
+                  <h2 className="text-[28px] font-[700] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
+                  <p className="text-[17px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[32px] mb-0"
+              className="mt-[30px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -211,8 +211,8 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-5 h-[44px] flex items-center justify-center text-[14px] font-[600] transition-all duration-200 active:scale-95",
-                      selectedCategory === cat ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" : "bg-white text-[#2D2D2D] border border-border/60 shadow-sm"
+                      "whitespace-nowrap rounded-[14px] px-6 h-[42px] flex items-center justify-center text-[16px] font-[600] transition-all duration-200 active:scale-95",
+                      selectedCategory === cat ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" : "bg-white text-[#2D2D2D] border border-border/40 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
                     )}
                   >
                     {cat}
@@ -220,7 +220,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[24px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[26px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
