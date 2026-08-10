@@ -387,10 +387,25 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-4 flex justify-between items-center px-4 max-w-sm mx-auto w-full h-[60px] opacity-80">
-                  <TrustItem label="EXPERT CARE" />
-                  <TrustItem label="PHOTO PROOF" />
-                  <TrustItem label="SAFE & SECURE" />
+                <div className="py-4 flex justify-between items-center px-6 max-w-sm mx-auto w-full h-[60px] opacity-70">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Expert Care</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]">
+                      <Camera className="h-4 w-4" />
+                    </div>
+                    <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Photo Proof</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]">
+                      <ShieldAlert className="h-4 w-4" />
+                    </div>
+                    <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Safe & Secure</span>
+                  </div>
                 </div>
 
                 <Section className="pb-4 mt-6">
