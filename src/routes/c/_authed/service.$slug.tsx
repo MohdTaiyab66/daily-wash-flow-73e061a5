@@ -202,15 +202,21 @@ function ServiceDetail() {
       </header>
 
       {/* Gallery */}
-      <div className="px-4 pt-4">
-        <div className="overflow-hidden rounded-[28px] shadow-xl border border-black/[0.02]" ref={emblaRef}>
-          <div className="flex h-[300px]">
-             {galleryImages.map((img, i) => <img key={i} src={img} className="flex-[0_0_100%] w-full h-full object-cover" />)}
+      <div className="px-4 pt-4 w-full box-border">
+        <div className="overflow-hidden rounded-[24px] shadow-lg border border-black/[0.02] bg-white relative w-full" ref={emblaRef}>
+          <div className="flex h-[240px] sm:h-[300px]">
+             {galleryImages.map((img, i) => (
+               <div key={i} className="flex-[0_0_100%] min-w-0 w-full h-full">
+                 <img src={img} className="w-full h-full object-cover" alt={`${service.name} gallery ${i + 1}`} />
+               </div>
+             ))}
           </div>
         </div>
-        <div className="flex justify-center gap-1.5 mt-4">
-          {galleryImages.map((_, i) => <div key={i} className={cn("h-1.5 w-1.5 rounded-full", currentPhotoIndex === i ? "bg-[#EA580C]" : "bg-black/10")} />)}
-        </div>
+        {galleryImages.length > 1 && (
+          <div className="flex justify-center gap-1.5 mt-3">
+            {galleryImages.map((_, i) => <div key={i} className={cn("h-1.5 transition-all duration-300 rounded-full", currentPhotoIndex === i ? "w-4 bg-[#EA580C]" : "w-1.5 bg-black/10")} />)}
+          </div>
+        )}
       </div>
 
       {/* Content */}
