@@ -1,7 +1,7 @@
 import { MapPin, Car, Sparkles, ChevronDown, CheckCircle2 } from "lucide-react";
 import { Surface, Muted } from "./ui/kit";
 import { cn } from "@/lib/utils";
-import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
+import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PremiumHeroProps {

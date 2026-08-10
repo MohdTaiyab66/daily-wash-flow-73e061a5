@@ -17,9 +17,10 @@ import {
   Shield,
   Search
 } from "lucide-react";
-import { getServiceImage, useServiceImages } from "@/lib/service-image-resolver";
+import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -183,16 +184,18 @@ function ServiceDetail() {
   const addonTotal = selectedAddons.reduce((sum, a) => sum + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
   const totalPayable = basePrice + addonTotal;
 
-  const imagesQ = useServiceImages();
+  const galleryQ = useServiceGallery(slug);
   
   // Gallery Logic
   const galleryImages = useMemo(() => {
-    if (service?.gallery_images && service.gallery_images.length > 0) {
-      return service.gallery_images;
+    const items = galleryQ.data || [];
+    if (items.length > 0) {
+      return items.map((i: any) => i.image_url);
     }
-    const fallback = getServiceImage(slug, imagesQ.data).url;
+    const fallback = getServiceImage(slug).url;
     return fallback ? [fallback] : [];
-  }, [service, slug, imagesQ.data]);
+  }, [galleryQ.data, slug]);
+
 
   const isSubscription = service?.service_type === "subscription" || slug === "daily-shine";
 
