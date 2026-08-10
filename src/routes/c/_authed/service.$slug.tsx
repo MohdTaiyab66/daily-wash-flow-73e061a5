@@ -214,47 +214,65 @@ function ServiceDetail() {
       </div>
 
       {/* Content */}
-      <div className="px-4 mt-6 space-y-6">
-        <div className="bg-white p-6 rounded-[28px] border shadow-sm">
-           <div className="flex justify-between items-start">
-              <h1 className="text-[22px] font-black text-charcoal">{service.name}</h1>
-              <div className="text-[24px] font-black text-[#EA580C]">₹{basePrice}</div>
+      <div className="px-4 mt-6 space-y-6 max-w-full">
+        <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
+           <div className="flex justify-between items-start gap-3">
+              <h1 className="text-[20px] font-black text-charcoal leading-tight flex-1 break-words min-w-0">{service.name}</h1>
+              <div className="text-[22px] font-black text-[#EA580C] shrink-0">₹{basePrice}</div>
            </div>
-           <p className="text-[14px] text-muted-foreground mt-2">{service.description}</p>
+           <p className="text-[14px] text-muted-foreground mt-2 line-clamp-3">{service.description}</p>
         </div>
 
         {/* Includes */}
         {service.inclusions_json && (
-          <div className="bg-white p-6 rounded-[28px] border shadow-sm grid grid-cols-4 gap-4">
-            {service.inclusions_json.map((item, i) => (
-              <div key={i} className="flex flex-col items-center text-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-[#EA580C]">
-                  {item.icon === 'exterior' ? <ZapIconLucide /> : <Sparkles />}
+          <div className="bg-white p-6 rounded-[28px] border shadow-sm grid grid-cols-4 gap-2 w-full box-border">
+            {service.inclusions_json.slice(0, 4).map((item, i) => (
+              <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#EA580C] shrink-0">
+                  {item.icon === 'exterior' ? <ZapIconLucide className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
                 </div>
-                <span className="text-[10px] font-bold uppercase">{item.label}</span>
+                <span className="text-[9px] font-bold uppercase leading-tight truncate w-full">{item.label}</span>
               </div>
             ))}
           </div>
         )}
 
         {/* Location & Time */}
-        <div className="bg-white p-6 rounded-[28px] border shadow-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-bold text-charcoal">Location: {activeAddress?.label || "Home"}</span>
-            <Button variant="link" onClick={() => navigate({ to: "/c/location/search" })}>Change</Button>
+        <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-sm font-bold text-charcoal truncate flex-1">📍 {activeAddress?.label || "Home"}</span>
+            <Button variant="link" className="text-[#EA580C] p-0 h-auto font-bold text-xs shrink-0" onClick={() => navigate({ to: "/c/location/search" })}>CHANGE</Button>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4">
             {TIME_SLOTS.map(t => (
-              <button key={t} onClick={() => setSlot(t)} className={cn("py-3 rounded-xl border font-bold text-[11px]", slot === t ? "bg-orange-50 border-orange-200" : "bg-white")}>{t}</button>
+              <button 
+                key={t} 
+                onClick={() => setSlot(t)} 
+                className={cn(
+                  "py-2.5 rounded-xl border font-bold text-[10px] transition-all", 
+                  slot === t ? "bg-orange-50 border-[#EA580C] text-[#EA580C]" : "bg-white border-black/[0.05] text-charcoal"
+                )}
+              >
+                {t}
+              </button>
             ))}
           </div>
         </div>
       </div>
 
       {/* Payment Footer */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t flex justify-between items-center shadow-lg">
-        <div className="text-[22px] font-black text-charcoal">₹{totalPayable}</div>
-        <Button onClick={confirm} className="h-14 px-8 rounded-2xl bg-[#EA580C]">PAY NOW</Button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-black/[0.05] flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-[80] w-full box-border">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">TOTAL</span>
+          <div className="text-[24px] font-black text-charcoal leading-none">₹{totalPayable}</div>
+        </div>
+        <Button 
+          onClick={confirm} 
+          disabled={submitting}
+          className="h-[54px] px-8 rounded-full bg-[#EA580C] hover:bg-[#EA580C]/90 text-white font-bold text-[15px] shadow-lg shadow-[#EA580C]/20 shrink-0 min-w-[140px]"
+        >
+          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW →"}
+        </Button>
       </div>
 
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
