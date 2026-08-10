@@ -300,14 +300,15 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFF9F3] pb-32">
+      <div className="min-h-screen bg-[#FFF9F3] pb-12">
         <UWHeader 
           area={area} 
           unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
-        <div className="px-5 space-y-6 mt-2">
+        <div className="px-5 pb-8">
+          <div className="space-y-6 mt-2">
           {/* 1. Vehicle Selector - Immediately below Location Header */}
           <Section className="mt-0">
             {vehiclesQ.isLoading ? (
@@ -420,7 +421,7 @@ function CustomerHome() {
           </Section>
           {showCatalog && (
             <>
-              <div className="py-12 flex items-center justify-center gap-4">
+              <div className="py-10 flex items-center justify-between px-2">
                 <TrustItem label="Expert Care" />
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Photo Proof" />
@@ -428,8 +429,8 @@ function CustomerHome() {
                 <TrustItem label="Safe & Secure" />
               </div>
               
-              <Section className="pb-8 -mt-6">
-                <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-6 rounded-[20px]">
+              <Section className="pb-4 -mt-4">
+                <Surface className="bg-white border-black/5 p-6 rounded-[20px] shadow-sm">
                   <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
                   <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed text-balance">Premium doorstep car care you can trust every day.</p>
                 </Surface>
