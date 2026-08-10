@@ -32,7 +32,7 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-[195px] bg-white border-none rounded-[14px] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.02)] transition-transform active:scale-[0.98] duration-150", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-[195px] bg-white border border-[#2D2D2D]/5 rounded-[14px] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.02)] transition-transform active:scale-[0.98] duration-150", className)}
 
     >
       <div className="relative h-[108px] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[14px]">
@@ -66,7 +66,7 @@ export function UWServiceCard({
       
       <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2">
         <div className="h-[60px] flex items-center justify-center overflow-hidden px-0.5">
-          <h3 className="text-[14.5px] font-[600] leading-[1.3] text-[#2D2D2D] line-clamp-2 text-center overflow-hidden">
+          <h3 className="text-[13.5px] font-[600] leading-[1.25] text-[#2D2D2D] line-clamp-2 text-center overflow-hidden break-words">
             {name}
           </h3>
         </div>

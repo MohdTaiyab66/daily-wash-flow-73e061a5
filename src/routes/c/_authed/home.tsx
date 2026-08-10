@@ -58,9 +58,9 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const compactHeaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -87,16 +87,14 @@ function CustomerHome() {
   });
 
   const vehicles = vehiclesQ.data ?? [];
-  const vehicleId = selectedVehicleId;
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
   const category = activeVehicle?.category ?? "hatchback_compact_sedan";
-  const bodyLabel = activeVehicle ? vehicleBodyLabel(activeVehicle.make, activeVehicle.model, activeVehicle.category) : "";
 
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
     model: activeVehicle?.model,
     imagePath: activeVehicle?.image_path,
-    transform: { width: 480, height: 360, quality: 72, resize: "cover" },
+    transform: { width: 120, height: 120, quality: 72, resize: "contain" },
   });
 
   const availability = useAreaAvailability();
@@ -141,12 +139,7 @@ function CustomerHome() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const isCollapsed = !entry.isIntersecting;
-        if (compactHeaderRef.current) {
-          compactHeaderRef.current.style.opacity = isCollapsed ? "1" : "0";
-          compactHeaderRef.current.style.transform = isCollapsed ? "translateY(0)" : "translateY(-8px)";
-          compactHeaderRef.current.style.pointerEvents = isCollapsed ? "auto" : "none";
-        }
+        setIsCollapsed(!entry.isIntersecting);
       },
       { threshold: 0, rootMargin: "-40px 0px 0px 0px" }
     );
@@ -165,73 +158,22 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-[#FFFCF9] pb-32">
         
-        {/* Sticky Compact Header (Overlay) - High performance fixed position */}
-        <div 
-          ref={compactHeaderRef}
-          className="fixed top-0 left-0 right-0 z-[60] px-5 pt-[env(safe-area-inset-top,24px)] pb-3 bg-[#FFF9F3] shadow-[0_2px_12px_rgba(0,0,0,0.05)] border-b border-[#FF6B00]/10 opacity-0 translate-y-[-8px] transition-all duration-[220ms] ease-out pointer-events-none"
-        >
-          {activeVehicle && (
-            <div 
-              className="flex items-center gap-2.5 py-0.5 cursor-pointer active:opacity-70"
-              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-            >
-              <div className="h-[38px] w-[38px] shrink-0 overflow-hidden rounded-[8px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
-                <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-0.5" />
-              </div>
-              <div className="min-w-0 flex-1 flex items-baseline gap-1.5 overflow-hidden">
-                <h2 className="truncate font-[650] text-[16px] text-[#2D2D2D] leading-tight shrink-0">
-                  {activeVehicle.make} {activeVehicle.model}
-                </h2>
-                <span className="truncate font-[500] text-[14px] text-[#7A7A7A] leading-tight">
-                  · {activeVehicle.registration_number} · {bodyLabel}
-                </span>
-                <ChevronDown className="text-[#7A7A7A]/40 shrink-0 h-3.5 w-3.5" />
-              </div>
-            </div>
-          )}
-        </div>
-
         <UWHeader 
           area={area} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} window.location.href = "/c?change=1"; }}
-        >
-          {vehiclesQ.isLoading ? (
-            <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
-          ) : activeVehicle ? (
-            <div 
-              className="flex items-center gap-4 py-1 cursor-pointer active:opacity-80"
-              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-            >
-              <div className="relative shrink-0 h-[64px] w-[64px] overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
-                <VehicleAvatar imageUrl={catalogImageQ.data} make={activeVehicle.make} model={activeVehicle.model} color={activeVehicle.color} className="h-full w-full object-contain p-1.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex flex-col">
-                    <h2 className="truncate font-[650] tracking-tight text-[#2D2D2D] text-[27px] leading-tight">
-                      {activeVehicle.make} {activeVehicle.model}
-                    </h2>
-                    <p className="truncate font-[500] text-[#7A7A7A] text-[18px] mt-0.5 leading-tight">
-                      {activeVehicle.registration_number} · {bodyLabel}
-                    </p>
-                  </div>
-                  <ChevronDown className="text-[#7A7A7A]/40 ml-2 h-5 w-5" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button onClick={() => navigate({ to: "/c/vehicles/add" })} className="flex items-center gap-2 text-[#FF6B00] font-[600] text-[14px]">
-              <Plus className="h-4 w-4" /> Add your car
-            </button>
-          )}
-        </UWHeader>
+          activeVehicle={activeVehicle}
+          vehicleImage={catalogImageQ.data}
+          onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+          isCollapsed={isCollapsed}
+        />
 
-        {/* Sentinel for IntersectionObserver */}
-        <div ref={sentinelRef} className="h-px w-full -mt-2 pointer-events-none" />
+        {/* Adjust top padding to match header height */}
+        <div className="pt-[calc(82px+env(safe-area-inset-top,24px))]">
+          {/* Sentinel for IntersectionObserver - shifted to control transition */}
+          <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
-        <div className="px-5">
-          <div className="space-y-4 mt-[16px]">
-            <div className="mt-[-4px]">
+          <div className="px-5">
+            <div className="mt-[20px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -256,12 +198,12 @@ function CustomerHome() {
 
             <Section 
               title={
-                <div className="space-y-0.5">
-                  <h2 className="text-[26px] font-[700] text-[#2D2D2D] tracking-tight">Car care services</h2>
-                  <p className="text-[15px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
+                <div className="space-y-1">
+                  <h2 className="text-[29px] font-[700] text-[#2D2D2D] tracking-tight">Car care services</h2>
+                  <p className="text-[17px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[40px] mb-0"
+              className="mt-[32px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -278,7 +220,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[26px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[24px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
@@ -289,14 +231,14 @@ function CustomerHome() {
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
-                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
+                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId ?? undefined } })}
                   />
                 ))}
               </div>
             </Section>
 
             {showCatalog && (
-              <div className="py-4 flex justify-between items-center px-6 max-w-sm mx-auto w-full h-[60px] opacity-70">
+              <div className="py-8 flex justify-between items-center px-6 max-w-sm mx-auto w-full h-[60px] opacity-70">
                 <div className="flex flex-col items-center gap-1.5">
                   <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]"><Sparkles className="h-4 w-4" /></div>
                   <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Expert Care</span>
