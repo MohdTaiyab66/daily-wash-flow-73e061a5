@@ -280,7 +280,8 @@ function ServiceDetail() {
             {service.inclusions_json.map((item, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
-                  <Sparkles className="h-4 w-4" />
+                  <ZapIconLucide className="h-4 w-4" />
+
                 </div>
                 <span className="text-[9px] font-bold uppercase leading-tight text-[#1a1a1a] truncate w-full">{item.label}</span>
               </div>
