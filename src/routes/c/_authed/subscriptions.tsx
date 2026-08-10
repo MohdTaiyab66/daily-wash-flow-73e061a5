@@ -288,7 +288,9 @@ function MyPlanPage() {
       <UWHeader
         area={vehicleLabel ? "My Plan" : "Urban Wash"}
         onAreaClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}
-      >
+      />
+
+      <div className="px-5 pt-4">
         {hasVehicles ? (
           <div className="flex items-center justify-between">
             <div className="min-w-0">
@@ -310,7 +312,7 @@ function MyPlanPage() {
             <h1 className="text-[21px] font-black tracking-tight text-foreground">My Plan</h1>
           </div>
         )}
-      </UWHeader>
+      </div>
 
       {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center shadow-sm">
