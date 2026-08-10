@@ -306,10 +306,10 @@ function ServiceDetail() {
         {service.inclusions_json && (
           <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-3 gap-y-4 gap-x-2 w-full box-border">
             {service.inclusions_json.map((item, i) => {
-              const Icon = item.label.toLowerCase().includes('pressure') || item.label.toLowerCase().includes('water') ? ZapIconLucide :
-                           item.label.toLowerCase().includes('polish') || item.label.toLowerCase().includes('sparkle') ? Sparkles :
-                           item.label.toLowerCase().includes('vacuum') || item.label.toLowerCase().includes('interior') ? Car :
-                           item.label.toLowerCase().includes('fragrance') || item.label.toLowerCase().includes('scent') ? ZapIconLucide :
+              const Icon = item.label.toLowerCase().includes('pressure') || item.label.toLowerCase().includes('wash') ? ZapIconLucide :
+                           item.label.toLowerCase().includes('polish') || item.label.toLowerCase().includes('wax') ? Sparkles :
+                           item.label.toLowerCase().includes('vacuum') || item.label.toLowerCase().includes('cleaning') ? Car :
+                           item.label.toLowerCase().includes('fragrance') || item.label.toLowerCase().includes('perfume') ? Sparkles :
                            ZapIconLucide;
               return (
                 <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
