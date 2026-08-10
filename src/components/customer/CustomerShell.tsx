@@ -23,7 +23,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(80,50,30,0.08)] bg-[#F3E5D7] pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-[#FFFFFF] pb-[env(safe-area-inset-bottom)]">
           <div className="mx-auto flex max-w-md items-center justify-around h-[72px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
@@ -35,20 +35,20 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex flex-1 flex-col items-center justify-center transition-colors",
-                    active ? "text-[#2D2D2D]" : "text-[#8A8783]"
+                    active ? "text-[#2D2D2D]" : "text-[#8A8A8A]"
                   )}
                 >
                   <div
                     className={cn(
                       "grid h-[40px] w-[50px] place-items-center rounded-xl transition-all duration-200",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_8px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#8A8783]"
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_8px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#8A8A8A]"
                     )}
                   >
                     <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
                   </div>
                   <span className={cn(
                     "mt-[5px] text-[12px] font-semibold tracking-wide uppercase",
-                    active ? "text-[#2D2D2D]" : "text-[#8A8783]"
+                    active ? "text-[#2D2D2D]" : "text-[#8A8A8A]"
                   )}>
                     {n.label}
                   </span>
