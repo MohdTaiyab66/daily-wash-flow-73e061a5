@@ -156,7 +156,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[160px]">
+      <div className="min-h-screen bg-[#FFFCF9] pb-[32px]">
         
         <UWHeader 
           area={area} 
@@ -168,12 +168,12 @@ function CustomerHome() {
         />
 
         {/* Adjust top padding to match header height */}
-        <div className="pt-[calc(68px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
           {/* Sentinel for IntersectionObserver - shifted to control transition */}
           <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
           <div className="px-5">
-            <div className="mt-[24px]">
+            <div className="mt-[16px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -196,23 +196,40 @@ function CustomerHome() {
               />
             </div>
 
+            <div className="py-4 flex justify-between items-center px-4 max-w-[360px] mx-auto w-full h-[70px] mt-[16px]">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="text-[#FF6B00]">✦</div>
+                <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Expert Care</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="text-[#FF6B00]">◉</div>
+                <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Photo Proof</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="text-[#FF6B00]">♢</div>
+                <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Safe & Secure</span>
+              </div>
+            </div>
+
             <Section 
               title={
-                <div className="space-y-1.5">
-                  <h2 className="text-[28px] font-[700] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
+                <div className="space-y-1">
+                  <h2 className="text-[28px] font-[650] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
                   <p className="text-[17px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[30px] mb-0"
+              className="mt-[20px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[16px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
                       "whitespace-nowrap rounded-[14px] px-6 h-[42px] flex items-center justify-center text-[16px] font-[600] transition-all duration-200 active:scale-95",
-                      selectedCategory === cat ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" : "bg-white text-[#2D2D2D] border border-border/40 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                      selectedCategory === cat 
+                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" 
+                        : "bg-white text-[#2D2D2D] border border-[#2D2D2D]/5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                     )}
                   >
                     {cat}
@@ -220,7 +237,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[26px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[22px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
@@ -237,22 +254,6 @@ function CustomerHome() {
               </div>
             </Section>
 
-            {showCatalog && (
-              <div className="py-8 flex justify-between items-center px-6 max-w-sm mx-auto w-full h-[60px] opacity-70">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]"><Sparkles className="h-4 w-4" /></div>
-                  <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Expert Care</span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]"><Camera className="h-4 w-4" /></div>
-                  <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Photo Proof</span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full bg-[#FF6B00]/5 flex items-center justify-center text-[#FF6B00]"><ShieldAlert className="h-4 w-4" /></div>
-                  <span className="text-[9px] font-[800] text-[#2D2D2D] uppercase tracking-wider">Safe & Secure</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
