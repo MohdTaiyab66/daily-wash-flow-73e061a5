@@ -227,7 +227,9 @@ function CustomerHome() {
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
                       "whitespace-nowrap rounded-[14px] px-6 h-[42px] flex items-center justify-center text-[16px] font-[600] transition-all duration-200 active:scale-95",
-                      selectedCategory === cat ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" : "bg-white text-[#2D2D2D] border border-border/40 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                      selectedCategory === cat 
+                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" 
+                        : "bg-white text-[#2D2D2D] border border-[#2D2D2D]/5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                     )}
                   >
                     {cat}
