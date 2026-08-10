@@ -128,7 +128,11 @@ function CustomerHome() {
   });
 
   const galleryQ = useServiceGallery();
-  const resolvedServiceImage = (slug: string) => getServiceImage(slug, galleryQ.data);
+  const resolvedServiceImage = (slug: string) => {
+    // If we have gallery data (which we do from useServiceGallery), getServiceImage will use it.
+    // It filters by service_slug internally.
+    return getServiceImage(slug, galleryQ.data);
+  };
 
 
   const refreshAll = () => Promise.all([
