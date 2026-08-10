@@ -94,8 +94,7 @@ function BookingsPage() {
   return (
     <PullToRefresh onRefresh={() => qc.invalidateQueries({ queryKey: ["customer-bookings"] })}>
       <div className="min-h-screen bg-[#FFF9F3] pb-24">
-        {/* Header */}
-        <div className="bg-[#FFF9F3] pt-2">
+        <div className="pt-2">
           <UWHeader 
             area={vehiclesQ.data?.find(v => v.id === selectedVehicleId)?.registration_number ?? "My Bookings"}
             onAreaClick={() => {}}

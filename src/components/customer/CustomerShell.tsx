@@ -40,13 +40,13 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                 >
                   <span
                     className={cn(
-                      "grid h-[44px] w-[52px] place-items-center rounded-full transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white" : "bg-transparent text-[#9E9E9E]"
+                      "grid h-[44px] w-[52px] place-items-center rounded-[18px] transition-all duration-300",
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#9E9E9E]"
                     )}
                   >
-                    <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
                   </span>
-                  <span className={cn("tracking-[0.05em] uppercase text-[9px] font-[600]", active ? "opacity-100" : "opacity-80")}>
+                  <span className={cn("tracking-[0.05em] uppercase text-[9px] font-[700] mt-1", active ? "text-[#2D2D2D]" : "text-[#9E9E9E]")}>
                     {n.label}
                   </span>
 
