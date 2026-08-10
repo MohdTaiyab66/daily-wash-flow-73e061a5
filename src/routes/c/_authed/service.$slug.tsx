@@ -415,10 +415,15 @@ function ServiceDetail() {
       </Drawer>
 
       <Drawer open={showCartDrawer} onOpenChange={setShowCartDrawer}>
-        <DrawerContent className="h-[70vh]">
-          <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> CART</DrawerTitle></DrawerHeader>
-          <ScrollArea className="px-6 flex-1 h-full">
-            <div className="space-y-4 pb-24">
+        <DrawerContent className="h-[70vh] flex flex-col">
+          <DrawerHeader className="px-6 pt-6 flex justify-between items-center shrink-0">
+            <DrawerTitle className="text-[16px] font-black uppercase flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> CART</DrawerTitle>
+            <button onClick={() => setShowCartDrawer(false)} className="p-2 -mr-2 text-[#7A7A7A] active:scale-90 transition-transform">
+              <X className="h-5 w-5" />
+            </button>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-4 pb-[160px]">
               {cartItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
                   <div className="flex-1 min-w-0 mr-4">
@@ -431,14 +436,14 @@ function ServiceDetail() {
                   </div>
                 </div>
               ))}
-              <div className="p-4 border-t border-black/5 space-y-2">
+              <div className="p-4 border-t border-black/5 space-y-2 mt-2">
                 <div className="flex justify-between text-[14px]"><span className="text-[#7A7A7A]">Subtotal</span><span className="font-bold">₹{totalPayable}</span></div>
                 <div className="flex justify-between text-[16px] font-black"><span className="text-[#1a1a1a]">TOTAL</span><span className="text-[#EA580C]">₹{totalPayable}</span></div>
               </div>
             </div>
-          </ScrollArea>
-          <div className="p-4 border-t bg-white">
-             <Button className="w-full h-[52px] rounded-full bg-[#EA580C]" onClick={() => { setShowCartDrawer(false); confirm(); }}>PROCEED TO PAY</Button>
+          </div>
+          <div className="p-4 pt-6 border-t bg-white shrink-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
+             <Button className="w-full h-[54px] rounded-[16px] bg-[#EA580C] text-white font-black text-[15px]" onClick={() => { setShowCartDrawer(false); confirm(); }}>PROCEED TO PAY</Button>
           </div>
         </DrawerContent>
       </Drawer>
