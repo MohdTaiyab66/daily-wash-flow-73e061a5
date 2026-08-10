@@ -97,11 +97,25 @@ function ServiceDetail() {
   const search = Route.useSearch();
   
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
-  const [slot, setSlot] = useState(TIME_SLOTS[3]);
+  const [slot, setSlot] = useState("");
   const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
   const [showVehicleDrawer, setShowVehicleDrawer] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, skipSnaps: false });
+
+  const onSelect = useCallback((emblaApi: any) => {
+    setCurrentPhotoIndex(emblaApi.selectedScrollSnap());
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect(emblaApi);
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+  }, [emblaApi, onSelect]);
 
   useEffect(() => {
     if (!vehicleId) {
@@ -157,8 +171,10 @@ function ServiceDetail() {
   
   const allAddons = addonsQ.data ?? [];
   const relevantAddons = useMemo(() => {
+    if (!service) return [];
+    // If it's daily shine, maybe limit add-ons or show specific ones
     return allAddons.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
-  }, [allAddons, slug]);
+  }, [allAddons, slug, service]);
 
   const selectedAddons = useMemo(() => {
     return relevantAddons.filter(a => addonQty[a.id] > 0);
@@ -168,7 +184,15 @@ function ServiceDetail() {
   const totalPayable = basePrice + addonTotal;
 
   const imagesQ = useServiceImages();
-  const imageObj = getServiceImage(slug, imagesQ.data);
+  
+  // Gallery Logic
+  const galleryImages = useMemo(() => {
+    if (service?.gallery_images && service.gallery_images.length > 0) {
+      return service.gallery_images;
+    }
+    const fallback = getServiceImage(slug, imagesQ.data).url;
+    return fallback ? [fallback] : [];
+  }, [service, slug, imagesQ.data]);
 
   const isSubscription = service?.service_type === "subscription" || slug === "daily-shine";
 
@@ -185,6 +209,12 @@ function ServiceDetail() {
     if (!activeAddress) {
       toast.error("Please set a service location");
       navigate({ to: "/c/location/search" });
+      return;
+    }
+    if (!slot) {
+      toast.error("Please select a time slot");
+      // Scroll to time slot section
+      document.getElementById('time-slots')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
     
