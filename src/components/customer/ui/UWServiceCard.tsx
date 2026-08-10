@@ -35,11 +35,11 @@ export function UWServiceCard({
   return (
     <Surface 
       className={cn(
-        "p-0 overflow-hidden flex flex-col h-[202px] bg-white border border-[#2D2D2D]/5 rounded-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-[208px] bg-white border border-[#2D2D2D]/5 rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
         className
       )}
     >
-      <div className="relative h-[100px] w-full bg-[#F8F9FB] overflow-hidden shrink-0">
+      <div className="relative h-[105px] w-full bg-[#F1F2F3] overflow-hidden shrink-0">
         {image && loadStatus !== 'error' ? (
           <img 
             src={image} 
@@ -53,9 +53,9 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F2F3] text-[#7A7A7A]/30 p-2">
-            <Car className="h-7 w-7 mb-1.5 opacity-10" />
-            <span className="text-[9px] font-[800] uppercase tracking-[0.12em] text-[#7A7A7A]/50 text-center">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F2F3] text-[#7A7A7A] p-2">
+            <Car className="h-8 w-8 mb-1.5 opacity-20" />
+            <span className="text-[9px] font-[800] uppercase tracking-[0.14em] text-[#7A7A7A] text-center">Coming soon</span>
           </div>
         )}
         
@@ -68,10 +68,10 @@ export function UWServiceCard({
         )}
       </div>
       
-      <div className="flex flex-col flex-1 px-2.5 pt-2 pb-2.5 min-w-0">
+      <div className="flex flex-col flex-1 px-3 pt-2.5 pb-3 min-w-0">
         <div className="h-[52px] flex items-start justify-center overflow-hidden">
           <h3 className={cn(
-            "text-[13.5px] font-[600] leading-[1.3] text-[#2D2D2D] text-center break-words line-clamp-3",
+            "text-[14px] font-[600] leading-[1.3] text-[#2D2D2D] text-center break-words line-clamp-3",
             isComingSoon && "text-[#2D2D2D]"
           )}>
             {name}
@@ -80,9 +80,9 @@ export function UWServiceCard({
         
         <div className="mt-auto flex items-center justify-between gap-1 h-[34px]">
           <div className="flex items-baseline gap-0.5 overflow-hidden">
-            <span className="text-[15px] font-[750] text-[#FF6B00] truncate">₹{price}</span>
+            <span className="text-[16px] font-[750] text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
-              <span className="text-[10px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
+              <span className="text-[11px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
                 ₹{oldPrice}
               </span>
             )}
