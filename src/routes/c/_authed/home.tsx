@@ -431,9 +431,9 @@ function CustomerHome() {
                     <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
                   </Surface>
 
-                  <div className="mt-8 mb-6 text-center px-6">
-                    <p className="text-[12px] font-[700] text-[#2D2D2D] uppercase tracking-[0.25em] opacity-60">URBAN WASH</p>
-                    <p className="mt-1 text-[11px] font-medium text-[#7A7A7A] opacity-40">Designed for those who love their cars.</p>
+                  <div className="mt-12 mb-8 text-center px-6">
+                    <p className="text-[12px] font-[700] text-[#2D2D2D] uppercase tracking-[0.25em] opacity-30">URBAN WASH</p>
+                    <p className="mt-1.5 text-[11px] font-medium text-[#7A7A7A] opacity-30">Designed for those who love their cars.</p>
                   </div>
                 </Section>
 
