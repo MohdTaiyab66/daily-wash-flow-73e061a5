@@ -383,7 +383,7 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-2 flex justify-between items-center px-4 max-w-sm mx-auto w-full opacity-60">
+                <div className="py-2 flex justify-between items-center px-4 max-w-sm mx-auto w-full opacity-80">
                   <TrustItem label="EXPERT CARE" />
                   <TrustItem label="PHOTO PROOF" />
                   <TrustItem label="SAFE & SECURE" />
