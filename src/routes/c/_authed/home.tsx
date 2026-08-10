@@ -151,7 +151,9 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+          scrollRef={containerRef}
         />
+
 
         <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
 

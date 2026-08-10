@@ -129,7 +129,7 @@ export function UWHeader({
               onClick={onVehicleClick}
             >
               <div 
-                ref={vThumbRef}
+                ref={vehicleThumbRef}
                 className="h-[32px] w-[32px] shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center will-change-transform"
               >
                 {vehicleImage ? (
@@ -158,6 +158,7 @@ export function UWHeader({
               </div>
             </div>
           )}
+
         </div>
       </div>
     </header>
