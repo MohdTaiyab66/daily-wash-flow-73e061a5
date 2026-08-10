@@ -17,13 +17,13 @@ export function UWHeader({
   children
 }: UWHeaderProps) {
   return (
-    <div className="sticky top-0 z-30 bg-[#FFF9F3] px-5 pt-[env(safe-area-inset-top,12px)] pb-1 border-b border-[#FF6B00]/10">
+    <div className="sticky top-0 z-30 bg-[#FFF9F3] px-5 pt-[env(safe-area-inset-top,12px)] pb-0.5 border-b border-[#FF6B00]/10">
       {/* Subtle orange accent line */}
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none" />
       
       <div className="relative flex flex-col gap-1.5">
         {/* Row 1: Location & Notifications */}
-        <div className="flex items-center justify-between py-0.5">
+        <div className="flex items-center justify-between py-0">
           <div 
             className="flex items-center gap-1.5 cursor-pointer active:opacity-70 transition-opacity" 
             onClick={onAreaClick}
