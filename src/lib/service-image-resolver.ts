@@ -26,8 +26,12 @@ export const useServiceGallery = (slug?: string) => {
 
 export const getServiceImage = (slug: string, gallery?: any[]) => {
   if (gallery && gallery.length > 0) {
-    const hero = gallery.find(i => i.is_hero) || gallery[0];
-    return { url: hero.image_url, source: 'GALLERY', slug };
+    // Filter gallery for this specific service first
+    const serviceGallery = gallery.filter(i => i.service_slug === slug);
+    if (serviceGallery.length > 0) {
+      const hero = serviceGallery.find(i => i.is_hero) || serviceGallery[0];
+      return { url: hero.image_url, source: 'GALLERY', slug };
+    }
   }
   
   const FALLBACKS: Record<string, string> = {
