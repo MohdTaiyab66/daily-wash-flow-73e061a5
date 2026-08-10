@@ -278,7 +278,7 @@ function CustomerHome() {
               className="flex items-center gap-3 active:opacity-70 transition-opacity"
               onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
             >
-              <div className="relative h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-black/5 shadow-sm">
+              <div className="relative h-[50px] w-[50px] shrink-0 overflow-hidden rounded-[10px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_4px_rgba(255,107,0,0.05)]">
                 <VehicleAvatar 
                   imageUrl={catalogImageQ.data} 
                   make={activeVehicle.make} 
@@ -290,14 +290,14 @@ function CustomerHome() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A] leading-tight">
+                    <h2 className="truncate text-[19px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
-                    <p className="truncate text-[13px] font-medium text-muted-foreground/60 leading-tight">
+                    <p className="truncate text-[13px] font-[500] text-[#7A7A7A] leading-tight">
                       {activeVehicle.registration_number} · {bodyLabel}
                     </p>
                   </div>
-                  <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
+                  <ChevronDown className="h-4 w-4 text-[#7A7A7A]/40 ml-2" />
                 </div>
               </div>
             </div>
@@ -313,7 +313,7 @@ function CustomerHome() {
         </UWHeader>
 
         <div className="px-5">
-          <div className="space-y-5 mt-5">
+          <div className="space-y-4 mt-5">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
             <div className="mt-[-2px]">
@@ -343,7 +343,8 @@ function CustomerHome() {
 
             <Section 
               title="Car care services"
-              className="mt-7 mb-0"
+              className="mt-8 mb-0"
+              titleClassName="text-[20px] font-[650] text-[#2D2D2D]"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -364,7 +365,7 @@ function CustomerHome() {
                 <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#FFF9F3] to-transparent pointer-events-none" />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mt-2">
+              <div className="grid grid-cols-3 gap-3 mt-4">
                 {servicesQ.isLoading ? (
                   [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
