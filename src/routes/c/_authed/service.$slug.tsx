@@ -267,17 +267,17 @@ function ServiceDetail() {
       </div>
 
       {/* Payment Footer */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-black/[0.05] flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-[80] w-full box-border">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">TOTAL</span>
-          <div className="text-[24px] font-black text-charcoal leading-none">₹{totalPayable}</div>
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-black/[0.05] flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-[80] w-full box-border gap-4">
+        <div className="flex flex-col min-w-0 flex-shrink">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">TOTAL</span>
+          <div className="text-[22px] font-black text-charcoal leading-none truncate">₹{totalPayable}</div>
         </div>
         <Button 
           onClick={confirm} 
           disabled={submitting}
-          className="h-[54px] px-8 rounded-full bg-[#EA580C] hover:bg-[#EA580C]/90 text-white font-bold text-[15px] shadow-lg shadow-[#EA580C]/20 shrink-0 min-w-[140px]"
+          className="h-[52px] px-6 rounded-full bg-[#EA580C] hover:bg-[#EA580C]/90 text-white font-bold text-[14px] shadow-lg shadow-[#EA580C]/20 shrink-0 flex-1 max-w-[180px]"
         >
-          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW →"}
+          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
         </Button>
       </div>
 
