@@ -196,17 +196,17 @@ function CustomerHome() {
               />
             </div>
 
-            <div className="py-4 flex justify-between items-center px-4 max-w-sm mx-auto w-full h-[70px] mt-[16px]">
+            <div className="py-4 flex justify-between items-center px-4 max-w-[360px] mx-auto w-full h-[70px] mt-[16px]">
               <div className="flex flex-col items-center gap-1.5">
-                <div className="text-[#FF6B00]"><Sparkles className="h-4 w-4" /></div>
+                <div className="text-[#FF6B00]">✦</div>
                 <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Expert Care</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <div className="text-[#FF6B00]"><Camera className="h-4 w-4" /></div>
+                <div className="text-[#FF6B00]">◉</div>
                 <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Photo Proof</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <div className="text-[#FF6B00]"><ShieldAlert className="h-4 w-4" /></div>
+                <div className="text-[#FF6B00]">♢</div>
                 <span className="text-[10px] font-[600] text-[#7A7A7A] uppercase tracking-wider">Safe & Secure</span>
               </div>
             </div>
