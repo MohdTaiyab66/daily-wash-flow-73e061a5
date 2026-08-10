@@ -16,7 +16,7 @@ interface UWHeaderProps {
   onVehicleClick?: () => void;
 }
 
-const COLLAPSE_DISTANCE = 60;
+const COLLAPSE_DISTANCE = 80; // Slightly more distance for smoother transition
 
 export function UWHeader({ 
   area, 
@@ -41,49 +41,45 @@ export function UWHeader({
     if (!header) return;
 
     const handleScroll = () => {
-      // Use window.scrollY for synchronization
       const scrollY = window.scrollY;
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
       // Header background & elevation transition
-      // We keep a constant height but animate content inside for smooth collapse
-      header.style.backgroundColor = `rgba(255, 249, 243, ${0.95 + progress * 0.05})`;
-      header.style.backdropFilter = progress > 0.1 ? 'blur(10px)' : 'none';
-      header.style.boxShadow = `0 1px ${progress * 8}px rgba(0,0,0,${progress * 0.04})`;
-      header.style.borderBottom = `1px solid rgba(255, 107, 0, ${progress * 0.05})`;
+      header.style.backgroundColor = `rgba(255, 249, 243, ${0.98 + progress * 0.02})`;
+      header.style.backdropFilter = progress > 0.1 ? 'blur(12px)' : 'none';
+      header.style.boxShadow = progress > 0.1 ? `0 2px 10px rgba(0,0,0,${progress * 0.03})` : 'none';
+      header.style.borderBottom = `1px solid rgba(255, 107, 0, ${progress * 0.08})`;
 
       if (location) {
         // Progressive fade and shift for location
         location.style.opacity = `${1 - progress}`;
-        location.style.transform = `translateX(${-progress * 15}px)`;
-        location.style.pointerEvents = progress > 0.8 ? 'none' : 'auto';
-        // Adjust width to allow vehicle to take space
-        location.style.flex = `${0.6 * (1 - progress)}`;
+        location.style.transform = `translateX(${-progress * 20}px) scale(${1 - progress * 0.05})`;
+        location.style.pointerEvents = progress > 0.7 ? 'none' : 'auto';
+        
+        // Use max-width for smoother collapse than flex-basis
+        location.style.maxWidth = `${(1 - progress) * 100}%`;
       }
 
       if (vehicle) {
-        // Vehicle selector moves left and background fades
-        const xOffset = -progress * (location?.offsetWidth || 0) * 0.1; 
+        // Vehicle selector moves left and background fades to transparent in compact state
+        const xOffset = -progress * 10; 
         vehicle.style.transform = `translateX(${xOffset}px)`;
-        vehicle.style.backgroundColor = progress > 0.5 ? 'transparent' : 'white';
-        vehicle.style.border = progress > 0.5 ? 'none' : '1px solid rgba(255, 107, 0, 0.08)';
-        vehicle.style.boxShadow = progress > 0.5 ? 'none' : '0 1px 2px rgba(0,0,0,0.03)';
-        vehicle.style.flex = `${0.4 + progress * 0.6}`;
+        vehicle.style.backgroundColor = progress > 0.8 ? 'transparent' : 'white';
+        vehicle.style.borderColor = progress > 0.8 ? 'transparent' : 'rgba(255, 107, 0, 0.08)';
+        vehicle.style.boxShadow = progress > 0.8 ? 'none' : '0 1px 2px rgba(0,0,0,0.03)';
       }
 
       if (vThumb) {
-        // Subtly adjust thumb size
-        const scale = 1 - progress * 0.05;
+        const scale = 1 - progress * 0.1;
         vThumb.style.transform = `scale(${scale})`;
       }
 
       if (vName) {
-        // Refine name weight or size slightly if needed, but keeping it stable is better for performance
-        vName.style.fontSize = `${16 - progress * 0.5}px`;
+        // Keep name readable but slightly smaller in compact mode
+        vName.style.fontSize = `${16 - progress * 1}px`;
       }
     };
 
-    // Use passive: true for scroll performance
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); 
 
@@ -93,13 +89,13 @@ export function UWHeader({
   return (
     <header 
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] pb-3 h-[calc(56px+env(safe-area-inset-top,24px))] will-change-[background-color,box-shadow]"
+      className="fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] pb-2 h-[calc(52px+env(safe-area-inset-top,24px))] flex items-center will-change-[background-color,box-shadow,backdrop-filter]"
     >
       <div className="flex items-center justify-between gap-3 h-full w-full relative">
         {/* Left: Location */}
         <div 
           ref={locationRef}
-          className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity flex-[0.6] min-w-0 will-change-[opacity,transform,flex]"
+          className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 will-change-[opacity,transform,max-width]"
           onClick={onAreaClick}
         >
           <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
@@ -113,12 +109,12 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleRef}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-white border border-[#FF6B00]/8 shadow-[0_1px_2px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.97] transition-all min-w-0 flex-[0.4] will-change-[transform,flex,background-color,border,box-shadow]"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-white border border-[#FF6B00]/8 shadow-[0_1px_2px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.98] transition-all min-w-0 flex-shrink-0 will-change-[transform,background-color,border-color,box-shadow]"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[32px] w-[32px] shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center will-change-transform"
+              className="h-[28px] w-[28px] shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center will-change-transform"
             >
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
@@ -127,10 +123,10 @@ export function UWHeader({
               )}
             </div>
             
-            <div className="min-w-0 flex-1 flex items-center gap-1">
+            <div className="min-w-0 flex items-center gap-1">
               <span 
                 ref={vehicleNameRef}
-                className="font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap truncate text-[16px]"
+                className="font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap truncate text-[16px] max-w-[100px] sm:max-w-none"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>

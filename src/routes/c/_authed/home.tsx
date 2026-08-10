@@ -149,9 +149,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[calc(56px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[calc(52px+env(safe-area-inset-top,24px))]">
           <div className="px-5">
-            <div className="mt-[18px]">
+            <div className="mt-[20px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -205,16 +205,16 @@ function CustomerHome() {
               }
               className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-3 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
-                {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
+              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
+                {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[14px] px-7 h-[40px] flex items-center justify-center text-[15px] font-[600] transition-all duration-200 active:scale-95",
+                      "whitespace-nowrap rounded-full px-6 h-[38px] flex items-center justify-center text-[14px] font-[650] transition-all duration-200 active:scale-[0.96]",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
-                        : "bg-white text-[#2D2D2D] border border-[#2D2D2D]/5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                        ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/15" 
+                        : "bg-white text-[#4A4A4A] border border-[#2D2D2D]/5 shadow-sm"
                     )}
                   >
                     {cat}
@@ -239,20 +239,18 @@ function CustomerHome() {
               </div>
 
               {/* Refined Daily Shine Closing CTA */}
-              <div className="mt-8 mb-4">
+              <div className="mt-8 mb-8 pb-4">
                 <button 
                   onClick={() => navigate({ to: "/c/service/daily-shine" as any })}
                   className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-6 text-left active:scale-[0.98] transition-transform shadow-sm"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[12px] font-[700] text-[#FF6B00] uppercase tracking-wider mb-1.5">Your car deserves better</p>
-                      <h3 className="text-[20px] font-[700] text-[#2D2D2D] leading-tight mb-4">
-                        Keep it clean every day <br/> with Daily Shine.
-                      </h3>
-                      <div className="inline-flex items-center justify-center px-4 py-2 bg-[#FF6B00] rounded-full text-white text-[13px] font-[700] shadow-sm">
-                        EXPLORE DAILY SHINE <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                      </div>
+                  <div className="flex flex-col items-center text-center">
+                    <p className="text-[12px] font-[750] text-[#FF6B00] uppercase tracking-widest mb-2">Your car deserves better</p>
+                    <h3 className="text-[20px] font-[700] text-[#2D2D2D] leading-tight mb-5">
+                      Keep it clean every day <br/> with Daily Shine.
+                    </h3>
+                    <div className="inline-flex items-center justify-center px-6 py-2.5 bg-[#FF6B00] rounded-full text-white text-[13px] font-[750] shadow-md shadow-[#FF6B00]/20">
+                      EXPLORE DAILY SHINE <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
                     </div>
                   </div>
                 </button>
