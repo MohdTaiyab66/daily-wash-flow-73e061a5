@@ -67,17 +67,17 @@ export function UWServiceCard({
       </div>
       
       <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2 min-w-0">
-        <div className="h-[58px] flex items-center justify-center overflow-hidden px-0.5">
-          <h3 className="text-[13px] font-[600] leading-[1.3] text-[#2D2D2D] text-center overflow-hidden break-words line-clamp-3">
+        <div className="h-[60px] flex items-center justify-center overflow-hidden px-0.5">
+          <h3 className="text-[14px] font-[600] leading-[1.25] text-[#2D2D2D] text-center overflow-hidden break-words line-clamp-3">
             {name}
           </h3>
         </div>
         
         <div className="mt-auto flex items-center justify-between gap-1 h-[36px]">
           <div className="flex items-baseline gap-1 overflow-hidden">
-            <span className="text-[18px] font-[700] text-[#FF6B00] truncate">₹{price}</span>
+            <span className="text-[17px] font-[700] text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
-              <span className="text-[10px] font-medium text-muted-foreground/30 line-through truncate">
+              <span className="text-[10px] font-medium text-[#7A7A7A]/40 line-through truncate">
                 ₹{oldPrice}
               </span>
             )}
@@ -91,7 +91,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] shadow-[0_2px_4px_rgba(255,107,0,0.1)] border border-[#FF6B00]/5",
+              "flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] shadow-[0_2px_4px_rgba(255,107,0,0.1)] border border-[#FF6B00]/5",
               isAdded && "bg-[#FF6B00] text-white shadow-[#FF6B00]/20"
             )}
           >

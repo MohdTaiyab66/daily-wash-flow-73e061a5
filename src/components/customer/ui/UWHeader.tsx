@@ -36,7 +36,7 @@ export function UWHeader({
           {/* Left: Location - 60% approx */}
           <div 
             className={cn(
-              "flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-all duration-400 flex-[0.6] min-w-0",
+              "flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-all duration-400 flex-[0.55] min-w-0",
               isCollapsed ? "opacity-0 pointer-events-none -translate-y-2" : "opacity-100 translate-y-0"
             )} 
             onClick={onAreaClick}
@@ -52,8 +52,8 @@ export function UWHeader({
           {activeVehicle && (
             <div 
               className={cn(
-                "flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-[#FFF0E4] border border-[#FF6B00]/5 cursor-pointer active:scale-[0.97] transition-all duration-400 min-w-0",
-                isCollapsed ? "absolute left-4 right-4 bg-white/95 backdrop-blur-sm border-none shadow-sm h-[42px] px-3 translate-y-0" : "flex-[0.4] translate-y-0"
+                "flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] bg-white border border-[#FF6B00]/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-400 min-w-0",
+                isCollapsed ? "absolute left-4 right-4 bg-white/95 backdrop-blur-sm border-none shadow-sm h-[42px] px-3 translate-y-0" : "flex-[0.45] translate-y-0"
               )}
               onClick={onVehicleClick}
             >
@@ -70,8 +70,8 @@ export function UWHeader({
               
               <div className="min-w-0 flex-1 flex items-center gap-1.5">
                 <span className={cn(
-                  "truncate font-[600] text-[#2D2D2D] tracking-tight",
-                  isCollapsed ? "text-[16px]" : "text-[15.5px]"
+                  "font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap",
+                  isCollapsed ? "text-[16px] truncate" : "text-[15.5px]"
                 )}>
                   {activeVehicle.make} {activeVehicle.model}
                 </span>
