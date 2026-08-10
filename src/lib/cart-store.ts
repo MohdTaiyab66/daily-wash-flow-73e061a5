@@ -22,7 +22,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
-      addItem: (item) => set((state) => {
+      addItem: (item: CartItem) => set((state: CartState) => {
         const existing = state.items.find((i) => i.id === item.id);
         if (existing) {
           return {
@@ -33,16 +33,16 @@ export const useCartStore = create<CartState>()(
         }
         return { items: [...state.items, item] };
       }),
-      updateQuantity: (id, quantity) => set((state) => ({
+      updateQuantity: (id: string, quantity: number) => set((state: CartState) => ({
         items: state.items
           .map((i) => (i.id === id ? { ...i, quantity } : i))
           .filter((i) => i.type === 'base' || i.quantity > 0),
       })),
-      removeItem: (id) => set((state) => ({
+      removeItem: (id: string) => set((state: CartState) => ({
         items: state.items.filter((i) => i.id !== id),
       })),
       clearCart: () => set({ items: [] }),
-      setBaseService: (id, name, price) => set((state) => {
+      setBaseService: (id: string, name: string, price: number) => set((state: CartState) => {
         const otherItems = state.items.filter((i) => i.type !== 'base');
         return {
           items: [{ id, name, price, quantity: 1, type: 'base' }, ...otherItems],
@@ -54,3 +54,4 @@ export const useCartStore = create<CartState>()(
     }
   )
 );
+
