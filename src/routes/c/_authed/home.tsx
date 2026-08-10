@@ -265,55 +265,55 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFF9F3] pb-12">
+      <div className="min-h-screen bg-[#FFF9F3] pb-24">
         <UWHeader 
           area={area} 
           unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
-        />
-
-        <div className="px-5 pb-8">
-          <div className="space-y-5 mt-4">
-            {/* 1. Vehicle Selector - Immediately below Location Header */}
-            <Section className="mt-0">
-              {vehiclesQ.isLoading ? (
-                <SkeletonCard className="h-16" />
-              ) : activeVehicle ? (
-                <Surface 
-                  className="overflow-hidden p-3 border border-black/[0.03] bg-white shadow-sm rounded-[16px]"
-                  onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-                >
-                  <div className="flex w-full items-center gap-3">
-                    <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[#F8F9FB]">
-                      <VehicleAvatar 
-                        imageUrl={catalogImageQ.data} 
-                        make={activeVehicle.make} 
-                        model={activeVehicle.model} 
-                        color={activeVehicle.color} 
-                        className="h-full w-full object-contain p-1" 
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                          <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A]">{activeVehicle.make} {activeVehicle.model}</h2>
-                          <p className="truncate text-[13px] font-medium text-muted-foreground/50 mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
-                        </div>
-                        <ChevronDown className="h-5 w-5 text-muted-foreground/20 ml-2" />
-                      </div>
-                    </div>
+        >
+          {vehiclesQ.isLoading ? (
+            <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
+          ) : activeVehicle ? (
+            <div 
+              className="flex items-center gap-3 active:opacity-70 transition-opacity"
+              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+            >
+              <div className="relative h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-black/5 shadow-sm">
+                <VehicleAvatar 
+                  imageUrl={catalogImageQ.data} 
+                  make={activeVehicle.make} 
+                  model={activeVehicle.model} 
+                  color={activeVehicle.color} 
+                  className="h-full w-full object-contain p-1" 
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A] leading-tight">
+                      {activeVehicle.make} {activeVehicle.model}
+                    </h2>
+                    <p className="truncate text-[13px] font-medium text-muted-foreground/60 leading-tight">
+                      {activeVehicle.registration_number} · {bodyLabel}
+                    </p>
                   </div>
-                </Surface>
-              ) : (
-                <Surface 
-                  onClick={() => navigate({ to: "/c/vehicles/add" })}
-                  className="flex items-center gap-3 border-dashed border-primary/30 bg-primary/5 p-3 rounded-[16px]"
-                >
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-md shadow-primary/20"><Plus className="h-5 w-5" /></div>
-                  <div><span className="block text-[14px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
-                </Surface>
-              )}
-            </Section>
+                  <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button 
+              onClick={() => navigate({ to: "/c/vehicles/add" })}
+              className="flex items-center gap-2 text-primary font-black text-[14px]"
+            >
+              <Plus className="h-4 w-4" />
+              Add your car
+            </button>
+          )}
+        </UWHeader>
+
+        <div className="px-5">
+          <div className="space-y-5 mt-5">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
             <div className="mt-[-2px]">
@@ -343,7 +343,7 @@ function CustomerHome() {
 
             <Section 
               title="Car care services"
-              className="mt-7 mb-2"
+              className="mt-7 mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
