@@ -58,9 +58,8 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -133,20 +132,8 @@ function CustomerHome() {
   const serviceImagesQ = useServiceImages();
   const resolvedServiceImage = (slug: string) => getServiceImage(slug, serviceImagesQ.data);
 
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+  // Scroll sync logic handled by UWHeader using scrollRef
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsCollapsed(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: "-40px 0px 0px 0px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeVehicle?.id]);
 
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
@@ -156,7 +143,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[32px]">
+      <div ref={containerRef} className="min-h-screen bg-[#FFFCF9] pb-[32px] overflow-y-auto">
         
         <UWHeader 
           area={area} 
@@ -164,13 +151,10 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-          isCollapsed={isCollapsed}
         />
 
-        {/* Adjust top padding to match header height */}
         <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
-          {/* Sentinel for IntersectionObserver - shifted to control transition */}
-          <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
+
 
           <div className="px-5">
             <div className="mt-[20px]">
