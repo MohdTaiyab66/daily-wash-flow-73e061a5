@@ -33,11 +33,12 @@ export function UWServiceCard({
   return (
     <Surface 
       className={cn(
-        "p-0 overflow-hidden flex flex-col h-[195px] bg-white border border-[#2D2D2D]/5 rounded-[14px] shadow-[0_1px_6px_rgba(0,0,0,0.02)] transition-all active:scale-[0.98] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-[198px] bg-white border border-[#2D2D2D]/5 rounded-[12px] shadow-[0_1px_4px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
+
         className
       )}
     >
-      <div className="relative h-[105px] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[14px] shrink-0">
+      <div className="relative h-[102px] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px] shrink-0">
         {image ? (
           <img 
             src={image} 
