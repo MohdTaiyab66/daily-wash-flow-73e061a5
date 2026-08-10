@@ -221,33 +221,34 @@ function ServiceDetail() {
     : `Professional ${service?.name} service delivered at your doorstep for maximum convenience and quality.`);
 
   return (
-    <div className="min-h-screen bg-[#FFFDFB] pb-40">
-      {/* Redesigned Header */}
-      <header className="sticky top-0 z-30 bg-[#FFFDFB]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.04]">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 text-charcoal">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0">
-            <div className="font-bold text-[15px] text-charcoal truncate pr-2 leading-tight">
-              {service?.name}
-            </div>
-            <div className="text-[10px] font-black text-muted-foreground/80 uppercase tracking-widest mt-0.5">
-              SERVICE DETAILS
-            </div>
+    <div className="min-h-screen bg-[#FAF9F7] pb-32">
+      {/* 1. COMPACT HEADER (📍 Kalyanpur (West) 🚙 Tata Harrier ▾) */}
+      <header className="sticky top-0 z-50 bg-[#FAF9F7] px-4 py-4 flex items-center gap-4">
+        <button onClick={() => navigate({ to: "/c/home" })} className="p-1">
+          <ArrowLeft className="h-6 w-6 text-charcoal" />
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          <div className="text-[17px] font-bold text-charcoal truncate pr-2 leading-tight">
+            {service?.name}
+          </div>
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5 opacity-60">
+            SERVICE DETAILS
           </div>
         </div>
         
-        <div className="bg-white/70 px-3 py-1.5 rounded-full border border-black/[0.06] shadow-sm flex items-center gap-2 shrink-0">
-          <Car className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[12px] font-bold text-charcoal max-w-[80px] truncate">{vehicle?.nickname || vehicle?.model || "Vehicle"} ▾</span>
+        <div className="bg-white px-3 py-2 rounded-2xl border border-black/[0.04] shadow-sm flex items-center gap-2 shrink-0">
+          <div className="w-5 h-5 flex items-center justify-center">
+            <img src="https://lovable-uploads.s3.us-west-2.amazonaws.com/b9e28f24-2c6c-4869-95e5-3914a1f33774.png" className="h-3.5 w-auto object-contain opacity-70 grayscale" alt="" />
+          </div>
+          <span className="text-[13px] font-bold text-charcoal max-w-[80px] truncate">{vehicle?.model || "Harrier"} ▾</span>
         </div>
       </header>
 
       {service && (
-        <div className="px-4 space-y-7 pt-4 max-w-md mx-auto">
-          {/* Integrated Hero Section */}
-          <div className="relative overflow-hidden rounded-[28px] aspect-[16/10] bg-white shadow-sm border border-black/[0.03]">
+        <div className="px-4 space-y-6 pt-2 max-w-md mx-auto">
+          {/* 2. PREMIUM HERO IMAGE */}
+          <div className="relative overflow-hidden rounded-[24px] aspect-[16/8] bg-white shadow-sm border border-black/[0.03]">
              {imageObj.url ? (
                 <img src={imageObj.url} className="w-full h-full object-cover" alt={service.name} />
               ) : (
@@ -255,104 +256,69 @@ function ServiceDetail() {
                   <Sparkles className="h-10 w-10 text-primary/15" />
                 </div>
               )}
-             <div className="absolute inset-0 bg-black/5 pointer-events-none" />
           </div>
 
-          {/* Premium Service Summary Card */}
-          <Surface className="p-6 rounded-[28px] bg-white border-black/[0.04] shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1 pr-4">
-                <h1 className="text-[20px] font-black text-charcoal uppercase leading-tight tracking-tight">
-                  {service.name}
-                </h1>
-                <div className="flex items-center gap-2 mt-2.5">
-                  <div className="text-2xl font-black text-primary">
-                    ₹{basePrice}
-                  </div>
-                  <div className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
-                    {isSubscription ? "MONTHLY" : "ONE-TIME"}
-                  </div>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-[#FFF1E6] flex items-center justify-center text-primary shadow-sm border border-primary/10 shrink-0">
-                <Zap className="h-6 w-6" fill="currentColor" />
-              </div>
-            </div>
-            <div className="h-px bg-black/[0.03] my-4" />
-            <p className="text-[14px] font-bold text-charcoal/70 leading-relaxed italic">
-              {isSubscription ? "A cleaner car, every single day." : "Quality doorstep car wash & detail."}
-            </p>
-          </Surface>
-
-          {/* Service Overview */}
-          <div className="space-y-3">
-            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Overview</SectionTitle>
-            <Surface className="p-5 bg-white border-black/[0.03] rounded-[24px]">
-              <p className="text-[14px] font-bold text-charcoal/80 leading-relaxed">
-                {description}
+          {/* 3. SERVICE NAME & PRICE BLOCK */}
+          <div className="bg-white p-5 rounded-[24px] border border-black/[0.04] shadow-sm flex justify-between items-center">
+            <div className="flex-1 pr-4">
+              <h1 className="text-[20px] font-bold text-charcoal leading-tight">
+                {service.name}
+              </h1>
+              <p className="text-[13px] text-muted-foreground mt-1">
+                {isSubscription ? "A cleaner car, every single day." : "Quality doorstep car wash without body polish."}
               </p>
-            </Surface>
-          </div>
-
-          {/* Included Services */}
-          {inclusions && inclusions.length > 0 && (
-            <div className="space-y-3">
-              <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Includes</SectionTitle>
-              <div className="grid grid-cols-1 gap-2.5">
-                {inclusions.map((item: string) => (
-                  <Surface key={item} className="p-4 bg-white border-black/[0.03] rounded-[20px] flex items-center gap-3.5">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <span className="text-[14px] font-bold text-charcoal">{item}</span>
-                  </Surface>
-                ))}
-              </div>
             </div>
-          )}
-
-          {/* Service Benefits */}
-          <div className="space-y-3">
-            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Why choose Urban Wash?</SectionTitle>
-            <div className="grid grid-cols-2 gap-3">
-              {benefits.map((bLabel, idx) => {
-                const Icon = [Sparkles, ShieldCheck, CalendarClock, MapPin][idx % 4] || Star;
-                return (
-                  <Surface key={bLabel} className="p-4 flex flex-col gap-2.5 bg-white border-black/[0.03] rounded-[22px] min-h-[90px]">
-                    <Icon className="h-5 w-5 text-primary" />
-                    <div className="text-[12px] font-black text-charcoal leading-tight">{bLabel}</div>
-                  </Surface>
-                );
-              })}
+            <div className="text-right shrink-0">
+              <div className="text-[24px] font-black text-[#EA580C]">
+                ₹{basePrice}
+              </div>
+              <div className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5 bg-black/[0.03] px-2 py-0.5 rounded-full inline-block">
+                {isSubscription ? "MONTHLY" : "ONE-TIME"}
+              </div>
             </div>
           </div>
 
-          {/* Location */}
-          <div className="space-y-3">
-            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Location</SectionTitle>
-            <Surface className="flex items-center gap-4 p-5 bg-white border-black/[0.03] rounded-[24px]">
-              <div className="h-10 w-10 rounded-full bg-[#FFF1E6] flex items-center justify-center text-primary shrink-0">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div className="flex-grow min-w-0">
-                <div className="text-[14px] font-black text-charcoal truncate">
-                  {address ? `${address.label}: ${address.area}` : "No address set"}
+          {/* 4. SERVICE INCLUDES (GRID 4 COLS) */}
+          <div className="space-y-4">
+            <h2 className="text-[15px] font-bold text-charcoal px-1">Service Includes</h2>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Exterior Wash", icon: "🚿" },
+                { label: "Tyre & Rim Cleaning", icon: "🛞" },
+                { label: "Glass Cleaning", icon: "🪟" },
+                { label: "Drying & Finishing", icon: "🧺" }
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col items-center gap-3 py-4 px-1 text-center bg-white/40 border border-black/[0.02] rounded-[20px]">
+                  <div className="text-[24px]">{item.icon}</div>
+                  <div className="text-[10px] font-bold text-charcoal leading-tight max-w-[60px]">{item.label}</div>
                 </div>
-                <div className="text-[11px] font-bold text-muted-foreground mt-0.5">Your primary service address</div>
-              </div>
-              <button className="text-[11px] font-black text-primary uppercase bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10 active:scale-95 transition-transform shrink-0">
-                Change
-              </button>
-            </Surface>
+              ))}
+            </div>
           </div>
 
-          {/* Schedule */}
-          <div className="space-y-3">
-            <div className="flex flex-col gap-0.5">
-              <SectionTitle className="text-[17px] tracking-tight text-charcoal">Choose a time</SectionTitle>
-              <p className="text-[12px] font-bold text-muted-foreground">Select your preferred time slot</p>
+          {/* 5. SERVICE LOCATION (ORANGE PIN) */}
+          <div className="bg-white flex items-center gap-4 p-5 rounded-[24px] border border-black/[0.04] shadow-sm">
+            <div className="h-10 w-10 rounded-full bg-[#FFF1E6] flex items-center justify-center shrink-0">
+              <MapPin className="h-5 w-5 text-[#EA580C]" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex-grow min-w-0">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Service Location</div>
+              <div className="text-[15px] font-bold text-charcoal truncate mt-0.5">
+                {address ? `${address.label}: ${address.area}` : "No address set"}
+              </div>
+            </div>
+            <button className="text-[13px] font-bold text-[#EA580C] uppercase tracking-wide">
+              Change
+            </button>
+          </div>
+
+          {/* 6. CHOOSE A TIME (WHITE PILLS) */}
+          <div className="space-y-3">
+            <div className="px-1">
+              <h2 className="text-[15px] font-bold text-charcoal">Choose a time</h2>
+              <p className="text-[12px] text-muted-foreground mt-0.5">Select your preferred time slot</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
               {TIME_SLOTS.map(s => {
                 const isSelected = slot === s;
                 return (
@@ -360,121 +326,109 @@ function ServiceDetail() {
                     key={s} 
                     onClick={() => setSlot(s)} 
                     className={cn(
-                      "py-4 px-3 rounded-[20px] border-2 font-black text-[13px] flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.97]",
+                      "py-4 px-2 rounded-full border text-[12px] font-bold transition-all relative",
                       isSelected 
-                        ? "border-primary bg-primary/[0.04] text-primary shadow-[0_4px_12px_rgba(255,107,0,0.08)]" 
-                        : "border-black/[0.04] bg-white text-charcoal/60"
+                        ? "border-[#EA580C] bg-[#EA580C]/[0.02] text-[#EA580C]" 
+                        : "border-black/[0.03] bg-white text-charcoal/80"
                     )}
                   >
                     {s}
-                    {isSelected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                    {isSelected && (
+                      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-4 h-4 rounded-full bg-[#EA580C] flex items-center justify-center border-2 border-[#FAF9F7]">
+                        <Check className="h-2 w-2 text-white" strokeWidth={4} />
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Add-ons */}
+          {/* 7. PREMIUM ADD-ONS (COMPACT ROWS) */}
           {addonsQ.data && addonsQ.data.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex flex-col gap-0.5">
-                <SectionTitle className="text-[17px] tracking-tight text-charcoal">Premium Add-ons</SectionTitle>
-                <p className="text-[12px] font-bold text-muted-foreground">Enhance your service with optional extras</p>
+            <div className="space-y-4">
+              <div className="flex justify-between items-end px-1">
+                <div>
+                  <h2 className="text-[15px] font-bold text-charcoal">Premium Add-ons</h2>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">Enhance your wash experience</p>
+                </div>
+                <button className="text-[12px] font-bold text-[#EA580C]">View all</button>
               </div>
-              <div className="space-y-3">
+              
+              <div className="space-y-2">
                 {(showAllAddons ? addonsQ.data : addonsQ.data.slice(0, 3)).map(a => {
                   const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                   const isSelected = !!addonQty[a.id];
                   return (
-                    <Surface key={a.id} className="flex justify-between items-center p-4 bg-white border-black/[0.03] rounded-[22px]">
-                       <div className="flex-1 pr-3">
-                         <div className="font-bold text-[14px] text-charcoal">{a.name}</div>
-                         <div className="text-[12px] font-black text-primary mt-1 flex items-center gap-1.5">
-                            ₹{price}
-                            <span className="text-[10px] text-muted-foreground/60 font-black">EXTRA</span>
-                         </div>
+                    <div key={a.id} className="flex items-center gap-4 p-4 bg-white rounded-[22px] border border-black/[0.04] shadow-sm">
+                       <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0">
+                         {a.name.includes("Roof") ? "🚿" : a.name.includes("Seat") ? "💺" : "✨"}
                        </div>
-                       <Button 
-                         onClick={() => setAddonQty(p => ({...p, [a.id]: isSelected ? 0 : 1}))}
-                         className={cn(
-                           "h-9 rounded-full px-5 text-[11px] font-black shadow-sm transition-all",
-                           isSelected 
-                            ? "bg-success text-white border-none" 
-                            : "bg-white text-primary border border-primary/20 hover:bg-primary/5"
-                         )}
-                       >
-                         {isSelected ? "ADDED" : "+ ADD"}
-                       </Button>
-                    </Surface>
+                       <div className="flex-1 min-w-0">
+                         <div className="font-bold text-[14px] text-charcoal">{a.name}</div>
+                         <div className="text-[12px] font-black text-[#EA580C] mt-0.5">₹{price}</div>
+                       </div>
+                       <input 
+                         type="checkbox" 
+                         checked={isSelected}
+                         onChange={() => setAddonQty(p => ({...p, [a.id]: isSelected ? 0 : 1}))}
+                         className="h-5 w-5 rounded border-black/10 text-[#EA580C] focus:ring-[#EA580C]"
+                       />
+                    </div>
                   );
                 })}
               </div>
-              {addonsQ.data.length > 3 && !showAllAddons && (
-                <button 
-                  onClick={() => setShowAllAddons(true)}
-                  className="w-full mt-2 text-[12px] font-black text-primary uppercase bg-primary/[0.03] py-3 rounded-2xl border border-primary/5 active:scale-98 transition-transform"
-                >
-                  View all add-ons
-                </button>
-              )}
             </div>
           )}
 
-          {/* Bill Details */}
-          <div className="space-y-3">
-            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Bill Details</SectionTitle>
-            <Surface className="p-6 bg-white border-black/[0.03] rounded-[28px] shadow-sm">
-              <div className="space-y-3.5">
-                <div className="flex justify-between items-center text-[14px]">
-                  <span className="font-bold text-charcoal/60 uppercase text-[12px] tracking-tight">
-                    {isSubscription ? "Subscription" : "Service Amount"}
-                  </span>
-                  <span className="font-black text-charcoal">₹{basePrice}</span>
-                </div>
-                
-                {selectedAddons.length > 0 && (
-                  <div className="space-y-3.5 pt-3.5 border-t border-black/[0.03]">
-                    {selectedAddons.map(a => (
-                      <div key={a.id} className="flex justify-between items-center text-[14px]">
-                        <span className="font-bold text-charcoal/60 uppercase text-[12px] tracking-tight">{a.name}</span>
-                        <span className="font-black text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="h-px bg-black/[0.05] my-2" />
-                
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-[14px] font-black uppercase tracking-tight text-charcoal">Total Payable</span>
-                  <span className="text-[22px] font-black text-primary">₹{totalPayable}</span>
-                </div>
+          {/* 8. BILL DETAILS (FLAT CARD) */}
+          <div className="space-y-4">
+            <h2 className="text-[15px] font-bold text-charcoal px-1">Bill Details</h2>
+            <div className="bg-white p-6 rounded-[24px] border border-black/[0.04] shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-muted-foreground font-medium">Service Amount</span>
+                <span className="text-[13px] font-bold text-charcoal">₹{basePrice}</span>
               </div>
-            </Surface>
+              
+              {selectedAddons.map(a => (
+                <div key={a.id} className="flex justify-between items-center">
+                  <span className="text-[13px] text-muted-foreground font-medium">{a.name}</span>
+                  <span className="text-[13px] font-bold text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
+                </div>
+              ))}
+
+              <div className="h-px bg-black/[0.03]" />
+              
+              <div className="flex justify-between items-center">
+                <span className="text-[15px] font-bold text-charcoal uppercase tracking-wide">Total Payable</span>
+                <span className="text-[20px] font-black text-[#EA580C]">₹{totalPayable}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Sticky Bottom Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md p-4 pb-6 border-t border-black/[0.06] shadow-[0_-12px_40px_rgba(0,0,0,0.06)] flex items-center justify-between safe-area-bottom">
+      {/* 9. STICKY PAYMENT BAR (₹449  PROCEED TO PAY ->) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white p-5 pb-8 border-t border-black/[0.04] flex items-center justify-between safe-area-bottom shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
         <div>
-          <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">TOTAL PAYABLE</div>
-          <div className="text-[22px] font-black leading-none text-charcoal">₹{totalPayable}</div>
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">TOTAL</div>
+          <div className="text-[22px] font-black text-charcoal">₹{totalPayable}</div>
         </div>
-        <Button 
+        <button 
           onClick={confirm} 
           disabled={submitting} 
-          className="h-13 w-52 rounded-[20px] font-black text-[15px] shadow-xl shadow-primary/20 active:scale-[0.98] transition-transform"
+          className="bg-[#EA580C] text-white h-14 w-64 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-3 shadow-lg shadow-[#EA580C]/20 active:scale-[0.98] transition-transform"
         >
            {submitting ? (
              <Loader2 className="h-5 w-5 animate-spin" />
            ) : (
-             <div className="flex items-center gap-2">
+             <>
                PROCEED TO PAY <ArrowLeft className="h-4 w-4 rotate-180" strokeWidth={3} />
-             </div>
+             </>
            )}
-        </Button>
+        </button>
       </div>
     </div>
+
   );
 }
