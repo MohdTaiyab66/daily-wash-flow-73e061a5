@@ -34,13 +34,13 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-semibold transition-all",
-                    active ? "text-[#2D2D2D]" : "text-[#7A7A7A]"
+                    active ? "text-[#2D2D2D]" : "text-[#9E9E9E]"
                   )}
                 >
                   <span
                     className={cn(
                       "grid h-8 w-14 place-items-center rounded-full transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.3)]" : "bg-transparent text-[#7A7A7A]"
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.3)]" : "bg-transparent text-[#9E9E9E]"
                     )}
                   >
                     <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
