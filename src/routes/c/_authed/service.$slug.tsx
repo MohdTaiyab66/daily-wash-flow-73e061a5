@@ -274,7 +274,7 @@ function ServiceDetail() {
 
       {/* Service Image Gallery: Responsive card */}
       <div className="px-4 pt-6 w-full box-border">
-        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2.1/1]" ref={emblaRef}>
+        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2/1]" ref={emblaRef}>
           <div className="flex h-full">
              {galleryImages.map((img, i) => (
                <div key={i} className="flex-[0_0_100%] w-full h-full">
