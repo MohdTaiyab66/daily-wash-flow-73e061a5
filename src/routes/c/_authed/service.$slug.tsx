@@ -18,7 +18,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Section, Surface, Muted, SectionTitle } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
 import {
@@ -29,7 +28,6 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -88,7 +86,6 @@ function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const queryClient = useQueryClient();
   
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState(TIME_SLOTS[3]);
@@ -97,7 +94,6 @@ function ServiceDetail() {
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
   const [showVehicleDrawer, setShowVehicleDrawer] = useState(false);
 
-  // Persistence of selection in localStorage to match app behavior
   useEffect(() => {
     if (!vehicleId) {
       const stored = localStorage.getItem("uw_customer_vehicle");
@@ -131,7 +127,7 @@ function ServiceDetail() {
   });
 
   const addonsQ = useQuery({
-    queryKey: ["service-addons"], // Fetch all active addons, then filter
+    queryKey: ["service-addons"],
     queryFn: async () => {
       const { data } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
       return (data ?? []) as Addon[];
@@ -273,7 +269,6 @@ function ServiceDetail() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-32">
-      {/* 1. COMPACT HEADER */}
       <header className="sticky top-0 z-50 bg-[#FAF9F7]/80 backdrop-blur-md px-4 py-4 flex items-center gap-4 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-1 active:scale-90 transition-transform">
           <ArrowLeft className="h-6 w-6 text-charcoal" />
@@ -302,7 +297,6 @@ function ServiceDetail() {
 
       {service && (
         <div className="px-4 space-y-6 pt-2 max-w-md mx-auto">
-          {/* 2. PREMIUM HERO IMAGE */}
           <div className="relative overflow-hidden rounded-[24px] aspect-[16/8] bg-white shadow-sm border border-black/[0.03]">
              {imageObj.url ? (
                 <img src={imageObj.url} className="w-full h-full object-cover" alt={service.name} />
@@ -313,7 +307,6 @@ function ServiceDetail() {
               )}
           </div>
 
-          {/* 3. SERVICE NAME & PRICE BLOCK */}
           <div className="bg-white p-5 rounded-[24px] border border-black/[0.04] shadow-sm flex justify-between items-center">
             <div className="flex-1 pr-4">
               <h1 className="text-[20px] font-bold text-charcoal leading-tight">
@@ -333,7 +326,6 @@ function ServiceDetail() {
             </div>
           </div>
 
-          {/* 4. SERVICE INCLUDES */}
           {inclusions && inclusions.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-[15px] font-bold text-charcoal px-1">Service Includes</h2>
@@ -351,7 +343,6 @@ function ServiceDetail() {
             </div>
           )}
 
-          {/* 5. SERVICE LOCATION */}
           <div className="bg-white flex items-center gap-4 p-5 rounded-[24px] border border-black/[0.04] shadow-sm">
             <div className="h-10 w-10 rounded-full bg-[#FFF1E6] flex items-center justify-center shrink-0">
               <MapPin className="h-5 w-5 text-[#EA580C]" />
@@ -370,7 +361,6 @@ function ServiceDetail() {
             </button>
           </div>
 
-          {/* 6. CHOOSE A TIME */}
           <div className="space-y-3">
             <div className="px-1">
               <h2 className="text-[15px] font-bold text-charcoal">Choose a time</h2>
@@ -402,7 +392,6 @@ function ServiceDetail() {
             </div>
           </div>
 
-          {/* 7. PREMIUM ADD-ONS */}
           {relevantAddons.length > 0 && (
             <div className="space-y-4">
               <div className="flex justify-between items-end px-1">
@@ -433,7 +422,7 @@ function ServiceDetail() {
                           : "bg-white border-black/[0.04] shadow-sm"
                       )}
                     >
-                       <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0">
+                       <div className="w-10 h-10 rounded-2xl bg-black/[0.02] flex items-center justify-center shrink-0 text-lg">
                          {a.name.includes("Roof") ? "🚿" : a.name.includes("Seat") ? "💺" : "✨"}
                        </div>
                        <div className="flex-1 min-w-0">
@@ -453,7 +442,6 @@ function ServiceDetail() {
             </div>
           )}
 
-          {/* 8. BILL DETAILS */}
           <div className="space-y-4">
             <h2 className="text-[15px] font-bold text-charcoal px-1">Bill Details</h2>
             <div className="bg-white p-6 rounded-[24px] border border-black/[0.04] shadow-sm space-y-4">
@@ -480,7 +468,6 @@ function ServiceDetail() {
         </div>
       )}
 
-      {/* 9. STICKY PAYMENT BAR */}
       <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white p-5 pb-8 border-t border-black/[0.04] flex items-center justify-between safe-area-bottom shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
         <div>
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">TOTAL</div>
@@ -503,7 +490,6 @@ function ServiceDetail() {
         </Button>
       </div>
 
-      {/* ADD-ONS DRAWER */}
       <Drawer open={showAddonDrawer} onOpenChange={setShowAddonDrawer}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="border-b border-black/[0.03] pb-4">
@@ -560,7 +546,6 @@ function ServiceDetail() {
         </DrawerContent>
       </Drawer>
 
-      {/* VEHICLE SELECTOR DRAWER */}
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
         <DrawerContent>
           <DrawerHeader className="border-b border-black/[0.03] pb-4">
@@ -606,7 +591,7 @@ function ServiceDetail() {
             >
               <Plus className="h-5 w-5" />
               Add New Vehicle
-            </button>
+            </Button>
           </div>
           <div className="p-6"></div>
         </DrawerContent>
