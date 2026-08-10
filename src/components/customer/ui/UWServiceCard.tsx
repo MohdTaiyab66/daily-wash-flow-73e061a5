@@ -32,10 +32,10 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200 border-none rounded-[12px]", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-[184px] bg-white transition-opacity duration-200 border-none rounded-[12px]", className)}
       raised
     >
-      <div className="relative aspect-[1/0.9] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px]">
+      <div className="relative aspect-[1/0.8] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px]">
         {image ? (
           <img 
             src={image} 
@@ -64,16 +64,16 @@ export function UWServiceCard({
         )}
       </div>
       
-      <div className="flex flex-col flex-1 p-2">
-        <div className="h-[2.8em] flex items-start">
-          <h3 className="text-[12.5px] font-bold leading-[1.2] text-[#1A1A1A] line-clamp-2 w-full">
+      <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2">
+        <div className="h-[46px] flex items-start overflow-hidden">
+          <h3 className="text-[12px] font-bold leading-[1.2] text-[#1A1A1A] line-clamp-3 w-full">
             {name}
           </h3>
         </div>
         
-        <div className="mt-1 flex items-center justify-between gap-1">
+        <div className="mt-auto flex items-center justify-between gap-1">
           <div className="flex items-baseline gap-1 overflow-hidden">
-            <span className="text-[14px] font-black text-[#1A1A1A] truncate">₹{price}</span>
+            <span className="text-[13px] font-black text-[#1A1A1A] truncate">₹{price}</span>
             {oldPrice && (
               <span className="text-[9px] font-medium text-muted-foreground/40 line-through truncate">
                 ₹{oldPrice}

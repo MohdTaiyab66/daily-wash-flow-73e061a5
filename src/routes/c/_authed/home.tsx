@@ -380,12 +380,12 @@ function CustomerHome() {
             </Section>
 
             {showCatalog && (
-              <>
-                <div className="py-8 grid grid-cols-3 gap-2 px-2">
-                  <TrustItem label="Expert Care" />
-                  <TrustItem label="Photo Proof" />
-                  <TrustItem label="Safe & Secure" />
-                </div>
+              <div className="py-6 flex justify-between items-center px-4 max-w-sm mx-auto w-full">
+                <TrustItem label="EXPERT CARE" />
+                <TrustItem label="PHOTO PROOF" />
+                <TrustItem label="SAFE & SECURE" />
+              </div>
+            )}
                 
                 <Section className="pb-8 -mt-4">
                   <Surface 
