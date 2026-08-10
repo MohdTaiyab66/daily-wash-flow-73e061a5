@@ -131,12 +131,12 @@ function CustomerHome() {
   const resolvedServiceImage = (slug: string) => getServiceImage(slug, galleryQ.data);
 
 
-
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
     servicesQ.refetch(), 
-    serviceImagesQ.refetch()
+    galleryQ.refetch()
   ]);
+
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
