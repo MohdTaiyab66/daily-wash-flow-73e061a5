@@ -165,9 +165,14 @@ function ServiceDetail() {
 
   const confirm = async () => {
     if (!service || !vehicle || !activeAddress || !slot) {
-      toast.error("Please complete all selections.");
+      toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
       return;
     }
+    
+    // Ensure base service is in cart with latest price
+    const basePrice = isSUV ? service.price_sedan_suv : service.price_hatchback;
+    setBaseService(service.id, service.name, basePrice);
+    
     setSubmitting(true);
     try {
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
@@ -178,16 +183,38 @@ function ServiceDetail() {
         p_scheduled_time: slot,
         p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+
+      // Create Razorpay order with the CORRECT dynamic amount
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
-      const result = await openRazorpayCheckout({ keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: "INR", description: service.name, bookingId: bId });
+      
+      const result = await openRazorpayCheckout({ 
+        keyId: order.keyId, 
+        orderId: order.orderId, 
+        amount: order.amount, 
+        currency: "INR", 
+        description: service.name, 
+        bookingId: bId 
+      });
+
       if (result.status === "success") {
-        await useServerFn(verifyRazorpayPayment)({ data: { bookingId: bId, razorpayOrderId: result.orderId, razorpayPaymentId: result.paymentId, razorpaySignature: result.signature } });
+        await useServerFn(verifyRazorpayPayment)({ 
+          data: { 
+            bookingId: bId, 
+            razorpayOrderId: result.orderId, 
+            razorpayPaymentId: result.paymentId, 
+            razorpaySignature: result.signature 
+          } 
+        });
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
+      } else if (result.status === "failed") {
+        toast.error(result.message || "Payment failed. Please try again.");
       }
     } catch (e: any) {
       toast.error(e.message || "Booking failed");
-    } finally { setSubmitting(false); }
+    } finally { 
+      setSubmitting(false); 
+    }
   };
 
   const getAddonQty = (id: string) => cartItems.find(i => i.id === id)?.quantity || 0;
