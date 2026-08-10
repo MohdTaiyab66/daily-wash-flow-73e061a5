@@ -247,65 +247,93 @@ function ServiceDetail() {
           </div>
         )}
 
-        {/* Add-ons & Bill Details */}
-        <div className="space-y-4 w-full">
-          {/* Add-ons */}
-          {relevantAddons.length > 0 && (
-            <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-[16px] font-black text-charcoal">PREMIUM ADD-ONS</h3>
-                  <p className="text-[12px] text-muted-foreground font-medium">Enhance your service with additional care</p>
-                </div>
-                <Button variant="link" className="text-[#EA580C] font-bold text-xs" onClick={() => setShowAddonDrawer(true)}>VIEW ALL</Button>
-              </div>
-              <div className="space-y-4">
-                {relevantAddons.slice(0, 3).map(a => (
-                  <div key={a.id} className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#EA580C] shrink-0">
-                        <Sparkles className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[14px] font-bold text-charcoal truncate">{a.name}</div>
-                        <div className="text-[12px] font-bold text-[#EA580C]">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => setAddonQty(prev => ({ ...prev, [a.id]: prev[a.id] ? 0 : 1 }))}
-                      className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", addonQty[a.id] ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10")}
-                    >
-                      {addonQty[a.id] && <Check className="h-3 w-3 text-white" />}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Bill */}
-          <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
-            <h3 className="text-[14px] font-black text-charcoal mb-4 uppercase">Bill Details</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-[14px]">
-                <span className="text-muted-foreground font-medium">Service Amount</span>
-                <span className="font-bold text-charcoal">₹{basePrice}</span>
-              </div>
-              {selectedAddons.map(a => (
-                <div key={a.id} className="flex justify-between text-[14px]">
-                  <span className="text-muted-foreground font-medium truncate">{a.name}</span>
-                  <span className="font-bold text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
-                </div>
-              ))}
-              <div className="pt-4 mt-2 border-t flex justify-between items-center text-[16px]">
-                <span className="font-black text-charcoal">TOTAL PAYABLE</span>
-                <span className="font-black text-[#EA580C]">₹{totalPayable}</span>
-              </div>
-            </div>
+        {/* Location & Time */}
+        <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-sm font-bold text-charcoal truncate flex-1">📍 {activeAddress?.label || "Home"}</span>
+            <Button 
+              variant="link" 
+              className="text-[#EA580C] p-0 h-auto font-bold text-xs shrink-0" 
+              onClick={() => navigate({ 
+                to: "/c/location/search", 
+                search: { returnTo: window.location.pathname + window.location.search } 
+              })}
+            >
+              CHANGE
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            {TIME_SLOTS.map(t => (
+              <button 
+                key={t} 
+                onClick={() => setSlot(t)} 
+                className={cn(
+                  "py-2.5 rounded-xl border font-bold text-[10px] transition-all", 
+                  slot === t ? "bg-orange-50 border-[#EA580C] text-[#EA580C]" : "bg-white border-black/[0.05] text-charcoal"
+                )}
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
-      {/* Add-ons Drawer */}
+        {/* Add-ons */}
+        {relevantAddons.length > 0 && (
+          <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-[16px] font-black text-charcoal">PREMIUM ADD-ONS</h3>
+                <p className="text-[12px] text-muted-foreground font-medium">Enhance your service</p>
+              </div>
+              <Button variant="link" className="text-[#EA580C] font-bold text-xs" onClick={() => setShowAddonDrawer(true)}>VIEW ALL</Button>
+            </div>
+            <div className="space-y-4">
+              {relevantAddons.slice(0, 3).map(a => (
+                <div key={a.id} className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#EA580C] shrink-0">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-bold text-charcoal truncate">{a.name}</div>
+                      <div className="text-[12px] font-bold text-[#EA580C]">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setAddonQty(prev => ({ ...prev, [a.id]: prev[a.id] ? 0 : 1 }))}
+                    className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", addonQty[a.id] ? "bg-[#EA580C] border-[#EA580C]" : "border-black/10")}
+                  >
+                    {addonQty[a.id] && <Check className="h-3 w-3 text-white" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bill */}
+        <div className="bg-white p-6 rounded-[28px] border shadow-sm w-full box-border">
+          <h3 className="text-[14px] font-black text-charcoal mb-4 uppercase">Bill Details</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-[14px]">
+              <span className="text-muted-foreground font-medium">Service Amount</span>
+              <span className="font-bold text-charcoal">₹{basePrice}</span>
+            </div>
+            {selectedAddons.map(a => (
+              <div key={a.id} className="flex justify-between text-[14px]">
+                <span className="text-muted-foreground font-medium truncate">{a.name}</span>
+                <span className="font-bold text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
+              </div>
+            ))}
+            <div className="pt-4 mt-2 border-t flex justify-between items-center text-[16px]">
+              <span className="font-black text-charcoal">TOTAL PAYABLE</span>
+              <span className="font-black text-[#EA580C]">₹{totalPayable}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Drawer open={showAddonDrawer} onOpenChange={setShowAddonDrawer}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="px-6 pt-6 border-b"><DrawerTitle className="text-[18px] font-black uppercase tracking-tight">Select Add-ons</DrawerTitle></DrawerHeader>
@@ -335,6 +363,7 @@ function ServiceDetail() {
           </ScrollArea>
         </DrawerContent>
       </Drawer>
+
 
 
       {/* Payment Footer */}
