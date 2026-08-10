@@ -127,8 +127,9 @@ function CustomerHome() {
     },
   });
 
-  const serviceImagesQ = useServiceImages();
-  const resolvedServiceImage = (slug: string) => getServiceImage(slug, serviceImagesQ.data);
+  const galleryQ = useServiceGallery();
+  const resolvedServiceImage = (slug: string) => getServiceImage(slug, galleryQ.data);
+
 
 
   const refreshAll = () => Promise.all([
