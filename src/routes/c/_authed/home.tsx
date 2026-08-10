@@ -273,33 +273,33 @@ function CustomerHome() {
         />
 
         <div className="px-5 pb-8">
-          <div className="space-y-6 mt-2">
+          <div className="space-y-5 mt-4">
             {/* 1. Vehicle Selector - Immediately below Location Header */}
             <Section className="mt-0">
               {vehiclesQ.isLoading ? (
-                <SkeletonCard className="h-20" />
+                <SkeletonCard className="h-16" />
               ) : activeVehicle ? (
                 <Surface 
-                  className="overflow-hidden p-4 border-none bg-white shadow-sm rounded-[20px]"
+                  className="overflow-hidden p-3 border border-black/[0.03] bg-white shadow-sm rounded-[16px]"
                   onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
                 >
-                  <div className="flex w-full items-center gap-4">
-                    <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px] bg-[#F8F9FB]">
+                  <div className="flex w-full items-center gap-3">
+                    <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[#F8F9FB]">
                       <VehicleAvatar 
                         imageUrl={catalogImageQ.data} 
                         make={activeVehicle.make} 
                         model={activeVehicle.model} 
                         color={activeVehicle.color} 
-                        className="h-full w-full object-contain p-1.5" 
+                        className="h-full w-full object-contain p-1" 
                       />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0">
                           <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A]">{activeVehicle.make} {activeVehicle.model}</h2>
-                          <p className="truncate text-[12px] font-bold text-muted-foreground/60 uppercase tracking-tight mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
+                          <p className="truncate text-[13px] font-medium text-muted-foreground/50 mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
                         </div>
-                        <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
+                        <ChevronDown className="h-5 w-5 text-muted-foreground/20 ml-2" />
                       </div>
                     </div>
                   </div>
@@ -307,16 +307,16 @@ function CustomerHome() {
               ) : (
                 <Surface 
                   onClick={() => navigate({ to: "/c/vehicles/add" })}
-                  className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4 rounded-[20px]"
+                  className="flex items-center gap-3 border-dashed border-primary/30 bg-primary/5 p-3 rounded-[16px]"
                 >
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
-                  <div><span className="block text-[15px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-md shadow-primary/20"><Plus className="h-5 w-5" /></div>
+                  <div><span className="block text-[14px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
                 </Surface>
               )}
             </Section>
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-            <div className="mt-[-8px]">
+            <div className="mt-[-2px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -343,9 +343,9 @@ function CustomerHome() {
 
             <Section 
               title="Car care services"
-              className="mt-6 mb-2"
+              className="mt-7 mb-2"
             >
-              <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
@@ -360,6 +360,8 @@ function CustomerHome() {
                     {cat}
                   </button>
                 ))}
+                {/* Subtle scroll indicator fade */}
+                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[#FFF9F3] to-transparent pointer-events-none" />
               </div>
 
               <div className="grid grid-cols-3 gap-3 mt-2">
@@ -381,38 +383,38 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-6 flex justify-between items-center px-4 max-w-sm mx-auto w-full">
+                <div className="py-2 flex justify-between items-center px-4 max-w-sm mx-auto w-full opacity-60">
                   <TrustItem label="EXPERT CARE" />
                   <TrustItem label="PHOTO PROOF" />
                   <TrustItem label="SAFE & SECURE" />
                 </div>
 
-                <Section className="pb-4 mt-2">
+                <Section className="pb-4 mt-4">
                   <Surface 
-                    className="relative overflow-hidden bg-[#FF6B00] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform"
+                    className="relative overflow-hidden bg-[#FF6B00] border-none p-5 rounded-[22px] shadow-lg text-white group active:scale-[0.98] transition-transform"
                     onClick={() => navigate({ to: "/c/service/daily-shine" })}
                   >
                     <div className="relative z-10 flex flex-col items-start gap-1">
-                      <h3 className="text-[20px] font-black leading-[1.1] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
-                      <p className="mt-1.5 text-[12px] font-medium text-white/80 leading-snug max-w-[180px]">
+                      <h3 className="text-[18px] font-black leading-[1.1] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
+                      <p className="mt-1 text-[12px] font-medium text-white/80 leading-snug max-w-[180px]">
                         Premium doorstep car care you can trust.
                       </p>
-                      <div className="mt-5 flex items-center gap-1.5 font-black text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-4 py-2 rounded-full shadow-md">
+                      <div className="mt-4 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-wider bg-white text-[#FF6B00] px-3.5 py-1.5 rounded-full shadow-md">
                         Explore Daily Shine
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-3 w-3" />
                       </div>
                     </div>
                     
                     {/* Visual assets overlay */}
                     <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
-                      <Sparkles className="h-20 w-20 text-white" />
+                      <Sparkles className="h-16 w-16 text-white" />
                     </div>
                     <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
                   </Surface>
 
-                  <div className="mt-8 mb-4 text-center px-6">
-                    <p className="text-[12px] font-black text-[#1A1A1A]/40 uppercase tracking-[0.2em]">URBAN WASH</p>
-                    <p className="mt-1 text-[11px] font-bold text-[#1A1A1A]/20">Designed for those who love their cars.</p>
+                  <div className="mt-6 mb-2 text-center px-6">
+                    <p className="text-[11px] font-black text-[#1A1A1A]/30 uppercase tracking-[0.2em]">URBAN WASH</p>
+                    <p className="mt-0.5 text-[10px] font-bold text-[#1A1A1A]/15">Designed for those who love their cars.</p>
                   </div>
                 </Section>
 
