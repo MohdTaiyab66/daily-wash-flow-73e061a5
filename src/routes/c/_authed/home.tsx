@@ -495,7 +495,7 @@ function CustomerHome() {
 function TrustItem({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center gap-2 flex-1">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm border border-[#FF6B00]/10">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10">
         <Check className="h-4 w-4 text-[#FF6B00]" strokeWidth={4} />
       </div>
       <span className="text-[9px] font-[600] text-[#7A7A7A] uppercase tracking-widest text-center">{label}</span>
