@@ -1,83 +1,96 @@
 import { MapPin, ChevronDown } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface UWHeaderProps {
   area: string;
   onAreaClick: () => void;
   children?: ReactNode;
-  scrollY?: number;
 }
 
 export function UWHeader({ 
   area, 
   onAreaClick,
-  children,
-  scrollY = 0
+  children
 }: UWHeaderProps) {
-  // Collapse starts at 20px, finishes at 80px
-  const collapseStart = 20;
-  const collapseEnd = 80;
-  
-  // Progress from 0 (expanded) to 1 (collapsed)
-  const progress = Math.min(1, Math.max(0, (scrollY - collapseStart) / (collapseEnd - collapseStart)));
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const compactRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const isCollapsed = !entry.isIntersecting;
+        
+        if (compactRef.current) {
+          compactRef.current.style.opacity = isCollapsed ? "1" : "0";
+          compactRef.current.style.transform = isCollapsed ? "translateY(0)" : "translateY(-8px)";
+          compactRef.current.style.pointerEvents = isCollapsed ? "auto" : "none";
+        }
+        
+        if (expandedRef.current) {
+          // Subtle background shift for the sticky container
+          expandedRef.current.style.backgroundColor = isCollapsed ? "white" : "#FFF9F3";
+          expandedRef.current.style.boxShadow = isCollapsed ? "0 2px 10px rgba(0,0,0,0.03)" : "none";
+        }
+      },
+      { threshold: 0, rootMargin: "-20px 0px 0px 0px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
   
   return (
-    <div 
-      className={cn(
-        "sticky top-0 z-30 px-5 pt-[env(safe-area-inset-top,12px)] transition-colors duration-200",
-        progress > 0.8 ? "bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]" : "bg-[#FFF9F3]"
-      )}
-    >
-      {/* Subtle orange accent line */}
+    <>
+      {/* 1. Normal Flow Header (Expanded) */}
       <div 
-        className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none transition-opacity duration-200" 
-        style={{ opacity: progress > 0.8 ? 1 : 0.4 }}
-      />
-      
-      <div className="relative flex flex-col">
-        {/* Row 1: Location - Fades out and slides up */}
-        <div 
-          className="flex items-center py-0 transition-all duration-300 ease-out overflow-hidden"
-          style={{ 
-            height: `${Math.max(0, (1 - progress) * 24)}px`,
-            opacity: 1 - progress,
-            marginBottom: `${Math.max(0, (1 - progress) * 8)}px`,
-            transform: `translateY(${-progress * 20}px)`
-          }}
-        >
-          <div 
-            className="flex items-center gap-1.5 cursor-pointer active:opacity-70 transition-opacity" 
-            onClick={onAreaClick}
-          >
-            <MapPin className="h-4 w-4 text-[#FF6B00]" />
-            <span className="text-[16px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[280px]">
-              {area || "Set location"}
-            </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40" />
+        ref={expandedRef}
+        className="relative z-20 px-5 pt-[env(safe-area-inset-top,12px)] bg-[#FFF9F3] transition-colors duration-200"
+      >
+        <div className="flex flex-col">
+          {/* Row 1: Location */}
+          <div className="flex items-center pb-2">
+            <div 
+              className="flex items-center gap-1.5 cursor-pointer active:opacity-70" 
+              onClick={onAreaClick}
+            >
+              <MapPin className="h-4 w-4 text-[#FF6B00]" />
+              <span className="text-[16px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[280px]">
+                {area || "Set location"}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40" />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-[1px] w-full bg-[#FF6B00]/5 mb-2" />
+
+          {/* Row 2: Vehicle Selector Content */}
+          <div className="pb-3">
+            {children}
           </div>
         </div>
-
-        {/* Subtle orange/peach divider row - Fades out */}
-        <div 
-          className="h-[1px] w-full bg-[#FF6B00]/5 transition-all duration-300 ease-out" 
-          style={{ 
-            opacity: Math.max(0, 1 - progress * 1.5),
-            transform: `scaleX(${1 - progress * 0.2})`,
-            marginBottom: progress > 0.5 ? 0 : 8
-          }}
-        />
-
-        {/* Row 2: Vehicle Selector Content - Shrinks and animates */}
-        <div 
-          className="pb-2 transition-all duration-200"
-          style={{
-            paddingBottom: progress > 0.8 ? '8px' : '4px'
-          }}
-        >
-          {children}
-        </div>
       </div>
-    </div>
+
+      {/* Sentinel for IntersectionObserver */}
+      <div ref={sentinelRef} className="h-px w-full -mt-2 pointer-events-none" />
+
+      {/* 2. Sticky Compact Header (Overlay) */}
+      <div 
+        ref={compactRef}
+        className="fixed top-0 left-0 right-0 z-50 px-5 pt-[env(safe-area-inset-top,12px)] pb-2 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] opacity-0 translate-y-[-8px] transition-all duration-[220ms] ease-out pointer-events-none"
+      >
+         {/* Subtle orange accent line */}
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none" />
+        
+        {/* Compact Vehicle View handled by parent via portal or re-render is avoided by using a separate UI structure if possible, 
+            but for consistency with the "children" pattern while fixing performance, we'll keep it simple. */}
+        <div className="compact-header-content" />
+      </div>
+    </>
   );
 }

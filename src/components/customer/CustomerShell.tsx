@@ -33,9 +33,10 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-semibold transition-all",
+                    "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-semibold",
                     active ? "text-[#2D2D2D]" : "text-[#9E9E9E]"
                   )}
+
                 >
                   <span
                     className={cn(
