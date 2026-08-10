@@ -1,6 +1,5 @@
 import { Plus, Check, Loader2, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Surface } from "./kit";
 import { useState } from "react";
 
 interface UWServiceCardProps {
@@ -35,7 +34,7 @@ export function UWServiceCard({
   const isComingSoon = !image || loadStatus === 'error';
 
   return (
-    <Surface 
+    <div
       role="button"
       tabIndex={0}
       aria-label={`Open ${name}`}
@@ -123,6 +122,6 @@ export function UWServiceCard({
           </button>
         </div>
       </div>
-    </Surface>
+    </div>
   );
 }
