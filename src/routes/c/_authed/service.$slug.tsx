@@ -153,8 +153,9 @@ function ServiceDetail() {
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
   const cartAddons = cartItems.filter(i => i.type === 'addon');
-  const totalPayable = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const totalItems = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPayable = useMemo(() => cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0), [cartItems]);
+  const totalItems = useMemo(() => cartItems.reduce((sum, i) => sum + i.quantity, 0), [cartItems]);
+
 
   const galleryQ = useServiceGallery(slug);
   const galleryImages = useMemo(() => {
