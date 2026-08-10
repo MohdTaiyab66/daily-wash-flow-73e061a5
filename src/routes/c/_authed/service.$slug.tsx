@@ -430,7 +430,7 @@ function ServiceDetail() {
             <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-widest">TOTAL</span>
             <div className="text-[20px] font-black text-[#1a1a1a]">₹{totalPayable}</div>
           </div>
-          <Button onClick={confirm} disabled={submitting} className="h-[52px] px-10 rounded-[14px] bg-[#EA580C] text-white font-black text-[14px] active:scale-[0.96] transition-all">
+          <Button onClick={confirm} disabled={submitting || !slot} className={cn("h-[52px] px-10 rounded-[14px] bg-[#EA580C] text-white font-black text-[14px] active:scale-[0.96] transition-all", !slot && "opacity-50 grayscale")}>
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
           </Button>
         </div>
