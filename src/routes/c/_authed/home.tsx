@@ -205,16 +205,16 @@ function CustomerHome() {
               }
               className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-3 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
-                {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
+              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
+                {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[14px] px-7 h-[40px] flex items-center justify-center text-[15px] font-[600] transition-all duration-200 active:scale-95",
+                      "whitespace-nowrap rounded-full px-6 h-[38px] flex items-center justify-center text-[14px] font-[650] transition-all duration-200 active:scale-[0.96]",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
-                        : "bg-white text-[#2D2D2D] border border-[#2D2D2D]/5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                        ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/15" 
+                        : "bg-white text-[#4A4A4A] border border-[#2D2D2D]/5 shadow-sm"
                     )}
                   >
                     {cat}
