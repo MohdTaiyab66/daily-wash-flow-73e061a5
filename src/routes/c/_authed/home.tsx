@@ -233,7 +233,7 @@ function CustomerHome() {
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
-                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId ?? undefined } })}
+                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                   />
                 ))}
               </div>
@@ -241,7 +241,7 @@ function CustomerHome() {
               {/* Refined Daily Shine Closing CTA */}
               <div className="mt-8 mb-4 pb-0">
                 <button 
-                  onClick={() => navigate({ to: "/c/service/daily-shine" as any })}
+                  onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || undefined } } as any)}
                   className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-5 text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex flex-row items-center justify-between gap-4">
