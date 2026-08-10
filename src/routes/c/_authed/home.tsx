@@ -350,7 +350,7 @@ function CustomerHome() {
               }
               className="mt-10 mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
@@ -499,10 +499,10 @@ function CustomerHome() {
 function TrustItem({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center gap-2 flex-1">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10">
-        <Check className="h-4 w-4 text-[#FF6B00]" strokeWidth={4} />
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10 mb-1">
+        <Check className="h-3.5 w-3.5 text-[#FF6B00]" strokeWidth={4} />
       </div>
-      <span className="text-[9px] font-[600] text-[#7A7A7A] uppercase tracking-widest text-center">{label}</span>
+      <span className="text-[10px] font-[600] text-[#7A7A7A] tracking-wider text-center">{label}</span>
     </div>
   );
 }
