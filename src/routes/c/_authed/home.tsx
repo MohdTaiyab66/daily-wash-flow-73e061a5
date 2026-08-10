@@ -168,12 +168,12 @@ function CustomerHome() {
         />
 
         {/* Adjust top padding to match header height */}
-        <div className="pt-[calc(82px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[calc(78px+env(safe-area-inset-top,24px))]">
           {/* Sentinel for IntersectionObserver - shifted to control transition */}
           <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
           <div className="px-5">
-            <div className="mt-[20px]">
+            <div className="mt-[18px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -199,8 +199,8 @@ function CustomerHome() {
             <Section 
               title={
                 <div className="space-y-1">
-                  <h2 className="text-[29px] font-[700] text-[#2D2D2D] tracking-tight">Car care services</h2>
-                  <p className="text-[17px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
+                  <h2 className="text-[27px] font-[750] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
+                  <p className="text-[17.5px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
               className="mt-[32px] mb-0"
