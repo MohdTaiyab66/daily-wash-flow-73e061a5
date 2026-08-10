@@ -16,7 +16,7 @@ interface UWHeaderProps {
   onVehicleClick?: () => void;
 }
 
-const COLLAPSE_DISTANCE = 80; // Slightly more distance for smoother transition
+const COLLAPSE_DISTANCE = 60; // Distance over which header collapses
 
 export function UWHeader({ 
   area, 
@@ -26,16 +26,16 @@ export function UWHeader({
   onVehicleClick,
 }: UWHeaderProps) {
   const containerRef = useRef<HTMLElement>(null);
-  const locationRef = useRef<HTMLDivElement>(null);
-  const vehicleRef = useRef<HTMLDivElement>(null);
-  const vehicleNameRef = useRef<HTMLSpanElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const locationTextRef = useRef<HTMLSpanElement>(null);
+  const vehicleTextRef = useRef<HTMLSpanElement>(null);
   const vehicleThumbRef = useRef<HTMLDivElement>(null);
   
   useLayoutEffect(() => {
     const header = containerRef.current;
-    const location = locationRef.current;
-    const vehicle = vehicleRef.current;
-    const vName = vehicleNameRef.current;
+    const wrapper = contentWrapperRef.current;
+    const locText = locationTextRef.current;
+    const vText = vehicleTextRef.current;
     const vThumb = vehicleThumbRef.current;
     
     if (!header) return;
@@ -44,41 +44,33 @@ export function UWHeader({
       const scrollY = window.scrollY;
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
-      // Header background & elevation transition
-      header.style.backgroundColor = `rgba(255, 252, 249, ${0.98 + progress * 0.02})`;
+      // Header background & shadow
+      header.style.backgroundColor = `rgba(255, 252, 249, ${0.9 + progress * 0.1})`;
       header.style.backdropFilter = progress > 0.1 ? 'blur(12px)' : 'none';
-      header.style.boxShadow = progress > 0.1 ? `0 2px 10px rgba(0,0,0,${progress * 0.03})` : 'none';
-      header.style.borderBottom = progress > 0.9 ? `1px solid rgba(255, 107, 0, 0.08)` : 'none';
+      header.style.borderBottom = `1px solid rgba(45, 45, 45, ${progress * 0.05})`;
+      header.style.boxShadow = progress > 0.5 ? `0 4px 12px rgba(0,0,0,${progress * 0.02})` : 'none';
 
-      if (location) {
-        // Progressive fade and scale for location
-        location.style.opacity = `${1 - progress}`;
-        location.style.transform = `translateX(${-progress * 10}px) scale(${1 - progress * 0.05})`;
-        location.style.pointerEvents = progress > 0.7 ? 'none' : 'auto';
-        
-        // Use max-width to visually push content
-        location.style.maxWidth = `${(1 - progress) * 100}%`;
+      // Compact state adjustments
+      if (wrapper) {
+        // Reduce padding slightly in compact state
+        const verticalPadding = 16 - (progress * 4);
+        wrapper.style.paddingTop = `${verticalPadding}px`;
+        wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
 
-      if (vehicle) {
-        // Vehicle selector moves left
-        const xOffset = -progress * 5; 
-        vehicle.style.transform = `translateX(${xOffset}px)`;
-        
-        // Refine pill background transition
-        vehicle.style.backgroundColor = progress > 0.8 ? 'transparent' : 'white';
-        vehicle.style.borderColor = progress > 0.8 ? 'transparent' : 'rgba(255, 107, 0, 0.1)';
-        vehicle.style.boxShadow = progress > 0.8 ? 'none' : '0 1px 2px rgba(0,0,0,0.02)';
+      if (locText) {
+        // Location text gets slightly smaller or just stays clean
+        locText.style.fontSize = `${18 - progress * 1}px`;
+      }
+
+      if (vText) {
+        vText.style.fontSize = `${18 - progress * 1}px`;
       }
 
       if (vThumb) {
-        const scale = 1 - progress * 0.15;
+        // Thumbnail scales down slightly
+        const scale = 1 - progress * 0.1;
         vThumb.style.transform = `scale(${scale})`;
-      }
-
-      if (vName) {
-        // Stay readable, slightly smaller
-        vName.style.fontSize = `${16 - progress * 1}px`;
       }
     };
 
@@ -91,48 +83,54 @@ export function UWHeader({
   return (
     <header 
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] pb-2 h-[calc(52px+env(safe-area-inset-top,24px))] flex items-center will-change-[background-color,box-shadow,backdrop-filter]"
+      className="fixed top-0 left-0 right-0 z-[60] bg-[#FFFCF9] will-change-[background-color,border-bottom,box-shadow]"
     >
-      <div className="flex items-center justify-between gap-3 h-full w-full relative">
-        {/* Left: Location */}
+      <div 
+        ref={contentWrapperRef}
+        className="px-6 pt-4 pb-4 flex items-center justify-between gap-4 w-full transition-[padding]"
+      >
+        {/* Left: Unified Location */}
         <div 
-          ref={locationRef}
-          className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 will-change-[opacity,transform,max-width]"
+          className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1"
           onClick={onAreaClick}
         >
-          <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
-          <span className="text-[17px] font-[650] text-[#FF6B00] whitespace-nowrap overflow-hidden text-ellipsis">
-            {area || "Set location"}
-          </span>
-          <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/30 shrink-0" />
+          <MapPin className="h-5 w-5 text-[#FF6B00] shrink-0" />
+          <div className="flex items-center gap-1 min-w-0">
+            <span 
+              ref={locationTextRef}
+              className="text-[18px] font-[600] text-[#FF6B00] whitespace-nowrap overflow-hidden text-ellipsis"
+            >
+              {area || "Set location"}
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40 shrink-0 mt-0.5" />
+          </div>
         </div>
 
-        {/* Right: Vehicle Selector */}
+        {/* Right: Premium Vehicle Selector */}
         {activeVehicle && (
           <div 
-            ref={vehicleRef}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-[12px] bg-white border border-[#FF6B00]/8 shadow-[0_1px_2px_rgba(0,0,0,0.03)] cursor-pointer active:scale-[0.98] transition-all min-w-0 flex-shrink-0 will-change-[transform,background-color,border-color,box-shadow]"
+            className="flex items-center gap-2.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[28px] w-[28px] shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center will-change-transform"
+              className="h-[36px] w-[36px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-[#2D2D2D]/5 flex items-center justify-center will-change-transform"
             >
               {vehicleImage ? (
-                <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
+                <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-cover" />
               ) : (
-                <Car className="h-4 w-4 text-[#FF6B00]/40" />
+                <Car className="h-5 w-5 text-[#2D2D2D]/20" />
               )}
             </div>
             
-            <div className="min-w-0 flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <span 
-                ref={vehicleNameRef}
-                className="font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap truncate text-[16px] max-w-[100px] sm:max-w-none"
+                ref={vehicleTextRef}
+                className="text-[18px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
-              <ChevronDown className="text-[#7A7A7A]/30 shrink-0 h-3 w-3" />
+              <ChevronDown className="h-3.5 w-3.5 text-[#2D2D2D]/20 shrink-0 mt-0.5" />
             </div>
           </div>
         )}
