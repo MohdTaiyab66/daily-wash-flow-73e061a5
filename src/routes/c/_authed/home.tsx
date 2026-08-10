@@ -274,11 +274,11 @@ function CustomerHome() {
           {vehiclesQ.isLoading ? (
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
-            <div 
-              className="flex items-center gap-4 active:opacity-70 transition-opacity min-h-[82px] py-2"
-              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-            >
-              <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_8px_rgba(255,107,0,0.08)]">
+              <div 
+                className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[78px] py-1.5"
+                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+              >
+                <div className="relative h-[50px] w-[50px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_6px_rgba(255,107,0,0.06)]">
                 <VehicleAvatar 
                   imageUrl={catalogImageQ.data} 
                   make={activeVehicle.make} 
@@ -290,7 +290,7 @@ function CustomerHome() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <h2 className="truncate text-[20px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
+                    <h2 className="truncate text-[19px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
                     <p className="truncate text-[14px] font-[500] text-[#7A7A7A] leading-tight mt-0.5">
@@ -313,10 +313,10 @@ function CustomerHome() {
         </UWHeader>
 
         <div className="px-5">
-          <div className="space-y-4 mt-5">
+          <div className="space-y-4 mt-[20px]">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-            <div className="mt-2">
+            <div className="mt-0">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -348,9 +348,9 @@ function CustomerHome() {
                   <p className="text-[14px] text-[#7A7A7A] font-medium">Everything your car needs</p>
                 </div>
               }
-              className="mt-10 mb-0"
+              className="mt-[30px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[16px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
@@ -387,38 +387,38 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-4 flex justify-between items-center px-2 max-w-sm mx-auto w-full h-[80px]">
+                <div className="py-4 flex justify-between items-center px-4 max-w-sm mx-auto w-full h-[60px] opacity-80">
                   <TrustItem label="EXPERT CARE" />
                   <TrustItem label="PHOTO PROOF" />
                   <TrustItem label="SAFE & SECURE" />
                 </div>
 
-                <Section className="pb-4 mt-2">
+                <Section className="pb-4 mt-6">
                   <Surface 
-                    className="relative overflow-hidden bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform mx-[-4px]"
+                    className="relative overflow-hidden bg-gradient-to-br from-[#FF6B00] to-[#FF852D] border-none p-7 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform mx-[-4px] w-full"
                     onClick={() => navigate({ to: "/c/service/daily-shine" })}
                   >
                     <div className="relative z-10 flex flex-col items-start gap-1">
-                      <h3 className="text-[20px] font-bold leading-[1.2] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
-                      <p className="mt-1.5 text-[14px] font-medium text-white/90 leading-snug max-w-[200px]">
+                      <h3 className="text-[22px] font-bold leading-[1.2] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
+                      <p className="mt-2 text-[14px] font-medium text-white/90 leading-snug max-w-[220px]">
                         Premium doorstep car care you can trust.
                       </p>
-                      <div className="mt-5 flex items-center gap-1.5 font-bold text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-5 py-2.5 rounded-full shadow-lg">
+                      <div className="mt-6 flex items-center gap-2 font-bold text-[13px] uppercase tracking-wider bg-white text-[#FF6B00] px-6 py-3 rounded-full shadow-lg">
                         Explore Daily Shine
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-4 w-4" />
                       </div>
                     </div>
                     
                     {/* Visual assets overlay */}
-                    <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
-                      <Sparkles className="h-16 w-16 text-white" />
+                    <div className="absolute bottom-[-10%] right-[-5%] h-[70%] w-[40%] flex items-center justify-center opacity-15 pointer-events-none rotate-12">
+                      <Sparkles className="h-24 w-24 text-white" />
                     </div>
                     <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
                   </Surface>
 
                   <div className="mt-8 mb-6 text-center px-6">
-                    <p className="text-[12px] font-[600] text-[#7A7A7A] uppercase tracking-[0.2em] opacity-50">URBAN WASH</p>
-                    <p className="mt-1.5 text-[11px] font-medium text-[#7A7A7A] opacity-30">Designed for those who love their cars.</p>
+                    <p className="text-[12px] font-[700] text-[#2D2D2D] uppercase tracking-[0.25em] opacity-60">URBAN WASH</p>
+                    <p className="mt-1 text-[11px] font-medium text-[#7A7A7A] opacity-40">Designed for those who love their cars.</p>
                   </div>
                 </Section>
 
@@ -498,9 +498,9 @@ function CustomerHome() {
 
 function TrustItem({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 flex-1">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10 mb-1">
-        <Check className="h-3.5 w-3.5 text-[#FF6B00]" strokeWidth={4} />
+    <div className="flex flex-col items-center gap-1.5 flex-1 scale-90">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10">
+        <Check className="h-3 w-3 text-[#FF6B00]" strokeWidth={3.5} />
       </div>
       <span className="text-[10px] font-[600] text-[#7A7A7A] tracking-wider text-center">{label}</span>
     </div>
