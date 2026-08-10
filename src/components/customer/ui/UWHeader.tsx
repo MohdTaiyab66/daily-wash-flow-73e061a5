@@ -28,7 +28,7 @@ export function UWHeader({
     <header className={cn(
       "fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
       "bg-[#FFF9F3] border-b border-[#FF6B00]/5 shadow-[0_1px_4px_rgba(0,0,0,0.02)]",
-      isCollapsed ? "h-[calc(52px+env(safe-area-inset-top,24px))]" : "h-[calc(68px+env(safe-area-inset-top,24px))]"
+      isCollapsed ? "h-[calc(56px+env(safe-area-inset-top,24px))]" : "h-[calc(72px+env(safe-area-inset-top,24px))]"
     )}>
       <div className="flex flex-col h-full justify-center">
         {/* Unified Toolbar Row */}

@@ -168,7 +168,7 @@ function CustomerHome() {
         />
 
         {/* Adjust top padding to match header height */}
-        <div className="pt-[calc(68px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
           {/* Sentinel for IntersectionObserver - shifted to control transition */}
           <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
