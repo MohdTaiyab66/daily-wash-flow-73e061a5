@@ -313,10 +313,10 @@ function CustomerHome() {
         </UWHeader>
 
         <div className="px-5">
-          <div className="space-y-4 mt-5">
+          <div className="space-y-4 mt-[20px]">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-            <div className="mt-2">
+            <div className="mt-0">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -348,9 +348,9 @@ function CustomerHome() {
                   <p className="text-[14px] text-[#7A7A7A] font-medium">Everything your car needs</p>
                 </div>
               }
-              className="mt-10 mb-0"
+              className="mt-[30px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[16px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
@@ -387,31 +387,31 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-4 flex justify-between items-center px-2 max-w-sm mx-auto w-full h-[80px]">
+                <div className="py-4 flex justify-between items-center px-4 max-w-sm mx-auto w-full h-[60px] opacity-80">
                   <TrustItem label="EXPERT CARE" />
                   <TrustItem label="PHOTO PROOF" />
                   <TrustItem label="SAFE & SECURE" />
                 </div>
 
-                <Section className="pb-4 mt-2">
+                <Section className="pb-4 mt-6">
                   <Surface 
-                    className="relative overflow-hidden bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform mx-[-4px]"
+                    className="relative overflow-hidden bg-gradient-to-br from-[#FF6B00] to-[#FF852D] border-none p-7 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform mx-[-4px] w-full"
                     onClick={() => navigate({ to: "/c/service/daily-shine" })}
                   >
                     <div className="relative z-10 flex flex-col items-start gap-1">
-                      <h3 className="text-[20px] font-bold leading-[1.2] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
-                      <p className="mt-1.5 text-[14px] font-medium text-white/90 leading-snug max-w-[200px]">
+                      <h3 className="text-[22px] font-bold leading-[1.2] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
+                      <p className="mt-2 text-[14px] font-medium text-white/90 leading-snug max-w-[220px]">
                         Premium doorstep car care you can trust.
                       </p>
-                      <div className="mt-5 flex items-center gap-1.5 font-bold text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-5 py-2.5 rounded-full shadow-lg">
+                      <div className="mt-6 flex items-center gap-2 font-bold text-[13px] uppercase tracking-wider bg-white text-[#FF6B00] px-6 py-3 rounded-full shadow-lg">
                         Explore Daily Shine
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-4 w-4" />
                       </div>
                     </div>
                     
                     {/* Visual assets overlay */}
-                    <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
-                      <Sparkles className="h-16 w-16 text-white" />
+                    <div className="absolute bottom-[-10%] right-[-5%] h-[70%] w-[40%] flex items-center justify-center opacity-15 pointer-events-none rotate-12">
+                      <Sparkles className="h-24 w-24 text-white" />
                     </div>
                     <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
                   </Surface>
