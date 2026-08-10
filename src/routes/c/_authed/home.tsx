@@ -238,6 +238,7 @@ function CustomerHome() {
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                    onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                     onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                   />
                 ))}
