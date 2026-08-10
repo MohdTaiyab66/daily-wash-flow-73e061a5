@@ -380,7 +380,6 @@ function ServiceDetail() {
         </Button>
       </div>
 
-
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
         <DrawerContent className="max-h-[85vh]">
            <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[18px] font-black uppercase tracking-tight">Select Vehicle</DrawerTitle></DrawerHeader>
