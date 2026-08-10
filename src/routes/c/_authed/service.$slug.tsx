@@ -2,14 +2,20 @@ import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
-import { ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, Car, ShieldCheck, CalendarClock, ChevronDown, Info } from "lucide-react";
+import { 
+  ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, 
+  Car, ShieldCheck, CalendarClock, ChevronDown, Info,
+  Star,
+  Zap,
+  CheckCircle2
+} from "lucide-react";
 import { getServiceImage, useServiceImages } from "@/lib/service-image-resolver";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/payment.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Section, Surface, Muted } from "@/components/customer/ui/kit";
+import { Section, Surface, Muted, SectionTitle } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { openRazorpayCheckout } from "@/lib/paymentBridge";
 
@@ -104,7 +110,6 @@ function ServiceDetail() {
     queryFn: async () => {
       const { data } = await supabase.from("service_addons").select("*").eq("active", true);
       const allAddons = (data ?? []) as Addon[];
-      // Filter based on applies_to_slugs if present
       return allAddons.filter((a) => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug));
     }
   });
@@ -132,7 +137,6 @@ function ServiceDetail() {
   const imageObj = getServiceImage(slug, imagesQ.data);
 
   const isSubscription = service?.service_type === "subscription" || slug === "daily-shine";
-  const serviceTypeLabel = isSubscription ? "SUBSCRIPTION" : "ONE-TIME SERVICE";
 
   const confirm = async () => {
     if (!service || !vehicle) {
@@ -217,148 +221,187 @@ function ServiceDetail() {
     : `Professional ${service?.name} service delivered at your doorstep for maximum convenience and quality.`);
 
   return (
-    <div className="min-h-screen bg-[#FFF9F3] pb-40">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-[#FFF9F3]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.05]">
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#FFFDFB] pb-40">
+      {/* Redesigned Header */}
+      <header className="sticky top-0 z-30 bg-[#FFFDFB]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-black/[0.04]">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 text-charcoal">
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
-            <div className="font-bold text-[14px] leading-none uppercase">{service?.name}</div>
-            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
-              {isSubscription ? "Subscription Details" : "Service Details"}
+          <div className="min-w-0">
+            <div className="font-bold text-[15px] text-charcoal truncate pr-2 leading-tight">
+              {service?.name}
+            </div>
+            <div className="text-[10px] font-black text-muted-foreground/80 uppercase tracking-widest mt-0.5">
+              SERVICE DETAILS
             </div>
           </div>
         </div>
-        <div className="bg-white/60 px-3 py-1.5 rounded-full border border-black/[0.05] shadow-sm flex items-center gap-2">
+        
+        <div className="bg-white/70 px-3 py-1.5 rounded-full border border-black/[0.06] shadow-sm flex items-center gap-2 shrink-0">
           <Car className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[12px] font-black max-w-[80px] truncate">{vehicle?.nickname || vehicle?.model || "Vehicle"} ▾</span>
+          <span className="text-[12px] font-bold text-charcoal max-w-[80px] truncate">{vehicle?.nickname || vehicle?.model || "Vehicle"} ▾</span>
         </div>
       </header>
 
       {service && (
-        <div className="px-4 space-y-6 pt-6 max-w-md mx-auto">
-          {/* Hero */}
-          <div className="relative overflow-hidden rounded-[24px] aspect-[16/11] bg-white shadow-md">
+        <div className="px-4 space-y-7 pt-4 max-w-md mx-auto">
+          {/* Integrated Hero Section */}
+          <div className="relative overflow-hidden rounded-[28px] aspect-[16/10] bg-white shadow-sm border border-black/[0.03]">
              {imageObj.url ? (
                 <img src={imageObj.url} className="w-full h-full object-cover" alt={service.name} />
               ) : (
                 <div className="w-full h-full bg-primary/5 flex items-center justify-center">
-                  <Sparkles className="h-12 w-12 text-primary/20" />
+                  <Sparkles className="h-10 w-10 text-primary/15" />
                 </div>
               )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            <div className="absolute bottom-5 left-5 text-white">
-              <div className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/20 inline-block mb-1.5">PROFESSIONAL CARE</div>
-              <h2 className="text-2xl font-black leading-tight uppercase">{service.name}</h2>
-              <p className="text-[12px] font-bold opacity-90 mt-1">{isSubscription ? "A cleaner car, every single day." : "Quality doorstep car care."}</p>
-            </div>
+             <div className="absolute inset-0 bg-black/5 pointer-events-none" />
           </div>
 
-          {/* Price Summary Card */}
-          <Surface className="p-5 rounded-[24px] bg-white border-0 shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{service.name}</div>
-                <div className="text-3xl font-black text-primary mt-1">
-                  ₹{basePrice}
-                  {isSubscription && <span className="text-[14px] font-bold text-muted-foreground ml-1">/ month</span>}
-                  {!isSubscription && <span className="text-[14px] font-bold text-muted-foreground ml-1 uppercase"> One-Time</span>}
+          {/* Premium Service Summary Card */}
+          <Surface className="p-6 rounded-[28px] bg-white border-black/[0.04] shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1 pr-4">
+                <h1 className="text-[20px] font-black text-charcoal uppercase leading-tight tracking-tight">
+                  {service.name}
+                </h1>
+                <div className="flex items-center gap-2 mt-2.5">
+                  <div className="text-2xl font-black text-primary">
+                    ₹{basePrice}
+                  </div>
+                  <div className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+                    {isSubscription ? "MONTHLY" : "ONE-TIME"}
+                  </div>
                 </div>
               </div>
-              {service.slug.includes('premium') && (
-                <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase">Premium</div>
-              )}
+              <div className="h-12 w-12 rounded-2xl bg-[#FFF1E6] flex items-center justify-center text-primary shadow-sm border border-primary/10 shrink-0">
+                <Zap className="h-6 w-6" fill="currentColor" />
+              </div>
             </div>
+            <div className="h-px bg-black/[0.03] my-4" />
+            <p className="text-[14px] font-bold text-charcoal/70 leading-relaxed italic">
+              {isSubscription ? "A cleaner car, every single day." : "Quality doorstep car wash & detail."}
+            </p>
           </Surface>
 
           {/* Service Overview */}
-          <Section title="Service Overview">
-            <p className="text-[14px] font-bold text-charcoal/80 leading-relaxed">{description}</p>
-          </Section>
+          <div className="space-y-3">
+            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Overview</SectionTitle>
+            <Surface className="p-5 bg-white border-black/[0.03] rounded-[24px]">
+              <p className="text-[14px] font-bold text-charcoal/80 leading-relaxed">
+                {description}
+              </p>
+            </Surface>
+          </div>
 
-          {/* Benefits */}
-          <Section title={isSubscription ? "Your Daily Shine Benefits" : "Service Benefits"}>
+          {/* Included Services */}
+          {inclusions && inclusions.length > 0 && (
+            <div className="space-y-3">
+              <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Includes</SectionTitle>
+              <div className="grid grid-cols-1 gap-2.5">
+                {inclusions.map((item: string) => (
+                  <Surface key={item} className="p-4 bg-white border-black/[0.03] rounded-[20px] flex items-center gap-3.5">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="text-[14px] font-bold text-charcoal">{item}</span>
+                  </Surface>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Service Benefits */}
+          <div className="space-y-3">
+            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Why choose Urban Wash?</SectionTitle>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map((bLabel, idx) => {
-                const Icon = [Sparkles, MapPin, CalendarClock, ShieldCheck][idx % 4] || Sparkles;
+                const Icon = [Sparkles, ShieldCheck, CalendarClock, MapPin][idx % 4] || Star;
                 return (
-                  <Surface key={bLabel} className="p-4 flex flex-col gap-2 bg-white">
-                    <Icon className="h-6 w-6 text-primary" />
-                    <div className="text-[12px] font-black leading-tight">{bLabel}</div>
+                  <Surface key={bLabel} className="p-4 flex flex-col gap-2.5 bg-white border-black/[0.03] rounded-[22px] min-h-[90px]">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <div className="text-[12px] font-black text-charcoal leading-tight">{bLabel}</div>
                   </Surface>
                 );
               })}
             </div>
-          </Section>
-
-          {/* Included */}
-          {inclusions && inclusions.length > 0 && (
-            <Section title="What's included">
-              <Surface className="p-5 bg-white space-y-4">
-                {inclusions.map((item: string) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                      <Check className="h-3.5 w-3.5 text-success" />
-                    </div>
-                    <span className="text-[14px] font-bold">{item}</span>
-                  </div>
-                ))}
-              </Surface>
-            </Section>
-          )}
+          </div>
 
           {/* Location */}
-          <Section title="Service Location">
-            <Surface className="flex items-center gap-4 p-4 bg-white">
-              <MapPin className="h-6 w-6 text-primary" />
-              <div className="flex-grow text-[14px] font-bold truncate">
-                {address ? `${address.label}: ${address.area}` : "No address set"}
+          <div className="space-y-3">
+            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Service Location</SectionTitle>
+            <Surface className="flex items-center gap-4 p-5 bg-white border-black/[0.03] rounded-[24px]">
+              <div className="h-10 w-10 rounded-full bg-[#FFF1E6] flex items-center justify-center text-primary shrink-0">
+                <MapPin className="h-5 w-5" />
               </div>
-              <button className="text-[12px] font-black text-primary uppercase">Change</button>
+              <div className="flex-grow min-w-0">
+                <div className="text-[14px] font-black text-charcoal truncate">
+                  {address ? `${address.label}: ${address.area}` : "No address set"}
+                </div>
+                <div className="text-[11px] font-bold text-muted-foreground mt-0.5">Your primary service address</div>
+              </div>
+              <button className="text-[11px] font-black text-primary uppercase bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10 active:scale-95 transition-transform shrink-0">
+                Change
+              </button>
             </Surface>
-          </Section>
+          </div>
 
           {/* Schedule */}
-          <Section title={isSubscription ? "Choose your schedule" : "Choose a time"}>
-            <div className="text-[13px] font-bold text-muted-foreground mb-3">
-              {isSubscription 
-                ? "Choose the time window that works best for your recurring service."
-                : "Choose your preferred time for the service."}
+          <div className="space-y-3">
+            <div className="flex flex-col gap-0.5">
+              <SectionTitle className="text-[17px] tracking-tight text-charcoal">Choose a time</SectionTitle>
+              <p className="text-[12px] font-bold text-muted-foreground">Select your preferred time slot</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {TIME_SLOTS.map(s => (
-                <button 
-                  key={s} 
-                  onClick={() => setSlot(s)} 
-                  className={cn(
-                    "py-3 px-3 rounded-2xl border-2 font-bold text-[13px] text-center transition-all",
-                    slot === s ? "border-primary bg-primary/5 text-primary" : "border-black/[0.05] bg-white text-charcoal"
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
+              {TIME_SLOTS.map(s => {
+                const isSelected = slot === s;
+                return (
+                  <button 
+                    key={s} 
+                    onClick={() => setSlot(s)} 
+                    className={cn(
+                      "py-4 px-3 rounded-[20px] border-2 font-black text-[13px] flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.97]",
+                      isSelected 
+                        ? "border-primary bg-primary/[0.04] text-primary shadow-[0_4px_12px_rgba(255,107,0,0.08)]" 
+                        : "border-black/[0.04] bg-white text-charcoal/60"
+                    )}
+                  >
+                    {s}
+                    {isSelected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                  </button>
+                );
+              })}
             </div>
-          </Section>
+          </div>
 
           {/* Add-ons */}
           {addonsQ.data && addonsQ.data.length > 0 && (
-            <Section title="Premium Add-ons">
+            <div className="space-y-3">
+              <div className="flex flex-col gap-0.5">
+                <SectionTitle className="text-[17px] tracking-tight text-charcoal">Premium Add-ons</SectionTitle>
+                <p className="text-[12px] font-bold text-muted-foreground">Enhance your service with optional extras</p>
+              </div>
               <div className="space-y-3">
                 {(showAllAddons ? addonsQ.data : addonsQ.data.slice(0, 3)).map(a => {
                   const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                   const isSelected = !!addonQty[a.id];
                   return (
-                    <Surface key={a.id} className="flex justify-between items-center p-4">
-                       <div>
-                         <div className="font-bold text-[14px]">{a.name}</div>
-                         <div className="text-[12px] font-black text-primary mt-0.5">₹{price}</div>
+                    <Surface key={a.id} className="flex justify-between items-center p-4 bg-white border-black/[0.03] rounded-[22px]">
+                       <div className="flex-1 pr-3">
+                         <div className="font-bold text-[14px] text-charcoal">{a.name}</div>
+                         <div className="text-[12px] font-black text-primary mt-1 flex items-center gap-1.5">
+                            ₹{price}
+                            <span className="text-[10px] text-muted-foreground/60 font-black">EXTRA</span>
+                         </div>
                        </div>
                        <Button 
                          onClick={() => setAddonQty(p => ({...p, [a.id]: isSelected ? 0 : 1}))}
-                         className={cn("h-8 rounded-full px-4 text-[11px] font-black", isSelected ? "bg-success" : "bg-primary")}
+                         className={cn(
+                           "h-9 rounded-full px-5 text-[11px] font-black shadow-sm transition-all",
+                           isSelected 
+                            ? "bg-success text-white border-none" 
+                            : "bg-white text-primary border border-primary/20 hover:bg-primary/5"
+                         )}
                        >
                          {isSelected ? "ADDED" : "+ ADD"}
                        </Button>
@@ -369,52 +412,67 @@ function ServiceDetail() {
               {addonsQ.data.length > 3 && !showAllAddons && (
                 <button 
                   onClick={() => setShowAllAddons(true)}
-                  className="w-full mt-3 text-[12px] font-bold text-primary uppercase underline"
+                  className="w-full mt-2 text-[12px] font-black text-primary uppercase bg-primary/[0.03] py-3 rounded-2xl border border-primary/5 active:scale-98 transition-transform"
                 >
                   View all add-ons
                 </button>
               )}
-            </Section>
+            </div>
           )}
 
           {/* Bill Details */}
-          <Section title="Bill Details">
-            <Surface className="p-5 bg-white space-y-3">
-              <div className="flex justify-between items-center text-[14px]">
-                <span className="font-bold text-muted-foreground">{isSubscription ? "Monthly Subscription" : "Service Amount"}</span>
-                <span className="font-black">₹{basePrice}</span>
-              </div>
-              
-              {selectedAddons.length > 0 && (
-                <>
-                  {selectedAddons.map(a => (
-                    <div key={a.id} className="flex justify-between items-center text-[14px]">
-                      <span className="font-bold text-muted-foreground">{a.name}</span>
-                      <span className="font-black">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
-                    </div>
-                  ))}
-                </>
-              )}
+          <div className="space-y-3">
+            <SectionTitle className="text-[17px] tracking-tight text-charcoal">Bill Details</SectionTitle>
+            <Surface className="p-6 bg-white border-black/[0.03] rounded-[28px] shadow-sm">
+              <div className="space-y-3.5">
+                <div className="flex justify-between items-center text-[14px]">
+                  <span className="font-bold text-charcoal/60 uppercase text-[12px] tracking-tight">
+                    {isSubscription ? "Subscription" : "Service Amount"}
+                  </span>
+                  <span className="font-black text-charcoal">₹{basePrice}</span>
+                </div>
+                
+                {selectedAddons.length > 0 && (
+                  <div className="space-y-3.5 pt-3.5 border-t border-black/[0.03]">
+                    {selectedAddons.map(a => (
+                      <div key={a.id} className="flex justify-between items-center text-[14px]">
+                        <span className="font-bold text-charcoal/60 uppercase text-[12px] tracking-tight">{a.name}</span>
+                        <span className="font-black text-charcoal">₹{isSUV ? a.price_sedan_suv : a.price_hatchback}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              <div className="h-px bg-black/[0.05] my-2" />
-              
-              <div className="flex justify-between items-center">
-                <span className="text-[15px] font-black uppercase">Total Payable</span>
-                <span className="text-[20px] font-black text-primary">₹{totalPayable}</span>
+                <div className="h-px bg-black/[0.05] my-2" />
+                
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[14px] font-black uppercase tracking-tight text-charcoal">Total Payable</span>
+                  <span className="text-[22px] font-black text-primary">₹{totalPayable}</span>
+                </div>
               </div>
             </Surface>
-          </Section>
+          </div>
         </div>
       )}
 
-      {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white p-5 border-t border-black/[0.05] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] flex items-center justify-between safe-area-bottom">
+      {/* Sticky Bottom Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md p-4 pb-6 border-t border-black/[0.06] shadow-[0_-12px_40px_rgba(0,0,0,0.06)] flex items-center justify-between safe-area-bottom">
         <div>
-          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">TOTAL</div>
-          <div className="text-[20px] font-black leading-none">₹{totalPayable}</div>
+          <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">TOTAL PAYABLE</div>
+          <div className="text-[22px] font-black leading-none text-charcoal">₹{totalPayable}</div>
         </div>
-        <Button onClick={confirm} disabled={submitting} className="h-14 w-48 rounded-[16px] font-black text-[15px] shadow-lg shadow-primary/20">
-           {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>PROCEED TO PAY →</>}
+        <Button 
+          onClick={confirm} 
+          disabled={submitting} 
+          className="h-13 w-52 rounded-[20px] font-black text-[15px] shadow-xl shadow-primary/20 active:scale-[0.98] transition-transform"
+        >
+           {submitting ? (
+             <Loader2 className="h-5 w-5 animate-spin" />
+           ) : (
+             <div className="flex items-center gap-2">
+               PROCEED TO PAY <ArrowLeft className="h-4 w-4 rotate-180" strokeWidth={3} />
+             </div>
+           )}
         </Button>
       </div>
     </div>
