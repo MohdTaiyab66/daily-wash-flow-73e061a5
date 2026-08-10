@@ -265,7 +265,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-24">
+      <div className="min-h-screen bg-[#FFFCF9] pb-32">
         <UWHeader 
           area={area} 
           unread={unread} 
@@ -274,8 +274,8 @@ function CustomerHome() {
           {vehiclesQ.isLoading ? (
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
-              <div 
-                className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[82px] py-1"
+                <div 
+                  className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[72px] py-1"
                 onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
               >
                 <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
@@ -348,9 +348,9 @@ function CustomerHome() {
                   <p className="text-[15px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[28px] mb-0"
+              className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[16px]">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[14px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}

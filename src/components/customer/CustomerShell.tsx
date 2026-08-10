@@ -16,7 +16,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
   
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(84px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(110px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
