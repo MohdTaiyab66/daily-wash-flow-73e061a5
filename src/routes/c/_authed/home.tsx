@@ -182,26 +182,27 @@ function CustomerHome() {
               />
             </div>
 
-            <div className="flex justify-between items-center px-4 w-full h-[70px] mt-[18px]">
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <Sparkles className="h-4 w-4" />
+            <div className="flex justify-between items-center px-4 w-full h-[75px] mt-[16px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5">
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Sparkles className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Expert Care</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Expert Care</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <Camera className="h-4 w-4" />
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Camera className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Photo Proof</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Photo Proof</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <ShieldCheck className="h-4 w-4" />
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <ShieldCheck className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Safe & Secure</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Safe & Secure</span>
               </div>
             </div>
+
 
             <Section 
               title={
