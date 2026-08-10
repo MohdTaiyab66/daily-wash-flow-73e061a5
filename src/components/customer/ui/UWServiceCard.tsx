@@ -32,10 +32,10 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200 border-none", className)}
       raised
     >
-      <div className="relative aspect-[1.1/1] w-full bg-[#F8F9FB] overflow-hidden">
+      <div className="relative aspect-[1.2/1] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[18px]">
         {image ? (
           <img 
             src={image} 
@@ -49,13 +49,14 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/40">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">No Photo</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/30">
+            <span className="text-[20px] mb-1">🚗</span>
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Coming soon</span>
           </div>
         )}
         
         {badge && (
-          <div className="absolute top-2 left-2 rounded-full bg-primary/90 px-2 py-0.5 backdrop-blur-sm z-[60]">
+          <div className="absolute top-2 left-2 rounded-full bg-[#FF6B00] px-2 py-0.5 backdrop-blur-sm z-[10]">
             <span className="text-[9px] font-black uppercase tracking-widest text-white">
               {badge}
             </span>
@@ -64,18 +65,18 @@ export function UWServiceCard({
       </div>
       
       <div className="flex flex-col flex-1 p-3">
-        <h3 className="text-[14px] font-black leading-tight text-foreground line-clamp-2 min-h-[2.5em]">
+        <h3 className="text-[15px] font-black leading-[1.2] text-[#1A1A1A] line-clamp-2 h-[2.4em]">
           {name}
         </h3>
         
-        <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex flex-col">
             {oldPrice && (
               <span className="text-[11px] font-medium text-muted-foreground/60 line-through">
                 ₹{oldPrice}
               </span>
             )}
-            <span className="text-[15px] font-black text-foreground">₹{price}</span>
+            <span className="text-[16px] font-black text-[#1A1A1A]">₹{price}</span>
           </div>
           
           <button
@@ -86,7 +87,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-[0.85] bg-[#FFF2ED] text-primary hover:bg-[#FFE5D9]"
+              "flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] hover:bg-[#FFE5D9]"
             )}
           >
             {isLoading ? (
