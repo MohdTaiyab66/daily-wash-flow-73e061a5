@@ -151,6 +151,7 @@ function ServiceDetail() {
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
+        p_address_id: address?.id || "",
         p_scheduled_date: new Date().toISOString().slice(0, 10),
         p_scheduled_time: slot,
         p_addons: selectedAddons.map(a => ({ id: a.id, quantity: 1 })),
