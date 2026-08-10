@@ -1,4 +1,4 @@
-export const BUILD_VERSION = "SERVICE-BOOKING-PREMIUM-UI-34";
+export const BUILD_VERSION = "SERVICE-BOOKING-PREMIUM-UI-35";
 export const DAILY_SHINE_CAROUSEL_BUCKET = "daily-shine-carousel";
 
 
