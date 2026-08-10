@@ -1,56 +1,79 @@
-import { Bell, MapPin, ChevronDown } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { MapPin, ChevronDown } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface UWHeaderProps {
   area: string;
-  unread: number;
   onAreaClick: () => void;
   children?: ReactNode;
+  scrollY?: number;
 }
 
 export function UWHeader({ 
   area, 
-  unread, 
   onAreaClick,
-  children
+  children,
+  scrollY = 0
 }: UWHeaderProps) {
+  // Collapse starts at 20px, finishes at 80px
+  const collapseStart = 20;
+  const collapseEnd = 80;
+  
+  // Progress from 0 (expanded) to 1 (collapsed)
+  const progress = Math.min(1, Math.max(0, (scrollY - collapseStart) / (collapseEnd - collapseStart)));
+  
   return (
-    <div className="sticky top-0 z-30 bg-[#FFF9F3] px-5 pt-[env(safe-area-inset-top,12px)] pb-0.5 border-b border-[#FF6B00]/10">
+    <div 
+      className={cn(
+        "sticky top-0 z-30 px-5 pt-[env(safe-area-inset-top,12px)] transition-colors duration-200",
+        progress > 0.8 ? "bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]" : "bg-[#FFF9F3]"
+      )}
+    >
       {/* Subtle orange accent line */}
-      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none" />
+      <div 
+        className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent pointer-events-none transition-opacity duration-200" 
+        style={{ opacity: progress > 0.8 ? 1 : 0.4 }}
+      />
       
-      <div className="relative flex flex-col gap-1.5">
-        {/* Row 1: Location & Notifications */}
-        <div className="flex items-center justify-between py-0">
+      <div className="relative flex flex-col">
+        {/* Row 1: Location - Fades out */}
+        <div 
+          className="flex items-center py-0 transition-all duration-200 overflow-hidden"
+          style={{ 
+            height: `${Math.max(0, (1 - progress) * 24)}px`,
+            opacity: 1 - progress,
+            marginBottom: `${Math.max(0, (1 - progress) * 6)}px`,
+            transform: `translateY(${-progress * 10}px)`
+          }}
+        >
           <div 
             className="flex items-center gap-1.5 cursor-pointer active:opacity-70 transition-opacity" 
             onClick={onAreaClick}
           >
             <MapPin className="h-4 w-4 text-[#FF6B00]" />
-            <span className="text-[15px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[240px]">
+            <span className="text-[15px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[280px]">
               {area || "Set location"}
             </span>
             <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40" />
           </div>
-          
-          <Link 
-            to="/c/notifications" 
-            className="relative grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/5 transition-transform active:scale-95"
-          >
-            <Bell className={cn("h-5 w-5", unread > 0 ? "text-[#FF6B00]" : "text-[#7A7A7A]")} />
-            {unread > 0 && (
-              <span className="absolute right-3 top-3 flex h-2 w-2 rounded-full bg-[#FF6B00] ring-2 ring-white" />
-            )}
-          </Link>
         </div>
 
-        {/* Subtle orange/peach divider row */}
-        <div className="h-[1px] w-full bg-[#FF6B00]/5 -mt-1 mb-1.5" />
+        {/* Subtle orange/peach divider row - Fades out */}
+        <div 
+          className="h-[1px] w-full bg-[#FF6B00]/5 transition-opacity duration-200" 
+          style={{ 
+            opacity: 1 - progress,
+            marginBottom: progress > 0.5 ? 0 : 6
+          }}
+        />
 
-        {/* Row 2: Vehicle Selector Content */}
-        <div className="pb-1">
+        {/* Row 2: Vehicle Selector Content - Shrinks and animates */}
+        <div 
+          className="pb-2 transition-all duration-200"
+          style={{
+            paddingBottom: progress > 0.8 ? '8px' : '4px'
+          }}
+        >
           {children}
         </div>
       </div>
