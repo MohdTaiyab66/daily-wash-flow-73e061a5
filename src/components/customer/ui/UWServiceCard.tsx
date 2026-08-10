@@ -32,10 +32,10 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200 border-none", className)}
+      className={cn("p-0 overflow-hidden flex flex-col h-full bg-white transition-opacity duration-200 border-none rounded-[12px]", className)}
       raised
     >
-      <div className="relative aspect-[1.2/1] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[18px]">
+      <div className="relative aspect-[1/0.9] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px]">
         {image ? (
           <img 
             src={image} 
@@ -49,36 +49,36 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20 text-muted-foreground/30">
-            <span className="text-[20px] mb-1">🚗</span>
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/10 text-muted-foreground/20">
+            <span className="text-[14px] mb-0.5 opacity-50">🚗</span>
+            <span className="text-[7px] font-black uppercase tracking-wider opacity-30">Coming soon</span>
           </div>
         )}
         
         {badge && (
-          <div className="absolute top-2 left-2 rounded-full bg-[#FF6B00] px-2 py-0.5 backdrop-blur-sm z-[10]">
-            <span className="text-[9px] font-black uppercase tracking-widest text-white">
+          <div className="absolute top-1.5 left-1.5 rounded-full bg-[#FF6B00] px-1.5 py-0.5 backdrop-blur-sm z-[10]">
+            <span className="text-[7px] font-black uppercase tracking-widest text-white">
               {badge}
             </span>
           </div>
         )}
       </div>
       
-      <div className="flex flex-col flex-1 p-3">
-        <div className="h-[2.6em] flex items-center">
-          <h3 className="text-[14px] font-black leading-[1.2] text-[#1A1A1A] line-clamp-2 w-full">
+      <div className="flex flex-col flex-1 p-2">
+        <div className="h-[2.8em] flex items-start">
+          <h3 className="text-[12.5px] font-bold leading-[1.2] text-[#1A1A1A] line-clamp-2 w-full">
             {name}
           </h3>
         </div>
         
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="flex flex-col">
+        <div className="mt-1 flex items-center justify-between gap-1">
+          <div className="flex items-baseline gap-1 overflow-hidden">
+            <span className="text-[14px] font-black text-[#1A1A1A] truncate">₹{price}</span>
             {oldPrice && (
-              <span className="text-[11px] font-medium text-muted-foreground/60 line-through">
+              <span className="text-[9px] font-medium text-muted-foreground/40 line-through truncate">
                 ₹{oldPrice}
               </span>
             )}
-            <span className="text-[16px] font-black text-[#1A1A1A]">₹{price}</span>
           </div>
           
           <button
@@ -89,15 +89,15 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] hover:bg-[#FFE5D9]"
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] hover:bg-[#FFE5D9]"
             )}
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : isAdded ? (
-              <Check className="h-4 w-4" strokeWidth={3} />
+              <Check className="h-3 w-3" strokeWidth={3} />
             ) : (
-              <Plus className="h-4 w-4" strokeWidth={3} />
+              <Plus className="h-3 w-3" strokeWidth={3} />
             )}
           </button>
         </div>
