@@ -226,7 +226,8 @@ function ServiceDetail() {
               </div>
               <h2 className="text-white text-2xl font-black leading-tight">{service.name}</h2>
             </div>
-          </header>
+          </div>
+
 
           {/* Location Bar */}
           <Surface className="flex items-center gap-3 p-3 bg-white/50 border-dashed">
