@@ -155,11 +155,9 @@ function CustomerHome() {
         />
 
 
-        <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
-
-
+        <div className="pt-[calc(56px+env(safe-area-inset-top,24px))]">
           <div className="px-5">
-            <div className="mt-[20px]">
+            <div className="mt-[18px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -182,48 +180,46 @@ function CustomerHome() {
               />
             </div>
 
-            <div className="flex justify-between items-center px-4 w-full h-[75px] mt-[16px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5">
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <Sparkles className="h-4.5 w-4.5" />
+            {/* Refined Trust Strip */}
+            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[18px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5 shadow-sm">
+              <div className="flex flex-col items-center gap-0.5 flex-1">
+                <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Expert Care</span>
+                <span className="text-[9px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Expert Care</span>
               </div>
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <Camera className="h-4.5 w-4.5" />
+              <div className="flex flex-col items-center gap-0.5 flex-1">
+                <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Camera className="h-4 w-4" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Photo Proof</span>
+                <span className="text-[9px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Photo Proof</span>
               </div>
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <ShieldCheck className="h-4.5 w-4.5" />
+              <div className="flex flex-col items-center gap-0.5 flex-1">
+                <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <ShieldCheck className="h-4 w-4" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Safe & Secure</span>
+                <span className="text-[9px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Safe & Secure</span>
               </div>
             </div>
-
 
             <Section 
               title={
                 <div className="flex flex-col gap-1.5">
-                  <h2 className="text-[28px] font-[700] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
-
+                  <h2 className="text-[26px] font-[700] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
                   <p className="text-[14px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[24px] mb-0"
+              className="mt-[26px] mb-0"
             >
-
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
+              <div className="relative flex items-center gap-3 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[14px] px-7 h-[42px] flex items-center justify-center text-[16px] font-[600] transition-all duration-200 active:scale-95",
+                      "whitespace-nowrap rounded-[14px] px-7 h-[40px] flex items-center justify-center text-[15px] font-[600] transition-all duration-200 active:scale-95",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" 
+                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
                         : "bg-white text-[#2D2D2D] border border-[#2D2D2D]/5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                     )}
                   >
@@ -232,7 +228,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 mt-[26px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 mt-[24px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
@@ -248,26 +244,28 @@ function CustomerHome() {
                 ))}
               </div>
 
-              {/* Compact Daily Shine Closing CTA */}
+              {/* Refined Daily Shine Closing CTA */}
               <div className="mt-8 mb-4">
                 <button 
                   onClick={() => navigate({ to: "/c/service/daily-shine" as any })}
-                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-5 text-left active:scale-[0.98] transition-transform"
+                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-6 text-left active:scale-[0.98] transition-transform shadow-sm"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-[13px] font-[600] text-[#FF6B00] uppercase tracking-wider mb-1">Your car deserves better</p>
-                      <h3 className="text-[19px] font-[700] text-[#2D2D2D] leading-tight">
+                      <p className="text-[12px] font-[700] text-[#FF6B00] uppercase tracking-wider mb-1.5">Your car deserves better</p>
+                      <h3 className="text-[20px] font-[700] text-[#2D2D2D] leading-tight mb-4">
                         Keep it clean every day <br/> with Daily Shine.
                       </h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-[#FF6B00] flex items-center justify-center text-white shrink-0">
-                      <ChevronRight className="h-6 w-6" />
+                      <div className="inline-flex items-center justify-center px-4 py-2 bg-[#FF6B00] rounded-full text-white text-[13px] font-[700] shadow-sm">
+                        EXPLORE DAILY SHINE <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                      </div>
                     </div>
                   </div>
                 </button>
               </div>
             </Section>
+          </div>
+        </div>
 
           </div>
         </div>
