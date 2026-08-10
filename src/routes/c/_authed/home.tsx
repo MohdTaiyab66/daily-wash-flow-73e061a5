@@ -205,7 +205,7 @@ function CustomerHome() {
               }
               className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-3 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
+              <div className="relative flex items-center gap-3 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}

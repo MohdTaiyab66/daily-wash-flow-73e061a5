@@ -71,7 +71,7 @@ export function UWServiceCard({
       <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2 min-w-0">
         <div className="h-[58px] flex items-center justify-center overflow-hidden px-1">
           <h3 className={cn(
-            "text-[13px] font-[600] leading-[1.3] text-[#2D2D2D] text-center overflow-hidden break-words line-clamp-3",
+            "text-[13px] font-[550] leading-[1.3] text-[#2D2D2D] text-center overflow-hidden break-words line-clamp-3",
             isComingSoon && "text-[#7A7A7A]"
           )}>
             {name}
