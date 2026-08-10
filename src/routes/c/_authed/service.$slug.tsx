@@ -381,18 +381,23 @@ function ServiceDetail() {
       </div>
 
       <Drawer open={showAddonDrawer} onOpenChange={setShowAddonDrawer}>
-        <DrawerContent className="h-[90vh]">
-          <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase">SELECT ADD-ONS</DrawerTitle></DrawerHeader>
-          <ScrollArea className="px-6 flex-1 h-full">
-            <div className="space-y-4 pb-24">
+        <DrawerContent className="h-[90vh] flex flex-col">
+          <DrawerHeader className="px-6 pt-6 flex justify-between items-center shrink-0">
+            <DrawerTitle className="text-[16px] font-black uppercase">SELECT ADD-ONS</DrawerTitle>
+            <button onClick={() => setShowAddonDrawer(false)} className="p-2 -mr-2 text-[#7A7A7A] active:scale-90 transition-transform">
+              <X className="h-5 w-5" />
+            </button>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-4 pb-[160px]">
               {relevantAddons.map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
                   <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 mr-4">
                       <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
-                      <div>
-                        <div className="font-bold text-[13px]">{a.name}</div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-[13px] truncate">{a.name}</div>
                         <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
@@ -401,10 +406,10 @@ function ServiceDetail() {
                 );
               })}
             </div>
-          </ScrollArea>
-          <div className="p-4 border-t bg-white">
-             <div className="flex justify-between items-center mb-4 px-2 font-black"><span>Selected Total:</span><span className="text-[#EA580C]">₹{totalPayable}</span></div>
-             <Button className="w-full h-[52px] rounded-full bg-[#EA580C]" onClick={() => setShowAddonDrawer(false)}>DONE</Button>
+          </div>
+          <div className="p-4 pt-6 border-t bg-white shrink-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
+             <div className="flex justify-between items-center mb-4 px-2 font-black"><span className="text-[13px] uppercase tracking-wider text-[#7A7A7A]">CURRENT TOTAL</span><span className="text-[#EA580C] text-[20px]">₹{totalPayable}</span></div>
+             <Button className="w-full h-[54px] rounded-[16px] bg-[#EA580C] text-white font-black text-[15px]" onClick={() => setShowAddonDrawer(false)}>DONE</Button>
           </div>
         </DrawerContent>
       </Drawer>
