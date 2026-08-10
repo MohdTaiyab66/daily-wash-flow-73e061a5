@@ -14,7 +14,7 @@ interface UWHeaderProps {
   } | null;
   vehicleImage?: string | null;
   onVehicleClick?: () => void;
-  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  scrollRef?: React.RefObject<HTMLElement | null>;
 }
 
 const COLLAPSE_DISTANCE = 80;
@@ -35,7 +35,7 @@ export function UWHeader({
   const vehicleThumbRef = useRef<HTMLDivElement>(null);
   
   useLayoutEffect(() => {
-    const scrollEl = scrollRef?.current || window;
+    const scrollEl = window;
     const header = containerRef.current;
     const location = locationRef.current;
     const vehicle = vehicleRef.current;
@@ -94,7 +94,7 @@ export function UWHeader({
       }
     };
 
-    const target = scrollEl instanceof Window ? window : scrollEl;
+    const target = window;
     target.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // Initial state
 

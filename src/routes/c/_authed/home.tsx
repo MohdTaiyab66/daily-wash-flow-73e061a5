@@ -143,7 +143,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div ref={containerRef} className="min-h-screen bg-[#FFFCF9] pb-[32px] overflow-y-auto">
+      <div className="min-h-screen bg-[#FFFCF9] pb-[32px]">
         
         <UWHeader 
           area={area} 
@@ -151,7 +151,7 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-          scrollRef={containerRef}
+          scrollRef={undefined}
         />
 
 
