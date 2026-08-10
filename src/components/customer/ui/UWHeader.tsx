@@ -36,14 +36,14 @@ export function UWHeader({
       />
       
       <div className="relative flex flex-col">
-        {/* Row 1: Location - Fades out */}
+        {/* Row 1: Location - Fades out and slides up */}
         <div 
-          className="flex items-center py-0 transition-all duration-200 overflow-hidden"
+          className="flex items-center py-0 transition-all duration-300 ease-out overflow-hidden"
           style={{ 
             height: `${Math.max(0, (1 - progress) * 24)}px`,
             opacity: 1 - progress,
-            marginBottom: `${Math.max(0, (1 - progress) * 6)}px`,
-            transform: `translateY(${-progress * 10}px)`
+            marginBottom: `${Math.max(0, (1 - progress) * 8)}px`,
+            transform: `translateY(${-progress * 20}px)`
           }}
         >
           <div 
@@ -51,7 +51,7 @@ export function UWHeader({
             onClick={onAreaClick}
           >
             <MapPin className="h-4 w-4 text-[#FF6B00]" />
-            <span className="text-[15px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[280px]">
+            <span className="text-[16px] font-[600] uppercase tracking-[0.2px] text-[#FF6B00] truncate max-w-[280px]">
               {area || "Set location"}
             </span>
             <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40" />
@@ -60,10 +60,11 @@ export function UWHeader({
 
         {/* Subtle orange/peach divider row - Fades out */}
         <div 
-          className="h-[1px] w-full bg-[#FF6B00]/5 transition-opacity duration-200" 
+          className="h-[1px] w-full bg-[#FF6B00]/5 transition-all duration-300 ease-out" 
           style={{ 
-            opacity: 1 - progress,
-            marginBottom: progress > 0.5 ? 0 : 6
+            opacity: Math.max(0, 1 - progress * 1.5),
+            transform: `scaleX(${1 - progress * 0.2})`,
+            marginBottom: progress > 0.5 ? 0 : 8
           }}
         />
 

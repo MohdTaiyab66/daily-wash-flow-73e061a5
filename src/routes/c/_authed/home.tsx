@@ -293,8 +293,8 @@ function CustomerHome() {
               <div 
                 className="relative shrink-0 overflow-hidden rounded-[11px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm transition-all duration-200"
                 style={{
-                  height: scrollY > 60 ? '36px' : '58px',
-                  width: scrollY > 60 ? '36px' : '58px',
+                  height: scrollY > 60 ? '38px' : '58px',
+                  width: scrollY > 60 ? '38px' : '58px',
                 }}
               >
                 <VehicleAvatar 
@@ -310,13 +310,13 @@ function CustomerHome() {
                   <div className={cn("min-w-0 flex transition-all duration-200", scrollY > 60 ? "items-baseline gap-1.5" : "flex-col")}>
                     <h2 className={cn(
                       "truncate font-[650] tracking-tight text-[#2D2D2D] leading-tight transition-all duration-200",
-                      scrollY > 60 ? "text-[16px]" : "text-[21px]"
+                      scrollY > 60 ? "text-[16px]" : "text-[22px]"
                     )}>
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
                     <p className={cn(
                       "truncate font-[500] text-[#7A7A7A] leading-tight transition-all duration-200",
-                      scrollY > 60 ? "text-[14px]" : "text-[14px] mt-0.5"
+                      scrollY > 60 ? "text-[14px]" : "text-[15px] mt-0.5"
                     )}>
                       {scrollY > 60 && "· "}{activeVehicle.registration_number} · {bodyLabel}
                     </p>
