@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
-  ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide
+  ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide,
+  Plus, Minus, ShoppingCart
 } from "lucide-react";
 import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { z } from "zod";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
+import { useCartStore } from "@/lib/cart-store";
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
@@ -79,11 +81,12 @@ function ServiceDetail() {
   
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState("");
-  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
-  const [showVehicleDrawer, setShowVehicleDrawer] = useState(false);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const { items: cartItems, updateQuantity, setBaseService } = useCartStore();
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
@@ -135,11 +138,20 @@ function ServiceDetail() {
   const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const isSUV = vehicle?.category === "sedan_suv";
-  const basePrice = service ? (isSUV ? service.price_sedan_suv : service.price_hatchback) : 0;
+  
+  // Initialize base service in cart when loaded
+  useEffect(() => {
+    if (service) {
+      const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
+      setBaseService(service.id, service.name, price);
+    }
+  }, [service, isSUV, setBaseService]);
+
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
-  const selectedAddons = useMemo(() => relevantAddons.filter(a => addonQty[a.id] > 0), [relevantAddons, addonQty]);
-  const addonTotal = selectedAddons.reduce((sum, a) => sum + (isSUV ? a.price_sedan_suv : a.price_hatchback), 0);
-  const totalPayable = basePrice + addonTotal;
+  
+  const cartAddons = cartItems.filter(i => i.type === 'addon');
+  const totalPayable = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const totalItems = cartItems.reduce((sum, i) => sum + i.quantity, 0);
 
   const galleryQ = useServiceGallery(slug);
   const galleryImages = useMemo(() => {
@@ -160,7 +172,7 @@ function ServiceDetail() {
         p_address_id: activeAddress.id,
         p_scheduled_date: new Date().toISOString().slice(0, 10),
         p_scheduled_time: slot,
-        p_addons: selectedAddons.map(a => ({ id: a.id, quantity: 1 })),
+        p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
       if (error) throw error;
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
@@ -174,7 +186,31 @@ function ServiceDetail() {
     } finally { setSubmitting(false); }
   };
 
+  const getAddonQty = (id: string) => cartItems.find(i => i.id === id)?.quantity || 0;
+
+  const QuantityControl = ({ id, name, price, type }: { id: string, name: string, price: number, type: 'base' | 'addon' }) => {
+    const qty = getAddonQty(id);
+    return (
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={() => updateQuantity(id, Math.max(type === 'base' ? 1 : 0, qty - 1))}
+          className={cn("w-7 h-7 rounded-full border border-black/10 flex items-center justify-center transition-all active:scale-90", qty > (type === 'base' ? 1 : 0) ? "text-[#EA580C]" : "text-black/30")}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-[14px] font-black w-4 text-center">{qty}</span>
+        <button 
+          onClick={() => updateQuantity(id, qty + 1)}
+          className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center text-[#EA580C] transition-all active:scale-90"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  };
+
   if (!service) return <div className="p-10 text-center">Loading...</div>;
+
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-[120px]">
