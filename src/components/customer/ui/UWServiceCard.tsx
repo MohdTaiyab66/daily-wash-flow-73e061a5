@@ -30,6 +30,7 @@ export function UWServiceCard({
 }: UWServiceCardProps) {
   const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(image ? 'loading' : 'error');
 
+
   return (
     <Surface 
       className={cn(
@@ -92,7 +93,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] shadow-[0_2px_4px_rgba(255,107,0,0.1)] border border-[#FF6B00]/5",
+              "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] shadow-[0_2px_4px_rgba(255,107,0,0.1)] border border-[#FF6B00]/5",
               isAdded && "bg-[#FF6B00] text-white shadow-[#FF6B00]/20"
             )}
           >

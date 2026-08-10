@@ -58,9 +58,8 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -133,20 +132,8 @@ function CustomerHome() {
   const serviceImagesQ = useServiceImages();
   const resolvedServiceImage = (slug: string) => getServiceImage(slug, serviceImagesQ.data);
 
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+  // Scroll sync logic handled by UWHeader using scrollRef
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsCollapsed(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: "-40px 0px 0px 0px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [activeVehicle?.id]);
 
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
@@ -164,13 +151,12 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-          isCollapsed={isCollapsed}
+          
         />
 
-        {/* Adjust top padding to match header height */}
+
         <div className="pt-[calc(72px+env(safe-area-inset-top,24px))]">
-          {/* Sentinel for IntersectionObserver - shifted to control transition */}
-          <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
+
 
           <div className="px-5">
             <div className="mt-[20px]">
@@ -196,26 +182,27 @@ function CustomerHome() {
               />
             </div>
 
-            <div className="flex justify-between items-center px-4 w-full h-[70px] mt-[18px]">
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <Sparkles className="h-4 w-4" />
+            <div className="flex justify-between items-center px-4 w-full h-[75px] mt-[16px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5">
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Sparkles className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Expert Care</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Expert Care</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <Camera className="h-4 w-4" />
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <Camera className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Photo Proof</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Photo Proof</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-8 w-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#FF6B00]">
-                  <ShieldCheck className="h-4 w-4" />
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
+                  <ShieldCheck className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider">Safe & Secure</span>
+                <span className="text-[10px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Safe & Secure</span>
               </div>
             </div>
+
 
             <Section 
               title={
@@ -225,8 +212,9 @@ function CustomerHome() {
                   <p className="text-[14px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[26px] mb-0"
+              className="mt-[24px] mb-0"
             >
+
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
@@ -244,7 +232,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 mt-[26px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 mt-[26px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (

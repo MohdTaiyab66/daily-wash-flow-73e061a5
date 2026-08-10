@@ -1,5 +1,6 @@
 import { MapPin, ChevronDown, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLayoutEffect, useRef } from "react";
 
 interface UWHeaderProps {
   area: string;
@@ -13,8 +14,10 @@ interface UWHeaderProps {
   } | null;
   vehicleImage?: string | null;
   onVehicleClick?: () => void;
-  isCollapsed?: boolean;
+  scrollRef?: React.RefObject<HTMLElement | null>;
 }
+
+const COLLAPSE_DISTANCE = 80;
 
 export function UWHeader({ 
   area, 
@@ -22,23 +25,85 @@ export function UWHeader({
   activeVehicle,
   vehicleImage,
   onVehicleClick,
-  isCollapsed = false
+  scrollRef
 }: UWHeaderProps) {
+  const containerRef = useRef<HTMLElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const vehicleRef = useRef<HTMLDivElement>(null);
+  const vehicleNameRef = useRef<HTMLSpanElement>(null);
+  const vehicleMetaRef = useRef<HTMLSpanElement>(null);
+  const vehicleThumbRef = useRef<HTMLDivElement>(null);
+  
+  useLayoutEffect(() => {
+    const header = containerRef.current;
+    const location = locationRef.current;
+    const vehicle = vehicleRef.current;
+    const vName = vehicleNameRef.current;
+    const vMeta = vehicleMetaRef.current;
+    const vThumb = vehicleThumbRef.current;
+    
+    if (!header) return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
+      
+      // 1. Header background & height
+      const expandedHeight = 72;
+      const collapsedHeight = 58;
+      const currentHeight = expandedHeight - (progress * (expandedHeight - collapsedHeight));
+      header.style.height = `calc(${currentHeight}px + env(safe-area-inset-top, 24px))`;
+      header.style.backgroundColor = progress > 0.1 ? `rgba(255, 249, 243, ${0.95 + progress * 0.05})` : '#FFF9F3';
+      header.style.backdropFilter = progress > 0.1 ? 'blur(8px)' : 'none';
+      header.style.boxShadow = `0 1px ${progress * 10}px rgba(0,0,0,${progress * 0.05})`;
+
+      if (location) {
+        location.style.opacity = `${1 - progress}`;
+        location.style.transform = `translateX(${-progress * 10}px) scale(${1 - progress * 0.1})`;
+        location.style.pointerEvents = progress > 0.8 ? 'none' : 'auto';
+      }
+
+      if (vehicle) {
+        const xOffset = -progress * 20; 
+        vehicle.style.transform = `translateX(${xOffset}px)`;
+        vehicle.style.backgroundColor = progress > 0.5 ? 'transparent' : 'white';
+        vehicle.style.border = progress > 0.5 ? 'none' : '1px solid rgba(255, 107, 0, 0.1)';
+        vehicle.style.boxShadow = progress > 0.5 ? 'none' : '0 1px 3px rgba(0,0,0,0.04)';
+      }
+
+      if (vThumb) {
+        const scale = 1 + progress * 0.1;
+        vThumb.style.transform = `scale(${scale})`;
+      }
+
+      if (vName) {
+        vName.style.fontSize = `${15.5 + progress * 0.5}px`;
+      }
+
+      if (vMeta) {
+        vMeta.style.opacity = `${progress}`;
+        vMeta.style.display = progress > 0.1 ? 'inline' : 'none';
+        vMeta.style.transform = `translateX(${(1 - progress) * 10}px)`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); 
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <header className={cn(
-      "fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
-      "bg-[#FFF9F3] border-b border-[#FF6B00]/5 shadow-[0_1px_4px_rgba(0,0,0,0.02)]",
-      isCollapsed ? "h-[calc(56px+env(safe-area-inset-top,24px))]" : "h-[calc(72px+env(safe-area-inset-top,24px))]"
-    )}>
+    <header 
+      ref={containerRef}
+      className="fixed top-0 left-0 right-0 z-[60] px-4 pt-[env(safe-area-inset-top,24px)] will-change-[height,background-color]"
+    >
       <div className="flex flex-col h-full justify-center">
-        {/* Unified Toolbar Row */}
-        <div className="flex items-center justify-between gap-4 w-full">
-          {/* Left: Location - 60% approx */}
+        <div className="flex items-center justify-between gap-4 w-full relative">
+          {/* Left: Location */}
           <div 
-            className={cn(
-              "flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-all duration-400 flex-[0.6] min-w-0",
-              isCollapsed ? "opacity-0 pointer-events-none -translate-y-2" : "opacity-100 translate-y-0"
-            )} 
+            ref={locationRef}
+            className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity flex-[0.6] min-w-0 will-change-transform"
             onClick={onAreaClick}
           >
             <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
@@ -48,19 +113,17 @@ export function UWHeader({
             <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/30 shrink-0" />
           </div>
 
-          {/* Right: Vehicle Selector - Compact Control */}
+          {/* Right: Vehicle Selector */}
           {activeVehicle && (
             <div 
-              className={cn(
-                "flex items-center gap-2 px-2 py-1.5 rounded-[12px] bg-white border border-[#FF6B00]/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer active:scale-[0.97] transition-all duration-400 min-w-0 flex-[0.4]",
-                isCollapsed ? "absolute left-4 right-4 bg-white/95 backdrop-blur-sm border-none shadow-sm h-[42px] px-3 translate-y-0" : ""
-              )}
+              ref={vehicleRef}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-[12px] cursor-pointer active:scale-[0.97] transition-all min-w-0 flex-[0.4] will-change-transform"
               onClick={onVehicleClick}
             >
-              <div className={cn(
-                "shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center transition-all duration-400",
-                isCollapsed ? "h-[34px] w-[34px]" : "h-[32px] w-[32px]"
-              )}>
+              <div 
+                ref={vehicleThumbRef}
+                className="h-[32px] w-[32px] shrink-0 overflow-hidden rounded-full bg-white flex items-center justify-center will-change-transform"
+              >
                 {vehicleImage ? (
                   <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
                 ) : (
@@ -69,18 +132,19 @@ export function UWHeader({
               </div>
               
               <div className="min-w-0 flex-1 flex items-center gap-1">
-                <span className={cn(
-                  "font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap truncate",
-                  isCollapsed ? "text-[16px]" : "text-[15.5px]"
-                )}>
+                <span 
+                  ref={vehicleNameRef}
+                  className="font-[600] text-[#2D2D2D] tracking-tight whitespace-nowrap truncate"
+                >
                   {activeVehicle.make} {activeVehicle.model}
                 </span>
                 
-                {isCollapsed && (
-                   <span className="truncate font-[500] text-[14px] text-[#7A7A7A] leading-tight shrink-0">
-                    · {activeVehicle.registration_number} · {activeVehicle.category.includes('suv') ? 'SUV' : 'Car'}
-                  </span>
-                )}
+                <span 
+                  ref={vehicleMetaRef}
+                  className="truncate font-[500] text-[14px] text-[#7A7A7A] leading-tight shrink-0 hidden"
+                >
+                  · {activeVehicle.registration_number} · {activeVehicle.category.includes('suv') ? 'SUV' : 'Car'}
+                </span>
                 
                 <ChevronDown className="text-[#7A7A7A]/30 shrink-0 h-3 w-3" />
               </div>
