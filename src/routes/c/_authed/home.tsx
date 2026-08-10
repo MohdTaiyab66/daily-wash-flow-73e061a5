@@ -342,9 +342,8 @@ function CustomerHome() {
             </div>
 
             <Section 
-              title="Car care services"
+              title={<h2 className="text-[20px] font-[650] text-[#2D2D2D] tracking-tight">Car care services</h2>}
               className="mt-8 mb-0"
-              titleClassName="text-[20px] font-[650] text-[#2D2D2D]"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
