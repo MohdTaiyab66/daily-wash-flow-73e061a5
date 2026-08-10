@@ -265,7 +265,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFF9F3] pb-24">
+      <div className="min-h-screen bg-[#FFFCF9] pb-24">
         <UWHeader 
           area={area} 
           unread={unread} 
@@ -275,10 +275,10 @@ function CustomerHome() {
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
               <div 
-                className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[78px] py-1.5"
+                className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[82px] py-1"
                 onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
               >
-                <div className="relative h-[50px] w-[50px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_6px_rgba(255,107,0,0.06)]">
+                <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
                 <VehicleAvatar 
                   imageUrl={catalogImageQ.data} 
                   make={activeVehicle.make} 
@@ -290,7 +290,7 @@ function CustomerHome() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <h2 className="truncate text-[19px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
+                    <h2 className="truncate text-[21px] font-[650] tracking-tight text-[#2D2D2D] leading-tight">
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
                     <p className="truncate text-[14px] font-[500] text-[#7A7A7A] leading-tight mt-0.5">
@@ -313,7 +313,7 @@ function CustomerHome() {
         </UWHeader>
 
         <div className="px-5">
-          <div className="space-y-4 mt-[20px]">
+          <div className="space-y-4 mt-[16px]">
 
             {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
             <div className="mt-0">
@@ -344,11 +344,11 @@ function CustomerHome() {
             <Section 
               title={
                 <div className="space-y-0.5">
-                  <h2 className="text-[21px] font-[600] text-[#2D2D2D] tracking-tight">Car care services</h2>
-                  <p className="text-[14px] text-[#7A7A7A] font-medium">Everything your car needs</p>
+                  <h2 className="text-[26px] font-[700] text-[#2D2D2D] tracking-tight">Car care services</h2>
+                  <p className="text-[15px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[30px] mb-0"
+              className="mt-[28px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[16px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -356,7 +356,7 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-[600] transition-all duration-200",
+                      "whitespace-nowrap rounded-full px-5 h-[44px] flex items-center justify-center text-[14px] font-[600] transition-all duration-200",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25" 
                         : "bg-white text-[#2D2D2D] border border-border/60 shadow-sm"
@@ -368,7 +368,7 @@ function CustomerHome() {
                 {/* No scroll indicator fade needed if scrollbar hidden properly */}
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-3 gap-x-2 gap-y-3 mt-4">
                 {servicesQ.isLoading ? (
                   [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
