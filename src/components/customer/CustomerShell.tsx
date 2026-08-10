@@ -14,16 +14,17 @@ export function CustomerShell({ children }: { children: ReactNode }) {
 
   const isCheckout = pathname.startsWith("/c/service/") || pathname.startsWith("/c/vehicles/add") || pathname.includes("/vehicles/");
   
+  // Height target: ~72px excluding safe area
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(100px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(76px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(100,60,30,0.10)] bg-[#F3E7DC] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(100,60,30,0.03)]">
-          <div className="mx-auto flex max-w-md items-center justify-around px-3 py-2.5">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(80,50,30,0.08)] bg-[#F3E5D7] pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto flex max-w-md items-center justify-around h-[72px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/c/home" && pathname.startsWith(n.to));
@@ -33,19 +34,22 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1.5 py-1 text-[9px] font-[700] transition-colors",
-                    active ? "text-[#2D2D2D]" : "text-[#8B8986]"
+                    "flex flex-1 flex-col items-center justify-center transition-colors",
+                    active ? "text-[#2D2D2D]" : "text-[#8A8783]"
                   )}
                 >
-                  <span
+                  <div
                     className={cn(
-                      "grid h-[42px] w-[50px] place-items-center rounded-[18px] transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8B8986]"
+                      "grid h-[40px] w-[50px] place-items-center rounded-xl transition-all duration-200",
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_8px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#8A8783]"
                     )}
                   >
-                    <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
-                  </span>
-                  <span className={cn("tracking-[0.06em] uppercase", active ? "text-[#2D2D2D]" : "text-[#8B8986]")}>
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
+                  </div>
+                  <span className={cn(
+                    "mt-[5px] text-[12px] font-semibold tracking-wide uppercase",
+                    active ? "text-[#2D2D2D]" : "text-[#8A8783]"
+                  )}>
                     {n.label}
                   </span>
                 </Link>
