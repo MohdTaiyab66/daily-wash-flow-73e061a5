@@ -417,8 +417,8 @@ function CustomerHome() {
                   </Surface>
 
                   <div className="mt-8 mb-6 text-center px-6">
-                    <p className="text-[12px] font-[600] text-[#7A7A7A] uppercase tracking-[0.2em] opacity-50">URBAN WASH</p>
-                    <p className="mt-1.5 text-[11px] font-medium text-[#7A7A7A] opacity-30">Designed for those who love their cars.</p>
+                    <p className="text-[12px] font-[700] text-[#2D2D2D] uppercase tracking-[0.25em] opacity-60">URBAN WASH</p>
+                    <p className="mt-1 text-[11px] font-medium text-[#7A7A7A] opacity-40">Designed for those who love their cars.</p>
                   </div>
                 </Section>
 
@@ -498,9 +498,9 @@ function CustomerHome() {
 
 function TrustItem({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 flex-1">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10 mb-1">
-        <Check className="h-3.5 w-3.5 text-[#FF6B00]" strokeWidth={4} />
+    <div className="flex flex-col items-center gap-1.5 flex-1 scale-90">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B00]/5 border border-[#FF6B00]/10">
+        <Check className="h-3 w-3 text-[#FF6B00]" strokeWidth={3.5} />
       </div>
       <span className="text-[10px] font-[600] text-[#7A7A7A] tracking-wider text-center">{label}</span>
     </div>

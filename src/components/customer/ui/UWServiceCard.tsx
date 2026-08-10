@@ -48,9 +48,9 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F3F5] text-[#2D2D2D]/20">
-            <Car className="h-7 w-7 mb-1 opacity-20" />
-            <span className="text-[9px] font-[800] uppercase tracking-wider opacity-40">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F3F5] text-[#2D2D2D]/30 p-2">
+            <Car className="h-6 w-6 mb-1 opacity-20" />
+            <span className="text-[8px] font-[800] uppercase tracking-widest opacity-60 text-center">Coming soon</span>
           </div>
         )}
         
