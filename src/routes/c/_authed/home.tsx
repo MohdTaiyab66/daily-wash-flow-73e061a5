@@ -206,13 +206,13 @@ function CustomerHome() {
               }
               className="mt-[22px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px]">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-5 h-[34px] flex items-center justify-center text-[13px] font-[650] transition-all duration-200 active:scale-[0.96]",
+                      "whitespace-nowrap rounded-full px-5 h-[34px] flex items-center justify-center text-[13px] font-[650] transition-all duration-200 active:scale-[0.96] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/15" 
                         : "bg-white text-[#4A4A4A] border border-[#2D2D2D]/8 shadow-sm"

@@ -36,6 +36,15 @@ export const upsertGalleryItem = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    // If setting this as hero, unset others for this service_slug
+    if (data.is_hero) {
+      await (supabaseAdmin as any)
+        .from("service_gallery")
+        .update({ is_hero: false })
+        .eq("service_slug", data.service_slug);
+    }
+
     const { data: result, error } = await (supabaseAdmin as any)
       .from("service_gallery")
       .upsert({

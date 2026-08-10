@@ -64,7 +64,8 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
   return (
     <div 
       className={cn(
-        "featured-carousel relative w-full overflow-hidden rounded-[16px] bg-white aspect-[1.87/1] touch-pan-y shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] border border-black/5", 
+        "featured-carousel relative w-full overflow-hidden rounded-[16px] bg-white aspect-[1.87/1] touch-pan-y shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] border border-black/5 box-border", 
+
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
