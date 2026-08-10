@@ -382,7 +382,7 @@ function CustomerHome() {
             title="Car care services"
             className="mt-6"
           >
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
               {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                 <button
                   key={cat}
@@ -431,7 +431,7 @@ function CustomerHome() {
               <Section className="pb-8 -mt-6">
                 <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-6 rounded-[20px]">
                   <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
-                  <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed">Premium doorstep car care you can trust every day.</p>
+                  <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed text-balance">Premium doorstep car care you can trust every day.</p>
                 </Surface>
               </Section>
 
