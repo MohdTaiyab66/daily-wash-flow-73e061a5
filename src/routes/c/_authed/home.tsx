@@ -1,46 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldAlert, Car } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ShieldAlert, Car, Sparkles, Camera, ChevronDown, ChevronRight, Plus, Check } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  MapPin,
-  Plus,
-  ChevronRight,
-  Sparkles,
-  Droplets,
-  Wrench,
-  ShowerHead,
-  ChevronDown,
-  BellRing,
-  Check,
-  Pencil,
-  Bell,
-  Camera,
-  Image as ImageIcon,
-} from "lucide-react";
 import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
 import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAreaAvailability, isServiceAllowed } from "@/lib/area-availability";
+import { useAreaAvailability } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
 import { VehicleAvatar } from "@/components/VehicleAvatar";
-import { toast } from "sonner";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
-import { SkeletonCard, Shimmer } from "@/components/customer/ui/Skeletons";
+import { SkeletonCard } from "@/components/customer/ui/Skeletons";
 import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
-import { UWPlanCard } from "@/components/customer/ui/UWPlanCard";
-import { ListGroup, ListRow, Section, StatusChip, Surface } from "@/components/customer/ui/kit";
+import { ListGroup, ListRow, Section, Surface } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
-import { BookAWashSheet } from "@/components/customer/BookAWashSheet";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
-import { BUILD_VERSION, DAILY_SHINE_CAROUSEL_BUCKET } from "@/lib/build-info";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
@@ -80,7 +58,6 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [bookOpen, setBookOpen] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const compactHeaderRef = useRef<HTMLDivElement>(null);
@@ -109,43 +86,6 @@ function CustomerHome() {
     },
   });
 
-  const profileQ = useQuery({
-    queryKey: ["customer-profile-name"],
-    queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const { data } = await (supabase as any).from("customer_profiles").select("full_name").eq("user_id", u.user.id).maybeSingle();
-      return {
-        id: u.user.id,
-        fullName: (data?.full_name as string | undefined) ?? null
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const unreadQ = useQuery({
-    queryKey: ["customer-notifications-unread"],
-    queryFn: async (): Promise<number> => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return 0;
-      const { count } = await supabase.from("customer_notifications").select("id", { count: "exact", head: true }).is("read_at", null);
-      return count ?? 0;
-    },
-    refetchInterval: 60000,
-  });
-
-  const subStatusQ = useQuery({
-    queryKey: ["customer-subscription-status", selectedVehicleId],
-    queryFn: async (): Promise<string | null> => {
-      const { data } = await (supabase as any).from("subscriptions").select("status,vehicle_id,created_at").order("created_at", { ascending: false }).limit(20);
-      const rows = (data ?? []) as Array<{ status: string; vehicle_id: string | null }>;
-      if (rows.length === 0) return null;
-      const mine = selectedVehicleId ? rows.filter((r) => r.vehicle_id === selectedVehicleId) : rows;
-      const pick = mine.find((r) => r.status === "active") ?? mine.find((r) => r.status === "payment_pending") ?? mine[0];
-      return pick?.status ?? null;
-    },
-  });
-
   const vehicles = vehiclesQ.data ?? [];
   const vehicleId = selectedVehicleId;
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
@@ -158,6 +98,10 @@ function CustomerHome() {
     imagePath: activeVehicle?.image_path,
     transform: { width: 480, height: 360, quality: 72, resize: "cover" },
   });
+
+  const availability = useAreaAvailability();
+  const a = availability.data;
+  const showCatalog = !area || (a && (a.daily_shine || a.premium));
 
   const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
   const services = servicesQ.data ?? [];
@@ -209,13 +153,11 @@ function CustomerHome() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [selectedVehicleId]);
+  }, [activeVehicle?.id]);
 
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
     servicesQ.refetch(), 
-    subStatusQ.refetch(), 
-    unreadQ.refetch(), 
     serviceImagesQ.refetch()
   ]);
 
@@ -386,10 +328,11 @@ function CustomerHome() {
                     title={`${v.make} ${v.model}`}
                     subtitle={`${v.registration_number} · ${vehicleBodyLabel(v.make, v.model, v.category)}`}
                     onClick={() => { setSelectedVehicleId(v.id); localStorage.setItem("uw_customer_vehicle", v.id); setVehicleSheetOpen(false); }}
-                    right={v.id === selectedVehicleId ? <div className="rounded-full bg-[#FF6B00] p-1 text-white"><Check className="h-3 w-3" /></div> : <ChevronRight className="h-4 w-4 text-muted-foreground/30" />}
+                    trailing={v.id === selectedVehicleId ? <div className="rounded-full bg-[#FF6B00] p-1 text-white"><Check className="h-3 w-3" /></div> : undefined}
+                    chevron={v.id !== selectedVehicleId}
                   />
                 ))}
-                <ListRow title="Add a new car" onClick={() => { setVehicleSheetOpen(false); navigate({ to: "/c/vehicles/add" }); }} icon={<Plus className="h-5 w-5" />} />
+                <ListRow title="Add a new car" onClick={() => { setVehicleSheetOpen(false); navigate({ to: "/c/vehicles/add" }); }} icon={Plus} />
               </ListGroup>
             </div>
           </DialogContent>
@@ -397,8 +340,8 @@ function CustomerHome() {
 
         {activeVehicle && (
           <>
-            <EditVehicleDialog open={editOpen} onOpenChange={setEditOpen} vehicle={activeVehicle} onUpdated={() => vehiclesQ.refetch()} onDelete={() => { setSelectedVehicleId(null); localStorage.removeItem("uw_customer_vehicle"); vehiclesQ.refetch(); }} />
-            <ChangePhotoDialog open={photoOpen} onOpenChange={setPhotoOpen} vehicleId={activeVehicle.id} onUpdated={() => vehiclesQ.refetch()} />
+            <EditVehicleDialog open={editOpen} onOpenChange={setEditOpen} vehicle={activeVehicle} />
+            <ChangePhotoDialog open={photoOpen} onOpenChange={setPhotoOpen} vehicle={activeVehicle} />
           </>
         )}
       </div>
