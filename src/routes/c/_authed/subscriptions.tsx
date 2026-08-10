@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { toast } from "sonner";
 import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
