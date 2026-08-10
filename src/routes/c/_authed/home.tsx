@@ -304,7 +304,7 @@ function CustomerHome() {
           ) : (
             <button 
               onClick={() => navigate({ to: "/c/vehicles/add" })}
-              className="flex items-center gap-2 text-primary font-black text-[14px]"
+              className="flex items-center gap-2 text-[#FF6B00] font-[600] text-[14px]"
             >
               <Plus className="h-4 w-4" />
               Add your car
