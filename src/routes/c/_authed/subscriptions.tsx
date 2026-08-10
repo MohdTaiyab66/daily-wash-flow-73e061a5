@@ -288,7 +288,6 @@ function MyPlanPage() {
       <UWHeader
         area={vehicleLabel ? "My Plan" : "Urban Wash"}
         onAreaClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}
-        scrollY={0}
       >
         {hasVehicles ? (
           <div className="flex items-center justify-between">

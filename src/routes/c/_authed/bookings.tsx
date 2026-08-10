@@ -99,7 +99,6 @@ function BookingsPage() {
           <UWHeader 
             area={vehiclesQ.data?.find(v => v.id === selectedVehicleId)?.registration_number ?? "My Bookings"}
             onAreaClick={() => {}}
-            scrollY={0}
           />
         </div>
 
