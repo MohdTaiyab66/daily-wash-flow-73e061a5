@@ -1,13 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldAlert, Car, Sparkles, Camera, ChevronDown, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { Sparkles, Camera, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
 import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAreaAvailability } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
-import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
@@ -15,7 +14,7 @@ import { SkeletonCard } from "@/components/customer/ui/Skeletons";
 import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
-import { ListGroup, ListRow, Section, Surface } from "@/components/customer/ui/kit";
+import { ListGroup, ListRow, Section } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -58,7 +57,6 @@ function CustomerHome() {
   const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -132,8 +130,6 @@ function CustomerHome() {
   const serviceImagesQ = useServiceImages();
   const resolvedServiceImage = (slug: string) => getServiceImage(slug, serviceImagesQ.data);
 
-  // Scroll sync logic handled by UWHeader using scrollRef
-
 
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
@@ -151,9 +147,7 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-          
         />
-
 
         <div className="pt-[calc(56px+env(safe-area-inset-top,24px))]">
           <div className="px-5">
@@ -264,9 +258,6 @@ function CustomerHome() {
                 </button>
               </div>
             </Section>
-          </div>
-        </div>
-
           </div>
         </div>
 
