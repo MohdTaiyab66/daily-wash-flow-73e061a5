@@ -35,7 +35,6 @@ export function UWHeader({
   const vehicleThumbRef = useRef<HTMLDivElement>(null);
   
   useLayoutEffect(() => {
-    const scrollEl = window;
     const header = containerRef.current;
     const location = locationRef.current;
     const vehicle = vehicleRef.current;
@@ -46,11 +45,10 @@ export function UWHeader({
     if (!header) return;
 
     const handleScroll = () => {
-      const scrollY = scrollEl instanceof Window ? scrollEl.scrollY : scrollEl.scrollTop;
+      const scrollY = window.scrollY;
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
       // 1. Header background & height
-      // Expanded: 72px + safe-area, Collapsed: 58px + safe-area
       const expandedHeight = 72;
       const collapsedHeight = 58;
       const currentHeight = expandedHeight - (progress * (expandedHeight - collapsedHeight));
@@ -60,16 +58,13 @@ export function UWHeader({
       header.style.boxShadow = `0 1px ${progress * 10}px rgba(0,0,0,${progress * 0.05})`;
 
       if (location) {
-        // Location fades and slides left/up slightly
         location.style.opacity = `${1 - progress}`;
         location.style.transform = `translateX(${-progress * 10}px) scale(${1 - progress * 0.1})`;
         location.style.pointerEvents = progress > 0.8 ? 'none' : 'auto';
       }
 
       if (vehicle) {
-        // Vehicle selector moves left to center/occupy more space
-        // In expanded: right-aligned. In collapsed: takes over row.
-        const xOffset = -progress * 20; // Move left slightly as location disappears
+        const xOffset = -progress * 20; 
         vehicle.style.transform = `translateX(${xOffset}px)`;
         vehicle.style.backgroundColor = progress > 0.5 ? 'transparent' : 'white';
         vehicle.style.border = progress > 0.5 ? 'none' : '1px solid rgba(255, 107, 0, 0.1)';
@@ -77,7 +72,6 @@ export function UWHeader({
       }
 
       if (vThumb) {
-        // Thumbnail gets slightly larger/smaller
         const scale = 1 + progress * 0.1;
         vThumb.style.transform = `scale(${scale})`;
       }
@@ -87,19 +81,17 @@ export function UWHeader({
       }
 
       if (vMeta) {
-        // Metadata fades IN when collapsed to show full identity
         vMeta.style.opacity = `${progress}`;
         vMeta.style.display = progress > 0.1 ? 'inline' : 'none';
         vMeta.style.transform = `translateX(${(1 - progress) * 10}px)`;
       }
     };
 
-    const target = window;
-    target.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial state
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); 
 
-    return () => target.removeEventListener('scroll', handleScroll);
-  }, [scrollRef]);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <header 
@@ -158,7 +150,6 @@ export function UWHeader({
               </div>
             </div>
           )}
-
         </div>
       </div>
     </header>
