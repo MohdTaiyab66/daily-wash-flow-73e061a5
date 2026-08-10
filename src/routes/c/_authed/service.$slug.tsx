@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   ArrowLeft, Check, Clock, ChevronRight, Loader2, Sparkles, MapPin, 
   Car, ShieldCheck, CalendarClock, ChevronDown, Info,
@@ -10,7 +10,12 @@ import {
   CheckCircle2,
   X,
   Plus,
-  Minus
+  Minus,
+  Droplets,
+  ZapIcon,
+  Wind,
+  Shield,
+  Search
 } from "lucide-react";
 import { getServiceImage, useServiceImages } from "@/lib/service-image-resolver";
 import { z } from "zod";
@@ -28,6 +33,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import useEmblaCarousel from 'embla-carousel-react';
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
   ssr: false,
