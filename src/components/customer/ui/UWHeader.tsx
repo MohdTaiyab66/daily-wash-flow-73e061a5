@@ -126,9 +126,9 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[17px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]"
+                className="text-[17px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]"
               >
-                {activeVehicle.make}
+                {activeVehicle.make} {activeVehicle.model}
               </span>
               <ChevronDown className="h-3.5 w-3.5 text-[#2D2D2D]/40 shrink-0 mt-0.5" />
             </div>

@@ -35,11 +35,11 @@ export function UWServiceCard({
   return (
     <Surface 
       className={cn(
-        "p-0 overflow-hidden flex flex-col h-[208px] bg-white border border-[#2D2D2D]/5 rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-[202px] bg-white border border-[#2D2D2D]/8 rounded-[18px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
         className
       )}
     >
-      <div className="relative h-[105px] w-full bg-[#F1F2F3] overflow-hidden shrink-0">
+      <div className="relative h-[98px] w-full bg-[#F1F2F3] overflow-hidden shrink-0">
         {image && loadStatus !== 'error' ? (
           <img 
             src={image} 
@@ -68,19 +68,19 @@ export function UWServiceCard({
         )}
       </div>
       
-      <div className="flex flex-col flex-1 px-3 pt-2.5 pb-3 min-w-0">
-        <div className="h-[52px] flex items-start justify-center overflow-hidden">
+      <div className="flex flex-col flex-1 px-2.5 pt-2 pb-2.5 min-w-0">
+        <div className="h-[48px] flex items-start justify-center overflow-hidden">
           <h3 className={cn(
-            "text-[14px] font-[600] leading-[1.3] text-[#2D2D2D] text-center break-words line-clamp-3",
-            isComingSoon && "text-[#2D2D2D]"
+            "text-[13.5px] font-[600] leading-[1.25] text-[#2D2D2D] text-center break-words line-clamp-3",
+            isComingSoon && "text-[#7A7A7A]"
           )}>
             {name}
           </h3>
         </div>
         
-        <div className="mt-auto flex items-center justify-between gap-1 h-[34px]">
+        <div className="mt-auto flex items-center justify-between gap-1 h-[32px]">
           <div className="flex items-baseline gap-0.5 overflow-hidden">
-            <span className="text-[16px] font-[750] text-[#FF6B00] truncate">₹{price}</span>
+            <span className="text-[15.5px] font-[750] text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
               <span className="text-[11px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
                 ₹{oldPrice}
