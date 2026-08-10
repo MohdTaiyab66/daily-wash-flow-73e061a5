@@ -351,9 +351,9 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-black transition-all duration-200",
+                      "whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-black transition-all duration-200",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" 
+                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
                         : "bg-white text-[#1A1A1A] border border-border/50 shadow-sm"
                     )}
                   >
@@ -362,9 +362,9 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="grid grid-cols-3 gap-3 mt-2">
                 {servicesQ.isLoading ? (
-                  [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
+                  [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
@@ -381,20 +381,38 @@ function CustomerHome() {
 
             {showCatalog && (
               <>
-                <div className="py-10 flex items-center justify-between px-2">
+                <div className="py-8 grid grid-cols-3 gap-2 px-2">
                   <TrustItem label="Expert Care" />
-                  <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                   <TrustItem label="Photo Proof" />
-                  <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                   <TrustItem label="Safe & Secure" />
                 </div>
                 
-                <Section className="pb-4 -mt-4">
-                  <Surface className="bg-white border-black/5 p-6 rounded-[20px] shadow-sm">
-                    <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
-                    <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed text-balance">Premium doorstep car care you can trust every day.</p>
+                <Section className="pb-8 -mt-4">
+                  <Surface 
+                    className="relative overflow-hidden bg-[#FF6B00] border-none p-8 rounded-[24px] shadow-xl text-white"
+                    onClick={() => navigate({ to: "/c/service/daily-shine" })}
+                  >
+                    <div className="relative z-10 flex flex-col gap-1">
+                      <h3 className="text-[24px] font-black leading-tight tracking-tight">Your car.<br/>Cleaner every day.</h3>
+                      <p className="mt-2 text-[14px] font-medium text-white/90 leading-relaxed max-w-[200px]">
+                        Premium doorstep car care you can trust.
+                      </p>
+                      <div className="mt-6 flex items-center gap-2 font-black text-[15px] uppercase tracking-wider bg-white/20 w-fit px-4 py-2.5 rounded-full backdrop-blur-md">
+                        Explore Daily Shine
+                        <ChevronRight className="h-4 w-4" />
+                      </div>
+                    </div>
+                    {/* Abstract visual element */}
+                    <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[140%] bg-gradient-to-l from-white/20 to-transparent rotate-12 blur-3xl pointer-events-none" />
+                    <Sparkles className="absolute bottom-6 right-6 h-12 w-12 text-white/10" />
                   </Surface>
+
+                  <div className="mt-12 mb-8 text-center px-6">
+                    <p className="text-[12px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em]">Urban Wash</p>
+                    <p className="mt-1 text-[11px] font-medium text-muted-foreground/20 italic">Designed for those who love their cars.</p>
+                  </div>
                 </Section>
+
 
                 {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
                 {latestNoticeQ.data && activeVehicle && (
