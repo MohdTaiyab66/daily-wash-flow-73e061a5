@@ -185,9 +185,9 @@ function ServiceDetail() {
         </div>
       </header>
 
-      {/* Premium Photo Carousel: 2.3:1 Ratio, 16px radius */}
+      {/* Service Image Gallery: Responsive card */}
       <div className="px-4 pt-6 w-full box-border">
-        <div className="overflow-hidden rounded-[16px] border border-black/[0.05] shadow-sm bg-white relative w-full aspect-[2.3/1]" ref={emblaRef}>
+        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2/1]" ref={emblaRef}>
           <div className="flex h-full">
              {galleryImages.map((img, i) => (
                <div key={i} className="flex-[0_0_100%] w-full h-full">
@@ -202,6 +202,7 @@ function ServiceDetail() {
           </div>
         )}
       </div>
+
 
       <div className="px-4 mt-6 space-y-6 max-w-full">
         {/* Service Card */}
