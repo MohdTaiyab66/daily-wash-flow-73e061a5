@@ -2,397 +2,126 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { 
-  listServiceImages, 
-  upsertServiceImage, 
-  deleteServiceImage,
-  listAllCatalogServices 
-} from "@/lib/service-images.functions";
+  listServiceGallery, 
+  upsertGalleryItem, 
+  deleteGalleryItem, 
+  reorderGallery 
+} from "@/lib/service-gallery.functions";
+import { listAllCatalogServices } from "@/lib/service-images.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, X } from "lucide-react";
-import { useState, useMemo, useRef, ErrorInfo, Component, useEffect } from "react";
+import { Loader2, Trash2, ArrowLeft, Image as ImageIcon, Save, Check, Upload, Plus } from "lucide-react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[ServiceImages] UI Crash caught by boundary:", error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-10 text-center bg-white rounded-xl shadow-lg border border-destructive/20 m-6">
-          <h2 className="text-xl font-bold text-destructive">Photography Manager Error</h2>
-          <p className="mt-2 text-muted-foreground text-sm max-w-md mx-auto">
-            {this.state.error?.message || "An unexpected rendering error occurred."}
-          </p>
-          <div className="flex gap-3 justify-center mt-6">
-            <Button variant="outline" onClick={() => this.setState({ hasError: false, error: null })}>Try Again</Button>
-            <Button onClick={() => window.location.reload()}>Reload Page</Button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 export const Route = createFileRoute("/admin/service-images")({
-  beforeLoad: async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) throw new Error("Unauthorized");
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: sess.session.user.id,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Forbidden: Admin access required");
-  },
-  component: () => (
-    <ErrorBoundary>
-      <ServiceImagesAdminPage />
-    </ErrorBoundary>
-  ),
+  component: ServiceGalleryManager,
 });
 
-function ServiceImagesAdminPage() {
+function ServiceGalleryManager() {
   const qc = useQueryClient();
-  const listImagesFn = useServerFn(listServiceImages);
+  const listGalleryFn = useServerFn(listServiceGallery);
   const listServicesFn = useServerFn(listAllCatalogServices);
-  const upsertFn = useServerFn(upsertServiceImage);
-  const deleteFn = useServerFn(deleteServiceImage);
+  const upsertFn = useServerFn(upsertGalleryItem);
+  const deleteFn = useServerFn(deleteGalleryItem);
 
-  const { data: images, isLoading: imagesLoading } = useQuery({
-    queryKey: ["admin-service-images"],
-    queryFn: () => listImagesFn(),
-  });
-
-  const { data: catalogServices, isLoading: servicesLoading } = useQuery({
+  const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["admin-catalog-services"],
     queryFn: () => listServicesFn(),
   });
 
-  const upsertMutation = useMutation({
-    mutationFn: (data: any) => upsertFn({ data }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-service-images"] });
-      qc.invalidateQueries({ queryKey: ["customer-service-images"] });
-      toast.success("Changes saved and published");
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to save");
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-service-images"] });
-      qc.invalidateQueries({ queryKey: ["customer-service-images"] });
-      toast.success("Image removed");
-    },
-  });
-
-  const imageMap = useMemo(() => {
-    const map = new Map();
-    if (images && Array.isArray(images)) {
-      const sorted = [...images].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-      sorted.forEach(img => {
-        if (img && img.service_slug && !map.has(img.service_slug)) {
-          map.set(img.service_slug, img);
-        }
-      });
-    }
-    return map;
-  }, [images]);
-
-  const [localChanges, setLocalChanges] = useState<{ [slug: string]: { url?: string, status?: "draft" | "published" } }>({});
-  const [uploading, setUploading] = useState<{ [slug: string]: boolean }>({});
-
-  const handleUpload = async (slug: string, file: File) => {
-    try {
-      setUploading(prev => ({ ...prev, [slug]: true }));
-      
-      if (!file.type.startsWith('image/')) {
-        throw new Error("Invalid file type. Please select an image.");
-      }
-
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `${slug}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('service-photography')
-        .upload(filePath, file, {
-          contentType: file.type, // EXPLICIT CONTENT TYPE IS CRITICAL
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      // DO NOT USE getPublicUrl if public=false.
-      // But we will use it because we WANT it to be public.
-      const { data: urlData } = supabase.storage
-        .from('service-photography')
-        .getPublicUrl(filePath);
-      
-      const publicUrl = urlData.publicUrl;
-
-      setLocalChanges(prev => ({
-        ...prev,
-        [slug]: { ...prev[slug], url: publicUrl, status: "draft" }
-      }));
-      
-      toast.success("Photo uploaded as draft");
-    } catch (error: any) {
-      console.error("[ServiceImages] Fatal Upload Error:", error);
-      toast.error("Upload failed: " + (error.message || "Unknown error"));
-    } finally {
-      setUploading(prev => ({ ...prev, [slug]: false }));
-    }
-  };
-
-  const handleStatusChange = (slug: string, status: "draft" | "published") => {
-    setLocalChanges(prev => ({
-      ...prev,
-      [slug]: { ...prev[slug], status }
-    }));
-  };
-
-  const handleSave = (slug: string) => {
-    const change = localChanges[slug];
-    const existing = imageMap.get(slug);
-    
-    if (!change?.url && !existing?.image_url) {
-      toast.error("No image to save");
-      return;
-    }
-
-    const finalData = {
-      id: existing?.id,
-      service_slug: slug,
-      image_url: change?.url || existing?.image_url,
-      status: change?.status || existing?.status || "published"
-    };
-
-    upsertMutation.mutate(finalData);
-    
-    setLocalChanges(prev => {
-        const newChanges = { ...prev };
-        delete newChanges[slug];
-        return newChanges;
-    });
-  };
-
-  const isLoading = imagesLoading || servicesLoading;
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-[#fafafa] min-h-screen">
       <div className="flex items-center gap-4 mb-8">
-        <Link to="/admin" className="text-muted-foreground hover:text-foreground bg-white p-2 rounded-full border border-border/50 shadow-sm transition-all active:scale-95">
+        <Link to="/admin" className="text-muted-foreground hover:text-foreground bg-white p-2 rounded-full border border-border/50 shadow-sm">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#1a1a1a]">Service Photography</h1>
-          <p className="text-muted-foreground mt-1">Manage the photos customers see on each service.</p>
+          <h1 className="text-3xl font-bold">Service Photography</h1>
+          <p className="text-muted-foreground">Manage professional imagery per service.</p>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {catalogServices?.filter(s => s.active).map((service) => (
-            <ServicePhotographyCard 
-              key={service.id}
-              service={service}
-              saved={imageMap.get(service.slug)}
-              local={localChanges[service.slug]}
-              isUploading={uploading[service.slug]}
-              onUpload={handleUpload}
-              onStatusChange={handleStatusChange}
-              onSave={handleSave}
-              onDelete={(id) => deleteMutation.mutate(id)}
-              onCancelLocal={() => setLocalChanges(prev => {
-                const next = { ...prev };
-                delete next[service.slug];
-                return next;
-              })}
-              isSaving={upsertMutation.isPending}
-            />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="md:col-span-1 space-y-2">
+          {servicesLoading ? <Loader2 className="animate-spin" /> : services?.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setSelectedSlug(s.slug)}
+              className={cn("w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all", selectedSlug === s.slug ? "bg-[#ff6b00] text-white shadow-md" : "bg-white hover:bg-muted")}
+            >
+              {s.name}
+            </button>
           ))}
         </div>
-      )}
+        <div className="md:col-span-3">
+          {selectedSlug ? <GalleryEditor slug={selectedSlug} /> : (
+            <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-3xl text-muted-foreground">
+              Select a service to manage photos
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-interface ServicePhotographyCardProps {
-  service: any;
-  saved: any;
-  local: any;
-  isUploading: boolean;
-  onUpload: (slug: string, file: File) => void;
-  onStatusChange: (slug: string, status: "draft" | "published") => void;
-  onSave: (slug: string) => void;
-  onDelete: (id: string) => void;
-  onCancelLocal: () => void;
-  isSaving: boolean;
-}
+function GalleryEditor({ slug }: { slug: string }) {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listServiceGallery);
+  const upsertFn = useServerFn(upsertGalleryItem);
+  const deleteFn = useServerFn(deleteGalleryItem);
 
-function ServicePhotographyCard({
-  service,
-  saved,
-  local,
-  isUploading,
-  onUpload,
-  onStatusChange,
-  onSave,
-  onDelete,
-  onCancelLocal,
-  isSaving
-}: ServicePhotographyCardProps) {
-  const currentUrl = local?.url || saved?.image_url || "";
-  const currentStatus = local?.status || saved?.status || "published";
-  const isDirty = local !== undefined;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Verify hook order - this is top level within the card component.
-  useEffect(() => {
-    if (service.slug === 'body-polish') {
-      console.log(`[ServiceImages DEBUG] Admin Card for Body Polish: ${saved?.image_url || 'no image'}`);
+  const { data: items, isLoading } = useQuery({
+    queryKey: ["gallery", slug],
+    queryFn: () => listFn({ data: { service_slug: slug } }),
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: (data: any) => upsertFn({ data }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["gallery", slug] }),
+  });
+
+  const handleUpload = async (file: File) => {
+    try {
+      const fileName = `${slug}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("service-photography").upload(fileName, file);
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage.from("service-photography").getPublicUrl(fileName);
+      await upsertMutation.mutateAsync({ service_slug: slug, image_url: publicUrl, sort_order: (items?.length || 0) });
+      toast.success("Uploaded!");
+    } catch (e) {
+      toast.error("Upload failed");
     }
-  }, [service.slug, saved]);
-
-
+  };
 
   return (
-    <Card className="overflow-hidden border-border/40 shadow-sm bg-white hover:shadow-md transition-shadow duration-300">
-      <div 
-        className="relative aspect-[16/10] bg-muted group cursor-pointer overflow-hidden border-b border-border/40"
-        onClick={() => !isUploading && fileInputRef.current?.click()}
-      >
-        {currentUrl ? (
-          <img src={currentUrl} alt={service.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 space-y-3">
-            <ImageIcon className="h-12 w-12" />
-            <span className="text-[10px] uppercase font-black tracking-widest">No Image Uploaded</span>
-            <Button variant="outline" size="sm" className="bg-white border-dashed text-[10px] font-bold h-7">
-              + UPLOAD PHOTO
-            </Button>
-          </div>
-        )}
-
-        {isUploading && (
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-3 z-10">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="text-[10px] font-bold tracking-widest uppercase">Uploading...</span>
-          </div>
-        )}
-
-        {currentUrl && !isUploading && (
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <Button variant="secondary" size="sm" className="bg-white/90 text-[10px] font-bold shadow-lg">
-              REPLACE PHOTO
-            </Button>
-          </div>
-        )}
-
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          className="hidden" 
-          accept="image/png, image/jpeg, image/webp"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onUpload(service.slug, file);
-          }}
-        />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold capitalize">{slug.replace(/-/g, ' ')} Gallery</h2>
+        <Button onClick={() => document.getElementById('file-upload')?.click()}>
+          <Plus className="mr-2 h-4 w-4" /> Upload
+        </Button>
+        <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
       </div>
 
-      <div className="p-5 space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-bold text-base text-[#1a1a1a] truncate">{service.name}</h3>
-            <div className={cn(
-              "text-[9px] uppercase font-black px-2 py-0.5 rounded-full tracking-tighter flex items-center gap-1.5",
-              currentStatus === "published" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-amber-50 text-amber-600 border border-amber-100"
-            )}>
-              <div className={cn("h-1.5 w-1.5 rounded-full", currentStatus === "published" ? "bg-emerald-500" : "bg-amber-500")} />
-              {currentStatus}
-            </div>
-          </div>
-          <span className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-tighter">ID: {service.slug}</span>
-        </div>
-
-        <div className="flex items-center gap-3 pt-2 border-t border-border/30">
-          <div className="flex-1">
-            <Select value={currentStatus} onValueChange={(val: any) => onStatusChange(service.slug, val)}>
-              <SelectTrigger className="h-8 text-[11px] font-bold bg-[#fcfcfc] border-border/40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="published" className="text-[11px] font-medium">Published</SelectItem>
-                <SelectItem value="draft" className="text-[11px] font-medium">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-              {saved && !isDirty && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
-                onClick={() => {
-                  if (window.confirm("Remove this image?")) onDelete(saved.id);
-                }}
-              >
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {items?.map((item) => (
+          <div key={item.id} className="relative group aspect-square rounded-2xl overflow-hidden border">
+            <img src={item.image_url} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Button variant="destructive" size="icon" onClick={() => deleteFn({ data: { id: item.id } }).then(() => qc.invalidateQueries({ queryKey: ["gallery", slug] }))}>
                 <Trash2 className="h-4 w-4" />
               </Button>
-            )}
-            
-            {isDirty && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-muted-foreground hover:bg-muted"
-                onClick={onCancelLocal}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-
-            <Button 
-              onClick={() => onSave(service.slug)}
-              disabled={!isDirty || isSaving}
-              size="sm"
-              className={cn(
-                "h-8 px-4 text-[11px] font-black tracking-tight rounded-lg",
-                isDirty ? "bg-[#ff6b00] hover:bg-[#e66000] text-white shadow-sm" : "bg-muted/50 text-muted-foreground cursor-not-allowed"
-              )}
-            >
-              {isSaving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : isDirty ? (
-                <><Save className="h-3 w-3 mr-2" /> PUBLISH</>
-              ) : (
-                <><Check className="h-3 w-3 mr-2" /> SAVED</>
-              )}
-            </Button>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
-    </Card>
+    </div>
   );
 }
