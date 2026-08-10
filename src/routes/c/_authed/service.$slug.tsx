@@ -58,6 +58,9 @@ type Service = {
   includes_sedan_suv: string[] | null;
   benefits: string[] | null;
   addons: any;
+  gallery_images: string[] | null;
+  inclusions_json: Array<{ label: string; icon: string }> | null;
+  benefits_json: Array<{ title: string; desc: string }> | null;
 };
 
 type Vehicle = {
