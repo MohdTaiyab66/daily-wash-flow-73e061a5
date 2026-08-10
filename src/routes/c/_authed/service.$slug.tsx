@@ -132,7 +132,16 @@ function ServiceDetail() {
       toast.error("Please select a vehicle to continue");
       return;
     }
+    
+    // Defensive check: If the service has a price in the DB but we calculated 0
+    // This handles accidental entitlement mapping or UI bugs.
+    if (basePrice > 0 && totalPayable <= 0) {
+      toast.error("Invalid price calculation. Please contact support.");
+      return;
+    }
+
     setSubmitting(true);
+
     try {
       // 1. Create booking
       const { data: bId, error } = await (supabase as any).rpc("confirm_customer_booking", {
