@@ -300,51 +300,51 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFF9F3] pb-24">
+      <div className="min-h-screen bg-[#FFF9F3] pb-32">
         <UWHeader 
           area={area} 
           unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
-        <div className="px-5 space-y-4 mt-2">
-          {/* Location + Notification header handled by UWHeader */}
-
+        <div className="px-5 space-y-6 mt-2">
           {/* 1. Vehicle Selector - Immediately below Location Header */}
           <Section className="mt-0">
             {vehiclesQ.isLoading ? (
-              <SkeletonCard className="h-16" />
+              <SkeletonCard className="h-20" />
             ) : activeVehicle ? (
               <Surface 
-                className="overflow-hidden p-3 border-none bg-white shadow-sm"
+                className="overflow-hidden p-4 border-none bg-white shadow-sm rounded-[20px]"
                 onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
               >
-                <div className="flex w-full items-center gap-3">
-                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-xl bg-[#F8F9FB]">
+                <div className="flex w-full items-center gap-4">
+                  <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px] bg-[#F8F9FB]">
                     <VehicleAvatar 
                       imageUrl={catalogImageQ.data} 
                       make={activeVehicle.make} 
                       model={activeVehicle.model} 
                       color={activeVehicle.color} 
-                      className="h-full w-full object-contain p-1" 
+                      className="h-full w-full object-contain p-1.5" 
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1">
-                      <h2 className="truncate text-[16px] font-black tracking-tight text-foreground">{activeVehicle.make} {activeVehicle.model}</h2>
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/30" />
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A]">{activeVehicle.make} {activeVehicle.model}</h2>
+                        <p className="truncate text-[12px] font-bold text-muted-foreground/60 uppercase tracking-tight mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
+                      </div>
+                      <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
                     </div>
-                    <p className="truncate text-[11px] font-bold text-muted-foreground/60 uppercase tracking-tight">{activeVehicle.registration_number} · {bodyLabel}</p>
                   </div>
                 </div>
               </Surface>
             ) : (
               <Surface 
                 onClick={() => navigate({ to: "/c/vehicles/add" })}
-                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4"
+                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4 rounded-[20px]"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-5 w-5" /></div>
-                <div><span className="block text-[14px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
+                <div><span className="block text-[15px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
               </Surface>
             )}
           </Section>
@@ -380,18 +380,18 @@ function CustomerHome() {
 
           <Section 
             title="Car care services"
-            className="mt-4"
+            className="mt-6"
           >
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none no-scrollbar">
               {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "whitespace-nowrap rounded-full px-5 py-2 text-[13px] font-bold transition-all duration-200",
+                    "whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-black transition-all duration-200",
                     selectedCategory === cat 
                       ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" 
-                      : "bg-white text-[#1a1a1a] border border-border/50"
+                      : "bg-white text-[#1A1A1A] border border-border/50 shadow-sm"
                   )}
                 >
                   {cat}
@@ -399,7 +399,7 @@ function CustomerHome() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-[12px]">
+            <div className="grid grid-cols-2 gap-4 mt-2">
               {servicesQ.isLoading ? (
                 [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
               ) : filteredServices.map((s) => (
@@ -420,17 +420,18 @@ function CustomerHome() {
           </Section>
           {showCatalog && (
             <>
-              <div className="py-8 flex items-center justify-center gap-6 safe-area-bottom">
+              <div className="py-12 flex items-center justify-center gap-4">
                 <TrustItem label="Expert Care" />
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Photo Proof" />
                 <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
                 <TrustItem label="Safe & Secure" />
               </div>
-              <Section className="pb-10 -mt-4">
-                <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-5">
-                  <div className="text-[14px] font-black text-[#1a1a1a]">Trust Urban Wash</div>
-                  <div className="mt-1 text-[12px] font-medium text-muted-foreground/70 text-balance">Premium doorstep car care you can trust every day.</div>
+              
+              <Section className="pb-8 -mt-6">
+                <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-6 rounded-[20px]">
+                  <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
+                  <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed">Premium doorstep car care you can trust every day.</p>
                 </Surface>
               </Section>
 

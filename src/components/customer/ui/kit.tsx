@@ -70,8 +70,8 @@ export function Surface({
     <Component
       onClick={onClick}
       className={cn(
-        "rounded-[22px] border border-border/70 bg-card p-4 transition-all",
-        raised && "shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-16px_rgba(0,0,0,0.18)]",
+        "rounded-[20px] border border-border/70 bg-card p-4 transition-all",
+        raised && "shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)]",
         onClick && "uw-pressable active:scale-[0.98]",
         className,
       )}
