@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide,
-  Plus, Minus, ShoppingCart
+  Plus, Minus, ShoppingCart, Waves, Droplet, Wind, ShieldCheck, Thermometer, UserCheck, CalendarDays, ClipboardCheck
 } from "lucide-react";
 import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { z } from "zod";
@@ -264,16 +264,18 @@ function ServiceDetail() {
 
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] pb-[120px]">
-      <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-4 py-4 flex items-center gap-4 border-b border-black/[0.03]">
-        <button onClick={() => navigate({ to: "/c/home" })} className="p-1"><ArrowLeft className="h-6 w-6 text-[#1a1a1a]" /></button>
+    <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
+      <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-6 h-[64px] flex items-center gap-3 border-b border-black/[0.03]">
+        <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 rounded-full active:bg-black/5 transition-colors">
+          <ArrowLeft className="h-6 w-6 text-[#1a1a1a]" />
+        </button>
         <div className="flex-1 min-w-0">
-          <div className="text-[17px] font-bold text-[#1a1a1a] truncate">{service.name}</div>
+          <h1 className="text-[20px] font-black text-[#1a1a1a] truncate leading-tight">{service.name}</h1>
         </div>
       </header>
 
       {/* Service Image Gallery: Responsive card */}
-      <div className="px-4 pt-6 w-full box-border">
+      <div className="px-6 pt-6 w-full box-border">
         <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2/1]" ref={emblaRef}>
           <div className="flex h-full">
              {galleryImages.map((img, i) => (
@@ -291,7 +293,7 @@ function ServiceDetail() {
       </div>
 
 
-      <div className="px-4 mt-6 space-y-6 max-w-full">
+      <div className="px-6 mt-6 space-y-5 max-w-full">
         {/* Service Card */}
         <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm w-full box-border">
            <div className="flex justify-between items-start gap-3 mb-2">
@@ -304,17 +306,29 @@ function ServiceDetail() {
 
         {/* Dynamic Includes */}
         {service.inclusions_json && (
-          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-3 gap-y-4 gap-x-2 w-full box-border">
+          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-3 gap-y-5 gap-x-2 w-full box-border">
             {service.inclusions_json.map((item, i) => {
-              const Icon = item.label.toLowerCase().includes('pressure') || item.label.toLowerCase().includes('wash') ? ZapIconLucide :
-                           item.label.toLowerCase().includes('polish') || item.label.toLowerCase().includes('wax') ? Sparkles :
-                           item.label.toLowerCase().includes('vacuum') || item.label.toLowerCase().includes('cleaning') ? Car :
-                           item.label.toLowerCase().includes('fragrance') || item.label.toLowerCase().includes('perfume') ? Sparkles :
-                           ZapIconLucide;
+              const label = item.label.toLowerCase();
+              const Icon = 
+                label.includes('pressure') ? Waves :
+                label.includes('wash') ? Droplet :
+                label.includes('polish') ? Sparkles :
+                label.includes('wax') ? Sparkles :
+                label.includes('vacuum') ? Wind :
+                label.includes('cleaning') ? Wind :
+                label.includes('tyre') ? Car :
+                label.includes('dashboard') ? Car :
+                label.includes('fragrance') ? Sparkles :
+                label.includes('doorstep') ? Car :
+                label.includes('scheduled') ? CalendarDays :
+                label.includes('assurance') ? ShieldCheck :
+                label.includes('exterior') ? Droplet :
+                ZapIconLucide;
+              
               return (
                 <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
-                    <Icon className="h-5 w-5" />
+                  <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
+                    <Icon className="h-4.5 w-4.5" />
                   </div>
                   <span className="text-[10px] font-bold uppercase leading-tight text-[#1a1a1a] break-words w-full px-1">{item.label}</span>
                 </div>
@@ -347,12 +361,12 @@ function ServiceDetail() {
               {relevantAddons.slice(0, 3).map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
-                  <div key={a.id} className="flex items-center justify-between gap-3">
+                  <div key={a.id} className="flex items-center justify-between gap-3 p-1">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
-                        <div className="text-[13px] font-bold text-[#1a1a1a] truncate">{a.name}</div>
-                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                        <div className="text-[13px] font-black text-[#1a1a1a] truncate">{a.name}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
                     <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
@@ -393,12 +407,12 @@ function ServiceDetail() {
               {relevantAddons.map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
-                  <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
+                  <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl border border-black/5">
                     <div className="flex items-center gap-3 min-w-0 mr-4">
-                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
+                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
-                        <div className="font-bold text-[13px] truncate">{a.name}</div>
-                        <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
+                        <div className="font-black text-[13px] truncate text-[#1a1a1a]">{a.name}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
                     <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
@@ -450,19 +464,20 @@ function ServiceDetail() {
 
       <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none pb-[env(safe-area-inset-bottom,16px)]">
         {/* Compact Cart Bar */}
-        {!showAddonDrawer && !showCartDrawer && (
-          <div className="px-4 mb-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+        {!showAddonDrawer && !showCartDrawer && totalItems > 0 && (
+          <div className="px-6 mb-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
             <button 
               onClick={() => setShowCartDrawer(true)}
-              className="w-full bg-[#1a1a1a] text-white h-[60px] rounded-[18px] px-5 flex items-center justify-between shadow-[0_12px_35px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all border border-white/5"
+              className="w-full bg-[#1a1a1a] text-white h-[56px] rounded-[24px] px-5 flex items-center justify-between shadow-[0_12px_35px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all border border-white/5"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                  <ShoppingCart className="h-4 w-4" />
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <ShoppingCart className="h-3.5 w-3.5" />
                 </div>
-                <div className="flex flex-col items-start leading-tight">
+                <div className="flex items-center gap-3 leading-tight">
                   <span className="text-[11px] font-[900] uppercase tracking-[0.1em] text-white/50">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
-                  <span className="text-[16px] font-[900] text-[#FF6B00]">₹{totalPayable}</span>
+                  <div className="w-[1px] h-3 bg-white/20" />
+                  <span className="text-[15px] font-[900] text-[#FF6B00]">₹{totalPayable}</span>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
@@ -474,7 +489,7 @@ function ServiceDetail() {
         )}
 
         {/* Payment Footer */}
-        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-[0_-12px_40px_rgba(0,0,0,0.08)] pointer-events-auto gap-4">
+        <div className="bg-white border-t border-black/[0.05] p-6 flex justify-between items-center shadow-[0_-12px_40px_rgba(0,0,0,0.08)] pointer-events-auto gap-4 min-h-[88px]">
           <div className="flex flex-col min-w-0">
             <span className="text-[9px] font-[900] text-[#7A7A7A] uppercase tracking-[0.18em] mb-0.5">TOTAL PAYABLE</span>
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
@@ -483,7 +498,7 @@ function ServiceDetail() {
             onClick={confirm} 
             disabled={submitting || !slot || totalPayable <= 0} 
             className={cn(
-              "h-[56px] px-8 rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)] min-w-[145px]",
+              "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)]",
               (!slot || totalPayable <= 0) && "opacity-50 grayscale shadow-none"
             )}
           >
