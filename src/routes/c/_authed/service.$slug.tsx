@@ -282,11 +282,25 @@ function ServiceDetail() {
       </div>
 
       <Drawer open={showVehicleDrawer} onOpenChange={setShowVehicleDrawer}>
-        <DrawerContent>
-           <DrawerHeader><DrawerTitle>Select Vehicle</DrawerTitle></DrawerHeader>
-           <div className="p-4 space-y-2">
+        <DrawerContent className="max-h-[85vh]">
+           <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[18px] font-black uppercase tracking-tight">Select Vehicle</DrawerTitle></DrawerHeader>
+           <div className="p-4 px-6 space-y-3 pb-12 overflow-y-auto">
              {vehicles.map(v => (
-               <Button key={v.id} variant="outline" className="w-full justify-start" onClick={() => { setVehicleId(v.id); setShowVehicleDrawer(false); }}>{v.model} - {v.registration_number}</Button>
+               <Button 
+                key={v.id} 
+                variant="outline" 
+                className={cn(
+                  "w-full justify-between h-auto p-4 rounded-2xl border-black/[0.05] text-left",
+                  vehicle?.id === v.id ? "border-[#EA580C] bg-orange-50/30" : "bg-white"
+                )} 
+                onClick={() => { setVehicleId(v.id); setShowVehicleDrawer(false); }}
+               >
+                 <div className="flex flex-col gap-0.5">
+                   <span className="text-[15px] font-bold text-charcoal">{v.make} {v.model}</span>
+                   <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{v.registration_number}</span>
+                 </div>
+                 {vehicle?.id === v.id && <Check className="h-5 w-5 text-[#EA580C]" />}
+               </Button>
              ))}
            </div>
         </DrawerContent>

@@ -94,7 +94,7 @@ export function UWHeader({
     >
       <div 
         ref={contentWrapperRef}
-        className="px-6 py-3.5 flex items-center justify-between gap-4 w-full transition-[padding]"
+        className="px-6 py-3.5 flex items-center justify-between gap-4 w-full transition-[padding] box-border"
       >
         {/* 3. Left: Polished Location Control */}
         <div 
