@@ -380,74 +380,75 @@ function CustomerHome() {
             </Section>
 
             {showCatalog && (
-              <div className="py-6 flex justify-between items-center px-4 max-w-sm mx-auto w-full">
-                <TrustItem label="EXPERT CARE" />
-                <TrustItem label="PHOTO PROOF" />
-                <TrustItem label="SAFE & SECURE" />
-              </div>
-            )}
-            <Section className="pb-4 mt-2">
-              <Surface 
-                className="relative overflow-hidden bg-[#FF6B00] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform"
-                onClick={() => navigate({ to: "/c/service/daily-shine" })}
-              >
-                <div className="relative z-10 flex flex-col items-start gap-1">
-                  <h3 className="text-[20px] font-black leading-[1.1] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
-                  <p className="mt-1.5 text-[12px] font-medium text-white/80 leading-snug max-w-[180px]">
-                    Premium doorstep car care you can trust.
-                  </p>
-                  <div className="mt-5 flex items-center gap-1.5 font-black text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-4 py-2 rounded-full shadow-md">
-                    Explore Daily Shine
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </div>
+              <>
+                <div className="py-6 flex justify-between items-center px-4 max-w-sm mx-auto w-full">
+                  <TrustItem label="EXPERT CARE" />
+                  <TrustItem label="PHOTO PROOF" />
+                  <TrustItem label="SAFE & SECURE" />
                 </div>
-                
-                {/* Visual assets overlay */}
-                <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
-                  <Sparkles className="h-20 w-20 text-white" />
-                </div>
-                <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
-              </Surface>
 
-              <div className="mt-8 mb-4 text-center px-6">
-                <p className="text-[12px] font-black text-[#1A1A1A]/40 uppercase tracking-[0.2em]">URBAN WASH</p>
-                <p className="mt-1 text-[11px] font-bold text-[#1A1A1A]/20">Designed for those who love their cars.</p>
-              </div>
-            </Section>
-
-            {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
-            {latestNoticeQ.data && activeVehicle && (
-              <Section className="mt-[-24px] mb-8">
-                <Surface className="border-primary/20 p-5 bg-white shadow-sm">
-                  <div className="flex items-start gap-4">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                      <ShieldAlert className="h-6 w-6" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
-                        <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
-                          {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/80">
-                        A cleaner reported that your vehicle needs extra attention. Would you like to schedule a deep clean?
+                <Section className="pb-4 mt-2">
+                  <Surface 
+                    className="relative overflow-hidden bg-[#FF6B00] border-none p-6 rounded-[24px] shadow-lg text-white group active:scale-[0.98] transition-transform"
+                    onClick={() => navigate({ to: "/c/service/daily-shine" })}
+                  >
+                    <div className="relative z-10 flex flex-col items-start gap-1">
+                      <h3 className="text-[20px] font-black leading-[1.1] tracking-tight text-white">Your car.<br/>Cleaner every day.</h3>
+                      <p className="mt-1.5 text-[12px] font-medium text-white/80 leading-snug max-w-[180px]">
+                        Premium doorstep car care you can trust.
                       </p>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="mt-4 w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-11 text-[14px] font-black shadow-lg shadow-primary/20"
-                        onClick={() => setBookOpen(true)}
-                      >
-                        Schedule a wash
-                      </Button>
+                      <div className="mt-5 flex items-center gap-1.5 font-black text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-4 py-2 rounded-full shadow-md">
+                        Explore Daily Shine
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </div>
                     </div>
+                    
+                    {/* Visual assets overlay */}
+                    <div className="absolute top-0 right-0 h-full w-[45%] flex items-center justify-center opacity-20 pointer-events-none">
+                      <Sparkles className="h-20 w-20 text-white" />
+                    </div>
+                    <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
+                  </Surface>
+
+                  <div className="mt-8 mb-4 text-center px-6">
+                    <p className="text-[12px] font-black text-[#1A1A1A]/40 uppercase tracking-[0.2em]">URBAN WASH</p>
+                    <p className="mt-1 text-[11px] font-bold text-[#1A1A1A]/20">Designed for those who love their cars.</p>
                   </div>
-                </Surface>
-              </Section>
+                </Section>
+
+                {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
+                {latestNoticeQ.data && activeVehicle && (
+                  <Section className="mt-[-24px] mb-8">
+                    <Surface className="border-primary/20 p-5 bg-white shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                          <ShieldAlert className="h-6 w-6" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-[15px] font-black tracking-tight text-foreground">Vehicle needs attention</h3>
+                            <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider">
+                              {new Date(latestNoticeQ.data.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[13px] font-medium leading-relaxed text-muted-foreground/80">
+                            A cleaner reported that your vehicle needs extra attention. Would you like to schedule a deep clean?
+                          </p>
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="mt-4 w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-11 text-[14px] font-black shadow-lg shadow-primary/20"
+                            onClick={() => setBookOpen(true)}
+                          >
+                            Schedule a wash
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  </Section>
+                )}
+              </>
             )}
-          </>
-        )}
           </div>
 
           <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
