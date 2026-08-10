@@ -139,7 +139,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[100px]">
+      <div className="min-h-screen bg-[#FFFCF9] pb-[80px]">
         
         <UWHeader 
           area={area} 
@@ -149,9 +149,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[calc(52px+env(safe-area-inset-top,24px))]">
+        <div className="pt-[72px]">
           <div className="px-5">
-            <div className="mt-[32px]">
+            <div className="mt-[24px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
