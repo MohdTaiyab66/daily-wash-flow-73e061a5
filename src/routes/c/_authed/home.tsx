@@ -274,11 +274,11 @@ function CustomerHome() {
           {vehiclesQ.isLoading ? (
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
-            <div 
-              className="flex items-center gap-4 active:opacity-70 transition-opacity min-h-[82px] py-2"
-              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-            >
-              <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_8px_rgba(255,107,0,0.08)]">
+              <div 
+                className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[78px] py-1.5"
+                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+              >
+                <div className="relative h-[50px] w-[50px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-[0_2px_6px_rgba(255,107,0,0.06)]">
                 <VehicleAvatar 
                   imageUrl={catalogImageQ.data} 
                   make={activeVehicle.make} 
@@ -290,7 +290,7 @@ function CustomerHome() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <h2 className="truncate text-[20px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
+                    <h2 className="truncate text-[19px] font-[600] tracking-tight text-[#2D2D2D] leading-tight">
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
                     <p className="truncate text-[14px] font-[500] text-[#7A7A7A] leading-tight mt-0.5">
