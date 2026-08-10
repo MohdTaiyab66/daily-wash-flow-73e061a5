@@ -17,13 +17,13 @@ export function UWHeader({
   children
 }: UWHeaderProps) {
   return (
-    <div className="sticky top-0 z-30 bg-gradient-to-b from-[#FFF9F3] via-[#FFFDFB] to-[#FFFDFB] px-5 pt-[env(safe-area-inset-top,12px)] pb-2 backdrop-blur-xl">
+    <div className="sticky top-0 z-30 bg-gradient-to-b from-[#FFFDFB] via-[#FFFDFB] to-[#FFF9F3] px-5 pt-[env(safe-area-inset-top,12px)] pb-1 backdrop-blur-xl border-b border-[#FF6B00]/5 shadow-[0_2px_15px_-5px_rgba(255,107,0,0.05)]">
       {/* Subtle brand glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,107,0,0.02)_0%,transparent_50%)] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,107,0,0.03)_0%,transparent_50%)] pointer-events-none" />
       
-      <div className="relative flex flex-col gap-2">
+      <div className="relative flex flex-col gap-1.5">
         {/* Row 1: Location & Notifications */}
-        <div className="flex items-center justify-between py-1">
+        <div className="flex items-center justify-between py-0.5">
           <div 
             className="flex items-center gap-1.5 cursor-pointer active:opacity-70 transition-opacity" 
             onClick={onAreaClick}
@@ -37,11 +37,11 @@ export function UWHeader({
           
           <Link 
             to="/c/notifications" 
-            className="relative grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/5 transition-transform active:scale-90"
+            className="relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-black/5 transition-transform active:scale-90"
           >
-            <Bell className={cn("h-5 w-5", unread > 0 ? "text-[#FF6B00]" : "text-muted-foreground")} />
+            <Bell className={cn("h-5 w-5", unread > 0 ? "text-[#FF6B00]" : "text-[#7A7A7A]")} />
             {unread > 0 && (
-              <span className="absolute right-2.5 top-2.5 flex h-2 w-2 rounded-full bg-[#FF6B00] ring-2 ring-white" />
+              <span className="absolute right-3 top-3 flex h-2 w-2 rounded-full bg-[#FF6B00] ring-2 ring-white" />
             )}
           </Link>
         </div>
