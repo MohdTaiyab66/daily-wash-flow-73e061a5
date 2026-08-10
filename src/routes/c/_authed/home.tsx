@@ -173,7 +173,7 @@ function CustomerHome() {
           <div ref={sentinelRef} className="h-px w-full pointer-events-none" />
 
           <div className="px-5">
-            <div className="mt-[20px]">
+            <div className="mt-[16px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -213,12 +213,12 @@ function CustomerHome() {
 
             <Section 
               title={
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <h2 className="text-[28px] font-[650] text-[#2D2D2D] tracking-tight leading-tight">Car care services</h2>
                   <p className="text-[17px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[24px] mb-0"
+              className="mt-[20px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
