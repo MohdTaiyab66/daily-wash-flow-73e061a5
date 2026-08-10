@@ -165,9 +165,14 @@ function ServiceDetail() {
 
   const confirm = async () => {
     if (!service || !vehicle || !activeAddress || !slot) {
-      toast.error("Please complete all selections.");
+      toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
       return;
     }
+    
+    // Ensure base service is in cart with latest price
+    const basePrice = isSUV ? service.price_sedan_suv : service.price_hatchback;
+    setBaseService(service.id, service.name, basePrice);
+    
     setSubmitting(true);
     try {
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
@@ -178,16 +183,38 @@ function ServiceDetail() {
         p_scheduled_time: slot,
         p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+
+      // Create Razorpay order with the CORRECT dynamic amount
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
-      const result = await openRazorpayCheckout({ keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: "INR", description: service.name, bookingId: bId });
+      
+      const result = await openRazorpayCheckout({ 
+        keyId: order.keyId, 
+        orderId: order.orderId, 
+        amount: order.amount, 
+        currency: "INR", 
+        description: service.name, 
+        bookingId: bId 
+      });
+
       if (result.status === "success") {
-        await useServerFn(verifyRazorpayPayment)({ data: { bookingId: bId, razorpayOrderId: result.orderId, razorpayPaymentId: result.paymentId, razorpaySignature: result.signature } });
+        await useServerFn(verifyRazorpayPayment)({ 
+          data: { 
+            bookingId: bId, 
+            razorpayOrderId: result.orderId, 
+            razorpayPaymentId: result.paymentId, 
+            razorpaySignature: result.signature 
+          } 
+        });
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
+      } else if (result.status === "failed") {
+        toast.error(result.message || "Payment failed. Please try again.");
       }
     } catch (e: any) {
       toast.error(e.message || "Booking failed");
-    } finally { setSubmitting(false); }
+    } finally { 
+      setSubmitting(false); 
+    }
   };
 
   const getAddonQty = (id: string) => cartItems.find(i => i.id === id)?.quantity || 0;
@@ -247,7 +274,7 @@ function ServiceDetail() {
 
       {/* Service Image Gallery: Responsive card */}
       <div className="px-4 pt-6 w-full box-border">
-        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2.1/1]" ref={emblaRef}>
+        <div className="overflow-hidden rounded-[18px] border border-[#2D2D2D]/8 shadow-sm bg-white relative w-full aspect-[2/1]" ref={emblaRef}>
           <div className="flex h-full">
              {galleryImages.map((img, i) => (
                <div key={i} className="flex-[0_0_100%] w-full h-full">
@@ -277,16 +304,22 @@ function ServiceDetail() {
 
         {/* Dynamic Includes */}
         {service.inclusions_json && (
-          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-4 gap-3 w-full box-border">
-            {service.inclusions_json.map((item, i) => (
-              <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
-                  <ZapIconLucide className="h-4 w-4" />
-
+          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-3 gap-y-4 gap-x-2 w-full box-border">
+            {service.inclusions_json.map((item, i) => {
+              const Icon = item.label.toLowerCase().includes('pressure') || item.label.toLowerCase().includes('wash') ? ZapIconLucide :
+                           item.label.toLowerCase().includes('polish') || item.label.toLowerCase().includes('wax') ? Sparkles :
+                           item.label.toLowerCase().includes('vacuum') || item.label.toLowerCase().includes('cleaning') ? Car :
+                           item.label.toLowerCase().includes('fragrance') || item.label.toLowerCase().includes('perfume') ? Sparkles :
+                           ZapIconLucide;
+              return (
+                <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase leading-tight text-[#1a1a1a] break-words w-full px-1">{item.label}</span>
                 </div>
-                <span className="text-[9px] font-bold uppercase leading-tight text-[#1a1a1a] truncate w-full">{item.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -348,18 +381,23 @@ function ServiceDetail() {
       </div>
 
       <Drawer open={showAddonDrawer} onOpenChange={setShowAddonDrawer}>
-        <DrawerContent className="h-[90vh]">
-          <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase">SELECT ADD-ONS</DrawerTitle></DrawerHeader>
-          <ScrollArea className="px-6 flex-1 h-full">
-            <div className="space-y-4 pb-24">
+        <DrawerContent className="h-[90vh] flex flex-col">
+          <DrawerHeader className="px-6 pt-6 flex justify-between items-center shrink-0">
+            <DrawerTitle className="text-[16px] font-black uppercase">SELECT ADD-ONS</DrawerTitle>
+            <button onClick={() => setShowAddonDrawer(false)} className="p-2 -mr-2 text-[#7A7A7A] active:scale-90 transition-transform">
+              <X className="h-5 w-5" />
+            </button>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-4 pb-[160px]">
               {relevantAddons.map(a => {
                 const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
                   <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 mr-4">
                       <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
-                      <div>
-                        <div className="font-bold text-[13px]">{a.name}</div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-[13px] truncate">{a.name}</div>
                         <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
@@ -368,19 +406,24 @@ function ServiceDetail() {
                 );
               })}
             </div>
-          </ScrollArea>
-          <div className="p-4 border-t bg-white">
-             <div className="flex justify-between items-center mb-4 px-2 font-black"><span>Selected Total:</span><span className="text-[#EA580C]">₹{totalPayable}</span></div>
-             <Button className="w-full h-[52px] rounded-full bg-[#EA580C]" onClick={() => setShowAddonDrawer(false)}>DONE</Button>
+          </div>
+          <div className="p-4 pt-6 border-t bg-white shrink-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
+             <div className="flex justify-between items-center mb-4 px-2 font-black"><span className="text-[13px] uppercase tracking-wider text-[#7A7A7A]">CURRENT TOTAL</span><span className="text-[#EA580C] text-[20px]">₹{totalPayable}</span></div>
+             <Button className="w-full h-[54px] rounded-[16px] bg-[#EA580C] text-white font-black text-[15px]" onClick={() => setShowAddonDrawer(false)}>DONE</Button>
           </div>
         </DrawerContent>
       </Drawer>
 
       <Drawer open={showCartDrawer} onOpenChange={setShowCartDrawer}>
-        <DrawerContent className="h-[70vh]">
-          <DrawerHeader className="px-6 pt-6"><DrawerTitle className="text-[16px] font-black uppercase flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> CART</DrawerTitle></DrawerHeader>
-          <ScrollArea className="px-6 flex-1 h-full">
-            <div className="space-y-4 pb-24">
+        <DrawerContent className="h-[70vh] flex flex-col">
+          <DrawerHeader className="px-6 pt-6 flex justify-between items-center shrink-0">
+            <DrawerTitle className="text-[16px] font-black uppercase flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> CART</DrawerTitle>
+            <button onClick={() => setShowCartDrawer(false)} className="p-2 -mr-2 text-[#7A7A7A] active:scale-90 transition-transform">
+              <X className="h-5 w-5" />
+            </button>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-4 pb-[160px]">
               {cartItems.map(item => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
                   <div className="flex-1 min-w-0 mr-4">
@@ -393,45 +436,62 @@ function ServiceDetail() {
                   </div>
                 </div>
               ))}
-              <div className="p-4 border-t border-black/5 space-y-2">
+              <div className="p-4 border-t border-black/5 space-y-2 mt-2">
                 <div className="flex justify-between text-[14px]"><span className="text-[#7A7A7A]">Subtotal</span><span className="font-bold">₹{totalPayable}</span></div>
                 <div className="flex justify-between text-[16px] font-black"><span className="text-[#1a1a1a]">TOTAL</span><span className="text-[#EA580C]">₹{totalPayable}</span></div>
               </div>
             </div>
-          </ScrollArea>
-          <div className="p-4 border-t bg-white">
-             <Button className="w-full h-[52px] rounded-full bg-[#EA580C]" onClick={() => { setShowCartDrawer(false); confirm(); }}>PROCEED TO PAY</Button>
+          </div>
+          <div className="p-4 pt-6 border-t bg-white shrink-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)]">
+             <Button className="w-full h-[54px] rounded-[16px] bg-[#EA580C] text-white font-black text-[15px]" onClick={() => { setShowCartDrawer(false); confirm(); }}>PROCEED TO PAY</Button>
           </div>
         </DrawerContent>
       </Drawer>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none pb-[env(safe-area-inset-bottom,16px)]">
         {/* Compact Cart Bar */}
-        <div className="px-4 mb-2 pointer-events-auto">
-          <button 
-            onClick={() => setShowCartDrawer(true)}
-            className="w-full bg-[#1a1a1a] text-white h-[48px] rounded-[14px] px-5 flex items-center justify-between shadow-xl active:scale-[0.98] transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <ShoppingCart className="h-4 w-4" />
-              <span className="text-[13px] font-black">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
-              <span className="text-[13px] font-black text-white/40 ml-2">₹{totalPayable}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] font-black uppercase tracking-wider">VIEW CART</span>
-              <ChevronRight className="h-4 w-4" />
-            </div>
-          </button>
-        </div>
+        {!showAddonDrawer && !showCartDrawer && (
+          <div className="px-4 mb-3 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <button 
+              onClick={() => setShowCartDrawer(true)}
+              className="w-full bg-[#1a1a1a] text-white h-[60px] rounded-[18px] px-5 flex items-center justify-between shadow-[0_12px_35px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all border border-white/5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <ShoppingCart className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[11px] font-[900] uppercase tracking-[0.1em] text-white/50">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
+                  <span className="text-[16px] font-[900] text-[#FF6B00]">₹{totalPayable}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
+                <span className="text-[10px] font-[900] uppercase tracking-widest">VIEW CART</span>
+                <ChevronRight className="h-3 w-3" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Payment Footer */}
-        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-2xl pointer-events-auto gap-4">
+        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-[0_-12px_40px_rgba(0,0,0,0.08)] pointer-events-auto gap-4">
           <div className="flex flex-col min-w-0">
-            <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-widest">TOTAL</span>
-            <div className="text-[20px] font-black text-[#1a1a1a]">₹{totalPayable}</div>
+            <span className="text-[9px] font-[900] text-[#7A7A7A] uppercase tracking-[0.18em] mb-0.5">TOTAL PAYABLE</span>
+            <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
-          <Button onClick={confirm} disabled={submitting || !slot} className={cn("h-[52px] px-10 rounded-[14px] bg-[#EA580C] text-white font-black text-[14px] active:scale-[0.96] transition-all", !slot && "opacity-50 grayscale")}>
-            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
+          <Button 
+            onClick={confirm} 
+            disabled={submitting || !slot || totalPayable <= 0} 
+            className={cn(
+              "h-[56px] px-8 rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)] min-w-[145px]",
+              (!slot || totalPayable <= 0) && "opacity-50 grayscale shadow-none"
+            )}
+          >
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+              <span className="flex items-center gap-2">
+                PAY NOW <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
           </Button>
         </div>
       </div>
