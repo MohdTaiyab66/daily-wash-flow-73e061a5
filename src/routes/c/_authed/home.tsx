@@ -151,7 +151,7 @@ function CustomerHome() {
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-          scrollRef={undefined}
+          
         />
 
 
