@@ -448,33 +448,48 @@ function ServiceDetail() {
         </DrawerContent>
       </Drawer>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[80] w-full flex flex-col pointer-events-none pb-[env(safe-area-inset-bottom,16px)]">
         {/* Compact Cart Bar */}
-        <div className="px-4 mb-2 pointer-events-auto">
+        <div className="px-4 mb-3 pointer-events-auto">
           <button 
             onClick={() => setShowCartDrawer(true)}
-            className="w-full bg-[#1a1a1a] text-white h-[48px] rounded-[14px] px-5 flex items-center justify-between shadow-xl active:scale-[0.98] transition-all"
+            className="w-full bg-[#1a1a1a] text-white h-[56px] rounded-[16px] px-5 flex items-center justify-between shadow-[0_8px_25px_rgba(0,0,0,0.25)] active:scale-[0.98] transition-all"
           >
             <div className="flex items-center gap-3">
-              <ShoppingCart className="h-4 w-4" />
-              <span className="text-[13px] font-black">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
-              <span className="text-[13px] font-black text-white/40 ml-2">₹{totalPayable}</span>
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                <ShoppingCart className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[12px] font-black uppercase tracking-wider">{totalItems} {totalItems === 1 ? 'ITEM' : 'ITEMS'}</span>
+                <span className="text-[14px] font-black text-[#FF6B00]">₹{totalPayable}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] font-black uppercase tracking-wider">VIEW CART</span>
-              <ChevronRight className="h-4 w-4" />
+            <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
+              <span className="text-[10px] font-black uppercase tracking-widest">VIEW CART</span>
+              <ChevronRight className="h-3 w-3" />
             </div>
           </button>
         </div>
 
         {/* Payment Footer */}
-        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-2xl pointer-events-auto gap-4">
+        <div className="bg-white border-t border-black/[0.05] p-4 flex justify-between items-center shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pointer-events-auto gap-4">
           <div className="flex flex-col min-w-0">
-            <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-widest">TOTAL</span>
-            <div className="text-[20px] font-black text-[#1a1a1a]">₹{totalPayable}</div>
+            <span className="text-[9px] font-black text-[#7A7A7A] uppercase tracking-[0.15em] mb-0.5">TOTAL PAYABLE</span>
+            <div className="text-[22px] font-black text-[#1a1a1a] leading-none">₹{totalPayable}</div>
           </div>
-          <Button onClick={confirm} disabled={submitting || !slot} className={cn("h-[52px] px-10 rounded-[14px] bg-[#EA580C] text-white font-black text-[14px] active:scale-[0.96] transition-all", !slot && "opacity-50 grayscale")}>
-            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "PAY NOW   →"}
+          <Button 
+            onClick={confirm} 
+            disabled={submitting || !slot || totalPayable <= 0} 
+            className={cn(
+              "h-[54px] px-8 rounded-[16px] bg-[#EA580C] text-white font-black text-[15px] active:scale-[0.96] transition-all shadow-lg shadow-[#EA580C]/20 min-w-[140px]",
+              (!slot || totalPayable <= 0) && "opacity-50 grayscale shadow-none"
+            )}
+          >
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+              <span className="flex items-center gap-2">
+                PAY NOW <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
           </Button>
         </div>
       </div>
