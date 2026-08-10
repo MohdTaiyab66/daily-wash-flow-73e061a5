@@ -139,7 +139,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[32px]">
+      <div className="min-h-screen bg-[#FFFCF9] pb-[100px]">
         
         <UWHeader 
           area={area} 
@@ -175,7 +175,7 @@ function CustomerHome() {
             </div>
 
             {/* Refined Trust Strip */}
-            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[18px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5 shadow-sm">
+            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[20px] bg-[#FFF8F1] rounded-[20px] border border-[#FF6B00]/5 shadow-sm">
               <div className="flex flex-col items-center gap-0.5 flex-1">
                 <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
                   <Sparkles className="h-4 w-4" />
@@ -205,7 +205,7 @@ function CustomerHome() {
               }
               className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-3 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
+              <div className="relative flex items-center gap-3 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[20px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
