@@ -193,24 +193,44 @@ function ServiceDetail() {
 
   const QuantityControl = ({ id, name, price, type }: { id: string, name: string, price: number, type: 'base' | 'addon' }) => {
     const qty = getAddonQty(id);
+    
+    const handleDecrease = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateQuantity(id, Math.max(type === 'base' ? 1 : 0, qty - 1));
+    };
+
+    const handleIncrease = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (qty === 0) {
+        useCartStore.getState().addItem({ id, name, price, quantity: 1, type });
+      } else {
+        updateQuantity(id, qty + 1);
+      }
+    };
+
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 bg-[#F1F2F3] rounded-full px-2 py-1 border border-black/5">
         <button 
-          onClick={() => updateQuantity(id, Math.max(type === 'base' ? 1 : 0, qty - 1))}
-          className={cn("w-7 h-7 rounded-full border border-black/10 flex items-center justify-center transition-all active:scale-90", qty > (type === 'base' ? 1 : 0) ? "text-[#EA580C]" : "text-black/30")}
+          onClick={handleDecrease}
+          disabled={type === 'base' && qty <= 1}
+          className={cn(
+            "w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90",
+            type === 'base' && qty <= 1 ? "text-black/10" : "text-[#1a1a1a] hover:bg-black/5"
+          )}
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
-        <span className="text-[14px] font-black w-4 text-center">{qty}</span>
+        <span className="text-[13px] font-black min-w-[12px] text-center">{qty}</span>
         <button 
-          onClick={() => updateQuantity(id, qty + 1)}
-          className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center text-[#EA580C] transition-all active:scale-90"
+          onClick={handleIncrease}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[#EA580C] hover:bg-[#EA580C]/5 transition-all active:scale-90"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
     );
   };
+
 
   if (!service) return <div className="p-10 text-center">Loading...</div>;
 
