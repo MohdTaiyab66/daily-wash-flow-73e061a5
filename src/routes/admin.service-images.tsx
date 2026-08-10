@@ -102,12 +102,21 @@ function GalleryEditor({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold capitalize">{slug.replace(/-/g, ' ')} Gallery</h2>
-        <Button onClick={() => document.getElementById('file-upload')?.click()}>
-          <Plus className="mr-2 h-4 w-4" /> Upload
-        </Button>
-        <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+      <div className="flex flex-col gap-1 mb-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold capitalize">{slug.replace(/-/g, ' ')} Gallery</h2>
+          <Button onClick={() => document.getElementById('file-upload')?.click()}>
+            <Plus className="mr-2 h-4 w-4" /> Upload
+          </Button>
+          <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+        </div>
+        <div className="bg-orange-50 border border-orange-100 p-3 rounded-xl mt-2">
+          <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wider mb-1">Recommended Specifications</p>
+          <p className="text-xs text-orange-700 leading-relaxed">
+            <span className="font-bold">1600 × 900 px (16:9)</span>. JPG, JPEG or WebP. Up to 5 images per service. 
+            Source images should be landscape for the best carousel experience.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
