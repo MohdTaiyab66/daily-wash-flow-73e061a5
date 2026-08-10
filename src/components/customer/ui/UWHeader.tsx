@@ -45,37 +45,39 @@ export function UWHeader({
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
       // Header background & elevation transition
-      header.style.backgroundColor = `rgba(255, 249, 243, ${0.98 + progress * 0.02})`;
+      header.style.backgroundColor = `rgba(255, 252, 249, ${0.98 + progress * 0.02})`;
       header.style.backdropFilter = progress > 0.1 ? 'blur(12px)' : 'none';
       header.style.boxShadow = progress > 0.1 ? `0 2px 10px rgba(0,0,0,${progress * 0.03})` : 'none';
-      header.style.borderBottom = `1px solid rgba(255, 107, 0, ${progress * 0.08})`;
+      header.style.borderBottom = progress > 0.9 ? `1px solid rgba(255, 107, 0, 0.08)` : 'none';
 
       if (location) {
-        // Progressive fade and shift for location
+        // Progressive fade and scale for location
         location.style.opacity = `${1 - progress}`;
-        location.style.transform = `translateX(${-progress * 20}px) scale(${1 - progress * 0.05})`;
+        location.style.transform = `translateX(${-progress * 10}px) scale(${1 - progress * 0.05})`;
         location.style.pointerEvents = progress > 0.7 ? 'none' : 'auto';
         
-        // Use max-width for smoother collapse than flex-basis
+        // Use max-width to visually push content
         location.style.maxWidth = `${(1 - progress) * 100}%`;
       }
 
       if (vehicle) {
-        // Vehicle selector moves left and background fades to transparent in compact state
-        const xOffset = -progress * 10; 
+        // Vehicle selector moves left
+        const xOffset = -progress * 5; 
         vehicle.style.transform = `translateX(${xOffset}px)`;
+        
+        // Refine pill background transition
         vehicle.style.backgroundColor = progress > 0.8 ? 'transparent' : 'white';
-        vehicle.style.borderColor = progress > 0.8 ? 'transparent' : 'rgba(255, 107, 0, 0.08)';
-        vehicle.style.boxShadow = progress > 0.8 ? 'none' : '0 1px 2px rgba(0,0,0,0.03)';
+        vehicle.style.borderColor = progress > 0.8 ? 'transparent' : 'rgba(255, 107, 0, 0.1)';
+        vehicle.style.boxShadow = progress > 0.8 ? 'none' : '0 1px 2px rgba(0,0,0,0.02)';
       }
 
       if (vThumb) {
-        const scale = 1 - progress * 0.1;
+        const scale = 1 - progress * 0.15;
         vThumb.style.transform = `scale(${scale})`;
       }
 
       if (vName) {
-        // Keep name readable but slightly smaller in compact mode
+        // Stay readable, slightly smaller
         vName.style.fontSize = `${16 - progress * 1}px`;
       }
     };

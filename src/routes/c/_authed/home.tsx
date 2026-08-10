@@ -151,7 +151,7 @@ function CustomerHome() {
 
         <div className="pt-[calc(52px+env(safe-area-inset-top,24px))]">
           <div className="px-5">
-            <div className="mt-[20px]">
+            <div className="mt-[32px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -175,7 +175,7 @@ function CustomerHome() {
             </div>
 
             {/* Refined Trust Strip */}
-            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[20px] bg-[#FFF8F1] rounded-[20px] border border-[#FF6B00]/5 shadow-sm">
+            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[22px] bg-[#FFF8F1] rounded-[20px] border border-[#FF6B00]/5">
               <div className="flex flex-col items-center gap-0.5 flex-1">
                 <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
                   <Sparkles className="h-4 w-4" />
@@ -203,9 +203,9 @@ function CustomerHome() {
                   <p className="text-[14px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[26px] mb-0"
+              className="mt-[32px] mb-0"
             >
-              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
+              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[22px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
@@ -239,18 +239,20 @@ function CustomerHome() {
               </div>
 
               {/* Refined Daily Shine Closing CTA */}
-              <div className="mt-8 mb-8 pb-4">
+              <div className="mt-10 mb-4 pb-0">
                 <button 
                   onClick={() => navigate({ to: "/c/service/daily-shine" as any })}
-                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-6 text-left active:scale-[0.98] transition-transform shadow-sm"
+                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[24px] p-6 text-left active:scale-[0.98] transition-transform"
                 >
-                  <div className="flex flex-col items-center text-center">
-                    <p className="text-[12px] font-[750] text-[#FF6B00] uppercase tracking-widest mb-2">Your car deserves better</p>
-                    <h3 className="text-[20px] font-[700] text-[#2D2D2D] leading-tight mb-5">
-                      Keep it clean every day <br/> with Daily Shine.
-                    </h3>
-                    <div className="inline-flex items-center justify-center px-6 py-2.5 bg-[#FF6B00] rounded-full text-white text-[13px] font-[750] shadow-md shadow-[#FF6B00]/20">
-                      EXPLORE DAILY SHINE <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
+                  <div className="flex flex-row items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-[11px] font-[800] text-[#FF6B00] uppercase tracking-widest mb-1.5">Your car deserves better</p>
+                      <h3 className="text-[18px] font-[700] text-[#2D2D2D] leading-tight">
+                        Keep it clean every day <br/> with Daily Shine.
+                      </h3>
+                    </div>
+                    <div className="inline-flex items-center justify-center px-4 py-2 bg-[#FF6B00] rounded-full text-white text-[12px] font-[800] shadow-md shadow-[#FF6B00]/20 shrink-0">
+                      EXPLORE <ChevronRight className="ml-1 h-3 w-3" />
                     </div>
                   </div>
                 </button>
