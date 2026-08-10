@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Camera, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
+import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAreaAvailability } from "@/lib/area-availability";
@@ -127,15 +127,16 @@ function CustomerHome() {
     },
   });
 
-  const serviceImagesQ = useServiceImages();
-  const resolvedServiceImage = (slug: string) => getServiceImage(slug, serviceImagesQ.data);
+  const galleryQ = useServiceGallery();
+  const resolvedServiceImage = (slug: string) => getServiceImage(slug, galleryQ.data);
 
 
   const refreshAll = () => Promise.all([
     vehiclesQ.refetch(), 
     servicesQ.refetch(), 
-    serviceImagesQ.refetch()
+    galleryQ.refetch()
   ]);
+
 
   return (
     <PullToRefresh onRefresh={refreshAll}>

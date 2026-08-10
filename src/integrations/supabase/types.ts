@@ -3869,6 +3869,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_gallery: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          is_hero: boolean | null
+          service_slug: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_hero?: boolean | null
+          service_slug: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_hero?: boolean | null
+          service_slug?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       service_images: {
         Row: {
           created_at: string | null

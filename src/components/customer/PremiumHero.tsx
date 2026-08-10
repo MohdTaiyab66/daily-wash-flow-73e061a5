@@ -1,7 +1,7 @@
 import { MapPin, Car, Sparkles, ChevronDown, CheckCircle2 } from "lucide-react";
 import { Surface, Muted } from "./ui/kit";
 import { cn } from "@/lib/utils";
-import { useServiceImages, getServiceImage } from "@/lib/service-image-resolver";
+import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PremiumHeroProps {
@@ -25,8 +25,9 @@ export function PremiumHero({
   onVehicleClick,
   onAddressClick
 }: PremiumHeroProps) {
-  const serviceImagesQ = useServiceImages();
-  const currentImage = getServiceImage(service?.slug, serviceImagesQ.data).url;
+  const galleryQ = useServiceGallery(service?.slug);
+  const currentImage = getServiceImage(service?.slug, galleryQ.data).url;
+
   const isIncluded = purchaseMode === 'included_wash';
 
   return (
