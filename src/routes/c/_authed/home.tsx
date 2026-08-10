@@ -98,6 +98,15 @@ function CustomerHome() {
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -268,17 +277,26 @@ function CustomerHome() {
       <div className="min-h-screen bg-[#FFFCF9] pb-32">
         <UWHeader 
           area={area} 
-          unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
+          scrollY={scrollY}
         >
           {vehiclesQ.isLoading ? (
             <div className="h-10 animate-pulse bg-black/5 rounded-lg" />
           ) : activeVehicle ? (
-                <div 
-                  className="flex items-center gap-3 active:opacity-80 transition-opacity min-h-[72px] py-1"
-                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+            <div 
+              className={cn(
+                "flex items-center transition-all duration-200 cursor-pointer active:opacity-80",
+                scrollY > 60 ? "gap-2" : "gap-3 py-1"
+              )}
+              onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+            >
+              <div 
+                className="relative shrink-0 overflow-hidden rounded-[11px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm transition-all duration-200"
+                style={{
+                  height: scrollY > 60 ? '36px' : '58px',
+                  width: scrollY > 60 ? '36px' : '58px',
+                }}
               >
-                <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[#FF6B00]/5 border border-[#FF6B00]/10 shadow-sm">
                 <VehicleAvatar 
                   imageUrl={catalogImageQ.data} 
                   make={activeVehicle.make} 
@@ -289,15 +307,21 @@ function CustomerHome() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <h2 className="truncate text-[21px] font-[650] tracking-tight text-[#2D2D2D] leading-tight">
+                  <div className={cn("min-w-0 flex transition-all duration-200", scrollY > 60 ? "items-baseline gap-1.5" : "flex-col")}>
+                    <h2 className={cn(
+                      "truncate font-[650] tracking-tight text-[#2D2D2D] leading-tight transition-all duration-200",
+                      scrollY > 60 ? "text-[16px]" : "text-[21px]"
+                    )}>
                       {activeVehicle.make} {activeVehicle.model}
                     </h2>
-                    <p className="truncate text-[14px] font-[500] text-[#7A7A7A] leading-tight mt-0.5">
-                      {activeVehicle.registration_number} · {bodyLabel}
+                    <p className={cn(
+                      "truncate font-[500] text-[#7A7A7A] leading-tight transition-all duration-200",
+                      scrollY > 60 ? "text-[14px]" : "text-[14px] mt-0.5"
+                    )}>
+                      {scrollY > 60 && "· "}{activeVehicle.registration_number} · {bodyLabel}
                     </p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-[#7A7A7A]/40 ml-2" />
+                  <ChevronDown className={cn("text-[#7A7A7A]/40 ml-2 transition-all duration-200", scrollY > 60 ? "h-3.5 w-3.5" : "h-4 w-4")} />
                 </div>
               </div>
             </div>

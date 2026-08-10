@@ -97,9 +97,9 @@ function BookingsPage() {
         {/* Header */}
         <div className="bg-[#FFF9F3] pt-2">
           <UWHeader 
-            unread={0}
             area={vehiclesQ.data?.find(v => v.id === selectedVehicleId)?.registration_number ?? "My Bookings"}
             onAreaClick={() => {}}
+            scrollY={0}
           />
         </div>
 

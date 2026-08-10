@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { toast } from "sonner";
 import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
@@ -283,26 +284,34 @@ function MyPlanPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#FFF9F3] px-6 pb-12 pt-8">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-[28px] font-black tracking-tight text-foreground">My Plan</h1>
-          <div className="mt-1 flex items-center gap-1.5" onClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}>
-            <p className="text-[13px] font-medium text-muted-foreground">
-              {vehicleLabel ? vehicleLabel : "Manage your car subscription"}
-            </p>
-            {hasVehicles && <ChevronDown className="h-3 w-3 text-muted-foreground/40" />}
+    <div className="min-h-screen bg-[#FFF9F3] pb-12">
+      <UWHeader
+        area={vehicleLabel ? "My Plan" : "Urban Wash"}
+        onAreaClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}
+        scrollY={0}
+      >
+        {hasVehicles ? (
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[21px] font-black tracking-tight text-foreground">
+                {vehicleLabel || "My Plan"}
+              </h1>
+              <p className="text-[13px] font-medium text-muted-foreground mt-0.5">
+                {selectedVehicle?.registration_number || "Manage your car subscription"}
+              </p>
+            </div>
+            <VehicleSelector
+              vehicles={vehiclesQ.data ?? []}
+              value={selectedVehicleId}
+              onChange={setSelectedVehicleId}
+            />
           </div>
-
-        </div>
-        {hasVehicles && (
-          <VehicleSelector
-            vehicles={vehiclesQ.data ?? []}
-            value={selectedVehicleId}
-            onChange={setSelectedVehicleId}
-          />
+        ) : (
+          <div className="py-2">
+            <h1 className="text-[21px] font-black tracking-tight text-foreground">My Plan</h1>
+          </div>
         )}
-      </div>
+      </UWHeader>
 
       {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center shadow-sm">
