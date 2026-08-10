@@ -25,8 +25,9 @@ export function PremiumHero({
   onVehicleClick,
   onAddressClick
 }: PremiumHeroProps) {
-  const serviceImagesQ = useServiceImages();
-  const currentImage = getServiceImage(service?.slug, serviceImagesQ.data).url;
+  const galleryQ = useServiceGallery(service?.slug);
+  const currentImage = getServiceImage(service?.slug, galleryQ.data).url;
+
   const isIncluded = purchaseMode === 'included_wash';
 
   return (
