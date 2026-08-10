@@ -22,8 +22,8 @@ export function CustomerShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-          <div className="mx-auto flex max-w-md items-center justify-around px-3 py-2">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(100,60,30,0.10)] bg-[#F3E7DC] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(100,60,30,0.03)]">
+          <div className="mx-auto flex max-w-md items-center justify-around px-3 py-2.5">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/c/home" && pathname.startsWith(n.to));
@@ -33,23 +33,21 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1 py-1.5 text-[10px] font-semibold",
-                    active ? "text-[#2D2D2D]" : "text-[#7A7A7A]"
+                    "flex flex-1 flex-col items-center gap-1.5 py-1 text-[9px] font-[700] transition-colors",
+                    active ? "text-[#2D2D2D]" : "text-[#8B8986]"
                   )}
-
                 >
                   <span
                     className={cn(
-                      "grid h-[44px] w-[52px] place-items-center rounded-[18px] transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#7A7A7A]"
+                      "grid h-[42px] w-[50px] place-items-center rounded-[18px] transition-all duration-300",
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8B8986]"
                     )}
                   >
-                    <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
+                    <Icon className="h-[20px] w-[20px]" strokeWidth={active ? 2.5 : 2} />
                   </span>
-                  <span className={cn("tracking-[0.05em] uppercase text-[9px] font-[600] mt-1", active ? "text-[#2D2D2D]" : "text-[#7A7A7A]")}>
+                  <span className={cn("tracking-[0.06em] uppercase", active ? "text-[#2D2D2D]" : "text-[#8B8986]")}>
                     {n.label}
                   </span>
-
                 </Link>
               );
             })}

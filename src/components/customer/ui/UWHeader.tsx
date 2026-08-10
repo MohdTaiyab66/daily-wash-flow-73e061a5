@@ -16,7 +16,7 @@ interface UWHeaderProps {
   onVehicleClick?: () => void;
 }
 
-const COLLAPSE_DISTANCE = 60; // Distance over which header collapses
+const COLLAPSE_DISTANCE = 60; 
 
 export function UWHeader({ 
   area, 
@@ -30,6 +30,7 @@ export function UWHeader({
   const locationTextRef = useRef<HTMLSpanElement>(null);
   const vehicleTextRef = useRef<HTMLSpanElement>(null);
   const vehicleThumbRef = useRef<HTMLDivElement>(null);
+  const vehicleSelectorRef = useRef<HTMLDivElement>(null);
   
   useLayoutEffect(() => {
     const header = containerRef.current;
@@ -37,6 +38,7 @@ export function UWHeader({
     const locText = locationTextRef.current;
     const vText = vehicleTextRef.current;
     const vThumb = vehicleThumbRef.current;
+    const vSelector = vehicleSelectorRef.current;
     
     if (!header) return;
 
@@ -44,33 +46,38 @@ export function UWHeader({
       const scrollY = window.scrollY;
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
-      // Header background & shadow
-      // Transition from #FFF1E6 (peach) to a slightly more opaque version or sticky state
-      header.style.backgroundColor = `rgba(255, 241, 230, ${0.98 + progress * 0.02})`;
-      header.style.backdropFilter = progress > 0.1 ? 'blur(12px)' : 'none';
-      // Subtile warm/orange-grey divider
-      header.style.borderBottom = `1px solid rgba(255, 107, 0, ${0.08 + progress * 0.04})`;
-      header.style.boxShadow = progress > 0.5 ? `0 4px 12px rgba(255, 107, 0, ${progress * 0.03})` : 'none';
+      // 1. Header background: Deeper warm ivory / muted peach (#F4E1D1 range)
+      header.style.backgroundColor = `rgba(244, 225, 209, ${0.98 + progress * 0.02})`;
+      header.style.backdropFilter = progress > 0.1 ? 'blur(16px)' : 'none';
+      
+      // 6. Header divider: subtle separation
+      header.style.borderBottom = `1px solid rgba(120, 70, 40, ${0.08 + progress * 0.04})`;
+      
+      // 7. Header shadow: extremely subtle
+      header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(120, 70, 40, ${progress * 0.04})` : 'none';
 
-      // Compact state adjustments
+      // 5. Header height: transitions smoothly
       if (wrapper) {
-        // Vertical padding: 16px -> 12px
-        const verticalPadding = 16 - (progress * 4);
+        const verticalPadding = 14 - (progress * 4);
         wrapper.style.paddingTop = `${verticalPadding}px`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
 
       if (locText) {
-        locText.style.fontSize = `${18 - progress * 1}px`;
+        locText.style.fontSize = `${16 - progress * 1}px`;
       }
 
       if (vText) {
-        vText.style.fontSize = `${18 - progress * 1}px`;
+        vText.style.fontSize = `${16 - progress * 1}px`;
       }
 
       if (vThumb) {
-        const scale = 1 - progress * 0.08;
+        const scale = 1 - progress * 0.05;
         vThumb.style.transform = `scale(${scale})`;
+      }
+      
+      if (vSelector) {
+        vSelector.style.backgroundColor = `rgba(255, 255, 255, ${0.7 - progress * 0.1})`;
       }
     };
 
@@ -83,54 +90,55 @@ export function UWHeader({
   return (
     <header 
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 z-[60] bg-[#FFF1E6] will-change-[background-color,border-bottom,box-shadow]"
+      className="fixed top-0 left-0 right-0 z-[60] bg-[#F4E1D1] will-change-[background-color,border-bottom,box-shadow]"
     >
       <div 
         ref={contentWrapperRef}
-        className="px-6 py-4 flex items-center justify-between gap-4 w-full transition-[padding]"
+        className="px-6 py-3.5 flex items-center justify-between gap-4 w-full transition-[padding]"
       >
-        {/* Left: Unified Location */}
+        {/* 3. Left: Polished Location Control */}
         <div 
-          className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1"
+          className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1 group"
           onClick={onAreaClick}
         >
-          <MapPin className="h-5 w-5 text-[#FF6B00] shrink-0" />
+          <MapPin className="h-4.5 w-4.5 text-[#FF6B00] shrink-0" />
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[18px] font-[600] text-[#FF6B00] whitespace-nowrap overflow-hidden text-ellipsis"
+              className="text-[16px] font-[650] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis leading-none"
             >
               {area || "Set location"}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40 shrink-0 mt-0.5" />
+            <ChevronDown className="h-3 w-3 text-[#2D2D2D]/30 shrink-0 mt-0.5 group-hover:text-[#FF6B00] transition-colors" />
           </div>
         </div>
 
-        {/* Right: Premium Vehicle Selector */}
+        {/* 4. Right: Premium Vehicle Selector */}
         {activeVehicle && (
           <div 
-            className="flex items-center gap-2.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white/60 backdrop-blur-sm border border-[#FF6B00]/10 rounded-[12px] px-2.5 py-1.5 shadow-sm"
+            ref={vehicleSelectorRef}
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white/70 backdrop-blur-sm border border-[rgba(120,70,40,0.1)] rounded-[14px] px-2.5 py-1.5 shadow-[0_2px_8px_rgba(120,70,40,0.04)]"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[34px] w-[34px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-[#FF6B00]/5 flex items-center justify-center shadow-inner will-change-transform"
+              className="h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-[rgba(120,70,40,0.05)] flex items-center justify-center shadow-inner will-change-transform"
             >
               {vehicleImage ? (
-                <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-cover" />
+                <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
               ) : (
-                <Car className="h-5 w-5 text-[#2D2D2D]/20" />
+                <Car className="h-4.5 w-4.5 text-[#2D2D2D]/20" />
               )}
             </div>
             
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[17px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]"
+                className="text-[15px] font-[650] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] leading-none"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
-              <ChevronDown className="h-3.5 w-3.5 text-[#2D2D2D]/40 shrink-0 mt-0.5" />
+              <ChevronDown className="h-3 w-3 text-[#2D2D2D]/30 shrink-0 mt-0.5" />
             </div>
           </div>
         )}
