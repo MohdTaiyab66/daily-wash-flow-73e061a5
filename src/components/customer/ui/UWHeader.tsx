@@ -1,6 +1,7 @@
 import { Bell, MapPin, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface UWHeaderProps {
   area: string;
@@ -16,36 +17,42 @@ export function UWHeader({
   children
 }: UWHeaderProps) {
   return (
-    <div className="sticky top-0 z-30 bg-[#FFF9F3]/95 px-5 pt-[env(safe-area-inset-top,12px)] pb-3 backdrop-blur-xl border-b border-black/[0.02]">
-      <div className="flex flex-col gap-3">
+    <div className="sticky top-0 z-30 bg-gradient-to-b from-[#FFF9F3] via-[#FFFDFB] to-[#FFFDFB] px-5 pt-[env(safe-area-inset-top,12px)] pb-2 backdrop-blur-xl">
+      {/* Subtle brand glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,107,0,0.02)_0%,transparent_50%)] pointer-events-none" />
+      
+      <div className="relative flex flex-col gap-2">
         {/* Row 1: Location & Notifications */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-1">
           <div 
             className="flex items-center gap-1.5 cursor-pointer active:opacity-70 transition-opacity" 
             onClick={onAreaClick}
           >
-            <MapPin className="h-4 w-4 text-primary fill-primary/10" />
-            <span className="text-[16px] font-black uppercase tracking-tight text-primary truncate max-w-[240px]">
+            <MapPin className="h-4 w-4 text-[#FF6B00]" />
+            <span className="text-[15px] font-semibold uppercase tracking-[0.5px] text-[#FF6B00] truncate max-w-[240px]">
               {area || "Set location"}
             </span>
-            <ChevronDown className="h-4 w-4 text-primary/40" />
+            <ChevronDown className="h-3.5 w-3.5 text-[#FF6B00]/40" />
           </div>
           
           <Link 
             to="/c/notifications" 
-            className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white shadow-sm border border-black/5 transition-transform active:scale-90"
+            className="relative grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/5 transition-transform active:scale-90"
           >
-            <Bell className="h-5 w-5 text-[#1A1A1A]" />
+            <Bell className={cn("h-5 w-5", unread > 0 ? "text-[#FF6B00]" : "text-muted-foreground")} />
             {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-black text-white ring-2 ring-[#FFF9F3]">
-                {unread > 9 ? "9+" : unread}
-              </span>
+              <span className="absolute right-2.5 top-2.5 flex h-2 w-2 rounded-full bg-[#FF6B00] ring-2 ring-white" />
             )}
           </Link>
         </div>
 
+        {/* Subtle orange/peach divider row */}
+        <div className="h-[1px] w-full bg-[#FF6B00]/5 -mt-1 mb-1" />
+
         {/* Row 2: Vehicle Selector Content */}
-        {children}
+        <div className="pb-1">
+          {children}
+        </div>
       </div>
     </div>
   );

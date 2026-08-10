@@ -32,8 +32,7 @@ export function UWServiceCard({
 
   return (
     <Surface 
-      className={cn("p-0 overflow-hidden flex flex-col h-[184px] bg-white transition-opacity duration-200 border-none rounded-[12px]", className)}
-      raised
+      className={cn("p-0 overflow-hidden flex flex-col h-[184px] bg-white transition-opacity duration-200 border-none rounded-[12px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]", className)}
     >
       <div className="relative aspect-[1/0.8] w-full bg-[#F8F9FB] overflow-hidden rounded-t-[12px]">
         {image ? (
@@ -66,14 +65,14 @@ export function UWServiceCard({
       
       <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2">
         <div className="h-[46px] flex items-center justify-center overflow-hidden px-1">
-          <h3 className="text-[12px] font-black leading-[1.2] text-[#1A1A1A] line-clamp-3 text-center">
+          <h3 className="text-[12px] font-[600] leading-[1.2] text-[#2D2D2D] line-clamp-3 text-center">
             {name}
           </h3>
         </div>
         
         <div className="mt-auto flex items-center justify-between gap-1">
           <div className="flex items-baseline gap-1 overflow-hidden">
-            <span className="text-[13px] font-black text-[#1A1A1A] truncate">₹{price}</span>
+            <span className="text-[13px] font-black text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
               <span className="text-[9px] font-medium text-muted-foreground/40 line-through truncate">
                 ₹{oldPrice}
