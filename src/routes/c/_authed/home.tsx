@@ -187,7 +187,6 @@ function CustomerHome() {
 
   const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
   const services = servicesQ.data ?? [];
-  const subscription = services.find((s) => s.service_type === "subscription");
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
   const filteredServices = oneTime.filter((s) => {
@@ -203,41 +202,7 @@ function CustomerHome() {
   const a = availability.data;
   const showCatalog = !area || (a && (a.daily_shine || a.premium));
 
-  const nameToProcess = typeof profileQ.data === 'object' && profileQ.data !== null ? (profileQ.data.fullName ?? "") : "";
-  const firstName = nameToProcess.trim().split(/\s+/)[0] || "there";
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const unread = unreadQ.data ?? 0;
-  const subStatus = subStatusQ.data;
-  const planActive = subStatus === "active";
-  const planPending = subStatus === "payment_pending";
-
-  const bookingsQ = useQuery({
-    queryKey: ["customer-bookings-all", userId, selectedVehicleId],
-    enabled: !!selectedVehicleId,
-    queryFn: async (): Promise<any[]> => {
-      const { data, error } = await (supabase as any)
-        .from("bookings")
-        .select("id, scheduled_date, status, payment_status, total_amount, base_amount, addon_amount, service_id, vehicle_id, service_catalog:service_id(name, service_type, slug)")
-        .eq("vehicle_id", selectedVehicleId)
-        .order("scheduled_date", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
-
-  const allBookings = bookingsQ.data ?? [];
-  const activeSub = allBookings.find(
-    (b) => b.service_catalog?.service_type === "subscription" && b.payment_status === "paid" && b.status !== "cancelled"
-  );
-  
-  const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
-  const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - new Date().getTime()) / 86400000)) : 0;
-  const expiringSoon = daysLeft > 0 && daysLeft <= 7;
-
 
   const latestNoticeQ = useQuery({
     queryKey: ["customer-latest-service-notice", selectedVehicleId],
@@ -300,140 +265,136 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFF9F3] pb-32">
+      <div className="min-h-screen bg-[#FFF9F3] pb-12">
         <UWHeader 
           area={area} 
           unread={unread} 
           onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} if (typeof window !== "undefined") window.location.href = "/c?change=1"; }}
         />
 
-        <div className="px-5 space-y-6 mt-2">
-          {/* 1. Vehicle Selector - Immediately below Location Header */}
-          <Section className="mt-0">
-            {vehiclesQ.isLoading ? (
-              <SkeletonCard className="h-20" />
-            ) : activeVehicle ? (
-              <Surface 
-                className="overflow-hidden p-4 border-none bg-white shadow-sm rounded-[20px]"
-                onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
-              >
-                <div className="flex w-full items-center gap-4">
-                  <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px] bg-[#F8F9FB]">
-                    <VehicleAvatar 
-                      imageUrl={catalogImageQ.data} 
-                      make={activeVehicle.make} 
-                      model={activeVehicle.model} 
-                      color={activeVehicle.color} 
-                      className="h-full w-full object-contain p-1.5" 
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A]">{activeVehicle.make} {activeVehicle.model}</h2>
-                        <p className="truncate text-[12px] font-bold text-muted-foreground/60 uppercase tracking-tight mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
+        <div className="px-5 pb-8">
+          <div className="space-y-6 mt-2">
+            {/* 1. Vehicle Selector - Immediately below Location Header */}
+            <Section className="mt-0">
+              {vehiclesQ.isLoading ? (
+                <SkeletonCard className="h-20" />
+              ) : activeVehicle ? (
+                <Surface 
+                  className="overflow-hidden p-4 border-none bg-white shadow-sm rounded-[20px]"
+                  onClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
+                >
+                  <div className="flex w-full items-center gap-4">
+                    <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px] bg-[#F8F9FB]">
+                      <VehicleAvatar 
+                        imageUrl={catalogImageQ.data} 
+                        make={activeVehicle.make} 
+                        model={activeVehicle.model} 
+                        color={activeVehicle.color} 
+                        className="h-full w-full object-contain p-1.5" 
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <h2 className="truncate text-[18px] font-black tracking-tight text-[#1A1A1A]">{activeVehicle.make} {activeVehicle.model}</h2>
+                          <p className="truncate text-[12px] font-bold text-muted-foreground/60 uppercase tracking-tight mt-0.5">{activeVehicle.registration_number} · {bodyLabel}</p>
+                        </div>
+                        <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
                       </div>
-                      <ChevronDown className="h-5 w-5 text-muted-foreground/30 ml-2" />
                     </div>
                   </div>
-                </div>
-              </Surface>
-            ) : (
-              <Surface 
-                onClick={() => navigate({ to: "/c/vehicles/add" })}
-                className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4 rounded-[20px]"
-              >
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
-                <div><span className="block text-[15px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
-              </Surface>
-            )}
-          </Section>
-
-          {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
-          <div className="mt-[-8px]">
-            <UWFeaturedCarousel 
-              items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
-                const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
-                
-                let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
-                if (finalImage && finalImage.includes('supabase.co')) {
-                  const separator = finalImage.includes('?') ? '&' : '?';
-                  finalImage = `${finalImage}${separator}v=${bust}`;
-                }
-
-                return {
-                  id: img.id || `static-${idx}`,
-                  title: "",
-                  subtitle: "",
-                  price: 0,
-                  image: finalImage,
-                  link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
-                  slideNumber: img.slide_number || idx + 1
-                };
-              })}
-              onItemClick={(item) => navigate({ to: item.link as any })}
-            />
-          </div>
-
-
-
-
-          <Section 
-            title="Car care services"
-            className="mt-6"
-          >
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
-              {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-black transition-all duration-200",
-                    selectedCategory === cat 
-                      ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" 
-                      : "bg-white text-[#1A1A1A] border border-border/50 shadow-sm"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              {servicesQ.isLoading ? (
-                [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
-              ) : filteredServices.map((s) => (
-                <UWServiceCard
-                  key={s.id}
-                  name={s.name}
-                  price={priceFor(s)}
-                  image={resolvedServiceImage(s.slug).url || undefined}
-                  slug={s.slug}
-                  // Removed debugInfo
-
-                  badge={s.slug.includes('premium') ? 'Premium' : undefined}
-                  onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
-                />
-              ))}
-
-            </div>
-          </Section>
-          {showCatalog && (
-            <>
-              <div className="py-12 flex items-center justify-center gap-4">
-                <TrustItem label="Expert Care" />
-                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                <TrustItem label="Photo Proof" />
-                <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                <TrustItem label="Safe & Secure" />
-              </div>
-              
-              <Section className="pb-8 -mt-6">
-                <Surface className="bg-[#FF6B00]/5 border-[#FF6B00]/10 p-6 rounded-[20px]">
-                  <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
-                  <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed text-balance">Premium doorstep car care you can trust every day.</p>
                 </Surface>
-              </Section>
+              ) : (
+                <Surface 
+                  onClick={() => navigate({ to: "/c/vehicles/add" })}
+                  className="flex items-center gap-4 border-dashed border-primary/30 bg-primary/5 p-4 rounded-[20px]"
+                >
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20"><Plus className="h-6 w-6" /></div>
+                  <div><span className="block text-[15px] font-black text-[#1a1a1a]">Add your car</span><span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">Prices vary by vehicle size</span></div>
+                </Surface>
+              )}
+            </Section>
+
+            {/* 2. Daily Shine Carousel - Immediately below Vehicle Selector */}
+            <div className="mt-[-8px]">
+              <UWFeaturedCarousel 
+                items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
+                  const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
+                  
+                  let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
+                  if (finalImage && finalImage.includes('supabase.co')) {
+                    const separator = finalImage.includes('?') ? '&' : '?';
+                    finalImage = `${finalImage}${separator}v=${bust}`;
+                  }
+
+                  return {
+                    id: img.id || `static-${idx}`,
+                    title: "",
+                    subtitle: "",
+                    price: 0,
+                    image: finalImage,
+                    link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
+                    slideNumber: img.slide_number || idx + 1
+                  };
+                })}
+                onItemClick={(item) => navigate({ to: item.link as any })}
+              />
+            </div>
+
+            <Section 
+              title="Car care services"
+              className="mt-6 mb-2"
+            >
+              <div className="flex items-center gap-2 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar">
+                {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                      "whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-black transition-all duration-200",
+                      selectedCategory === cat 
+                        ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" 
+                        : "bg-white text-[#1A1A1A] border border-border/50 shadow-sm"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                {servicesQ.isLoading ? (
+                  [1, 2, 3, 4].map(i => <SkeletonCard key={i} className="aspect-[4/5]" />)
+                ) : filteredServices.map((s) => (
+                  <UWServiceCard
+                    key={s.id}
+                    name={s.name}
+                    price={priceFor(s)}
+                    image={resolvedServiceImage(s.slug).url || undefined}
+                    slug={s.slug}
+                    badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: vehicleId ?? undefined } })}
+                  />
+                ))}
+              </div>
+            </Section>
+
+            {showCatalog && (
+              <>
+                <div className="py-10 flex items-center justify-between px-2">
+                  <TrustItem label="Expert Care" />
+                  <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                  <TrustItem label="Photo Proof" />
+                  <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                  <TrustItem label="Safe & Secure" />
+                </div>
+                
+                <Section className="pb-4 -mt-4">
+                  <Surface className="bg-white border-black/5 p-6 rounded-[20px] shadow-sm">
+                    <h3 className="text-[18px] font-black text-[#1A1A1A]">Trust Urban Wash</h3>
+                    <p className="mt-1.5 text-[14px] font-medium text-muted-foreground/70 leading-relaxed text-balance">Premium doorstep car care you can trust every day.</p>
+                  </Surface>
+                </Section>
 
                 {/* Vehicle Notice (Dirty) - Isolated below services catalog */}
                 {latestNoticeQ.data && activeVehicle && (
@@ -468,44 +429,41 @@ function CustomerHome() {
                 )}
               </>
             )}
-        </div>
+          </div>
 
-        <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
-          <DialogContent className="max-w-md rounded-3xl">
-            <DialogHeader><DialogTitle>Your vehicles</DialogTitle></DialogHeader>
-            <div className="space-y-2">
-              {vehicles.map((v) => {
-                const isActive = v.id === activeVehicle?.id;
-                return (
-                  <button key={v.id} onClick={() => pickVehicle(v.id)} className={`uw-pressable flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${isActive ? "border-primary bg-primary/[0.06]" : "border-border/70"}`}>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[15px] font-semibold">{v.make} {v.model}</span><span className="mt-0.5 block text-[12.5px] text-muted-foreground">{v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}</span></span>
-                    {isActive && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                  </button>
-                );
-              })}
-              <Button asChild variant="outline" className="w-full rounded-full"><Link to="/c/vehicles/add"><Plus className="mr-1 h-4 w-4" /> Add vehicle</Link></Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
+            <DialogContent className="max-w-md rounded-3xl">
+              <DialogHeader><DialogTitle>Your vehicles</DialogTitle></DialogHeader>
+              <div className="space-y-2">
+                {vehicles.map((v) => {
+                  const isActive = v.id === activeVehicle?.id;
+                  return (
+                    <button key={v.id} onClick={() => pickVehicle(v.id)} className={`uw-pressable flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${isActive ? "border-primary bg-primary/[0.06]" : "border-border/70"}`}>
+                      <span className="min-w-0 flex-1"><span className="block truncate text-[15px] font-semibold">{v.make} {v.model}</span><span className="mt-0.5 block text-[12.5px] text-muted-foreground">{v.registration_number} · {vehicleBodyLabel(v.make, v.model, v.category)}</span></span>
+                      {isActive && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                    </button>
+                  );
+                })}
+                <Button asChild variant="outline" className="w-full rounded-full"><Link to="/c/vehicles/add"><Plus className="mr-1 h-4 w-4" /> Add vehicle</Link></Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-        <EditVehicleDialog vehicle={(activeVehicle ?? null) as any} open={editOpen} onOpenChange={setEditOpen} />
-        <ChangePhotoDialog vehicle={(activeVehicle ?? null) as any} open={photoOpen} onOpenChange={setPhotoOpen} />
-        
-        <BookAWashSheet
-          open={bookOpen}
-          onOpenChange={setBookOpen}
-          vehicleId={selectedVehicleId}
-          userId={userId}
-        />
-        
-        {!showCatalog && (
-          <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
-        )}
+          <EditVehicleDialog vehicle={(activeVehicle ?? null) as any} open={editOpen} onOpenChange={setEditOpen} />
+          <ChangePhotoDialog vehicle={(activeVehicle ?? null) as any} open={photoOpen} onOpenChange={setPhotoOpen} />
+          
+          <BookAWashSheet
+            open={bookOpen}
+            onOpenChange={setBookOpen}
+            vehicleId={selectedVehicleId}
+            userId={userId}
+          />
+          
+          {!showCatalog && (
+            <div className="mt-8"><ComingSoon area={area} onChange={() => navigate({ to: "/c" })} /></div>
+          )}
 
-        <div className="mt-12 mb-8 px-6 text-center opacity-0 pointer-events-none">
-          <span className="text-[10px] font-medium text-muted-foreground/30 tracking-widest uppercase">
-            {BUILD_VERSION}
-          </span>
+          {/* Debug build text removed */}
         </div>
       </div>
     </PullToRefresh>
@@ -514,9 +472,11 @@ function CustomerHome() {
 
 function TrustItem({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <Check className="h-3.5 w-3.5 text-[#22C55E]" strokeWidth={3} />
-      <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 flex-1">
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+        <Check className="h-3 w-3" strokeWidth={4} />
+      </div>
+      <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-wider text-center">{label}</span>
     </div>
   );
 }

@@ -65,9 +65,11 @@ export function UWServiceCard({
       </div>
       
       <div className="flex flex-col flex-1 p-3">
-        <h3 className="text-[15px] font-black leading-[1.2] text-[#1A1A1A] line-clamp-2 h-[2.4em]">
-          {name}
-        </h3>
+        <div className="h-[2.6em] flex items-center">
+          <h3 className="text-[14px] font-black leading-[1.2] text-[#1A1A1A] line-clamp-2 w-full">
+            {name}
+          </h3>
+        </div>
         
         <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex flex-col">
