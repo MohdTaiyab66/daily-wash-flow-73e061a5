@@ -1,4 +1,4 @@
-import { Plus, Check, Loader2 } from "lucide-react";
+import { Plus, Check, Loader2, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Surface } from "./kit";
 import { useState } from "react";
@@ -49,9 +49,9 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-muted/10 text-muted-foreground/20">
-            <span className="text-[14px] mb-0.5 opacity-50">🚗</span>
-            <span className="text-[7px] font-black uppercase tracking-wider opacity-30">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F3F5] text-muted-foreground/30">
+            <Car className="h-6 w-6 mb-1 opacity-20" />
+            <span className="text-[8px] font-black uppercase tracking-wider opacity-40">Coming soon</span>
           </div>
         )}
         
@@ -65,8 +65,8 @@ export function UWServiceCard({
       </div>
       
       <div className="flex flex-col flex-1 p-2 pt-1.5 pb-2">
-        <div className="h-[46px] flex items-start overflow-hidden">
-          <h3 className="text-[12px] font-bold leading-[1.2] text-[#1A1A1A] line-clamp-3 w-full">
+        <div className="h-[46px] flex items-center overflow-hidden">
+          <h3 className="text-[12px] font-bold leading-[1.2] text-[#1A1A1A] line-clamp-3 w-full text-center">
             {name}
           </h3>
         </div>
