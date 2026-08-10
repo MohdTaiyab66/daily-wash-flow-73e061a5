@@ -10,6 +10,7 @@ interface UWServiceCardProps {
   image?: string;
   badge?: string;
   onAdd?: () => void;
+  onOpen?: () => void;
   isAdded?: boolean;
   isLoading?: boolean;
   slug?: string;
@@ -23,6 +24,7 @@ export function UWServiceCard({
   image,
   badge,
   onAdd,
+  onOpen,
   isAdded,
   isLoading,
   slug,
@@ -34,7 +36,18 @@ export function UWServiceCard({
 
   return (
     <Surface 
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${name}`}
+      onClick={() => onOpen?.()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen?.();
+        }
+      }}
       className={cn(
+        "cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]/40",
         "p-0 overflow-hidden flex flex-col h-[195px] bg-white border border-[#2D2D2D]/8 rounded-[18px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
         className
       )}
