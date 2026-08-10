@@ -403,9 +403,9 @@ function CustomerHome() {
                       <p className="mt-1.5 text-[14px] font-medium text-white/90 leading-snug max-w-[200px]">
                         Premium doorstep car care you can trust.
                       </p>
-                      <div className="mt-4 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-wider bg-white text-[#FF6B00] px-3.5 py-1.5 rounded-full shadow-md">
+                      <div className="mt-5 flex items-center gap-1.5 font-bold text-[12px] uppercase tracking-wider bg-white text-[#FF6B00] px-5 py-2.5 rounded-full shadow-lg">
                         Explore Daily Shine
-                        <ChevronRight className="h-3 w-3" />
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </div>
                     </div>
                     
@@ -416,9 +416,9 @@ function CustomerHome() {
                     <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[140%] bg-gradient-to-l from-white/10 to-transparent rotate-12 blur-2xl pointer-events-none" />
                   </Surface>
 
-                  <div className="mt-8 mb-4 text-center px-6">
+                  <div className="mt-8 mb-6 text-center px-6">
                     <p className="text-[12px] font-[600] text-[#7A7A7A] uppercase tracking-[0.2em] opacity-50">URBAN WASH</p>
-                    <p className="mt-1 text-[11px] font-medium text-[#7A7A7A] opacity-30">Designed for those who love their cars.</p>
+                    <p className="mt-1.5 text-[11px] font-medium text-[#7A7A7A] opacity-30">Designed for those who love their cars.</p>
                   </div>
                 </Section>
 
