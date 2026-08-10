@@ -191,13 +191,13 @@ function ServiceDetail() {
        {/* Premium Header */}
       <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-4 py-4 flex items-center gap-4 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-1"><ArrowLeft className="h-6 w-6 text-charcoal" /></button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="text-[17px] font-bold text-charcoal truncate">{service.name}</div>
           <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">DETAILS</div>
         </div>
-        <button onClick={() => setShowVehicleDrawer(true)} className="bg-white px-3 py-2 rounded-2xl border flex items-center gap-2">
+        <button onClick={() => setShowVehicleDrawer(true)} className="bg-white px-3 py-2 rounded-2xl border flex items-center gap-2 shrink-0 max-w-[120px]">
           <Car className="h-4 w-4 text-[#EA580C]" />
-          <span className="text-[13px] font-bold text-charcoal truncate max-w-[80px]">{vehicle?.model || "Select"}</span>
+          <span className="text-[13px] font-bold text-charcoal truncate">{vehicle?.model || "Select"}</span>
         </button>
       </header>
 
