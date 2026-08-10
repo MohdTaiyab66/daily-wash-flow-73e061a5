@@ -304,16 +304,22 @@ function ServiceDetail() {
 
         {/* Dynamic Includes */}
         {service.inclusions_json && (
-          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-4 gap-3 w-full box-border">
-            {service.inclusions_json.map((item, i) => (
-              <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
-                  <ZapIconLucide className="h-4 w-4" />
-
+          <div className="bg-white p-5 rounded-[16px] border border-black/[0.05] shadow-sm grid grid-cols-3 gap-y-4 gap-x-2 w-full box-border">
+            {service.inclusions_json.map((item, i) => {
+              const Icon = item.label.toLowerCase().includes('pressure') || item.label.toLowerCase().includes('water') ? ZapIconLucide :
+                           item.label.toLowerCase().includes('polish') || item.label.toLowerCase().includes('sparkle') ? Sparkles :
+                           item.label.toLowerCase().includes('vacuum') || item.label.toLowerCase().includes('interior') ? Car :
+                           item.label.toLowerCase().includes('fragrance') || item.label.toLowerCase().includes('scent') ? ZapIconLucide :
+                           ZapIconLucide;
+              return (
+                <div key={i} className="flex flex-col items-center text-center gap-2 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C]">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase leading-tight text-[#1a1a1a] break-words w-full px-1">{item.label}</span>
                 </div>
-                <span className="text-[9px] font-bold uppercase leading-tight text-[#1a1a1a] truncate w-full">{item.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
