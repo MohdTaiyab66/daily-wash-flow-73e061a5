@@ -357,7 +357,7 @@ function ServiceDetail() {
                 return (
                   <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><Sparkles className="h-4 w-4" /></div>
+                      <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0"><ZapIconLucide className="h-4 w-4" /></div>
                       <div>
                         <div className="font-bold text-[13px]">{a.name}</div>
                         <div className="text-[11px] font-bold text-[#EA580C]">₹{price}</div>
