@@ -149,9 +149,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[72px]">
+        <div className="pt-[68px]">
           <div className="px-5">
-            <div className="mt-[24px]">
+            <div className="mt-[22px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -175,7 +175,7 @@ function CustomerHome() {
             </div>
 
             {/* Refined Trust Strip */}
-            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[22px] bg-[#FFF8F1] rounded-[20px] border border-[#FF6B00]/5">
+            <div className="flex justify-between items-center px-4 w-full h-[65px] mt-[20px] bg-[#FFF8F1] rounded-[20px] border border-[#FF6B00]/5">
               <div className="flex flex-col items-center gap-0.5 flex-1">
                 <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
                   <Sparkles className="h-4 w-4" />
@@ -203,9 +203,9 @@ function CustomerHome() {
                   <p className="text-[14px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
                 </div>
               }
-              className="mt-[32px] mb-0"
+              className="mt-[26px] mb-0"
             >
-              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[22px]">
+              <div className="relative flex items-center gap-2.5 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar touch-pan-x mt-[18px]">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}

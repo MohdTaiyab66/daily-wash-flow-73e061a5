@@ -45,21 +45,22 @@ export function UWHeader({
       const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
       
       // Header background & shadow
-      header.style.backgroundColor = `rgba(255, 252, 249, ${0.9 + progress * 0.1})`;
+      // Transition from #FFF1E6 (peach) to a slightly more opaque version or sticky state
+      header.style.backgroundColor = `rgba(255, 241, 230, ${0.98 + progress * 0.02})`;
       header.style.backdropFilter = progress > 0.1 ? 'blur(12px)' : 'none';
-      header.style.borderBottom = `1px solid rgba(45, 45, 45, ${progress * 0.05})`;
-      header.style.boxShadow = progress > 0.5 ? `0 4px 12px rgba(0,0,0,${progress * 0.02})` : 'none';
+      // Subtile warm/orange-grey divider
+      header.style.borderBottom = `1px solid rgba(255, 107, 0, ${0.08 + progress * 0.04})`;
+      header.style.boxShadow = progress > 0.5 ? `0 4px 12px rgba(255, 107, 0, ${progress * 0.03})` : 'none';
 
       // Compact state adjustments
       if (wrapper) {
-        // Reduce padding slightly in compact state
+        // Vertical padding: 16px -> 12px
         const verticalPadding = 16 - (progress * 4);
         wrapper.style.paddingTop = `${verticalPadding}px`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
 
       if (locText) {
-        // Location text gets slightly smaller or just stays clean
         locText.style.fontSize = `${18 - progress * 1}px`;
       }
 
@@ -68,8 +69,7 @@ export function UWHeader({
       }
 
       if (vThumb) {
-        // Thumbnail scales down slightly
-        const scale = 1 - progress * 0.1;
+        const scale = 1 - progress * 0.08;
         vThumb.style.transform = `scale(${scale})`;
       }
     };
@@ -83,11 +83,11 @@ export function UWHeader({
   return (
     <header 
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 z-[60] bg-[#FFFCF9] will-change-[background-color,border-bottom,box-shadow]"
+      className="fixed top-0 left-0 right-0 z-[60] bg-[#FFF1E6] will-change-[background-color,border-bottom,box-shadow]"
     >
       <div 
         ref={contentWrapperRef}
-        className="px-6 pt-4 pb-4 flex items-center justify-between gap-4 w-full transition-[padding]"
+        className="px-6 py-4 flex items-center justify-between gap-4 w-full transition-[padding]"
       >
         {/* Left: Unified Location */}
         <div 
@@ -109,12 +109,12 @@ export function UWHeader({
         {/* Right: Premium Vehicle Selector */}
         {activeVehicle && (
           <div 
-            className="flex items-center gap-2.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0"
+            className="flex items-center gap-2.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white/60 backdrop-blur-sm border border-[#FF6B00]/10 rounded-[12px] px-2.5 py-1.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[36px] w-[36px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-[#2D2D2D]/5 flex items-center justify-center will-change-transform"
+              className="h-[34px] w-[34px] shrink-0 overflow-hidden rounded-[10px] bg-white border border-[#FF6B00]/5 flex items-center justify-center shadow-inner will-change-transform"
             >
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-cover" />
@@ -126,11 +126,11 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[18px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]"
+                className="text-[17px] font-[600] text-[#2D2D2D] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]"
               >
-                {activeVehicle.make} {activeVehicle.model}
+                {activeVehicle.make}
               </span>
-              <ChevronDown className="h-3.5 w-3.5 text-[#2D2D2D]/20 shrink-0 mt-0.5" />
+              <ChevronDown className="h-3.5 w-3.5 text-[#2D2D2D]/40 shrink-0 mt-0.5" />
             </div>
           </div>
         )}
