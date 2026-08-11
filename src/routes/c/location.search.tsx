@@ -385,7 +385,7 @@ function LocationFlow() {
       <div className="h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
         {/* HEADER */}
         <div className="px-6 py-4 flex items-center gap-4 shrink-0">
-          <button onClick={() => setView('onboarding')} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform">
+          <button onClick={() => { setView('onboarding'); setSelectedManualLocation(null); }} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform">
             <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
           </button>
           <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Choose location</h1>
@@ -404,7 +404,14 @@ function LocationFlow() {
                 placeholder="Search locality, society or landmark..."
                 className="flex-1 bg-transparent border-0 outline-none focus:ring-0 p-0 h-full text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
               />
-              {q && <button onClick={() => setQ("")} className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400"><X className="h-4 w-4" /></button>}
+              {q && (
+                <button 
+                  onClick={() => setQ("")} 
+                  className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -413,32 +420,32 @@ function LocationFlow() {
         <div className="px-6 mt-4 shrink-0">
           <div className="h-[200px] w-full rounded-[20px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm relative">
             <div ref={mapRef} className="w-full h-full" />
+            {/* Visual marker overlay if location selected but map not updated yet */}
+            {selectedManualLocation && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                <MapPin className="h-8 w-8 text-[#FF6B00] fill-white" />
+              </div>
+            )}
           </div>
         </div>
 
         {/* RESULTS / CONFIRMATION */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-4">
           <div className="flex-1 overflow-y-auto px-6 py-2 no-scrollbar">
-            {loadingSuggestions && <div className="py-6 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]/40" /></div>}
-
-            {/* CONFIRMATION STATE */}
-            {!q && suggestions.length === 0 && savedArea && (
-              <div className="animate-in slide-in-from-bottom-4 duration-500">
-                <div className="p-5 rounded-[24px] bg-white border border-black/5 flex flex-col gap-4 shadow-sm border-l-4 border-l-[#4CAF50]">
-                  <div className="min-w-0">
-                    <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-1">✓ LOCATION SET</span>
-                    <span className="block text-[18px] font-black text-[#1A1A1A] leading-tight">{savedArea}</span>
-                  </div>
-                  <Button onClick={handleContinue} className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-2">Continue</Button>
-                </div>
+            {loadingSuggestions && (
+              <div className="py-6 flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]/40" />
               </div>
             )}
 
-            {/* RESULTS LIST */}
-            {suggestions.map((s, idx) => (
+            {/* RESULTS LIST - Only show when typing */}
+            {q.length > 0 && suggestions.map((s, idx) => (
               <div key={s.placeId}>
                 <button
-                  onClick={() => { setQ(""); chooseSuggestion(s); }}
+                  onClick={() => { 
+                    setQ(""); 
+                    chooseSuggestion(s); 
+                  }}
                   disabled={selecting}
                   className="w-full flex items-start gap-4 py-4 px-1 text-left active:bg-gray-50 transition-all"
                 >
@@ -452,11 +459,35 @@ function LocationFlow() {
               </div>
             ))}
 
-            {/* EMPTY STATE */}
-            {!q && suggestions.length === 0 && !savedArea && (
+            {/* CONFIRMATION STATE - Show after selection */}
+            {!q && selectedManualLocation && (
+              <div className="animate-in slide-in-from-bottom-4 duration-500">
+                <div className="p-5 rounded-[24px] bg-white border border-black/5 flex flex-col gap-4 shadow-sm">
+                  <div className="min-w-0">
+                    <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-1 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3 w-3" />
+                      LOCATION SELECTED
+                    </span>
+                    <span className="block text-[18px] font-black text-[#1A1A1A] leading-tight">{selectedManualLocation.area}</span>
+                    <span className="block text-[13px] font-medium text-muted-foreground/40 mt-1 truncate">{selectedManualLocation.fullAddress}</span>
+                  </div>
+                  <Button 
+                    onClick={handleContinue} 
+                    className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-2"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* INITIAL/EMPTY STATE */}
+            {!q && !selectedManualLocation && (
               <div className="py-2">
-                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search for your area</h3>
-                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 max-w-[260px]">Enter a locality, society or landmark to check service availability.</p>
+                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search your area</h3>
+                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 max-w-[260px]">
+                  Enter your locality, society or landmark to check doorstep service availability.
+                </p>
               </div>
             )}
           </div>
