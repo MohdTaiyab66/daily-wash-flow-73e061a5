@@ -335,7 +335,7 @@ function LocationFlow() {
                   Try again
                 </Button>
                 <Button 
-                  onClick={() => setView('search')}
+                  onClick={() => setView('manual_entry')}
                   variant="ghost"
                   className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50 text-xs"
                 >
@@ -355,12 +355,11 @@ function LocationFlow() {
           </Button>
           
           <button 
-            onClick={() => setView('search')}
+            onClick={() => setView('manual_entry')}
             className="w-full py-3 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors flex items-center justify-center gap-1"
           >
             Enter location manually
           </button>
-
         </div>
       </div>
     );
@@ -384,95 +383,44 @@ function LocationFlow() {
     );
   }
 
-
-  // SCREEN 2: DETAILS / SEARCH
-  return (
-    <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 flex items-center gap-4">
-        <button 
-          onClick={() => setView('onboarding')}
-          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform"
-        >
-          <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
-        </button>
-        <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
-      </div>
-
-
-      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-4">
-        {/* SUCCESS CARD - Compact Row */}
-        {savedArea && (
-          <div className="animate-in slide-in-from-top-4 duration-500">
-            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-4 shadow-sm">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
-                <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-0.5">LOCATION SET</span>
-                <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
-              </div>
-              <Button 
-                onClick={handleContinue}
-                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
-              >
-                Continue
-              </Button>
-            </div>
-
-          </div>
-        )}
-
-        {/* SEARCH BOX */}
-        <div className="relative group">
-          <div className="flex items-center gap-3 h-[56px] rounded-xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
-            <Search className="h-5 w-5 text-[#FF6B00]" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search area, landmark or society"
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[14px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30"
-            />
-            {q && (
-              <button 
-                onClick={() => setQ("")} 
-                className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* CURRENT LOCATION (Compact Action) */}
-        {!q && (
-          <button
-            onClick={() => handleUseCurrentLocation(true)}
-            className="w-full flex items-center gap-4 p-3.5 rounded-xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-sm group"
+  // SCREEN 3: DEDICATED MANUAL ENTRY
+  if (view === 'manual_entry') {
+    return (
+      <div className="h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
+        <div className="px-6 py-4 flex items-center gap-4">
+          <button 
+            onClick={() => setView('onboarding')}
+            className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform"
           >
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#FF6B00]/5 group-active:bg-[#FF6B00]/10 transition-colors">
-              <Navigation className="h-4.5 w-4.5 text-[#FF6B00]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="block text-[14px] font-bold text-[#1A1A1A]">Use current location</span>
-              <span className="inline-block mt-0.5 text-[8px] font-black text-[#FF6B00] uppercase tracking-[0.1em]">FASTEST WAY</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-400 transition-colors" />
+            <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
           </button>
-        )}
-
-        {/* INTENTIONAL DIVIDER */}
-        <div className="flex items-center gap-3 px-10 py-1">
-          <div className="h-[1px] flex-1 bg-black/5" />
-          <span className="text-[10px] font-black text-black/15 uppercase tracking-[0.25em]">
-            {q.trim().length >= 2 && suggestions.length > 0 ? 'Search Results' : 'OR'}
-          </span>
-          <div className="h-[1px] flex-1 bg-black/5" />
+          <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Choose location</h1>
         </div>
 
+        <div className="px-6 pb-4">
+          <div className="relative group">
+            <div className="flex items-center gap-3 h-[56px] rounded-xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
+              <Search className="h-5 w-5 text-[#FF6B00]" />
+              <Input
+                autoFocus
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search area, landmark or society"
+                className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[14px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30"
+              />
+              {q && (
+                <button 
+                  onClick={() => setQ("")} 
+                  className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
-        {/* RESULTS AREA */}
-        <div className="space-y-3">
+        <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-3">
           {loadingSuggestions && (
             <div className="py-10 flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]/20" />
@@ -494,29 +442,20 @@ function LocationFlow() {
                 {s.secondary && (
                   <span className="mt-0.5 block text-[12px] font-medium text-muted-foreground/30 truncate">{s.secondary}</span>
                 )}
-                <div className="mt-2 flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#4CAF50]" />
-                  <span className="text-[10px] font-black text-[#4CAF50] uppercase tracking-wider">Service available</span>
-                </div>
-              </div>
-              <div className="mt-0.5 shrink-0 px-3 py-1.5 rounded-lg bg-[#1A1A1A] text-[10px] font-black text-white uppercase tracking-wider group-active:scale-95 transition-transform">
-                Select
               </div>
             </button>
           ))}
 
-          {/* COMPACT INFORMATION PANEL */}
           {!q && suggestions.length === 0 && (
             <div className="py-6 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
               <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3 flex items-center justify-center">
                 <Search className="h-4.5 w-4.5 text-[#FF6B00]" strokeWidth={3} />
               </div>
-              <h3 className="text-[14px] font-black text-[#1A1A1A]">Find your service area</h3>
+              <h3 className="text-[14px] font-black text-[#1A1A1A]">Search for your area</h3>
               <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[220px] mx-auto">
-                Enter your apartment, society, or office name to check doorstep availability.
+                Type your locality or society name to check service availability.
               </p>
             </div>
-
           )}
 
           {q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0 && (
@@ -527,9 +466,91 @@ function LocationFlow() {
           )}
         </div>
       </div>
+    );
+  }
+
+  // SCREEN 2: DETAILS / CONFIRMATION
+  return (
+    <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center gap-4">
+        <button 
+          onClick={() => setView('onboarding')}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform"
+        >
+          <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
+        </button>
+        <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-6">
+        {/* SUCCESS CARD - Unified confirmation */}
+        {savedArea && (
+          <div className="animate-in slide-in-from-top-4 duration-500">
+            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-4 shadow-sm">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
+                <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-0.5">LOCATION SET</span>
+                <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
+              </div>
+              <Button 
+                onClick={handleContinue}
+                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* SEARCH ENTRY POINT (Navigates to manual_entry) */}
+        <button 
+          onClick={() => setView('manual_entry')}
+          className="w-full flex items-center gap-3 h-[56px] rounded-xl border border-black/5 bg-white px-5 shadow-sm active:bg-gray-50 transition-all text-left"
+        >
+          <Search className="h-5 w-5 text-[#FF6B00]" />
+          <span className="text-[14px] font-bold text-muted-foreground/30">Search area, landmark or society</span>
+        </button>
+
+        {/* OR DIVIDER */}
+        <div className="flex items-center gap-3 px-10 py-1">
+          <div className="h-[1px] flex-1 bg-black/5" />
+          <span className="text-[10px] font-black text-black/15 uppercase tracking-[0.25em]">OR</span>
+          <div className="h-[1px] flex-1 bg-black/5" />
+        </div>
+
+        {/* SECONDARY CURRENT LOCATION CARD */}
+        <button
+          onClick={() => handleUseCurrentLocation(true)}
+          className="w-full flex items-center gap-4 p-4 rounded-xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-sm group"
+        >
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FF6B00]/5 group-active:bg-[#FF6B00]/10 transition-colors">
+            <Navigation className="h-5 w-5 text-[#FF6B00]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="block text-[15px] font-bold text-[#1A1A1A]">Use current location</span>
+            <span className="inline-block mt-0.5 text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.15em]">FASTEST WAY</span>
+          </div>
+          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-400 transition-colors" />
+        </button>
+
+        {/* COMPACT SEARCH HELPER */}
+        <div className="py-6 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
+          <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3 flex items-center justify-center">
+            <Search className="h-4.5 w-4.5 text-[#FF6B00]" strokeWidth={3} />
+          </div>
+          <h3 className="text-[14px] font-black text-[#1A1A1A]">Find your service area</h3>
+          <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[220px] mx-auto">
+            Enter your apartment, society, or office name to check doorstep availability.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 
 const mapStyles: any[] = [
