@@ -536,18 +536,26 @@ function ServiceDetail() {
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
-            onClick={() => {
-              console.log("Pay Now button clicked");
+            onClick={(e) => {
+              // Stop any potential parent clicks or form submissions
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("[PAY_NOW] button_physical_click_received", { 
+                submitting, 
+                hasSlot: !!slot,
+                pointerEvents: window.getComputedStyle(e.currentTarget).pointerEvents,
+                zIndex: window.getComputedStyle(e.currentTarget).zIndex
+              });
               confirm();
             }}
             disabled={submitting || !slot}
             className={cn(
-              "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)]",
+              "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)] relative z-[99]",
               (submitting || !slot) && "opacity-50 grayscale shadow-none"
             )}
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 pointer-events-none">
                 PAY NOW <ChevronRight className="h-4 w-4" />
               </span>
             )}
