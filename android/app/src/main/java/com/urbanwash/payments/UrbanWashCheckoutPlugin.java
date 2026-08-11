@@ -2,6 +2,8 @@ package com.urbanwash.payments;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import com.getcapacitor.JSObject;
@@ -13,6 +15,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.razorpay.Checkout;
 
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * The ONLY Razorpay bridge in this app.
