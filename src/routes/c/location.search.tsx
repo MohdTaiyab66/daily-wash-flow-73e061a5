@@ -81,7 +81,7 @@ function LocationFlow() {
             center: initialCenter,
             zoom: 14,
             disableDefaultUI: true,
-            styles: [], // Standard Google Maps styling
+            styles: mapStyles,
             gestureHandling: "greedy"
           });
           
@@ -111,6 +111,7 @@ function LocationFlow() {
               radius: 100, // 100 meters default
             });
           }
+
         }
       } catch (e) {
         console.warn("[location.search] Maps API load failed", e);
@@ -307,36 +308,36 @@ function LocationFlow() {
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(60px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
         <div className="mb-6">
-          <h1 className="text-[26px] font-black tracking-tight text-[#1a1a1a] leading-tight">What's your location?</h1>
-          <p className="text-[15px] font-medium text-muted-foreground mt-2 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
+          <h1 className="text-[26px] font-black tracking-tight text-[#1A1A1A] leading-tight">What's your location?</h1>
+          <p className="text-[15px] font-medium text-muted-foreground/60 mt-2 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
         </div>
 
-        <div className="flex-1 relative mb-8 min-h-[300px]">
+        <div className="flex-1 relative mb-6 min-h-[280px]">
           <div 
             ref={mapRef}
-            className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5"
+            className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm"
           />
-          {/* Bottom fade - subtle to not cover map interaction */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
+          {/* Bottom fade */}
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
         </div>
 
         {/* CTAs */}
         <div className="w-full space-y-4">
           {locatingError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
               <p className="text-[13px] font-bold text-red-600 mb-3">{locatingError}</p>
               <div className="flex gap-3">
                 <Button 
                   onClick={() => handleUseCurrentLocation(false)}
                   variant="outline"
-                  className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50"
+                  className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50 text-xs"
                 >
                   Try again
                 </Button>
                 <Button 
                   onClick={() => setView('search')}
                   variant="ghost"
-                  className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50"
+                  className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50 text-xs"
                 >
                   Enter manually
                 </Button>
@@ -346,17 +347,21 @@ function LocationFlow() {
 
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[60px] rounded-2xl bg-[#FF6B00] hover:bg-[#E66000] text-white font-black text-[17px] shadow-[0_8px_20px_rgba(255,107,0,0.15)] flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+            className="w-full h-[60px] rounded-2xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[17px] shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
-            <Navigation className="h-5 w-5 fill-white" />
+            <Navigation className="h-5 w-5 fill-white group-active:text-[#FF6B00] transition-colors" />
             Use current location
+            <div className="absolute right-6 opacity-10">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
+            </div>
           </Button>
           
           <button 
             onClick={() => setView('search')}
-            className="w-full py-2 text-[#FF6B00] font-black text-center text-[15px] active:opacity-70 transition-opacity"
+            className="w-full py-2 text-[#1A1A1A] font-black text-center text-[15px] active:opacity-70 transition-opacity flex items-center justify-center gap-1 group"
           >
             Enter location manually
+            <span className="h-[2px] w-0 bg-[#FF6B00] transition-all group-hover:w-4" />
           </button>
         </div>
       </div>
@@ -366,20 +371,21 @@ function LocationFlow() {
   // LOADING STATE
   if (view === 'locating') {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center px-6">
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-[#FF6B00]/5 blur-3xl rounded-full animate-pulse scale-150" />
-          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl">
-             <div className="absolute inset-0 border-2 border-[#FF6B00]/10 rounded-full" />
+          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl overflow-hidden">
+             <div className="absolute inset-0 border-2 border-[#1A1A1A]/5 rounded-full" />
              <div className="absolute inset-0 border-t-2 border-[#FF6B00] rounded-full animate-spin" />
-             <Navigation className="h-8 w-8 text-[#FF6B00] fill-[#FF6B00]/10 animate-pulse" />
+             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/5 animate-pulse" />
           </div>
         </div>
-        <h2 className="text-[22px] font-black text-[#1a1a1a] text-center">Locating you…</h2>
-        <p className="text-[14px] font-medium text-muted-foreground text-center mt-2 max-w-[200px]">Checking nearby serviceable areas</p>
+        <h2 className="text-[22px] font-black text-[#1A1A1A] text-center">Locating you…</h2>
+        <p className="text-[14px] font-medium text-muted-foreground/50 text-center mt-2 max-w-[200px]">Checking nearby serviceable areas</p>
       </div>
     );
   }
+
 
   // SCREEN 2: DETAILS / SEARCH
   return (
@@ -388,49 +394,50 @@ function LocationFlow() {
       <div className="px-6 py-4 flex items-center gap-4">
         <button 
           onClick={() => setView('onboarding')}
-          className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-black/5 active:scale-90 transition-transform"
+          className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 active:scale-90 transition-transform"
         >
-          <ArrowLeft className="h-5 w-5 text-[#1a1a1a]" />
+          <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
         </button>
-        <h1 className="text-[20px] font-black tracking-tight text-[#1a1a1a]">Location</h1>
+        <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-6">
-        {/* SUCCESS CARD - Compact & Premium */}
+      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-5">
+        {/* SUCCESS CARD - Compact & Neutral */}
         {savedArea && (
           <div className="animate-in slide-in-from-top-4 duration-500">
-            <div className="p-4 rounded-[20px] bg-[#E8F5E9]/60 border border-[#C8E6C9] flex items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white shadow-sm">
+            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-3 shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
                 <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-[10px] font-black text-[#4CAF50] uppercase tracking-widest mb-0.5">LOCATION SET</span>
-                <span className="block text-[16px] font-black text-[#1b5e20] truncate">{savedArea}</span>
+                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.15em] mb-0.5">LOCATION SET</span>
+                <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
               </div>
               <Button 
                 onClick={handleContinue}
-                className="h-10 px-5 rounded-xl bg-[#4CAF50] hover:bg-[#43A047] text-white font-black text-sm shadow-sm transition-all active:scale-95"
+                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 group flex items-center gap-2"
               >
                 Continue
+                <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00]" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* SEARCH BOX - Premium Polish */}
+        {/* SEARCH BOX */}
         <div className="relative group">
-          <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-black/5 bg-white px-5 shadow-[0_4px_16px_rgba(0,0,0,0.03)] focus-within:ring-2 focus-within:ring-[#FF6B00]/5 transition-all">
+          <div className="flex items-center gap-3 h-[60px] rounded-2xl border border-black/5 bg-white px-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus-within:ring-1 focus-within:ring-[#FF6B00]/20 transition-all">
             <Search className="h-5 w-5 text-[#FF6B00]" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search area, landmark or society"
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[15px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30"
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[15px] font-bold placeholder:font-medium placeholder:text-muted-foreground/25"
             />
             {q && (
               <button 
                 onClick={() => setQ("")} 
-                className="grid h-7 w-7 place-items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+                className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -438,27 +445,27 @@ function LocationFlow() {
           </div>
         </div>
 
-        {/* CURRENT LOCATION (Compact Card) */}
+        {/* CURRENT LOCATION (Compact Action) */}
         {!q && (
           <button
             onClick={() => handleUseCurrentLocation(true)}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-sm"
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.02)] group"
           >
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FF6B00]/5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FF6B00]/5 group-active:bg-[#FF6B00]/10 transition-colors">
               <Navigation className="h-5 w-5 text-[#FF6B00]" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="block text-[15px] font-black text-[#1a1a1a]">Use current location</span>
-              <span className="inline-block mt-0.5 text-[9px] font-black text-[#FF6B00] uppercase tracking-widest">FASTEST WAY</span>
+              <span className="block text-[15px] font-black text-[#1A1A1A]">Use current location</span>
+              <span className="inline-block mt-0.5 text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.1em]">FASTEST WAY</span>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-300" />
+            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-400 transition-colors" />
           </button>
         )}
 
         {/* SUBTLE DIVIDER */}
-        <div className="flex items-center gap-3 px-8">
+        <div className="flex items-center gap-3 px-10">
           <div className="h-[1px] flex-1 bg-black/5" />
-          <span className="text-[10px] font-black text-black/20 uppercase tracking-[0.2em]">
+          <span className="text-[10px] font-black text-black/15 uppercase tracking-[0.25em]">
             {q.trim().length >= 2 && suggestions.length > 0 ? 'Search Results' : 'OR'}
           </span>
           <div className="h-[1px] flex-1 bg-black/5" />
@@ -467,7 +474,7 @@ function LocationFlow() {
         {/* RESULTS AREA */}
         <div className="space-y-3">
           {loadingSuggestions && (
-            <div className="py-12 flex justify-center">
+            <div className="py-10 flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]/20" />
             </div>
           )}
@@ -477,22 +484,22 @@ function LocationFlow() {
               key={s.placeId}
               onClick={() => chooseSuggestion(s)}
               disabled={selecting}
-              className="w-full flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/5 active:border-[#FF6B00]/10 text-left transition-all active:bg-gray-50 shadow-sm"
+              className="w-full flex items-start gap-4 p-4 rounded-[20px] bg-white border border-black/5 active:border-[#FF6B00]/10 text-left transition-all active:bg-gray-50 shadow-sm group"
             >
               <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F8F9FA]">
-                <MapPin className="h-5 w-5 text-[#1a1a1a]/40" />
+                <MapPin className="h-5 w-5 text-[#1A1A1A]/30 group-hover:text-[#FF6B00]/40 transition-colors" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-[15px] font-black text-[#1a1a1a] truncate leading-tight">{s.primary}</span>
+                <span className="block text-[15px] font-black text-[#1A1A1A] truncate leading-tight">{s.primary}</span>
                 {s.secondary && (
-                  <span className="mt-0.5 block text-[12px] font-medium text-muted-foreground/40 truncate">{s.secondary}</span>
+                  <span className="mt-0.5 block text-[12px] font-medium text-muted-foreground/30 truncate">{s.secondary}</span>
                 )}
                 <div className="mt-2 flex items-center gap-1.5">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#4CAF50]" />
                   <span className="text-[10px] font-black text-[#4CAF50] uppercase tracking-wider">Service available</span>
                 </div>
               </div>
-              <div className="mt-0.5 shrink-0 px-3 py-1.5 rounded-lg bg-[#FF6B00]/5 border border-[#FF6B00]/10 text-[11px] font-black text-[#FF6B00] uppercase">
+              <div className="mt-0.5 shrink-0 px-3 py-1.5 rounded-lg bg-[#1A1A1A] text-[10px] font-black text-white uppercase tracking-wider group-active:scale-95 transition-transform">
                 Select
               </div>
             </button>
@@ -500,21 +507,21 @@ function LocationFlow() {
 
           {/* COMPACT EMPTY STATE */}
           {!q && suggestions.length === 0 && (
-            <div className="py-10 text-center bg-[#F8F9FA] rounded-[24px] border border-black/5 px-8">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-black/5 mx-auto mb-4 flex items-center justify-center">
-                <Search className="h-6 w-6 text-[#FF6B00]/30" strokeWidth={2} />
+            <div className="py-8 text-center bg-[#F8F9FA]/50 rounded-[28px] border border-black/5 px-8">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-4 flex items-center justify-center">
+                <Search className="h-5 w-5 text-[#FF6B00]/20" strokeWidth={3} />
               </div>
-              <h3 className="text-[16px] font-black text-[#1a1a1a]">Find your service area</h3>
-              <p className="mt-2 text-[13px] font-medium text-muted-foreground/50 leading-relaxed max-w-[200px] mx-auto">
-                Enter your apartment, society, or office name to check availability.
+              <h3 className="text-[15px] font-black text-[#1A1A1A]">Find your service area</h3>
+              <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 leading-relaxed max-w-[200px] mx-auto">
+                Enter your apartment, society, or office name to check doorstep availability.
               </p>
             </div>
           )}
 
           {q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0 && (
             <div className="py-12 text-center">
-              <p className="text-[15px] font-black text-[#1a1a1a]">Location currently unavailable</p>
-              <p className="mt-1 text-[13px] font-medium text-muted-foreground/40">We're expanding rapidly to more areas!</p>
+              <p className="text-[15px] font-black text-[#1A1A1A]">Location currently unavailable</p>
+              <p className="mt-1 text-[13px] font-medium text-muted-foreground/30">We're expanding rapidly to more areas!</p>
             </div>
           )}
         </div>
@@ -523,4 +530,37 @@ function LocationFlow() {
   );
 }
 
-const mapStyles: any[] = [];
+
+const mapStyles: any[] = [
+  {
+    "featureType": "all",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#1A1A1A" }]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e9e9e9" }]
+  },
+  {
+    "featureType": "landscape",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f5f5f5" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#ffffff" }]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#eeeeee" }]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f2f2f2" }]
+  }
+];
+
