@@ -196,6 +196,9 @@ function LocationFlow() {
 
   const handleUseCurrentLocation = async () => {
     setView('locating');
+    // Ensure we start from top of screen for loading state
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     if (!p) {
       setView('onboarding');
