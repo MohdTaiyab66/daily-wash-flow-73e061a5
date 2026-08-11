@@ -37,7 +37,7 @@ public class UrbanWashCheckoutPlugin extends Plugin {
     /** The only keys forwarded to the Razorpay SDK. */
     private static final String[] KEYS = {
             "key", "order_id", "amount", "currency", "name", "description",
-            "prefill", "notes", "theme", "retry", "config"
+            "prefill", "notes", "theme", "retry", "config", "method"
     };
 
     /** Common Indian UPI packages to check for diagnostics. */
