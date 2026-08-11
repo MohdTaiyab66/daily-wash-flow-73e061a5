@@ -6,6 +6,7 @@
 DO $$
 BEGIN
     -- 1. Drop existing constraints to be absolutely sure we redefine them correctly.
+    -- We drop both possible names to be safe.
     ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_status_check;
     ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
     
