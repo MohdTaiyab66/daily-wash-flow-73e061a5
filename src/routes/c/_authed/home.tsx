@@ -155,7 +155,7 @@ function CustomerHome() {
 
         <div className="pt-[52px]">
           <div className="px-4">
-            <div className="mt-[18px]">
+            <div className="mt-[16px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -178,38 +178,38 @@ function CustomerHome() {
               />
             </div>
 
-            {/* Refined Trust Strip - Tighter */}
-            <div className="flex justify-between items-center px-4 w-full h-[60px] mt-[16px] bg-[#FFF8F1] rounded-[18px] border border-[#FF6B00]/5">
+            {/* Refined Trust Strip - Lighter */}
+            <div className="flex justify-between items-center px-4 w-full h-[56px] mt-[16px] bg-[#FFF8F1] rounded-[18px]">
               <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-7 w-7 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <Sparkles className="h-3.5 w-3.5" />
+                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Sparkles className="h-3 w-3" />
                 </div>
-                <span className="text-[8.5px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Expert Care</span>
+                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Expert Care</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-7 w-7 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <Camera className="h-3.5 w-3.5" />
+                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Camera className="h-3 w-3" />
                 </div>
-                <span className="text-[8.5px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Photo Proof</span>
+                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Photo Proof</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-7 w-7 rounded-full bg-white shadow-sm flex items-center justify-center text-[#FF6B00]">
-                  <ShieldCheck className="h-3.5 w-3.5" />
+                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <ShieldCheck className="h-3 w-3" />
                 </div>
-                <span className="text-[8.5px] font-[700] text-[#2D2D2D] uppercase tracking-wider mt-1">Safe & Secure</span>
+                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Safe & Secure</span>
               </div>
             </div>
 
             <Section 
               title={
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[24px] font-[700] text-[#2D2D2D] tracking-tight leading-tight uppercase">Car care services</h2>
-                  <p className="text-[13px] text-[#7A7A7A] font-[500]">Everything your car needs</p>
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-[22px] font-bold text-[#2D2D2D] tracking-tight leading-tight uppercase">Car care services</h2>
+                  <p className="text-[12px] text-[#7A7A7A] font-medium">Everything your car needs</p>
                 </div>
               }
-              className="mt-[22px] mb-0"
+              className="mt-[20px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-3 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[12px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
@@ -217,7 +217,7 @@ function CustomerHome() {
                     className={cn(
                       "whitespace-nowrap rounded-full px-4 h-[32px] flex items-center justify-center text-[12px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-sm shadow-[#FF6B00]/10" 
+                        ? "bg-[#FF6B00] text-white" 
                         : "bg-white text-[#4A4A4A] border border-[rgba(0,0,0,0.06)] shadow-sm"
                     )}
                   >
@@ -226,7 +226,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2 gap-y-3.5 mt-[20px]">
+              <div className="grid grid-cols-3 gap-x-2 gap-y-3.5 mt-[18px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
@@ -243,7 +243,6 @@ function CustomerHome() {
                 ))}
               </div>
 
-              {/* Refined Daily Shine Closing CTA */}
               <div className="mt-8 mb-4 pb-0">
                 <button 
                   onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || undefined } } as any)}
@@ -251,12 +250,12 @@ function CustomerHome() {
                 >
                   <div className="flex flex-row items-center justify-between gap-4">
                     <div className="flex-1">
-                      <p className="text-[10px] font-[800] text-[#FF6B00] uppercase tracking-widest mb-1">Your car deserves better</p>
-                      <h3 className="text-[17px] font-[700] text-[#2D2D2D] leading-tight">
+                      <p className="text-[10px] font-extrabold text-[#FF6B00] uppercase tracking-widest mb-1">Your car deserves better</p>
+                      <h3 className="text-[17px] font-bold text-[#2D2D2D] leading-tight">
                         Keep it clean every day <br/> with Daily Shine.
                       </h3>
                     </div>
-                    <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[11px] font-[800] shadow-md shadow-[#FF6B00]/20 shrink-0">
+                    <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[11px] font-extrabold shadow-md shadow-[#FF6B00]/20 shrink-0">
                       EXPLORE <ChevronRight className="ml-1 h-3 w-3" />
                     </div>
                   </div>

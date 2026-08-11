@@ -58,7 +58,7 @@ export function UWHeader({
 
       // 5. Header height: transitions smoothly (Target 70-80px total height)
       if (wrapper) {
-        const verticalPadding = 12 - (progress * 2);
+        const verticalPadding = 10 - (progress * 2);
         wrapper.style.paddingTop = `${verticalPadding}px`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
@@ -117,7 +117,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-xl px-2 py-1 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-lg px-2 py-1 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
