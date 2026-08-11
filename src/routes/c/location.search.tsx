@@ -387,17 +387,18 @@ function LocationFlow() {
 
   // SCREEN 2: DETAILS / SEARCH
   return (
-    <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+    <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-3 flex items-center gap-4">
+      <div className="px-6 py-4 flex items-center gap-4">
         <button 
           onClick={() => setView('onboarding')}
-          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm border border-black/5 active:scale-90 transition-transform"
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform"
         >
           <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
         </button>
-        <h1 className="text-[19px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
+        <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
       </div>
+
 
       <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-4">
         {/* SUCCESS CARD - Compact Row */}
