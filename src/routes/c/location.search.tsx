@@ -400,14 +400,14 @@ function LocationFlow() {
 
         <div className="px-6 pb-4">
           <div className="relative group">
-            <div className="flex items-center gap-3 h-[56px] rounded-xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
+            <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
               <Search className="h-5 w-5 text-[#FF6B00]" />
               <Input
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search area, landmark or society"
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[14px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30"
+                className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[15px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
               />
               {q && (
                 <button 
@@ -421,50 +421,61 @@ function LocationFlow() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-3">
-          {loadingSuggestions && (
-            <div className="py-10 flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]/20" />
-            </div>
-          )}
-
-          {suggestions.map((s) => (
-            <button
-              key={s.placeId}
-              onClick={() => chooseSuggestion(s)}
-              disabled={selecting}
-              className="w-full flex items-start gap-4 p-4 rounded-[20px] bg-white border border-black/5 active:border-[#FF6B00]/10 text-left transition-all active:bg-gray-50 shadow-sm group"
-            >
-              <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F8F9FA]">
-                <MapPin className="h-5 w-5 text-[#1A1A1A]/30 group-hover:text-[#FF6B00]/40 transition-colors" />
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 space-y-2">
+            {loadingSuggestions && (
+              <div className="py-10 flex justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]/20" />
               </div>
-              <div className="flex-1 min-w-0">
-                <span className="block text-[15px] font-black text-[#1A1A1A] truncate leading-tight">{s.primary}</span>
-                {s.secondary && (
-                  <span className="mt-0.5 block text-[12px] font-medium text-muted-foreground/30 truncate">{s.secondary}</span>
+            )}
+
+            {suggestions.map((s, idx) => (
+              <div key={s.placeId}>
+                <button
+                  onClick={() => chooseSuggestion(s)}
+                  disabled={selecting}
+                  className="w-full flex items-start gap-4 py-4 px-2 text-left transition-all active:bg-gray-50 group"
+                >
+                  <div className="mt-1 grid h-5 w-5 shrink-0 place-items-center">
+                    <MapPin className="h-5 w-5 text-[#FF6B00]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-[15px] font-black text-[#1A1A1A] truncate leading-tight">{s.primary}</span>
+                    {s.secondary && (
+                      <span className="mt-0.5 block text-[13px] font-medium text-muted-foreground/30 truncate">{s.secondary}</span>
+                    )}
+                  </div>
+                </button>
+                {idx < suggestions.length - 1 && (
+                  <div className="h-[1px] w-full bg-black/5 ml-9" />
                 )}
               </div>
-            </button>
-          ))}
+            ))}
 
-          {!q && suggestions.length === 0 && (
-            <div className="py-6 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
-              <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3 flex items-center justify-center">
-                <Search className="h-4.5 w-4.5 text-[#FF6B00]" strokeWidth={3} />
+            {!q && suggestions.length === 0 && (
+              <div className="py-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search your area</h3>
+                <p className="mt-1.5 text-[12px] font-medium text-muted-foreground/40 leading-relaxed max-w-[260px]">
+                  Enter your locality, society or landmark to check doorstep service availability.
+                </p>
               </div>
-              <h3 className="text-[14px] font-black text-[#1A1A1A]">Search for your area</h3>
-              <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[220px] mx-auto">
-                Type your locality or society name to check service availability.
-              </p>
-            </div>
-          )}
+            )}
 
-          {q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0 && (
-            <div className="py-12 text-center">
-              <p className="text-[15px] font-black text-[#1A1A1A]">Location currently unavailable</p>
-              <p className="mt-1 text-[13px] font-medium text-muted-foreground/30">We're expanding rapidly to more areas!</p>
-            </div>
-          )}
+            {q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0 && (
+              <div className="py-12 text-center">
+                <p className="text-[15px] font-black text-[#1A1A1A]">Location currently unavailable</p>
+                <p className="mt-1 text-[13px] font-medium text-muted-foreground/30">We're expanding rapidly to more areas!</p>
+              </div>
+            )}
+          </div>
+
+          {/* SUPPORTING MAP Visual */}
+          <div className="h-[30vh] min-h-[160px] relative px-6 mb-6">
+            <div 
+              ref={mapRef}
+              className="w-full h-full rounded-[24px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm"
+            />
+          </div>
         </div>
       </div>
     );
