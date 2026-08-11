@@ -45,6 +45,13 @@ function LocationFlow() {
   const reverse = useServerFn(reverseGeocode);
   const { view, setView, setLocation, area: savedArea, geo: savedGeo } = useLocationFlowStore();
   
+  // Intercept view to prevent nesting issues
+  useEffect(() => {
+    if (view === 'manual_entry') {
+      navigate({ to: "/c/location/manual" as any, search: searchParams });
+    }
+  }, [view]);
+  
   const [q, setQ] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
