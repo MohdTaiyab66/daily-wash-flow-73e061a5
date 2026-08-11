@@ -400,7 +400,7 @@ function LocationFlow() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleUseCurrentLocation} className="flex-1 h-11 rounded-xl bg-[#181818] text-white font-bold text-xs hover:bg-black transition-all">Try again</Button>
-                <Button onClick={() => setView('manual_entry')} variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 text-[#1A1A1A] font-bold text-xs hover:bg-gray-50 transition-all">Manual search</Button>
+                <Button onClick={handleManualEntry} variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 text-[#1A1A1A] font-bold text-xs hover:bg-gray-50 transition-all">Manual search</Button>
               </div>
             </div>
           )}
