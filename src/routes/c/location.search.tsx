@@ -49,6 +49,13 @@ function LocationFlow() {
     navigate({ to: "/c/location/manual", search: { returnTo: searchParams.returnTo } });
   };
   
+  // Intercept view to prevent nesting issues
+  useEffect(() => {
+    if (view === 'manual_entry') {
+      handleManualEntry();
+    }
+  }, [view]);
+  
   const [q, setQ] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
