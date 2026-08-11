@@ -404,22 +404,22 @@ function LocationFlow() {
         {/* SUCCESS CARD - Compact Row */}
         {savedArea && (
           <div className="animate-in slide-in-from-top-4 duration-500">
-            <div className="p-3.5 rounded-[20px] bg-white border border-black/5 flex items-center gap-3 shadow-sm">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
-                <CheckCircle2 className="h-5 w-5 text-[#4CAF50]" />
+            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-4 shadow-sm">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
+                <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-[8px] font-black text-[#4CAF50] uppercase tracking-[0.15em] mb-0.5">LOCATION SET</span>
-                <span className="block text-[15px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
+                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-0.5">LOCATION SET</span>
+                <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
               </div>
               <Button 
                 onClick={handleContinue}
-                className="h-9 px-4 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-bold text-[12px] shadow-sm transition-all active:scale-95 group flex items-center gap-2"
+                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
               >
                 Continue
-                <div className="h-1 w-1 rounded-full bg-[#FF6B00] opacity-60" />
               </Button>
             </div>
+
           </div>
         )}
 
