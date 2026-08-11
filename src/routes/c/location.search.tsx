@@ -370,11 +370,19 @@ function LocationFlow() {
 
         <div className="w-full space-y-4">
           {locatingError && (
-            <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
-              <p className="text-[13px] font-bold text-red-600 mb-3">{locatingError}</p>
-              <div className="flex gap-3">
-                <Button onClick={handleUseCurrentLocation} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50 text-xs">Try again</Button>
-                <Button onClick={() => setView('manual_entry')} variant="ghost" className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50 text-xs">Enter manually</Button>
+            <div className="p-5 rounded-[24px] bg-white border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2 shadow-sm">
+              <div className="flex gap-3 mb-3">
+                <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                  <X className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-black text-[#1A1A1A]">Location needed</h3>
+                  <p className="text-[12px] font-medium text-muted-foreground/60 leading-tight mt-0.5">{locatingError}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleUseCurrentLocation} className="flex-1 h-11 rounded-xl bg-[#181818] text-white font-bold text-xs hover:bg-black transition-all">Try again</Button>
+                <Button onClick={() => setView('manual_entry')} variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 text-[#1A1A1A] font-bold text-xs hover:bg-gray-50 transition-all">Manual search</Button>
               </div>
             </div>
           )}
