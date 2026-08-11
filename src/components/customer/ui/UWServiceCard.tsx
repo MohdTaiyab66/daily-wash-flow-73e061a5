@@ -104,11 +104,12 @@ export function UWServiceCard({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log("Quick add clicked for", name);
               onAdd?.();
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] border border-[#FF6B00]/5",
+              "flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] border border-[#FF6B00]/5 z-10",
               isAdded && "bg-[#FF6B00] text-white"
             )}
           >

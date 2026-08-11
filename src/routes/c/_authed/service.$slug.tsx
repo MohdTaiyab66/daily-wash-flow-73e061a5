@@ -142,13 +142,14 @@ function ServiceDetail() {
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const isSUV = vehicle?.category === "sedan_suv";
   
-  // Initialize base service in cart when loaded
+  // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
-    if (service) {
+    if (service && vehicle) {
       const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
+      console.log("Setting base service in cart", { id: service.id, name: service.name, price });
       setBaseService(service.id, service.name, price);
     }
-  }, [service, isSUV, setBaseService]);
+  }, [service, isSUV, vehicle?.id, setBaseService]);
 
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
@@ -164,17 +165,24 @@ function ServiceDetail() {
   }, [galleryQ.data, slug]);
 
   const confirm = async () => {
+    console.log("Confirm initiated", { service, vehicle, activeAddress, slot, totalPayable });
+    
+    // Safety check: totalPayable should be > 0 (handled by button disable usually, but good to check)
+    if (totalPayable <= 0) {
+      toast.error("Cart is empty.");
+      return;
+    }
+
     if (!service || !vehicle || !activeAddress || !slot) {
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
+      console.error("Validation failed", { hasService: !!service, hasVehicle: !!vehicle, hasAddress: !!activeAddress, slot });
       return;
     }
     
-    // Ensure base service is in cart with latest price
-    const basePrice = isSUV ? service.price_sedan_suv : service.price_hatchback;
-    setBaseService(service.id, service.name, basePrice);
-    
     setSubmitting(true);
     try {
+      console.log("Calling confirm_customer_booking RPC");
+      // Use real-time pricing from cart items to ensure synchronization
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -183,11 +191,19 @@ function ServiceDetail() {
         p_scheduled_time: slot,
         p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
-      if (error) throw new Error(error.message);
-
-      // Create Razorpay order with the CORRECT dynamic amount
-      const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
       
+      if (error) {
+        console.error("RPC Error:", error);
+        throw new Error(error.message);
+      }
+      console.log("Booking created ID:", bId);
+
+      // Create Razorpay order with the CORRECT dynamic amount from the database booking record
+      console.log("Creating Razorpay order for booking:", bId);
+      const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
+      console.log("Razorpay order created:", order);
+      
+      console.log("Opening Razorpay checkout");
       const result = await openRazorpayCheckout({ 
         keyId: order.keyId, 
         orderId: order.orderId, 
@@ -196,8 +212,10 @@ function ServiceDetail() {
         description: service.name, 
         bookingId: bId 
       });
+      console.log("Razorpay checkout result:", result);
 
       if (result.status === "success") {
+        console.log("Verifying payment");
         await useServerFn(verifyRazorpayPayment)({ 
           data: { 
             bookingId: bId, 
@@ -206,11 +224,14 @@ function ServiceDetail() {
             razorpaySignature: result.signature 
           } 
         });
+        console.log("Payment verified, navigating to success");
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
       } else if (result.status === "failed") {
+        console.error("Payment failed result:", result);
         toast.error(result.message || "Payment failed. Please try again.");
       }
     } catch (e: any) {
+      console.error("Booking process exception:", e);
       toast.error(e.message || "Booking failed");
     } finally { 
       setSubmitting(false); 
@@ -495,11 +516,14 @@ function ServiceDetail() {
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
-            onClick={confirm} 
-            disabled={submitting || !slot || totalPayable <= 0} 
+            onClick={() => {
+              console.log("Pay Now button clicked");
+              confirm();
+            }}
+            disabled={submitting || !slot}
             className={cn(
               "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)]",
-              (!slot || totalPayable <= 0) && "opacity-50 grayscale shadow-none"
+              (submitting || !slot) && "opacity-50 grayscale shadow-none"
             )}
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
