@@ -26,6 +26,9 @@ export type PaymentBridgeOptions = {
   prefill?: { email?: string; contact?: string; name?: string };
   notes?: Record<string, string>;
   theme?: { color?: string };
+  retry?: { enabled: boolean; max_count: number };
+  config?: any;
+  method?: string | Record<string, boolean>;
 };
 
 /** Exactly what the native plugin resolves. */
