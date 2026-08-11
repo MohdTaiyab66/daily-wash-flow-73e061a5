@@ -236,6 +236,15 @@ function ServiceDetail() {
     setSubmitting(true);
 
     try {
+      console.log("[PAY_NOW] Invoking confirm_customer_booking", {
+        p_service_id: service.id,
+        p_vehicle_id: vehicle.id,
+        p_address_id: activeAddress.id,
+        p_scheduled_date: new Date().toISOString().slice(0, 10),
+        p_scheduled_time: slot,
+        p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
+      });
+      
       const { data: bId, error: rpcErr } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -246,9 +255,18 @@ function ServiceDetail() {
       });
       
       if (rpcErr) {
-        updateDiagStep('rpc', 'err', rpcErr.message);
-        throw rpcErr;
+        console.error("[PAY_NOW] RPC ERROR:", rpcErr);
+        updateDiagStep('rpc', 'err', rpcErr.message || JSON.stringify(rpcErr));
+        throw new Error(rpcErr.message || "Booking creation failed (RPC)");
       }
+      
+      if (!bId) {
+        console.error("[PAY_NOW] RPC SUCCESS BUT NO ID RETURNED");
+        updateDiagStep('rpc', 'err', "No booking ID returned");
+        throw new Error("Booking creation failed: No ID returned from server");
+      }
+      
+      console.log("[PAY_NOW] RPC SUCCESS:", bId);
       updateDiagStep('rpc', 'ok');
 
       console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
@@ -314,20 +332,26 @@ function ServiceDetail() {
       setDiag(prev => {
         const steps = [...prev.steps];
         
-        // If we know Step 3 (RPC) failed, mark it and ensure Step 4+ are NOT marked as errors
-        const rpcStep = steps.find(s => s.id === 'rpc');
-        if (rpcStep && rpcStep.status === 'err') {
-           // RPC already marked as error by the try-catch block above if it failed there
-           return prev;
-        }
-
-        // Generic fallback: find the first pending step
-        const firstPending = steps.find(s => s.status === 'pending');
-        if (firstPending) {
+        // Find the RPC step to see if it failed
+        const rpcStepIndex = steps.findIndex(s => s.id === 'rpc');
+        if (rpcStepIndex !== -1 && steps[rpcStepIndex].status === 'err') {
+          // If RPC failed, ensure subsequent steps are NOT shown as failed with this error
           return {
             ...prev,
-            steps: steps.map(s => 
-              s.id === firstPending.id ? { ...s, status: 'err', error: e.message } : s
+            steps: steps.map((s, idx) => {
+              if (idx > rpcStepIndex) return { ...s, status: 'pending', error: undefined };
+              return s;
+            })
+          };
+        }
+
+        // Generic fallback: mark first pending as error
+        const firstPendingIndex = steps.findIndex(s => s.status === 'pending');
+        if (firstPendingIndex !== -1) {
+          return {
+            ...prev,
+            steps: steps.map((s, idx) => 
+              idx === firstPendingIndex ? { ...s, status: 'err', error: e.message } : s
             )
           };
         }
