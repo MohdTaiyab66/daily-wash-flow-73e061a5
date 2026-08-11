@@ -247,15 +247,21 @@ function ServiceDetail() {
       
       if (rpcErr) {
         updateDiagStep('rpc', 'err', rpcErr.message);
-        throw new Error(rpcErr.message);
+        throw rpcErr;
       }
       updateDiagStep('rpc', 'ok');
 
       console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
-      const order = await createOrder({ data: { bookingId: bId } });
-      console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
-
-      updateDiagStep('order', 'ok');
+      let order;
+      try {
+        order = await createOrder({ data: { bookingId: bId } });
+        console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
+        updateDiagStep('order', 'ok');
+      } catch (err: any) {
+        console.error("[PAYMENT] ORDER_CREATION_FAILED", err);
+        updateDiagStep('order', 'err', err.message);
+        throw err;
+      }
       
       if (!order.orderId) {
         updateDiagStep('orderId', 'err', 'Order ID missing from response');
@@ -275,32 +281,31 @@ function ServiceDetail() {
         description: service.name, 
         bookingId: bId,
         onOpened: () => {
-          // These status updates depend on Capacitor actually reaching the native side
           updateDiagStep('plugin', 'ok');
           updateDiagStep('sdk_call', 'ok');
-          // Note: ui_open will be marked ok if result is not a fatal error immediately
+          updateDiagStep('ui_open', 'ok');
         }
       });
 
       if (result.status === "success") {
-        updateDiagStep('ui_open', 'ok');
         updateDiagStep('result', 'ok', undefined, 'SUCCESS');
-        await verifyPayment({ 
-          data: { 
-            bookingId: bId, 
-            razorpayOrderId: result.orderId, 
-            razorpayPaymentId: result.paymentId, 
-            razorpaySignature: result.signature 
-          } 
-        });
-        navigate({ to: "/c/booking-success", search: { bookingId: bId } });
+        try {
+          await verifyPayment({ 
+            data: { 
+              bookingId: bId, 
+              razorpayOrderId: result.orderId, 
+              razorpayPaymentId: result.paymentId, 
+              razorpaySignature: result.signature 
+            } 
+          });
+          navigate({ to: "/c/booking-success", search: { bookingId: bId } });
+        } catch (vErr: any) {
+          toast.error("Payment verification failed. Please contact support.");
+        }
       } else if (result.status === "failed") {
-        updateDiagStep('ui_open', 'err', result.message);
         updateDiagStep('result', 'err', result.message, 'FAILED');
         toast.error(result.message || "Payment failed.");
       } else {
-        // Cancelled
-        updateDiagStep('ui_open', 'ok', 'Closed by user');
         updateDiagStep('result', 'ok', undefined, 'CANCELLED');
       }
     } catch (e: any) {
