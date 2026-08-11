@@ -41,7 +41,7 @@ export async function getCurrentGps(options?: GpsOptions): Promise<GpsPoint | nu
 
       // Try for last known location first for speed
       try {
-        const lastKnown = await Geolocation.getLastKnownLocation();
+        const lastKnown = await (Geolocation as any).getLastKnownLocation();
         if (lastKnown) {
           console.log("[LOCATION] cached location available");
           // If it's very fresh (< 10s), return it immediately
