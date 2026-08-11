@@ -81,7 +81,7 @@ function LocationFlow() {
             center: initialCenter,
             zoom: 14,
             disableDefaultUI: true,
-            styles: [], // Standard Google Maps styling
+            styles: mapStyles,
             gestureHandling: "greedy"
           });
           
@@ -111,6 +111,7 @@ function LocationFlow() {
               radius: 100, // 100 meters default
             });
           }
+
         }
       } catch (e) {
         console.warn("[location.search] Maps API load failed", e);
