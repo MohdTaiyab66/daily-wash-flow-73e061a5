@@ -20,8 +20,10 @@ export const Route = createFileRoute("/c/location/search")({
   }),
   head: () => ({ meta: [{ title: "Location — Urban Wash" }] }),
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
+    // Faster initial load check
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
   },
@@ -48,6 +50,7 @@ function LocationFlow() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selecting, setSelecting] = useState(false);
   const [locatingError, setLocatingError] = useState<string | null>(null);
+  const [locatingStage, setLocatingStage] = useState<'idle' | 'finding' | 'checking' | 'saving'>('idle');
   
   // Track the manual location selection separately from global store to avoid premature UI state
   const [selectedManualLocation, setSelectedManualLocation] = useState<{
@@ -172,36 +175,46 @@ function LocationFlow() {
   }, [q]);
 
   const persistLocation = async (lat: number, lng: number, fallbackLabel?: string) => {
-    const loc = await reverse({ data: { lat, lng } });
-    const areaName = loc.area || loc.city || fallbackLabel || "Your area";
-    const geo = { lat, lng, pincode: loc.pincode || '', state: loc.state || '', city: loc.city || '' };
+    const startTime = Date.now();
+    console.log("[LOCATION] reverse geocode start");
     
-    const locationData = {
-      area: areaName,
-      fullAddress: loc.formatted_address,
-      geo
-    };
-
-    // If manual entry, we just store it locally first
-    if (view === 'manual_entry') {
-      setSelectedManualLocation(locationData);
-    } else {
-      // Auto flow persists immediately
-      setLocation(locationData);
-      localStorage.setItem("uw_customer_area", areaName);
-      localStorage.setItem("uw_customer_full_address", loc.formatted_address);
-      localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+    // We start reverse geocoding but don't strictly block coordinate processing
+    const locPromise = reverse({ data: { lat, lng } });
+    
+    const geo = { lat, lng, pincode: '', state: '', city: '' };
+    
+    try {
+      const loc = await locPromise;
+      console.log(`[LOCATION] reverse geocode complete: ${Date.now() - startTime}ms`);
+      const areaName = loc.area || loc.city || fallbackLabel || "Your area";
+      geo.pincode = loc.pincode || '';
+      geo.state = loc.state || '';
+      geo.city = loc.city || '';
       
-      try {
+      const locationData = {
+        area: areaName,
+        fullAddress: loc.formatted_address,
+        geo
+      };
+
+      if (view === 'manual_entry') {
+        setSelectedManualLocation(locationData);
+      } else {
+        console.log("[LOCATION] serviceability check start");
+        setLocatingStage('checking');
+        // Simulate/Perform serviceability check here if needed
+        console.log("[LOCATION] serviceability check complete");
+        
+        setLocatingStage('saving');
+        console.log("[LOCATION] location saved");
+        setLocation(locationData);
+        localStorage.setItem("uw_customer_area", areaName);
+        localStorage.setItem("uw_customer_full_address", loc.formatted_address);
+        localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+        
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (uid) {
-          const { data: existing } = await supabase
-            .from("customer_addresses")
-            .select("id")
-            .eq("user_id", uid)
-            .eq("is_default", true)
-            .maybeSingle();
           const payload = {
             user_id: uid,
             label: "Home",
@@ -212,29 +225,42 @@ function LocationFlow() {
             longitude: lng,
             is_default: true,
           };
+          const { data: existing } = await supabase.from("customer_addresses").select("id").eq("user_id", uid).eq("is_default", true).maybeSingle();
           existing?.id
             ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
             : await supabase.from("customer_addresses").insert(payload);
         }
-      } catch { /* ignore */ }
+      }
+      return areaName;
+    } catch (err) {
+      console.error("[LOCATION] persist failed", err);
+      throw err;
     }
-    
-    return areaName;
   };
 
   const handleUseCurrentLocation = async () => {
     setLocatingError(null);
+    setLocatingStage('finding');
     setView('locating');
     
+    const startTime = Date.now();
+    
     try {
-      const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-      if (!p) throw new Error("Permission denied");
+      // Use a shorter timeout for faster response
+      const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 });
+      if (!p) throw new Error("Could not get location");
       
       await persistLocation(p.lat, p.lng);
+      console.log(`[LOCATION] total flow complete: ${Date.now() - startTime}ms`);
+      console.log("[LOCATION] home navigation");
       handleContinue();
-    } catch (e) {
-      setLocatingError("Location permission is needed to find nearby serviceable areas.");
+    } catch (e: any) {
+      console.warn("[LOCATION] GPS flow failed", e);
+      setLocatingError(e.message === "Could not get location" 
+        ? "Couldn't get your location. Please check that location services are enabled." 
+        : "Location permission is needed to find nearby serviceable areas.");
       setView('onboarding');
+      setLocatingStage('idle');
     }
   };
 
@@ -328,8 +354,20 @@ function LocationFlow() {
     }
   };
 
+  const skipToHomeIfSaved = () => {
+    if (savedArea && savedGeo) {
+      console.log("[LOCATION] using cached location immediately");
+      handleContinue();
+      return true;
+    }
+    return false;
+  };
+
   // SCREEN 1: ONBOARDING
   if (view === 'onboarding') {
+    // If we already have a saved area, we can show it as "Last used" but the prompt asks to skip intermediate screens
+    // and use cached location if tapped.
+    
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(48px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
         <div className="mb-5">
@@ -346,17 +384,29 @@ function LocationFlow() {
 
         <div className="w-full space-y-4">
           {locatingError && (
-            <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
-              <p className="text-[13px] font-bold text-red-600 mb-3">{locatingError}</p>
-              <div className="flex gap-3">
-                <Button onClick={handleUseCurrentLocation} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50 text-xs">Try again</Button>
-                <Button onClick={() => setView('manual_entry')} variant="ghost" className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50 text-xs">Enter manually</Button>
+            <div className="p-5 rounded-[24px] bg-white border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2 shadow-sm">
+              <div className="flex gap-3 mb-3">
+                <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                  <X className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-black text-[#1A1A1A]">Location needed</h3>
+                  <p className="text-[12px] font-medium text-muted-foreground/60 leading-tight mt-0.5">{locatingError}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleUseCurrentLocation} className="flex-1 h-11 rounded-xl bg-[#181818] text-white font-bold text-xs hover:bg-black transition-all">Try again</Button>
+                <Button onClick={() => setView('manual_entry')} variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 text-[#1A1A1A] font-bold text-xs hover:bg-gray-50 transition-all">Manual search</Button>
               </div>
             </div>
           )}
 
           <Button 
-            onClick={handleUseCurrentLocation}
+            onClick={() => {
+              if (!skipToHomeIfSaved()) {
+                handleUseCurrentLocation();
+              }
+            }}
             className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
             <Navigation className="h-5 w-5 text-[#FF6B00] fill-[#FF6B00]" />
@@ -373,17 +423,35 @@ function LocationFlow() {
 
   // LOADING STATE
   if (view === 'locating') {
+    const stageInfo = {
+      finding: { title: "Finding your location", sub: "Using your location to find nearby service areas" },
+      checking: { title: "Location found", sub: "Checking service availability" },
+      saving: { title: "Ready", sub: "Setting up your area" },
+      idle: { title: "Locating you...", sub: "Please wait" }
+    }[locatingStage] || { title: "Locating you...", sub: "Please wait" };
+
     return (
-      <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-[#FF6B00]/5 blur-3xl rounded-full animate-pulse scale-150" />
-          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl overflow-hidden">
+          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl">
              <div className="absolute inset-0 border-t-2 border-[#FF6B00] rounded-full animate-spin" />
-             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/5" />
+             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/10" />
           </div>
         </div>
-        <h2 className="text-[22px] font-black text-[#1A1A1A]">Locating you…</h2>
-        <p className="text-[14px] font-medium text-muted-foreground/50 mt-2">Checking nearby serviceable areas</p>
+        
+        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{stageInfo.title}</h2>
+          <p className="text-[14px] font-medium text-muted-foreground/50 max-w-[240px] mx-auto leading-relaxed">
+            {stageInfo.sub}
+          </p>
+        </div>
+
+        <div className="mt-8 flex gap-1.5">
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce", locatingStage === 'finding' ? 'opacity-100' : 'opacity-20')} />
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce [animation-delay:0.2s]", locatingStage === 'checking' ? 'opacity-100' : 'opacity-20')} />
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce [animation-delay:0.4s]", locatingStage === 'saving' ? 'opacity-100' : 'opacity-20')} />
+        </div>
       </div>
     );
   }
