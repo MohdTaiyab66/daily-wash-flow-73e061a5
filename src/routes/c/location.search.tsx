@@ -356,6 +356,9 @@ function LocationFlow() {
 
   // SCREEN 1: ONBOARDING
   if (view === 'onboarding') {
+    // If we already have a saved area, we can show it as "Last used" but the prompt asks to skip intermediate screens
+    // and use cached location if tapped.
+    
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(48px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
         <div className="mb-5">
