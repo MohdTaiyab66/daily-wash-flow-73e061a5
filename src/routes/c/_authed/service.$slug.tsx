@@ -84,6 +84,9 @@ function ServiceDetail() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   
+  const createOrder = useServerFn(createRazorpayOrder);
+  const verifyPayment = useServerFn(verifyRazorpayPayment);
+  
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -249,7 +252,6 @@ function ServiceDetail() {
       updateDiagStep('rpc', 'ok');
 
       console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
-      const createOrder = useServerFn(createRazorpayOrder);
       const order = await createOrder({ data: { bookingId: bId } });
       console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
 
@@ -283,7 +285,6 @@ function ServiceDetail() {
       if (result.status === "success") {
         updateDiagStep('ui_open', 'ok');
         updateDiagStep('result', 'ok', undefined, 'SUCCESS');
-        const verifyPayment = useServerFn(verifyRazorpayPayment);
         await verifyPayment({ 
           data: { 
             bookingId: bId, 
