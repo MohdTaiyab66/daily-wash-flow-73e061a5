@@ -57,5 +57,4 @@ export function CustomerShell({ children }: { children: ReactNode }) {
       )}
     </div>
   );
-  );
 }
