@@ -221,44 +221,16 @@ function LocationFlow() {
       const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
       if (!p) throw new Error("Permission denied");
       
-      await persistLocation(p.lat, p.lng);
+      const areaName = await persistLocation(p.lat, p.lng);
       
       if (fromSearch) {
         toast.success("Location updated");
+        // For search/manual view, we stay and let them see the confirmation or continue manually
+        // although fromSearch=true usually means they are on the confirmation screen already.
+        // If they tap "Use current location" FROM the search screen, we just update.
       } else {
-        // Update map center before navigating
-        if (googleMapRef.current) {
-          googleMapRef.current.setCenter({ lat: p.lat, lng: p.lng });
-          if (markerRef.current) {
-            markerRef.current.setPosition({ lat: p.lat, lng: p.lng });
-          } else {
-            markerRef.current = new window.google.maps.Marker({
-              position: { lat: p.lat, lng: p.lng },
-              map: googleMapRef.current,
-              icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                fillColor: '#4285F4', // Standard Google Blue
-                fillOpacity: 1,
-                strokeColor: '#FFFFFF',
-                strokeWeight: 2,
-                scale: 7,
-              }
-            });
-            
-            // Add accuracy circle
-            new window.google.maps.Circle({
-              strokeColor: "#4285F4",
-              strokeOpacity: 0.15,
-              strokeWeight: 0,
-              fillColor: "#4285F4",
-              fillOpacity: 0.1,
-              map: googleMapRef.current,
-              center: { lat: p.lat, lng: p.lng },
-              radius: 100,
-            });
-          }
-        }
-        setView('search');
+        // ONE-TAP EXPERIENCE: Success -> Home
+        handleContinue();
       }
     } catch (e) {
       if (fromSearch) {
