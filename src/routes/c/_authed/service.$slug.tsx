@@ -310,13 +310,23 @@ function ServiceDetail() {
       }
     } catch (e: any) {
       console.error("[PAY_NOW] critical_exception:", e);
-      // Find the first pending step and mark as error if not already marked
+      // Find the specific step that failed and mark it
       setDiag(prev => {
-        const firstPending = prev.steps.find(s => s.status === 'pending');
+        const steps = [...prev.steps];
+        
+        // If we know Step 3 (RPC) failed, mark it and ensure Step 4+ are NOT marked as errors
+        const rpcStep = steps.find(s => s.id === 'rpc');
+        if (rpcStep && rpcStep.status === 'err') {
+           // RPC already marked as error by the try-catch block above if it failed there
+           return prev;
+        }
+
+        // Generic fallback: find the first pending step
+        const firstPending = steps.find(s => s.status === 'pending');
         if (firstPending) {
           return {
             ...prev,
-            steps: prev.steps.map(s => 
+            steps: steps.map(s => 
               s.id === firstPending.id ? { ...s, status: 'err', error: e.message } : s
             )
           };
