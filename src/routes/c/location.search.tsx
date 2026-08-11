@@ -417,7 +417,7 @@ function LocationFlow() {
             Use current location
           </Button>
           
-          <button onClick={() => setView('manual_entry')} className="w-full py-3 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors">
+          <button onClick={handleManualEntry} className="w-full py-3 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors">
             Enter location manually
           </button>
         </div>
