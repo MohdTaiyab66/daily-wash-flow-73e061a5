@@ -404,12 +404,13 @@ function LocationFlow() {
           <div className="relative">
             <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-gray-200 bg-white px-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-within:ring-1 focus-within:ring-[#FF6B00]/20 transition-all">
               <Search className="h-5 w-5 text-[#FF6B00]" />
-              <Input
+              <input
                 autoFocus
+                type="text"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search area, landmark or society"
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
+                className="flex-1 bg-transparent border-0 outline-none focus:ring-0 p-0 h-full text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
               />
               {q && (
                 <button 
@@ -493,6 +494,7 @@ function LocationFlow() {
       </div>
     );
   }
+
 
 
 
