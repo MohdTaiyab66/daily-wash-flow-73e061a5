@@ -17,13 +17,17 @@ export const Route = createFileRoute("/c/location/manual")({
   validateSearch: (search: Record<string, unknown>) => ({
     returnTo: z.string().optional().parse(search.returnTo),
   }),
-  head: () => ({ meta: [{ title: "Location — Urban Wash" }] }),
+  head: () => ({ meta: [{ title: "Manual Location — Urban Wash" }] }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     const user = data.session?.user;
     if (!user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
+  },
+  loader: async ({ search }) => {
+    // Force a specific internal state if needed or fetch initial data
+    return { returnTo: search.returnTo };
   },
   component: LocationFlow,
 });
