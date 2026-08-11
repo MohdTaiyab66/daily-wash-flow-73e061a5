@@ -48,6 +48,7 @@ function LocationFlow() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selecting, setSelecting] = useState(false);
   const [locatingError, setLocatingError] = useState<string | null>(null);
+  const [locatingStage, setLocatingStage] = useState<'idle' | 'finding' | 'checking' | 'saving'>('idle');
   
   // Track the manual location selection separately from global store to avoid premature UI state
   const [selectedManualLocation, setSelectedManualLocation] = useState<{
