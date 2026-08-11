@@ -345,12 +345,12 @@ function LocationFlow() {
             </div>
           )}
 
-          {/* PRIMARY CTA - URBAN WASH ORANGE */}
+          {/* PRIMARY CTA - BLACK / DARK CHARCOAL */}
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[58px] rounded-2xl bg-[#FF6B00] hover:bg-[#FF8C33] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
+            className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
-            <Navigation className="h-5 w-5 fill-white" />
+            <Navigation className="h-5 w-5 text-[#FF6B00] fill-[#FF6B00]" />
             Use current location
           </Button>
           
@@ -498,8 +498,9 @@ function LocationFlow() {
               </div>
               <Button 
                 onClick={handleContinue}
-                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
+                className="h-10 px-5 rounded-xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
               >
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
                 Continue
               </Button>
             </div>
@@ -554,36 +555,6 @@ function LocationFlow() {
 
 
 
-const mapStyles: any[] = [
-  {
-    "featureType": "all",
-    "elementType": "labels.text.fill",
-    "stylers": [{ "color": "#1A1A1A" }]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#e9e9e9" }]
-  },
-  {
-    "featureType": "landscape",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#f5f5f5" }]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#ffffff" }]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#eeeeee" }]
-  },
-  {
-    "featureType": "transit",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#f2f2f2" }]
-  }
-];
+const mapStyles: any[] = [];
+
 
