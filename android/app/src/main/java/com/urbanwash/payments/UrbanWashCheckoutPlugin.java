@@ -118,7 +118,18 @@ public class UrbanWashCheckoutPlugin extends Plugin {
                         Log.d(TAG, "[UW_UPI_DIAG] prefillContact=" + (prefillContact.isEmpty() ? "false" : "true"));
                         Log.d(TAG, "[UW_UPI_DIAG] upiIntentPackagesDetected=" + detectedUpi.size() + " (" + detectedUpi + ")");
                         
-                        // TEMPORARY verification log — remove after checkout is confirmed.
+                        // [UW_UPI_DIAG] Safe diagnostic output only
+                        Log.d(TAG, "[UW_UPI_DIAG] environment=TEST");
+                        Log.d(TAG, "[UW_UPI_DIAG] keyPrefix=" + (key.length() >= 9 ? key.substring(0, 9) : key));
+                        Log.d(TAG, "[UW_UPI_DIAG] orderId=" + orderId);
+                        Log.d(TAG, "[UW_UPI_DIAG] amount=" + amount);
+                        Log.d(TAG, "[UW_UPI_DIAG] currency=" + currency);
+                        Log.d(TAG, "[UW_UPI_DIAG] contactPresent=" + (prefillContact.isEmpty() ? "false" : "true"));
+                        Log.d(TAG, "[UW_UPI_DIAG] emailPresent=" + (prefill != null && !prefill.optString("email", "").isEmpty()));
+                        Log.d(TAG, "[UW_UPI_DIAG] method=" + options.optString("method", "absent"));
+                        Log.d(TAG, "[UW_UPI_DIAG] methodType=" + (options.has("method") ? options.get("method").getClass().getSimpleName() : "none"));
+                        Log.d(TAG, "[UW_UPI_DIAG] prefillObjectPresent=" + (prefill != null));
+
                         Log.d(TAG, "checkout options -> " + maskedOptions(options));
                         
                         Checkout checkout = new Checkout();
