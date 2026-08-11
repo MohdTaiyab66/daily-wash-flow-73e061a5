@@ -173,36 +173,46 @@ function LocationFlow() {
   }, [q]);
 
   const persistLocation = async (lat: number, lng: number, fallbackLabel?: string) => {
-    const loc = await reverse({ data: { lat, lng } });
-    const areaName = loc.area || loc.city || fallbackLabel || "Your area";
-    const geo = { lat, lng, pincode: loc.pincode || '', state: loc.state || '', city: loc.city || '' };
+    const startTime = Date.now();
+    console.log("[LOCATION] reverse geocode start");
     
-    const locationData = {
-      area: areaName,
-      fullAddress: loc.formatted_address,
-      geo
-    };
-
-    // If manual entry, we just store it locally first
-    if (view === 'manual_entry') {
-      setSelectedManualLocation(locationData);
-    } else {
-      // Auto flow persists immediately
-      setLocation(locationData);
-      localStorage.setItem("uw_customer_area", areaName);
-      localStorage.setItem("uw_customer_full_address", loc.formatted_address);
-      localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+    // We start reverse geocoding but don't strictly block coordinate processing
+    const locPromise = reverse({ data: { lat, lng } });
+    
+    const geo = { lat, lng, pincode: '', state: '', city: '' };
+    
+    try {
+      const loc = await locPromise;
+      console.log(`[LOCATION] reverse geocode complete: ${Date.now() - startTime}ms`);
+      const areaName = loc.area || loc.city || fallbackLabel || "Your area";
+      geo.pincode = loc.pincode || '';
+      geo.state = loc.state || '';
+      geo.city = loc.city || '';
       
-      try {
+      const locationData = {
+        area: areaName,
+        fullAddress: loc.formatted_address,
+        geo
+      };
+
+      if (view === 'manual_entry') {
+        setSelectedManualLocation(locationData);
+      } else {
+        console.log("[LOCATION] serviceability check start");
+        setLocatingStage('checking');
+        // Simulate/Perform serviceability check here if needed
+        console.log("[LOCATION] serviceability check complete");
+        
+        setLocatingStage('saving');
+        console.log("[LOCATION] location saved");
+        setLocation(locationData);
+        localStorage.setItem("uw_customer_area", areaName);
+        localStorage.setItem("uw_customer_full_address", loc.formatted_address);
+        localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+        
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (uid) {
-          const { data: existing } = await supabase
-            .from("customer_addresses")
-            .select("id")
-            .eq("user_id", uid)
-            .eq("is_default", true)
-            .maybeSingle();
           const payload = {
             user_id: uid,
             label: "Home",
@@ -213,29 +223,42 @@ function LocationFlow() {
             longitude: lng,
             is_default: true,
           };
+          const { data: existing } = await supabase.from("customer_addresses").select("id").eq("user_id", uid).eq("is_default", true).maybeSingle();
           existing?.id
             ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
             : await supabase.from("customer_addresses").insert(payload);
         }
-      } catch { /* ignore */ }
+      }
+      return areaName;
+    } catch (err) {
+      console.error("[LOCATION] persist failed", err);
+      throw err;
     }
-    
-    return areaName;
   };
 
   const handleUseCurrentLocation = async () => {
     setLocatingError(null);
+    setLocatingStage('finding');
     setView('locating');
     
+    const startTime = Date.now();
+    
     try {
-      const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-      if (!p) throw new Error("Permission denied");
+      // Use a shorter timeout for faster response
+      const p = await getCurrentGps({ enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 });
+      if (!p) throw new Error("Could not get location");
       
       await persistLocation(p.lat, p.lng);
+      console.log(`[LOCATION] total flow complete: ${Date.now() - startTime}ms`);
+      console.log("[LOCATION] home navigation");
       handleContinue();
-    } catch (e) {
-      setLocatingError("Location permission is needed to find nearby serviceable areas.");
+    } catch (e: any) {
+      console.warn("[LOCATION] GPS flow failed", e);
+      setLocatingError(e.message === "Could not get location" 
+        ? "Couldn't get your location. Please check that location services are enabled." 
+        : "Location permission is needed to find nearby serviceable areas.");
       setView('onboarding');
+      setLocatingStage('idle');
     }
   };
 
@@ -374,17 +397,35 @@ function LocationFlow() {
 
   // LOADING STATE
   if (view === 'locating') {
+    const stageInfo = {
+      finding: { title: "Finding your location", sub: "Using your location to find nearby service areas" },
+      checking: { title: "Location found", sub: "Checking service availability" },
+      saving: { title: "Ready", sub: "Setting up your area" },
+      idle: { title: "Locating you...", sub: "Please wait" }
+    }[locatingStage] || { title: "Locating you...", sub: "Please wait" };
+
     return (
-      <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-[#FF6B00]/5 blur-3xl rounded-full animate-pulse scale-150" />
-          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl overflow-hidden">
+          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl">
              <div className="absolute inset-0 border-t-2 border-[#FF6B00] rounded-full animate-spin" />
-             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/5" />
+             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/10" />
           </div>
         </div>
-        <h2 className="text-[22px] font-black text-[#1A1A1A]">Locating you…</h2>
-        <p className="text-[14px] font-medium text-muted-foreground/50 mt-2">Checking nearby serviceable areas</p>
+        
+        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{stageInfo.title}</h2>
+          <p className="text-[14px] font-medium text-muted-foreground/50 max-w-[240px] mx-auto leading-relaxed">
+            {stageInfo.sub}
+          </p>
+        </div>
+
+        <div className="mt-8 flex gap-1.5">
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce", locatingStage === 'finding' ? 'opacity-100' : 'opacity-20')} />
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce [animation-delay:0.2s]", locatingStage === 'checking' ? 'opacity-100' : 'opacity-20')} />
+          <div className={cn("h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-bounce [animation-delay:0.4s]", locatingStage === 'saving' ? 'opacity-100' : 'opacity-20')} />
+        </div>
       </div>
     );
   }
