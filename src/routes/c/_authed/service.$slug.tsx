@@ -310,7 +310,10 @@ function ServiceDetail() {
         currency: "INR", 
         description: service.name, 
         bookingId: bId,
+        prefillEmail: profile?.email || undefined,
+        prefillContact: profile?.phone || undefined,
         onOpened: () => {
+
           updateDiagStep('plugin', 'ok');
           updateDiagStep('sdk_call', 'ok');
           updateDiagStep('ui_open', 'ok');
