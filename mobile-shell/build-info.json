@@ -1,8 +1,7 @@
 {
-  "app": "partner",
+  "app": "customer",
   "version": "1.0.32",
   "build": "2026-07-18-trace-01",
   "buildNumber": "32",
-  "gitSha": "f3b46a8",
-  "buildTime": "2026-07-18T18:40:10Z"
+  "buildTime": "2026-08-11T18:31:59.072Z"
 }

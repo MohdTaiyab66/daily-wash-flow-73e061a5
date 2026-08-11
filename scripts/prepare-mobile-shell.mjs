@@ -13,18 +13,22 @@ mkdirSync(shellDir, { recursive: true });
 
 mkdirSync(outDir, { recursive: true });
 
-// Keep the native webDir self-contained for `cap add android`, which performs
-// an immediate copy before a later `cap sync`.
-const sourceBuildInfoPath = join(projectRoot, "public", "build-info.json");
-const shellBuildInfoPath = join(shellDir, "build-info.json");
-if (existsSync(sourceBuildInfoPath)) {
-  copyFileSync(sourceBuildInfoPath, shellBuildInfoPath);
-} else if (!existsSync(shellBuildInfoPath)) {
-  const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
-  writeFileSync(shellBuildInfoPath, JSON.stringify({ app: variant, version: "dev", build: "dev" }, null, 2));
-}
-
+// Capacitor copies this build-info.json into the native bundle. We MUST
+// regenerate it every time to match the current variant (URBANWASH_APP),
+// or a Customer build might ship with a Partner build-info.json.
 const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
+const shellBuildInfoPath = join(shellDir, "build-info.json");
+const buildInfo = {
+  app: variant,
+  version: process.env.PARTNER_APP_VERSION || "1.0.32",
+  build: process.env.PARTNER_BUILD_ID || "2026-07-18-trace-01",
+  buildNumber: process.env.PARTNER_VERSION_CODE || "32",
+  buildTime: new Date().toISOString(),
+};
+
+writeFileSync(shellBuildInfoPath, JSON.stringify(buildInfo, null, 2));
+console.log(`[prepare-mobile-shell] Wrote build-info.json for variant=${variant}`);
+
 const targetUrl = variant === "customer" ? "https://daily-wash-flow.lovable.app/c" : "https://daily-wash-flow.lovable.app/auth";
 
 const renderShell = () => `<!doctype html>
