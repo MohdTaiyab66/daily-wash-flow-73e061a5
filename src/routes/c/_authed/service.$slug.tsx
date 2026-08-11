@@ -180,9 +180,21 @@ function ServiceDetail() {
     }
   });
 
+  const profileQ = useQuery({
+    queryKey: ["customer-profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
+      return data;
+    }
+  });
+
   const service = serviceQ.data;
   const vehicles = vehiclesQ.data ?? [];
   const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
+  const profile = profileQ.data;
+
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const isSUV = vehicle?.category === "sedan_suv";
   
@@ -298,7 +310,10 @@ function ServiceDetail() {
         currency: "INR", 
         description: service.name, 
         bookingId: bId,
+        prefillEmail: profile?.email || undefined,
+        prefillContact: profile?.phone || undefined,
         onOpened: () => {
+
           updateDiagStep('plugin', 'ok');
           updateDiagStep('sdk_call', 'ok');
           updateDiagStep('ui_open', 'ok');
