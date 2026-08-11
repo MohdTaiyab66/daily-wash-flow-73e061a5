@@ -389,7 +389,7 @@ function LocationFlow() {
     return (
       <div className="h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
         {/* HEADER */}
-        <div className="px-6 py-4 flex items-center gap-4">
+        <div className="px-6 py-4 flex items-center gap-4 shrink-0">
           <button 
             onClick={() => setView('onboarding')}
             className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform"
@@ -400,7 +400,7 @@ function LocationFlow() {
         </div>
 
         {/* REAL SEARCH INPUT */}
-        <div className="px-6 py-2">
+        <div className="px-6 py-2 shrink-0">
           <div className="relative">
             <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-gray-200 bg-white px-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-within:ring-1 focus-within:ring-[#FF6B00]/20 transition-all">
               <Search className="h-5 w-5 text-[#FF6B00]" />
@@ -423,9 +423,9 @@ function LocationFlow() {
           </div>
         </div>
 
-        {/* RESULTS & HELPER STATE - Flex-1 to push map down and allow scrolling above keyboard */}
+        {/* RESULTS & HELPER STATE - Scrollable area */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
             {loadingSuggestions && (
               <div className="py-6 flex justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]/40" />
@@ -458,9 +458,9 @@ function LocationFlow() {
 
             {/* BEFORE USER TYPES / EMPTY STATE */}
             {!q && suggestions.length === 0 && (
-              <div className="py-4 animate-in fade-in slide-in-from-top-4 duration-500 max-w-[280px]">
+              <div className="py-4 animate-in fade-in slide-in-from-top-4 duration-500">
                 <h3 className="text-[14px] font-black text-[#1A1A1A]">Search your area</h3>
-                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 leading-relaxed">
+                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 leading-relaxed max-w-[260px]">
                   Enter your locality, society or landmark to check doorstep service availability.
                 </p>
               </div>
@@ -482,8 +482,8 @@ function LocationFlow() {
             )}
           </div>
 
-          {/* MAP - Supporting visual, shrinks as content above it grows or keyboard opens */}
-          <div className="flex-[0.6] min-h-[140px] relative px-6 mb-6">
+          {/* MAP - Supporting visual, naturally fills remaining space or shrinks */}
+          <div className="flex-[0.6] min-h-[140px] relative px-6 mb-6 shrink">
             <div 
               ref={mapRef}
               className="w-full h-full rounded-[24px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm"
@@ -493,6 +493,7 @@ function LocationFlow() {
       </div>
     );
   }
+
 
 
   // SCREEN 2: DETAILS / CONFIRMATION
