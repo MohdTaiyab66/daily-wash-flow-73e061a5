@@ -236,6 +236,15 @@ function ServiceDetail() {
     setSubmitting(true);
 
     try {
+      console.log("[PAY_NOW] Invoking confirm_customer_booking", {
+        p_service_id: service.id,
+        p_vehicle_id: vehicle.id,
+        p_address_id: activeAddress.id,
+        p_scheduled_date: new Date().toISOString().slice(0, 10),
+        p_scheduled_time: slot,
+        p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
+      });
+      
       const { data: bId, error: rpcErr } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -246,9 +255,18 @@ function ServiceDetail() {
       });
       
       if (rpcErr) {
-        updateDiagStep('rpc', 'err', rpcErr.message);
-        throw rpcErr;
+        console.error("[PAY_NOW] RPC ERROR:", rpcErr);
+        updateDiagStep('rpc', 'err', rpcErr.message || JSON.stringify(rpcErr));
+        throw new Error(rpcErr.message || "Booking creation failed (RPC)");
       }
+      
+      if (!bId) {
+        console.error("[PAY_NOW] RPC SUCCESS BUT NO ID RETURNED");
+        updateDiagStep('rpc', 'err', "No booking ID returned");
+        throw new Error("Booking creation failed: No ID returned from server");
+      }
+      
+      console.log("[PAY_NOW] RPC SUCCESS:", bId);
       updateDiagStep('rpc', 'ok');
 
       console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
