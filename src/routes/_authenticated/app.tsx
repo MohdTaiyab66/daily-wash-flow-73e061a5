@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-[calc(64px+env(safe-area-inset-bottom))]">
       <TopBar />
       <PartnerRuntime />
       <Outlet />
