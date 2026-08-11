@@ -142,13 +142,14 @@ function ServiceDetail() {
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const isSUV = vehicle?.category === "sedan_suv";
   
-  // Initialize base service in cart when loaded
+  // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
-    if (service) {
+    if (service && vehicle) {
       const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
+      console.log("Setting base service in cart", { id: service.id, name: service.name, price });
       setBaseService(service.id, service.name, price);
     }
-  }, [service, isSUV, setBaseService]);
+  }, [service, isSUV, vehicle?.id, setBaseService]);
 
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
@@ -165,19 +166,23 @@ function ServiceDetail() {
 
   const confirm = async () => {
     console.log("Confirm initiated", { service, vehicle, activeAddress, slot, totalPayable });
+    
+    // Safety check: totalPayable should be > 0 (handled by button disable usually, but good to check)
+    if (totalPayable <= 0) {
+      toast.error("Cart is empty.");
+      return;
+    }
+
     if (!service || !vehicle || !activeAddress || !slot) {
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
       console.error("Validation failed", { hasService: !!service, hasVehicle: !!vehicle, hasAddress: !!activeAddress, slot });
       return;
     }
     
-    // Ensure base service is in cart with latest price
-    const basePrice = isSUV ? service.price_sedan_suv : service.price_hatchback;
-    setBaseService(service.id, service.name, basePrice);
-    
     setSubmitting(true);
     try {
       console.log("Calling confirm_customer_booking RPC");
+      // Use real-time pricing from cart items to ensure synchronization
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -193,7 +198,7 @@ function ServiceDetail() {
       }
       console.log("Booking created ID:", bId);
 
-      // Create Razorpay order with the CORRECT dynamic amount
+      // Create Razorpay order with the CORRECT dynamic amount from the database booking record
       console.log("Creating Razorpay order for booking:", bId);
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
       console.log("Razorpay order created:", order);
