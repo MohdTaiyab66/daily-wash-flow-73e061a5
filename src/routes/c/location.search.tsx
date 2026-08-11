@@ -402,7 +402,11 @@ function LocationFlow() {
           )}
 
           <Button 
-            onClick={handleUseCurrentLocation}
+            onClick={() => {
+              if (!skipToHomeIfSaved()) {
+                handleUseCurrentLocation();
+              }
+            }}
             className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
             <Navigation className="h-5 w-5 text-[#FF6B00] fill-[#FF6B00]" />
