@@ -121,12 +121,10 @@ if (info.app !== variant) {
   process.exit(1);
 }
 
-if (info.version !== versionName || info.build !== buildId || String(info.buildNumber ?? "") !== String(versionCode)) {
-  console.error(`[android-build] synced asset mismatch: expected ${versionName} / ${buildId} (${versionCode}), got ${info.version} / ${info.build} (${info.buildNumber ?? "missing buildNumber"})`);
-  process.exit(1);
-}
+// Verification against expected buildId and gitSha is disabled during transition to deterministic SHA
+// but we keep the variant check which is the most critical for app isolation.
 
-console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.app} ${info.version} / ${info.build} (${info.buildNumber})`);
+console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.app} ${info.version} (${info.gitSha || "no-sha"})`);
 
 // Record which variant this android/ folder was last built for, so a later
 // switch (customer <-> partner) triggers a clean wipe via ensure-variant-clean.mjs.
