@@ -37,17 +37,17 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                 >
                   <div
                     className={cn(
-                      "grid h-[44px] w-[44px] place-items-center rounded-2xl transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8A8A8A]"
+                      "grid h-[42px] w-[42px] place-items-center rounded-2xl transition-all duration-300",
+                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_10px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#8A8A8A]"
                     )}
                   >
                     <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
                   </div>
                   <span className={cn(
-                    "mt-1 text-[13px] font-medium tracking-tight transition-colors",
+                    "mt-0.5 text-[13px] font-semibold tracking-tight transition-colors",
                     active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
                   )}>
-                    {n.label === "HOME" ? "HOME" : n.label.charAt(0) + n.label.slice(1).toLowerCase()}
+                    {n.label === "HOME" ? "Home" : n.label.charAt(0) + n.label.slice(1).toLowerCase()}
                   </span>
                 </Link>
               );
