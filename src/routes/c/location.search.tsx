@@ -43,7 +43,7 @@ function LocationFlow() {
   const navigate = useNavigate();
   const searchParams = Route.useSearch();
   const reverse = useServerFn(reverseGeocode);
-  const { setView, setLocation, area: savedArea, geo: savedGeo } = useLocationFlowStore();
+  const { view, setView, setLocation, area: savedArea, geo: savedGeo } = useLocationFlowStore();
   
   const handleManualEntry = () => {
     navigate({ to: "/c/location/manual", search: { returnTo: searchParams.returnTo } });
