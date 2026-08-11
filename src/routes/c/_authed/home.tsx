@@ -147,7 +147,7 @@ function CustomerHome() {
         
         <UWHeader 
           area={area} 
-          onAreaClick={() => { try { localStorage.removeItem("uw_customer_area"); } catch {} window.location.href = "/c?change=1"; }}
+          onAreaClick={() => { navigate({ to: "/c/location/search" }); }}
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
