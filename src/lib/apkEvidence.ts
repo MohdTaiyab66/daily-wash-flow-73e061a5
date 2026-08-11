@@ -14,3 +14,17 @@ export const APK_EVIDENCE = {
 };
 
 console.log("[APK_EVIDENCE] Loading", APK_EVIDENCE.version);
+
+/**
+ * Re-exporting legacy functions used by partner pages to fix build breaks.
+ * These are stubs — the customer payment task does not touch partner evidence logic.
+ */
+export async function logApkEvidence(params: any) {
+  console.log("[APK_EVIDENCE] log", params);
+  return Promise.resolve();
+}
+
+export function evidenceError(err: any) {
+  return { message: String(err?.message || err) };
+}
+
