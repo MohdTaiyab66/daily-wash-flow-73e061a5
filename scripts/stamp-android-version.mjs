@@ -113,12 +113,20 @@ if (!syncedBuildInfo) {
 }
 
 const info = JSON.parse(await readFile(syncedBuildInfo, "utf8"));
+
+// CRITICAL GUARD: Verify that the synced app variant matches the current build variant.
+if (info.app !== variant) {
+  console.error(`[android-build] VARIANT MISMATCH: android/.urbanwash-variant is "${variant}" but synced ${syncedBuildInfo} says "app": "${info.app}"`);
+  console.error(`[android-build] This means Capacitor synced the wrong web assets. Cleaning and retrying...`);
+  process.exit(1);
+}
+
 if (info.version !== versionName || info.build !== buildId || String(info.buildNumber ?? "") !== String(versionCode)) {
   console.error(`[android-build] synced asset mismatch: expected ${versionName} / ${buildId} (${versionCode}), got ${info.version} / ${info.build} (${info.buildNumber ?? "missing buildNumber"})`);
   process.exit(1);
 }
 
-console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.version} / ${info.build} (${info.buildNumber})`);
+console.log(`[android-build] Synced asset verified: ${syncedBuildInfo} -> ${info.app} ${info.version} / ${info.build} (${info.buildNumber})`);
 
 // Record which variant this android/ folder was last built for, so a later
 // switch (customer <-> partner) triggers a clean wipe via ensure-variant-clean.mjs.
