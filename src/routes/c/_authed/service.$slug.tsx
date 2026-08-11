@@ -23,6 +23,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
+import { APK_EVIDENCE } from "@/lib/apkEvidence";
+
 
 const serviceSearchSchema = z.object({
   vehicleId: z.string().optional(),
@@ -212,6 +214,8 @@ function ServiceDetail() {
     }));
 
     updateDiagStep('click', 'ok');
+    console.log("[PAY_NOW] APK Evidence:", APK_EVIDENCE.version);
+
 
     if (totalPayable <= 0) {
       updateDiagStep('validation', 'err', 'Cart is empty');

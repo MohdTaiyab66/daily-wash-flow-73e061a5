@@ -1,49 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
-import { appVariant, isNative, nativePlatform } from "@/lib/platform";
-import type { GpsPoint } from "@/lib/native";
 
-type EvidenceArgs = {
-  eventType: string;
-  serviceId?: string | null;
-  assignmentId?: string | null;
-  gps?: GpsPoint | null;
-  status?: "info" | "success" | "error" | "blocked";
-  payload?: Record<string, unknown>;
+/**
+2026-08-11: Internal build marker for payment verification.
+VERSION: 1.0.32-PAYMENT-FINAL-01
+BUILD_TIME: 2026-08-11T00:45:00Z
+TARGET: ANDROID_NATIVE_RAZORPAY_1.7.18
+*/
+export const APK_EVIDENCE = {
+  version: "1.0.32-PAYMENT-FINAL-01",
+  timestamp: "2026-08-11T00:45:00Z",
+  resolvedSdk: "com.razorpay:standard-core:1.7.18",
+  bridge: "UrbanWashCheckout"
 };
 
-export async function logApkEvidence({
-  eventType,
-  serviceId = null,
-  assignmentId = null,
-  gps = null,
-  status = "info",
-  payload = {},
-}: EvidenceArgs) {
-  try {
-    await (supabase as any).rpc("log_partner_apk_workflow_event", {
-      p_event_type: eventType,
-      p_service_id: serviceId,
-      p_assignment_id: assignmentId,
-      p_platform: nativePlatform(),
-      p_app_variant: appVariant(),
-      p_is_native: isNative(),
-      p_lat: gps?.lat ?? null,
-      p_lng: gps?.lng ?? null,
-      p_accuracy: gps?.accuracy ?? null,
-      p_status: status,
-      p_payload: payload,
-    });
-  } catch (err) {
-    // Evidence logging must never block a live field workflow.
-    console.warn("[apk-evidence] log failed", eventType, err);
-  }
-}
-
-export function evidenceError(err: unknown) {
-  const e = err as { message?: string; code?: string; name?: string };
-  return {
-    name: e?.name ?? "Error",
-    code: e?.code ?? null,
-    message: e?.message ?? String(err),
-  };
-}
+console.log("[APK_EVIDENCE] Loading", APK_EVIDENCE.version);
