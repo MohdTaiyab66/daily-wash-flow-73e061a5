@@ -48,6 +48,13 @@ function LocationFlow() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selecting, setSelecting] = useState(false);
   const [locatingError, setLocatingError] = useState<string | null>(null);
+  
+  // Track the manual location selection separately from global store to avoid premature UI state
+  const [selectedManualLocation, setSelectedManualLocation] = useState<{
+    area: string;
+    fullAddress: string;
+    geo: any;
+  } | null>(null);
 
   const sessionTokenRef = useRef<any>(null);
   const placesLibRef = useRef<any>(null);
