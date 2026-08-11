@@ -29,7 +29,6 @@ const buildInfo = {
 writeFileSync(shellBuildInfoPath, JSON.stringify(buildInfo, null, 2));
 console.log(`[prepare-mobile-shell] Wrote build-info.json for variant=${variant}`);
 
-const variant = (process.env.URBANWASH_APP || "partner").toLowerCase();
 const targetUrl = variant === "customer" ? "https://daily-wash-flow.lovable.app/c" : "https://daily-wash-flow.lovable.app/auth";
 
 const renderShell = () => `<!doctype html>
