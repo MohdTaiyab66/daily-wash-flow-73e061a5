@@ -14,40 +14,48 @@ export function CustomerShell({ children }: { children: ReactNode }) {
 
   const isCheckout = pathname.startsWith("/c/service/") || pathname.startsWith("/c/vehicles/add") || pathname.includes("/vehicles/");
   
-  // Refined height for premium feel: ~64px excluding safe area
+  // Premium spacious height: ~90-100px excluding safe area
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(64px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(100px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto flex max-w-md items-center justify-around h-[64px] px-4">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.05)] bg-white pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto flex max-w-md items-center justify-between h-[90px] px-6">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/c/home" && pathname.startsWith(n.to));
+              const label = n.label === "HOME" ? "Home" : n.label.charAt(0) + n.label.slice(1).toLowerCase();
+              
+              if (active) {
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    aria-current="page"
+                    className="flex items-center justify-center h-[58px] min-w-[135px] px-5 rounded-[28px] bg-[#FFF1E8] transition-all duration-300 group shrink-0"
+                  >
+                    <Icon className="h-[26px] w-[26px] text-[#FF6B00] mr-2" strokeWidth={2} />
+                    <span className="text-[18px] font-semibold text-[#FF6B00] leading-none">
+                      {label}
+                    </span>
+                  </Link>
+                );
+              }
+
               return (
                 <Link
                   key={n.to}
                   to={n.to}
-                  aria-current={active ? "page" : undefined}
-                  className="flex flex-1 flex-col items-center justify-center transition-all group"
+                  className="flex flex-col items-center justify-center transition-all group px-2"
                 >
-                  <div
-                    className={cn(
-                      "grid h-[42px] w-[42px] place-items-center rounded-2xl transition-all duration-300",
-                      active ? "bg-[#FF6B00] text-white shadow-[0_4px_10px_rgba(255,107,0,0.15)]" : "bg-transparent text-[#8A8A8A]"
-                    )}
-                  >
-                    <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
-                  </div>
-                  <span className={cn(
-                    "mt-0.5 text-[13px] font-semibold tracking-tight transition-colors",
-                    active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
-                  )}>
-                    {n.label === "HOME" ? "Home" : n.label.charAt(0) + n.label.slice(1).toLowerCase()}
+                  <Icon className="h-[26px] w-[26px] text-[#555555] group-active:scale-95 transition-transform" strokeWidth={1.75} />
+                  {/* Label below icon for inactive states to maintain spacing in the row */}
+                  <span className="mt-1.5 text-[14px] font-medium text-[#555555]">
+                    {label}
                   </span>
                 </Link>
               );
