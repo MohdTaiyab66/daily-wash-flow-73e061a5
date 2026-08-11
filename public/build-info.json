@@ -1,8 +1,8 @@
 {
   "app": "partner",
   "version": "1.0.32",
-  "build": "2026-07-18-trace-01",
+  "build": "manual-2026-08-11",
   "buildNumber": "32",
-  "gitSha": "f3b46a8",
-  "buildTime": "2026-07-18T18:40:10Z"
+  "gitSha": "fba6875a",
+  "buildTime": "2026-08-11T19:04:13.293Z"
 }
