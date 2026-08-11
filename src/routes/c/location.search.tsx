@@ -48,6 +48,13 @@ function LocationFlow() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selecting, setSelecting] = useState(false);
   const [locatingError, setLocatingError] = useState<string | null>(null);
+  
+  // Track the manual location selection separately from global store to avoid premature UI state
+  const [selectedManualLocation, setSelectedManualLocation] = useState<{
+    area: string;
+    fullAddress: string;
+    geo: any;
+  } | null>(null);
 
   const sessionTokenRef = useRef<any>(null);
   const placesLibRef = useRef<any>(null);
@@ -61,6 +68,9 @@ function LocationFlow() {
 
   // Initialize Maps
   useEffect(() => {
+    // Only initialize map if we have a container for it
+    if (!mapRef.current) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -76,6 +86,7 @@ function LocationFlow() {
 
         // Initialize map
         if (mapRef.current) {
+          // Clean up any existing map instance if needed (though React should handle this via ref update)
           const initialCenter = savedGeo ? { lat: savedGeo.lat, lng: savedGeo.lng } : LUCKNOW_CENTER;
           googleMapRef.current = new maps.Map(mapRef.current, {
             center: initialCenter,
@@ -103,7 +114,12 @@ function LocationFlow() {
         console.warn("[location.search] Maps API load failed", e);
       }
     })();
-    return () => { cancelled = true; };
+    return () => { 
+      cancelled = true;
+      // Cleanup map references when view changes
+      googleMapRef.current = null;
+      markerRef.current = null;
+    };
   }, [view]);
 
   // Autocomplete
@@ -160,41 +176,48 @@ function LocationFlow() {
     const areaName = loc.area || loc.city || fallbackLabel || "Your area";
     const geo = { lat, lng, pincode: loc.pincode || '', state: loc.state || '', city: loc.city || '' };
     
-    setLocation({
+    const locationData = {
       area: areaName,
       fullAddress: loc.formatted_address,
       geo
-    });
+    };
 
-    localStorage.setItem("uw_customer_area", areaName);
-    localStorage.setItem("uw_customer_full_address", loc.formatted_address);
-    localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
-    
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
-      if (uid) {
-        const { data: existing } = await supabase
-          .from("customer_addresses")
-          .select("id")
-          .eq("user_id", uid)
-          .eq("is_default", true)
-          .maybeSingle();
-        const payload = {
-          user_id: uid,
-          label: "Home",
-          address_line: loc.address_line || loc.formatted_address,
-          area: loc.area,
-          pincode: loc.pincode,
-          latitude: lat,
-          longitude: lng,
-          is_default: true,
-        };
-        existing?.id
-          ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
-          : await supabase.from("customer_addresses").insert(payload);
-      }
-    } catch { /* ignore */ }
+    // If manual entry, we just store it locally first
+    if (view === 'manual_entry') {
+      setSelectedManualLocation(locationData);
+    } else {
+      // Auto flow persists immediately
+      setLocation(locationData);
+      localStorage.setItem("uw_customer_area", areaName);
+      localStorage.setItem("uw_customer_full_address", loc.formatted_address);
+      localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+      
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (uid) {
+          const { data: existing } = await supabase
+            .from("customer_addresses")
+            .select("id")
+            .eq("user_id", uid)
+            .eq("is_default", true)
+            .maybeSingle();
+          const payload = {
+            user_id: uid,
+            label: "Home",
+            address_line: loc.address_line || loc.formatted_address,
+            area: loc.area,
+            pincode: loc.pincode,
+            latitude: lat,
+            longitude: lng,
+            is_default: true,
+          };
+          existing?.id
+            ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+            : await supabase.from("customer_addresses").insert(payload);
+        }
+      } catch { /* ignore */ }
+    }
     
     return areaName;
   };
@@ -259,7 +282,41 @@ function LocationFlow() {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // If we have a selected manual location, persist it now
+    if (selectedManualLocation) {
+      setLocation(selectedManualLocation);
+      localStorage.setItem("uw_customer_area", selectedManualLocation.area);
+      localStorage.setItem("uw_customer_full_address", selectedManualLocation.fullAddress);
+      localStorage.setItem("uw_customer_geo", JSON.stringify(selectedManualLocation.geo));
+      
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (uid) {
+          const { data: existing } = await supabase
+            .from("customer_addresses")
+            .select("id")
+            .eq("user_id", uid)
+            .eq("is_default", true)
+            .maybeSingle();
+          const payload = {
+            user_id: uid,
+            label: "Home",
+            address_line: selectedManualLocation.fullAddress,
+            area: selectedManualLocation.area,
+            pincode: selectedManualLocation.geo.pincode,
+            latitude: selectedManualLocation.geo.lat,
+            longitude: selectedManualLocation.geo.lng,
+            is_default: true,
+          };
+          existing?.id
+            ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+            : await supabase.from("customer_addresses").insert(payload);
+        }
+      } catch { /* ignore */ }
+    }
+
     if (searchParams.returnTo) {
       if (searchParams.returnTo.startsWith('/')) {
         navigate({ to: searchParams.returnTo as any });
@@ -281,6 +338,8 @@ function LocationFlow() {
         </div>
 
         <div className="flex-[0.92] relative mb-6 min-h-[260px]">
+          {/* Note: In this view, we use a different ref if we want to avoid re-using the same div, 
+              but since view changes, the manual_entry map won't exist yet anyway. */}
           <div ref={mapRef} className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm" />
           <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
         </div>
@@ -335,7 +394,7 @@ function LocationFlow() {
       <div className="h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] overflow-hidden">
         {/* HEADER */}
         <div className="px-6 py-4 flex items-center gap-4 shrink-0">
-          <button onClick={() => setView('onboarding')} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform">
+          <button onClick={() => { setView('onboarding'); setSelectedManualLocation(null); }} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-90 transition-transform">
             <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
           </button>
           <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Choose location</h1>
@@ -354,7 +413,14 @@ function LocationFlow() {
                 placeholder="Search locality, society or landmark..."
                 className="flex-1 bg-transparent border-0 outline-none focus:ring-0 p-0 h-full text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
               />
-              {q && <button onClick={() => setQ("")} className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400"><X className="h-4 w-4" /></button>}
+              {q && (
+                <button 
+                  onClick={() => setQ("")} 
+                  className="grid h-8 w-8 place-items-center rounded-full bg-gray-50 text-gray-400"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -363,32 +429,32 @@ function LocationFlow() {
         <div className="px-6 mt-4 shrink-0">
           <div className="h-[200px] w-full rounded-[20px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm relative">
             <div ref={mapRef} className="w-full h-full" />
+            {/* Visual marker overlay if location selected but map not updated yet */}
+            {selectedManualLocation && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                <MapPin className="h-8 w-8 text-[#FF6B00] fill-white" />
+              </div>
+            )}
           </div>
         </div>
 
         {/* RESULTS / CONFIRMATION */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden mt-4">
           <div className="flex-1 overflow-y-auto px-6 py-2 no-scrollbar">
-            {loadingSuggestions && <div className="py-6 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]/40" /></div>}
-
-            {/* CONFIRMATION STATE */}
-            {!q && suggestions.length === 0 && savedArea && (
-              <div className="animate-in slide-in-from-bottom-4 duration-500">
-                <div className="p-5 rounded-[24px] bg-white border border-black/5 flex flex-col gap-4 shadow-sm border-l-4 border-l-[#4CAF50]">
-                  <div className="min-w-0">
-                    <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-1">✓ LOCATION SET</span>
-                    <span className="block text-[18px] font-black text-[#1A1A1A] leading-tight">{savedArea}</span>
-                  </div>
-                  <Button onClick={handleContinue} className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-2">Continue</Button>
-                </div>
+            {loadingSuggestions && (
+              <div className="py-6 flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]/40" />
               </div>
             )}
 
-            {/* RESULTS LIST */}
-            {suggestions.map((s, idx) => (
+            {/* RESULTS LIST - Only show when typing */}
+            {q.length > 0 && suggestions.map((s, idx) => (
               <div key={s.placeId}>
                 <button
-                  onClick={() => { setQ(""); chooseSuggestion(s); }}
+                  onClick={() => { 
+                    setQ(""); 
+                    chooseSuggestion(s); 
+                  }}
                   disabled={selecting}
                   className="w-full flex items-start gap-4 py-4 px-1 text-left active:bg-gray-50 transition-all"
                 >
@@ -402,11 +468,35 @@ function LocationFlow() {
               </div>
             ))}
 
-            {/* EMPTY STATE */}
-            {!q && suggestions.length === 0 && !savedArea && (
+            {/* CONFIRMATION STATE - Show after selection */}
+            {!q && selectedManualLocation && (
+              <div className="animate-in slide-in-from-bottom-4 duration-500">
+                <div className="p-5 rounded-[24px] bg-white border border-black/5 flex flex-col gap-4 shadow-sm">
+                  <div className="min-w-0">
+                    <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-1 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3 w-3" />
+                      LOCATION SELECTED
+                    </span>
+                    <span className="block text-[18px] font-black text-[#1A1A1A] leading-tight">{selectedManualLocation.area}</span>
+                    <span className="block text-[13px] font-medium text-muted-foreground/40 mt-1 truncate">{selectedManualLocation.fullAddress}</span>
+                  </div>
+                  <Button 
+                    onClick={handleContinue} 
+                    className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-2"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* INITIAL/EMPTY STATE */}
+            {!q && !selectedManualLocation && (
               <div className="py-2">
-                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search for your area</h3>
-                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 max-w-[260px]">Enter a locality, society or landmark to check service availability.</p>
+                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search your area</h3>
+                <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 max-w-[260px]">
+                  Enter your locality, society or landmark to check doorstep service availability.
+                </p>
               </div>
             )}
           </div>
