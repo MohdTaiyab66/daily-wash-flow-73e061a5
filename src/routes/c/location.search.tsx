@@ -307,36 +307,36 @@ function LocationFlow() {
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(60px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
         <div className="mb-6">
-          <h1 className="text-[26px] font-black tracking-tight text-[#1a1a1a] leading-tight">What's your location?</h1>
-          <p className="text-[15px] font-medium text-muted-foreground mt-2 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
+          <h1 className="text-[26px] font-black tracking-tight text-[#1A1A1A] leading-tight">What's your location?</h1>
+          <p className="text-[15px] font-medium text-muted-foreground/60 mt-2 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
         </div>
 
-        <div className="flex-1 relative mb-8 min-h-[300px]">
+        <div className="flex-1 relative mb-6 min-h-[280px]">
           <div 
             ref={mapRef}
-            className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5"
+            className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm"
           />
-          {/* Bottom fade - subtle to not cover map interaction */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
+          {/* Bottom fade */}
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
         </div>
 
         {/* CTAs */}
         <div className="w-full space-y-4">
           {locatingError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-red-100 mb-2 animate-in fade-in slide-in-from-bottom-2">
               <p className="text-[13px] font-bold text-red-600 mb-3">{locatingError}</p>
               <div className="flex gap-3">
                 <Button 
                   onClick={() => handleUseCurrentLocation(false)}
                   variant="outline"
-                  className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50"
+                  className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-bold hover:bg-red-50 text-xs"
                 >
                   Try again
                 </Button>
                 <Button 
                   onClick={() => setView('search')}
                   variant="ghost"
-                  className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50"
+                  className="flex-1 h-10 rounded-xl text-red-600 font-bold hover:bg-red-50 text-xs"
                 >
                   Enter manually
                 </Button>
@@ -346,17 +346,21 @@ function LocationFlow() {
 
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[60px] rounded-2xl bg-[#FF6B00] hover:bg-[#E66000] text-white font-black text-[17px] shadow-[0_8px_20px_rgba(255,107,0,0.15)] flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+            className="w-full h-[60px] rounded-2xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[17px] shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
-            <Navigation className="h-5 w-5 fill-white" />
+            <Navigation className="h-5 w-5 fill-white group-active:text-[#FF6B00] transition-colors" />
             Use current location
+            <div className="absolute right-6 opacity-10">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
+            </div>
           </Button>
           
           <button 
             onClick={() => setView('search')}
-            className="w-full py-2 text-[#FF6B00] font-black text-center text-[15px] active:opacity-70 transition-opacity"
+            className="w-full py-2 text-[#1A1A1A] font-black text-center text-[15px] active:opacity-70 transition-opacity flex items-center justify-center gap-1 group"
           >
             Enter location manually
+            <span className="h-[2px] w-0 bg-[#FF6B00] transition-all group-hover:w-4" />
           </button>
         </div>
       </div>
@@ -366,20 +370,21 @@ function LocationFlow() {
   // LOADING STATE
   if (view === 'locating') {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center px-6">
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-[#FF6B00]/5 blur-3xl rounded-full animate-pulse scale-150" />
-          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl">
-             <div className="absolute inset-0 border-2 border-[#FF6B00]/10 rounded-full" />
+          <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl overflow-hidden">
+             <div className="absolute inset-0 border-2 border-[#1A1A1A]/5 rounded-full" />
              <div className="absolute inset-0 border-t-2 border-[#FF6B00] rounded-full animate-spin" />
-             <Navigation className="h-8 w-8 text-[#FF6B00] fill-[#FF6B00]/10 animate-pulse" />
+             <Navigation className="h-8 w-8 text-[#1A1A1A] fill-[#FF6B00]/5 animate-pulse" />
           </div>
         </div>
-        <h2 className="text-[22px] font-black text-[#1a1a1a] text-center">Locating you…</h2>
-        <p className="text-[14px] font-medium text-muted-foreground text-center mt-2 max-w-[200px]">Checking nearby serviceable areas</p>
+        <h2 className="text-[22px] font-black text-[#1A1A1A] text-center">Locating you…</h2>
+        <p className="text-[14px] font-medium text-muted-foreground/50 text-center mt-2 max-w-[200px]">Checking nearby serviceable areas</p>
       </div>
     );
   }
+
 
   // SCREEN 2: DETAILS / SEARCH
   return (
