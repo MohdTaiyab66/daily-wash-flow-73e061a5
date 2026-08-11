@@ -345,23 +345,22 @@ function LocationFlow() {
             </div>
           )}
 
+          {/* PRIMARY CTA - URBAN WASH ORANGE */}
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[58px] rounded-2xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group relative overflow-hidden"
+            className="w-full h-[58px] rounded-2xl bg-[#FF6B00] hover:bg-[#FF8C33] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
-            <Navigation className="h-5 w-5 fill-white group-active:text-[#FF6B00] transition-colors" />
+            <Navigation className="h-5 w-5 fill-white" />
             Use current location
-            <div className="absolute right-6 opacity-20 pointer-events-none">
-              <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
-            </div>
           </Button>
           
           <button 
             onClick={() => setView('search')}
-            className="w-full py-2 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors flex items-center justify-center gap-1"
+            className="w-full py-3 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors flex items-center justify-center gap-1"
           >
             Enter location manually
           </button>
+
         </div>
       </div>
     );
