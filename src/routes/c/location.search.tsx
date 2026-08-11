@@ -398,9 +398,9 @@ function LocationFlow() {
           <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Choose location</h1>
         </div>
 
-        <div className="px-6 pb-4">
-          <div className="relative group">
-            <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
+        <div className="px-6 py-2">
+          <div className="relative">
+            <div className="flex items-center gap-3 h-[58px] rounded-2xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/20 transition-all">
               <Search className="h-5 w-5 text-[#FF6B00]" />
               <Input
                 autoFocus
