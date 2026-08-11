@@ -507,15 +507,16 @@ function LocationFlow() {
 
           {/* COMPACT INFORMATION PANEL */}
           {!q && suggestions.length === 0 && (
-            <div className="py-7 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
-              <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3.5 flex items-center justify-center">
+            <div className="py-6 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
+              <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3 flex items-center justify-center">
                 <Search className="h-4.5 w-4.5 text-[#FF6B00]" strokeWidth={3} />
               </div>
               <h3 className="text-[14px] font-black text-[#1A1A1A]">Find your service area</h3>
-              <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[200px] mx-auto">
+              <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[220px] mx-auto">
                 Enter your apartment, society, or office name to check doorstep availability.
               </p>
             </div>
+
           )}
 
           {q.trim().length >= 2 && !loadingSuggestions && suggestions.length === 0 && (
