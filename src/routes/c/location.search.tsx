@@ -156,7 +156,11 @@ function LocationSearch() {
         }
       } catch { /* non-fatal */ }
       if (searchParams.returnTo) {
-        window.location.href = searchParams.returnTo;
+        if (searchParams.returnTo.startsWith('/')) {
+          navigate({ to: searchParams.returnTo as any });
+        } else {
+          window.location.href = searchParams.returnTo;
+        }
       } else {
         navigate({ to: "/c/home" });
       }
@@ -220,7 +224,13 @@ function LocationSearch() {
         <button 
            onClick={() => {
              if (searchParams.returnTo) {
-               window.location.href = searchParams.returnTo;
+               // Use navigate for internal routes to avoid full page reload if possible
+               // but ensure absolute paths work
+               if (searchParams.returnTo.startsWith('/')) {
+                 navigate({ to: searchParams.returnTo as any });
+               } else {
+                 window.location.href = searchParams.returnTo;
+               }
              } else {
                navigate({ to: "/c/location" });
              }

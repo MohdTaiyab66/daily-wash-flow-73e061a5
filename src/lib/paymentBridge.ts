@@ -92,8 +92,22 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
  */
 export async function openRazorpayCheckout(opts: CheckoutOptions): Promise<RazorpayResult> {
   try {
+    console.log("[PAY_NOW:BRIDGE] open_requested", { orderId: opts.orderId, amount: opts.amount });
     opts.onOpened?.();
-    const res = await UrbanWashCheckout.open(toNativeOptions(opts));
+    
+    if (import.meta.env.DEV) {
+      console.log("[PAY_NOW:BRIDGE] dev_mode_detected");
+    }
+
+    const nativeOptions = toNativeOptions(opts);
+    console.log("[PAY_NOW:BRIDGE] calling_native_open", { 
+      pluginName: "UrbanWashCheckout",
+      method: "open",
+      options: { ...nativeOptions, key: "****" }
+    });
+    
+    const res = await UrbanWashCheckout.open(nativeOptions);
+    console.log("[PAY_NOW:BRIDGE] native_response_received", res);
 
     if ("razorpay_payment_id" in res && res.razorpay_payment_id) {
       return {
@@ -103,8 +117,10 @@ export async function openRazorpayCheckout(opts: CheckoutOptions): Promise<Razor
         signature: res.razorpay_signature,
       };
     }
+    console.log("[PAY_NOW:BRIDGE] payment_cancelled_by_user");
     return { status: "cancelled" };
   } catch (e: any) {
+    console.error("[PAY_NOW:BRIDGE] fatal_plugin_error", e);
     const message = String(e?.message ?? e?.description ?? e ?? "Payment failed");
     return { status: "failed", code: e?.code ? String(e.code) : undefined, message };
   }

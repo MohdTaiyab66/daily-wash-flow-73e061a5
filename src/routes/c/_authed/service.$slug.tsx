@@ -165,24 +165,37 @@ function ServiceDetail() {
   }, [galleryQ.data, slug]);
 
   const confirm = async () => {
-    console.log("Confirm initiated", { service, vehicle, activeAddress, slot, totalPayable });
+    console.log("[PAY_NOW] confirm_initiated", { 
+      slug,
+      vehicleId: vehicle?.id,
+      addressId: activeAddress?.id,
+      slot,
+      totalPayable,
+      cartItemCount: cartItems.length 
+    });
     
-    // Safety check: totalPayable should be > 0 (handled by button disable usually, but good to check)
     if (totalPayable <= 0) {
+      console.log("[PAY_NOW] validation_failed: cart_empty");
       toast.error("Cart is empty.");
       return;
     }
 
     if (!service || !vehicle || !activeAddress || !slot) {
+      console.log("[PAY_NOW] validation_failed: missing_fields", { 
+        service: !!service, 
+        vehicle: !!vehicle, 
+        address: !!activeAddress, 
+        slot: !!slot 
+      });
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
-      console.error("Validation failed", { hasService: !!service, hasVehicle: !!vehicle, hasAddress: !!activeAddress, slot });
       return;
     }
     
     setSubmitting(true);
+    console.log("[PAY_NOW] step: starting_booking_flow");
+
     try {
-      console.log("Calling confirm_customer_booking RPC");
-      // Use real-time pricing from cart items to ensure synchronization
+      console.log("[PAY_NOW] step: calling_rpc_confirm_booking");
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -193,29 +206,33 @@ function ServiceDetail() {
       });
       
       if (error) {
-        console.error("RPC Error:", error);
+        console.error("[PAY_NOW] error: rpc_failed", error);
         throw new Error(error.message);
       }
-      console.log("Booking created ID:", bId);
+      console.log("[PAY_NOW] step: booking_created", { bookingId: bId });
 
-      // Create Razorpay order with the CORRECT dynamic amount from the database booking record
-      console.log("Creating Razorpay order for booking:", bId);
+      console.log("[PAY_NOW] step: creating_razorpay_order_server");
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
-      console.log("Razorpay order created:", order);
+      console.log("[PAY_NOW] step: razorpay_order_received", { 
+        orderId: order.orderId, 
+        amount: order.amount,
+        keyPresent: !!order.keyId 
+      });
       
-      console.log("Opening Razorpay checkout");
+      console.log("[PAY_NOW] step: invoking_native_bridge");
       const result = await openRazorpayCheckout({ 
         keyId: order.keyId, 
         orderId: order.orderId, 
         amount: order.amount, 
         currency: "INR", 
         description: service.name, 
-        bookingId: bId 
+        bookingId: bId,
+        onOpened: () => console.log("[PAY_NOW] step: native_bridge_open_called")
       });
-      console.log("Razorpay checkout result:", result);
+      console.log("[PAY_NOW] step: native_bridge_result", result);
 
       if (result.status === "success") {
-        console.log("Verifying payment");
+        console.log("[PAY_NOW] step: starting_verification");
         await useServerFn(verifyRazorpayPayment)({ 
           data: { 
             bookingId: bId, 
@@ -224,16 +241,19 @@ function ServiceDetail() {
             razorpaySignature: result.signature 
           } 
         });
-        console.log("Payment verified, navigating to success");
+        console.log("[PAY_NOW] step: verification_success");
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
       } else if (result.status === "failed") {
-        console.error("Payment failed result:", result);
+        console.error("[PAY_NOW] error: payment_failed_status", result);
         toast.error(result.message || "Payment failed. Please try again.");
+      } else {
+        console.log("[PAY_NOW] status: payment_cancelled");
       }
     } catch (e: any) {
-      console.error("Booking process exception:", e);
+      console.error("[PAY_NOW] critical_exception:", e);
       toast.error(e.message || "Booking failed");
     } finally { 
+      console.log("[PAY_NOW] flow_finished");
       setSubmitting(false); 
     }
   };
@@ -516,18 +536,26 @@ function ServiceDetail() {
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
-            onClick={() => {
-              console.log("Pay Now button clicked");
+            onClick={(e) => {
+              // Stop any potential parent clicks or form submissions
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("[PAY_NOW] button_physical_click_received", { 
+                submitting, 
+                hasSlot: !!slot,
+                pointerEvents: window.getComputedStyle(e.currentTarget).pointerEvents,
+                zIndex: window.getComputedStyle(e.currentTarget).zIndex
+              });
               confirm();
             }}
             disabled={submitting || !slot}
             className={cn(
-              "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)]",
+              "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)] relative z-[99]",
               (submitting || !slot) && "opacity-50 grayscale shadow-none"
             )}
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 pointer-events-none">
                 PAY NOW <ChevronRight className="h-4 w-4" />
               </span>
             )}
