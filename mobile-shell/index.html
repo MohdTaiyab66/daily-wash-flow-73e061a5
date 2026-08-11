@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Urban Wash</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #0F172A; color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .wrap { display:flex; align-items:center; justify-content:center; min-height:100%; flex-direction:column; gap:16px; padding:24px; box-sizing:border-box; text-align:center; }
+      .spinner { width:36px; height:36px; border:3px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:s 1s linear infinite; }
+      .hint { max-width: 320px; color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.45; }
+      .action { display:none; margin-top: 4px; border:0; border-radius:10px; background:#fff; color:#0F172A; padding:11px 14px; font-weight:700; text-decoration:none; }
+      .failed .spinner { display:none; }
+      .failed .action { display:inline-block; }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
+    <script>
+      (function () {
+        var url = "https://daily-wash-flow.lovable.app/c";
+        window.URBANWASH_TARGET_URL = url;
+        setTimeout(function () {
+          var root = document.querySelector(".wrap");
+          var link = document.querySelector(".action");
+          if (root) root.className += " failed";
+          if (link) link.href = url;
+        }, 6000);
+        window.location.replace(url);
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="spinner"></div>
+      <div>Loading Urban Wash…</div>
+      <div class="hint">If this screen stays here, check internet access and tap retry.</div>
+      <a class="action" href="https://daily-wash-flow.lovable.app/c">Retry loading app</a>
+    </div>
+  </body>
+</html>
