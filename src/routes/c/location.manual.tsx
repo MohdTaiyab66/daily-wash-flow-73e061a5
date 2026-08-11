@@ -12,7 +12,7 @@ import { reverseGeocode } from "@/lib/geo.functions";
 import { cn } from "@/lib/utils";
 import { useLocationFlowStore } from "@/lib/location-flow-store";
 
-export const Route = createFileRoute("/c/location/search")({
+export const Route = createFileRoute("/c/location/manual")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     returnTo: z.string().optional().parse(search.returnTo),
