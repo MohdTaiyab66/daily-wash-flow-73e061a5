@@ -61,6 +61,8 @@ function LocationFlow() {
 
   // Initialize Maps
   useEffect(() => {
+    if (view !== 'manual_entry') return;
+
     let cancelled = false;
     (async () => {
       try {
