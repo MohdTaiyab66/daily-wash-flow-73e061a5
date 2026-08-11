@@ -46,7 +46,8 @@ function CustomerSplash() {
         if (cancelled) return;
         if (isCustomer) {
           const savedArea = localStorage.getItem("uw_customer_area");
-          navigate({ to: savedArea ? "/c/home" : "/c/location", replace: true });
+          // If we have an area, go home. If not, go to location flow which starts at onboarding.
+          navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
         } else {
           navigate({ to: "/c/auth", replace: true });
         }
