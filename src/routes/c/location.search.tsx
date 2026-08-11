@@ -275,7 +275,41 @@ function LocationFlow() {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // If we have a selected manual location, persist it now
+    if (selectedManualLocation) {
+      setLocation(selectedManualLocation);
+      localStorage.setItem("uw_customer_area", selectedManualLocation.area);
+      localStorage.setItem("uw_customer_full_address", selectedManualLocation.fullAddress);
+      localStorage.setItem("uw_customer_geo", JSON.stringify(selectedManualLocation.geo));
+      
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (uid) {
+          const { data: existing } = await supabase
+            .from("customer_addresses")
+            .select("id")
+            .eq("user_id", uid)
+            .eq("is_default", true)
+            .maybeSingle();
+          const payload = {
+            user_id: uid,
+            label: "Home",
+            address_line: selectedManualLocation.fullAddress,
+            area: selectedManualLocation.area,
+            pincode: selectedManualLocation.geo.pincode,
+            latitude: selectedManualLocation.geo.lat,
+            longitude: selectedManualLocation.geo.lng,
+            is_default: true,
+          };
+          existing?.id
+            ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+            : await supabase.from("customer_addresses").insert(payload);
+        }
+      } catch { /* ignore */ }
+    }
+
     if (searchParams.returnTo) {
       if (searchParams.returnTo.startsWith('/')) {
         navigate({ to: searchParams.returnTo as any });
