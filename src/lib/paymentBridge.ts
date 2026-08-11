@@ -68,7 +68,7 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
     notes: { booking_id: opts.bookingId },
     theme: { color: "#FF6B1A" },
     retry: { enabled: true, max_count: 1 },
-    method: "upi" // TASK 5: Force "upi" as documented
+    // method: "upi" // REMOVED for diagnostic build (STEP 4)
   };
 
   if (Object.keys(prefill).length > 0) options.prefill = prefill;
