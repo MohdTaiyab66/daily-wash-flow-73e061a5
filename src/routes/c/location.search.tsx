@@ -20,8 +20,10 @@ export const Route = createFileRoute("/c/location/search")({
   }),
   head: () => ({ meta: [{ title: "Location — Urban Wash" }] }),
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
+    // Faster initial load check
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
   },
