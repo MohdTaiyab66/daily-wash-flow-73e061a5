@@ -285,7 +285,6 @@ function ServiceDetail() {
       if (result.status === "success") {
         updateDiagStep('ui_open', 'ok');
         updateDiagStep('result', 'ok', undefined, 'SUCCESS');
-        const verifyPayment = useServerFn(verifyRazorpayPayment);
         await verifyPayment({ 
           data: { 
             bookingId: bId, 
