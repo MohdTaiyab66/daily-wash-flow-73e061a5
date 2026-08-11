@@ -287,14 +287,13 @@ function LocationFlow() {
           <p className="text-[15px] font-medium text-muted-foreground mt-2">We need your location to show you our serviceable hubs.</p>
         </div>
 
-        {/* LIVE MAP AREA (45-55% of screen) */}
-        <div className="flex-1 relative mb-10 min-h-[300px] max-h-[50%]">
+        <div className="flex-[3] relative mb-10 min-h-[350px]">
           <div 
             ref={mapRef}
-            className="w-full h-full rounded-[32px] overflow-hidden bg-gray-100 border border-black/5 shadow-inner"
+            className="absolute inset-0 rounded-[32px] overflow-hidden bg-gray-100 border border-black/5 shadow-inner"
           />
           {/* Bottom fade */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
         </div>
 
         {/* CTAs */}
