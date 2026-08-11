@@ -306,19 +306,19 @@ function LocationFlow() {
   // SCREEN 1: ONBOARDING (MAP + CTA)
   if (view === 'onboarding') {
     return (
-      <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(60px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
-        <div className="mb-6">
-          <h1 className="text-[26px] font-black tracking-tight text-[#1A1A1A] leading-tight">What's your location?</h1>
-          <p className="text-[15px] font-medium text-muted-foreground/60 mt-2 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
+      <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[max(48px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))] px-6 overflow-hidden">
+        <div className="mb-5">
+          <h1 className="text-[24px] font-black tracking-tight text-[#1A1A1A] leading-tight">What's your location?</h1>
+          <p className="text-[14px] font-medium text-muted-foreground/50 mt-1.5 max-w-[280px]">We need your location to show you our serviceable hubs.</p>
         </div>
 
-        <div className="flex-1 relative mb-6 min-h-[280px]">
+        <div className="flex-[0.92] relative mb-6 min-h-[260px]">
           <div 
             ref={mapRef}
             className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm"
           />
           {/* Bottom fade */}
-          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
         </div>
 
         {/* CTAs */}
@@ -347,21 +347,20 @@ function LocationFlow() {
 
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[60px] rounded-2xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[17px] shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
+            className="w-full h-[58px] rounded-2xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group relative overflow-hidden"
           >
             <Navigation className="h-5 w-5 fill-white group-active:text-[#FF6B00] transition-colors" />
             Use current location
-            <div className="absolute right-6 opacity-10">
+            <div className="absolute right-6 opacity-20 pointer-events-none">
               <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
             </div>
           </Button>
           
           <button 
             onClick={() => setView('search')}
-            className="w-full py-2 text-[#1A1A1A] font-black text-center text-[15px] active:opacity-70 transition-opacity flex items-center justify-center gap-1 group"
+            className="w-full py-2 text-[#1A1A1A] font-bold text-center text-[14px] active:text-[#FF6B00] transition-colors flex items-center justify-center gap-1"
           >
             Enter location manually
-            <span className="h-[2px] w-0 bg-[#FF6B00] transition-all group-hover:w-4" />
           </button>
         </div>
       </div>
@@ -391,34 +390,34 @@ function LocationFlow() {
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center gap-4">
+      <div className="px-6 py-3 flex items-center gap-4">
         <button 
           onClick={() => setView('onboarding')}
-          className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 active:scale-90 transition-transform"
+          className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm border border-black/5 active:scale-90 transition-transform"
         >
           <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
         </button>
-        <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
+        <h1 className="text-[19px] font-black tracking-tight text-[#1A1A1A]">Location</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-5">
-        {/* SUCCESS CARD - Compact & Neutral */}
+      <div className="flex-1 overflow-y-auto px-6 pb-10 space-y-4">
+        {/* SUCCESS CARD - Compact Row */}
         {savedArea && (
           <div className="animate-in slide-in-from-top-4 duration-500">
-            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-3 shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
-                <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
+            <div className="p-3.5 rounded-[20px] bg-white border border-black/5 flex items-center gap-3 shadow-sm">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
+                <CheckCircle2 className="h-5 w-5 text-[#4CAF50]" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.15em] mb-0.5">LOCATION SET</span>
-                <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
+                <span className="block text-[8px] font-black text-[#4CAF50] uppercase tracking-[0.15em] mb-0.5">LOCATION SET</span>
+                <span className="block text-[15px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
               </div>
               <Button 
                 onClick={handleContinue}
-                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 group flex items-center gap-2"
+                className="h-9 px-4 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-bold text-[12px] shadow-sm transition-all active:scale-95 group flex items-center gap-2"
               >
                 Continue
-                <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00]" />
+                <div className="h-1 w-1 rounded-full bg-[#FF6B00] opacity-60" />
               </Button>
             </div>
           </div>
@@ -426,13 +425,13 @@ function LocationFlow() {
 
         {/* SEARCH BOX */}
         <div className="relative group">
-          <div className="flex items-center gap-3 h-[60px] rounded-2xl border border-black/5 bg-white px-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] focus-within:ring-1 focus-within:ring-[#FF6B00]/20 transition-all">
+          <div className="flex items-center gap-3 h-[56px] rounded-xl border border-black/5 bg-white px-5 shadow-sm focus-within:ring-1 focus-within:ring-[#FF6B00]/10 transition-all">
             <Search className="h-5 w-5 text-[#FF6B00]" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search area, landmark or society"
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[15px] font-bold placeholder:font-medium placeholder:text-muted-foreground/25"
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-full text-[14px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30"
             />
             {q && (
               <button 
@@ -449,23 +448,23 @@ function LocationFlow() {
         {!q && (
           <button
             onClick={() => handleUseCurrentLocation(true)}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.02)] group"
+            className="w-full flex items-center gap-4 p-3.5 rounded-xl bg-white border border-black/5 text-left active:bg-gray-50 transition-colors shadow-sm group"
           >
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FF6B00]/5 group-active:bg-[#FF6B00]/10 transition-colors">
-              <Navigation className="h-5 w-5 text-[#FF6B00]" />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#FF6B00]/5 group-active:bg-[#FF6B00]/10 transition-colors">
+              <Navigation className="h-4.5 w-4.5 text-[#FF6B00]" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="block text-[15px] font-black text-[#1A1A1A]">Use current location</span>
-              <span className="inline-block mt-0.5 text-[9px] font-black text-[#FF6B00] uppercase tracking-[0.1em]">FASTEST WAY</span>
+              <span className="block text-[14px] font-bold text-[#1A1A1A]">Use current location</span>
+              <span className="inline-block mt-0.5 text-[8px] font-black text-[#FF6B00] uppercase tracking-[0.1em]">FASTEST WAY</span>
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-400 transition-colors" />
+            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-400 transition-colors" />
           </button>
         )}
 
-        {/* SUBTLE DIVIDER */}
-        <div className="flex items-center gap-3 px-10">
+        {/* INTENTIONAL DIVIDER */}
+        <div className="flex items-center gap-3 px-12 py-1">
           <div className="h-[1px] flex-1 bg-black/5" />
-          <span className="text-[10px] font-black text-black/15 uppercase tracking-[0.25em]">
+          <span className="text-[9px] font-black text-black/20 uppercase tracking-[0.2em]">
             {q.trim().length >= 2 && suggestions.length > 0 ? 'Search Results' : 'OR'}
           </span>
           <div className="h-[1px] flex-1 bg-black/5" />
@@ -505,14 +504,14 @@ function LocationFlow() {
             </button>
           ))}
 
-          {/* COMPACT EMPTY STATE */}
+          {/* COMPACT INFORMATION PANEL */}
           {!q && suggestions.length === 0 && (
-            <div className="py-8 text-center bg-[#F8F9FA]/50 rounded-[28px] border border-black/5 px-8">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-4 flex items-center justify-center">
-                <Search className="h-5 w-5 text-[#FF6B00]/20" strokeWidth={3} />
+            <div className="py-7 text-center bg-[#F8F9FA]/40 rounded-[24px] border border-black/5 px-6">
+              <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-black/5 mx-auto mb-3.5 flex items-center justify-center">
+                <Search className="h-4.5 w-4.5 text-[#FF6B00]" strokeWidth={3} />
               </div>
-              <h3 className="text-[15px] font-black text-[#1A1A1A]">Find your service area</h3>
-              <p className="mt-1 text-[12px] font-medium text-muted-foreground/40 leading-relaxed max-w-[200px] mx-auto">
+              <h3 className="text-[14px] font-black text-[#1A1A1A]">Find your service area</h3>
+              <p className="mt-1 text-[11.5px] font-medium text-muted-foreground/40 leading-relaxed max-w-[200px] mx-auto">
                 Enter your apartment, society, or office name to check doorstep availability.
               </p>
             </div>
