@@ -283,7 +283,7 @@ function LocationFlow() {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error("Invalid location");
       await persistLocation(Number(lat), Number(lng), s.primary);
       setView('search');
-      setQ("");
+
     } catch (e) {
       toast.error("Could not load location");
     } finally {
