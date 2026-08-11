@@ -499,19 +499,15 @@ function LocationFlow() {
         {/* SUCCESS CARD - Unified confirmation */}
         {savedArea && (
           <div className="animate-in slide-in-from-top-4 duration-500">
-            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-4 shadow-sm">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#4CAF50]/5">
-                <CheckCircle2 className="h-6 w-6 text-[#4CAF50]" />
-              </div>
+            <div className="p-4 rounded-[24px] bg-white border border-black/5 flex items-center gap-4 shadow-sm border-l-4 border-l-[#4CAF50]">
               <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-0.5">LOCATION SET</span>
+                <span className="block text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.2em] mb-0.5">✓ LOCATION SET</span>
                 <span className="block text-[16px] font-black text-[#1A1A1A] truncate">{savedArea}</span>
               </div>
               <Button 
                 onClick={handleContinue}
                 className="h-10 px-5 rounded-xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
                 Continue
               </Button>
             </div>
