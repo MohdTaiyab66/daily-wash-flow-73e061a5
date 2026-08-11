@@ -360,6 +360,7 @@ function LocationFlow() {
           >
             Enter location manually
           </button>
+
         </div>
       </div>
     );
