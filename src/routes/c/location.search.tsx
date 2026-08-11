@@ -134,7 +134,7 @@ function LocationFlow() {
       googleMapRef.current = null;
       markerRef.current = null;
     };
-  }, []); // Run only once to avoid re-mounting maps when local state changes
+  }, []); // Static effect for Onboarding map
 
   // Autocomplete
   useEffect(() => {
