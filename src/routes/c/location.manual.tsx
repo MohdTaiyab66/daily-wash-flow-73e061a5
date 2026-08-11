@@ -25,6 +25,9 @@ export const Route = createFileRoute("/c/location/manual")({
       throw redirect({ to: "/c/auth" });
     }
   },
+  loader: async ({ search }) => {
+    return { returnTo: search.returnTo };
+  },
   component: LocationFlow,
 });
 
