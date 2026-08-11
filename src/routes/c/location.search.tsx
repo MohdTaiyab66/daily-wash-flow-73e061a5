@@ -354,6 +354,15 @@ function LocationFlow() {
     }
   };
 
+  const skipToHomeIfSaved = () => {
+    if (savedArea && savedGeo) {
+      console.log("[LOCATION] using cached location immediately");
+      handleContinue();
+      return true;
+    }
+    return false;
+  };
+
   // SCREEN 1: ONBOARDING
   if (view === 'onboarding') {
     // If we already have a saved area, we can show it as "Last used" but the prompt asks to skip intermediate screens
