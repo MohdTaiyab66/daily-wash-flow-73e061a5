@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface LocationState {
-  view: 'onboarding' | 'locating' | 'search';
-  setView: (view: 'onboarding' | 'locating' | 'search') => void;
+  view: 'onboarding' | 'locating' | 'search' | 'manual_entry';
+  setView: (view: 'onboarding' | 'locating' | 'search' | 'manual_entry') => void;
+
   
   // Selection state
   area: string | null;
