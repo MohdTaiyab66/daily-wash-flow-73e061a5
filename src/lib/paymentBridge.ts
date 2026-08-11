@@ -13,7 +13,7 @@
  * Nothing is activated here: order creation, signature verification, the
  * webhook and booking activation are server-side and untouched by this layer.
  */
-import { registerPlugin } from "@capacitor/core";
+import { registerPlugin, Capacitor } from "@capacitor/core";
 
 /** Exactly the payload the native plugin accepts. */
 export type PaymentBridgeOptions = {
@@ -91,23 +91,30 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
  * when the native SDK throws.
  */
 export async function openRazorpayCheckout(opts: CheckoutOptions): Promise<RazorpayResult> {
+  const platform = Capacitor.getPlatform();
+  const attemptId = Math.random().toString(36).substring(7);
+  
   try {
-    console.log("[PAY_NOW:BRIDGE] open_requested", { orderId: opts.orderId, amount: opts.amount });
-    opts.onOpened?.();
+    console.log(`[PAYMENT] attempt=${attemptId} platform=${platform} open_requested`, { orderId: opts.orderId });
     
-    if (import.meta.env.DEV) {
-      console.log("[PAY_NOW:BRIDGE] dev_mode_detected");
+    if (platform === 'web') {
+      console.warn(`[PAYMENT] attempt=${attemptId} skipping native plugin on web`);
+      return { 
+        status: "failed", 
+        message: "Mobile payments are only supported in the Android app. Please open the Urban Wash app to complete your booking." 
+      };
     }
 
+    opts.onOpened?.();
+    
     const nativeOptions = toNativeOptions(opts);
-    console.log("[PAY_NOW:BRIDGE] calling_native_open", { 
+    console.log(`[PAYMENT] attempt=${attemptId} calling_native_open`, { 
       pluginName: "UrbanWashCheckout",
-      method: "open",
-      options: { ...nativeOptions, key: "****" }
+      method: "open"
     });
     
     const res = await UrbanWashCheckout.open(nativeOptions);
-    console.log("[PAY_NOW:BRIDGE] native_response_received", res);
+    console.log(`[PAYMENT] attempt=${attemptId} native_response_received`, res);
 
     if ("razorpay_payment_id" in res && res.razorpay_payment_id) {
       return {
@@ -120,7 +127,7 @@ export async function openRazorpayCheckout(opts: CheckoutOptions): Promise<Razor
     console.log("[PAY_NOW:BRIDGE] payment_cancelled_by_user");
     return { status: "cancelled" };
   } catch (e: any) {
-    console.error("[PAY_NOW:BRIDGE] fatal_plugin_error", e);
+    console.error(`[PAYMENT] attempt=${attemptId} fatal_plugin_error`, e);
     const message = String(e?.message ?? e?.description ?? e ?? "Payment failed");
     return { status: "failed", code: e?.code ? String(e.code) : undefined, message };
   }
