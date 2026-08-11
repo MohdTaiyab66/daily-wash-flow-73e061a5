@@ -156,7 +156,11 @@ function LocationSearch() {
         }
       } catch { /* non-fatal */ }
       if (searchParams.returnTo) {
-        window.location.href = searchParams.returnTo;
+        if (searchParams.returnTo.startsWith('/')) {
+          navigate({ to: searchParams.returnTo as any });
+        } else {
+          window.location.href = searchParams.returnTo;
+        }
       } else {
         navigate({ to: "/c/home" });
       }
