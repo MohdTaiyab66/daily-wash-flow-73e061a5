@@ -82,7 +82,7 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
     name: "Urban Wash",
     description: opts.description,
     notes: { booking_id: opts.bookingId },
-    theme: { color: "#FF6B1A" },
+    theme: { color: "#FF6B1A" }, method: "upi",
     retry: { enabled: true, max_count: 1 }
   };
   
