@@ -185,7 +185,7 @@ function ServiceDetail() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const { data } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
       return data;
     }
   });
