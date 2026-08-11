@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Home, Briefcase, Wallet, Gift, User, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-[calc(64px+env(safe-area-inset-bottom))]">
       <TopBar />
       <PartnerRuntime />
       <Outlet />
@@ -133,8 +134,8 @@ function BottomNav() {
     { to: "/app/profile", label: t("profile"), icon: User },
   ];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto grid max-w-md grid-cols-5">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex max-w-md items-center justify-around h-[64px] px-4">
         {tabs.map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
           const Icon = t.icon;
@@ -142,23 +143,25 @@ function BottomNav() {
             <Link
               key={t.to}
               to={t.to}
-              className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${active ? "text-primary" : "text-muted-foreground"}`}
+              className="flex flex-1 flex-col items-center justify-center transition-all group"
             >
-              <span
-                className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
-                  active ? "bg-primary/12 scale-105" : "bg-transparent"
-                }`}
+              <div
+                className={cn(
+                  "grid h-[44px] w-[44px] place-items-center rounded-2xl transition-all duration-300",
+                  active ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8A8A8A]"
+                )}
               >
-                <Icon
-                  className="h-5 w-5"
-                  {...(active ? { fill: "currentColor", strokeWidth: 1.5 } : {})}
-                />
+                <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
+              </div>
+              <span className={cn(
+                "mt-1 text-[13px] font-medium tracking-tight transition-colors",
+                active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
+              )}>
+                {t.label}
               </span>
-              {t.label}
             </Link>
           );
         })}
-
       </div>
     </nav>
   );
