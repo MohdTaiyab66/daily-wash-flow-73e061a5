@@ -83,7 +83,13 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
     description: opts.description,
     notes: { booking_id: opts.bookingId },
     theme: { color: "#FF6B1A" },
+    retry: { enabled: true, max_count: 1 }
   };
+  
+  // MATCH RAZORPAY DOCUMENTATION: Force "upi" method if we want to ensure it appears.
+  // We'll leave it out for the general case first, or explicitly add it if requested.
+  // options.method = "upi"; 
+
   if (Object.keys(prefill).length > 0) options.prefill = prefill;
   return options;
 }
