@@ -248,7 +248,11 @@ function ServiceDetail() {
       }
       updateDiagStep('rpc', 'ok');
 
-      const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
+      console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
+      const createOrder = useServerFn(createRazorpayOrder);
+      const order = await createOrder({ data: { bookingId: bId } });
+      console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
+
       updateDiagStep('order', 'ok');
       
       if (!order.orderId) {
@@ -279,7 +283,8 @@ function ServiceDetail() {
       if (result.status === "success") {
         updateDiagStep('ui_open', 'ok');
         updateDiagStep('result', 'ok', undefined, 'SUCCESS');
-        await useServerFn(verifyRazorpayPayment)({ 
+        const verifyPayment = useServerFn(verifyRazorpayPayment);
+        await verifyPayment({ 
           data: { 
             bookingId: bId, 
             razorpayOrderId: result.orderId, 
