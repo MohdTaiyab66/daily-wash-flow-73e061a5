@@ -252,7 +252,6 @@ function ServiceDetail() {
       updateDiagStep('rpc', 'ok');
 
       console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
-      const createOrder = useServerFn(createRazorpayOrder);
       const order = await createOrder({ data: { bookingId: bId } });
       console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
 
