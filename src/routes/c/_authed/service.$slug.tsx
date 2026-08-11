@@ -164,8 +164,10 @@ function ServiceDetail() {
   }, [galleryQ.data, slug]);
 
   const confirm = async () => {
+    console.log("Confirm initiated", { service, vehicle, activeAddress, slot, totalPayable });
     if (!service || !vehicle || !activeAddress || !slot) {
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
+      console.error("Validation failed", { hasService: !!service, hasVehicle: !!vehicle, hasAddress: !!activeAddress, slot });
       return;
     }
     
@@ -175,6 +177,7 @@ function ServiceDetail() {
     
     setSubmitting(true);
     try {
+      console.log("Calling confirm_customer_booking RPC");
       const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
@@ -183,11 +186,19 @@ function ServiceDetail() {
         p_scheduled_time: slot,
         p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
-      if (error) throw new Error(error.message);
+      
+      if (error) {
+        console.error("RPC Error:", error);
+        throw new Error(error.message);
+      }
+      console.log("Booking created ID:", bId);
 
       // Create Razorpay order with the CORRECT dynamic amount
+      console.log("Creating Razorpay order for booking:", bId);
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
+      console.log("Razorpay order created:", order);
       
+      console.log("Opening Razorpay checkout");
       const result = await openRazorpayCheckout({ 
         keyId: order.keyId, 
         orderId: order.orderId, 
@@ -196,8 +207,10 @@ function ServiceDetail() {
         description: service.name, 
         bookingId: bId 
       });
+      console.log("Razorpay checkout result:", result);
 
       if (result.status === "success") {
+        console.log("Verifying payment");
         await useServerFn(verifyRazorpayPayment)({ 
           data: { 
             bookingId: bId, 
@@ -206,11 +219,14 @@ function ServiceDetail() {
             razorpaySignature: result.signature 
           } 
         });
+        console.log("Payment verified, navigating to success");
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
       } else if (result.status === "failed") {
+        console.error("Payment failed result:", result);
         toast.error(result.message || "Payment failed. Please try again.");
       }
     } catch (e: any) {
+      console.error("Booking process exception:", e);
       toast.error(e.message || "Booking failed");
     } finally { 
       setSubmitting(false); 
