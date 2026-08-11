@@ -345,12 +345,12 @@ function LocationFlow() {
             </div>
           )}
 
-          {/* PRIMARY CTA - URBAN WASH ORANGE */}
+          {/* PRIMARY CTA - BLACK / DARK CHARCOAL */}
           <Button 
             onClick={() => handleUseCurrentLocation(false)}
-            className="w-full h-[58px] rounded-2xl bg-[#FF6B00] hover:bg-[#FF8C33] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
+            className="w-full h-[58px] rounded-2xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[16px] shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] group"
           >
-            <Navigation className="h-5 w-5 fill-white" />
+            <Navigation className="h-5 w-5 text-[#FF6B00] fill-[#FF6B00]" />
             Use current location
           </Button>
           
