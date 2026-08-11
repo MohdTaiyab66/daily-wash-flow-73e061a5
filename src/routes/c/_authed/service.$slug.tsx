@@ -511,11 +511,14 @@ function ServiceDetail() {
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
-            onClick={confirm} 
-            disabled={submitting || !slot || totalPayable <= 0} 
+            onClick={() => {
+              console.log("Pay Now button clicked");
+              confirm();
+            }}
+            disabled={submitting || !slot}
             className={cn(
               "h-[54px] w-[180px] rounded-[18px] bg-[#EA580C] text-white font-[900] text-[15px] active:scale-[0.96] transition-all shadow-[0_8px_25px_rgba(234,88,12,0.25)]",
-              (!slot || totalPayable <= 0) && "opacity-50 grayscale shadow-none"
+              (submitting || !slot) && "opacity-50 grayscale shadow-none"
             )}
           >
             {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : (
