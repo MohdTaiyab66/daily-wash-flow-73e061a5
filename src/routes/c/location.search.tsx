@@ -68,7 +68,8 @@ function LocationFlow() {
 
   // Initialize Maps
   useEffect(() => {
-    if (view !== 'manual_entry') return;
+    // Only initialize map if we have a container for it
+    if (!mapRef.current) return;
 
     let cancelled = false;
     (async () => {
@@ -85,6 +86,7 @@ function LocationFlow() {
 
         // Initialize map
         if (mapRef.current) {
+          // Clean up any existing map instance if needed (though React should handle this via ref update)
           const initialCenter = savedGeo ? { lat: savedGeo.lat, lng: savedGeo.lng } : LUCKNOW_CENTER;
           googleMapRef.current = new maps.Map(mapRef.current, {
             center: initialCenter,
@@ -112,7 +114,12 @@ function LocationFlow() {
         console.warn("[location.search] Maps API load failed", e);
       }
     })();
-    return () => { cancelled = true; };
+    return () => { 
+      cancelled = true;
+      // Cleanup map references when view changes
+      googleMapRef.current = null;
+      markerRef.current = null;
+    };
   }, [view]);
 
   // Autocomplete
