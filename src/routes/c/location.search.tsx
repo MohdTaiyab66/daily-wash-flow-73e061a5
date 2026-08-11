@@ -498,8 +498,9 @@ function LocationFlow() {
               </div>
               <Button 
                 onClick={handleContinue}
-                className="h-10 px-5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
+                className="h-10 px-5 rounded-xl bg-[#181818] hover:bg-[#252525] text-white font-black text-[13px] shadow-sm transition-all active:scale-95 flex items-center gap-2"
               >
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
                 Continue
               </Button>
             </div>
