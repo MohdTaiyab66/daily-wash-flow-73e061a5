@@ -148,7 +148,7 @@ function BottomNav() {
               <div
                 className={cn(
                   "grid h-[44px] w-[44px] place-items-center rounded-2xl transition-all duration-300",
-                  active ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(var(--primary-rgb),0.2)]" : "bg-transparent text-[#8A8A8A]"
+                  active ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8A8A8A]"
                 )}
               >
                 <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
