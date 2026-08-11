@@ -462,13 +462,14 @@ function LocationFlow() {
         )}
 
         {/* INTENTIONAL DIVIDER */}
-        <div className="flex items-center gap-3 px-12 py-1">
+        <div className="flex items-center gap-3 px-10 py-1">
           <div className="h-[1px] flex-1 bg-black/5" />
-          <span className="text-[9px] font-black text-black/20 uppercase tracking-[0.2em]">
+          <span className="text-[10px] font-black text-black/15 uppercase tracking-[0.25em]">
             {q.trim().length >= 2 && suggestions.length > 0 ? 'Search Results' : 'OR'}
           </span>
           <div className="h-[1px] flex-1 bg-black/5" />
         </div>
+
 
         {/* RESULTS AREA */}
         <div className="space-y-3">
