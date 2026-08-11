@@ -169,41 +169,48 @@ function LocationFlow() {
     const areaName = loc.area || loc.city || fallbackLabel || "Your area";
     const geo = { lat, lng, pincode: loc.pincode || '', state: loc.state || '', city: loc.city || '' };
     
-    setLocation({
+    const locationData = {
       area: areaName,
       fullAddress: loc.formatted_address,
       geo
-    });
+    };
 
-    localStorage.setItem("uw_customer_area", areaName);
-    localStorage.setItem("uw_customer_full_address", loc.formatted_address);
-    localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
-    
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
-      if (uid) {
-        const { data: existing } = await supabase
-          .from("customer_addresses")
-          .select("id")
-          .eq("user_id", uid)
-          .eq("is_default", true)
-          .maybeSingle();
-        const payload = {
-          user_id: uid,
-          label: "Home",
-          address_line: loc.address_line || loc.formatted_address,
-          area: loc.area,
-          pincode: loc.pincode,
-          latitude: lat,
-          longitude: lng,
-          is_default: true,
-        };
-        existing?.id
-          ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
-          : await supabase.from("customer_addresses").insert(payload);
-      }
-    } catch { /* ignore */ }
+    // If manual entry, we just store it locally first
+    if (view === 'manual_entry') {
+      setSelectedManualLocation(locationData);
+    } else {
+      // Auto flow persists immediately
+      setLocation(locationData);
+      localStorage.setItem("uw_customer_area", areaName);
+      localStorage.setItem("uw_customer_full_address", loc.formatted_address);
+      localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+      
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (uid) {
+          const { data: existing } = await supabase
+            .from("customer_addresses")
+            .select("id")
+            .eq("user_id", uid)
+            .eq("is_default", true)
+            .maybeSingle();
+          const payload = {
+            user_id: uid,
+            label: "Home",
+            address_line: loc.address_line || loc.formatted_address,
+            area: loc.area,
+            pincode: loc.pincode,
+            latitude: lat,
+            longitude: lng,
+            is_default: true,
+          };
+          existing?.id
+            ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+            : await supabase.from("customer_addresses").insert(payload);
+        }
+      } catch { /* ignore */ }
+    }
     
     return areaName;
   };
