@@ -81,7 +81,7 @@ function LocationFlow() {
             center: initialCenter,
             zoom: 14,
             disableDefaultUI: true,
-            styles: mapStyles,
+            styles: [], // Standard Google Maps styling
             gestureHandling: "greedy"
           });
           
@@ -91,12 +91,24 @@ function LocationFlow() {
               map: googleMapRef.current,
               icon: {
                 path: window.google.maps.SymbolPath.CIRCLE,
-                fillColor: '#FF6B00',
+                fillColor: '#4285F4', // Standard Google Blue
                 fillOpacity: 1,
                 strokeColor: '#FFFFFF',
                 strokeWeight: 2,
-                scale: 8,
+                scale: 7,
               }
+            });
+
+            // Add accuracy circle
+            new window.google.maps.Circle({
+              strokeColor: "#4285F4",
+              strokeOpacity: 0.15,
+              strokeWeight: 0,
+              fillColor: "#4285F4",
+              fillOpacity: 0.1,
+              map: googleMapRef.current,
+              center: initialCenter,
+              radius: 100, // 100 meters default
             });
           }
         }
