@@ -185,7 +185,7 @@ function ServiceDetail() {
         service: !!service, 
         vehicle: !!vehicle, 
         address: !!activeAddress, 
-        slot 
+        slot: !!slot 
       });
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
       return;
