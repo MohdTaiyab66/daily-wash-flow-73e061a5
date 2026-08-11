@@ -47,7 +47,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                     "mt-1 text-[13px] font-medium tracking-tight transition-colors",
                     active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
                   )}>
-                    {n.label.charAt(0) + n.label.slice(1).toLowerCase()}
+                    {n.label === "HOME" ? "HOME" : n.label.charAt(0) + n.label.slice(1).toLowerCase()}
                   </span>
                 </Link>
               );
