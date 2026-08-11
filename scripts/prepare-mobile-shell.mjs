@@ -21,7 +21,7 @@ const shellBuildInfoPath = join(shellDir, "build-info.json");
 const buildInfo = {
   app: variant,
   version: process.env.PARTNER_APP_VERSION || "1.0.32",
-  build: process.env.PARTNER_BUILD_ID || `manual-${new Date().toISOString().split("T")[0]}`,
+  build: process.env.PARTNER_BUILD_ID || "2026-07-18-trace-01",
   buildNumber: process.env.PARTNER_VERSION_CODE || "32",
   buildTime: new Date().toISOString(),
 };
