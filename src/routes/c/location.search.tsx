@@ -331,6 +331,8 @@ function LocationFlow() {
         </div>
 
         <div className="flex-[0.92] relative mb-6 min-h-[260px]">
+          {/* Note: In this view, we use a different ref if we want to avoid re-using the same div, 
+              but since view changes, the manual_entry map won't exist yet anyway. */}
           <div ref={mapRef} className="absolute inset-0 rounded-[28px] overflow-hidden bg-gray-100 border border-black/5 shadow-sm" />
           <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#FDFDFD] to-transparent pointer-events-none z-10" />
         </div>
