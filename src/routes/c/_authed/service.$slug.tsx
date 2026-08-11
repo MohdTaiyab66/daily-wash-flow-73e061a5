@@ -89,34 +89,44 @@ function ServiceDetail() {
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  // Diagnostic panel state
   const [diag, setDiag] = useState<{
     open: boolean;
-    steps: {
-      click: 'pending' | 'ok' | 'err';
-      validation: 'pending' | 'ok' | 'err';
-      rpc: 'pending' | 'ok' | 'err';
-      order: 'pending' | 'ok' | 'err';
-      orderId: 'pending' | 'ok' | 'err';
-      bridge: 'pending' | 'ok' | 'err';
-      native: 'pending' | 'ok' | 'err';
-      result: 'waiting' | 'success' | 'failed' | 'cancelled';
+    steps: Array<{
+      id: string;
+      label: string;
+      status: 'pending' | 'ok' | 'err';
+      time?: string;
       error?: string;
       details?: string;
+    }>;
+    orderInfo?: {
+      id: string;
+      amount: number;
     };
   }>({
     open: false,
-    steps: {
-      click: 'pending',
-      validation: 'pending',
-      rpc: 'pending',
-      order: 'pending',
-      orderId: 'pending',
-      bridge: 'pending',
-      native: 'pending',
-      result: 'waiting'
-    }
+    steps: [
+      { id: 'click', label: '1. PAY NOW CLICKED', status: 'pending' },
+      { id: 'validation', label: '2. VALIDATION', status: 'pending' },
+      { id: 'rpc', label: '3. CONFIRM CUSTOMER BOOKING RPC', status: 'pending' },
+      { id: 'order', label: '4. RAZORPAY ORDER CREATION', status: 'pending' },
+      { id: 'orderId', label: '5. ORDER ID RECEIVED', status: 'pending' },
+      { id: 'bridge', label: '6. CAPACITOR BRIDGE CALLED', status: 'pending' },
+      { id: 'plugin', label: '7. URBANWASHCHECKOUT NATIVE PLUGIN RECEIVED', status: 'pending' },
+      { id: 'sdk_call', label: '8. RAZORPAY SDK OPEN CALLED', status: 'pending' },
+      { id: 'ui_open', label: '9. RAZORPAY CHECKOUT OPENED', status: 'pending' },
+      { id: 'result', label: '10. PAYMENT RESULT', status: 'pending' },
+    ]
   });
+
+  const updateDiagStep = (id: string, status: 'ok' | 'err', error?: string, details?: string) => {
+    setDiag(prev => ({
+      ...prev,
+      steps: prev.steps.map(s => 
+        s.id === id ? { ...s, status, time: new Date().toLocaleTimeString(), error, details } : s
+      )
+    }));
+  };
 
   const { items: cartItems, updateQuantity, setBaseService } = useCartStore();
 
@@ -195,46 +205,31 @@ function ServiceDetail() {
 
   const confirm = async () => {
     setDiag(prev => ({
+      ...prev,
       open: true,
-      steps: {
-        click: 'ok',
-        validation: 'pending',
-        rpc: 'pending',
-        order: 'pending',
-        orderId: 'pending',
-        bridge: 'pending',
-        native: 'pending',
-        result: 'waiting'
-      }
+      steps: prev.steps.map(s => ({ ...s, status: 'pending', error: undefined, time: undefined })),
+      orderInfo: undefined
     }));
 
-    console.log("[PAY_NOW] confirm_initiated", { 
-      slug,
-      vehicleId: vehicle?.id,
-      addressId: activeAddress?.id,
-      slot,
-      totalPayable,
-      cartItemCount: cartItems.length 
-    });
-    
+    updateDiagStep('click', 'ok');
+
     if (totalPayable <= 0) {
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, validation: 'err', error: 'Cart is empty' } }));
+      updateDiagStep('validation', 'err', 'Cart is empty');
       toast.error("Cart is empty.");
       return;
     }
 
     if (!service || !vehicle || !activeAddress || !slot) {
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, validation: 'err', error: !slot ? "Time slot missing" : "Selections incomplete" } }));
+      updateDiagStep('validation', 'err', !slot ? "Time slot missing" : "Selections incomplete");
       toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
       return;
     }
 
-    setDiag(prev => ({ ...prev, steps: { ...prev.steps, validation: 'ok' } }));
+    updateDiagStep('validation', 'ok');
     setSubmitting(true);
 
     try {
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, rpc: 'pending' } }));
-      const { data: bId, error } = await supabase.rpc("confirm_customer_booking", {
+      const { data: bId, error: rpcErr } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
         p_vehicle_id: vehicle.id,
         p_address_id: activeAddress.id,
@@ -243,22 +238,25 @@ function ServiceDetail() {
         p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
       });
       
-      if (error) {
-        setDiag(prev => ({ ...prev, steps: { ...prev.steps, rpc: 'err', error: error.message } }));
-        throw new Error(error.message);
+      if (rpcErr) {
+        updateDiagStep('rpc', 'err', rpcErr.message);
+        throw new Error(rpcErr.message);
       }
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, rpc: 'ok' } }));
+      updateDiagStep('rpc', 'ok');
 
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, order: 'pending' } }));
       const order = await useServerFn(createRazorpayOrder)({ data: { bookingId: bId } });
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, order: 'ok', orderId: order.orderId ? 'ok' : 'err' } }));
+      updateDiagStep('order', 'ok');
       
       if (!order.orderId) {
-        setDiag(prev => ({ ...prev, steps: { ...prev.steps, orderId: 'err', error: 'Order ID missing from server' } }));
+        updateDiagStep('orderId', 'err', 'Order ID missing from response');
         throw new Error("Order creation failed: No Order ID");
       }
+      
+      setDiag(prev => ({ ...prev, orderInfo: { id: order.orderId, amount: order.amount } }));
+      updateDiagStep('orderId', 'ok');
 
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, bridge: 'pending' } }));
+      updateDiagStep('bridge', 'ok');
+      
       const result = await openRazorpayCheckout({ 
         keyId: order.keyId, 
         orderId: order.orderId, 
@@ -267,15 +265,16 @@ function ServiceDetail() {
         description: service.name, 
         bookingId: bId,
         onOpened: () => {
-          console.log("[PAY_NOW] native_bridge_open_called");
-          setDiag(prev => ({ ...prev, steps: { ...prev.steps, native: 'ok' } }));
+          // These status updates depend on Capacitor actually reaching the native side
+          updateDiagStep('plugin', 'ok');
+          updateDiagStep('sdk_call', 'ok');
+          // Note: ui_open will be marked ok if result is not a fatal error immediately
         }
       });
 
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, bridge: 'ok' } }));
-
       if (result.status === "success") {
-        setDiag(prev => ({ ...prev, steps: { ...prev.steps, result: 'success' } }));
+        updateDiagStep('ui_open', 'ok');
+        updateDiagStep('result', 'ok', undefined, 'SUCCESS');
         await useServerFn(verifyRazorpayPayment)({ 
           data: { 
             bookingId: bId, 
@@ -286,14 +285,29 @@ function ServiceDetail() {
         });
         navigate({ to: "/c/booking-success", search: { bookingId: bId } });
       } else if (result.status === "failed") {
-        setDiag(prev => ({ ...prev, steps: { ...prev.steps, result: 'failed', error: result.message } }));
+        updateDiagStep('ui_open', 'err', result.message);
+        updateDiagStep('result', 'err', result.message, 'FAILED');
         toast.error(result.message || "Payment failed.");
       } else {
-        setDiag(prev => ({ ...prev, steps: { ...prev.steps, result: 'cancelled' } }));
+        // Cancelled
+        updateDiagStep('ui_open', 'ok', 'Closed by user');
+        updateDiagStep('result', 'ok', undefined, 'CANCELLED');
       }
     } catch (e: any) {
       console.error("[PAY_NOW] critical_exception:", e);
-      setDiag(prev => ({ ...prev, steps: { ...prev.steps, error: e.message || "Unknown error" } }));
+      // Find the first pending step and mark as error if not already marked
+      setDiag(prev => {
+        const firstPending = prev.steps.find(s => s.status === 'pending');
+        if (firstPending) {
+          return {
+            ...prev,
+            steps: prev.steps.map(s => 
+              s.id === firstPending.id ? { ...s, status: 'err', error: e.message } : s
+            )
+          };
+        }
+        return prev;
+      });
       toast.error(e.message || "Booking failed");
     } finally { 
       setSubmitting(false); 
@@ -606,57 +620,66 @@ function ServiceDetail() {
       </div>
 
       {/* Diagnostic Panel */}
-      <Drawer open={diag.open} onOpenChange={(o) => setDiag(prev => ({ ...prev, open: o }))}>
-        <DrawerContent className="max-h-[85vh] bg-[#1a1a1a] text-white font-mono p-6">
-          <DrawerHeader className="p-0 mb-6 flex justify-between items-center border-b border-white/10 pb-4">
-            <DrawerTitle className="text-white text-[14px] font-black uppercase tracking-widest">PAYMENT DIAGNOSTICS</DrawerTitle>
-            <button onClick={() => setDiag(prev => ({ ...prev, open: false }))} className="text-white/50"><X className="h-5 w-5" /></button>
+      <Drawer open={diag.open} onOpenChange={(o) => setDiag(prev => ({ ...prev, open: o }))} dismissible={true}>
+        <DrawerContent className="max-h-[90vh] bg-[#0A0A0A] text-white font-mono p-6 border-t border-white/10">
+          <DrawerHeader className="p-0 mb-4 flex justify-between items-center border-b border-white/10 pb-4">
+            <div className="flex flex-col">
+              <DrawerTitle className="text-white text-[14px] font-black uppercase tracking-widest">DEVICE DIAGNOSTICS</DrawerTitle>
+              <span className="text-[10px] text-[#4ade80] font-bold mt-1">REAL-TIME EXECUTION TRACE</span>
+            </div>
+            <button onClick={() => setDiag(prev => ({ ...prev, open: false }))} className="p-2 -mr-2 text-white/30 active:scale-90"><X className="h-5 w-5" /></button>
           </DrawerHeader>
 
-          <div className="space-y-4 overflow-y-auto pb-10">
-            {[
-              { id: 'click', label: 'PAY NOW CLICK' },
-              { id: 'validation', label: 'VALIDATION' },
-              { id: 'rpc', label: 'BOOKING RPC' },
-              { id: 'order', label: 'ORDER CREATION' },
-              { id: 'orderId', label: 'ORDER ID' },
-              { id: 'bridge', label: 'PAYMENT BRIDGE' },
-              { id: 'native', label: 'NATIVE RAZORPAY OPEN' }
-            ].map(step => {
-              const status = diag.steps[step.id as keyof typeof diag.steps];
-              return (
-                <div key={step.id} className="flex items-center justify-between text-[13px]">
-                  <span className="text-white/60 font-bold">{step.label}</span>
-                  <span className={cn(
-                    "font-black px-2 py-0.5 rounded",
-                    status === 'ok' ? "text-[#4ade80] bg-[#4ade80]/10" : 
-                    status === 'err' ? "text-[#f87171] bg-[#f87171]/10" : "text-white/20"
-                  )}>
-                    {status === 'ok' ? '✓' : status === 'err' ? '✗' : '...'}
-                  </span>
+          <div className="space-y-3 overflow-y-auto pb-12 pr-1">
+            {diag.orderInfo && (
+              <div className="bg-white/5 border border-white/10 p-3 rounded-xl mb-4">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-white/40 font-bold uppercase">ORDER ID</span>
+                  <span className="text-[11px] text-[#4ade80] font-black">{diag.orderInfo.id}</span>
                 </div>
-              );
-            })}
-
-            <div className="pt-4 border-t border-white/10 mt-4 space-y-3">
-              <div className="flex justify-between text-[13px]">
-                <span className="text-white/60 font-bold">RAZORPAY RESULT</span>
-                <span className={cn(
-                  "font-black uppercase",
-                  diag.steps.result === 'success' ? "text-[#4ade80]" :
-                  diag.steps.result === 'failed' ? "text-[#f87171]" : "text-[#fbbf24]"
-                )}>
-                  {diag.steps.result}
-                </span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-white/40 font-bold uppercase">AMOUNT</span>
+                  <span className="text-[11px] text-white font-black">₹{diag.orderInfo.amount / 100} (INR)</span>
+                </div>
               </div>
+            )}
 
-              {diag.steps.error && (
-                <div className="bg-[#f87171]/10 border border-[#f87171]/20 p-3 rounded-lg mt-2">
-                  <div className="text-[10px] text-[#f87171] font-black uppercase mb-1">ERROR MESSAGE</div>
-                  <div className="text-[12px] text-white leading-tight break-words">{diag.steps.error}</div>
+            {diag.steps.map((step, idx) => (
+              <div key={step.id} className={cn(
+                "flex flex-col gap-1 p-2 rounded-lg transition-colors",
+                step.status === 'pending' ? "opacity-30" : "bg-white/5"
+              )}>
+                <div className="flex items-center justify-between">
+                  <span className={cn(
+                    "text-[12px] font-bold",
+                    step.status === 'ok' ? "text-white" : 
+                    step.status === 'err' ? "text-[#f87171]" : "text-white/60"
+                  )}>
+                    {step.label}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {step.time && <span className="text-[9px] text-white/30">{step.time}</span>}
+                    <span className={cn(
+                      "text-[11px] font-black w-5 h-5 flex items-center justify-center rounded-full",
+                      step.status === 'ok' ? "bg-[#4ade80]/20 text-[#4ade80]" : 
+                      step.status === 'err' ? "bg-[#f87171]/20 text-[#f87171]" : "bg-white/10 text-white/20"
+                    )}>
+                      {step.status === 'ok' ? '✓' : step.status === 'err' ? '✗' : '...'}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </div>
+                {step.error && (
+                  <div className="text-[10px] text-[#f87171]/80 leading-tight pl-0 mt-1 font-medium bg-[#f87171]/5 p-2 rounded border border-[#f87171]/10">
+                    ERR: {step.error}
+                  </div>
+                )}
+                {step.details && (
+                  <div className="text-[10px] text-[#4ade80]/80 font-black tracking-widest mt-0.5">
+                    {step.details}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </DrawerContent>
       </Drawer>
