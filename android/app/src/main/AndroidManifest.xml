@@ -28,6 +28,13 @@
         <package android:name="com.sbi.upi" />
         <package android:name="com.enstage.wibmo.hdfc" />
         <package android:name="com.msf.kbank.mobile" />
+        <package android:name="com.upi.axispay" />
+        <package android:name="com.bankofbaroda.upi" />
+        <package android:name="com.unionbank.online.userve" />
+        <package android:name="com.idfcfirstbank.mobilebanking" />
+        <package android:name="com.canarabank.bhim.upi" />
+        <package android:name="com.pnb.upi" />
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
