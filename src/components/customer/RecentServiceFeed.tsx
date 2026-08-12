@@ -234,106 +234,50 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[15.5px] font-semibold text-[#1A1A1A] leading-tight">
-              {service.service_name ?? "Daily Shine"} · <span className={cn(
-                "text-[13.5px] font-medium",
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[16px] font-semibold text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-[12px] font-bold uppercase tracking-widest",
                 status.tone === "success" ? "text-[#2E7D32]" : 
                 status.tone === "danger" ? "text-[#E53935]" :
                 status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
-              )}>{status.label} {status.tone === "success" && "✓"}</span>
-            </span>
+              )}>
+                {status.label} {status.tone === "success" && "✓"}
+              </span>
+            </div>
           </div>
           
-          <p className="mt-1.5 text-[13.5px] font-normal text-[#8A8A8A]">
+          <p className="mt-2 text-[13px] font-medium text-[#8A8A8A]">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
           </p>
-
-          {(reason || (isUnavailable && service.unavailable_notes)) && (
-            <div className="mt-3 space-y-1">
-              {reason && <p className="text-[13px] font-semibold text-[#1A1A1A]">{reason}</p>}
-              {isUnavailable && (
-                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
-                  {service.unavailable_notes || "No wash was deducted from your plan."}
-                </p>
-              )}
-              {hasDirty && (
-                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
-                  Partner reported the vehicle needed more attention than usual.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-        <div className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-          status.tone === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
-          status.tone === "danger" ? "bg-[#FFEBEE] text-[#E53935]" :
-          status.tone === "warning" ? "bg-[#FFF3E0] text-[#E65100]" : "bg-[#FFF1E8] text-[#FF6B00]"
-        )}>
-          <StatusIcon className="h-5 w-5" />
         </div>
       </div>
 
       {!isUnavailable && !isMissed && service.photos.length > 0 && (
-        <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />
-      )}
-
-      {!isUnavailable && !isMissed && !isPending && service.photos.length === 0 && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#F5F5F5] p-3">
-          <AlertCircle className="h-4 w-4 text-[#8A8A8A]" />
-          <span className="text-[12px] font-medium text-[#8A8A8A]">
-            {service.service_name?.toLowerCase().includes("daily") 
-              ? "Service photos are temporarily unavailable."
-              : "No service photos were required for this service."}
-          </span>
-        </div>
-      )}
-
-      {(isUnavailable || hasDirty) && (service.unavailable_photo || dirtyPhotos.length > 0) && (
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {service.unavailable_photo && (
-            <SignedPhoto 
-              path={service.unavailable_photo} 
-              stage="proof" 
-              onClick={() => openViewer(0)} 
-            />
-          )}
-          {dirtyPhotos.map((p, i) => (
-            <SignedPhoto 
-              key={p} 
-              path={p} 
-              stage="dirty" 
-              onClick={() => openViewer(service.unavailable_photo ? i + 1 : i)} 
-            />
+        <div className="mt-4 flex gap-2">
+          {service.photos.slice(0, 3).map((p, i) => (
+             <SignedPhoto key={i} path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
           ))}
+          {service.photos.length > 3 && (
+            <button 
+              onClick={() => openViewer(3)}
+              className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[12px] bg-neutral-100 text-[13px] font-bold text-[#1A1A1A]"
+            >
+              +{service.photos.length - 3}
+            </button>
+          )}
         </div>
       )}
 
       <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
-        <div className="flex items-center gap-1.5">
-          {isPending ? (
-            <div className="flex items-center gap-2">
-               <Loader2 className="h-3 w-3 animate-spin text-[#FF6B00]" />
-               <span className="text-[11px] font-medium text-[#FF6B00]">Photos are being uploaded...</span>
-            </div>
-          ) : (
-            <>
-              <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
-              <span className="text-[12px] font-medium text-[#8A8A8A]">
-                {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
-              </span>
-            </>
-          )}
-        </div>
-        
-        {!isUnavailable && !isMissed && !isPending && (
-          <button 
-            onClick={() => openViewer(0)}
-            className="text-[13.5px] font-semibold text-[#FF6B00]"
-          >
+        <span className="text-[12px] font-medium text-[#8A8A8A]">
+           {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
+        </span>
+        {!isUnavailable && !isMissed && !isPending && service.photos.length > 0 && (
+          <button onClick={() => openViewer(0)} className="text-[13px] font-bold text-[#FF6B00]">
             View all photos →
           </button>
         )}
