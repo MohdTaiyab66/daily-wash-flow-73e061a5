@@ -68,3 +68,19 @@ export function getAuthErrorDetails(error: unknown) {
   };
 }
 
+export async function diagnoseSession() {
+  const { data, error } = await supabase.auth.getSession();
+  console.log("[AUTH-P0] DIRECT GET SESSION");
+  console.log("error:", error?.message);
+  console.log("hasSession:", !!data.session);
+  console.log("hasUser:", !!data.session?.user);
+  console.log("userId:", data.session?.user?.id ?? null);
+  return { 
+    error: error?.message, 
+    hasSession: !!data.session, 
+    userId: data.session?.user?.id,
+    email: data.session?.user?.email
+  };
+}
+
+

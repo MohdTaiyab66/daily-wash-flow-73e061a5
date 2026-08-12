@@ -1,28 +1,19 @@
 import { createFileRoute, Outlet, redirect, useNavigate, useLocation, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { authLog } from "@/lib/auth-debug";
+import { authLog, diagnoseSession } from "@/lib/auth-debug";
+import { CUSTOMER_APP_VERSION, CUSTOMER_BUILD_ID } from "@/lib/buildInfo";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
-  loader: async () => {
-    authLog.trace("[AUTH-TRACE] 06 PROTECTED_LOADER_START");
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      authLog.error("[AUTH-TRACE] REDIRECTING: NO SESSION IN LOADER");
-      throw redirect({ to: "/c/auth", replace: true });
-    }
-    
-    return null;
-  },
   beforeLoad: async () => {
     authLog.trace("[AUTH-TRACE] 06 PROTECTED_BEFORELOAD_START");
     
+    // Canonical Check 1: Session
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
@@ -30,6 +21,7 @@ export const Route = createFileRoute("/c/_authed")({
       throw redirect({ to: "/c/auth", replace: true });
     }
     
+    // Canonical Check 2: Domain
     if (!session.user.email?.endsWith("@customer.urbanwash.app")) {
       authLog.error("[AUTH-TRACE] REDIRECTING: INVALID DOMAIN", { email: session.user.email });
       await supabase.auth.signOut({ scope: "local" });
@@ -43,42 +35,80 @@ export const Route = createFileRoute("/c/_authed")({
 
 function CustomerAuthedLayout() {
   const [authStatus, setAuthStatus] = useState<'initializing' | 'authenticated' | 'unauthenticated'>('initializing');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [sessionData, setSessionData] = useState<{ userId: string | null; email: string | null }>({ userId: null, email: null });
+  const [diag, setDiag] = useState<any>(null);
+  
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
 
+  // SINGLE SOURCE OF TRUTH: Initial Sync
   useEffect(() => {
     let cancelled = false;
-    // Non-blocking UI update for user ID
-    supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) {
-        if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
-          setAuthStatus('authenticated');
-          setUserId(data.session.user.id);
-        } else {
-          setAuthStatus('unauthenticated');
-          navigate({ to: "/c/auth", replace: true });
-        }
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
+    
+    const syncAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
 
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[AUTH-P0] SHELL AUTH EVENT: ${event}`, { sessionPresent: !!session });
-      if (event === "SIGNED_OUT" || (event === "TOKEN_REFRESHED" && !session)) {
-        console.log("[AUTH-P0] SESSION LOST/SIGNED OUT. Navigating to login.");
-        void qc.invalidateQueries();
-        toast.info("Session expired. Please log in again.");
+      const user = data.session?.user;
+      const isCustomer = !!user?.email?.endsWith("@customer.urbanwash.app");
+
+      if (isCustomer) {
+        setSessionData({ userId: user!.id, email: user!.email! });
+        setAuthStatus('authenticated');
+      } else {
+        setAuthStatus('unauthenticated');
+        authLog.error("[AUTH-P0] SHELL_SYNC: Unauthenticated, redirecting");
         navigate({ to: "/c/auth", replace: true });
+      }
+    };
+
+    syncAuth();
+    return () => { cancelled = true; };
+  }, [navigate]);
+
+  // SINGLE SOURCE OF TRUTH: Event Listener
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      authLog.info(`[AUTH-P0] SHELL AUTH EVENT: ${event}`, { sessionPresent: !!session });
+      
+      const user = session?.user;
+      const isCustomer = !!user?.email?.endsWith("@customer.urbanwash.app");
+
+      if (event === "SIGNED_OUT" || !isCustomer) {
+        setAuthStatus('unauthenticated');
+        void qc.invalidateQueries();
+        if (event === "SIGNED_OUT") toast.info("Signed out successfully.");
+        navigate({ to: "/c/auth", replace: true });
+      } else if (session) {
+        setSessionData({ userId: user!.id, email: user!.email! });
+        setAuthStatus('authenticated');
       }
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate, qc]);
 
-  useFcmRegistration(userId, "customer");
+  useFcmRegistration(sessionData.userId, "customer");
+
+  const runDiagnostic = async () => {
+    const res = await diagnoseSession();
+    setDiag(res);
+    toast.success("Auth diagnostic complete");
+  };
+
+  const testSignedInReq = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("NO SESSION — REQUEST NOT SENT");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.from('customer_profiles').select('id').limit(1);
+      alert(error ? `ERROR: ${error.message}` : "SUCCESS: Profile accessible");
+    } catch (e: any) {
+      alert(`EXCEPTION: ${e.message}`);
+    }
+  };
 
   if (authStatus === 'initializing') {
     return (
@@ -91,18 +121,49 @@ function CustomerAuthedLayout() {
     );
   }
 
-  if (authStatus === 'unauthenticated') {
-    return null; // Navigation is already triggered in useEffect
-  }
+  if (authStatus === 'unauthenticated') return null;
 
   return (
     <CustomerShell>
-      <div className="fixed top-2 right-2 z-[10000] opacity-30">
-        <Link to="/c/auth" className="text-[9px] font-mono bg-black text-white px-2 py-1 rounded">LOGOUT</Link>
+      <div className="fixed top-2 right-2 z-[10000] flex flex-col items-end gap-2">
+        <div className="flex gap-2">
+          <button 
+            onClick={runDiagnostic}
+            className="text-[9px] font-mono bg-blue-600 text-white px-2 py-1 rounded shadow-lg active:scale-95"
+          >
+            TEST AUTH
+          </button>
+          <button 
+            onClick={testSignedInReq}
+            className="text-[9px] font-mono bg-green-600 text-white px-2 py-1 rounded shadow-lg active:scale-95"
+          >
+            TEST REQ
+          </button>
+          <button 
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/c/auth", replace: true });
+            }}
+            className="text-[9px] font-mono bg-black text-white px-2 py-1 rounded shadow-lg active:scale-95"
+          >
+            LOGOUT
+          </button>
+        </div>
+        
+        {diag && (
+          <div className="bg-black/90 text-white p-2 rounded text-[8px] font-mono border border-white/20 animate-in fade-in slide-in-from-top-1">
+            <p>SESSION: {diag.hasSession ? 'PRESENT' : 'MISSING'}</p>
+            <p>USER: {diag.userId || 'NONE'}</p>
+            <p>EMAIL: {diag.email || 'NONE'}</p>
+          </div>
+        )}
       </div>
-      <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+
+      <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-20 pointer-events-none">
         <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: {location.pathname}</span>
+        <span className="text-[10px] font-mono tracking-tighter text-orange-500">BUILD: {CUSTOMER_APP_VERSION}-{CUSTOMER_BUILD_ID}</span>
       </div>
+
       <Outlet />
     </CustomerShell>
   );
