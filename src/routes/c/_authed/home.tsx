@@ -146,23 +146,34 @@ function CustomerHome() {
     queryKey: ["service-catalog"],
     staleTime: 1000 * 30, // Reduced to 30s
     queryFn: async (): Promise<Service[]> => {
-      console.log("[SERVICE-DATA] request started");
-      const { data, error } = await supabase
-        .from("service_catalog")
-        .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
-        .eq("active", true)
-        .order("sort_order");
+      const start = Date.now();
+      console.log("[SERVICE-CATALOG] REQUEST START");
+      try {
+        const { data, error, status } = await supabase
+          .from("service_catalog")
+          .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
+          .eq("active", true)
+          .order("sort_order", { ascending: true });
 
-      if (error) {
-        console.error("[SERVICE-DATA] query error:", error);
-        throw error;
+        const elapsed = Date.now() - start;
+        console.log(`[SERVICE-CATALOG] RESPONSE: status=${status}, elapsed=${elapsed}ms`);
+
+        if (error) {
+          console.error("[SERVICE-CATALOG] query error:", error);
+          throw error;
+        }
+        
+        const rawData = (data ?? []) as Service[];
+        console.log("[SERVICE-CATALOG] RAW ROW COUNT:", rawData.length);
+        return rawData;
+      } catch (err) {
+        console.error("[SERVICE-CATALOG] FETCH FAILED:", err);
+        throw err;
       }
-      
-      const rawData = (data ?? []) as Service[];
-      console.log("[SERVICE-DATA] response received, raw count:", rawData.length);
-      return rawData;
     },
-    retry: 2,
+    retry: false,
+
+
   });
 
   const imagesQ = useQuery({
@@ -231,16 +242,15 @@ function CustomerHome() {
 
   useEffect(() => {
     if (servicesQ.data) {
-      console.log(`[SERVICE-DATA] processing lifecycle:
-        - raw: ${servicesQ.data.length}
-        - oneTime: ${oneTime.length}
-        - selectedCategory: ${selectedCategory}
-        - filtered: ${filteredServices.length}
-        - loading: ${servicesQ.isLoading}
-        - error: ${servicesQ.isError}
+      console.log(`[SERVICE-CATALOG] TRANSFORMATION:
+        - RAW ROWS = ${servicesQ.data.length}
+        - AFTER NORMALIZATION = ${oneTime.length}
+        - CATEGORY = ${selectedCategory}
+        - FINAL RENDER LIST = ${filteredServices.length}
       `);
     }
-  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length, servicesQ.isLoading, servicesQ.isError]);
+  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length]);
+
 
   const galleryQ = useServiceGallery();
   
@@ -331,40 +341,63 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isLoading && services.length === 0 ? (
-                   [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
-                ) : servicesQ.isError && services.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
-                    <p className="text-[#555] text-sm mb-3">Unable to load services</p>
-                    <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
+                {servicesQ.isError && services.length === 0 ? (
+                  <div className="col-span-3 py-8 text-center bg-[#FFF2ED] rounded-[16px] border border-[#FF6B00]/20">
+                    <p className="text-[#D32F2F] font-bold text-[15px] mb-1">SERVICE ERROR</p>
+                    <p className="text-[#666] text-[12px] mb-4 px-6 leading-relaxed">
+                      The service catalog is currently unreachable.<br/>
+                      Please check your connection and try again.
+                    </p>
+                    <button 
+                      onClick={() => {
+                        console.log("[SERVICE-CATALOG] Manual retry clicked");
+                        servicesQ.refetch();
+                      }} 
+                      className="h-[40px] px-8 bg-[#FF6B00] text-white text-[14px] font-bold rounded-full active:scale-[0.96] transition-transform shadow-md shadow-[#FF6B00]/20"
+                    >
+                      TRY AGAIN
+                    </button>
                   </div>
+                ) : (servicesQ.isLoading || (servicesQ.fetchStatus === 'fetching' && services.length === 0)) ? (
+
+                   [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : services.length > 0 && filteredServices.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
-                ) : filteredServices.map((s) => (
-                  <UWServiceCard
-                    key={s.id}
-                    name={s.name
-                      .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
-                      .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
-                      .replace("Deep Clean (Full)", "Deep Clean (Full)")
-                      .replace("One-Time ", "")
-                      .replace("Butting Polish", "Buffing Polish")
-                      .replace("Root Cleaning", "Roof Cleaning")}
-                    price={priceFor(s)}
-                    image={resolvedServiceImage(s)}
-                    slug={s.slug}
-                    badge={s.slug.includes('premium') ? 'Premium' : undefined}
-                    duration={s.duration_minutes}
-                    onOpen={() => {
-                      console.log(`[SERVICE-NAV] Opening ${s.slug}`);
-                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
-                    }}
-                    onAdd={() => {
-                      console.log(`[SERVICE-NAV] Adding ${s.slug}`);
-                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
-                    }}
-                  />
-                ))}
+                  <div className="col-span-3 py-8 text-center">
+                    <p className="text-[#888] text-sm font-medium">No services found in this category.</p>
+                  </div>
+                ) : filteredServices.map((s) => {
+                  try {
+                    return (
+                      <UWServiceCard
+                        key={s.id}
+                        name={s.name
+                          .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
+                          .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
+                          .replace("Deep Clean (Full)", "Deep Clean (Full)")
+                          .replace("One-Time ", "")
+                          .replace("Butting Polish", "Buffing Polish")
+                          .replace("Root Cleaning", "Roof Cleaning")}
+                        price={priceFor(s)}
+                        image={resolvedServiceImage(s)}
+                        slug={s.slug}
+                        badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                        duration={s.duration_minutes}
+                        onOpen={() => {
+                          console.log(`[SERVICE-NAV] Opening ${s.slug}`);
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                        }}
+                        onAdd={() => {
+                          console.log(`[SERVICE-NAV] Adding ${s.slug}`);
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                        }}
+                      />
+                    );
+                  } catch (e) {
+                    console.error("[SERVICE-DATA] Error rendering service card:", e, s);
+                    return null;
+                  }
+                })}
+
               </div>
 
               <div className="mt-6 mb-4">
