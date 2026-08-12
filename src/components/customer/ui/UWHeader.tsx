@@ -65,13 +65,13 @@ export function UWHeader({
 
 
       if (locText) {
-        locText.style.fontSize = `${17.5 - progress * 0.5}px`;
-        locText.style.fontWeight = '600';
+        locText.style.fontSize = `${16.5 - progress * 0.5}px`;
+        locText.style.fontWeight = '500';
       }
 
       if (vText) {
-        vText.style.fontSize = `${17.5 - progress * 0.5}px`;
-        vText.style.fontWeight = '600';
+        vText.style.fontSize = `${16.5 - progress * 0.5}px`;
+        vText.style.fontWeight = '500';
       }
 
 
@@ -108,12 +108,12 @@ export function UWHeader({
           )}
           onClick={hideLocationIcon ? undefined : onAreaClick}
         >
-          {!hideLocationIcon && <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />}
+          {!hideLocationIcon && <MapPin className="h-[20.5px] w-[20.5px] text-[#FF6B00] shrink-0" />}
 
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[17px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
+              className="text-[16px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
             >
               {area || "Set location"}
             </span>
@@ -135,14 +135,14 @@ export function UWHeader({
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
               ) : (
-                <Car className="h-5 w-5 text-[#8A8A8A]" />
+                <Car className="h-[21px] w-[21px] text-[#8A8A8A]" />
               )}
             </div>
             
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[17px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
+                className="text-[16px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>

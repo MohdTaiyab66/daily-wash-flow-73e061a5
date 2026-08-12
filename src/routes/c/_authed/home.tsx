@@ -182,9 +182,9 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[28px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
+                <h2 className="text-[23px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
               }
-              className="mt-[20px] mb-0"
+              className="mt-[24px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-3 w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
@@ -192,10 +192,10 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[20px] px-5 h-[54px] flex items-center justify-center text-[16.5px] font-semibold transition-all duration-200 active:scale-[0.97] shrink-0",
+                      "whitespace-nowrap rounded-[20px] px-[22px] h-[50px] flex items-center justify-center text-[15.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white" 
-                        : "bg-white text-[#555555] border border-[#EEEEEE]"
+                        ? "bg-[#FF6B00] text-white shadow-none" 
+                        : "bg-white text-[#555555] border border-[#EEEEEE] shadow-none"
                     )}
                   >
                     {cat}
@@ -203,13 +203,16 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-[11px] gap-y-4 mt-[18px]">
+              <div className="grid grid-cols-3 gap-x-[15px] gap-y-[17px] mt-[18px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
-                    name={s.name.replace("Butting Polish", "Buffing Polish").replace("Root Cleaning", "Roof Cleaning")}
+                    name={s.name
+                      .replace("One-Time ", "")
+                      .replace("Butting Polish", "Buffing Polish")
+                      .replace("Root Cleaning", "Roof Cleaning")}
                     price={priceFor(s)}
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
@@ -225,17 +228,17 @@ function CustomerHome() {
               <div className="mt-8 mb-4">
                 <button 
                   onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || undefined } } as any)}
-                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/5 rounded-[20px] p-5 text-left active:scale-[0.98] transition-transform"
+                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/5 rounded-[20px] p-4 text-left active:scale-[0.98] transition-transform h-[108px] flex items-center"
                 >
-                  <div className="flex flex-row items-center justify-between gap-4">
+                  <div className="flex flex-row items-center justify-between gap-4 w-full">
                     <div className="flex-1">
-                      <p className="text-[10px] font-extrabold text-[#FF6B00] uppercase tracking-widest mb-1">Your car deserves better</p>
-                      <h3 className="text-[17px] font-bold text-[#2D2D2D] leading-tight">
+                      <p className="text-[11.5px] font-semibold text-[#FF6B00] uppercase tracking-wider mb-1">Your car deserves better</p>
+                      <h3 className="text-[17.5px] font-semibold text-[#2D2D2D] leading-tight">
                         Keep it clean every day <br/> with Daily Shine.
                       </h3>
                     </div>
-                    <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[11px] font-extrabold shadow-md shadow-[#FF6B00]/20 shrink-0">
-                      EXPLORE <ChevronRight className="ml-1 h-3 w-3" />
+                    <div className="inline-flex items-center justify-center px-4 py-1.5 bg-[#FF6B00] rounded-full text-white text-[14.5px] font-semibold shrink-0">
+                      EXPLORE <ChevronRight className="ml-1 h-3.5 w-3.5" />
                     </div>
                   </div>
                 </button>

@@ -49,11 +49,11 @@ export function UWServiceCard({
       }}
       className={cn(
         "cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]/40",
-        "p-0 overflow-hidden flex flex-col h-auto bg-white border border-[#0000000A] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all active:scale-[0.96] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-full bg-white border border-[#0000000D] rounded-[18px] shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
         className
       )}
     >
-      <div className="relative h-[155px] w-full bg-[#F5F6F7] overflow-hidden shrink-0">
+      <div className="relative h-[132px] w-full bg-[#F5F6F7] overflow-hidden shrink-0">
         {image && loadStatus !== 'error' ? (
           <img 
             src={image} 
@@ -82,28 +82,29 @@ export function UWServiceCard({
         )}
       </div>
       
-      <div className="flex flex-col flex-1 px-2.5 pt-2.5 pb-3 min-w-0">
+      <div className="flex flex-col flex-1 px-[13px] pt-[13px] pb-[13px] min-w-0">
         <div className="h-[42px] flex flex-col items-start overflow-hidden w-full mb-1">
           <h3 className={cn(
-            "text-[16px] font-semibold leading-[1.25] text-[#1A1A1A] break-words line-clamp-2 w-full",
+            "text-[15.5px] font-semibold leading-[1.2] text-[#1A1A1A] break-words line-clamp-2 w-full",
+
             isComingSoon && "text-[#7A7A7A]"
           )}>
             {name}
           </h3>
         </div>
         
-        <div className="mb-2">
+        <div className="mt-1.5 mb-2.5">
           {duration && (
-            <span className="text-[13px] text-[#8A8A8A] font-medium leading-none">
+            <span className="text-[13.5px] text-[#8A8A8A] font-normal leading-none">
               {duration} min
             </span>
           )}
         </div>
 
         
-        <div className="mt-auto flex items-center justify-between gap-1 h-[40px]">
-          <div className="flex items-baseline gap-0.5 overflow-hidden flex-1">
-            <span className="text-[19px] font-semibold text-[#FF6B00] whitespace-nowrap tracking-tight">₹{price.toLocaleString('en-IN')}</span>
+        <div className="mt-auto flex items-center justify-between gap-1 h-[44px]">
+          <div className="flex items-center gap-0.5 overflow-hidden flex-1">
+            <span className="text-[19px] font-semibold text-[#FF6B00] whitespace-nowrap tracking-tight leading-none">₹{price.toLocaleString('en-IN')}</span>
 
             {oldPrice && (
               <span className="text-[10px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
@@ -121,7 +122,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.9] bg-[#FFF2E8] text-[#FF6B00] border border-[#FF6B00]/5 z-10",
+              "flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.9] bg-[#FFF2E8] text-[#FF6B00] border border-[#FF6B00]/5 z-10",
               isAdded && "bg-[#FF6B00] text-white"
             )}
           >
