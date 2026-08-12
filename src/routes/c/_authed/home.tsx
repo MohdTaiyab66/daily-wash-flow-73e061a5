@@ -109,7 +109,6 @@ function CustomerHome() {
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
-    staleTime: 1000 * 60 * 60,
     queryFn: async (): Promise<Service[]> => {
       try {
         const result = await fetchWithTimeout(
@@ -143,7 +142,6 @@ function CustomerHome() {
     },
     retry: 1,
     staleTime: 1000 * 60 * 10,
-
   });
 
   const imagesQ = useQuery({
@@ -151,6 +149,7 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
+
       try {
         const result = await fetchWithTimeout(
           (async () => {
