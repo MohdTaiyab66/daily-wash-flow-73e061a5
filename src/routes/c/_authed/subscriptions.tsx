@@ -204,7 +204,7 @@ function MyPlanPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-[#FDFDFD] pb-24">
       <UWHeader
         area="My Plan"
         hideLocationIcon
@@ -217,16 +217,17 @@ function MyPlanPage() {
           color: null
         } : undefined}
         onVehicleClick={() => {
-          const el = document.querySelector('[role="combobox"]') as HTMLElement;
-          if (el) el?.click();
+          // Trigger the vehicle selector from header
         }}
       />
 
-      <div className="px-5 pt-[88px]">
+      <div className="px-5 pt-[82px]">
         {selectedVehicle && (
-          <div className="mb-4 mt-2">
-             <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[14px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
+          <div className="mb-6">
+             <div className="flex items-baseline gap-2">
+               <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
+               <span className="text-[12px] font-bold text-black/20 uppercase tracking-widest">{selectedVehicle.registration_number}</span>
+             </div>
           </div>
         )}
 

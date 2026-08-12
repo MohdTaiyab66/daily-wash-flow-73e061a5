@@ -230,26 +230,25 @@ export function AwaitingPartnerBanner({
   };
 
   const statusPill = (
-
     <div className={cn(
-      "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+      "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em]",
       state === "completed" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
       state === "in_progress" ? "bg-[#FFF3E0] text-[#E65100]" :
-      "bg-[#F5F5F5] text-[#555555]"
+      "bg-black/5 text-black/40"
     )}>
       {state === "completed" ? "Completed ✓" : state === "in_progress" ? "In Progress" : "Scheduled"}
     </div>
   );
 
   return (
-    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm space-y-4">
+    <div className="rounded-[18px] border border-black/5 bg-white p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Today's Service</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A]">Today's Service</p>
           {serviceWindow && (
             <div className="flex items-center gap-1.5 mt-1">
               <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <span className="text-[15px] font-semibold text-[#1A1A1A]">Before {serviceWindow}</span>
+              <span className="text-[15px] font-black text-[#1A1A1A]">Before {serviceWindow}</span>
             </div>
           )}
         </div>
@@ -257,7 +256,7 @@ export function AwaitingPartnerBanner({
       </div>
 
       {(partner || state === "searching") && (
-        <div className="flex items-center gap-3 pt-3 border-t border-[#F5F5F5]">
+        <div className="flex items-center gap-3 pt-4 border-t border-[#F5F5F5]">
           {state === "searching" ? (
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#F5F5F5] text-[#8A8A8A]">
               <Search className="h-5 w-5 animate-pulse" />
@@ -269,22 +268,22 @@ export function AwaitingPartnerBanner({
               className="h-10 w-10 rounded-xl object-cover"
             />
           ) : (
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF1E8] text-[14px] font-bold text-[#FF6B00]">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-black/5 text-[14px] font-black text-black">
               {partner?.full_name?.[0] ?? "P"}
             </div>
           )}
           
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-semibold text-[#1A1A1A]">
+            <p className="truncate text-[15px] font-black text-[#1A1A1A]">
               {state === "searching" ? "Finding your partner..." : partner?.full_name}
             </p>
-            <div className="flex items-center gap-2 text-[12px] font-normal text-[#8A8A8A]">
+            <div className="flex items-center gap-2 text-[12px] font-bold text-[#8A8A8A]">
               {state !== "searching" && (
                 <>
-                  <span className="inline-flex items-center gap-0.5 text-[#FF6B00] font-medium">
+                  <span className="inline-flex items-center gap-0.5 text-[#FF6B00]">
                     <Star className="h-3 w-3 fill-current" /> {Number(partner?.rating ?? 5).toFixed(1)}
                   </span>
-                  <span className="opacity-30">·</span>
+                  <span className="opacity-20">·</span>
                 </>
               )}
               <span>
@@ -296,12 +295,6 @@ export function AwaitingPartnerBanner({
             </div>
           </div>
         </div>
-      )}
-      
-      {copyMap[state] && state === "searching" && (
-        <p className="text-[12px] font-normal leading-relaxed text-[#8A8A8A] mt-2 italic">
-          {copyMap[state]}
-        </p>
       )}
     </div>
   );
