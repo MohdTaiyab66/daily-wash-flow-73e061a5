@@ -83,6 +83,12 @@ function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
   const navigate = useNavigate();
   const search = Route.useSearch();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[SERVICE] SESSION_CHECK", { exists: !!session, user: session?.user?.id });
+    });
+  }, []);
   
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
@@ -150,16 +156,24 @@ function ServiceDetail() {
   const serviceQ = useQuery({
     queryKey: ["service", slug],
     queryFn: async () => {
+      console.log("[SERVICE] QUERY_START slug=", slug);
       const { data, error } = await supabase.from("service_catalog").select("*").eq("slug", slug).maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error("[SERVICE] QUERY_ERROR", error);
+        throw error;
+      }
+      console.log("[SERVICE] QUERY_SUCCESS", data?.name);
       return data as Service | null;
-    }
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000
   });
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async () => {
-      const { data } = await supabase.from("customer_vehicles").select("*");
+      const { data, error } = await supabase.from("customer_vehicles").select("*");
+      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
       return (data ?? []) as Vehicle[];
     }
   });
@@ -167,7 +181,8 @@ function ServiceDetail() {
   const addressesQ = useQuery({
     queryKey: ["customer-addresses"],
     queryFn: async () => {
-      const { data } = await supabase.from("customer_addresses").select("*");
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) console.error("[SERVICE] ADDRESSES_ERROR", error);
       return (data ?? []) as Address[];
     }
   });
@@ -175,7 +190,8 @@ function ServiceDetail() {
   const addonsQ = useQuery({
     queryKey: ["service-addons"],
     queryFn: async () => {
-      const { data } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
+      const { data, error } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
+      if (error) console.error("[SERVICE] ADDONS_ERROR", error);
       return (data ?? []) as Addon[];
     }
   });
@@ -183,11 +199,21 @@ function ServiceDetail() {
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
+      // NOTE: We do NOT use supabase.auth.getUser() here as it can trigger 
+      // network requests that might fail or refresh the token unexpectedly 
+      // during navigation. We use the session from AuthProvider or a simple getSession.
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        console.warn("[SERVICE] PROFILE_SESSION_MISSING", sessionError);
+        return null;
+      }
+      
+      const { data, error } = await supabase.from("customer_profiles").select("*").eq("id", session.user.id).maybeSingle();
+      if (error) console.error("[SERVICE] PROFILE_DATA_ERROR", error);
       return data;
-    }
+    },
+    retry: 1
   });
 
   const service = serviceQ.data;
@@ -421,7 +447,40 @@ function ServiceDetail() {
   };
 
 
-  if (!service) return <div className="p-10 text-center">Loading...</div>;
+  if (serviceQ.isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF9F7]">
+        <div className="flex flex-col items-center gap-4 text-center px-6">
+          <Loader2 className="h-10 w-10 animate-spin text-[#EA580C]" />
+          <p className="text-[12px] font-bold text-[#1a1a1a]/60 uppercase tracking-widest">Loading Service Details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceQ.isError || !service) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF9F7] px-6">
+        <div className="text-center">
+          <h2 className="text-[18px] font-black text-[#1a1a1a] mb-2">Couldn't load service details</h2>
+          <p className="text-[14px] text-[#7A7A7A] mb-6">Something went wrong while fetching the service information.</p>
+          <Button 
+            onClick={() => serviceQ.refetch()}
+            className="bg-[#EA580C] text-white rounded-full font-black px-8"
+          >
+            Try Again
+          </Button>
+          <Button 
+            variant="ghost"
+            onClick={() => navigate({ to: "/c/home" })}
+            className="mt-4 block w-full text-[#7A7A7A] font-bold"
+          >
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
 
   return (

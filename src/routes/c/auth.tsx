@@ -48,7 +48,8 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const VERIFY_TIMEOUT_MS = 10000;
+const VERIFY_TIMEOUT_MS = 12000; 
+
 
 
 type VerifyState = "IDLE" | "VERIFYING" | "SUCCESS" | "ERROR" | "TIMEOUT";
@@ -159,7 +160,8 @@ function CustomerAuth() {
     );
 
     try {
-      const { data, error: signInError } = await Promise.race([verifyPromise, timeoutPromise]) as any;
+      const result = await Promise.race([verifyPromise, timeoutPromise]);
+      const { data, error: signInError } = result as any;
       
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
       if (data) {
@@ -209,7 +211,7 @@ function CustomerAuth() {
     } catch (e: any) {
       if (e.message === "TIMEOUT") {
         authLog.error("[OTP-P0] VERIFY TIMEOUT");
-        setError("Verification timed out. Please check your internet connection and try again.");
+        setError("Verification timed out. This often happens if the app loses focus or the network request hangs. Please check your internet and try again.");
         setVerifyState("TIMEOUT");
       } else {
         const details = getAuthErrorDetails(e);
