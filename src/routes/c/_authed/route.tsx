@@ -5,11 +5,22 @@ import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-// Customer app intentionally does not subscribe to route/ETA updates.
-// Per product policy, customers see a Service Window — not live arrival data.
+import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
+  loader: async ({ context }) => {
+    // Prefetch critical customer context in parallel
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw redirect({ to: "/c/auth" });
+    
+    // Fire off parallel fetch
+    return context.queryClient.ensureQueryData({
+      queryKey: ["customer-initial-context"],
+      queryFn: () => getInitialCustomerContext(),
+      staleTime: 1000 * 60 * 5, // 5 mins
+    });
+  },
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/c/auth" });
@@ -20,6 +31,7 @@ export const Route = createFileRoute("/c/_authed")({
   },
   component: CustomerAuthedLayout,
 });
+
 
 function CustomerAuthedLayout() {
   const [userId, setUserId] = useState<string | null>(null);
