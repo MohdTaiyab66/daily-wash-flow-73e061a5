@@ -17,7 +17,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
   // Compact Premium Height: 72px
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(84px+24px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(82px+24px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
