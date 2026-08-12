@@ -412,7 +412,7 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
 function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
   return (
-    <div className="mt-4 grid grid-cols-4 gap-2">
+    <div className="mt-5 grid grid-cols-4 gap-2.5">
       {photos.slice(0, 3).map((p, i) => (
         <SignedPhoto 
           key={i} 
@@ -422,12 +422,15 @@ function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (
         />
       ))}
       {photos.length > 3 && (
-        <button 
-          onClick={() => onPhotoClick(3)}
-          className="uw-pressable relative aspect-square overflow-hidden rounded-xl bg-black/5 text-[12px] font-black text-primary active:scale-95"
-        >
-          +{photos.length - 3}
-        </button>
+        <div className="relative cursor-pointer" onClick={() => onPhotoClick(3)}>
+          <SignedPhoto 
+            path={photos[3].storage_path} 
+            stage={photos[3].stage} 
+          />
+          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white">
+            +{photos.length - 3}
+          </div>
+        </div>
       )}
     </div>
   );
