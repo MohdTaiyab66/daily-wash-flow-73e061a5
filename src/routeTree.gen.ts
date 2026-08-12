@@ -56,7 +56,6 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as CAuthedRouteRouteImport } from './routes/c/_authed/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as CLocationSearchRouteImport } from './routes/c/location.search'
-import { Route as CLocationManualRouteImport } from './routes/c/location.manual'
 import { Route as CAuthedVehiclesRouteImport } from './routes/c/_authed/vehicles'
 import { Route as CAuthedSubscriptionsRouteImport } from './routes/c/_authed/subscriptions'
 import { Route as CAuthedReferralsRouteImport } from './routes/c/_authed/referrals'
@@ -335,11 +334,6 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
 const CLocationSearchRoute = CLocationSearchRouteImport.update({
   id: '/search',
   path: '/search',
-  getParentRoute: () => CLocationRoute,
-} as any)
-const CLocationManualRoute = CLocationManualRouteImport.update({
-  id: '/manual',
-  path: '/manual',
   getParentRoute: () => CLocationRoute,
 } as any)
 const CAuthedVehiclesRoute = CAuthedVehiclesRouteImport.update({
@@ -654,7 +648,6 @@ export interface FileRoutesByFullPath {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
-  '/c/location/manual': typeof CLocationManualRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -744,7 +737,6 @@ export interface FileRoutesByTo {
   '/c/referrals': typeof CAuthedReferralsRoute
   '/c/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/vehicles': typeof CAuthedVehiclesRoute
-  '/c/location/manual': typeof CLocationManualRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -839,7 +831,6 @@ export interface FileRoutesById {
   '/c/_authed/referrals': typeof CAuthedReferralsRoute
   '/c/_authed/subscriptions': typeof CAuthedSubscriptionsRoute
   '/c/_authed/vehicles': typeof CAuthedVehiclesRoute
-  '/c/location/manual': typeof CLocationManualRoute
   '/c/location/search': typeof CLocationSearchRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/service/$id': typeof AuthenticatedAppServiceIdRoute
@@ -934,7 +925,6 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
-    | '/c/location/manual'
     | '/c/location/search'
     | '/app/'
     | '/app/service/$id'
@@ -1024,7 +1014,6 @@ export interface FileRouteTypes {
     | '/c/referrals'
     | '/c/subscriptions'
     | '/c/vehicles'
-    | '/c/location/manual'
     | '/c/location/search'
     | '/app'
     | '/app/service/$id'
@@ -1118,7 +1107,6 @@ export interface FileRouteTypes {
     | '/c/_authed/referrals'
     | '/c/_authed/subscriptions'
     | '/c/_authed/vehicles'
-    | '/c/location/manual'
     | '/c/location/search'
     | '/_authenticated/app/'
     | '/_authenticated/app/service/$id'
@@ -1498,13 +1486,6 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/c/location/search'
       preLoaderRoute: typeof CLocationSearchRouteImport
-      parentRoute: typeof CLocationRoute
-    }
-    '/c/location/manual': {
-      id: '/c/location/manual'
-      path: '/manual'
-      fullPath: '/c/location/manual'
-      preLoaderRoute: typeof CLocationManualRouteImport
       parentRoute: typeof CLocationRoute
     }
     '/c/_authed/vehicles': {
@@ -2025,12 +2006,10 @@ const CAuthedRouteRouteWithChildren = CAuthedRouteRoute._addFileChildren(
 )
 
 interface CLocationRouteChildren {
-  CLocationManualRoute: typeof CLocationManualRoute
   CLocationSearchRoute: typeof CLocationSearchRoute
 }
 
 const CLocationRouteChildren: CLocationRouteChildren = {
-  CLocationManualRoute: CLocationManualRoute,
   CLocationSearchRoute: CLocationSearchRoute,
 }
 
