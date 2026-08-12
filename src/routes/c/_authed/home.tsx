@@ -108,6 +108,7 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
+      console.log("[SERVICE-DATA] request started");
       const { data, error } = await supabase
         .from("service_catalog")
         .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
@@ -115,12 +116,14 @@ function CustomerHome() {
         .order("sort_order");
 
       if (error) {
-        console.error("[HOME] Service catalog query error:", error);
+        console.error("[SERVICE-DATA] query error:", error);
         throw error;
       }
-      return (data ?? []) as Service[];
+      
+      const rawData = (data ?? []) as Service[];
+      console.log("[SERVICE-DATA] response received, raw count:", rawData.length);
+      return rawData;
     },
-
     retry: 2,
     staleTime: 1000 * 60 * 10,
   });
@@ -131,27 +134,30 @@ function CustomerHome() {
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
       try {
+        console.log("[CAROUSEL-DATA] request started");
         const { data, error } = await (supabase as any)
           .from("daily_shine_carousel")
           .select("id, image_url, status, slide_number, updated_at, service_slug")
           .eq("status", "published")
           .order("slide_number");
         if (error) {
-          console.error("[HOME-DATA] Carousel query error:", error);
+          console.error("[CAROUSEL-DATA] query error:", error);
           throw error;
         }
-        return (data || []).map((img: any) => ({
+        
+        const rawSlides = data || [];
+        console.log("[CAROUSEL-DATA] response received, raw count:", rawSlides.length);
+        
+        return rawSlides.map((img: any) => ({
           ...img,
           image_url: getDailyShineCarouselImageUrl(img.image_url)
         }));
       } catch (err: any) {
-        console.error("[HOME-DATA] Carousel failed:", err);
-        return []; // Fallback handled by UWFeaturedCarousel (uses DEFAULT_PROMO_IMAGES)
+        console.error("[CAROUSEL-DATA] failed:", err);
+        return []; 
       }
     },
-
     retry: 1,
-
   });
 
   const vehicles = vehiclesQ.data ?? [];
