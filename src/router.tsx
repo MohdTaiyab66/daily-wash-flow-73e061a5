@@ -1,11 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter } from "@tanstack/react-router";
+import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-export function createRouterWithContext() {
+export function createRouter() {
   const queryClient = new QueryClient();
 
-  return createRouter({
+  return createTanStackRouter({
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
@@ -13,13 +13,13 @@ export function createRouterWithContext() {
   });
 }
 
-export const router = createRouterWithContext();
+// Keep export for SSR entry resolution
+export const getRouter = createRouter;
 
-export const getRouter = () => router;
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router;
+    router: ReturnType<typeof createRouter>;
   }
 }
 
