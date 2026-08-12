@@ -348,6 +348,22 @@ function CustomerHome() {
           </div>
         </div>
 
+        {/* Diagnostic Panel - Build 35 */}
+        <div className="fixed bottom-[80px] left-2 right-2 z-[9999] pointer-events-none opacity-80">
+          <div className="bg-black/90 text-[9px] text-white p-2 rounded-lg border border-white/20 font-mono space-y-0.5">
+            <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
+              <span>DEBUG BUILD 1.0.35</span>
+              <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
+                {servicesQ.fetchStatus} | {servicesQ.status}
+              </span>
+            </div>
+            <div>Services: {servicesQ.isPending ? 'PENDING' : servicesQ.isError ? 'ERROR' : `OK (${servicesQ.data?.length})`}</div>
+            <div>Carousel: {imagesQ.isPending ? 'PENDING' : imagesQ.isError ? 'ERROR' : `OK (${imagesQ.data?.length})`}</div>
+            <div>Auth: {initialContextQ.data ? 'READY' : 'WAITING'}</div>
+          </div>
+        </div>
+
+
         <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
           <DialogContent className="max-w-md rounded-t-3xl border-none p-0">
             <DialogHeader className="p-6 pb-2">
