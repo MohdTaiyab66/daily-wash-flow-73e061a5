@@ -100,7 +100,7 @@ export function UWHeader({
     >
       <div 
         ref={contentWrapperRef}
-        className="px-4 flex items-center justify-between gap-3 w-full transition-[padding] box-border"
+        className="px-4 flex items-center justify-between gap-3 w-full transition-[height] box-border h-[78px]"
       >
         {/* Left: Compact Location Selector */}
         <div 

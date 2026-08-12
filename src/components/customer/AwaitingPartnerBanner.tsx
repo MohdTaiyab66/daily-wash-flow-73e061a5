@@ -278,8 +278,8 @@ export function AwaitingPartnerBanner({
 
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[18px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
-          {copyMap[state] && <p className="mt-1 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
+          <p className="text-[17px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
+          {copyMap[state] && <p className="mt-0.5 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
             <div className="mt-4 flex items-center gap-3">

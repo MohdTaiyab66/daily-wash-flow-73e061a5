@@ -357,10 +357,10 @@ function MyPlanPage() {
                         <div className="space-y-2">
                           <div className="flex justify-between text-[14px] font-medium">
                             <span className="text-[#8A8A8A]">Exterior washes</span>
-                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
+                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 24</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 24) * 100}%` }} />
                           </div>
                         </div>
                         <div className="space-y-2">
