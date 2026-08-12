@@ -231,24 +231,24 @@ export function AwaitingPartnerBanner({
 
   const statusPill = (
     <div className={cn(
-      "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em]",
+      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm",
       state === "completed" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
       state === "in_progress" ? "bg-[#FFF3E0] text-[#E65100]" :
-      "bg-black/5 text-black/40"
+      "bg-black text-white"
     )}>
       {state === "completed" ? "Completed ✓" : state === "in_progress" ? "In Progress" : "Scheduled"}
     </div>
   );
 
   return (
-    <div className="rounded-[18px] border border-black/5 bg-white p-5 shadow-sm space-y-4">
+    <div className="rounded-[20px] border border-black/5 bg-white p-6 shadow-sm space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A]">Today's Service</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Daily Status</p>
           {serviceWindow && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <span className="text-[15px] font-black text-[#1A1A1A]">Before {serviceWindow}</span>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Clock className="h-4 w-4 text-[#FF6B00]" />
+              <span className="text-[17px] font-black tracking-tight text-[#1A1A1A]">Before {serviceWindow}</span>
             </div>
           )}
         </div>
@@ -256,41 +256,41 @@ export function AwaitingPartnerBanner({
       </div>
 
       {(partner || state === "searching") && (
-        <div className="flex items-center gap-3 pt-4 border-t border-[#F5F5F5]">
+        <div className="flex items-center gap-3.5 pt-5 border-t border-black/5">
           {state === "searching" ? (
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#F5F5F5] text-[#8A8A8A]">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-black/5 text-black/20">
               <Search className="h-5 w-5 animate-pulse" />
             </div>
           ) : partner?.profile_photo_url ? (
             <img
               src={partner.profile_photo_url}
               alt={partner.full_name}
-              className="h-10 w-10 rounded-xl object-cover"
+              className="h-11 w-11 rounded-xl object-cover ring-2 ring-black/5"
             />
           ) : (
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-black/5 text-[14px] font-black text-black">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#1A1A1A] text-[15px] font-black text-white">
               {partner?.full_name?.[0] ?? "P"}
             </div>
           )}
           
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-black text-[#1A1A1A]">
-              {state === "searching" ? "Finding your partner..." : partner?.full_name}
+              {state === "searching" ? "Matching with partner..." : partner?.full_name}
             </p>
-            <div className="flex items-center gap-2 text-[12px] font-bold text-[#8A8A8A]">
+            <div className="flex items-center gap-2 text-[12px] font-bold text-black/30">
               {state !== "searching" && (
                 <>
                   <span className="inline-flex items-center gap-0.5 text-[#FF6B00]">
                     <Star className="h-3 w-3 fill-current" /> {Number(partner?.rating ?? 5).toFixed(1)}
                   </span>
-                  <span className="opacity-20">·</span>
+                  <span className="h-1 w-1 rounded-full bg-black/10" />
                 </>
               )}
-              <span>
-                {state === "searching" ? "Nearby availability" : 
-                 state === "assigned" ? "Partner assigned" : 
-                 state === "in_progress" ? "Service in progress" : 
-                 completedAt ? `Finished at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}` : "All done"}
+              <span className="truncate">
+                {state === "searching" ? "Automated assignment active" : 
+                 state === "assigned" ? "Assigned · Cleaning crew" : 
+                 state === "in_progress" ? "Partner cleaning now" : 
+                 completedAt ? `Finished at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}` : "Service finished"}
               </span>
             </div>
           </div>
