@@ -143,7 +143,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[24px]">
+      <div className="min-h-screen bg-[#FFFCF9]">
         
         <UWHeader 
           area={area} 
@@ -153,9 +153,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[68px]">
+        <div className="pt-[64px]">
           <div className="px-4">
-            <div className="mt-[14px]">
+            <div className="mt-[10px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -179,43 +179,44 @@ function CustomerHome() {
             </div>
 
             {/* Compact Benefits Strip */}
-            <div className="flex justify-between items-center px-4 w-full h-[92px] mt-[22px] bg-[#FFF9F4] rounded-[18px] border border-[#FF6B00]/5">
+            {/* Compact Benefits Strip - Target ~84px total height */}
+            <div className="flex justify-between items-center px-4 w-full h-[84px] mt-[18px] bg-[#FFF9F4] rounded-[16px] border border-[#FF6B00]/5 shadow-sm">
               <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Sparkles className="h-[13px] w-[13px]" />
+                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Sparkles className="h-[12px] w-[12px]" />
                 </div>
-                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Expert Care</span>
+                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Expert Care</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 flex-1 border-x border-[#FF6B00]/5">
+                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Camera className="h-[12px] w-[12px]" />
+                </div>
+                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Photo Proof</span>
               </div>
               <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Camera className="h-[13px] w-[13px]" />
+                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <ShieldCheck className="h-[12px] w-[12px]" />
                 </div>
-                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Photo Proof</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <ShieldCheck className="h-[13px] w-[13px]" />
-                </div>
-                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Safe & Secure</span>
+                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Safe & Secure</span>
               </div>
             </div>
 
             <Section 
               title={
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[29px] font-bold text-[#1A1A1A] tracking-tight leading-tight">CAR CARE SERVICES</h2>
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-[28px] font-bold text-[#1A1A1A] tracking-tight leading-tight">CAR CARE SERVICES</h2>
                   <p className="text-[15px] text-[#7A7A7A] font-medium">Everything your car needs</p>
                 </div>
               }
-              className="mt-[32px] mb-0"
+              className="mt-[28px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[20px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[16px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[23px] px-5 h-[44px] flex items-center justify-center text-[14px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
+                      "whitespace-nowrap rounded-[20px] px-4 h-[38px] flex items-center justify-center text-[13px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
                         : "bg-white text-[#555555] border border-[#EAEAEA]"
@@ -226,7 +227,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 mt-[22px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3.5 mt-[18px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
