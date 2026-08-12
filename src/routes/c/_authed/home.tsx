@@ -97,15 +97,11 @@ function CustomerHome() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return [];
       
-      return fetchWithTimeout(
-        (async () => {
-          const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
-          if (error) throw error;
-          return (data ?? []) as Vehicle[];
-        })(),
-        "VEHICLES"
-      );
+      const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
+      if (error) throw error;
+      return (data ?? []) as Vehicle[];
     },
+
     retry: 2
   });
 
