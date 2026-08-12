@@ -324,7 +324,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const label = stage.toUpperCase();
+  const label = stage === 'before' ? 'BEFORE' : stage === 'after' ? 'AFTER' : null;
 
   return (
     <div 
@@ -341,7 +341,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      {stage && (
+      {label && (
         <div className="absolute inset-0 bg-black/5" />
       )}
       {(stage === 'before' || stage === 'after') && (
