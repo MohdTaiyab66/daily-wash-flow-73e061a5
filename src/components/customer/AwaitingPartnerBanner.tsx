@@ -233,7 +233,7 @@ export function AwaitingPartnerBanner({
     searching: "Waiting for area assignment",
     assigned: "Today's service",
     in_progress: "Service in progress",
-    completed: "Today's service completed ✓",
+    completed: "Service completed ✓",
   };
 
   const copyMap: Record<Exclude<State, "unassignable">, string> = {

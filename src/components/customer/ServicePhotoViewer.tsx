@@ -109,10 +109,10 @@ export function ServicePhotoViewer({
 
   const stageLabels: Record<string, string> = {
     before: "Before",
-    after: "After",
-    proof: "Proof",
-    dirty: "Dirty Vehicle",
-    unavailable: "Unavailable",
+    after: "AFTER",
+    proof: "SERVICE PHOTO",
+    dirty: "DIRTY VEHICLE",
+    unavailable: "UNAVAILABLE",
   };
 
   return (
@@ -121,11 +121,17 @@ export function ServicePhotoViewer({
         <div className="relative flex h-[85vh] flex-col overflow-hidden">
           {/* Header */}
           <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-6 py-6">
-            <div className="text-white">
+            <button
+              onClick={() => onOpenChange(false)}
+              className="flex items-center gap-2 text-white/90 active:opacity-60"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-[17px] font-medium">Close</span>
+            </button>
+            <div className="text-right text-white">
               <h3 className="text-[17px] font-semibold tracking-tight">{serviceName}</h3>
               {serviceDate && (
-                <div className="mt-1 flex items-center gap-2 text-[12px] font-normal text-white/60">
-                  <Calendar className="h-3.5 w-3.5" />
+                <div className="mt-0.5 flex items-center justify-end gap-1.5 text-[12px] font-normal text-white/60">
                   {new Date(serviceDate).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
@@ -134,12 +140,6 @@ export function ServicePhotoViewer({
                 </div>
               )}
             </div>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-transform active:scale-90"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
 
           {/* Main Image View - with Swipe area */}
@@ -189,18 +189,15 @@ export function ServicePhotoViewer({
           {/* Footer Info */}
           <div className="bg-gradient-to-t from-black/90 to-transparent px-8 pb-10 pt-10">
              <div className="flex items-end justify-between">
-                <div className="space-y-3">
-                   <div className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-black">
+                <div className="space-y-2">
+                   <div className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
                       {stageLabels[currentPhoto.stage] || currentPhoto.stage}
                    </div>
-                   <div className="text-[18px] font-semibold text-white">
-                      {currentPhoto.angle.charAt(0).toUpperCase() + currentPhoto.angle.slice(1)} View
+                   <div className="text-[15px] font-medium text-white/70">
+                      {currentIndex + 1} / {photos.length}
                    </div>
                 </div>
                 <div className="flex flex-col items-end gap-3">
-                   <div className="text-[13px] font-medium text-white/60">
-                      {currentIndex + 1} / {photos.length}
-                   </div>
                    {/* Dots indicator */}
                    <div className="flex gap-1.5">
                       {photos.map((_, i) => (
