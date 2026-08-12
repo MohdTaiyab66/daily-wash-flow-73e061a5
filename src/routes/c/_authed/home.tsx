@@ -174,6 +174,8 @@ function CustomerHome() {
   });
 
   const galleryQ = useServiceGallery();
+  console.log("[HOME] Gallery state:", { isLoading: galleryQ.isLoading, isError: galleryQ.isError, count: galleryQ.data?.length });
+  
   const resolvedServiceImage = (slug: string) => {
     // Pass the entire gallery data to getServiceImage which filters by slug
     return getServiceImage(slug, galleryQ.data || []);
@@ -209,7 +211,10 @@ function CustomerHome() {
               <UWFeaturedCarousel 
                 isLoading={imagesQ.isLoading}
                 isError={imagesQ.isError}
-                onRetry={() => imagesQ.refetch()}
+                onRetry={() => {
+                  console.log("[HOME] Retrying carousel...");
+                  imagesQ.refetch();
+                }}
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
@@ -241,7 +246,10 @@ function CustomerHome() {
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => {
+                      console.log("[HOME] Category switched to:", cat);
+                      setSelectedCategory(cat);
+                    }}
                     className={cn(
                       "whitespace-nowrap rounded-[22px] px-[16px] h-[42px] flex items-center justify-center text-[14px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
