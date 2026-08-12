@@ -15,6 +15,7 @@ interface UWHeaderProps {
   vehicleImage?: string | null;
   onVehicleClick?: () => void;
   hideLocationIcon?: boolean;
+  buildId?: string;
 }
 
 
@@ -29,6 +30,7 @@ export function UWHeader({
   vehicleImage,
   onVehicleClick,
   hideLocationIcon = false,
+  buildId,
 }: UWHeaderProps) {
 
   const containerRef = useRef<HTMLElement>(null);
@@ -57,11 +59,12 @@ export function UWHeader({
         {/* Left: Compact Location Selector */}
         <div 
           className={cn(
-            "flex items-center gap-1.5 transition-opacity min-w-0 flex-1 group",
+            "flex items-center gap-1.5 transition-opacity min-w-0 flex-1 group relative",
             !hideLocationIcon && "cursor-pointer active:opacity-60"
           )}
           onClick={hideLocationIcon ? undefined : onAreaClick}
         >
+          {buildId && <span className="text-[8px] opacity-30 absolute -top-3 left-0">{buildId}</span>}
           {!hideLocationIcon && <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />}
 
           <div className="flex items-center gap-1 min-w-0">

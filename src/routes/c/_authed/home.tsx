@@ -144,6 +144,7 @@ function CustomerHome() {
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
+    staleTime: 1000 * 30, // Reduced to 30s
     queryFn: async (): Promise<Service[]> => {
       console.log("[SERVICE-DATA] request started");
       const { data, error } = await supabase
@@ -162,13 +163,12 @@ function CustomerHome() {
       return rawData;
     },
     retry: 2,
-    staleTime: 1000 * 60 * 10,
   });
 
   const imagesQ = useQuery({
     queryKey: ["customer-promo-images"],
-    staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60 * 24,
+    staleTime: 1000 * 30, // Reduced to 30s for freshness
+    gcTime: 1000 * 60 * 5,
     queryFn: async () => {
       try {
         console.log("[CAROUSEL-DATA] request started");
@@ -244,10 +244,16 @@ function CustomerHome() {
 
   const galleryQ = useServiceGallery();
   
-  const resolvedServiceImage = (slug: string) => {
-    const result = getServiceImage(slug, galleryQ.data || []);
-    // Ensure we always have a URL to prevent "Coming Soon" placeholder
-    return result.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
+  const resolvedServiceImage = (service: Service) => {
+    // 1. Check Banner URL from Catalog (Direct Source)
+    if (service.banner_url) return service.banner_url;
+
+    // 2. Check Gallery
+    const galleryResult = getServiceImage(service.slug, galleryQ.data || []);
+    if (galleryResult.source === 'GALLERY') return galleryResult.url;
+
+    // 3. Check hardcoded fallbacks
+    return galleryResult.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
   };
 
   // refreshAll is now defined earlier to be used in the useEffect
@@ -256,7 +262,9 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
         <UWHeader 
+          buildId="1.0.56-data-truth"
           area={area} 
+
           onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
@@ -271,7 +279,7 @@ function CustomerHome() {
                 isError={imagesQ.isError && (!imagesQ.data || imagesQ.data.length === 0)}
                 onRetry={() => imagesQ.refetch()}
 
-                items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
+                items={(imagesQ.data?.length ? imagesQ.data : []).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                   const isFallback = !img.id || img.id.startsWith('static-');
                   
@@ -343,7 +351,7 @@ function CustomerHome() {
                       .replace("Butting Polish", "Buffing Polish")
                       .replace("Root Cleaning", "Roof Cleaning")}
                     price={priceFor(s)}
-                    image={resolvedServiceImage(s.slug)}
+                    image={resolvedServiceImage(s)}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
                     duration={s.duration_minutes}
