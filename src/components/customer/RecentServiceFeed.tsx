@@ -133,7 +133,7 @@ export function RecentServiceFeed({
   return (
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
           {showAll ? "Full History" : "RECENT SERVICE"}
         </h3>
         <button
@@ -233,9 +233,9 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[17px] font-semibold text-[#1A1A1A] leading-tight">
+            <span className="text-[15.5px] font-semibold text-[#1A1A1A] leading-tight">
               {service.service_name ?? "Daily Shine"} · <span className={cn(
-                "text-[14px] font-medium",
+                "text-[13.5px] font-medium",
                 status.tone === "success" ? "text-[#2E7D32]" : 
                 status.tone === "danger" ? "text-[#E53935]" :
                 status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
@@ -243,7 +243,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             </span>
           </div>
           
-          <p className="mt-1.5 text-[14px] font-normal text-[#8A8A8A]">
+          <p className="mt-1.5 text-[13.5px] font-normal text-[#8A8A8A]">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
@@ -409,7 +409,7 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
 function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
   return (
-    <div className="mt-5 grid grid-cols-4 gap-2.5">
+    <div className="mt-5 grid grid-cols-4 gap-2">
       {photos.slice(0, 3).map((p, i) => (
         <SignedPhoto 
           key={i} 
@@ -424,7 +424,7 @@ function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (
             path={photos[3].storage_path} 
             stage={photos[3].stage} 
           />
-          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/50 text-[18px] font-semibold text-white backdrop-blur-[1px]">
+          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white backdrop-blur-[1px]">
             +{photos.length - 3}
           </div>
         </div>
@@ -444,13 +444,20 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE PHOTO";
+  const labelMap: Record<string, string> = {
+    before: "BEFORE",
+    after: "AFTER",
+    proof: "SERVICE PHOTO",
+    dirty: "DIRTY VEHICLE"
+  };
+
+  const label = labelMap[stage] || "SERVICE PHOTO";
 
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "uw-pressable relative aspect-square overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        "uw-pressable relative h-[76px] w-full overflow-hidden rounded-[16px] bg-[#F5F5F5]",
         onClick && "cursor-pointer"
       )}
     >
@@ -461,7 +468,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      <div className="absolute bottom-1.5 left-1.5 rounded-full bg-black/30 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white backdrop-blur-[2px]">
+      <div className="absolute bottom-1 left-1 rounded-full bg-black/30 px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-white backdrop-blur-[2px]">
         {label}
       </div>
     </div>

@@ -223,11 +223,11 @@ function MyPlanPage() {
       />
 
 
-      <div className="px-5 pt-[68px]">
+      <div className="px-5 pt-[88px]">
         {selectedVehicle && (
-          <div className="mb-5 mt-2">
+          <div className="mb-4 mt-2">
              <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[13.5px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
+             <p className="text-[14px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
           </div>
 
         )}
@@ -311,14 +311,18 @@ function MyPlanPage() {
 
                       <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
-                          <p className="text-[18px] font-semibold text-[#1A1A1A] mt-0.5">
-                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
-                          </p>
+                          <p className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[16px] font-semibold text-[#1A1A1A]">
+                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                            </p>
+                            {cancelScheduled ? (
+                              <span className="text-[13px] font-medium text-[#E53935]">Scheduled to end</span>
+                            ) : (
+                              <span className="text-[13px] font-medium text-[#2E7D32]">Auto-renews</span>
+                            )}
+                          </div>
                         </div>
-                        {cancelScheduled && (
-                          <p className="text-[13px] font-medium text-[#E53935]">Scheduled to end</p>
-                        )}
                       </div>
                     </div>
 
@@ -327,20 +331,20 @@ function MyPlanPage() {
 
                     {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl bg-[#222222] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[16.5px] font-semibold">Book Wash</span>
-                        <span className="text-[11.5px] font-medium uppercase tracking-widest opacity-70 mt-0.5">Included</span>
+                      <button onClick={() => setBookOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Book Wash</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">INCLUDED</span>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[16.5px] font-semibold">Modify</span>
-                        <span className="text-[11.5px] font-medium uppercase tracking-widest text-[#8A8A8A] mt-0.5">Adjust Plan</span>
+                      <button onClick={() => setBuilderOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Modify</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mt-0.5">ADJUST PLAN</span>
                       </button>
                     </div>
 
                     {/* PAUSE / CANCEL */}
                     <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[13.5px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[13.5px] font-medium text-[#8A8A8A]">Cancel plan</button>
+                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
                     {/* RECENT SERVICE */}
@@ -348,15 +352,15 @@ function MyPlanPage() {
 
                     {/* DETAILED USAGE */}
                     <div className="space-y-3">
-                      <h3 className="text-[17px] font-semibold tracking-tight text-[#1A1A1A] px-1">Plan Usage</h3>
-                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5">
+                      <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A] px-1">Plan Usage</h3>
+                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[14.5px] font-medium">
-                            <span className="text-[#555555]">Exterior washes</span>
-                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
+                          <div className="flex justify-between text-[14px] font-medium">
+                            <span className="text-[#8A8A8A]">Exterior washes</span>
+                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 24</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 24) * 100}%` }} />
                           </div>
                         </div>
                         <div className="space-y-2">

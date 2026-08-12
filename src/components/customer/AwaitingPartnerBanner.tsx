@@ -260,7 +260,7 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm", tone)}>
+    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm min-h-[260px] flex flex-col justify-center", tone)}>
       {serviceWindow && (
         <div className="mb-4 flex items-center justify-between border-b border-[#F5F5F5] pb-4">
           <div className="flex items-center gap-2.5">
@@ -278,8 +278,8 @@ export function AwaitingPartnerBanner({
 
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[18px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
-          {copyMap[state] && <p className="mt-1 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
+          <p className="text-[17px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
+          {copyMap[state] && <p className="mt-0.5 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
             <div className="mt-4 flex items-center gap-3">
