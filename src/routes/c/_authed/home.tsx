@@ -352,22 +352,25 @@ function CustomerHome() {
                   <div className="col-span-3 py-8 text-center">
                     <p className="text-[#888] text-sm font-medium">No services found in this category.</p>
                   </div>
-                ) : filteredServices.map((s) => (
-                  <UWServiceCard
-                    key={s.id}
-                    name={s.name
-                      .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
-                      .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
-                      .replace("Deep Clean (Full)", "Deep Clean (Full)")
-                      .replace("One-Time ", "")
-                      .replace("Butting Polish", "Buffing Polish")
-                      .replace("Root Cleaning", "Roof Cleaning")}
-                    price={priceFor(s)}
-                    image={resolvedServiceImage(s)}
-                    slug={s.slug}
-                    badge={s.slug.includes('premium') ? 'Premium' : undefined}
-                    duration={s.duration_minutes}
-                    onOpen={() => {
+                ) : filteredServices.map((s) => {
+                  try {
+                    return (
+                      <UWServiceCard
+                        key={s.id}
+                        name={s.name
+                          .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
+                          .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
+                          .replace("Deep Clean (Full)", "Deep Clean (Full)")
+                          .replace("One-Time ", "")
+                          .replace("Butting Polish", "Buffing Polish")
+                          .replace("Root Cleaning", "Roof Cleaning")}
+                        price={priceFor(s)}
+                        image={resolvedServiceImage(s)}
+                        slug={s.slug}
+                        badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                        duration={s.duration_minutes}
+                        onOpen={() => {
+
                       console.log(`[SERVICE-NAV] Opening ${s.slug}`);
                       navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
                     }}
