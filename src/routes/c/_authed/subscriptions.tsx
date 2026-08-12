@@ -347,10 +347,10 @@ function MyPlanPage() {
                       <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
                     </div>
 
-                    <div className="flex justify-center gap-4 mt-6 mb-4">
-                      <button className="text-[12px] font-bold text-[#8A8A8A] active:opacity-60">Pause subscription</button>
+                    <div className="flex justify-center gap-4 mt-8 mb-6">
+                      <button className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Pause</button>
                       <span className="h-4 w-[1px] bg-black/5" />
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-bold text-[#8A8A8A] active:opacity-60">Cancel plan</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Cancel</button>
                     </div>
                   </div>
 
