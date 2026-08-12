@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthProvider } from "@/components/customer/AuthProvider";
 import { installCameraRouteRestore } from "@/lib/cameraRestore";
 import { installPartnerRuntimeInstrumentation } from "@/lib/partner-runtime-instrumentation";
 
@@ -153,11 +154,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster richColors position="top-center" />
-      </I18nProvider>
+      <AuthProvider>
+        <I18nProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster richColors position="top-center" />
+        </I18nProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

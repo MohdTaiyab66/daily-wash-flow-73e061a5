@@ -1,168 +1,132 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useLocation, Link } from "@tanstack/react-router";
-import { useEffect, useState, useMemo } from "react";
+import { createFileRoute, Outlet, redirect, useNavigate, useLocation } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { authLog, diagnoseSession } from "@/lib/auth-debug";
+import { authLog } from "@/lib/auth-debug";
 import { CUSTOMER_APP_VERSION, CUSTOMER_BUILD_ID } from "@/lib/buildInfo";
+import { useAuth } from "@/components/customer/AuthProvider";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
   beforeLoad: async () => {
-    authLog.trace("[AUTH-TRACE] 06 PROTECTED_BEFORELOAD_START");
-    
-    // Canonical Check 1: Session
+    authLog.trace("[AUTH-SYNC] AUTH_GATE_BEFORELOAD_START");
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session?.user) {
-      authLog.error("[AUTH-TRACE] REDIRECTING: NO SESSION IN BEFORELOAD");
+    if (!session?.user || !session.user.email?.endsWith("@customer.urbanwash.app")) {
+      authLog.error("[AUTH-SYNC] AUTH_GATE_REDIRECTING", { hasSession: !!session });
       throw redirect({ to: "/c/auth", replace: true });
     }
-    
-    // Canonical Check 2: Domain
-    if (!session.user.email?.endsWith("@customer.urbanwash.app")) {
-      authLog.error("[AUTH-TRACE] REDIRECTING: INVALID DOMAIN", { email: session.user.email });
-      await supabase.auth.signOut({ scope: "local" });
-      throw redirect({ to: "/c/auth", replace: true });
-    }
-    
-    authLog.trace("[AUTH-TRACE] 13 AUTHENTICATED_CONFIRMED", { userId: session.user.id });
   },
   component: CustomerAuthedLayout,
 });
 
 function CustomerAuthedLayout() {
-  const [authStatus, setAuthStatus] = useState<'initializing' | 'authenticated' | 'unauthenticated'>('initializing');
-  const [sessionData, setSessionData] = useState<{ userId: string | null; email: string | null }>({ userId: null, email: null });
-  const [diag, setDiag] = useState<any>(null);
-  
+  const { authStatus, session, clientId } = useAuth();
+  const [diagVisible, setDiagVisible] = useState(false);
+  const [directSession, setDirectSession] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
 
-  // SINGLE SOURCE OF TRUTH: Initial Sync
   useEffect(() => {
-    let cancelled = false;
-    
-    const syncAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
+    if (authStatus === 'unauthenticated') {
+      authLog.error("[AUTH-SYNC] AUTH_GATE_UNAUTHENTICATED_REDIRECT");
+      navigate({ to: "/c/auth", replace: true });
+    }
+  }, [authStatus, navigate]);
 
-      const user = data.session?.user;
-      const isCustomer = !!user?.email?.endsWith("@customer.urbanwash.app");
+  useFcmRegistration(session?.user?.id, "customer");
 
-      if (isCustomer) {
-        setSessionData({ userId: user!.id, email: user!.email! });
-        setAuthStatus('authenticated');
-      } else {
-        setAuthStatus('unauthenticated');
-        authLog.error("[AUTH-P0] SHELL_SYNC: Unauthenticated, redirecting");
-        navigate({ to: "/c/auth", replace: true });
-      }
-    };
-
-    syncAuth();
-    return () => { cancelled = true; };
-  }, [navigate]);
-
-  // SINGLE SOURCE OF TRUTH: Event Listener
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
-      authLog.info(`[AUTH-P0] SHELL AUTH EVENT: ${event}`, { sessionPresent: !!session });
-      
-      const user = session?.user;
-      const isCustomer = !!user?.email?.endsWith("@customer.urbanwash.app");
-
-      if (event === "SIGNED_OUT" || !isCustomer) {
-        setAuthStatus('unauthenticated');
-        void qc.invalidateQueries();
-        if (event === "SIGNED_OUT") toast.info("Signed out successfully.");
-        navigate({ to: "/c/auth", replace: true });
-      } else if (session) {
-        setSessionData({ userId: user!.id, email: user!.email! });
-        setAuthStatus('authenticated');
-      }
+  const runSyncDiagnostic = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    setDirectSession({
+      hasSession: !!data.session,
+      userId: data.session?.user?.id ?? null,
+      error: error?.message ?? null
     });
-    return () => sub.subscription.unsubscribe();
-  }, [navigate, qc]);
-
-  useFcmRegistration(sessionData.userId, "customer");
-
-  const runDiagnostic = async () => {
-    const res = await diagnoseSession();
-    setDiag(res);
-    toast.success("Auth diagnostic complete");
+    setDiagVisible(true);
+    authLog.info("[AUTH-SYNC] AUTH_GATE_GET_SESSION", {
+      hasSession: !!data.session,
+      userId: data.session?.user?.id ?? null,
+      error: error?.message ?? null,
+      clientId: (window as any).__SUPABASE_CLIENT_ID
+    });
   };
 
   const testSignedInReq = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      alert("NO SESSION — REQUEST NOT SENT");
-      return;
-    }
     try {
       const { data, error } = await supabase.from('customer_profiles').select('id').limit(1);
-      alert(error ? `ERROR: ${error.message}` : "SUCCESS: Profile accessible");
+      toast(error ? `REQ FAILED: ${error.message}` : "REQ SUCCESS");
     } catch (e: any) {
-      alert(`EXCEPTION: ${e.message}`);
+      toast.error(`REQ EXCEPTION: ${e.message}`);
     }
   };
 
   if (authStatus === 'initializing') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FFF9F3]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm font-bold text-muted-foreground/60 uppercase tracking-widest">Verifying Access...</p>
+        <div className="flex flex-col items-center gap-4 text-center px-6">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF6B00] border-t-transparent" />
+          <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest">Verifying Access...</p>
         </div>
       </div>
     );
   }
 
-  if (authStatus === 'unauthenticated') return null;
-
   return (
     <CustomerShell>
+      {/* Build 1.0.44 Diagnostic Overlay */}
       <div className="fixed top-2 right-2 z-[10000] flex flex-col items-end gap-2">
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <button 
-            onClick={runDiagnostic}
-            className="text-[9px] font-mono bg-blue-600 text-white px-2 py-1 rounded shadow-lg active:scale-95"
+            onClick={runSyncDiagnostic}
+            className="text-[9px] font-bold bg-[#FF6B00] text-white px-2 py-1 rounded shadow active:scale-95"
           >
             TEST AUTH
           </button>
           <button 
             onClick={testSignedInReq}
-            className="text-[9px] font-mono bg-green-600 text-white px-2 py-1 rounded shadow-lg active:scale-95"
+            className="text-[9px] font-bold bg-green-600 text-white px-2 py-1 rounded shadow active:scale-95"
           >
             TEST REQ
           </button>
           <button 
             onClick={async () => {
               await supabase.auth.signOut();
+              qc.clear();
               navigate({ to: "/c/auth", replace: true });
             }}
-            className="text-[9px] font-mono bg-black text-white px-2 py-1 rounded shadow-lg active:scale-95"
+            className="text-[9px] font-bold bg-black text-white px-2 py-1 rounded shadow active:scale-95"
           >
             LOGOUT
           </button>
         </div>
         
-        {diag && (
-          <div className="bg-black/90 text-white p-2 rounded text-[8px] font-mono border border-white/20 animate-in fade-in slide-in-from-top-1">
-            <p>SESSION: {diag.hasSession ? 'PRESENT' : 'MISSING'}</p>
-            <p>USER: {diag.userId || 'NONE'}</p>
-            <p>EMAIL: {diag.email || 'NONE'}</p>
-            <p>CLIENT_ID: {(window as any).__SUPABASE_CLIENT_ID || 'UNKNOWN'}</p>
+        {diagVisible && (
+          <div className="bg-black/95 text-white p-2.5 rounded-xl text-[9px] font-mono border border-white/20 shadow-2xl animate-in fade-in slide-in-from-top-2">
+            <div className="border-b border-white/10 pb-1.5 mb-1.5">
+              <p className="text-[#FF6B00] font-black">BUILD 1.0.44-auth-sync</p>
+            </div>
+            <div className="space-y-1">
+              <p>AUTH STATUS: <span className={cn(authStatus === 'authenticated' ? 'text-green-400' : 'text-orange-400')}>{authStatus.toUpperCase()}</span></p>
+              <p>GET SESSION: <span className={directSession?.hasSession ? 'text-green-400' : 'text-red-400'}>{directSession?.hasSession ? 'PRESENT' : 'MISSING'}</span></p>
+              <p>CLIENT ID: <span className="text-blue-400 font-bold">{clientId}</span></p>
+              <p>ROUTE: <span className="text-purple-400">{location.pathname}</span></p>
+              <p>USER: <span className="text-blue-300">{session?.user ? 'PRESENT' : 'MISSING'}</span></p>
+              {directSession?.error && <p className="text-red-500 font-bold">ERROR: {directSession.error}</p>}
+              <button 
+                onClick={() => setDiagVisible(false)}
+                className="mt-2 w-full py-1 bg-white/10 hover:bg-white/20 rounded text-[8px] transition-colors"
+              >
+                CLOSE
+              </button>
+            </div>
           </div>
         )}
-      </div>
-
-      <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-20 pointer-events-none">
-        <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: {location.pathname}</span>
-        <span className="text-[10px] font-mono tracking-tighter text-orange-500">BUILD: {CUSTOMER_APP_VERSION}-{CUSTOMER_BUILD_ID}</span>
       </div>
 
       <Outlet />

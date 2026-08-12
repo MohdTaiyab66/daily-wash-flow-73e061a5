@@ -29,7 +29,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const AUTH_BUILD_ID = "1.0.43-auth-arch-fix";
+const AUTH_BUILD_ID = "1.0.44-auth-sync";
 const VERIFY_TIMEOUT_MS = 10000;
 
 type VerifyState = "IDLE" | "VERIFYING" | "SUCCESS" | "ERROR" | "TIMEOUT";
