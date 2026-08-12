@@ -147,13 +147,13 @@ function CustomerHome() {
         
         <UWHeader 
           area={area} 
-          onAreaClick={() => { navigate({ to: "/c/location/search" }); }}
+          onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[64px]">
+        <div className="pt-[52px]">
           <div className="px-4">
             <div className="mt-[10px]">
               <UWFeaturedCarousel 
@@ -180,7 +180,7 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[21px] font-bold text-[#171717] tracking-tight leading-[28px]">Our Services</h2>
+                <h2 className="text-[26px] font-bold text-[#171717] tracking-tight leading-tight">Our Services</h2>
               }
               className="mt-[24px] mb-0"
             >
@@ -190,7 +190,7 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[22px] px-5 h-[42px] flex items-center justify-center text-[14.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
+                      "whitespace-nowrap rounded-[22px] px-5 h-[38px] flex items-center justify-center text-[14.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white" 
                         : "bg-white text-[#555555] border border-[#EEEEEE]"
@@ -212,6 +212,7 @@ function CustomerHome() {
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
+                    duration={s.duration_minutes}
                     onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                     onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                   />
