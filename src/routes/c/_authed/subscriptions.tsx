@@ -222,15 +222,6 @@ function MyPlanPage() {
       />
 
       <div className="px-5 pt-[82px]">
-        {selectedVehicle && (
-          <div className="mb-6">
-             <div className="flex items-baseline gap-2">
-               <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-               <span className="text-[12px] font-bold text-black/20 uppercase tracking-widest">{selectedVehicle.registration_number}</span>
-             </div>
-          </div>
-        )}
-
         {hasVehicles && (
           <>
             {bookingsQ.isLoading ? (
