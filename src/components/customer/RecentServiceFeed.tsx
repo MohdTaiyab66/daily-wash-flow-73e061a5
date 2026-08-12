@@ -134,7 +134,7 @@ export function RecentServiceFeed({
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
         <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
-          {showAll ? "Full History" : "Recent Service"}
+          {showAll ? "Full History" : "RECENT SERVICE"}
         </h3>
         <button
           type="button"
@@ -314,7 +314,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
                 onClick={() => setViewerOpen(true)}
                 className="text-[13px] font-semibold text-[#FF6B00]"
               >
-                Report Issue
+                Report an issue
               </button>
             )}
             <button 
@@ -424,7 +424,7 @@ function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (
             path={photos[3].storage_path} 
             stage={photos[3].stage} 
           />
-          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white">
+          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/50 text-[18px] font-semibold text-white backdrop-blur-[1px]">
             +{photos.length - 3}
           </div>
         </div>
