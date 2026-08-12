@@ -159,7 +159,8 @@ function CustomerAuth() {
     );
 
     try {
-      const { data, error: signInError } = await Promise.race([verifyPromise, timeoutPromise]) as any;
+      const result = await Promise.race([verifyPromise, timeoutPromise]);
+      const { data, error: signInError } = result as any;
       
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
       if (data) {
