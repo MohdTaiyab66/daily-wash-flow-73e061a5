@@ -328,10 +328,6 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             </button>
           </div>
         )}
-              View Photos
-            </button>
-          </div>
-        )}
       </div>
 
       <ServicePhotoViewer
