@@ -230,11 +230,12 @@ export function AwaitingPartnerBanner({
       : "border-primary/10 bg-primary/5";
 
   const titleMap: Record<Exclude<State, "unassignable">, string> = {
-    searching: "Subscription activated · Waiting for area assignment",
-    assigned: "Today's service scheduled",
-    in_progress: "Your Daily Shine service is in progress",
-    completed: "Service completed",
+    searching: "Waiting for area assignment",
+    assigned: "Today's service",
+    in_progress: "Service in progress",
+    completed: "Today's service completed ✓",
   };
+
   const copyMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "You're all set. We'll notify you once your first service is completed.",
     assigned: "", // Empty so it's not rendered
@@ -259,9 +260,9 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm", tone)}>
+    <div className={cn("rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-sm", tone)}>
       {serviceWindow && (
-        <div className="mb-4 flex items-center gap-3 border-b border-[#F5F5F5] pb-4">
+        <div className="mb-3 flex items-center gap-3 border-b border-[#F5F5F5] pb-3">
           <Clock className="h-4 w-4 text-[#FF6B00]" />
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
@@ -281,7 +282,7 @@ export function AwaitingPartnerBanner({
           {copyMap[state] && <p className="mt-1 text-[13px] font-medium leading-relaxed text-[#555555]">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-3 flex items-center gap-3">
               {partner.profile_photo_url ? (
                 <img
                   src={partner.profile_photo_url}

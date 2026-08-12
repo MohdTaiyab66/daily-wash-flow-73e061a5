@@ -222,7 +222,7 @@ export function Meter({
 }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
-    <div className={cn("h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]", className)}>
+    <div className={cn("h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]", className)}>
       <div
         className={cn("h-full rounded-full transition-[width] duration-500", tone === "success" ? "bg-[#2E7D32]" : "bg-[#FF6B00]")}
         style={{ width: `${pct}%` }}

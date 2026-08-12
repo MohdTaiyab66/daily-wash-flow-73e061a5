@@ -14,7 +14,9 @@ interface UWHeaderProps {
   } | null;
   vehicleImage?: string | null;
   onVehicleClick?: () => void;
+  hideLocationIcon?: boolean;
 }
+
 
 const COLLAPSE_DISTANCE = 40; 
 
@@ -24,7 +26,9 @@ export function UWHeader({
   activeVehicle,
   vehicleImage,
   onVehicleClick,
+  hideLocationIcon = false,
 }: UWHeaderProps) {
+
   const containerRef = useRef<HTMLElement>(null);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   const locationTextRef = useRef<HTMLSpanElement>(null);
@@ -97,10 +101,14 @@ export function UWHeader({
       >
         {/* Left: Compact Location Selector */}
         <div 
-          className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1 group"
-          onClick={onAreaClick}
+          className={cn(
+            "flex items-center gap-1.5 transition-opacity min-w-0 flex-1 group",
+            !hideLocationIcon && "cursor-pointer active:opacity-60"
+          )}
+          onClick={hideLocationIcon ? undefined : onAreaClick}
         >
-          <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
+          {!hideLocationIcon && <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />}
+
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
@@ -109,7 +117,7 @@ export function UWHeader({
 
               {area || "Set location"}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[#8A8A8A] shrink-0 transition-colors" />
+            {!hideLocationIcon && <ChevronDown className="h-3.5 w-3.5 text-[#8A8A8A] shrink-0 transition-colors" />}
           </div>
         </div>
 
