@@ -240,6 +240,17 @@ function CustomerHome() {
 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
+                  const isFallback = !img.id || img.id.startsWith('static-');
+                  
+                  // LOG CAROUSEL URLS FOR TRACING
+                  console.log(`[CAROUSEL-DATA] Slide ${idx + 1}:
+                    - ID: ${img.id}
+                    - Source: ${isFallback ? 'FALLBACK' : 'DATABASE'}
+                    - URL: ${img.image_url}
+                    - UpdatedAt: ${img.updated_at}
+                    - Bust: ${bust}
+                  `);
+
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
                   if (finalImage && finalImage.includes('supabase.co')) {
                     const separator = finalImage.includes('?') ? '&' : '?';
