@@ -155,6 +155,7 @@ function CustomerAuthedLayout() {
             <p>SESSION: {diag.hasSession ? 'PRESENT' : 'MISSING'}</p>
             <p>USER: {diag.userId || 'NONE'}</p>
             <p>EMAIL: {diag.email || 'NONE'}</p>
+            <p>CLIENT_ID: {(window as any).__SUPABASE_CLIENT_ID || 'UNKNOWN'}</p>
           </div>
         )}
       </div>
