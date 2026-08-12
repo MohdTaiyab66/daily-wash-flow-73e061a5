@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authStatus: session ? 'authenticated' : 'unauthenticated',
         session,
         user: session?.user ?? null,
-        clientId
+        clientId: clientId
       }));
     };
 
