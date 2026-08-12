@@ -83,6 +83,12 @@ function ServiceDetail() {
   const { slug } = useParams({ from: "/c/_authed/service/$slug" });
   const navigate = useNavigate();
   const search = Route.useSearch();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[SERVICE] SESSION_CHECK", { exists: !!session, user: session?.user?.id });
+    });
+  }, []);
   
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
@@ -150,16 +156,24 @@ function ServiceDetail() {
   const serviceQ = useQuery({
     queryKey: ["service", slug],
     queryFn: async () => {
+      console.log("[SERVICE] QUERY_START slug=", slug);
       const { data, error } = await supabase.from("service_catalog").select("*").eq("slug", slug).maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error("[SERVICE] QUERY_ERROR", error);
+        throw error;
+      }
+      console.log("[SERVICE] QUERY_SUCCESS", data?.name);
       return data as Service | null;
-    }
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000
   });
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
     queryFn: async () => {
-      const { data } = await supabase.from("customer_vehicles").select("*");
+      const { data, error } = await supabase.from("customer_vehicles").select("*");
+      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
       return (data ?? []) as Vehicle[];
     }
   });
@@ -167,7 +181,8 @@ function ServiceDetail() {
   const addressesQ = useQuery({
     queryKey: ["customer-addresses"],
     queryFn: async () => {
-      const { data } = await supabase.from("customer_addresses").select("*");
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) console.error("[SERVICE] ADDRESSES_ERROR", error);
       return (data ?? []) as Address[];
     }
   });
@@ -175,7 +190,8 @@ function ServiceDetail() {
   const addonsQ = useQuery({
     queryKey: ["service-addons"],
     queryFn: async () => {
-      const { data } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
+      const { data, error } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
+      if (error) console.error("[SERVICE] ADDONS_ERROR", error);
       return (data ?? []) as Addon[];
     }
   });
@@ -183,9 +199,13 @@ function ServiceDetail() {
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.warn("[SERVICE] PROFILE_USER_MISSING", userError);
+        return null;
+      }
+      const { data, error } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
+      if (error) console.error("[SERVICE] PROFILE_DATA_ERROR", error);
       return data;
     }
   });
