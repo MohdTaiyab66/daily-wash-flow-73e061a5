@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { ServicePhotoViewer } from "./ServicePhotoViewer";
 import { cn } from "@/lib/utils";
 
-type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
+type Photo = { stage: string; angle: string; storage_path: string; captured_at: string; partner_name?: string | null };
 type DirtyReport = {
   reason: string | null; notes: string | null;
   photo_front: string | null; photo_rear: string | null;
@@ -38,6 +38,7 @@ type RecentService = {
   complaint_window_ends_at: string;
   can_complain: boolean;
   has_complaint: boolean;
+  vehicle_registration: string | null;
 };
 
 export function RecentServiceFeed({
@@ -147,10 +148,10 @@ export function RecentServiceFeed({
       <div className="mt-3 space-y-4">
         {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <div className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center space-y-2 bg-white">
-            <p className="text-[15px] font-semibold text-[#1A1A1A]">No completed services yet</p>
-            <p className="text-[13px] font-normal text-[#8A8A8A] max-w-[240px] mx-auto">
-              Service photos will appear here after your service is completed.
+          <div className="rounded-[18px] border border-black/5 p-8 text-center bg-white shadow-sm">
+            <p className="text-[15px] font-black text-[#1A1A1A]">No completed services yet</p>
+            <p className="mt-2 text-[13px] font-bold text-black/20 max-w-[200px] mx-auto leading-relaxed">
+              Your service proof photos will appear here after your first completed wash.
             </p>
           </div>
         )}
@@ -231,109 +232,56 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[15.5px] font-semibold text-[#1A1A1A] leading-tight">
-              {service.service_name ?? "Daily Shine"} · <span className={cn(
-                "text-[13.5px] font-medium",
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[17px] font-black tracking-tight text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-[10px] font-black uppercase tracking-[0.15em]",
                 status.tone === "success" ? "text-[#2E7D32]" : 
                 status.tone === "danger" ? "text-[#E53935]" :
                 status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
-              )}>{status.label} {status.tone === "success" && "✓"}</span>
-            </span>
+              )}>
+                {status.label} {status.tone === "success" && "✓"}
+              </span>
+            </div>
           </div>
           
-          <p className="mt-1.5 text-[13.5px] font-normal text-[#8A8A8A]">
+          <p className="mt-2 text-[13px] font-bold text-black/20">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
           </p>
-
-          {(reason || (isUnavailable && service.unavailable_notes)) && (
-            <div className="mt-3 space-y-1">
-              {reason && <p className="text-[13px] font-semibold text-[#1A1A1A]">{reason}</p>}
-              {isUnavailable && (
-                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
-                  {service.unavailable_notes || "No wash was deducted from your plan."}
-                </p>
-              )}
-              {hasDirty && (
-                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
-                  Partner reported the vehicle needed more attention than usual.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-        <div className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-          status.tone === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
-          status.tone === "danger" ? "bg-[#FFEBEE] text-[#E53935]" :
-          status.tone === "warning" ? "bg-[#FFF3E0] text-[#E65100]" : "bg-[#FFF1E8] text-[#FF6B00]"
-        )}>
-          <StatusIcon className="h-5 w-5" />
         </div>
       </div>
 
       {!isUnavailable && !isMissed && service.photos.length > 0 && (
-        <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />
-      )}
-
-      {!isUnavailable && !isMissed && !isPending && service.photos.length === 0 && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#F5F5F5] p-3">
-          <AlertCircle className="h-4 w-4 text-[#8A8A8A]" />
-          <span className="text-[12px] font-medium text-[#8A8A8A]">
-            {service.service_name?.toLowerCase().includes("daily") 
-              ? "Service photos are temporarily unavailable."
-              : "No service photos were required for this service."}
-          </span>
-        </div>
-      )}
-
-      {(isUnavailable || hasDirty) && (service.unavailable_photo || dirtyPhotos.length > 0) && (
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {service.unavailable_photo && (
-            <SignedPhoto 
-              path={service.unavailable_photo} 
-              stage="proof" 
-              onClick={() => openViewer(0)} 
-            />
-          )}
-          {dirtyPhotos.map((p, i) => (
-            <SignedPhoto 
-              key={p} 
-              path={p} 
-              stage="dirty" 
-              onClick={() => openViewer(service.unavailable_photo ? i + 1 : i)} 
-            />
+        <div className="mt-5 flex gap-2">
+          {service.photos.slice(0, 3).map((p, i) => (
+             <SignedPhoto key={i} path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
           ))}
+          {service.photos.length > 3 && (
+            <button 
+              onClick={() => openViewer(3)}
+              className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[12px] bg-neutral-100 overflow-hidden group active:scale-95 transition-all"
+            >
+              <SignedPhoto path={service.photos[3].storage_path} stage={service.photos[3].stage} />
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+                <span className="text-[13px] font-black text-white">+{service.photos.length - 3} photos</span>
+              </div>
+            </button>
+          )}
         </div>
       )}
 
       <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
-        <div className="flex items-center gap-1.5">
-          {isPending ? (
-            <div className="flex items-center gap-2">
-               <Loader2 className="h-3 w-3 animate-spin text-[#FF6B00]" />
-               <span className="text-[11px] font-medium text-[#FF6B00]">Photos are being uploaded...</span>
-            </div>
-          ) : (
-            <>
-              <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
-              <span className="text-[12px] font-medium text-[#8A8A8A]">
-                {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
-              </span>
-            </>
-          )}
-        </div>
-        
-        {!isUnavailable && !isMissed && !isPending && (
-          <button 
-            onClick={() => openViewer(0)}
-            className="text-[13.5px] font-semibold text-[#FF6B00]"
-          >
+        <span className="text-[12px] font-bold text-black/20">
+           {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
+        </span>
+        {!isUnavailable && !isMissed && !isPending && service.photos.length > 0 && (
+          <button onClick={() => openViewer(0)} className="text-[13px] font-black text-[#FF6B00] active:opacity-60 transition-all">
             View all photos →
           </button>
         )}
@@ -349,7 +297,12 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
                 ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at, partner_name: service.partner_name }] : []),
                 ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at, partner_name: service.partner_name }))
               ]
-            : service.photos.map(p => ({ ...p, partner_name: service.partner_name }))
+            : service.photos.map(p => ({ 
+                ...p, 
+                partner_name: service.partner_name, 
+                vehicle_label: service.vehicle_label, 
+                vehicle_registration: service.vehicle_registration 
+              }))
         }
         initialIndex={initialPhotoIndex}
         serviceName={service.service_name ?? "Daily Shine"}
@@ -358,90 +311,6 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     </div>
   );
 }
-
-function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [type, setType] = useState<string>("quality");
-  const [desc, setDesc] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const submit = async () => {
-    setSaving(true);
-    try {
-      const { error } = await (supabase as any).rpc("submit_service_complaint", {
-        p_service_id: service.service_id, p_complaint_type: type, p_description: desc || null,
-      });
-      if (error) throw error;
-      toast.success("Complaint submitted. Our team will follow up.");
-      setOpen(false); setDesc(""); onSubmitted();
-    } catch (e: any) {
-      toast.error(e?.message || "Could not submit complaint");
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <>
-      <Button size="sm" variant={canComplain ? "outline" : "ghost"} disabled={!canComplain} className="h-7 gap-1 text-[11px]" onClick={() => setOpen(true)}>
-        <ShieldAlert className="h-3.5 w-3.5" /> Report issue
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Report an issue</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-2 text-[11px] text-primary">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>Complaints accepted within 2 hours of completion. Our team responds the same day.</span>
-            </div>
-            <div>
-              <Label className="text-xs">What went wrong?</Label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm">
-                <option value="quality">Wash quality not satisfactory</option>
-                <option value="damage">Vehicle damage</option>
-                <option value="missed_area">Area missed</option>
-                <option value="behaviour">Partner behaviour</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <Label className="text-xs">Describe (optional)</Label>
-              <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder="Add a few details so we can resolve it" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
-  if (!photos.length) return null;
-  
-  return (
-    <div className="mt-5">
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-        {photos.map((p, i) => (
-          <div key={i} className="flex-shrink-0 w-[82px]">
-            <SignedPhoto 
-              path={p.storage_path} 
-              stage={p.stage} 
-              onClick={() => onPhotoClick(i)} 
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-1 mt-2">
-        <span className="text-[11px] font-semibold text-[#8A8A8A]">1 / {photos.length}</span>
-      </div>
-    </div>
-  );
-}
-
 
 function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -454,20 +323,13 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const labelMap: Record<string, string> = {
-    before: "BEFORE",
-    after: "AFTER",
-    proof: "SERVICE PHOTO",
-    dirty: "DIRTY VEHICLE"
-  };
-
-  const label = labelMap[stage] || "SERVICE PHOTO";
+  const label = stage === 'before' ? 'BEFORE' : stage === 'after' ? 'AFTER' : 'SERVICE PHOTO';
 
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "uw-pressable relative h-[76px] w-full overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        "uw-pressable relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] bg-[#F5F5F5]",
         onClick && "cursor-pointer"
       )}
     >
@@ -478,9 +340,14 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      <div className="absolute bottom-1 left-1 rounded-full bg-black/30 px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-white backdrop-blur-[2px]">
-        {label}
-      </div>
+      {(stage === 'before' || stage === 'after') && (
+        <div className="absolute inset-0 bg-black/5" />
+      )}
+      {(stage === 'before' || stage === 'after') && (
+        <div className="absolute top-1 left-1 rounded-sm bg-black/40 px-1 py-0.5 text-[7px] font-black tracking-widest text-white backdrop-blur-[2px]">
+          {label}
+        </div>
+      )}
     </div>
   );
 }

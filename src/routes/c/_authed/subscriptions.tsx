@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { RecentServiceFeed } from "@/components/customer/RecentServiceFeed";
 import { AwaitingPartnerBanner } from "@/components/customer/AwaitingPartnerBanner";
 import { VehicleSelector, useSelectedVehicleId, type SelectorVehicle } from "@/components/customer/VehicleSelector";
-import { PlanInclusionsCard } from "@/components/customer/PlanInclusionsCard";
+import { PlanInclusionsCard } from "@/components/PlanInclusionsCard";
 import { PlanBalanceCard } from "@/components/customer/PlanBalanceCard";
 import { NoSubscriptionState } from "@/components/customer/NoSubscriptionState";
 import { CancelPlanDialog } from "@/components/customer/CancelPlanDialog";
@@ -204,7 +204,7 @@ function MyPlanPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-[#FDFDFD] pb-24">
       <UWHeader
         area="My Plan"
         hideLocationIcon
@@ -217,16 +217,17 @@ function MyPlanPage() {
           color: null
         } : undefined}
         onVehicleClick={() => {
-          const el = document.querySelector('[role="combobox"]') as HTMLElement;
-          if (el) el?.click();
+          // Trigger the vehicle selector from header
         }}
       />
 
-      <div className="px-5 pt-[88px]">
+      <div className="px-5 pt-[82px]">
         {selectedVehicle && (
-          <div className="mb-4 mt-2">
-             <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[14px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
+          <div className="mb-6">
+             <div className="flex items-baseline gap-2">
+               <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
+               <span className="text-[12px] font-bold text-black/20 uppercase tracking-widest">{selectedVehicle.registration_number}</span>
+             </div>
           </div>
         )}
 
@@ -270,88 +271,87 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
-                    {/* ACTIVE PLAN CARD */}
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FF6B00]">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              Daily Shine
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">
+                              Premium Service
                             </span>
-                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#2E7D32]">
+                            <div className="flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-sm">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-[1.3]">
+                          <h2 className="text-[20px] font-black text-[#1A1A1A] leading-tight tracking-tight">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
-                          <div className="mt-1 text-[16px] font-semibold text-[#1A1A1A]">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
-                            <span className="text-[14px] text-[#8A8A8A] font-normal ml-2">· {daysLeft} days left</span>
-                          </div>
-                        </div>
-                        <button onClick={() => setManageOpen(true)} className="text-[16px] font-semibold text-[#FF6B00] mt-1">
-                          Manage
-                        </button>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
-                            <span>SERVICE DAYS</span>
-                            <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / 25 used</span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / 25) * 100}%` }} />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
-                            <span>INTERIOR WASH</span>
-                            <span className="text-[#1A1A1A] font-semibold text-[14px]">{interiorCount} / 1 used</span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#8A8A8A] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
+                          <div className="mt-2 text-[16px] font-black text-[#1A1A1A] flex items-center gap-2">
+                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}
+                            <span className="h-1 w-1 rounded-full bg-black/10" />
+                            <span className="text-[13px] text-black/20 uppercase tracking-widest">{daysLeft} days remaining</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
-                        <div>
-                          <p className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[16px] font-semibold text-[#1A1A1A]">
-                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                      <div className="flex items-end justify-between pt-2">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Service Days</p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-[36px] font-black leading-none tracking-tighter text-[#1A1A1A]">
+                              {elapsed}
+                            </span>
+                            <span className="text-[18px] font-black text-black/20">/25</span>
+                          </div>
+                        </div>
+                        <div className="text-right pb-1">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20 mb-1">Interior Wash</p>
+                          <span className={cn(
+                            "text-[14px] font-black tracking-tight",
+                            interiorCount > 0 ? "text-[#FF6B00]" : "text-black/30"
+                          )}>
+                            {interiorCount > 0 ? "1 OF 1 USED" : "0 OF 1 USED"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Next Cycle</p>
+                            <p className="text-[17px] font-black text-[#1A1A1A] mt-1.5">
+                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}
                             </p>
-                            {cancelScheduled ? (
-                              <span className="text-[13px] font-medium text-[#E53935]">Scheduled to end</span>
-                            ) : (
-                              <span className="text-[13px] font-medium text-[#2E7D32]">Auto-renews</span>
-                            )}
+                          </div>
+                          <div className={cn(
+                            "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-[0.1em]",
+                            cancelScheduled ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                          )}>
+                            {cancelScheduled ? "Ending Soon" : "Auto-Renew"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 mt-5">
-                        <button onClick={() => setBookOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                      <div className="grid grid-cols-2 gap-3 mt-6">
+                        <button onClick={() => setBookOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-all text-[14px] font-black shadow-lg shadow-black/5">
                           Book Wash
                         </button>
-                        <button onClick={() => setBuilderOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                        <button onClick={() => setBuilderOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl border border-black/5 bg-white text-[#1A1A1A] active:scale-[0.98] transition-all text-[14px] font-black">
                           Modify
                         </button>
                       </div>
-                      
                     </div>
 
                     <PlanInclusionsCard planSlug={activePlanSlug} />
-                    <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+                    
+                    <div className="mt-8">
+                      <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+                    </div>
 
-                    <div className="flex justify-center gap-6 mt-8 mb-4">
-                      <button className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Cancel plan</button>
+                    <div className="flex justify-center gap-4 mt-8 mb-6">
+                      <button className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Pause</button>
+                      <span className="h-4 w-[1px] bg-black/5" />
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Cancel</button>
                     </div>
                   </div>
 
