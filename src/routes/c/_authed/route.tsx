@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
@@ -45,6 +45,7 @@ function CustomerAuthedLayout() {
   const [authStatus, setAuthStatus] = useState<'initializing' | 'authenticated' | 'unauthenticated'>('initializing');
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -96,6 +97,9 @@ function CustomerAuthedLayout() {
 
   return (
     <CustomerShell>
+      <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: {location.pathname}</span>
+      </div>
       <Outlet />
     </CustomerShell>
   );
