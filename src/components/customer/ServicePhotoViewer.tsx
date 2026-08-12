@@ -122,9 +122,9 @@ export function ServicePhotoViewer({
           {/* Header */}
           <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-6 py-6">
             <div className="text-white">
-              <h3 className="text-[17px] font-black tracking-tight">{serviceName}</h3>
+              <h3 className="text-[17px] font-semibold tracking-tight">{serviceName}</h3>
               {serviceDate && (
-                <div className="mt-1 flex items-center gap-2 text-[12px] font-bold text-white/40">
+                <div className="mt-1 flex items-center gap-2 text-[12px] font-normal text-white/60">
                   <Calendar className="h-3.5 w-3.5" />
                   {new Date(serviceDate).toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -163,7 +163,7 @@ export function ServicePhotoViewer({
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-white/20" />
-                <span className="text-[12px] font-bold text-white/20 uppercase tracking-widest">Loading Photo</span>
+                <span className="text-[12px] font-medium text-white/20 uppercase tracking-widest">Loading Photo</span>
               </div>
             )}
 
@@ -172,15 +172,15 @@ export function ServicePhotoViewer({
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); prev(); }}
-                  className="absolute left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 md:bg-white/10"
+                  className="absolute left-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
                 >
-                  <ChevronLeft className="h-6 w-6" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); next(); }}
-                  className="absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 md:bg-white/10"
+                  className="absolute right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
                 >
-                  <ChevronRight className="h-6 w-6" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </>
             )}
@@ -190,15 +190,15 @@ export function ServicePhotoViewer({
           <div className="bg-gradient-to-t from-black/90 to-transparent px-8 pb-10 pt-10">
              <div className="flex items-end justify-between">
                 <div className="space-y-3">
-                   <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-black">
+                   <div className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-black">
                       {stageLabels[currentPhoto.stage] || currentPhoto.stage}
                    </div>
-                   <div className="text-[16px] font-black text-white">
+                   <div className="text-[18px] font-semibold text-white">
                       {currentPhoto.angle.charAt(0).toUpperCase() + currentPhoto.angle.slice(1)} View
                    </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                   <div className="text-[14px] font-black text-white/40">
+                <div className="flex flex-col items-end gap-3">
+                   <div className="text-[13px] font-medium text-white/60">
                       {currentIndex + 1} / {photos.length}
                    </div>
                    {/* Dots indicator */}
@@ -208,7 +208,7 @@ export function ServicePhotoViewer({
                           key={i} 
                           className={cn(
                             "h-1 rounded-full transition-all duration-300",
-                            i === currentIndex ? "w-4 bg-white" : "w-1.5 bg-white/20"
+                            i === currentIndex ? "w-5 bg-white" : "w-1.5 bg-white/20"
                           )} 
                         />
                       ))}
@@ -219,5 +219,7 @@ export function ServicePhotoViewer({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
   );
 }
