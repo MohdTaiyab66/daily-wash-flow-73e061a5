@@ -179,42 +179,45 @@ export function ServicePhotoViewer({
           </div>
 
           {/* Footer Info */}
-          <div className="bg-gradient-to-t from-black/90 to-transparent px-8 pb-10 pt-10">
-             <div className="flex items-end justify-between">
-                <div className="space-y-3">
-                   <div className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-black">
-                      {stageLabels[currentPhoto.stage] || currentPhoto.stage}
+          <div className="bg-gradient-to-t from-black/95 to-transparent px-8 pb-12 pt-16">
+             <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                   <div className="space-y-1">
+                      <div className="text-[20px] font-black text-white leading-tight">
+                        {serviceName}
+                      </div>
+                      <div className="flex items-center gap-2 text-[14px] font-bold text-white/50">
+                        <span>{new Date(currentPhoto.captured_at || serviceDate || "").toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</span>
+                        <span className="h-1 w-1 rounded-full bg-white/20" />
+                        <span>{new Date(currentPhoto.captured_at || serviceDate || "").toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</span>
+                      </div>
                    </div>
-
-                   <div className="text-[14px] font-medium text-white/90">
-                      {currentIndex + 1} / {photos.length}
-                   </div>
-                   <div className="text-[13px] font-normal text-white/60 space-y-1">
-                      <p>Service: <span className="text-white/80 font-medium">{serviceName}</span></p>
-                      {serviceDate && (
-                        <>
-                          <p>Date: <span className="text-white/80 font-medium">{new Date(serviceDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
-                          <p>Time: <span className="text-white/80 font-medium">{new Date(serviceDate).toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</span></p>
-                        </>
-                      )}
-                      {photos[currentIndex].partner_name && (
-                        <p>Partner: <span className="text-white/80 font-medium">{photos[currentIndex].partner_name}</span></p>
-                      )}
-                   </div>
+                   {(currentPhoto.stage === 'before' || currentPhoto.stage === 'after') && (
+                     <div className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-black shadow-lg">
+                       {currentPhoto.stage}
+                     </div>
+                   )}
                 </div>
-                <div className="flex flex-col items-end gap-3">
-                   {/* Dots indicator */}
-                   <div className="flex gap-1.5">
-                      {photos.map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "h-1 rounded-full transition-all duration-300",
-                            i === currentIndex ? "w-5 bg-white" : "w-1.5 bg-white/20"
-                          )} 
-                        />
-                      ))}
-                   </div>
+
+                {currentPhoto.partner_name && (
+                  <div className="text-[13px] font-bold text-white/40">
+                    Serviced by {currentPhoto.partner_name}
+                  </div>
+                )}
+
+                {/* Page Indicator */}
+                <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                  <div className="flex gap-2">
+                    {photos.map((_, i) => (
+                      <div 
+                        key={i} 
+                        className={cn(
+                          "h-1 rounded-full transition-all duration-300",
+                          i === currentIndex ? "w-8 bg-[#FF6B00]" : "w-2 bg-white/20"
+                        )} 
+                      />
+                    ))}
+                  </div>
                 </div>
              </div>
           </div>
