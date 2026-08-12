@@ -32,21 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const updateState = async (event: string, session: any | null) => {
+      const clientId = (window as any).__SUPABASE_CLIENT_ID || 'initializing';
+      
       authLog.info(`[AUTH-SYNC] EVENT: ${event}`, { 
         hasSession: !!session, 
         userId: session?.user?.id ?? null,
-        previousStatus: state.authStatus,
-        nextStatus: session ? 'authenticated' : 'unauthenticated'
+        clientId
       });
 
       if (!mounted) return;
 
-      setState({
+      setState(prev => ({
+        ...prev,
         authStatus: session ? 'authenticated' : 'unauthenticated',
         session,
         user: session?.user ?? null,
-        clientId: (window as any).__SUPABASE_CLIENT_ID || 'unknown',
-      });
+        clientId
+      }));
     };
 
     // Initial check
