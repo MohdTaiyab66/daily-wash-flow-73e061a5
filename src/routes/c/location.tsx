@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { sessionManager } from "@/lib/customer-auth-session";
 
 // `/c/location` is a layout for `/c/location/search`. Its own path just
 // forwards to the search screen — but the layout MUST render <Outlet /> so

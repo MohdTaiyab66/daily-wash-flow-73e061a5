@@ -325,8 +325,8 @@ function LocationFlow() {
       localStorage.setItem("uw_customer_geo", JSON.stringify(selectedManualLocation.geo));
       
       try {
-        const { data: u } = await supabase.auth.getUser();
-        const uid = u.user?.id;
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
         if (uid) {
           const { data: existing } = await supabase
             .from("customer_addresses")
