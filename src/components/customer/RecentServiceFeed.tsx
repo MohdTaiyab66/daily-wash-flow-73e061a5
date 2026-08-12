@@ -133,21 +133,21 @@ export function RecentServiceFeed({
   return (
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-[14px] font-black uppercase tracking-widest text-muted-foreground/40">
-          {showAll ? "Full History" : "Recent Activity"}
+        <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+          {showAll ? "Full History" : "Recent Service"}
         </h3>
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="text-[12px] font-black text-primary active:opacity-60"
+          className="text-[13px] font-semibold text-[#FF6B00] active:opacity-60"
         >
           {showAll ? "Show Recent" : "View All"}
         </button>
       </div>
       <div className="mt-3 space-y-4">
-        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />}
+        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <p className="rounded-[28px] border border-dashed border-black/10 p-8 text-center text-[13px] font-medium text-muted-foreground/60">
+          <p className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center text-[13px] font-medium text-[#8A8A8A]">
             No service records found.
           </p>
         )}
