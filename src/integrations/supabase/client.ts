@@ -65,6 +65,7 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
       _supabase = createSupabaseClient();
       if (typeof window !== 'undefined') {
         (window as any).__SUPABASE_CLIENT_ID = Math.random().toString(36).substring(7);
+        (window as any).supabase = _supabase; // FOR DIAGNOSTICS ONLY
         console.log(`[AUTH-P0] Supabase client initialized with ID: ${(window as any).__SUPABASE_CLIENT_ID}`);
       }
     }
