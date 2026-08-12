@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
 const authLog = {
-  trace: (m: string, ...args: any[]) => console.log(`[AUTH][TRACE] ${m}`, ...args),
-  info: (m: string, ...args: any[]) => console.log(`[AUTH][INFO] ${m}`, ...args),
-  error: (m: string, ...args: any[]) => console.error(`[AUTH][ERROR] ${m}`, ...args),
+  trace: (m: string, ...args: any[]) => console.debug(`[AUTH] ${m}`, ...args),
+  info: (m: string, ...args: any[]) => console.log(`[AUTH] ${m}`, ...args),
+  error: (m: string, ...args: any[]) => console.error(`[AUTH] ${m}`, ...args),
 };
+
 
 const getAuthErrorDetails = (err: any) => {
   if (!err) return { message: "Unknown error" };
