@@ -95,7 +95,7 @@ function CustomerAuth() {
   const [referral, setReferral] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
   const [verifyState, setVerifyState] = useState<VerifyState>("IDLE");
   const verifyingRef = useRef(false);
 
