@@ -314,37 +314,31 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
 
       <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
         <div className="flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
-          <span className="text-[12px] font-medium text-[#8A8A8A]">
-            {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
-          </span>
-          {isPending && (
-            <div className="mt-1 flex items-center gap-2">
+          {isPending ? (
+            <div className="flex items-center gap-2">
                <Loader2 className="h-3 w-3 animate-spin text-[#FF6B00]" />
-               <span className="text-[11px] font-medium text-[#FF6B00]">Photos are being uploaded. They'll appear here shortly.</span>
+               <span className="text-[11px] font-medium text-[#FF6B00]">Photos are being uploaded...</span>
             </div>
+          ) : (
+            <>
+              <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
+              <span className="text-[12px] font-medium text-[#8A8A8A]">
+                {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
+              </span>
+            </>
           )}
         </div>
         
         {!isUnavailable && !isMissed && !isPending && (
-          <div className="flex items-center gap-4">
-            {canComplain && (
-              <button 
-                onClick={() => setViewerOpen(true)}
-                className="text-[13px] font-semibold text-[#FF6B00]"
-              >
-                Report an issue
-              </button>
-            )}
-            <button 
-              onClick={() => openViewer(0)}
-              className="text-[13.5px] font-semibold text-[#FF6B00]"
-            >
-              View all photos →
-            </button>
-          </div>
+          <button 
+            onClick={() => openViewer(0)}
+            className="text-[13.5px] font-semibold text-[#FF6B00]"
+          >
+            View all photos →
+          </button>
         )}
       </div>
+
 
       <ServicePhotoViewer
         open={viewerOpen}
