@@ -66,18 +66,23 @@ function CustomerHome() {
   const initialContextQ = useQuery({
     queryKey: ["customer-initial-context"],
     queryFn: async () => {
-      console.log("[HOME] Initial context fetch started");
+      console.log("[HOME DEBUG] [STARTUP] Initial context fetch started");
       try {
         const res = await getInitialCustomerContext();
-        console.log("[HOME] Initial context success:", !!res);
+        console.log("[HOME DEBUG] [STARTUP] Initial context success:", !!res);
         return res;
       } catch (err) {
-        console.error("[HOME] Initial context error:", err);
+        console.error("[HOME DEBUG] [STARTUP] Initial context error:", err);
         throw err;
       }
     },
     staleTime: 1000 * 60 * 5,
-    meta: { timeout: 5000 }
+  });
+
+  console.log("[HOME DEBUG] Environment check:", {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    BUILD: "1.0.35",
+    BUILD_ID: "debug-pipeline-2026-08-12"
   });
 
   useEffect(() => {
@@ -88,36 +93,46 @@ function CustomerHome() {
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     queryFn: async (): Promise<Vehicle[]> => {
-      console.log("[HOME] Vehicles request started");
+      console.log("[HOME DEBUG] [REQUEST] Vehicles request started");
       const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
       if (error) {
-        console.error("[HOME] Vehicles request failed:", error);
+        console.error("[HOME DEBUG] [REQUEST] Vehicles request failed:", error);
         throw error;
       }
-      console.log("[HOME] Vehicles request success:", data?.length ?? 0);
+      console.log("[HOME DEBUG] [REQUEST] Vehicles request success:", data?.length ?? 0);
       return (data ?? []) as Vehicle[];
     },
     retry: 2,
-    meta: { timeout: 5000 }
   });
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60,
     queryFn: async (): Promise<Service[]> => {
-      console.log("[HOME] Services request started");
+      console.log("[HOME DEBUG] [REQUEST] Services request started");
       const { data, error } = await supabase.from("service_catalog").select("*").eq("active", true).order("sort_order");
       if (error) {
-        console.error("[HOME] Services request failed:", error);
+        console.error("[HOME DEBUG] [REQUEST] Services request failed:", error);
         throw error;
       }
-      console.log("[HOME] Services request success:", data?.length ?? 0);
+      console.log("[HOME DEBUG] [REQUEST] Services request success:", data?.length ?? 0);
       return (data ?? []) as Service[];
     },
     retry: 2,
-    meta: { timeout: 5000 }
+  });
+
+  console.log("[HOME DEBUG] Services State:", {
+    status: servicesQ.status,
+    fetchStatus: servicesQ.fetchStatus,
+    isPending: servicesQ.isPending,
+    isLoading: servicesQ.isLoading,
+    isFetching: servicesQ.isFetching,
+    isError: servicesQ.isError,
+    isSuccess: servicesQ.isSuccess,
+    dataCount: servicesQ.data?.length,
+    enabled: true // Always true for services now
   });
 
   const vehicles = vehiclesQ.data ?? [];
@@ -150,27 +165,38 @@ function CustomerHome() {
 
   const imagesQ = useQuery({
     queryKey: ["customer-promo-images"],
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-      console.log("[HOME] Carousel request started");
+      console.log("[HOME DEBUG] [REQUEST] Carousel request started");
       const { data, error } = await (supabase as any)
         .from("daily_shine_carousel")
         .select("*")
         .eq("status", "published")
         .order("slide_number");
       if (error) {
-        console.error("[HOME] Carousel request failed:", error);
+        console.error("[HOME DEBUG] [REQUEST] Carousel request failed:", error);
         throw error;
       }
-      console.log("[HOME] Carousel request success:", data?.length ?? 0);
+      console.log("[HOME DEBUG] [REQUEST] Carousel request success:", data?.length ?? 0);
       return data.map((img: any) => ({
         ...img,
         image_url: getDailyShineCarouselImageUrl(img.image_url)
       }));
     },
     retry: 2,
-    meta: { timeout: 5000 }
+  });
+
+  console.log("[HOME DEBUG] Carousel State:", {
+    status: imagesQ.status,
+    fetchStatus: imagesQ.fetchStatus,
+    isPending: imagesQ.isPending,
+    isLoading: imagesQ.isLoading,
+    isFetching: imagesQ.isFetching,
+    isError: imagesQ.isError,
+    isSuccess: imagesQ.isSuccess,
+    dataCount: imagesQ.data?.length,
+    enabled: true // Always true for carousel now
   });
 
   const galleryQ = useServiceGallery();
@@ -263,7 +289,7 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isLoading ? (
+                {servicesQ.isPending && servicesQ.fetchStatus === "fetching" ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : servicesQ.isError ? (
                   <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
