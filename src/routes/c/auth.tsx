@@ -49,12 +49,15 @@ function CustomerAuth() {
   const [referral, setReferral] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const verifyingRef = useRef(false);
 
   useEffect(() => {
     (async () => {
+      authLog.trace("Checking existing session...");
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
+        authLog.info("Session restored", { email: data.session.user.email });
         goAfterAuth();
       }
     })();
@@ -69,7 +72,13 @@ function CustomerAuth() {
   }, [resendIn]);
 
   const sendOtp = () => {
-    if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit mobile number"); return; }
+    setError(null);
+    if (!/^\d{10}$/.test(phone)) { 
+      setError("Enter a valid 10-digit mobile number");
+      return; 
+    }
+    
+    authLog.info("Requesting OTP", { phone });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -78,65 +87,146 @@ function CustomerAuth() {
 
   const resendOtp = () => {
     if (resendIn > 0) return;
+    setError(null);
+    authLog.info("Resending OTP", { phone });
     setOtp("");
     setResendIn(RESEND_SECONDS);
     toast.success("OTP sent again");
   };
 
   const verifyOtp = async (code = otp) => {
-    if (verifyingRef.current) return; // no double submits
-    if (code.length !== OTP_LENGTH) { toast.error(`Enter the ${OTP_LENGTH}-digit code`); return; }
-    if (code !== "1234") { toast.error("Invalid OTP. Please try again."); return; }
+    if (verifyingRef.current) return;
+    setError(null);
+    
+    if (code.length !== OTP_LENGTH) {
+      setError(`Enter the \${OTP_LENGTH}-digit code`);
+      return;
+    }
+    
+    // Hardcoded dev check - keeping it but with proper logging
+    if (code !== "1234") {
+      authLog.error("OTP verification failed", "Invalid OTP entered (demo mode requires 1234)");
+      setError("That code doesn't look right. Please try again.");
+      return;
+    }
+
     verifyingRef.current = true;
     setLoading(true);
+    
     const email = customerEmail(phone);
     const password = customerPassword(phone);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    verifyingRef.current = false;
-    if (data.session) { goAfterAuth(); return; }
-    // Only treat "user does not exist" as a signup path. Surface other errors
-    // (rate-limit, network, unconfirmed email) so users aren't silently sent
-    // to the name step and told to sign up again.
-    const msg = (error?.message ?? "").toLowerCase();
-    const isNewUser =
-      msg.includes("invalid login credentials") ||
-      msg.includes("invalid_credentials") ||
-      msg.includes("user not found");
-    if (isNewUser) {
-      setStep("name");
-    } else if (error) {
-      toast.error(error.message || "Could not sign in. Please try again.");
+    
+    authLog.info("Verifying OTP & Signing In", { email });
+    
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (data.session) {
+        authLog.info("Authentication successful", { userId: data.user?.id });
+        goAfterAuth();
+        return;
+      }
+      
+      if (signInError) {
+        authLog.error("Sign in failed", signInError);
+        
+        const msg = (signInError.message ?? "").toLowerCase();
+        const isNewUser =
+          msg.includes("invalid login credentials") ||
+          msg.includes("invalid_credentials") ||
+          msg.includes("user not found");
+          
+        if (isNewUser) {
+          authLog.info("New customer detected, moving to signup");
+          setStep("name");
+        } else {
+          setError(parseAuthError(signInError));
+        }
+      }
+    } catch (e) {
+      authLog.error("Unexpected verification error", e);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+      verifyingRef.current = false;
     }
   };
 
   const signUp = async () => {
     if (loading) return;
-    if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
+    setError(null);
+    
+    if (name.trim().length < 2) { 
+      setError("Enter your full name");
+      return; 
+    }
+    
     setLoading(true);
     const email = customerEmail(phone);
     const password = customerPassword(phone);
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: name.trim(), phone, role: "customer", referral_code: hasReferral ? referral.trim() : null } },
-    });
-    if (error) { setLoading(false); toast.error(error.message); return; }
-    const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
-    if (e2) { setLoading(false); toast.error(e2.message); return; }
+    
+    authLog.info("Registering new customer", { email, name });
+    
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email, password,
+        options: { 
+          data: { 
+            full_name: name.trim(), 
+            phone, 
+            role: "customer", 
+            referral_code: hasReferral ? referral.trim() : null 
+          } 
+        },
+      });
+      
+      if (signUpError) {
+        authLog.error("Signup failed", signUpError);
+        setError(parseAuthError(signUpError));
+        setLoading(false);
+        return;
+      }
+      
+      authLog.info("Signup successful, creating profile...");
+      
+      // Auto-sign-in after signup
+      const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
+      if (e2) {
+        authLog.error("Sign in after signup failed", e2);
+        setError(parseAuthError(e2));
+        setLoading(false);
+        return;
+      }
 
-    const { data: u } = await supabase.auth.getUser();
-    if (u?.user) {
-      await (supabase as any).from("customer_profiles").upsert({
-        user_id: u.user.id,
-        full_name: name.trim(),
-        phone,
-      }, { onConflict: "user_id" });
+      const { data: u } = await supabase.auth.getUser();
+      if (u?.user) {
+        authLog.info("Saving customer profile...", { userId: u.user.id });
+        await (supabase as any).from("customer_profiles").upsert({
+          user_id: u.user.id,
+          full_name: name.trim(),
+          phone,
+          email,
+        }, { onConflict: "user_id" });
+      }
+      
+      authLog.info("Signup flow complete");
+      goAfterAuth();
+    } catch (e) {
+      authLog.error("Unexpected signup error", e);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    goAfterAuth();
   };
 
-  const backToPhone = () => { setOtp(""); setName(""); setResendIn(0); setStep("phone"); };
+  const backToPhone = () => { 
+    setError(null);
+    setOtp(""); 
+    setName(""); 
+    setResendIn(0); 
+    setStep("phone"); 
+  };
+
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
