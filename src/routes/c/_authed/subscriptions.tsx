@@ -273,51 +273,51 @@ function MyPlanPage() {
                     )}
 
                     {/* ACTIVE PLAN CARD */}
-                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-6 shadow-sm">
+                    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF6B00]">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FF6B00]">
                               <Sparkles className="h-2.5 w-2.5" />
                               Daily Shine
                             </span>
-                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#2E7D32]">
+                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#2E7D32]">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[24px] font-semibold text-[#1A1A1A] leading-tight">
+                          <h2 className="text-[21px] font-semibold text-[#1A1A1A] leading-tight">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
-                          <div className="mt-1.5 text-[17px] font-semibold text-[#1A1A1A]">
+                          <div className="mt-1 text-[16px] font-semibold text-[#1A1A1A]">
                             ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
-                            <span className="text-[15px] text-[#8A8A8A] font-medium ml-2">· {daysLeft} days left</span>
+                            <span className="text-[14px] text-[#8A8A8A] font-normal ml-2">· {daysLeft} days left</span>
                           </div>
                         </div>
-                        <button onClick={() => setManageOpen(true)} className="text-[17px] font-semibold text-[#FF6B00] mt-1">
+                        <button onClick={() => setManageOpen(true)} className="text-[16px] font-semibold text-[#FF6B00] mt-1">
                           Manage
                         </button>
                       </div>
 
-                      <div className="mt-6">
-                        <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A] mb-2.5">
+                      <div className="mt-5">
+                        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">
                           <span>Monthly Usage</span>
-                          <span className="text-[#1A1A1A] font-semibold text-[15px]">{elapsed} / {totalDays} service days</span>
+                          <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} service days</span>
                         </div>
-                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
                           <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / totalDays) * 100}%` }} />
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-5 border-t border-[#F5F5F5] flex items-center justify-between">
+                      <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
                         <div>
-                          <p className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
                           <p className="text-[18px] font-semibold text-[#1A1A1A] mt-0.5">
                             {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
                           </p>
                         </div>
                         {cancelScheduled && (
-                          <p className="text-[14px] font-medium text-[#E53935]">Scheduled to end</p>
+                          <p className="text-[13px] font-medium text-[#E53935]">Scheduled to end</p>
                         )}
                       </div>
                     </div>
