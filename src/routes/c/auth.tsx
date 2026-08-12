@@ -104,8 +104,9 @@ function CustomerAuth() {
     }
     
     // In current project, 123456 is the ONLY accepted OTP in the frontend guard for demo mode.
-    // If the backend expects something else, this is a failure.
-    if (code !== "123456") {
+    // If we are in production, the backend handles real OTPs and this guard might be bypassed or updated.
+    // For now, we enforce 123456 as the demo standard.
+    if (SHOW_DEMO_OTP && code !== "123456") {
       authLog.error("OTP verification failed at guard", { 
         entered: code, 
         expected: "123456",
