@@ -147,7 +147,7 @@ function CustomerHome() {
         
         <UWHeader 
           area={area} 
-          onAreaClick={() => { navigate({ to: "/c/location/search" }); }}
+          onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
           activeVehicle={activeVehicle}
           vehicleImage={catalogImageQ.data}
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
