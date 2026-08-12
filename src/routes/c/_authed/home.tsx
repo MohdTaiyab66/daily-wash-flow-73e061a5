@@ -341,7 +341,7 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {(servicesQ.isError || servicesQ.status === 'error') && services.length === 0 ? (
+                {servicesQ.isError && services.length === 0 ? (
                   <div className="col-span-3 py-8 text-center bg-[#FFF2ED] rounded-[16px] border border-[#FF6B00]/20">
                     <p className="text-[#D32F2F] font-bold text-[15px] mb-1">SERVICE ERROR</p>
                     <p className="text-[#666] text-[12px] mb-4 px-6 leading-relaxed">
