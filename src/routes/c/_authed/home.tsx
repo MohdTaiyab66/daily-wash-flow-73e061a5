@@ -341,21 +341,25 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isError && services.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px] border border-[#E5E5E5]">
-                    <p className="text-[#333] font-medium text-sm mb-1">Couldn't load services</p>
-                    <p className="text-[#666] text-xs mb-3 px-6">The wash server is currently unreachable. Please try again in a moment.</p>
+                {(servicesQ.isError || servicesQ.status === 'error') && services.length === 0 ? (
+                  <div className="col-span-3 py-8 text-center bg-[#FFF2ED] rounded-[16px] border border-[#FF6B00]/20">
+                    <p className="text-[#D32F2F] font-bold text-[15px] mb-1">SERVICE ERROR</p>
+                    <p className="text-[#666] text-[12px] mb-4 px-6 leading-relaxed">
+                      The service catalog is currently unreachable.<br/>
+                      Please check your connection and try again.
+                    </p>
                     <button 
                       onClick={() => {
-                        console.log("[SERVICE-DATA] Manual retry clicked");
+                        console.log("[SERVICE-CATALOG] Manual retry clicked");
                         servicesQ.refetch();
                       }} 
-                      className="px-6 py-2 bg-[#FF6B00] text-white text-[13px] font-bold rounded-full active:scale-[0.97] transition-transform"
+                      className="h-[40px] px-8 bg-[#FF6B00] text-white text-[14px] font-bold rounded-full active:scale-[0.96] transition-transform shadow-md shadow-[#FF6B00]/20"
                     >
-                      Try Again
+                      TRY AGAIN
                     </button>
                   </div>
-                ) : (servicesQ.isLoading || (servicesQ.isFetching && services.length === 0)) ? (
+                ) : (servicesQ.isLoading || (servicesQ.fetchStatus === 'fetching' && services.length === 0)) ? (
+
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : services.length > 0 && filteredServices.length === 0 ? (
                   <div className="col-span-3 py-8 text-center">
