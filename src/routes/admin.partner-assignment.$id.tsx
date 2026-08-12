@@ -124,7 +124,7 @@ function PartnerAssignmentPage() {
                 <Input
                   type="number"
                   min={0}
-                  max={24}
+                  max={25}
                   defaultValue={a.route_visibility_hours ?? ""}
                   placeholder="Global default"
                   onChange={(e) => {
