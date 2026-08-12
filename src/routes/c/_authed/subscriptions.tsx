@@ -286,33 +286,26 @@ function MyPlanPage() {
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-12">
       <UWHeader
-        area={vehicleLabel ? "My Plan" : "Urban Wash"}
-        onAreaClick={() => hasVehicles && (document.querySelector('[role="combobox"]') as HTMLElement)?.click()}
+        area="My Plan"
+        onAreaClick={() => {}}
+        activeVehicle={selectedVehicle ? {
+          make: selectedVehicle.make,
+          model: selectedVehicle.model,
+          registration_number: selectedVehicle.registration_number,
+          category: 'sedan', // placeholder for display logic, not used if not mapped
+          color: null
+        } : undefined}
+        vehicleImage={undefined} // Would need helper to fetch properly if needed
+        onVehicleClick={() => (vehiclesQ.data && vehiclesQ.data.length > 1 ? (document.querySelector('[role="combobox"]') as HTMLElement)?.click() : null)}
       />
 
-      <div className="px-5 pt-4">
-        {hasVehicles ? (
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <h1 className="text-[21px] font-black tracking-tight text-foreground">
-                {vehicleLabel || "My Plan"}
-              </h1>
-              <p className="text-[13px] font-medium text-muted-foreground mt-0.5">
-                {selectedVehicle?.registration_number || "Manage your car subscription"}
-              </p>
-            </div>
-            <VehicleSelector
-              vehicles={vehiclesQ.data ?? []}
-              value={selectedVehicleId}
-              onChange={setSelectedVehicleId}
-            />
-          </div>
-        ) : (
-          <div className="py-2">
-            <h1 className="text-[21px] font-black tracking-tight text-foreground">My Plan</h1>
+      <div className="px-5 pt-[52px]">
+        {selectedVehicle && (
+          <div className="mb-4">
+             <h2 className="text-[15px] font-bold text-[#1A1A1A]">{selectedVehicle.make} {selectedVehicle.model}</h2>
+             <p className="text-[12px] text-[#8A8A8A] font-medium">{selectedVehicle.registration_number}</p>
           </div>
         )}
-      </div>
 
       {!hasVehicles && !vehiclesQ.isLoading && (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center shadow-sm">
