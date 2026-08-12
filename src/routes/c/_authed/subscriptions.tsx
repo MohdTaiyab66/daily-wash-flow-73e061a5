@@ -207,6 +207,7 @@ function MyPlanPage() {
     <div className="min-h-screen bg-[#FFFCF9] pb-24">
       <UWHeader
         area="My Plan"
+        hideLocationIcon
         onAreaClick={() => {}}
         activeVehicle={selectedVehicle ? {
           make: selectedVehicle.make,
@@ -215,15 +216,20 @@ function MyPlanPage() {
           category: 'sedan',
           color: null
         } : undefined}
-        onVehicleClick={() => (vehiclesQ.data && vehiclesQ.data.length > 1 ? (document.querySelector('[role="combobox"]') as HTMLElement)?.click() : null)}
+        onVehicleClick={() => {
+          const el = document.querySelector('[role="combobox"]') as HTMLElement;
+          if (el) el.click();
+        }}
       />
+
 
       <div className="px-5 pt-[68px]">
         {selectedVehicle && (
-          <div className="mb-4">
-             <h2 className="text-[15px] font-bold text-[#1A1A1A]">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[12px] text-[#8A8A8A] font-medium">{selectedVehicle.registration_number}</p>
+          <div className="mb-4 mt-2">
+             <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
+             <p className="text-[13px] text-[#8A8A8A] font-medium mt-0.5">{selectedVehicle.registration_number}</p>
           </div>
+
         )}
 
         {hasVehicles && (
@@ -266,7 +272,7 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
-                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
@@ -286,6 +292,7 @@ function MyPlanPage() {
                             <span className="text-[#1A1A1A] font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / mo</span>
                             <span className="opacity-30">·</span>
                             <span>{daysLeft} days left</span>
+
                           </div>
                         </div>
                         <button onClick={() => setManageOpen(true)} className="text-[13px] font-bold text-[#FF6B00] flex items-center gap-0.5">
@@ -296,8 +303,9 @@ function MyPlanPage() {
                       <div className="mt-6">
                         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-[#8A8A8A]">
                           <span>Monthly Usage</span>
-                          <span className="text-[#1A1A1A]">{elapsed} / {totalDays} days</span>
+                          <span className="text-[#1A1A1A]">{elapsed} / {totalDays} days used</span>
                         </div>
+
                         <Meter value={elapsed} max={totalDays} className="mt-2 h-2" />
                       </div>
 
@@ -309,15 +317,16 @@ function MyPlanPage() {
                           </span>
                         </div>
                         {cancelScheduled && (
-                          <div className="flex items-center gap-1 text-[11px] font-bold text-[#E53935]">
-                            <XCircle className="h-3 w-3" /> Scheduled to end
+                          <div className="flex items-center gap-1 text-[11px] font-bold text-[#8A8A8A]">
+                            {cancelScheduled ? (subRow?.cancel_at ? `Ends ${new Date(subRow.cancel_at).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}` : "Auto-renewal off") : "Auto-renewal on"}
                           </div>
+
                         )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="flex h-[84px] items-center gap-3 rounded-[18px] bg-[#1A1A1A] p-4 active:scale-[0.98] transition-transform">
+                      <button onClick={() => setBookOpen(true)} className="flex h-[76px] items-center gap-3 rounded-[18px] bg-[#1A1A1A] p-3.5 active:scale-[0.98] transition-transform">
                         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white">
                           <CalendarPlus className="h-5 w-5" />
                         </div>
@@ -326,7 +335,7 @@ function MyPlanPage() {
                           <div className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">INCLUDED</div>
                         </div>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="flex h-[84px] items-center gap-3 rounded-[18px] border border-[#EEEEEE] bg-white p-4 active:scale-[0.98] transition-transform">
+                      <button onClick={() => setBuilderOpen(true)} className="flex h-[76px] items-center gap-3 rounded-[18px] border border-[#EEEEEE] bg-white p-3.5 active:scale-[0.98] transition-transform">
                         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF2E8] text-[#FF6B00]">
                           <Settings2 className="h-5 w-5" />
                         </div>
