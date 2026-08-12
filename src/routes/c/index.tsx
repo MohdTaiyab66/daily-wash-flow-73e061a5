@@ -44,6 +44,7 @@ function CustomerSplash() {
 
       try {
         // We use getSession because it is much faster (local storage read) than getUser
+        // getUser is expensive and requires a network call to Supabase.
         const authPromise = supabase.auth.getSession();
         const { data }: any = await Promise.race([authPromise, timeoutPromise]);
         

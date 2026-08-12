@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 import { Sparkles, Camera, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -61,6 +62,12 @@ function CustomerHome() {
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
+
+  const initialContextQ = useQuery({
+    queryKey: ["customer-initial-context"],
+    queryFn: () => getInitialCustomerContext(),
+    staleTime: 1000 * 60 * 5,
+  });
 
   const initialContextQ = useQuery({
     queryKey: ["customer-initial-context"],
