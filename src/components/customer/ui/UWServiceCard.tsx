@@ -85,21 +85,23 @@ export function UWServiceCard({
       <div className="flex flex-col flex-1 px-3 pt-2.5 pb-3 min-w-0">
         <div className="h-[44px] flex flex-col items-start overflow-hidden w-full">
           <h3 className={cn(
-            "text-[14px] font-semibold leading-[1.3] text-[#1A1A1A] break-words line-clamp-2 w-full",
+            "text-[15px] font-semibold leading-[1.3] text-[#1A1A1A] break-words line-clamp-2 w-full h-[40px] flex items-center",
             isComingSoon && "text-[#7A7A7A]"
           )}>
+
             {name}
           </h3>
           {duration && (
-            <span className="text-[11px] text-[#8A8A8A] font-medium leading-none mt-0.5">
+            <span className="text-[12px] text-[#8A8A8A] font-medium leading-none mt-1">
               {duration} min
             </span>
           )}
         </div>
+
         
         <div className="mt-auto flex items-end justify-between gap-1">
           <div className="flex items-baseline gap-0.5 overflow-hidden">
-            <span className="text-[18px] font-bold text-[#FF6B00] truncate tracking-tight">₹{price}</span>
+            <span className="text-[20px] font-bold text-[#FF6B00] whitespace-nowrap tracking-tight">₹{price.toLocaleString('en-IN')}</span>
             {oldPrice && (
               <span className="text-[11px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
                 ₹{oldPrice}
@@ -108,6 +110,8 @@ export function UWServiceCard({
           </div>
           
           <button
+            aria-label="Add to cart"
+
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

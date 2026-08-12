@@ -16,7 +16,7 @@ interface UWHeaderProps {
   onVehicleClick?: () => void;
 }
 
-const COLLAPSE_DISTANCE = 60; 
+const COLLAPSE_DISTANCE = 40; 
 
 export function UWHeader({ 
   area, 
@@ -54,18 +54,21 @@ export function UWHeader({
       header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(0, 0, 0, ${progress * 0.02})` : 'none';
 
       if (wrapper) {
-        const verticalPadding = 8 - (progress * 2);
+        const verticalPadding = 6 - (progress * 1.5);
         wrapper.style.paddingTop = `calc(${verticalPadding}px + env(safe-area-inset-top))`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
 
+
       if (locText) {
-        locText.style.fontSize = `${16 - progress * 1}px`;
+        locText.style.fontSize = `${15 - progress * 1}px`;
       }
 
+
       if (vText) {
-        vText.style.fontSize = `${16 - progress * 1}px`;
+        vText.style.fontSize = `${15 - progress * 1}px`;
       }
+
 
       if (vThumb) {
         const scale = 1 - progress * 0.05;
@@ -101,8 +104,9 @@ export function UWHeader({
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[16px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight"
+              className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
             >
+
               {area || "Set location"}
             </span>
             <ChevronDown className="h-3.5 w-3.5 text-[#8A8A8A] shrink-0 transition-colors" />
@@ -113,7 +117,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[44px] pl-1.5 pr-2.5 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[40px] pl-1.5 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
@@ -130,7 +134,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[16px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
+                className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
