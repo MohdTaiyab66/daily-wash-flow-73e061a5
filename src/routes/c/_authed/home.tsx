@@ -159,9 +159,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div>
+        <div className="flex flex-col">
           <div className="px-4">
-            <div className="mt-4">
+            <div className="mt-3">
               <UWFeaturedCarousel 
                 isLoading={imagesQ.isLoading}
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {

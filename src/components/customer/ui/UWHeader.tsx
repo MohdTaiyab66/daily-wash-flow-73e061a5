@@ -19,8 +19,8 @@ interface UWHeaderProps {
 
 
 const COLLAPSE_DISTANCE = 30; 
-const HEADER_HEIGHT_NORMAL = 78;
-const HEADER_HEIGHT_COLLAPSED = 72;
+const HEADER_HEIGHT_NORMAL = 68;
+const HEADER_HEIGHT_COLLAPSED = 62;
 
 export function UWHeader({ 
   area, 
@@ -52,7 +52,7 @@ export function UWHeader({
     >
       <div 
         ref={contentWrapperRef}
-        className="px-4 flex items-center justify-between gap-3 w-full transition-[height] box-border h-[78px]"
+        className="px-4 flex items-center justify-between gap-3 w-full transition-[height] box-border h-[68px]"
       >
         {/* Left: Compact Location Selector */}
         <div 

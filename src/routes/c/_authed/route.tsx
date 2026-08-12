@@ -24,19 +24,32 @@ export const Route = createFileRoute("/c/_authed")({
     // Fire off parallel fetch
     authLog.info("Customer & Vehicle lookup started (Parallel)");
     try {
-      const data = await context.queryClient.ensureQueryData({
+      // Don't block the whole app if context fetch is slow, but try to get it
+      const dataPromise = context.queryClient.ensureQueryData({
         queryKey: ["customer-initial-context"],
         queryFn: () => getInitialCustomerContext(),
         staleTime: 1000 * 60 * 5, // 5 mins
       });
-      authLog.info("Customer & Vehicle lookup completed", { 
-        hasProfile: !!data?.profile, 
-        vehicleCount: data?.vehicles?.length 
+
+      // We still wait for it in the loader to avoid layout flash, 
+      // but we add a timeout so the app shell isn't blocked forever.
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Context fetch timeout")), 2000)
+      );
+
+      const data = await Promise.race([dataPromise, timeoutPromise]).catch(err => {
+        authLog.error("Customer context fetch partial failure", err);
+        return null; // Let the component handle partial data
+      });
+
+      authLog.info("Customer & Vehicle lookup resolved", { 
+        hasProfile: !!(data as any)?.profile, 
+        vehicleCount: (data as any)?.vehicles?.length 
       });
       return data;
     } catch (error) {
-      authLog.error("Customer context fetch failed", error);
-      throw error;
+      authLog.error("Critical customer context fetch failed", error);
+      return null;
     }
   },
   beforeLoad: async () => {
