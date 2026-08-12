@@ -446,16 +446,27 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     })();
     return () => { cancelled = true; };
   }, [path]);
+
+  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE";
+
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "relative aspect-square overflow-hidden rounded-xl bg-black/5",
-        onClick && "cursor-pointer active:scale-95 transition-transform shadow-sm"
+        "uw-pressable relative aspect-square overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        onClick && "cursor-pointer"
       )}
     >
-      {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
-      <span className="absolute bottom-1 left-1 rounded-md bg-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black/80">{stage}</span>
+      {url ? (
+        <img src={url} alt={stage} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
+        </div>
+      )}
+      <div className="absolute bottom-1.5 left-1.5 rounded-full bg-black/30 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white backdrop-blur-[2px]">
+        {label}
+      </div>
     </div>
   );
 }
