@@ -108,7 +108,6 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
-      // Direct query using canonical client
       const { data, error } = await supabase
         .from("service_catalog")
         .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
@@ -117,14 +116,11 @@ function CustomerHome() {
 
       if (error) {
         console.error("[HOME] Service catalog query error:", error);
-        // Fallback services so UI doesn't break
-        return [
-          { id: 'f-1', slug: 'one-time-wash', name: 'Interior & Exterior', description: 'Complete wash', price_hatchback: 499, price_sedan_suv: 599, service_type: 'one_time', sort_order: 1, duration_minutes: 60, banner_url: null },
-          { id: 'f-3', slug: 'deep-clean', name: 'Deep Clean (Full)', description: 'Detailed cleaning', price_hatchback: 1499, price_sedan_suv: 1699, service_type: 'one_time', sort_order: 3, duration_minutes: 180, banner_url: null }
-        ] as Service[];
+        throw error;
       }
       return (data ?? []) as Service[];
     },
+
     retry: 2,
     staleTime: 1000 * 60 * 10,
   });
