@@ -158,7 +158,7 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[78px]">
+        <div style={{ marginTop: '78px' }}>
           <div className="px-4">
             <div className="mt-[20px]">
               <UWFeaturedCarousel 
