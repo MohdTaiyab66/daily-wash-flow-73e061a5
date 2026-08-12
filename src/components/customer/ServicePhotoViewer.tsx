@@ -10,6 +10,7 @@ type Photo = {
   storage_path: string;
   captured_at: string;
   url?: string;
+  partner_name?: string | null;
 };
 
 interface ServicePhotoViewerProps {
@@ -199,7 +200,13 @@ export function ServicePhotoViewer({
                    <div className="text-[13px] font-normal text-white/60 space-y-1">
                       <p>Service: <span className="text-white/80 font-medium">{serviceName}</span></p>
                       {serviceDate && (
-                        <p>Completed: <span className="text-white/80 font-medium">{new Date(serviceDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span></p>
+                        <>
+                          <p>Date: <span className="text-white/80 font-medium">{new Date(serviceDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
+                          <p>Time: <span className="text-white/80 font-medium">{new Date(serviceDate).toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</span></p>
+                        </>
+                      )}
+                      {photos[currentIndex].partner_name && (
+                        <p>Partner: <span className="text-white/80 font-medium">{photos[currentIndex].partner_name}</span></p>
                       )}
                    </div>
                 </div>

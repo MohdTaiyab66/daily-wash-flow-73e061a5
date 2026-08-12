@@ -149,7 +149,9 @@ export function RecentServiceFeed({
         {showAll && !historyQ.isLoading && list.length === 0 && (
           <div className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center space-y-2 bg-white">
             <p className="text-[15px] font-semibold text-[#1A1A1A]">No completed services yet</p>
-            <p className="text-[13px] font-normal text-[#8A8A8A] max-w-[240px] mx-auto">Your service photos and history will appear here after your first completed service.</p>
+            <p className="text-[13px] font-normal text-[#8A8A8A] max-w-[240px] mx-auto">
+              Service photos will appear here after your service is completed.
+            </p>
           </div>
         )}
         {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={invalidateAll} />)}
@@ -279,6 +281,17 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         <PhotoStrip photos={service.photos} onPhotoClick={openViewer} />
       )}
 
+      {!isUnavailable && !isMissed && !isPending && service.photos.length === 0 && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#F5F5F5] p-3">
+          <AlertCircle className="h-4 w-4 text-[#8A8A8A]" />
+          <span className="text-[12px] font-medium text-[#8A8A8A]">
+            {service.service_name?.toLowerCase().includes("daily") 
+              ? "Service photos are temporarily unavailable."
+              : "No service photos were required for this service."}
+          </span>
+        </div>
+      )}
+
       {(isUnavailable || hasDirty) && (service.unavailable_photo || dirtyPhotos.length > 0) && (
         <div className="mt-4 grid grid-cols-4 gap-2">
           {service.unavailable_photo && (
@@ -305,6 +318,12 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
           <span className="text-[12px] font-medium text-[#8A8A8A]">
             {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
           </span>
+          {isPending && (
+            <div className="mt-1 flex items-center gap-2">
+               <Loader2 className="h-3 w-3 animate-spin text-[#FF6B00]" />
+               <span className="text-[11px] font-medium text-[#FF6B00]">Photos are being uploaded. They'll appear here shortly.</span>
+            </div>
+          )}
         </div>
         
         {!isUnavailable && !isMissed && !isPending && (
@@ -333,10 +352,10 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         photos={
           isUnavailable || hasDirty
             ? [
-                ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at }] : []),
-                ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at }))
+                ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at, partner_name: service.partner_name }] : []),
+                ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at, partner_name: service.partner_name }))
               ]
-            : service.photos
+            : service.photos.map(p => ({ ...p, partner_name: service.partner_name }))
         }
         initialIndex={initialPhotoIndex}
         serviceName={service.service_name ?? "Daily Shine"}
