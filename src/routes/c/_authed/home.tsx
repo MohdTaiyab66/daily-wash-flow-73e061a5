@@ -125,8 +125,8 @@ function CustomerHome() {
 
   console.log("[HOME DEBUG] Environment check:", {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.40-auth-trace",
-    BUILD_ID: "auth-trace-2026-08-12"
+    BUILD: "1.0.44-auth-sync",
+    BUILD_ID: "auth-sync-2026-08-12-2006"
   });
 
   useEffect(() => {
