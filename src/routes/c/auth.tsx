@@ -210,7 +210,7 @@ function CustomerAuth() {
     } catch (e: any) {
       if (e.message === "TIMEOUT") {
         authLog.error("[OTP-P0] VERIFY TIMEOUT");
-        setError("Verification timed out. Please check your internet connection and try again.");
+        setError("Verification timed out. This often happens if the app loses focus or the network request hangs. Please check your internet and try again.");
         setVerifyState("TIMEOUT");
       } else {
         const details = getAuthErrorDetails(e);
