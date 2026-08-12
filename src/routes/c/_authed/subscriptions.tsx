@@ -370,19 +370,13 @@ function MyPlanPage() {
                         </div>
                       </div>
                     </div>
-                            <span className="text-[#1A1A1A]">Interior wash</span>
-                            <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
-
                   </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
                 )}
               </>
             )}
