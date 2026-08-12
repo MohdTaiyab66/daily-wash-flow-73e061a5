@@ -29,7 +29,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = import.meta.env.DEV; 
-const AUTH_BUILD_ID = "1.0.36-debug";
+const AUTH_BUILD_ID = "1.0.38-auth-session-fix";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -53,11 +53,13 @@ function CustomerAuth() {
 
   useEffect(() => {
     (async () => {
-      authLog.trace("Checking existing session...");
+      authLog.trace("[AUTH][STARTUP] Checking existing session...");
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
-        authLog.info("Session restored", { email: data.session.user.email });
+        authLog.info("[AUTH][STARTUP] session present = true (auto-navigating)");
         goAfterAuth();
+      } else {
+        authLog.info("[AUTH][STARTUP] session present = false");
       }
     })();
   }, []);
@@ -75,7 +77,7 @@ function CustomerAuth() {
       return; 
     }
     
-    authLog.info("Requesting OTP", { phone });
+    authLog.info("[AUTH][OTP] verification started", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -108,7 +110,7 @@ function CustomerAuth() {
     // If we are in production, the backend handles real OTPs and this guard might be bypassed or updated.
     // For now, we enforce 123456 as the demo standard.
     if (SHOW_DEMO_OTP && code !== "123456") {
-      authLog.error("OTP verification failed at guard", { 
+      authLog.error("[AUTH][OTP] verification failed at guard", { 
         entered: code, 
         expected: "123456",
         reason: "Invalid OTP (demo mode requires 123456)" 
@@ -123,53 +125,48 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    authLog.info("OTP verification request started", { email });
+    authLog.info("[AUTH][OTP] phone = +91 " + phone.replace(/(\d{6})(\d{4})/, "******$2"));
+    authLog.info("[AUTH][OTP] otp length = " + code.length);
+    authLog.info("[AUTH][OTP] verify request started", { email });
     
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      authLog.info("OTP verification response received", { 
+      authLog.info("[AUTH][OTP] verify response received", { 
         success: !!data.session, 
-        hasError: !!signInError 
+        hasError: !!signInError,
+        userExists: !!data.user,
+        sessionExists: !!data.session,
+        hasAccessToken: !!data.session?.access_token
       });
 
       if (data.session) {
-        authLog.info("Session received", {
-          userId: data.user?.id,
-          expires_at: data.session.expires_at,
-          hasAccessToken: !!data.session.access_token,
-          hasRefreshToken: !!data.session.refresh_token
-        });
-
-        // Test persistence immediately
+        // Explicitly confirm persistence
+        authLog.info("[AUTH][POST-OTP] getSession started");
         const { data: sessionCheck } = await supabase.auth.getSession();
-        authLog.info("Session persistence check", { 
-          persisted: !!sessionCheck.session,
-          match: sessionCheck.session?.user.id === data.user?.id
-        });
+        const isSessionPresent = !!sessionCheck.session;
+        authLog.info(`[AUTH][POST-OTP] session present = ${isSessionPresent}`);
 
-        // Check if customer profile exists
-        authLog.info("Customer lookup started", { userId: data.user?.id });
-        const { data: profile, error: profileError } = await supabase.from("customer_profiles").select("id").eq("user_id", data.user?.id).maybeSingle();
-        
-        if (profileError) {
-          authLog.error("Customer lookup failed", profileError);
-        } else {
-          authLog.info("Customer lookup completed", { found: !!profile });
+        if (!isSessionPresent) {
+          authLog.error("[AUTH] Persistence failure - session lost immediately");
+          setError("Authentication failed: session could not be established. Please try again.");
+          setLoading(false);
+          verifyingRef.current = false;
+          return;
         }
 
-        authLog.info("Navigation started");
+        authLog.info("Navigation started to Home");
         goAfterAuth();
         return;
       }
       
       if (signInError) {
-        authLog.error("Sign in failed", signInError);
+        authLog.error("[AUTH][OTP] verify response received | success=false", signInError);
         const msg = (signInError.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
-          authLog.info("New customer detected, moving to signup");
+          authLog.info("[AUTH][OTP] user exists = false (moving to signup)");
           setStep("name");
         } else {
           setError(parseAuthError(signInError));
@@ -238,8 +235,16 @@ function CustomerAuth() {
         }, { onConflict: "user_id" });
       }
       
-      authLog.info("Signup flow complete");
-      goAfterAuth();
+      authLog.info("[AUTH][SIGNUP] Signup flow complete. Verifying session persistence...");
+      const { data: finalCheck } = await supabase.auth.getSession();
+      if (finalCheck.session) {
+        authLog.info("[AUTH][SIGNUP] session present = true");
+        goAfterAuth();
+      } else {
+        authLog.error("[AUTH][SIGNUP] session present = false (lost after signup)");
+        setError("Account created, but could not establish session. Please log in.");
+        setStep("phone");
+      }
     } catch (e) {
       authLog.error("Unexpected signup error", e);
       setError("Something went wrong. Please try again.");
