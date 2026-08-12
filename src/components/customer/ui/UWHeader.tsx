@@ -135,7 +135,7 @@ export function UWHeader({
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
               ) : (
-                <Car className="h-5 w-5 text-[#8A8A8A]" />
+                <Car className="h-[21px] w-[21px] text-[#8A8A8A]" />
               )}
             </div>
             
