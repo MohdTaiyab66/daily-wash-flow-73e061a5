@@ -9,8 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/c/location")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user?.email?.endsWith("@customer.urbanwash.app")) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
     // Only bounce the bare `/c/location` URL — never intercept children like
@@ -18,7 +18,6 @@ export const Route = createFileRoute("/c/location")({
     if (location.pathname === "/c/location" || location.pathname === "/c/location/") {
       throw redirect({ to: "/c/location/search", search: { returnTo: undefined } });
     }
-
   },
   component: () => <Outlet />,
 });

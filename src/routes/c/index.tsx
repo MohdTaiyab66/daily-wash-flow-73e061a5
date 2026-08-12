@@ -25,7 +25,7 @@ export const Route = createFileRoute("/c/")({
  */
 const MIN_SPLASH_MS = 300;
 const AUTH_TIMEOUT_MS = 2000;
-const SPLASH_BUILD_ID = "1.0.40-auth-trace";
+const SPLASH_BUILD_ID = "1.0.41-routing-fix";
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -64,7 +64,12 @@ function CustomerSplash() {
           authLog.info("[AUTH-TRACE] 14 EXECUTING_NAVIGATION");
           if (isCustomer) {
             const savedArea = localStorage.getItem("uw_customer_area");
-            navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
+            // If area is missing, we go to location search which is also protected by /c/location layout
+            if (savedArea) {
+              navigate({ to: "/c/home", replace: true });
+            } else {
+              navigate({ to: "/c/location/search", search: { returnTo: undefined }, replace: true });
+            }
           } else {
             navigate({ to: "/c/auth", replace: true });
           }
@@ -73,6 +78,7 @@ function CustomerSplash() {
       } catch (err) {
         authLog.error("[AUTH-TRACE] 04 SESSION_CHECK_RESULT: ERROR", err);
         if (cancelled) return;
+        // Definitive redirect to auth on error/timeout
         navigate({ to: "/c/auth", replace: true });
       }
     };
@@ -105,6 +111,7 @@ function CustomerSplash() {
         <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
           <span className="text-[10px] font-mono tracking-tighter">APP_START_TRACE_ACTIVE</span>
           <span className="text-[10px] font-mono tracking-tighter">STARTUP BUILD: {SPLASH_BUILD_ID}</span>
+          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c (Splash)</span>
         </div>
       </div>
     </div>

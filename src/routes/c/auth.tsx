@@ -29,7 +29,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const AUTH_BUILD_ID = "1.0.40-auth-trace";
+const AUTH_BUILD_ID = "1.0.41-routing-fix";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ function CustomerAuth() {
   const goAfterAuth = () => {
     if (redirect) { navigate({ to: redirect as any, replace: true }); return; }
     const area = localStorage.getItem("uw_customer_area");
-    navigate({ to: area ? "/c/home" : "/c/location", replace: true });
+    navigate({ to: area ? "/c/home" : "/c/location/search", replace: true });
   };
 
   const [step, setStep] = useState<Step>("phone");
@@ -55,7 +55,8 @@ function CustomerAuth() {
     (async () => {
       authLog.trace("[AUTH][STARTUP] Checking existing session...");
       const { data } = await supabase.auth.getSession();
-      if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
+      const session = data.session;
+      if (session?.user?.email?.endsWith("@customer.urbanwash.app")) {
         authLog.info("[AUTH][STARTUP] session present = true (auto-navigating)");
         goAfterAuth();
       } else {
@@ -262,6 +263,9 @@ function CustomerAuth() {
   return (
     <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
+        <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c/auth</span>
+        </div>
         {step !== "phone" && (
           <button
             onClick={backToPhone}
@@ -383,7 +387,7 @@ function CustomerAuth() {
                 </p>
               )}
               <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
-                AUTH BUILD: {AUTH_BUILD_ID}
+                AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
               </p>
             </div>
 
