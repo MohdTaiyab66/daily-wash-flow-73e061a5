@@ -180,20 +180,20 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[20px] font-bold text-[#171717] tracking-tight">Our Services</h2>
+                <h2 className="text-[21px] font-bold text-[#171717] tracking-tight leading-[28px]">Our Services</h2>
               }
-              className="mt-[20px] mb-0"
+              className="mt-[24px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[10px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[24px] px-5 h-[44px] flex items-center justify-center text-[14px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
+                      "whitespace-nowrap rounded-[22px] px-5 h-[42px] flex items-center justify-center text-[14.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
-                        : "bg-white text-[#555555] border border-[#EAEAEA]"
+                        ? "bg-[#FF6B00] text-white" 
+                        : "bg-white text-[#555555] border border-[#EEEEEE]"
                     )}
                   >
                     {cat}
@@ -201,7 +201,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3.5 mt-[18px]">
+              <div className="grid grid-cols-3 gap-x-[11px] gap-y-3.5 mt-[18px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
