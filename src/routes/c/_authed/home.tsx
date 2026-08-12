@@ -314,7 +314,7 @@ function CustomerHome() {
                       .replace("Butting Polish", "Buffing Polish")
                       .replace("Root Cleaning", "Roof Cleaning")}
                     price={priceFor(s)}
-                    image={resolvedServiceImage(s.slug).url || undefined}
+                    image={resolvedServiceImage(s.slug)}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
                     duration={s.duration_minutes}
