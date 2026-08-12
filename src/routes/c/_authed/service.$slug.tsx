@@ -447,7 +447,40 @@ function ServiceDetail() {
   };
 
 
-  if (!service) return <div className="p-10 text-center">Loading...</div>;
+  if (serviceQ.isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF9F7]">
+        <div className="flex flex-col items-center gap-4 text-center px-6">
+          <Loader2 className="h-10 w-10 animate-spin text-[#EA580C]" />
+          <p className="text-[12px] font-bold text-[#1a1a1a]/60 uppercase tracking-widest">Loading Service Details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceQ.isError || !service) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF9F7] px-6">
+        <div className="text-center">
+          <h2 className="text-[18px] font-black text-[#1a1a1a] mb-2">Couldn't load service details</h2>
+          <p className="text-[14px] text-[#7A7A7A] mb-6">Something went wrong while fetching the service information.</p>
+          <Button 
+            onClick={() => serviceQ.refetch()}
+            className="bg-[#EA580C] text-white rounded-full font-black px-8"
+          >
+            Try Again
+          </Button>
+          <Button 
+            variant="ghost"
+            onClick={() => navigate({ to: "/c/home" })}
+            className="mt-4 block w-full text-[#7A7A7A] font-bold"
+          >
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
 
   return (
