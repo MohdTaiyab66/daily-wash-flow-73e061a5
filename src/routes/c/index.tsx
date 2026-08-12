@@ -25,7 +25,7 @@ export const Route = createFileRoute("/c/")({
  */
 const MIN_SPLASH_MS = 300;
 const AUTH_TIMEOUT_MS = 2000;
-const SPLASH_BUILD_ID = "1.0.40-auth-trace";
+const SPLASH_BUILD_ID = "1.0.41-routing-fix";
 
 function CustomerSplash() {
   const navigate = useNavigate();
