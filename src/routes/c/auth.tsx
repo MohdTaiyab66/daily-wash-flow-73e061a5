@@ -53,11 +53,13 @@ function CustomerAuth() {
 
   useEffect(() => {
     (async () => {
-      authLog.trace("Checking existing session...");
+      authLog.trace("[AUTH][STARTUP] Checking existing session...");
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
-        authLog.info("Session restored", { email: data.session.user.email });
+        authLog.info("[AUTH][STARTUP] session present = true (auto-navigating)");
         goAfterAuth();
+      } else {
+        authLog.info("[AUTH][STARTUP] session present = false");
       }
     })();
   }, []);
