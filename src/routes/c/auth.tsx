@@ -123,7 +123,7 @@ function CustomerAuth() {
     setError(null);
     setVerifyState("IDLE");
     if (!/^\d{10}$/.test(normalizePhone(phone))) { 
-      setError("Enter a valid 10-digit mobile number");
+      setError({ message: "Enter a valid 10-digit mobile number", code: "INVALID_PHONE" });
       return; 
     }
     
@@ -164,7 +164,7 @@ function CustomerAuth() {
     });
     
     if (code.length !== OTP_LENGTH) {
-      setError(`Enter the ${OTP_LENGTH}-digit code`);
+      setError({ message: `Enter the ${OTP_LENGTH}-digit code`, code: "INVALID_OTP_LENGTH" });
       setVerifyState("ERROR");
       return;
     }
@@ -259,7 +259,7 @@ function CustomerAuth() {
     setError(null);
     
     if (name.trim().length < 2) { 
-      setError("Enter your full name");
+      setError({ message: "Enter your full name", code: "INVALID_NAME" });
       return; 
     }
     
