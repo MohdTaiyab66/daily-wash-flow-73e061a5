@@ -64,8 +64,19 @@ function CustomerHome() {
 
   const initialContextQ = useQuery({
     queryKey: ["customer-initial-context"],
-    queryFn: () => getInitialCustomerContext(),
+    queryFn: async () => {
+      console.log("[HOME] Initial context fetch started");
+      try {
+        const res = await getInitialCustomerContext();
+        console.log("[HOME] Initial context success:", !!res);
+        return res;
+      } catch (err) {
+        console.error("[HOME] Initial context error:", err);
+        throw err;
+      }
+    },
     staleTime: 1000 * 60 * 5,
+    meta: { timeout: 5000 }
   });
 
   useEffect(() => {
@@ -78,20 +89,34 @@ function CustomerHome() {
     queryKey: ["customer-vehicles"],
     staleTime: 1000 * 60 * 5, // 5 minutes
     queryFn: async (): Promise<Vehicle[]> => {
+      console.log("[HOME] Vehicles request started");
       const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
-      if (error) throw error;
+      if (error) {
+        console.error("[HOME] Vehicles request failed:", error);
+        throw error;
+      }
+      console.log("[HOME] Vehicles request success:", data?.length ?? 0);
       return (data ?? []) as Vehicle[];
     },
+    retry: 2,
+    meta: { timeout: 5000 }
   });
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     staleTime: 1000 * 60 * 60, // 1 hour
     queryFn: async (): Promise<Service[]> => {
+      console.log("[HOME] Services request started");
       const { data, error } = await supabase.from("service_catalog").select("*").eq("active", true).order("sort_order");
-      if (error) throw error;
+      if (error) {
+        console.error("[HOME] Services request failed:", error);
+        throw error;
+      }
+      console.log("[HOME] Services request success:", data?.length ?? 0);
       return (data ?? []) as Service[];
     },
+    retry: 2,
+    meta: { timeout: 5000 }
   });
 
   const vehicles = vehiclesQ.data ?? [];
@@ -127,17 +152,24 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60, // 1 hour
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     queryFn: async () => {
+      console.log("[HOME] Carousel request started");
       const { data, error } = await (supabase as any)
         .from("daily_shine_carousel")
         .select("*")
         .eq("status", "published")
         .order("slide_number");
-      if (error) throw error;
+      if (error) {
+        console.error("[HOME] Carousel request failed:", error);
+        throw error;
+      }
+      console.log("[HOME] Carousel request success:", data?.length ?? 0);
       return data.map((img: any) => ({
         ...img,
         image_url: getDailyShineCarouselImageUrl(img.image_url)
       }));
     },
+    retry: 2,
+    meta: { timeout: 5000 }
   });
 
   const galleryQ = useServiceGallery();
@@ -218,6 +250,20 @@ function CustomerHome() {
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
+                ) : servicesQ.isError ? (
+                  <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
+                    <p className="text-[#555] text-sm mb-3">Unable to load services</p>
+                    <button 
+                      onClick={() => servicesQ.refetch()}
+                      className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : filteredServices.length === 0 ? (
+                  <div className="col-span-3 py-8 text-center">
+                    <p className="text-[#888] text-sm">No services found in this category.</p>
+                  </div>
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
@@ -236,7 +282,6 @@ function CustomerHome() {
                     onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                     onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                   />
-
                 ))}
               </div>
 
