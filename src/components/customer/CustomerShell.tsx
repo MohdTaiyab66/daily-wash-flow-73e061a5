@@ -14,10 +14,10 @@ export function CustomerShell({ children }: { children: ReactNode }) {
 
   const isCheckout = pathname.startsWith("/c/service/") || pathname.startsWith("/c/vehicles/add") || pathname.includes("/vehicles/");
   
-  // Compact Premium Height: 72px
+  // Compact Premium Height: 70px
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(72px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(70px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>

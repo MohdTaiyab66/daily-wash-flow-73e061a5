@@ -182,17 +182,17 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[25px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
+                <h2 className="text-[28px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
               }
-              className="mt-[24px] mb-0"
+              className="mt-[20px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-4 w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-3 w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[22px] px-5 h-[38px] flex items-center justify-center text-[14.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
+                      "whitespace-nowrap rounded-[20px] px-5 h-[54px] flex items-center justify-center text-[16.5px] font-semibold transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white" 
                         : "bg-white text-[#555555] border border-[#EEEEEE]"
