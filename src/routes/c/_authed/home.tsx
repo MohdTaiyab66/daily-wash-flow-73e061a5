@@ -331,15 +331,26 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isLoading && services.length === 0 ? (
-                   [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
-                ) : servicesQ.isError && services.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
-                    <p className="text-[#555] text-sm mb-3">Unable to load services</p>
-                    <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
+                {servicesQ.isError && services.length === 0 ? (
+                  <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px] border border-[#E5E5E5]">
+                    <p className="text-[#333] font-medium text-sm mb-1">Couldn't load services</p>
+                    <p className="text-[#666] text-xs mb-3 px-6">The wash server is currently unreachable. Please try again in a moment.</p>
+                    <button 
+                      onClick={() => {
+                        console.log("[SERVICE-DATA] Manual retry clicked");
+                        servicesQ.refetch();
+                      }} 
+                      className="px-6 py-2 bg-[#FF6B00] text-white text-[13px] font-bold rounded-full active:scale-[0.97] transition-transform"
+                    >
+                      Try Again
+                    </button>
                   </div>
+                ) : (servicesQ.isLoading || (servicesQ.isFetching && services.length === 0)) ? (
+                   [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : services.length > 0 && filteredServices.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
+                  <div className="col-span-3 py-8 text-center">
+                    <p className="text-[#888] text-sm font-medium">No services found in this category.</p>
+                  </div>
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
