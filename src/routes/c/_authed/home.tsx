@@ -108,6 +108,7 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
+      console.log("[SERVICE-DATA] request started");
       const { data, error } = await supabase
         .from("service_catalog")
         .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
@@ -115,12 +116,14 @@ function CustomerHome() {
         .order("sort_order");
 
       if (error) {
-        console.error("[HOME] Service catalog query error:", error);
+        console.error("[SERVICE-DATA] query error:", error);
         throw error;
       }
-      return (data ?? []) as Service[];
+      
+      const rawData = (data ?? []) as Service[];
+      console.log("[SERVICE-DATA] response received, raw count:", rawData.length);
+      return rawData;
     },
-
     retry: 2,
     staleTime: 1000 * 60 * 10,
   });
@@ -131,27 +134,30 @@ function CustomerHome() {
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
       try {
+        console.log("[CAROUSEL-DATA] request started");
         const { data, error } = await (supabase as any)
           .from("daily_shine_carousel")
           .select("id, image_url, status, slide_number, updated_at, service_slug")
           .eq("status", "published")
           .order("slide_number");
         if (error) {
-          console.error("[HOME-DATA] Carousel query error:", error);
+          console.error("[CAROUSEL-DATA] query error:", error);
           throw error;
         }
-        return (data || []).map((img: any) => ({
+        
+        const rawSlides = data || [];
+        console.log("[CAROUSEL-DATA] response received, raw count:", rawSlides.length);
+        
+        return rawSlides.map((img: any) => ({
           ...img,
           image_url: getDailyShineCarouselImageUrl(img.image_url)
         }));
       } catch (err: any) {
-        console.error("[HOME-DATA] Carousel failed:", err);
-        return []; // Fallback handled by UWFeaturedCarousel (uses DEFAULT_PROMO_IMAGES)
+        console.error("[CAROUSEL-DATA] failed:", err);
+        return []; 
       }
     },
-
     retry: 1,
-
   });
 
   const vehicles = vehiclesQ.data ?? [];
@@ -171,21 +177,40 @@ function CustomerHome() {
 
   const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
   const services = servicesQ.data ?? [];
-  const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
+  
+  // FIX: Include all one-time services regardless of PLAN_INCLUDED_SERVICE_SLUGS for the catalog
+  const oneTime = services.filter((s) => s.service_type !== "subscription");
 
   const filteredServices = oneTime.filter((s) => {
-    if (selectedCategory === "Popular") return true;
-    if (selectedCategory === "Wash") return s.slug.includes("wash");
-    if (selectedCategory === "Interior") return s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
-    if (selectedCategory === "Polish") return s.slug.includes("polish") || s.slug.includes("scratch");
-    if (selectedCategory === "Detailing") return s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
-    return true;
+    let matches = true;
+    if (selectedCategory === "Popular") matches = true;
+    else if (selectedCategory === "Wash") matches = s.slug.includes("wash");
+    else if (selectedCategory === "Interior") matches = s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
+    else if (selectedCategory === "Polish") matches = s.slug.includes("polish") || s.slug.includes("scratch");
+    else if (selectedCategory === "Detailing") matches = s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
+    
+    return matches;
   });
+
+  useEffect(() => {
+    if (servicesQ.data) {
+      console.log(`[SERVICE-DATA] processing lifecycle:
+        - raw: ${servicesQ.data.length}
+        - oneTime: ${oneTime.length}
+        - selectedCategory: ${selectedCategory}
+        - filtered: ${filteredServices.length}
+        - loading: ${servicesQ.isLoading}
+        - error: ${servicesQ.isError}
+      `);
+    }
+  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length, servicesQ.isLoading, servicesQ.isError]);
 
   const galleryQ = useServiceGallery();
   
   const resolvedServiceImage = (slug: string) => {
-    return getServiceImage(slug, galleryQ.data || []);
+    const result = getServiceImage(slug, galleryQ.data || []);
+    // Ensure we always have a URL to prevent "Coming Soon" placeholder
+    return result.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
   };
 
   const refreshAll = () => {
@@ -219,6 +244,17 @@ function CustomerHome() {
 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
+                  const isFallback = !img.id || img.id.startsWith('static-');
+                  
+                  // LOG CAROUSEL URLS FOR TRACING
+                  console.log(`[CAROUSEL-DATA] Slide ${idx + 1}:
+                    - ID: ${img.id}
+                    - Source: ${isFallback ? 'FALLBACK' : 'DATABASE'}
+                    - URL: ${img.image_url}
+                    - UpdatedAt: ${img.updated_at}
+                    - Bust: ${bust}
+                  `);
+
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
                   if (finalImage && finalImage.includes('supabase.co')) {
                     const separator = finalImage.includes('?') ? '&' : '?';
@@ -258,15 +294,14 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isLoading ? (
+                {servicesQ.isLoading && services.length === 0 ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
-                ) : servicesQ.isError && servicesQ.data?.length === 0 ? (
+                ) : servicesQ.isError && services.length === 0 ? (
                   <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
                     <p className="text-[#555] text-sm mb-3">Unable to load services</p>
                     <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
                   </div>
-
-                ) : filteredServices.length === 0 ? (
+                ) : services.length > 0 && filteredServices.length === 0 ? (
                   <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
@@ -279,12 +314,18 @@ function CustomerHome() {
                       .replace("Butting Polish", "Buffing Polish")
                       .replace("Root Cleaning", "Roof Cleaning")}
                     price={priceFor(s)}
-                    image={resolvedServiceImage(s.slug).url || undefined}
+                    image={resolvedServiceImage(s.slug)}
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
                     duration={s.duration_minutes}
-                    onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
-                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
+                    onOpen={() => {
+                      console.log(`[SERVICE-NAV] Opening ${s.slug}`);
+                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                    }}
+                    onAdd={() => {
+                      console.log(`[SERVICE-NAV] Adding ${s.slug}`);
+                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                    }}
                   />
                 ))}
               </div>
