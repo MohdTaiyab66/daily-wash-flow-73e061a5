@@ -263,6 +263,9 @@ function CustomerAuth() {
   return (
     <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
+        <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c/auth</span>
+        </div>
         {step !== "phone" && (
           <button
             onClick={backToPhone}
