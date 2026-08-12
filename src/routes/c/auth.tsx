@@ -125,6 +125,8 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
+    authLog.info("[AUTH][OTP] phone = +91 " + phone.replace(/(\d{6})(\d{4})/, "******$2"));
+    authLog.info("[AUTH][OTP] otp length = " + code.length);
     authLog.info("[AUTH][OTP] verify request started", { email });
     
     try {
