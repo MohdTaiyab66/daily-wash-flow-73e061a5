@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 import { Sparkles, Camera, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -54,6 +54,7 @@ const PLAN_INCLUDED_SERVICE_SLUGS = ["daily-shine-exterior", "daily-shine-interi
 
 function CustomerHome() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [area, setArea] = useState<string>("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("Popular");
@@ -179,11 +180,15 @@ function CustomerHome() {
   };
 
 
-  const refreshAll = () => Promise.all([
-    vehiclesQ.refetch(), 
-    servicesQ.refetch(), 
-    galleryQ.refetch()
-  ]);
+  const refreshAll = () => {
+    console.log("[HOME] Manual refresh triggered");
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
+      queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
+      queryClient.invalidateQueries({ queryKey: ["service-gallery"] }),
+      queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] })
+    ]);
+  };
 
 
   return (
