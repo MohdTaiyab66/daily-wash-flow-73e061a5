@@ -38,6 +38,7 @@ function CustomerSplash() {
       let isCustomer = false;
       
       console.log("[STARTUP] [WEB] Starting auth check...");
+      console.log("[STARTUP] [WEB] Auth status: INITIALIZING");
       
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Auth check timed out")), AUTH_TIMEOUT_MS)
@@ -52,8 +53,10 @@ function CustomerSplash() {
         console.log("[STARTUP] [WEB] Auth check completed. Session present:", !!data.session);
         
         isCustomer = !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
+        console.log("[STARTUP] [WEB] Auth status:", isCustomer ? "AUTHENTICATED" : "UNAUTHENTICATED");
       } catch (err) {
         console.warn("[STARTUP] [WEB] Auth check failed or timed out:", err);
+        console.log("[STARTUP] [WEB] Auth status: ERROR (Timeout/Failure)");
         isCustomer = false; 
       }
 
