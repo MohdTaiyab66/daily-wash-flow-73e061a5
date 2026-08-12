@@ -171,8 +171,8 @@ function CustomerHome() {
         throw err;
       }
     },
-    retry: 1,
-    retryDelay: 1000,
+    retry: false,
+
 
   });
 
