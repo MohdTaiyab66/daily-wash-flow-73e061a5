@@ -154,21 +154,18 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    const verifyPromise = (async () => {
+    try {
       // 1. First sign in
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      // 2. Immediately force a session refresh/check to ensure persistence in storage
-      // This helps AuthProvider see the state change reliably
-      await supabase.auth.getSession();
+      if (signInError) {
+        // ... handled below
+      } else {
+        // 2. Immediately force a session refresh/check to ensure persistence in storage
+        await supabase.auth.getSession();
+      }
       
-      return { data, error: null };
-    })();
-    
-    // REMOVED TIMEOUT RACE FOR SANDBOX STABILITY
-    const result = await verifyPromise;
-      const { data, error: signInError } = result as any;
+      const data = data; // scoped data
       
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
       if (data) {
