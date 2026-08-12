@@ -44,7 +44,7 @@ export const Route = createFileRoute("/c/_authed")({
     const { data, error } = await supabase.auth.getUser();
     
     if (error) {
-      authLog.error("beforeLoad - getUser failed", error);
+      authLog.trace("beforeLoad - getUser failed", error);
       throw redirect({ to: "/c/auth" });
     }
     
