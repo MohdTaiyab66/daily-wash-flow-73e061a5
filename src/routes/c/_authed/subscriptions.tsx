@@ -276,7 +276,7 @@ function MyPlanPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="flex h-5 items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black">
+                          <div className="flex items-center gap-2 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">
                               Premium Service
                             </span>
