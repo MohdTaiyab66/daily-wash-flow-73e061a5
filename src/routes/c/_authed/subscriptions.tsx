@@ -363,8 +363,9 @@ function MyPlanPage() {
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-[13px] font-bold">
-                            <span className="text-[#1A1A1A]">Interior wash</span>
-                            <span className="text-[#8A8A8A]">{interiorCount} / 1</span>
+                             <span className="text-[#1A1A1A]">Interior wash</span>
+                             <span className="text-[#8A8A8A]">{interiorCount} / 1 wash used</span>
+
                           </div>
                           <Meter value={interiorCount} max={1} className="h-1.5" />
                         </div>
@@ -425,14 +426,15 @@ function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleI
   const planName = booking.service_catalog?.name ?? "Daily Shine";
   const statusLabel = booking.status === "cancelled" ? "Payment cancelled" : booking.payment_status === "failed" ? "Payment failed" : "Payment pending";
   return (
-    <div className="mt-5 overflow-hidden rounded-[22px] border border-[#FFD54F]/30 bg-[#FFF9C4]/20 p-5">
+    <div className="mt-5 overflow-hidden rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[#F57F17]">{statusLabel}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#FF6B00]">{statusLabel}</p>
           <h2 className="mt-1 truncate text-[18px] font-bold text-[#1A1A1A]">{planName}</h2>
-          <p className="mt-2 text-[13px] text-[#555555]">Your subscription requires completion of payment to activate {planName}.</p>
+          <p className="mt-2 text-[13px] text-[#8A8A8A]">Your subscription requires completion of payment to activate {planName}.</p>
         </div>
-        <ShieldAlert className="h-6 w-6 shrink-0 text-[#F57F17]" />
+        <ShieldAlert className="h-6 w-6 shrink-0 text-[#FF6B00]" />
+
       </div>
       <div className="mt-5">
         <Button asChild className="h-11 w-full rounded-2xl bg-[#1A1A1A] text-white text-[14px] font-bold">
