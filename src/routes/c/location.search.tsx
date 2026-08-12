@@ -46,15 +46,9 @@ function LocationFlow() {
   const { view, setView, setLocation, area: savedArea, geo: savedGeo } = useLocationFlowStore();
   
   const handleManualEntry = () => {
-    navigate({ to: "/c/location/manual", search: { returnTo: searchParams.returnTo } });
+    setView('manual_entry');
   };
   
-  // Intercept view to prevent nesting issues
-  useEffect(() => {
-    if (view === 'manual_entry') {
-      handleManualEntry();
-    }
-  }, [view]);
   
   const [q, setQ] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
