@@ -122,25 +122,15 @@ export function ServicePhotoViewer({
       <DialogContent className="max-w-4xl border-none bg-black p-0 shadow-2xl outline-none sm:rounded-3xl">
         <div className="relative flex h-[85vh] flex-col overflow-hidden">
           {/* Header */}
-          <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-6 py-6">
+          <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-between px-6 py-6">
             <button
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-2 text-white/90 active:opacity-60"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md active:scale-95"
             >
-              <ChevronLeft className="h-5 w-5" />
-              <span className="text-[17px] font-medium">Close</span>
+              <X className="h-5 w-5" />
             </button>
-            <div className="text-right text-white">
-              <h3 className="text-[17px] font-semibold tracking-tight">{serviceName}</h3>
-              {serviceDate && (
-                <div className="mt-0.5 flex items-center justify-end gap-1.5 text-[12px] font-normal text-white/60">
-                  {new Date(serviceDate).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric"
-                  })}
-                </div>
-              )}
+            <div className="rounded-full bg-white/10 px-3 py-1 text-[13px] font-black text-white backdrop-blur-md">
+              {currentIndex + 1} / {photos.length}
             </div>
           </div>
 
