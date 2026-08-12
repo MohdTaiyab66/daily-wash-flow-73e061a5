@@ -1,12 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 
 /**
  * Server function to fetch initial customer context in parallel.
  * This reduces waterfalls during app startup.
+ * Moved database logic to handler as per TanStack Start rules.
  */
 export const getInitialCustomerContext = createServerFn({ method: "GET" })
   .handler(async () => {
+    // We import client helpers inside the handler to keep them out of the client bundle
+    const { supabase } = await import("@/integrations/supabase/client");
+
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error("[SERVER] Auth user error:", userError);
