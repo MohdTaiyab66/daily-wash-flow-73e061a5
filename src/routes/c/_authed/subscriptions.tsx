@@ -249,103 +249,109 @@ function MyPlanPage() {
                   <NoSubscriptionState vehicleId={selectedVehicleId} vehicleLabel={vehicleLabel} />
                 )}
 
-                {activeSub && (
-                  <div className="mt-4 space-y-4">
-                    <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
-                    
-                    {latestNoticeQ.data && (
-                      <Surface className="border-primary/20 bg-white p-5">
-                        <div className="flex items-start gap-4">
-                          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                            <ShieldAlert className="h-6 w-6" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-[15px] font-bold text-[#1A1A1A]">Vehicle needs attention</h3>
-                            <p className="mt-1 text-[13px] text-[#555555]">
-                              {vehicleLabel} was reported as extra dirty. A premium wash is recommended.
-                            </p>
-                            <Button onClick={() => setBookOpen(true)} className="mt-4 h-11 w-full rounded-2xl bg-[#1A1A1A] text-[14px] font-bold text-white active:scale-95">
-                              Schedule a wash
-                            </Button>
-                          </div>
-                        </div>
-                      </Surface>
-                    )}
+                    {activeSub && (
+                      <div className="mt-4 space-y-4">
+                        <AwaitingPartnerBanner userId={userId} vehicleId={selectedVehicleId} />
+                        
+                        {latestNoticeQ.data && (
+                          <Surface className="border-primary/20 bg-white p-5">
+                            <div className="flex items-start gap-4">
+                              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                                <ShieldAlert className="h-6 w-6" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="text-[15px] font-bold text-[#1A1A1A]">Vehicle needs attention</h3>
+                                <p className="mt-1 text-[13px] text-[#555555]">
+                                  {vehicleLabel} was reported as extra dirty. A premium wash is recommended.
+                                </p>
+                                <Button onClick={() => setBookOpen(true)} className="mt-4 h-11 w-full rounded-2xl bg-[#1A1A1A] text-[14px] font-bold text-white active:scale-95">
+                                  Schedule a wash
+                                </Button>
+                              </div>
+                            </div>
+                          </Surface>
+                        )}
 
-                    {/* ACTIVE PLAN CARD */}
-                    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FF6B00]">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              Daily Shine
-                            </span>
-                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#2E7D32]">
-                              <CheckCircle2 className="h-2.5 w-2.5" />
-                              Active
+                        {/* ACTIVE PLAN CARD */}
+                        <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FF6B00]">
+                                  <Sparkles className="h-2.5 w-2.5" />
+                                  Daily Shine
+                                </span>
+                                <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#2E7D32]">
+                                  <CheckCircle2 className="h-2.5 w-2.5" />
+                                  Active
+                                </div>
+                              </div>
+                              <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-[1.3]">
+                                {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
+                              </h2>
+                              <div className="mt-1 text-[16px] font-semibold text-[#1A1A1A]">
+                                ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
+                                <span className="text-[14px] text-[#8A8A8A] font-normal ml-2">· {daysLeft} days left</span>
+                              </div>
+                            </div>
+                            <button onClick={() => setManageOpen(true)} className="text-[16px] font-semibold text-[#FF6B00] mt-1">
+                              Manage
+                            </button>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+                                <span>SERVICE DAYS</span>
+                                <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / 25 used</span>
+                              </div>
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                                <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / 25) * 100}%` }} />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+                                <span>INTERIOR WASH</span>
+                                <span className="text-[#1A1A1A] font-semibold text-[14px]">{interiorCount} / 1 used</span>
+                              </div>
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                                <div className="h-full rounded-full bg-[#8A8A8A] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
+                              </div>
                             </div>
                           </div>
-                          <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-[1.3]">
-                            {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
-                          </h2>
-                          <div className="mt-1 text-[16px] font-semibold text-[#1A1A1A]">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
-                            <span className="text-[14px] text-[#8A8A8A] font-normal ml-2">· {daysLeft} days left</span>
+
+                          <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
+                            <div>
+                              <p className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-[16px] font-semibold text-[#1A1A1A]">
+                                  {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                                </p>
+                                {cancelScheduled ? (
+                                  <span className="text-[13px] font-medium text-[#E53935]">Scheduled to end</span>
+                                ) : (
+                                  <span className="text-[13px] font-medium text-[#2E7D32]">Auto-renews</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 mt-5">
+                            <button onClick={() => setBookOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                              Book Wash
+                            </button>
+                            <button onClick={() => setBuilderOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                              Modify
+                            </button>
+                          </div>
+                          
+                          <div className="flex justify-center gap-6 mt-4">
+                            <button className="text-[12px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                            <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-medium text-[#8A8A8A]">Cancel plan</button>
                           </div>
                         </div>
-                        <button onClick={() => setManageOpen(true)} className="text-[16px] font-semibold text-[#FF6B00] mt-1">
-                          Manage
-                        </button>
-                      </div>
 
-                      <div className="mt-5">
-                        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">
-                          <span>SERVICE DAYS</span>
-                          <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} used</span>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                          <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / totalDays) * 100}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
-                        <div>
-                          <p className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[16px] font-semibold text-[#1A1A1A]">
-                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
-                            </p>
-                            {cancelScheduled ? (
-                              <span className="text-[13px] font-medium text-[#E53935]">Scheduled to end</span>
-                            ) : (
-                              <span className="text-[13px] font-medium text-[#2E7D32]">Auto-renews</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* WHAT'S INCLUDED */}
-                    <PlanInclusionsCard planSlug={activePlanSlug} />
-
-                    {/* ACTION BUTTONS */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Book Wash</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">INCLUDED</span>
-                      </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Modify</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mt-0.5">ADJUST PLAN</span>
-                      </button>
-                    </div>
-
-                    {/* PAUSE / CANCEL */}
-                    <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
-                    </div>
 
                     {/* RECENT SERVICE */}
                     <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
