@@ -327,13 +327,13 @@ function MyPlanPage() {
 
                     {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[105px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[18px] font-semibold">Book Wash</span>
-                        <span className="text-[13px] font-bold uppercase tracking-widest opacity-60 mt-1">Included</span>
+                      <button onClick={() => setBookOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl bg-[#181818] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Book Wash</span>
+                        <span className="text-[11px] font-medium uppercase tracking-widest opacity-60 mt-0.5">Included</span>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[105px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[18px] font-semibold">Modify</span>
-                        <span className="text-[13px] font-bold uppercase tracking-widest text-[#8A8A8A] mt-1">Adjust Plan</span>
+                      <button onClick={() => setBuilderOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Modify</span>
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-[#8A8A8A] mt-0.5">Adjust Plan</span>
                       </button>
                     </div>
 
