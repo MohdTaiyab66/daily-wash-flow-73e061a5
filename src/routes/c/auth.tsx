@@ -22,10 +22,11 @@ export const Route = createFileRoute("/c/auth")({
 
 type Step = "phone" | "otp" | "name";
 
-const customerEmail = (phone: string) => `${phone}@customer.urbanwash.app`;
-const customerPassword = (phone: string) => `UWC@${phone}#2026`;
+const normalizePhone = (p: string) => p.replace(/\D/g, "").slice(-10);
+const customerEmail = (phone: string) => `${normalizePhone(phone)}@customer.urbanwash.app`;
+const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = import.meta.env.DEV;
 
@@ -68,7 +69,7 @@ function CustomerAuth() {
 
   const sendOtp = () => {
     setError(null);
-    if (!/^\d{10}$/.test(phone)) { 
+    if (!/^\d{10}$/.test(normalizePhone(phone))) { 
       setError("Enter a valid 10-digit mobile number");
       return; 
     }
@@ -355,7 +356,7 @@ function CustomerAuth() {
           <div className="mt-8 animate-in fade-in slide-in-from-right-4 duration-500">
             <h1 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Verification</h1>
             <p className="mt-2 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
-              Enter the code sent to <span className="font-bold text-[#1a1a1a]">+91 ••••••{phone.slice(-4)}</span>
+              Enter the code sent to <span className="font-bold text-[#1a1a1a]">+91 ••••••{normalizePhone(phone).slice(-4)}</span>
             </p>
 
             <div className="mt-10">

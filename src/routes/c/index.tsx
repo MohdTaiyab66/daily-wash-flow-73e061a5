@@ -22,7 +22,8 @@ export const Route = createFileRoute("/c/")({
  * Home (auto-login), and signed-out users go directly to the login form.
  * A short floor keeps it from flashing on very fast devices.
  */
-const MIN_SPLASH_MS = 700;
+const MIN_SPLASH_MS = 300;
+const AUTH_TIMEOUT_MS = 3000;
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -31,28 +32,39 @@ function CustomerSplash() {
     let cancelled = false;
     const startedAt = Date.now();
 
-    (async () => {
+    const resolveAuth = async () => {
       let isCustomer = false;
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Auth check timed out")), AUTH_TIMEOUT_MS)
+      );
+
       try {
-        const { data } = await supabase.auth.getSession();
+        const authPromise = supabase.auth.getSession();
+        const { data }: any = await Promise.race([authPromise, timeoutPromise]);
         isCustomer = !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
-      } catch {
-        isCustomer = false; // auth/network failure → login, never a blank screen
+      } catch (err) {
+        console.warn("[SPLASH] Auth check failed or timed out:", err);
+        isCustomer = false; // Fall back to login
       }
+
       if (cancelled) return;
 
-      const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - startedAt));
+      const elapsed = Date.now() - startedAt;
+      const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+      
       window.setTimeout(() => {
         if (cancelled) return;
         if (isCustomer) {
           const savedArea = localStorage.getItem("uw_customer_area");
-          // If we have an area, go home. If not, go to location flow which starts at onboarding.
           navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
         } else {
           navigate({ to: "/c/auth", replace: true });
         }
       }, wait);
-    })();
+    };
+
+    resolveAuth();
 
     return () => { cancelled = true; };
   }, [navigate]);
