@@ -55,9 +55,9 @@ export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeatured
   }, [activeIndex, items.length]);
 
   return (
-    <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px]">
+    <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px] bg-neutral-100/50">
       {isLoading ? (
-        <Skeleton className="w-full h-full rounded-[16px]" />
+        <div className="w-full h-full animate-pulse bg-neutral-100/80 rounded-[16px]" />
       ) : (
         <>
           <div 
@@ -73,7 +73,9 @@ export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeatured
                 <img 
                   src={item.image} 
                   alt={item.title} 
-                  className="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
                   onLoad={(e) => (e.currentTarget.style.opacity = "1")}
                   style={{ opacity: 0 }}
                 />

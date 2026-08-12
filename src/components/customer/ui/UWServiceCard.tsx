@@ -59,8 +59,10 @@ export function UWServiceCard({
             src={image} 
             alt={name} 
             data-slug={slug}
+            loading="lazy"
+            decoding="async"
             className={cn(
-              "h-full w-full object-cover transition-opacity duration-500",
+              "h-full w-full object-cover transition-opacity duration-300",
               loadStatus === 'success' ? "opacity-100" : "opacity-0"
             )} 
             onLoad={() => setLoadStatus('success')}

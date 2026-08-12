@@ -20,7 +20,7 @@ export const useServiceGallery = (slug?: string) => {
       if (error) throw error;
       return data;
     },
-    staleTime: 60000,
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
 
