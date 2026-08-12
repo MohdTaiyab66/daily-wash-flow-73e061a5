@@ -68,7 +68,7 @@ function CustomerSplash() {
             if (savedArea) {
               navigate({ to: "/c/home", replace: true });
             } else {
-              navigate({ to: "/c/location/search", replace: true });
+              navigate({ to: "/c/location/search", search: { returnTo: undefined }, replace: true });
             }
           } else {
             navigate({ to: "/c/auth", replace: true });
