@@ -318,14 +318,20 @@ function CustomerAuth() {
 
         {error && (
           <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2.5 rounded-2xl bg-destructive/5 px-4 py-3.5 border border-destructive/10">
-              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+            <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 px-4 py-3.5 border border-destructive/10">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-[13px] font-bold text-destructive uppercase tracking-widest">
+                  Verification Failed
+                </p>
+              </div>
               <p className="text-[13px] font-semibold text-destructive/90 leading-tight">
                 {error}
               </p>
             </div>
           </div>
         )}
+
 
         {step === "phone" && (
           <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
