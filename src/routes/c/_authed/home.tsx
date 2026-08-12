@@ -111,20 +111,39 @@ function CustomerHome() {
     queryKey: ["service-catalog"],
     staleTime: 1000 * 60 * 60,
     queryFn: async (): Promise<Service[]> => {
-      return fetchWithTimeout(
-        (async () => {
-          const { data, error } = await supabase
-            .from("service_catalog")
-            .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
-            .eq("active", true)
-            .order("sort_order");
-          if (error) throw error;
-          return (data ?? []) as Service[];
-        })(),
-        "SERVICES"
-      );
+      try {
+        const result = await fetchWithTimeout(
+          (async () => {
+            const { data, error } = await supabase
+              .from("service_catalog")
+              .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
+              .eq("active", true)
+              .order("sort_order");
+            if (error) {
+              console.error("[HOME-DATA] Service catalog query error:", error);
+              throw error;
+            }
+            return (data ?? []) as Service[];
+          })(),
+          "SERVICES"
+        );
+        return result;
+      } catch (err: any) {
+        console.error("[HOME-DATA] Service catalog failed:", err);
+        // Fallback services if database fails
+        return [
+          { id: 'f-1', slug: 'one-time-wash', name: 'Interior & Exterior', description: 'Complete wash', price_hatchback: 499, price_sedan_suv: 599, service_type: 'one_time', sort_order: 1, duration_minutes: 60, banner_url: null },
+          { id: 'f-2', slug: 'one-time-wash-no-polish', name: 'Wash (No Body Polish)', description: 'Quick wash', price_hatchback: 399, price_sedan_suv: 499, service_type: 'one_time', sort_order: 2, duration_minutes: 45, banner_url: null },
+          { id: 'f-3', slug: 'deep-clean', name: 'Deep Clean (Full)', description: 'Detailed cleaning', price_hatchback: 1499, price_sedan_suv: 1699, service_type: 'one_time', sort_order: 3, duration_minutes: 180, banner_url: null },
+          { id: 'f-4', slug: 'deep-clean-interior', name: 'Interior Deep Clean', description: 'Interior detailing', price_hatchback: 899, price_sedan_suv: 999, service_type: 'one_time', sort_order: 4, duration_minutes: 120, banner_url: null },
+          { id: 'f-5', slug: 'body-polish', name: 'Body Polish', description: 'Exterior shine', price_hatchback: 799, price_sedan_suv: 899, service_type: 'one_time', sort_order: 5, duration_minutes: 90, banner_url: null },
+          { id: 'f-6', slug: 'dusting', name: 'Dusting', description: 'Quick dust', price_hatchback: 199, price_sedan_suv: 249, service_type: 'one_time', sort_order: 6, duration_minutes: 20, banner_url: null }
+        ] as Service[];
+      }
     },
-    retry: 2,
+    retry: 1,
+    staleTime: 1000 * 60 * 10,
+
   });
 
   const imagesQ = useQuery({
@@ -132,23 +151,33 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-      return fetchWithTimeout(
-        (async () => {
-          const { data, error } = await (supabase as any)
-            .from("daily_shine_carousel")
-            .select("id, image_url, status, slide_number, updated_at, service_slug")
-            .eq("status", "published")
-            .order("slide_number");
-          if (error) throw error;
-          return (data || []).map((img: any) => ({
-            ...img,
-            image_url: getDailyShineCarouselImageUrl(img.image_url)
-          }));
-        })(),
-        "CAROUSEL"
-      );
+      try {
+        const result = await fetchWithTimeout(
+          (async () => {
+            const { data, error } = await (supabase as any)
+              .from("daily_shine_carousel")
+              .select("id, image_url, status, slide_number, updated_at, service_slug")
+              .eq("status", "published")
+              .order("slide_number");
+            if (error) {
+              console.error("[HOME-DATA] Carousel query error:", error);
+              throw error;
+            }
+            return (data || []).map((img: any) => ({
+              ...img,
+              image_url: getDailyShineCarouselImageUrl(img.image_url)
+            }));
+          })(),
+          "CAROUSEL"
+        );
+        return result;
+      } catch (err: any) {
+        console.error("[HOME-DATA] Carousel failed:", err);
+        return []; // Fallback handled by UWFeaturedCarousel (uses DEFAULT_PROMO_IMAGES)
+      }
     },
-    retry: 2,
+    retry: 1,
+
   });
 
   const vehicles = vehiclesQ.data ?? [];
@@ -211,8 +240,9 @@ function CustomerHome() {
             <div className="mt-3">
               <UWFeaturedCarousel 
                 isLoading={imagesQ.isLoading}
-                isError={imagesQ.isError}
+                isError={imagesQ.isError && (!imagesQ.data || imagesQ.data.length === 0)}
                 onRetry={() => imagesQ.refetch()}
+
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
@@ -254,13 +284,14 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isPending && servicesQ.fetchStatus === "fetching" ? (
+                {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
-                ) : servicesQ.isError ? (
+                ) : servicesQ.isError && servicesQ.data?.length === 0 ? (
                   <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
                     <p className="text-[#555] text-sm mb-3">Unable to load services</p>
                     <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
                   </div>
+
                 ) : filteredServices.length === 0 ? (
                   <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
                 ) : filteredServices.map((s) => (
