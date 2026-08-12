@@ -318,8 +318,14 @@ function CustomerHome() {
                     slug={s.slug}
                     badge={s.slug.includes('premium') ? 'Premium' : undefined}
                     duration={s.duration_minutes}
-                    onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
-                    onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
+                    onOpen={() => {
+                      console.log(`[SERVICE-NAV] Opening ${s.slug}`);
+                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                    }}
+                    onAdd={() => {
+                      console.log(`[SERVICE-NAV] Adding ${s.slug}`);
+                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                    }}
                   />
                 ))}
               </div>
