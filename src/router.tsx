@@ -13,9 +13,13 @@ export function createRouterWithContext() {
   });
 }
 
+export const router = createRouterWithContext();
+
+export const getRouter = () => router;
+
 declare module "@tanstack/react-router" {
   interface Register {
-    router: ReturnType<typeof createRouterWithContext>;
+    router: typeof router;
   }
 }
 
