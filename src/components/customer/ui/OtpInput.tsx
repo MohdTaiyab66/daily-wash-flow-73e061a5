@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function OtpInput({
   value,
   onChange,
-  length = 4,
+  length = 6,
   disabled,
   autoFocus = true,
   onComplete,

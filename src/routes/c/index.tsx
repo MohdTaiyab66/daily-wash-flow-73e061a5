@@ -23,7 +23,8 @@ export const Route = createFileRoute("/c/")({
  * A short floor keeps it from flashing on very fast devices.
  */
 const MIN_SPLASH_MS = 300;
-const AUTH_TIMEOUT_MS = 2500;
+const AUTH_TIMEOUT_MS = 2000;
+const SPLASH_BUILD_ID = "1.0.36-debug";
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -101,8 +102,9 @@ function CustomerSplash() {
         </div>
         
         {/* Unmistakable diagnostic marker visible only in dev or via inspection */}
-        <div className="fixed bottom-10 left-0 right-0 flex justify-center opacity-10 pointer-events-none">
-          <span className="text-[10px] font-mono">APP_START_TRACE_ACTIVE</span>
+        <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+          <span className="text-[10px] font-mono tracking-tighter">APP_START_TRACE_ACTIVE</span>
+          <span className="text-[10px] font-mono tracking-tighter">STARTUP BUILD: {SPLASH_BUILD_ID}</span>
         </div>
       </div>
     </div>
