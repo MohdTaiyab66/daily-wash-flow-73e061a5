@@ -353,11 +353,11 @@ function MyPlanPage() {
 
                     <div className="space-y-3">
                       <h3 className="text-[14px] font-bold uppercase tracking-widest text-[#8A8A8A] px-1">Detailed usage</h3>
-                      <div className="space-y-4 rounded-[18px] border border-[#EEEEEE] bg-white p-4">
+                      <div className="space-y-3 rounded-[18px] border border-[#EEEEEE] bg-white p-4">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-[13px] font-bold">
                             <span className="text-[#1A1A1A]">Exterior washes</span>
-                            <span className="text-[#8A8A8A]">{exteriorCount} / 25</span>
+                            <span className="text-[#8A8A8A]">{exteriorCount} / 25 washes used</span>
                           </div>
                           <Meter value={exteriorCount} max={25} className="h-1.5" />
                         </div>
