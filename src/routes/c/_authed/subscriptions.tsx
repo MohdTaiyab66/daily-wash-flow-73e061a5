@@ -204,7 +204,7 @@ function MyPlanPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FFFCF9] pb-24">
+    <div className="min-h-screen bg-white pb-24">
       <UWHeader
         area="My Plan"
         hideLocationIcon
