@@ -17,21 +17,19 @@ const authLog = {
 
 
 const getAuthErrorDetails = (err: any) => {
-  if (!err) return { message: "No error object returned" };
+  if (!err) return { message: "No error object returned", code: "no_code", hint: "" };
   
   // Extract all possible properties to avoid empty "{}" serialization
-  const details = {
-    message: err.message || "Unknown error",
-    name: err.name || "Error",
-    code: err.code || err.status || "no_code",
-    status: err.status || err.statusCode || "no_status",
-    hint: err.hint || "",
-    details: err.details || "",
+  return {
+    message: String(err.message || "Unknown error"),
+    name: String(err.name || "Error"),
+    code: String(err.code || err.status || "no_code"),
+    status: String(err.status || err.statusCode || "no_status"),
+    hint: String(err.hint || ""),
+    details: String(err.details || ""),
     cause: err.cause ? String(err.cause) : "",
     raw: String(err)
   };
-
-  return details;
 };
 
 const parseAuthError = (err: any) => {
