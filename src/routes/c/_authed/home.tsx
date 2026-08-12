@@ -264,8 +264,6 @@ function CustomerHome() {
             </Section>
           </div>
         </div>
-          </div>
-        </div>
 
         <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
           <DialogContent className="max-w-md rounded-t-3xl border-none p-0">
