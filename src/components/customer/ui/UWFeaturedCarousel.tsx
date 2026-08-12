@@ -87,8 +87,8 @@ export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeatured
                 <div 
                   key={idx}
                   className={cn(
-                "h-1 rounded-full transition-all duration-300",
-                idx === activeIndex ? "w-3 bg-white" : "w-1 bg-white/40"
+                    "h-1 rounded-full transition-all duration-300",
+                    idx === activeIndex ? "w-3 bg-white" : "w-1 bg-white/40"
                   )}
                 />
               ))}
