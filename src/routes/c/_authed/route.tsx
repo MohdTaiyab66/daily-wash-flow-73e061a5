@@ -10,35 +10,33 @@ import { authLog } from "@/lib/auth-debug";
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
   loader: async () => {
-    authLog.trace("[AUTH][SHELL] Protected route loader started");
+    authLog.trace("[AUTH-TRACE] 06 PROTECTED_LOADER_START");
     
-    // Non-blocking session check for the loader
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      authLog.error("[AUTH][SHELL] Protected route loader - No session present. Redirecting to login.");
-      throw redirect({ to: "/c/auth" });
+      authLog.error("[AUTH-TRACE] REDIRECTING: NO SESSION IN LOADER");
+      throw redirect({ to: "/c/auth", replace: true });
     }
     
     return null;
   },
   beforeLoad: async () => {
-    authLog.trace("[AUTH][SHELL] Protected route beforeLoad check");
+    authLog.trace("[AUTH-TRACE] 06 PROTECTED_BEFORELOAD_START");
     
-    // We use getSession here because it's nearly instantaneous (local storage)
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
-      authLog.error("[AUTH][SHELL] beforeLoad - No session present. Redirecting to login.");
-      throw redirect({ to: "/c/auth" });
+      authLog.error("[AUTH-TRACE] REDIRECTING: NO SESSION IN BEFORELOAD");
+      throw redirect({ to: "/c/auth", replace: true });
     }
     
     if (!session.user.email?.endsWith("@customer.urbanwash.app")) {
-      authLog.error("[AUTH][SHELL] beforeLoad - Invalid user domain", { email: session.user.email });
+      authLog.error("[AUTH-TRACE] REDIRECTING: INVALID DOMAIN", { email: session.user.email });
       await supabase.auth.signOut({ scope: "local" });
-      throw redirect({ to: "/c/auth" });
+      throw redirect({ to: "/c/auth", replace: true });
     }
     
-    authLog.trace("[AUTH][SHELL] beforeLoad - Auth confirmed", { userId: session.user.id });
+    authLog.trace("[AUTH-TRACE] 13 AUTHENTICATED_CONFIRMED", { userId: session.user.id });
   },
   component: CustomerAuthedLayout,
 });
