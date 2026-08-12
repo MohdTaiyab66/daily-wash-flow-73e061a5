@@ -303,90 +303,6 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   );
 }
 
-function ComplaintButton({ service, canComplain, onSubmitted }: { service: RecentService; canComplain: boolean; onSubmitted: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [type, setType] = useState<string>("quality");
-  const [desc, setDesc] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const submit = async () => {
-    setSaving(true);
-    try {
-      const { error } = await (supabase as any).rpc("submit_service_complaint", {
-        p_service_id: service.service_id, p_complaint_type: type, p_description: desc || null,
-      });
-      if (error) throw error;
-      toast.success("Complaint submitted. Our team will follow up.");
-      setOpen(false); setDesc(""); onSubmitted();
-    } catch (e: any) {
-      toast.error(e?.message || "Could not submit complaint");
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <>
-      <Button size="sm" variant={canComplain ? "outline" : "ghost"} disabled={!canComplain} className="h-7 gap-1 text-[11px]" onClick={() => setOpen(true)}>
-        <ShieldAlert className="h-3.5 w-3.5" /> Report issue
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Report an issue</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-2 text-[11px] text-primary">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>Complaints accepted within 2 hours of completion. Our team responds the same day.</span>
-            </div>
-            <div>
-              <Label className="text-xs">What went wrong?</Label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm">
-                <option value="quality">Wash quality not satisfactory</option>
-                <option value="damage">Vehicle damage</option>
-                <option value="missed_area">Area missed</option>
-                <option value="behaviour">Partner behaviour</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <Label className="text-xs">Describe (optional)</Label>
-              <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder="Add a few details so we can resolve it" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
-  if (!photos.length) return null;
-  
-  return (
-    <div className="mt-5">
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-        {photos.map((p, i) => (
-          <div key={i} className="flex-shrink-0 w-[82px]">
-            <SignedPhoto 
-              path={p.storage_path} 
-              stage={p.stage} 
-              onClick={() => onPhotoClick(i)} 
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-1 mt-2">
-        <span className="text-[11px] font-semibold text-[#8A8A8A]">1 / {photos.length}</span>
-      </div>
-    </div>
-  );
-}
-
-
 function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -398,20 +314,13 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const labelMap: Record<string, string> = {
-    before: "BEFORE",
-    after: "AFTER",
-    proof: "SERVICE PHOTO",
-    dirty: "DIRTY VEHICLE"
-  };
-
-  const label = labelMap[stage] || "SERVICE PHOTO";
+  const label = stage === 'before' ? 'BEFORE' : stage === 'after' ? 'AFTER' : 'SERVICE PHOTO';
 
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "uw-pressable relative h-[76px] w-full overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        "uw-pressable relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] bg-[#F5F5F5]",
         onClick && "cursor-pointer"
       )}
     >
@@ -422,9 +331,14 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      <div className="absolute bottom-1 left-1 rounded-full bg-black/30 px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-white backdrop-blur-[2px]">
-        {label}
-      </div>
+      {(stage === 'before' || stage === 'after') && (
+        <div className="absolute inset-0 bg-black/5" />
+      )}
+      {(stage === 'before' || stage === 'after') && (
+        <div className="absolute top-1 left-1 rounded-sm bg-black/40 px-1 py-0.5 text-[7px] font-black tracking-widest text-white backdrop-blur-[2px]">
+          {label}
+        </div>
+      )}
     </div>
   );
 }
