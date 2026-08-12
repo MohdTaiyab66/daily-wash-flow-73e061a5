@@ -297,7 +297,12 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
                 ...(service.unavailable_photo ? [{ stage: "proof", angle: "proof", storage_path: service.unavailable_photo, captured_at: service.completed_at, partner_name: service.partner_name }] : []),
                 ...dirtyPhotos.map(p => ({ stage: "dirty", angle: "dirty", storage_path: p, captured_at: service.completed_at, partner_name: service.partner_name }))
               ]
-            : service.photos.map(p => ({ ...p, partner_name: service.partner_name, vehicle_label: service.vehicle_label, vehicle_registration: service.vehicle_registration }))
+            : service.photos.map(p => ({ 
+                ...p, 
+                partner_name: service.partner_name, 
+                vehicle_label: service.vehicle_label, 
+                vehicle_registration: service.vehicle_registration 
+              }))
         }
         initialIndex={initialPhotoIndex}
         serviceName={service.service_name ?? "Daily Shine"}
