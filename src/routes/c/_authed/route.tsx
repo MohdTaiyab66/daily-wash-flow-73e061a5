@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useLocation, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerShell } from "@/components/customer/CustomerShell";
@@ -97,6 +97,9 @@ function CustomerAuthedLayout() {
 
   return (
     <CustomerShell>
+      <div className="fixed top-2 right-2 z-[10000] opacity-30">
+        <Link to="/c/auth" className="text-[9px] font-mono bg-black text-white px-2 py-1 rounded">LOGOUT</Link>
+      </div>
       <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
         <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: {location.pathname}</span>
       </div>
