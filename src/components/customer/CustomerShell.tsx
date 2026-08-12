@@ -6,29 +6,28 @@ import { cn } from "@/lib/utils";
 export function CustomerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const nav = [
-    { to: "/c/home", label: "HOME", icon: Home },
-    { to: "/c/subscriptions", label: "MY PLAN", icon: Sparkles },
-    { to: "/c/bookings", label: "BOOKINGS", icon: Calendar },
-    { to: "/c/profile", label: "PROFILE", icon: User },
+    { to: "/c/home", label: "Home", icon: Home },
+    { to: "/c/subscriptions", label: "My plan", icon: Sparkles },
+    { to: "/c/bookings", label: "Bookings", icon: Calendar },
+    { to: "/c/profile", label: "Profile", icon: User },
   ] as const;
 
   const isCheckout = pathname.startsWith("/c/service/") || pathname.startsWith("/c/vehicles/add") || pathname.includes("/vehicles/");
   
-  // Premium compact + spacious: ~82-90px
+  // Compact Premium Height: 72px
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(90px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(72px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto flex max-w-md items-center justify-between h-[82px] px-6">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.03)] bg-white pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto flex max-w-md items-center justify-between h-[72px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/c/home" && pathname.startsWith(n.to));
-              const label = n.label === "HOME" ? "Home" : n.label.charAt(0) + n.label.slice(1).toLowerCase();
               
               if (active) {
                 return (
@@ -36,12 +35,16 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                     key={n.to}
                     to={n.to}
                     aria-current="page"
-                    className="flex items-center justify-center h-[52px] min-w-[125px] px-4 rounded-[26px] bg-[#FFF1E8] transition-all duration-300 group shrink-0"
+                    className="flex-1 flex flex-col items-center justify-center h-full transition-all duration-300"
                   >
-                    <Icon className="h-[24px] w-[24px] text-[#FF6B00] mr-2" strokeWidth={2} />
-                    <span className="text-[17px] font-medium text-[#FF6B00] leading-none">
-                      {label}
-                    </span>
+                    <div className="flex items-center justify-center w-[86px] h-[46px] rounded-[23px] bg-[#FFF2E8] transition-all duration-300">
+                      <div className="flex flex-col items-center justify-center">
+                        <Icon className="h-[21px] w-[21px] text-[#FF6B00]" strokeWidth={2} />
+                        <span className="mt-0.5 text-[13px] font-medium text-[#FF6B00] leading-none">
+                          {n.label}
+                        </span>
+                      </div>
+                    </div>
                   </Link>
                 );
               }
@@ -50,11 +53,11 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="flex flex-col items-center justify-center transition-all group px-2"
+                  className="flex-1 flex flex-col items-center justify-center transition-all group h-full"
                 >
-                  <Icon className="h-[23px] w-[23px] text-[#666666] group-active:scale-95 transition-transform" strokeWidth={1.75} />
-                  <span className="mt-1 text-[16px] font-medium text-[#666666]">
-                    {label}
+                  <Icon className="h-[21px] w-[21px] text-[#6B6B6B] group-active:scale-95 transition-transform" strokeWidth={1.75} />
+                  <span className="mt-1 text-[13px] font-medium text-[#666666] leading-none">
+                    {n.label}
                   </span>
                 </Link>
               );

@@ -143,7 +143,7 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="min-h-screen bg-[#FFFCF9] pb-[120px]">
+      <div className="min-h-screen bg-[#FFFCF9] pb-[24px]">
         
         <UWHeader 
           area={area} 
