@@ -177,21 +177,22 @@ function CustomerAuth() {
     
     try {
       // P0: STAGE 1 - verifyOtp (using sign-in as the proxy for the current custom flow)
-      // Note: User mentioned supabase.auth.verifyOtp specifically.
-      // The current code uses signInWithPassword as a workaround for a "shadow password" flow.
-      // I will keep the existing flow but add the requested forensics.
+      authLog.info("[AUTH] STAGE 1: signInWithPassword START", { 
+        email,
+        phoneNormalized: normalized,
+        otpLength: code.length
+      });
       
-      authLog.info("[AUTH] STAGE 1: signInWithPassword START", { email });
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       const elapsed = Date.now() - startTime;
 
       if (signInError) {
+        const details = getAuthErrorDetails(signInError);
         authLog.error("[AUTH] STAGE 1: VERIFY_OTP_ERROR", { 
           elapsed, 
-          ...getAuthErrorDetails(signInError) 
+          ...details 
         });
         
-        const details = getAuthErrorDetails(signInError);
         const msg = (details.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
@@ -200,7 +201,7 @@ function CustomerAuth() {
           setStep("name");
           setVerifyState("IDLE");
         } else {
-          setError(parseAuthError(signInError));
+          setError(signInError); // Passing the raw error object to getDisplayError
           setVerifyState("ERROR");
         }
         return;
@@ -230,18 +231,21 @@ function CustomerAuth() {
 
       if (sessionData.session) {
         setVerifyState("SUCCESS");
-        authLog.info("[AUTH] AUTHENTICATION COMPLETE", { userId: userData.user?.id });
+        authLog.info("[AUTH] AUTHENTICATION COMPLETE", { 
+          userId: userData.user?.id,
+          clientId: (window as any).__SUPABASE_CLIENT_ID 
+        });
         goAfterAuth();
       } else {
         authLog.error("[AUTH] SESSION MISSING AFTER SUCCESSFUL VERIFY");
-        setError("Session failed to persist. Please check browser settings.");
+        setError({ message: "Session failed to persist. Please check browser settings.", code: "PERSISTENCE_FAIL" });
         setVerifyState("ERROR");
       }
     } catch (e: any) {
       const elapsed = Date.now() - startTime;
       const details = getAuthErrorDetails(e);
       authLog.error("[AUTH] VERIFY_OTP_UNEXPECTED_EXCEPTION", { elapsed, ...details });
-      setError(`System Error: ${details.message}`);
+      setError(e);
       setVerifyState("ERROR");
     } finally {
       setLoading(false);
