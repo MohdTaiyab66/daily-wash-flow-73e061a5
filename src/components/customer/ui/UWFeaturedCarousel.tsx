@@ -55,7 +55,7 @@ export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeatured
   }, [activeIndex, items.length]);
 
   return (
-    <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px] bg-neutral-100/50 isolate shadow-sm border border-black/[0.03]">
+    <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px] bg-neutral-100/50 isolate shadow-sm border border-black/[0.03]" style={{ minHeight: '140px' }}>
       {isLoading ? (
         <div className="w-full h-full animate-pulse bg-neutral-100/80 rounded-[16px]" />
       ) : (
