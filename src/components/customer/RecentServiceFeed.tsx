@@ -133,21 +133,21 @@ export function RecentServiceFeed({
   return (
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-[14px] font-black uppercase tracking-widest text-muted-foreground/40">
-          {showAll ? "Full History" : "Recent Activity"}
+        <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+          {showAll ? "Full History" : "Recent Service"}
         </h3>
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="text-[12px] font-black text-primary active:opacity-60"
+          className="text-[13px] font-semibold text-[#FF6B00] active:opacity-60"
         >
           {showAll ? "Show Recent" : "View All"}
         </button>
       </div>
       <div className="mt-3 space-y-4">
-        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[28px] bg-white border border-black/5" />}
+        {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <p className="rounded-[28px] border border-dashed border-black/10 p-8 text-center text-[13px] font-medium text-muted-foreground/60">
+          <p className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center text-[13px] font-medium text-[#8A8A8A]">
             No service records found.
           </p>
         )}
@@ -228,35 +228,40 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-black text-[#1a1a1a]">
-              {status.label} · {service.service_name ?? "Daily Shine"}
+            <span className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">
+              {status.label}
             </span>
-            <div className={`h-1.5 w-1.5 rounded-full ${
-              status.tone === "success" ? "bg-success" : 
-              status.tone === "danger" ? "bg-destructive" :
-              status.tone === "warning" ? "bg-warning" : "bg-primary"
+            <div className={`h-2 w-2 rounded-full ${
+              status.tone === "success" ? "bg-[#2E7D32]" : 
+              status.tone === "danger" ? "bg-[#E53935]" :
+              status.tone === "warning" ? "bg-[#FF6B00]" : "bg-[#FF6B00]"
             }`} />
           </div>
           
-          <p className="mt-1 text-[12px] font-bold text-muted-foreground/40">
-            {service.vehicle_label} · {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+          <p className="mt-1 text-[15px] font-semibold text-[#1A1A1A]">
+            {service.service_name ?? "Daily Shine"}
+          </p>
+
+          <p className="mt-0.5 text-[14px] font-normal text-[#8A8A8A]">
+            {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            {` · ${service.vehicle_label}`}
           </p>
 
           {(reason || (isUnavailable && service.unavailable_notes)) && (
             <div className="mt-3 space-y-1">
-              {reason && <p className="text-[13px] font-black text-[#1a1a1a]">{reason}</p>}
+              {reason && <p className="text-[13px] font-semibold text-[#1A1A1A]">{reason}</p>}
               {isUnavailable && (
-                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
                   {service.unavailable_notes || "No wash was deducted from your plan."}
                 </p>
               )}
               {hasDirty && (
-                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
                   Partner reported the vehicle needed more attention than usual.
                 </p>
               )}
@@ -265,9 +270,9 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
         <div className={cn(
           "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-          status.tone === "success" ? "bg-success/10 text-success" : 
-          status.tone === "danger" ? "bg-destructive/10 text-destructive" :
-          status.tone === "warning" ? "bg-warning/20 text-warning-foreground" : "bg-primary/10 text-primary"
+          status.tone === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
+          status.tone === "danger" ? "bg-[#FFEBEE] text-[#E53935]" :
+          status.tone === "warning" ? "bg-[#FFF3E0] text-[#E65100]" : "bg-[#FFF1E8] text-[#FF6B00]"
         )}>
           <StatusIcon className="h-5 w-5" />
         </div>
@@ -297,27 +302,27 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between border-t border-black/[0.03] pt-4">
+      <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
         <div className="flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-muted-foreground/40" />
-          <span className="text-[11px] font-bold text-muted-foreground/40">
+          <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
+          <span className="text-[12px] font-medium text-[#8A8A8A]">
             {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `${minutesLeft}m to report issue` : "Window closed"}
           </span>
         </div>
         
         {!isUnavailable && !isMissed && !isPending && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {canComplain && (
               <button 
                 onClick={() => setViewerOpen(true)}
-                className="text-[12px] font-black text-primary active:opacity-60"
+                className="text-[13px] font-semibold text-[#FF6B00]"
               >
                 Report Issue
               </button>
             )}
             <button 
               onClick={() => openViewer(0)}
-              className="text-[12px] font-black text-[#1a1a1a] active:opacity-60"
+              className="text-[13px] font-semibold text-[#1A1A1A]"
             >
               View Photos
             </button>
@@ -407,7 +412,7 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
 function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
   return (
-    <div className="mt-4 grid grid-cols-4 gap-2">
+    <div className="mt-5 grid grid-cols-4 gap-2.5">
       {photos.slice(0, 3).map((p, i) => (
         <SignedPhoto 
           key={i} 
@@ -417,12 +422,15 @@ function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (
         />
       ))}
       {photos.length > 3 && (
-        <button 
-          onClick={() => onPhotoClick(3)}
-          className="uw-pressable relative aspect-square overflow-hidden rounded-xl bg-black/5 text-[12px] font-black text-primary active:scale-95"
-        >
-          +{photos.length - 3}
-        </button>
+        <div className="relative cursor-pointer" onClick={() => onPhotoClick(3)}>
+          <SignedPhoto 
+            path={photos[3].storage_path} 
+            stage={photos[3].stage} 
+          />
+          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white">
+            +{photos.length - 3}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -438,16 +446,27 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     })();
     return () => { cancelled = true; };
   }, [path]);
+
+  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE";
+
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "relative aspect-square overflow-hidden rounded-xl bg-black/5",
-        onClick && "cursor-pointer active:scale-95 transition-transform shadow-sm"
+        "uw-pressable relative aspect-square overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        onClick && "cursor-pointer"
       )}
     >
-      {url ? <img src={url} alt={stage} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full animate-pulse bg-muted" />}
-      <span className="absolute bottom-1 left-1 rounded-md bg-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black/80">{stage}</span>
+      {url ? (
+        <img src={url} alt={stage} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
+        </div>
+      )}
+      <div className="absolute bottom-1.5 left-1.5 rounded-full bg-black/30 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white backdrop-blur-[2px]">
+        {label}
+      </div>
     </div>
   );
 }

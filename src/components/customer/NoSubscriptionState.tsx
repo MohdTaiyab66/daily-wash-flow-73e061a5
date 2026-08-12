@@ -11,17 +11,17 @@ export function NoSubscriptionState({
 }) {
   const navigate = useNavigate();
   return (
-    <div className="mt-6 flex flex-col items-center rounded-[22px] border border-[#EEEEEE] bg-white p-8 text-center shadow-sm">
-      <div className="grid h-[58px] w-[58px] place-items-center rounded-[20px] bg-[#FFF2E8] text-[#FF6B00] mb-5">
-        <Sparkles className="h-[28px] w-[28px]" />
+    <div className="mt-5 flex flex-col items-center rounded-[18px] border border-[#EEEEEE] bg-white p-8 text-center shadow-sm">
+      <div className="grid h-[52px] w-[52px] place-items-center rounded-[16px] bg-[#FFF1E8] text-[#FF6B00] mb-5">
+        <Sparkles className="h-[24px] w-[24px]" />
       </div>
       <h3 className="text-[20px] font-semibold text-[#1A1A1A]">Start Daily Shine</h3>
-      <p className="mt-2 max-w-[240px] text-[15px] font-medium leading-relaxed text-[#8A8A8A]">
+      <p className="mt-2 max-w-[240px] text-[14px] font-normal leading-relaxed text-[#8A8A8A]">
         Your vehicle doesn't have an active membership yet.
       </p>
 
       <Button
-        className="mt-8 h-12 w-full rounded-2xl bg-[#1A1A1A] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
+        className="mt-7 h-11 w-full rounded-xl bg-[#181818] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
         onClick={() =>
           navigate({
             to: "/c/service/$slug",

@@ -260,17 +260,17 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("rounded-[22px] border border-[#EEEEEE] bg-white p-6 shadow-sm", tone)}>
+    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm", tone)}>
       {serviceWindow && (
         <div className="mb-4 flex items-center justify-between border-b border-[#F5F5F5] pb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Clock className="h-4 w-4 text-[#FF6B00]" />
             <div className="min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
-              <p className="text-[18px] font-semibold text-[#1A1A1A] mt-0.5">{serviceWindow}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
+              <p className="text-[17px] font-semibold text-[#1A1A1A] mt-0.5">{serviceWindow}</p>
             </div>
           </div>
-          <StatusChip tone={state === "completed" ? "success" : "brand"} className="h-6 px-3 text-[10px] font-bold uppercase tracking-wider">
+          <StatusChip tone={state === "completed" ? "success" : "brand"} className="h-5 px-2.5 text-[9px] font-bold uppercase tracking-wider">
              {state === "completed" ? "Completed" : "Scheduled"}
           </StatusChip>
         </div>
@@ -279,7 +279,7 @@ export function AwaitingPartnerBanner({
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-[18px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
-          {copyMap[state] && <p className="mt-1 text-[15px] font-medium leading-relaxed text-[#555555]">{copyMap[state]}</p>}
+          {copyMap[state] && <p className="mt-1 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
             <div className="mt-4 flex items-center gap-3">
@@ -296,8 +296,8 @@ export function AwaitingPartnerBanner({
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-semibold text-[#1A1A1A]">{partner.full_name}</p>
-                <div className="flex items-center gap-2 text-[12px] font-medium text-[#8A8A8A]">
-                  <span className="inline-flex items-center gap-1 text-[#FF6B00]">
+                <div className="flex items-center gap-2 text-[12px] font-normal text-[#8A8A8A]">
+                  <span className="inline-flex items-center gap-1 text-[#FF6B00] font-medium">
                     <Star className="h-3 w-3 fill-current" /> {Number(partner.rating ?? 5).toFixed(1)}
                   </span>
                   <span className="opacity-30">·</span>
