@@ -38,6 +38,7 @@ type RecentService = {
   complaint_window_ends_at: string;
   can_complain: boolean;
   has_complaint: boolean;
+  vehicle_registration: string | null;
 };
 
 export function RecentServiceFeed({
