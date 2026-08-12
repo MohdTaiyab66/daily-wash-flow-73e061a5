@@ -105,6 +105,7 @@ function CustomerSplash() {
         <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
           <span className="text-[10px] font-mono tracking-tighter">APP_START_TRACE_ACTIVE</span>
           <span className="text-[10px] font-mono tracking-tighter">STARTUP BUILD: {SPLASH_BUILD_ID}</span>
+          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c (Splash)</span>
         </div>
       </div>
     </div>

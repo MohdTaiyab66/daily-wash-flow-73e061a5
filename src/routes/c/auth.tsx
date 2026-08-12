@@ -37,7 +37,7 @@ function CustomerAuth() {
   const goAfterAuth = () => {
     if (redirect) { navigate({ to: redirect as any, replace: true }); return; }
     const area = localStorage.getItem("uw_customer_area");
-    navigate({ to: area ? "/c/home" : "/c/location", replace: true });
+    navigate({ to: area ? "/c/home" : "/c/location/search", replace: true });
   };
 
   const [step, setStep] = useState<Step>("phone");
@@ -55,7 +55,8 @@ function CustomerAuth() {
     (async () => {
       authLog.trace("[AUTH][STARTUP] Checking existing session...");
       const { data } = await supabase.auth.getSession();
-      if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
+      const session = data.session;
+      if (session?.user?.email?.endsWith("@customer.urbanwash.app")) {
         authLog.info("[AUTH][STARTUP] session present = true (auto-navigating)");
         goAfterAuth();
       } else {
@@ -383,7 +384,7 @@ function CustomerAuth() {
                 </p>
               )}
               <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
-                AUTH BUILD: {AUTH_BUILD_ID}
+                AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
               </p>
             </div>
 
