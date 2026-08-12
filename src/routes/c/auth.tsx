@@ -156,23 +156,19 @@ function CustomerAuth() {
     
     try {
       // 1. First sign in
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      if (signInError) {
-        // ... handled below
-      } else {
+      if (!signInError) {
         // 2. Immediately force a session refresh/check to ensure persistence in storage
         await supabase.auth.getSession();
       }
       
-      const data = data; // scoped data
-      
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
-      if (data) {
-        authLog.info("[OTP-P0] DATA PRESENT", { session: !!data.session, user: !!data.user });
+      if (authData) {
+        authLog.info("[OTP-P0] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
       }
 
-      if (data?.session) {
+      if (authData?.session) {
         setVerifyState("SUCCESS");
         authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
 
