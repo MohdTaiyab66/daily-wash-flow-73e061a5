@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-
+import { useEffect, useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface CarouselItem {
@@ -14,102 +13,74 @@ interface CarouselItem {
 
 interface UWFeaturedCarouselProps {
   items: CarouselItem[];
-  className?: string;
   onItemClick?: (item: CarouselItem) => void;
 }
 
-export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeaturedCarouselProps) {
-  const [index, setIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const touchStart = useRef<number | null>(null);
-  const touchEnd = useRef<number | null>(null);
+export function UWFeaturedCarousel({ items, onItemClick }: UWFeaturedCarouselProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchEnd.current = null;
-    touchStart.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEnd.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart.current || !touchEnd.current) return;
-    const distance = touchStart.current - touchEnd.current;
-    if (distance > minSwipeDistance) {
-      setIndex((prev) => (prev + 1) % items.length);
-    } else if (distance < -minSwipeDistance) {
-      setIndex((prev) => (prev - 1 + items.length) % items.length);
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const scrollLeft = scrollRef.current.scrollLeft;
+    const width = scrollRef.current.offsetWidth;
+    const index = Math.round(scrollLeft / width);
+    if (index !== activeIndex) {
+      setActiveIndex(index);
     }
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000);
-  };
-
-  const next = useCallback(() => {
-    if (!document.hidden) {
-      setIndex((prev) => (prev + 1) % items.length);
-    }
-  }, [items.length]);
+  }, [activeIndex]);
 
   useEffect(() => {
-    if (isPaused || items.length <= 1) return;
-    const timer = setInterval(next, 4000);
-    return () => clearInterval(timer);
-  }, [isPaused, items.length, next]);
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener("scroll", handleScroll, { passive: true });
+      return () => el.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
 
-  if (!items.length) return null;
+  // Auto-scroll
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const interval = setInterval(() => {
+      if (!scrollRef.current) return;
+      const nextIndex = (activeIndex + 1) % items.length;
+      scrollRef.current.scrollTo({
+        left: nextIndex * scrollRef.current.offsetWidth,
+        behavior: "smooth"
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeIndex, items.length]);
 
   return (
-    <div 
-      className={cn(
-        "featured-carousel relative w-full overflow-hidden rounded-[16px] bg-white aspect-[1.87/1] touch-pan-y shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] border border-black/5 box-border", 
-
-        className
-      )}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
+    <div className="relative w-full">
       <div 
-        className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ transform: `translateX(-${index * 100}%)` }}
+        ref={scrollRef}
+        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full rounded-[18px] h-[160px]"
       >
-        {items.map((item, i) => (
+        {items.map((item, idx) => (
           <div 
-            key={item.id} 
-            className="featured-carousel-item relative h-full w-full shrink-0 cursor-pointer overflow-hidden"
+            key={item.id || idx}
             onClick={() => onItemClick?.(item)}
+            className="flex-shrink-0 w-full h-full snap-center cursor-pointer overflow-hidden"
           >
-            {/* 
-              Requirement: IMAGE IS THE ENTIRE CARD. 
-              Aspect ratio is fixed to 1.87/1.
-              Using object-contain ensures the ENTIRE creative is visible without any cropping,
-              even if the current uploaded image ratio doesn't perfectly match 1.87:1 yet.
-            */}
             <img 
               src={item.image} 
-              alt={item.title || "Urban Wash Daily Shine"} 
-              className="w-full h-full object-contain block"
-              loading={i === 0 ? "eager" : "lazy"}
+              alt={item.title} 
+              className="w-full h-full object-cover"
             />
-
           </div>
         ))}
       </div>
 
-      {/* Pagination indicators - matching target design */}
       {items.length > 1 && (
-        <div className="absolute bottom-4 left-6 flex gap-2 z-20 pointer-events-none">
-          {items.map((_, i) => (
-            <div
-              key={i}
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+          {items.map((_, idx) => (
+            <div 
+              key={idx}
               className={cn(
-                "h-1.5 w-1.5 rounded-full transition-all duration-300",
-                i === index ? "w-4 bg-[#FF6B00]" : "bg-white/50 shadow-sm"
+                "h-1.5 rounded-full transition-all duration-300",
+                idx === activeIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
               )}
             />
           ))}
@@ -118,7 +89,3 @@ export function UWFeaturedCarousel({ items, className, onItemClick }: UWFeatured
     </div>
   );
 }
-
-
-
-

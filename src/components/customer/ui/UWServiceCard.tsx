@@ -49,7 +49,7 @@ export function UWServiceCard({
       }}
       className={cn(
         "cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]/40",
-        "p-0 overflow-hidden flex flex-col h-[210px] bg-white border border-[#F0F0F0] rounded-[18px] shadow-sm transition-all active:scale-[0.96] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-[210px] bg-white border border-[#EEEEEE] rounded-[16px] shadow-sm transition-all active:scale-[0.96] duration-150", 
         className
       )}
     >
