@@ -353,18 +353,23 @@ function MyPlanPage() {
                         </div>
 
 
-                    {/* RECENT SERVICE */}
-                    <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+                        {/* RECENT SERVICE */}
+                        <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
 
-                    {/* DETAILED USAGE */}
-                    <div className="space-y-3">
-                      <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A] px-1">Plan Usage</h3>
-                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#8A8A8A]">Service days</span>
-                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
-                          </div>
+                        {/* Remove redundant detailed usage section as it is now in the main plan card */}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
                             <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
                           </div>
