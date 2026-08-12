@@ -57,17 +57,17 @@ function createSupabaseClient() {
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+if (typeof window !== 'undefined') {
+  _supabase = createSupabaseClient();
+  (window as any).__SUPABASE_CLIENT_ID = Math.random().toString(36).substring(7);
+  (window as any).supabase = _supabase;
+  console.log(`[AUTH-P0] Supabase client initialized with ID: ${(window as any).__SUPABASE_CLIENT_ID}`);
+}
+
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
     if (!_supabase) {
       _supabase = createSupabaseClient();
-      if (typeof window !== 'undefined') {
-        (window as any).__SUPABASE_CLIENT_ID = Math.random().toString(36).substring(7);
-        (window as any).supabase = _supabase; // FOR DIAGNOSTICS ONLY
-        console.log(`[AUTH-P0] Supabase client initialized with ID: ${(window as any).__SUPABASE_CLIENT_ID}`);
-      }
     }
     return Reflect.get(_supabase, prop, receiver);
   },
