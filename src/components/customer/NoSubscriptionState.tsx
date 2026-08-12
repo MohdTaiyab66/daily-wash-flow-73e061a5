@@ -33,7 +33,5 @@ export function NoSubscriptionState({
         Subscribe for ₹1,199/mo
       </Button>
     </div>
-
-    </div>
   );
 }
