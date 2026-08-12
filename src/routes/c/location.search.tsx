@@ -463,9 +463,122 @@ function LocationFlow() {
 
   if (view === 'manual_entry') {
     return (
-      <div className="flex flex-col h-screen bg-[#FDFDFD] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]" />
-        <p className="mt-4 text-[14px] font-bold text-[#1A1A1A]">Redirecting to manual search...</p>
+      <div className="flex flex-col h-screen bg-[#FDFDFD] overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        {/* HEADER */}
+        <div className="px-6 py-4 flex items-center gap-4 shrink-0">
+          <button 
+            onClick={() => setView('onboarding')} 
+            className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-md border border-black/5 active:scale-95 transition-all"
+          >
+            <ArrowLeft className="h-5 w-5 text-[#1A1A1A]" />
+          </button>
+          <h1 className="text-[20px] font-black tracking-tight text-[#1A1A1A]">Choose location</h1>
+        </div>
+
+        {/* SEARCH INPUT */}
+        <div className="px-6 py-2 shrink-0">
+          <div className="relative group">
+            <div className="flex items-center gap-3 h-[58px] rounded-[20px] border border-gray-100 bg-white px-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] focus-within:ring-2 focus-within:ring-[#FF6B00]/10 transition-all">
+              <Search className="h-5 w-5 text-[#FF6B00]" />
+              <input
+                autoFocus
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search locality, society or landmark..."
+                className="flex-1 bg-transparent border-0 outline-none focus:ring-0 p-0 h-full text-[16px] font-bold placeholder:font-medium placeholder:text-muted-foreground/30 text-[#1A1A1A]"
+              />
+              {q && (
+                <button onClick={() => setQ("")} className="p-1 rounded-full hover:bg-gray-100">
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* MAIN SCROLLABLE AREA */}
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          {/* COMPACT MAP */}
+          <div className="px-6 mt-4 shrink-0">
+            <div className="h-[210px] w-full rounded-[20px] overflow-hidden bg-gray-50 border border-black/5 relative shadow-sm">
+              <div ref={mapRef} className="w-full h-full" />
+            </div>
+          </div>
+
+          {/* CONTENT / RESULTS */}
+          <div className="px-6 py-6">
+            {loadingSuggestions && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-[#FF6B00]" />
+              </div>
+            )}
+
+            {/* SEARCH RESULTS */}
+            {q.length > 0 && (
+              <div className="space-y-1">
+                {suggestions.map((s, idx) => (
+                  <div key={s.placeId}>
+                    <button
+                      onClick={() => chooseSuggestion(s)}
+                      disabled={selecting}
+                      className="w-full flex items-start gap-4 py-4 px-1 text-left active:bg-gray-50 rounded-xl transition-all group"
+                    >
+                      <div className="mt-1 shrink-0 p-2 rounded-full bg-gray-50 group-active:bg-orange-50 transition-colors">
+                        <MapPin className="h-4 w-4 text-[#FF6B00]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-[15px] font-black text-[#1A1A1A] truncate">{s.primary}</span>
+                        <span className="mt-0.5 block text-[13px] font-medium text-muted-foreground/40 truncate">{s.secondary}</span>
+                      </div>
+                    </button>
+                    {idx < suggestions.length - 1 && <div className="h-[1px] w-full bg-black/5 ml-12" />}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* INITIAL STATE */}
+            {!q && !selectedManualLocation && (
+              <div className="animate-in fade-in duration-500">
+                <h3 className="text-[14px] font-black text-[#1A1A1A]">Search your area</h3>
+                <p className="mt-1 text-[13px] font-medium text-muted-foreground/40 leading-relaxed max-w-[280px]">
+                  Enter your locality, society or landmark to check doorstep service availability.
+                </p>
+              </div>
+            )}
+
+            {/* SELECTION CONFIRMATION */}
+            {!q && selectedManualLocation && (
+              <div className="animate-in slide-in-from-bottom-4 duration-500">
+                <div className="p-5 rounded-[24px] bg-white border border-black/5 flex flex-col gap-6 shadow-sm">
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-[9px] font-black text-[#4CAF50] uppercase tracking-[0.1em] mb-3">
+                      <CheckCircle2 className="h-3 w-3" />
+                      LOCATION SELECTED
+                    </span>
+                    <span className="block text-[18px] font-black text-[#1A1A1A] leading-tight">{selectedManualLocation.area}</span>
+                    <span className="block text-[13px] font-medium text-muted-foreground/40 mt-1.5">{selectedManualLocation.fullAddress}</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-[12px] font-bold text-green-600">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Service available in your area
+                    </div>
+                    
+                    <Button 
+                      onClick={handleContinue} 
+                      className="w-full h-[58px] rounded-[18px] bg-[#181818] hover:bg-black text-white font-black text-[16px] shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
