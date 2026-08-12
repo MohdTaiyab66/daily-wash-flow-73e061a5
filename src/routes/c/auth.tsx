@@ -50,6 +50,20 @@ export const Route = createFileRoute("/c/auth")({
   component: CustomerAuth,
 });
 
+// Helper for type-safe error access in JSX
+function getDisplayError(err: any): string {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  
+  const d = {
+    message: err.message || "Unknown error",
+    code: err.code || err.status || "no_code",
+    hint: err.hint || ""
+  };
+  
+  return `${d.message}${d.code !== 'no_code' ? ` [${d.code}]` : ''}${d.hint ? ` - ${d.hint}` : ''}`;
+}
+
 type Step = "phone" | "otp" | "name";
 
 const normalizePhone = (p: string) => p.replace(/\D/g, "").slice(-10);
@@ -356,8 +370,8 @@ function CustomerAuth() {
                   Verification Failed
                 </p>
               </div>
-              <p className="text-[13px] font-semibold text-destructive/90 leading-tight">
-                {error}
+              <p className="text-[13px] font-semibold text-destructive/90 leading-tight whitespace-pre-wrap">
+                {getDisplayError(error)}
               </p>
             </div>
           </div>
