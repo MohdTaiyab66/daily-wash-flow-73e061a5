@@ -218,7 +218,7 @@ function MyPlanPage() {
         } : undefined}
         onVehicleClick={() => {
           const el = document.querySelector('[role="combobox"]') as HTMLElement;
-          if (el) el.click();
+          if (el) el?.click();
         }}
       />
 
