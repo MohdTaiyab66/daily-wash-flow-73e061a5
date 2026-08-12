@@ -37,7 +37,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                     aria-current="page"
                     className="flex-1 flex flex-col items-center justify-center h-full transition-all duration-300"
                   >
-                    <div className="flex items-center justify-center w-[86px] h-[46px] rounded-[23px] bg-[#FFF2E8] transition-all duration-300">
+                    <div className="flex items-center justify-center w-[84px] h-[45px] rounded-[22px] bg-[#FFF2E8] transition-all duration-300">
                       <div className="flex flex-col items-center justify-center">
                         <Icon className="h-[21px] w-[21px] text-[#FF6B00]" strokeWidth={2} />
                         <span className="mt-0.5 text-[13px] font-medium text-[#FF6B00] leading-none">

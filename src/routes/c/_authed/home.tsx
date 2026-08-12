@@ -153,9 +153,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[52px]">
+        <div className="pt-[68px]">
           <div className="px-4">
-            <div className="mt-[16px]">
+            <div className="mt-[14px]">
               <UWFeaturedCarousel 
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
@@ -178,47 +178,47 @@ function CustomerHome() {
               />
             </div>
 
-            {/* Refined Trust Strip - Lighter */}
-            <div className="flex justify-between items-center px-4 w-full h-[56px] mt-[16px] bg-[#FFF8F1] rounded-[18px]">
-              <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Sparkles className="h-3 w-3" />
+            {/* Compact Benefits Strip */}
+            <div className="flex justify-between items-center px-4 w-full h-[92px] mt-[22px] bg-[#FFF9F4] rounded-[18px] border border-[#FF6B00]/5">
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Sparkles className="h-[13px] w-[13px]" />
                 </div>
-                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Expert Care</span>
+                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Expert Care</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Camera className="h-3 w-3" />
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <Camera className="h-[13px] w-[13px]" />
                 </div>
-                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Photo Proof</span>
+                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Photo Proof</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5 flex-1">
-                <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <ShieldCheck className="h-3 w-3" />
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="h-[24px] w-[24px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
+                  <ShieldCheck className="h-[13px] w-[13px]" />
                 </div>
-                <span className="text-[8px] font-bold text-[#444444] uppercase tracking-wider mt-1">Safe & Secure</span>
+                <span className="text-[12px] font-medium text-[#444444] tracking-tight">Safe & Secure</span>
               </div>
             </div>
 
             <Section 
               title={
-                <div className="flex flex-col gap-0.5">
-                  <h2 className="text-[22px] font-bold text-[#2D2D2D] tracking-tight leading-tight uppercase">Car care services</h2>
-                  <p className="text-[12px] text-[#7A7A7A] font-medium">Everything your car needs</p>
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-[29px] font-bold text-[#1A1A1A] tracking-tight leading-tight">CAR CARE SERVICES</h2>
+                  <p className="text-[15px] text-[#7A7A7A] font-medium">Everything your car needs</p>
                 </div>
               }
-              className="mt-[20px] mb-0"
+              className="mt-[32px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[12px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[20px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-full px-4 h-[32px] flex items-center justify-center text-[12px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
+                      "whitespace-nowrap rounded-[23px] px-5 h-[44px] flex items-center justify-center text-[14px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
                       selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white" 
-                        : "bg-white text-[#4A4A4A] border border-[rgba(0,0,0,0.06)] shadow-sm"
+                        ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
+                        : "bg-white text-[#555555] border border-[#EAEAEA]"
                     )}
                   >
                     {cat}
@@ -226,7 +226,7 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-2 gap-y-3.5 mt-[18px]">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 mt-[22px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
@@ -243,10 +243,10 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="mt-8 mb-4 pb-0">
+              <div className="mt-8 mb-4">
                 <button 
                   onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || undefined } } as any)}
-                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/10 rounded-[20px] p-5 text-left active:scale-[0.98] transition-transform"
+                  className="w-full bg-[#FFF2ED] border border-[#FF6B00]/5 rounded-[20px] p-5 text-left active:scale-[0.98] transition-transform"
                 >
                   <div className="flex flex-row items-center justify-between gap-4">
                     <div className="flex-1">
