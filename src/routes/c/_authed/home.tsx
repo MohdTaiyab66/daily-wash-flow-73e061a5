@@ -390,7 +390,7 @@ function CustomerHome() {
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-white/10">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
               <button 
                 onClick={() => {
                   console.log("[DIAGNOSTIC] Manual connectivity test...");
@@ -400,20 +400,37 @@ function CustomerHome() {
               >
                 TEST DB
               </button>
-              <button onClick={() => refreshAll()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
               <button 
-                onClick={() => {
-                  const env = {
-                    URL: !!import.meta.env.VITE_SUPABASE_URL,
-                    KEY: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                    HOST: import.meta.env.VITE_SUPABASE_URL?.split('://')[1]?.split('/')[0]
-                  };
-                  alert(`[ENV] URL:${env.URL}, KEY:${env.KEY}, HOST:${env.HOST}`);
+                onClick={async () => {
+                  console.log("[DIAGNOSTIC] Auth session test...");
+                  try {
+                    const { data } = await supabase.auth.getSession();
+                    const { data: userRes } = await supabase.auth.getUser();
+                    alert(`AUTH SESSION TEST\nSESSION: ${data.session ? 'PRESENT' : 'MISSING'}\nUSER: ${userRes.user ? 'PRESENT' : 'MISSING'}\nAUTH STATE: ${data.session ? 'AUTHENTICATED' : 'UNAUTHENTICATED'}`);
+                  } catch (err) {
+                    alert(`AUTH TEST ERROR: ${JSON.stringify(err)}`);
+                  }
                 }}
-                className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
+                className="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
               >
-                ENV INFO
+                TEST AUTH
               </button>
+              <button 
+                onClick={async () => {
+                  console.log("[DIAGNOSTIC] Signed-in request test...");
+                  try {
+                    const { data, error } = await supabase.from("customer_profiles").select("id").limit(1);
+                    if (error) throw error;
+                    alert(`SIGNED-IN REQUEST: SUCCESS (Found ${data?.length} records)`);
+                  } catch (err) {
+                    alert(`SIGNED-IN REQUEST FAILED: ${JSON.stringify(err)}`);
+                  }
+                }}
+                className="bg-green-600 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
+              >
+                TEST SIGNED-IN REQ
+              </button>
+              <button onClick={() => refreshAll()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
             </div>
           </div>
         </div>
