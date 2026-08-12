@@ -351,51 +351,10 @@ function CustomerHome() {
           </div>
         </div>
 
-        {/* Diagnostic Panel - Build 38 */}
-        <div className="fixed bottom-[80px] left-2 right-2 z-[9999] opacity-95 pointer-events-auto">
-          <div className="bg-black/95 text-[10px] text-white p-3 rounded-xl border border-white/20 font-mono shadow-2xl space-y-2">
-            <div className="flex justify-between border-b border-white/10 pb-1.5 mb-1.5">
-              <span className="font-bold text-[#FF6B00]">BUILD 1.0.43-auth-arch-fix</span>
-              <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
-                {servicesQ.fetchStatus} | {servicesQ.status}
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              <div>AUTH GATE: <span className={cn(
-                initialContextQ.data ? "text-green-400" : 
-                initialContextQ.status === 'error' ? "text-red-400" : "text-orange-400"
-              )}>
-                {initialContextQ.data ? 'AUTHENTICATED' : 
-                 initialContextQ.status === 'error' ? 'ERROR' : 
-                 initialContextQ.isPending ? 'INITIALIZING' : 'UNAUTHENTICATED'}
-              </span></div>
-
-              <div>ROUTE: <span className="text-blue-400">/c/home</span></div>
-              
-              <div>SESSION: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
-                {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
-              </span></div>
-
-              <div>DECISION: <span className="text-purple-400">{initialContextQ.data ? 'PROTECTED' : 'WAIT/LOGIN'}</span></div>
-
-              <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
-                SERVICES: <span className={cn(
-                  servicesQ.isSuccess ? "text-green-400" : 
-                  servicesQ.isError ? "text-red-400" : "text-orange-400"
-                )}>
-                  {servicesQ.isPending ? 'PENDING' : servicesQ.isError ? 'ERROR (Timeout?)' : `OK (${servicesQ.data?.length})`}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
-              <button 
-                onClick={() => testSupabaseRaw().then(res => alert(`Raw DB Test: ${res.success ? 'SUCCESS' : 'FAILED: ' + JSON.stringify(res.error)}`))}
-                className="bg-[#FF6B00] text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
-              >
-                TEST DB
-              </button>
+      </div>
+    </PullToRefresh>
+  );
+}
               <button 
                 onClick={async () => {
                   try {
