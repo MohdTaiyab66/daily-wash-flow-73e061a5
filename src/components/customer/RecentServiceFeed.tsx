@@ -228,35 +228,40 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-black/5 bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-black text-[#1a1a1a]">
-              {status.label} · {service.service_name ?? "Daily Shine"}
+            <span className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">
+              {status.label}
             </span>
-            <div className={`h-1.5 w-1.5 rounded-full ${
-              status.tone === "success" ? "bg-success" : 
-              status.tone === "danger" ? "bg-destructive" :
-              status.tone === "warning" ? "bg-warning" : "bg-primary"
+            <div className={`h-2 w-2 rounded-full ${
+              status.tone === "success" ? "bg-[#2E7D32]" : 
+              status.tone === "danger" ? "bg-[#E53935]" :
+              status.tone === "warning" ? "bg-[#FF6B00]" : "bg-[#FF6B00]"
             }`} />
           </div>
           
-          <p className="mt-1 text-[12px] font-bold text-muted-foreground/40">
-            {service.vehicle_label} · {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+          <p className="mt-1 text-[15px] font-semibold text-[#1A1A1A]">
+            {service.service_name ?? "Daily Shine"}
+          </p>
+
+          <p className="mt-0.5 text-[14px] font-normal text-[#8A8A8A]">
+            {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            {` · ${service.vehicle_label}`}
           </p>
 
           {(reason || (isUnavailable && service.unavailable_notes)) && (
             <div className="mt-3 space-y-1">
-              {reason && <p className="text-[13px] font-black text-[#1a1a1a]">{reason}</p>}
+              {reason && <p className="text-[13px] font-semibold text-[#1A1A1A]">{reason}</p>}
               {isUnavailable && (
-                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
                   {service.unavailable_notes || "No wash was deducted from your plan."}
                 </p>
               )}
               {hasDirty && (
-                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground/60">
+                <p className="text-[13px] font-normal leading-relaxed text-[#8A8A8A]">
                   Partner reported the vehicle needed more attention than usual.
                 </p>
               )}
@@ -265,9 +270,9 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
         <div className={cn(
           "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-          status.tone === "success" ? "bg-success/10 text-success" : 
-          status.tone === "danger" ? "bg-destructive/10 text-destructive" :
-          status.tone === "warning" ? "bg-warning/20 text-warning-foreground" : "bg-primary/10 text-primary"
+          status.tone === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
+          status.tone === "danger" ? "bg-[#FFEBEE] text-[#E53935]" :
+          status.tone === "warning" ? "bg-[#FFF3E0] text-[#E65100]" : "bg-[#FFF1E8] text-[#FF6B00]"
         )}>
           <StatusIcon className="h-5 w-5" />
         </div>
