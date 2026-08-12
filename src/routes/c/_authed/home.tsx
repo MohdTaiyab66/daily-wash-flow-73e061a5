@@ -88,13 +88,13 @@ function CustomerHome() {
   const testSupabaseRaw = async () => {
     console.log("[NET][DIAGNOSTIC] Raw database test starting...");
     try {
-      const { data, error } = await fetchWithTimeout(
-        supabase.from("service_catalog").select("id").limit(1),
+      const res = await fetchWithTimeout(
+        supabase.from("service_catalog").select("id").limit(1) as any,
         "RAW_DB_TEST"
       );
-      if (error) throw error;
-      console.log("[NET][DIAGNOSTIC] Raw database test SUCCESS:", !!data);
-      return { success: true, count: data?.length };
+      if (res.error) throw res.error;
+      console.log("[NET][DIAGNOSTIC] Raw database test SUCCESS:", !!res.data);
+      return { success: true, count: res.data?.length };
     } catch (err) {
       console.error("[NET][DIAGNOSTIC] Raw database test FAILED:", err);
       return { success: false, error: err };
