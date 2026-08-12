@@ -231,14 +231,14 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[16px] font-semibold text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
+            <span className="text-[17px] font-black tracking-tight text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
             <div className="flex items-center gap-2">
               <span className={cn(
-                "text-[12px] font-bold uppercase tracking-widest",
+                "text-[10px] font-black uppercase tracking-[0.15em]",
                 status.tone === "success" ? "text-[#2E7D32]" : 
                 status.tone === "danger" ? "text-[#E53935]" :
                 status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
@@ -248,7 +248,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             </div>
           </div>
           
-          <p className="mt-2 text-[13px] font-medium text-[#8A8A8A]">
+          <p className="mt-2 text-[13px] font-bold text-black/20">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
@@ -257,27 +257,30 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
       </div>
 
       {!isUnavailable && !isMissed && service.photos.length > 0 && (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-5 flex gap-2">
           {service.photos.slice(0, 3).map((p, i) => (
              <SignedPhoto key={i} path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
           ))}
           {service.photos.length > 3 && (
             <button 
               onClick={() => openViewer(3)}
-              className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[12px] bg-neutral-100 text-[13px] font-bold text-[#1A1A1A]"
+              className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[12px] bg-neutral-100 overflow-hidden group active:scale-95 transition-all"
             >
-              +{service.photos.length - 3}
+              <SignedPhoto path={service.photos[3].storage_path} stage={service.photos[3].stage} />
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+                <span className="text-[13px] font-black text-white">+{service.photos.length - 3} photos</span>
+              </div>
             </button>
           )}
         </div>
       )}
 
       <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
-        <span className="text-[12px] font-medium text-[#8A8A8A]">
+        <span className="text-[12px] font-bold text-black/20">
            {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
         </span>
         {!isUnavailable && !isMissed && !isPending && service.photos.length > 0 && (
-          <button onClick={() => openViewer(0)} className="text-[13px] font-bold text-[#FF6B00]">
+          <button onClick={() => openViewer(0)} className="text-[13px] font-black text-[#FF6B00] active:opacity-60 transition-all">
             View all photos →
           </button>
         )}
