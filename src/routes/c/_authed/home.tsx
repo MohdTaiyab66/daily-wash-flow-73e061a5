@@ -62,30 +62,7 @@ function CustomerHome() {
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
-
-  const initialContextQ = useQuery({
-    queryKey: ["customer-initial-context"],
-    queryFn: async () => {
-      console.log("[HOME DEBUG] [STARTUP] Initial context fetch started");
-      try {
-        const res = await getInitialCustomerContext();
-        console.log("[HOME DEBUG] [STARTUP] Initial context success:", !!res);
-        return res;
-      } catch (err) {
-        console.error("[HOME DEBUG] [STARTUP] Initial context error:", err);
-        throw err;
-      }
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
-  console.log("[HOME DEBUG] [STARTUP] Environment check:", {
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.37-network-diagnostic",
-    BUILD_ID: "network-diagnostic-2026-08-12"
-  });
-
-  const fetchWithTimeout = async <T>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
+  const fetchWithTimeout = async <T,>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
     const start = Date.now();
     console.log(`[NET][${label}] REQUEST START`);
     
@@ -111,7 +88,6 @@ function CustomerHome() {
   const testSupabaseRaw = async () => {
     console.log("[NET][DIAGNOSTIC] Raw database test starting...");
     try {
-      // Test 1: Simple select from a known public table
       const { data, error } = await fetchWithTimeout(
         supabase.from("service_catalog").select("id").limit(1),
         "RAW_DB_TEST"
@@ -124,6 +100,28 @@ function CustomerHome() {
       return { success: false, error: err };
     }
   };
+
+  const initialContextQ = useQuery({
+    queryKey: ["customer-initial-context"],
+    queryFn: async () => {
+      console.log("[HOME DEBUG] [STARTUP] Initial context fetch started");
+      try {
+        const res = await getInitialCustomerContext();
+        console.log("[HOME DEBUG] [STARTUP] Initial context success:", !!res);
+        return res;
+      } catch (err) {
+        console.error("[HOME DEBUG] [STARTUP] Initial context error:", err);
+        throw err;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  console.log("[HOME DEBUG] Environment check:", {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    BUILD: "1.0.37-network-diagnostic",
+    BUILD_ID: "network-diagnostic-2026-08-12"
+  });
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -153,10 +151,9 @@ function CustomerHome() {
     queryFn: async (): Promise<Service[]> => {
       return fetchWithTimeout(
         (async () => {
-          // Minimal query for diagnosis
           const { data, error } = await supabase
             .from("service_catalog")
-            .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes, active")
+            .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
             .eq("active", true)
             .order("sort_order");
           if (error) throw error;
@@ -168,16 +165,28 @@ function CustomerHome() {
     retry: 2,
   });
 
-  console.log("[HOME DEBUG] Services State:", {
-    status: servicesQ.status,
-    fetchStatus: servicesQ.fetchStatus,
-    isPending: servicesQ.isPending,
-    isLoading: servicesQ.isLoading,
-    isFetching: servicesQ.isFetching,
-    isError: servicesQ.isError,
-    isSuccess: servicesQ.isSuccess,
-    dataCount: servicesQ.data?.length,
-    enabled: true // Always true for services now
+  const imagesQ = useQuery({
+    queryKey: ["customer-promo-images"],
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+    queryFn: async () => {
+      return fetchWithTimeout(
+        (async () => {
+          const { data, error } = await (supabase as any)
+            .from("daily_shine_carousel")
+            .select("id, image_url, status, slide_number, updated_at, service_slug")
+            .eq("status", "published")
+            .order("slide_number");
+          if (error) throw error;
+          return (data || []).map((img: any) => ({
+            ...img,
+            image_url: getDailyShineCarouselImageUrl(img.image_url)
+          }));
+        })(),
+        "CAROUSEL"
+      );
+    },
+    retry: 2,
   });
 
   const vehicles = vehiclesQ.data ?? [];
@@ -208,53 +217,13 @@ function CustomerHome() {
     return true;
   });
 
-  const imagesQ = useQuery({
-    queryKey: ["customer-promo-images"],
-    staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60 * 24,
-    queryFn: async () => {
-      return fetchWithTimeout(
-        (async () => {
-          const { data, error } = await (supabase as any)
-            .from("daily_shine_carousel")
-            .select("id, image_url, status, slide_number, updated_at, service_slug")
-            .eq("status", "published")
-            .order("slide_number");
-          if (error) throw error;
-          return (data || []).map((img: any) => ({
-            ...img,
-            image_url: getDailyShineCarouselImageUrl(img.image_url)
-          }));
-        })(),
-        "CAROUSEL"
-      );
-    },
-    retry: 2,
-  });
-
-  console.log("[HOME DEBUG] Carousel State:", {
-    status: imagesQ.status,
-    fetchStatus: imagesQ.fetchStatus,
-    isPending: imagesQ.isPending,
-    isLoading: imagesQ.isLoading,
-    isFetching: imagesQ.isFetching,
-    isError: imagesQ.isError,
-    isSuccess: imagesQ.isSuccess,
-    dataCount: imagesQ.data?.length,
-    enabled: true // Always true for carousel now
-  });
-
   const galleryQ = useServiceGallery();
-  console.log("[HOME] Gallery state:", { isLoading: galleryQ.isLoading, isError: galleryQ.isError, count: galleryQ.data?.length });
   
   const resolvedServiceImage = (slug: string) => {
-    // Pass the entire gallery data to getServiceImage which filters by slug
     return getServiceImage(slug, galleryQ.data || []);
   };
 
-
   const refreshAll = () => {
-    console.log("[HOME] Manual refresh triggered");
     return Promise.all([
       queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
       queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
@@ -263,11 +232,9 @@ function CustomerHome() {
     ]);
   };
 
-
   return (
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
-        
         <UWHeader 
           area={area} 
           onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
@@ -282,10 +249,7 @@ function CustomerHome() {
               <UWFeaturedCarousel 
                 isLoading={imagesQ.isLoading}
                 isError={imagesQ.isError}
-                onRetry={() => {
-                  console.log("[HOME] Retrying carousel...");
-                  imagesQ.refetch();
-                }}
+                onRetry={() => imagesQ.refetch()}
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
@@ -308,24 +272,17 @@ function CustomerHome() {
             </div>
 
             <Section 
-              title={
-                <h2 className="text-[19px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
-              }
+              title={<h2 className="text-[19px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>}
               className="mt-[20px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-3 w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => {
-                      console.log("[HOME] Category switched to:", cat);
-                      setSelectedCategory(cat);
-                    }}
+                    onClick={() => setSelectedCategory(cat)}
                     className={cn(
                       "whitespace-nowrap rounded-[22px] px-[16px] h-[42px] flex items-center justify-center text-[14px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
-                      selectedCategory === cat 
-                        ? "bg-[#FF6B00] text-white shadow-none" 
-                        : "bg-white text-[#555555] border border-[#E5E5E5] shadow-none"
+                      selectedCategory === cat ? "bg-[#FF6B00] text-white" : "bg-white text-[#555555] border border-[#E5E5E5]"
                     )}
                   >
                     {cat}
@@ -339,17 +296,10 @@ function CustomerHome() {
                 ) : servicesQ.isError ? (
                   <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
                     <p className="text-[#555] text-sm mb-3">Unable to load services</p>
-                    <button 
-                      onClick={() => servicesQ.refetch()}
-                      className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full"
-                    >
-                      Try Again
-                    </button>
+                    <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
                   </div>
                 ) : filteredServices.length === 0 ? (
-                  <div className="col-span-3 py-8 text-center">
-                    <p className="text-[#888] text-sm">No services found in this category.</p>
-                  </div>
+                  <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
@@ -379,9 +329,7 @@ function CustomerHome() {
                   <div className="flex flex-row items-center justify-between gap-4 w-full">
                     <div className="flex-1">
                       <p className="text-[11px] font-semibold text-[#FF6B00] uppercase tracking-wider mb-1">Your car deserves better</p>
-                      <h3 className="text-[16px] font-semibold text-[#2D2D2D] leading-tight">
-                        Keep it clean every day <br/> with Daily Shine.
-                      </h3>
+                      <h3 className="text-[16px] font-semibold text-[#2D2D2D] leading-tight">Keep it clean every day <br/> with Daily Shine.</h3>
                     </div>
                     <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[13.5px] font-semibold shrink-0">
                       EXPLORE <ChevronRight className="ml-1 h-3.5 w-3.5" />
@@ -393,27 +341,80 @@ function CustomerHome() {
           </div>
         </div>
 
-        {/* Diagnostic Panel - Build 35 */}
-        <div className="fixed bottom-[80px] left-2 right-2 z-[9999] pointer-events-none opacity-80">
-          <div className="bg-black/90 text-[9px] text-white p-2 rounded-lg border border-white/20 font-mono space-y-0.5">
-            <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
-              <span>DEBUG BUILD 1.0.36-auth-arch</span>
+        {/* Diagnostic Panel - Build 37 */}
+        <div className="fixed bottom-[80px] left-2 right-2 z-[9999] opacity-95 pointer-events-auto">
+          <div className="bg-black/95 text-[10px] text-white p-3 rounded-xl border border-white/20 font-mono shadow-2xl space-y-2">
+            <div className="flex justify-between border-b border-white/10 pb-1.5 mb-1.5">
+              <span className="font-bold text-[#FF6B00]">BUILD 1.0.37-network-diagnostic</span>
               <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
                 {servicesQ.fetchStatus} | {servicesQ.status}
               </span>
             </div>
-            <div>Services: {servicesQ.isPending ? 'PENDING' : servicesQ.isError ? 'ERROR' : `OK (${servicesQ.data?.length})`}</div>
-            <div>Carousel: {imagesQ.isPending ? 'PENDING' : imagesQ.isError ? 'ERROR' : `OK (${imagesQ.data?.length})`}</div>
-            <div>Auth: {initialContextQ.data ? 'READY' : initialContextQ.status === 'error' ? 'ERROR' : 'WAITING'} ({initialContextQ.status})</div>
+            
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <div>Auth: <span className={cn(
+                initialContextQ.data ? "text-green-400" : 
+                initialContextQ.status === 'error' ? "text-red-400" : "text-orange-400"
+              )}>
+                {initialContextQ.data ? 'SUCCESS' : 
+                 initialContextQ.status === 'error' ? 'ERROR' : 
+                 initialContextQ.isPending ? 'INITIALIZING' : 'WAITING'}
+              </span></div>
+              
+              <div>Session: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
+                {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
+              </span></div>
+              
+              <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
+                Services: <span className={cn(
+                  servicesQ.isSuccess ? "text-green-400" : 
+                  servicesQ.isError ? "text-red-400" : "text-orange-400"
+                )}>
+                  {servicesQ.isPending ? 'PENDING' : servicesQ.isError ? 'ERROR (Timeout?)' : `OK (${servicesQ.data?.length})`}
+                </span>
+              </div>
+              
+              <div className="col-span-2">
+                Carousel: <span className={cn(
+                  imagesQ.isSuccess ? "text-green-400" : 
+                  imagesQ.isError ? "text-red-400" : "text-orange-400"
+                )}>
+                  {imagesQ.isPending ? 'PENDING' : imagesQ.isError ? 'ERROR (Timeout?)' : `OK (${imagesQ.data?.length})`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-white/10">
+              <button 
+                onClick={() => {
+                  console.log("[DIAGNOSTIC] Manual connectivity test...");
+                  testSupabaseRaw().then(res => alert(`Raw DB Test: ${res.success ? 'SUCCESS' : 'FAILED: ' + JSON.stringify(res.error)}`));
+                }}
+                className="bg-[#FF6B00] text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
+              >
+                TEST DB
+              </button>
+              <button onClick={() => refreshAll()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
+              <button 
+                onClick={() => {
+                  const env = {
+                    URL: !!import.meta.env.VITE_SUPABASE_URL,
+                    KEY: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                    HOST: import.meta.env.VITE_SUPABASE_URL?.split('://')[1]?.split('/')[0]
+                  };
+                  alert(`[ENV] URL:${env.URL}, KEY:${env.KEY}, HOST:${env.HOST}`);
+                }}
+                className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
+              >
+                ENV INFO
+              </button>
+            </div>
           </div>
         </div>
 
-
         <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
           <DialogContent className="max-w-md rounded-t-3xl border-none p-0">
-            <DialogHeader className="p-6 pb-2">
-              <DialogTitle className="text-xl font-bold">Select Vehicle</DialogTitle>
-            </DialogHeader>
+            <DialogHeader className="p-6 pb-2"><DialogTitle className="text-xl font-bold">Select Vehicle</DialogTitle></DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto p-4 pt-0">
               <ListGroup>
                 {vehicles.map((v) => (
