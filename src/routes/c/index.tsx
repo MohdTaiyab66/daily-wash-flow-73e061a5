@@ -64,7 +64,12 @@ function CustomerSplash() {
           authLog.info("[AUTH-TRACE] 14 EXECUTING_NAVIGATION");
           if (isCustomer) {
             const savedArea = localStorage.getItem("uw_customer_area");
-            navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
+            // If area is missing, we go to location search which is also protected by /c/location layout
+            if (savedArea) {
+              navigate({ to: "/c/home", replace: true });
+            } else {
+              navigate({ to: "/c/location/search", replace: true });
+            }
           } else {
             navigate({ to: "/c/auth", replace: true });
           }
@@ -73,6 +78,7 @@ function CustomerSplash() {
       } catch (err) {
         authLog.error("[AUTH-TRACE] 04 SESSION_CHECK_RESULT: ERROR", err);
         if (cancelled) return;
+        // Definitive redirect to auth on error/timeout
         navigate({ to: "/c/auth", replace: true });
       }
     };
