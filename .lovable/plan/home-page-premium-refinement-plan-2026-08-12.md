@@ -1,63 +1,56 @@
 # Home Page Premium Refinement Plan
 
-Refine the Urban Wash Home page into a lightweight, compact, and premium consumer mobile app experience.
+Refine the Home page to be more compact, premium, and visually restrained, following the "Black + Orange + White" palette. Fix the carousel loading flash and layout shift.
 
-## Overall Visual Direction
-- Reduce visual scale by 8–15% while maintaining readability.
-- Use strategic whitespace and subtle contrast instead of bold typography.
-- Shift brand orange usage to an accent (prices, selection, important CTAs).
+## User Review Required
+
+> [!IMPORTANT]
+> - The service cards will be approximately 20% smaller.
+> - The typography weights will be reduced to semibold/medium.
+> - The "Daily Shine" carousel will show a skeleton loader instead of stale images to prevent flashing.
+> - Card images will be slightly smaller with a consistent aspect ratio.
 
 ## Proposed Changes
 
-### Top Header (`UWHeader.tsx`)
-- Reduce vertical padding and header height.
-- Set location and vehicle text to 16–18px (font-weight 500-600).
-- Scale location icon to 20–21px and vehicle icon to 20–22px.
-- Maintain soft rounded selector appearance.
+### 1. Carousel Loading & Stability (P0)
+- **src/components/customer/ui/UWFeaturedCarousel.tsx**:
+    - Add an `isLoading` state.
+    - Implement a skeleton loader (shimmering block) within a reserved `aspect-[21/9]` or similar container.
+    - Ensure images only fade in once fully loaded (`onLoad`).
+    - Standardize the aspect ratio to prevent top-shifting.
 
-### Home Carousel (`UWFeaturedCarousel.tsx`)
-- Keep existing size and 150px height.
-- Ensure it feels like a premium promotional banner rather than a giant hero.
+### 2. Service Cards Compactness (P1)
+- **src/components/customer/ui/UWServiceCard.tsx**:
+    - Reduce overall card height and internal padding from `px-2.5` to `px-2`.
+    - Reduce image container height from `115px` to approx `96px`.
+    - Adjust fixed title height for 2 lines (`line-clamp-2`) to ensure row alignment.
+    - Reduce typography: Title (`14px`), Duration (`12px`), Price (`17-18px`).
+    - Scale down the "Add" button to `34-36px`.
+    - Switch background to a very light neutral (e.g. `bg-white` or `bg-slate-50`).
 
-### Our Services Section (`home.tsx`)
-- Change "OUR SERVICES" to "Our Services" (22–24px, 600 weight).
-- Reduce vertical spacing between carousel and heading to ~24px.
+### 3. Typography & Hierarchy (P1)
+- **src/routes/c/_authed/home.tsx**:
+    - Reduce "Our Services" heading to `text-[19px]` semibold.
+    - Tighten category tab height from `46px` to `42px`.
+    - Reduce vertical margins (`mt-8` -> `mt-6` for sections).
+    - Refine the category selection pills: narrower padding, cleaner border.
 
-### Category Tabs (`home.tsx`)
-- Reduce height to 48–52px.
-- Set text to 15–16px (500-600 weight).
-- Use a softer orange for the selected tab and a subtle neutral border for unselected.
-- Significantly reduce shadows to feel like modern filter chips.
+### 4. Vehicle & Location Selectors (P2)
+- **src/components/customer/VehicleSelector.tsx**:
+    - Redesign to follow the premium "Black + Orange" aesthetic.
+    - Use a clean white background with a subtle black/gray border.
+    - Update the vehicle icon to orange or black with orange accent.
+- **src/components/customer/ui/UWHeader.tsx**:
+    - Refine the location selector to be less bold (`font-medium`).
+    - Update the right-side vehicle selector (inline version) to match the dropdown style.
 
-### Service Cards (`UWServiceCard.tsx`)
-- **Compact Layout**: Maintain 3-column grid but reduce overall card height by 15-20%.
-- **Images**: Reduce image area height by ~15% to prevent it from dominating.
-- **Typography**: Set titles to 15–16px (600 weight) with max 2-line intelligent wrapping.
-- **Duration**: 13–14px (400-500 weight) in muted gray.
-- **Pricing**: 18–20px (600 weight) in brand orange. Ensure full visibility without clipping (responsive layout with "+" button).
-- **Add Button**: Reduce "+" button to 44–48px diameter with a soft peach background.
-- **Internal Spacing**: Tighten internal padding (12–14px) and element gaps.
-- **Visuals**: Use very subtle borders and extremely soft shadows (Radius 18-20px).
-
-### Service Grid (`home.tsx`)
-- Standardize horizontal gaps (14–16px) and vertical gaps (16–18px).
-- Apply identical compact design to all services (Buffing Polish, Roof Cleaning, etc.).
-- Simplify displayed names (e.g., "Wash (No Body Polish)" instead of repeating "One-Time").
-
-### Bottom Promotional Card (`home.tsx`)
-- Reduce height to 100–115px.
-- Heading: 11–12px uppercase orange.
-- Main Text: 17–18px (600 weight).
-- Compact CTA button.
-
-### Bottom Navigation (`CustomerShell.tsx`)
-- Maintain 68–72px height.
-- Icons: 22–24px.
-- Labels: 13–14px.
-- Selected state: soft peach pill with orange icon/text.
+### 5. Layout & Spacing (P2)
+- **src/components/customer/CustomerShell.tsx**:
+    - Ensure the 70px footer active state is a subtle peach/orange pill, not oversized.
+- **src/components/customer/ui/kit.tsx**:
+    - Update `SectionTitle` to be less heavy (`font-semibold` instead of `font-black`).
 
 ## Technical Details
-- Update `UWHeader.tsx` to handle responsive font sizes and padding.
-- Refactor `UWServiceCard.tsx` props and styles for fixed height/compactness.
-- Clean up `home.tsx` mapping logic to use concise customer-facing titles.
-- Adjust Tailwind classes for light-weight typography (font-normal/medium/semibold).
+- Use `aspect-ratio` for image containers.
+- Use `object-cover` and fixed heights for card components to enforce alignment.
+- Implement CSS transitions for opacity when images load to prevent "flash".
