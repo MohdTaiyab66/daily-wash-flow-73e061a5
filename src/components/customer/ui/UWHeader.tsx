@@ -65,12 +65,12 @@ export function UWHeader({
 
 
       if (locText) {
-        locText.style.fontSize = `${15 - progress * 1}px`;
+        locText.style.fontSize = `${17 - progress * 1}px`;
       }
 
 
       if (vText) {
-        vText.style.fontSize = `${15 - progress * 1}px`;
+        vText.style.fontSize = `${17 - progress * 1}px`;
       }
 
 
@@ -112,7 +112,7 @@ export function UWHeader({
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
+              className="text-[17px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
             >
 
               {area || "Set location"}
@@ -125,7 +125,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[40px] pl-1.5 pr-2.5 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[36px] pl-1.5 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
@@ -142,7 +142,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
+                className="text-[17px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
