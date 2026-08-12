@@ -90,16 +90,26 @@ function CustomerAuth() {
   };
 
   const verifyOtp = async (code = otp) => {
-    if (verifyingRef.current) return;
+    if (verifyingRef.current) {
+      authLog.trace("Verify already in progress, ignoring tap");
+      return;
+    }
     setError(null);
+    authLog.info("Verify button pressed", { codeLength: code.length });
     
     if (code.length !== OTP_LENGTH) {
       setError(`Enter the ${OTP_LENGTH}-digit code`);
       return;
     }
     
+    // In current project, 1234 is the ONLY accepted OTP in the frontend guard.
+    // If the backend expects something else, this is a failure.
     if (code !== "1234") {
-      authLog.error("OTP verification failed", "Invalid OTP (demo mode requires 1234)");
+      authLog.error("OTP verification failed at guard", { 
+        entered: code, 
+        expected: "1234",
+        reason: "Invalid OTP (demo mode requires 1234)" 
+      });
       setError("That code doesn't look right. Please try again.");
       return;
     }
@@ -110,13 +120,42 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    authLog.info("Verifying OTP & Signing In", { email });
+    authLog.info("OTP verification request started", { email });
     
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
+      authLog.info("OTP verification response received", { 
+        success: !!data.session, 
+        hasError: !!signInError 
+      });
+
       if (data.session) {
-        authLog.info("Authentication successful", { userId: data.user?.id });
+        authLog.info("Session received", {
+          userId: data.user?.id,
+          expires_at: data.session.expires_at,
+          hasAccessToken: !!data.session.access_token,
+          hasRefreshToken: !!data.session.refresh_token
+        });
+
+        // Test persistence immediately
+        const { data: sessionCheck } = await supabase.auth.getSession();
+        authLog.info("Session persistence check", { 
+          persisted: !!sessionCheck.session,
+          match: sessionCheck.session?.user.id === data.user?.id
+        });
+
+        // Check if customer profile exists
+        authLog.info("Customer lookup started", { userId: data.user?.id });
+        const { data: profile, error: profileError } = await supabase.from("customer_profiles").select("id").eq("user_id", data.user?.id).maybeSingle();
+        
+        if (profileError) {
+          authLog.error("Customer lookup failed", profileError);
+        } else {
+          authLog.info("Customer lookup completed", { found: !!profile });
+        }
+
+        authLog.info("Navigation started");
         goAfterAuth();
         return;
       }
