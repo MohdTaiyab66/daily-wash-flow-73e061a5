@@ -271,11 +271,9 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
-                    {/* ACTIVE PLAN CARD */}
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">
                               Premium Service
