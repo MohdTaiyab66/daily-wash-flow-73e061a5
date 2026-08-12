@@ -211,7 +211,7 @@ function MyPlanPage() {
         activeVehicle={selectedVehicle ? {
           make: selectedVehicle.make,
           model: selectedVehicle.model,
-          registration_number: selectedVehicle.registration_number,
+          registration_number: selectedVehicle.registration_number || "",
           category: 'sedan',
           color: null
         } : undefined}
