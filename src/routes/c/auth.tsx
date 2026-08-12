@@ -103,13 +103,13 @@ function CustomerAuth() {
       return;
     }
     
-    // In current project, 1234 is the ONLY accepted OTP in the frontend guard.
+    // In current project, 123456 is the ONLY accepted OTP in the frontend guard for demo mode.
     // If the backend expects something else, this is a failure.
-    if (code !== "1234") {
+    if (code !== "123456") {
       authLog.error("OTP verification failed at guard", { 
         entered: code, 
-        expected: "1234",
-        reason: "Invalid OTP (demo mode requires 1234)" 
+        expected: "123456",
+        reason: "Invalid OTP (demo mode requires 123456)" 
       });
       setError("That code doesn't look right. Please try again.");
       return;
@@ -373,7 +373,7 @@ function CustomerAuth() {
 
             {SHOW_DEMO_OTP && (
               <p className="mt-6 text-center text-[13px] font-bold text-primary/40 tracking-wider">
-                DEMO CODE: <span className="font-mono text-primary">1234</span>
+                DEMO CODE: <span className="font-mono text-primary">123456</span>
               </p>
             )}
 
