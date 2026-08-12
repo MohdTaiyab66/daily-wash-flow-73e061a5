@@ -109,12 +109,13 @@ export function ServicePhotoViewer({
   const prev = () => setCurrentIndex((i) => (i - 1 + photos.length) % photos.length);
 
   const stageLabels: Record<string, string> = {
-    before: "Before",
+    before: "BEFORE",
     after: "AFTER",
     proof: "SERVICE PHOTO",
     dirty: "DIRTY VEHICLE",
     unavailable: "UNAVAILABLE",
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
