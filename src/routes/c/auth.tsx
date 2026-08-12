@@ -11,9 +11,7 @@ import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
 import { authLog, parseAuthError } from "@/lib/auth-debug";
 import logo from "@/assets/logo.jpeg";
-import hero from "@/assets/hero-car-wash.jpg";
 import { cn } from "@/lib/utils";
-
 
 export const Route = createFileRoute("/c/auth")({
   ssr: false,
@@ -29,7 +27,6 @@ const customerPassword = (phone: string) => `UWC@${phone}#2026`;
 
 const OTP_LENGTH = 4;
 const RESEND_SECONDS = 30;
-// Demo OTP hint is a development affordance only — never shipped in the APK.
 const SHOW_DEMO_OTP = import.meta.env.DEV;
 
 function CustomerAuth() {
@@ -61,10 +58,8 @@ function CustomerAuth() {
         goAfterAuth();
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Resend countdown.
   useEffect(() => {
     if (resendIn <= 0) return;
     const t = window.setInterval(() => setResendIn((s) => (s <= 1 ? 0 : s - 1)), 1000);
@@ -99,13 +94,12 @@ function CustomerAuth() {
     setError(null);
     
     if (code.length !== OTP_LENGTH) {
-      setError(`Enter the \${OTP_LENGTH}-digit code`);
+      setError(`Enter the ${OTP_LENGTH}-digit code`);
       return;
     }
     
-    // Hardcoded dev check - keeping it but with proper logging
     if (code !== "1234") {
-      authLog.error("OTP verification failed", "Invalid OTP entered (demo mode requires 1234)");
+      authLog.error("OTP verification failed", "Invalid OTP (demo mode requires 1234)");
       setError("That code doesn't look right. Please try again.");
       return;
     }
@@ -129,12 +123,8 @@ function CustomerAuth() {
       
       if (signInError) {
         authLog.error("Sign in failed", signInError);
-        
         const msg = (signInError.message ?? "").toLowerCase();
-        const isNewUser =
-          msg.includes("invalid login credentials") ||
-          msg.includes("invalid_credentials") ||
-          msg.includes("user not found");
+        const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
           authLog.info("New customer detected, moving to signup");
@@ -168,7 +158,7 @@ function CustomerAuth() {
     authLog.info("Registering new customer", { email, name });
     
     try {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email, password,
         options: { 
           data: { 
@@ -187,9 +177,6 @@ function CustomerAuth() {
         return;
       }
       
-      authLog.info("Signup successful, creating profile...");
-      
-      // Auto-sign-in after signup
       const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
       if (e2) {
         authLog.error("Sign in after signup failed", e2);
@@ -201,7 +188,7 @@ function CustomerAuth() {
       const { data: u } = await supabase.auth.getUser();
       if (u?.user) {
         authLog.info("Saving customer profile...", { userId: u.user.id });
-        await (supabase as any).from("customer_profiles").upsert({
+        await supabase.from("customer_profiles").upsert({
           user_id: u.user.id,
           full_name: name.trim(),
           phone,
@@ -227,7 +214,6 @@ function CustomerAuth() {
     setStep("phone"); 
   };
 
-
   return (
     <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
@@ -251,14 +237,25 @@ function CustomerAuth() {
           </div>
         </div>
 
+        {error && (
+          <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2.5 rounded-2xl bg-destructive/5 px-4 py-3.5 border border-destructive/10">
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-[13px] font-semibold text-destructive/90 leading-tight">
+                {error}
+              </p>
+            </div>
+          </div>
+        )}
+
         {step === "phone" && (
-          <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Get started</h1>
-            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+          <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h1 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Get started</h1>
+            <p className="mt-2 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
               Enter your mobile number to log in or create your account.
             </p>
 
-            <div className="mt-10 flex items-center rounded-2xl border border-black/5 bg-white px-5 py-5 shadow-sm focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+            <div className="mt-8 flex items-center rounded-2xl border border-black/5 bg-white px-5 py-5 shadow-sm focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
               <span className="text-base font-black text-[#1a1a1a]">+91</span>
               <span className="mx-4 h-6 w-px bg-black/5" />
               <Input
@@ -266,7 +263,10 @@ function CustomerAuth() {
                 autoComplete="tel"
                 maxLength={10}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => {
+                  setError(null);
+                  setPhone(e.target.value.replace(/\D/g, ""));
+                }}
                 placeholder="Mobile number"
                 className="h-auto border-0 bg-transparent p-0 text-lg font-bold tracking-wider shadow-none focus-visible:ring-0 placeholder:font-medium placeholder:text-muted-foreground/40"
               />
@@ -275,10 +275,10 @@ function CustomerAuth() {
             <Button
               size="lg"
               onClick={sendOtp}
-              disabled={phone.length !== 10}
+              disabled={phone.length !== 10 || loading}
               className="mt-6 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
             >
-              Continue
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
             </Button>
 
             <div className="mt-8 flex items-center gap-3 justify-center">
@@ -299,7 +299,7 @@ function CustomerAuth() {
               />
             )}
 
-            <div className="mt-16 flex flex-col items-center">
+            <div className="mt-12 flex flex-col items-center">
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/40">
                 <ShieldCheck className="h-3.5 w-3.5 text-success" /> SECURE & PRIVATE
               </p>
@@ -313,19 +313,21 @@ function CustomerAuth() {
         )}
 
         {step === "otp" && (
-          <div className="mt-12 animate-in fade-in slide-in-from-right-4 duration-500">
-            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Verification</h1>
-            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
-              Enter the code sent to <span className="font-bold text-[#1a1a1a]">+91 {phone}</span>
+          <div className="mt-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            <h1 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Verification</h1>
+            <p className="mt-2 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+              Enter the code sent to <span className="font-bold text-[#1a1a1a]">+91 ••••••{phone.slice(-4)}</span>
             </p>
 
             <div className="mt-10">
               <OtpInput
                 value={otp}
-                onChange={setOtp}
-                length={OTP_LENGTH}
+                onChange={(v) => {
+                  setError(null);
+                  setOtp(v);
+                }}
                 disabled={loading}
-                onComplete={(code) => void verifyOtp(code)}
+                onComplete={verifyOtp}
               />
             </div>
 
@@ -337,76 +339,72 @@ function CustomerAuth() {
 
             <Button
               size="lg"
+              onClick={() => verifyOtp()}
+              disabled={otp.length !== OTP_LENGTH || loading}
               className="mt-10 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
-              onClick={() => void verifyOtp()}
-              disabled={loading || otp.length !== OTP_LENGTH}
             >
               {loading ? (
-                <div className="flex items-center gap-3">
-                   <Loader2 className="h-5 w-5 animate-spin" />
-                   <span>Verifying...</span>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Verifying…</span>
                 </div>
-              ) : "Verify & Continue"}
+              ) : (
+                "Verify & Continue"
+              )}
             </Button>
 
             <div className="mt-8 text-center">
-              {resendIn > 0 ? (
-                <p className="text-[13px] font-bold text-muted-foreground/50">
-                  Resend code in <span className="tabular-nums text-primary">{resendIn}s</span>
-                </p>
-              ) : (
-                <button 
-                   onClick={resendOtp} 
-                   className="text-[14px] font-black text-primary hover:opacity-80 transition-opacity"
-                >
-                  Resend Code
-                </button>
-              )}
-            </div>
-
-            <div className="mt-12 rounded-3xl border border-black/5 bg-white p-6 text-center shadow-sm">
-              <p className="text-[13px] font-bold text-[#1a1a1a]">Didn't get the code?</p>
-              <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted-foreground/60">
-                Wait for the timer to finish, or check if the number is correct.
-              </p>
               <button
-                onClick={backToPhone}
-                className="mt-4 text-[12px] font-black uppercase tracking-wider text-primary hover:opacity-80 transition-opacity"
+                onClick={resendOtp}
+                disabled={resendIn > 0 || loading}
+                className={cn(
+                  "text-[14px] font-bold transition-all active:scale-95",
+                  resendIn > 0 ? "text-muted-foreground/40" : "text-primary hover:text-primary/80"
+                )}
               >
-                Edit number
+                {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend Code"}
               </button>
             </div>
           </div>
         )}
 
         {step === "name" && (
-          <div className="mt-12 animate-in fade-in slide-in-from-right-4 duration-500">
-            <h1 className="text-3xl font-black tracking-tight text-[#1a1a1a]">Welcome!</h1>
-            <p className="mt-2.5 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
-              Just a final step — what should we call you?
+          <div className="mt-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            <h1 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Final step</h1>
+            <p className="mt-2 text-[15px] font-medium leading-relaxed text-muted-foreground/70">
+              Help us personalize your experience by sharing your name.
             </p>
-            <div className="mt-10">
-              <Label className="text-[13px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">Full Name</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Rahul Sharma"
-                autoComplete="name"
-                className="mt-2 h-15 rounded-2xl border-black/5 bg-white text-lg font-bold shadow-sm focus-visible:ring-4 focus-visible:ring-primary/5 transition-all"
-              />
+
+            <div className="mt-10 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-xs font-black uppercase tracking-wider text-muted-foreground/60 ml-1">Full Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => {
+                    setError(null);
+                    setName(e.target.value);
+                  }}
+                  placeholder="e.g. Mohd Taiyab"
+                  className="h-14 rounded-2xl border-black/5 bg-white px-5 text-base font-bold shadow-sm focus-visible:ring-primary/20"
+                />
+              </div>
             </div>
+
             <Button
               size="lg"
-              className="mt-8 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
               onClick={signUp}
-              disabled={loading || name.trim().length < 2}
+              disabled={name.trim().length < 2 || loading}
+              className="mt-10 h-15 w-full rounded-2xl text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
             >
               {loading ? (
-                <div className="flex items-center gap-3">
-                   <Loader2 className="h-5 w-5 animate-spin" />
-                   <span>Creating Account...</span>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Creating account…</span>
                 </div>
-              ) : "Get Started ✓"}
+              ) : (
+                "Complete Profile"
+              )}
             </Button>
           </div>
         )}
