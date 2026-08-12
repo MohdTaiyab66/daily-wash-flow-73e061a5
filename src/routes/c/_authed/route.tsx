@@ -59,9 +59,10 @@ function CustomerAuthedLayout() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[AUTH-P0] SHELL AUTH EVENT: ${event}`, { sessionPresent: !!session });
       if (event === "SIGNED_OUT" || (event === "TOKEN_REFRESHED" && !session)) {
-        void qc.cancelQueries();
-        qc.clear();
+        console.log("[AUTH-P0] SESSION LOST/SIGNED OUT. Navigating to login.");
+        void qc.invalidateQueries();
         toast.info("Session expired. Please log in again.");
         navigate({ to: "/c/auth", replace: true });
       }
