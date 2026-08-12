@@ -220,7 +220,17 @@ export function AwaitingPartnerBanner({
     );
   }
 
+  const copyMap: Record<Exclude<State, "unassignable">, string> = {
+    searching: "You're all set. We'll notify you once your first service is completed.",
+    assigned: "", 
+    in_progress: "Your partner is taking care of your vehicle now.",
+    completed: completedAt
+      ? `Completed at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}.`
+      : "All done for today.",
+  };
+
   const statusPill = (
+
     <div className={cn(
       "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
       state === "completed" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
