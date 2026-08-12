@@ -199,15 +199,21 @@ function ServiceDetail() {
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
     queryFn: async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.warn("[SERVICE] PROFILE_USER_MISSING", userError);
+      // NOTE: We do NOT use supabase.auth.getUser() here as it can trigger 
+      // network requests that might fail or refresh the token unexpectedly 
+      // during navigation. We use the session from AuthProvider or a simple getSession.
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        console.warn("[SERVICE] PROFILE_SESSION_MISSING", sessionError);
         return null;
       }
-      const { data, error } = await supabase.from("customer_profiles").select("*").eq("id", user.id).maybeSingle();
+      
+      const { data, error } = await supabase.from("customer_profiles").select("*").eq("id", session.user.id).maybeSingle();
       if (error) console.error("[SERVICE] PROFILE_DATA_ERROR", error);
       return data;
-    }
+    },
+    retry: 1
   });
 
   const service = serviceQ.data;
