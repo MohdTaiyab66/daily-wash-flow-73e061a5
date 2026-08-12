@@ -34,8 +34,7 @@ function CustomerAuthedLayout() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FFF9F3]">
         <div className="flex flex-col items-center gap-4 text-center px-6">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF6B00] border-t-transparent" />
-          <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest">URBAN WASH</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#FF6B00] border-t-transparent" />
         </div>
       </div>
     );

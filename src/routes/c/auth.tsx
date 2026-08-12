@@ -154,7 +154,18 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    const verifyPromise = supabase.auth.signInWithPassword({ email, password });
+    const verifyPromise = (async () => {
+      // 1. First sign in
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      
+      // 2. Immediately force a session refresh/check to ensure persistence in storage
+      // This helps AuthProvider see the state change reliably
+      await supabase.auth.getSession();
+      
+      return { data, error: null };
+    })();
+    
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error("TIMEOUT")), VERIFY_TIMEOUT_MS)
     );
