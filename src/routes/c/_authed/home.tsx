@@ -82,6 +82,28 @@ function CustomerHome() {
     };
   }, []);
 
+  const refreshAll = async () => {
+    console.log("[HOME] Manual refresh started");
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["coverage-at"] }),
+      queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
+      queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
+      queryClient.invalidateQueries({ queryKey: ["service-gallery"] }),
+      queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] }),
+      queryClient.invalidateQueries({ queryKey: ["customer-profile"] }),
+    ]);
+  };
+
+  useEffect(() => {
+    // Re-fetch on location update
+    const handleLocationUpdate = () => {
+      console.log("[HOME] Location updated event caught, invalidating queries...");
+      refreshAll();
+    };
+    window.addEventListener("uw-location-updated", handleLocationUpdate);
+    return () => window.removeEventListener("uw-location-updated", handleLocationUpdate);
+  }, [queryClient]);
+
 
   const profileQ = useQuery({
     queryKey: ["customer-profile"],

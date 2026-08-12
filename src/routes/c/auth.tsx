@@ -17,17 +17,25 @@ const authLog = {
 
 
 const getAuthErrorDetails = (err: any) => {
-  if (!err) return { message: "Unknown error" };
+  if (!err) return { message: "No error object returned", code: "no_code", hint: "" };
+  
+  // Extract all possible properties to avoid empty "{}" serialization
   return {
-    message: err.message || "Unknown error",
-    code: err.code || "unknown",
-    status: err.status || 500
+    message: String(err.message || "Unknown error"),
+    name: String(err.name || "Error"),
+    code: String(err.code || err.status || "no_code"),
+    status: String(err.status || err.statusCode || "no_status"),
+    hint: String(err.hint || ""),
+    details: String(err.details || ""),
+    cause: err.cause ? String(err.cause) : "",
+    raw: String(err)
   };
 };
 
 const parseAuthError = (err: any) => {
-  const details = getAuthErrorDetails(err);
-  return details.message;
+  const d = getAuthErrorDetails(err);
+  // Return a rich string that actually contains data for the UI
+  return `${d.message}${d.code !== 'no_code' ? ` [${d.code}]` : ''}${d.hint ? ` - ${d.hint}` : ''}`;
 };
 
 import logo from "@/assets/logo.jpeg";
@@ -39,6 +47,20 @@ export const Route = createFileRoute("/c/auth")({
   validateSearch: (search) => z.object({ redirect: z.string().optional().catch(undefined) }).parse(search),
   component: CustomerAuth,
 });
+
+// Helper for type-safe error access in JSX
+function getDisplayError(err: any): string {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  
+  const d = {
+    message: String(err.message || "Unknown error"),
+    code: String(err.code || err.status || "no_code"),
+    hint: String(err.hint || "")
+  };
+  
+  return `${d.message}${d.code !== 'no_code' ? ` [${d.code}]` : ''}${d.hint ? ` - ${d.hint}` : ''}`;
+}
 
 type Step = "phone" | "otp" | "name";
 
@@ -73,7 +95,7 @@ function CustomerAuth() {
   const [referral, setReferral] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
   const [verifyState, setVerifyState] = useState<VerifyState>("IDLE");
   const verifyingRef = useRef(false);
 
@@ -101,7 +123,7 @@ function CustomerAuth() {
     setError(null);
     setVerifyState("IDLE");
     if (!/^\d{10}$/.test(normalizePhone(phone))) { 
-      setError("Enter a valid 10-digit mobile number");
+      setError({ message: "Enter a valid 10-digit mobile number", code: "INVALID_PHONE" });
       return; 
     }
     
@@ -129,63 +151,47 @@ function CustomerAuth() {
     }
     setError(null);
     setVerifyState("VERIFYING");
-    authLog.info("[AUTH] VERIFY START", { codeLength: code.length, phone: phone.slice(-4) });
+    
+    const startTime = Date.now();
+    const normalized = phone.replace(/\D/g, "").slice(-10);
+    const maskedPhone = `+91 ******${normalized.slice(-4)}`;
+    
+    authLog.info("[AUTH] VERIFY_OTP_START", { 
+      codeLength: code.length, 
+      phone: maskedPhone,
+      normalized,
+      supabaseHost: (supabase as any).supabaseUrl || 'unknown'
+    });
     
     if (code.length !== OTP_LENGTH) {
-      setError(`Enter the ${OTP_LENGTH}-digit code`);
+      setError({ message: `Enter the ${OTP_LENGTH}-digit code`, code: "INVALID_OTP_LENGTH" });
       setVerifyState("ERROR");
       return;
     }
-    
 
     verifyingRef.current = true;
     setLoading(true);
-    authLog.info("[AUTH] 09 OTP_VERIFY_START");
     
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
     try {
-      // 1. First sign in
+      // P0: STAGE 1 - verifyOtp (using sign-in as the proxy for the current custom flow)
+      authLog.info("[AUTH] STAGE 1: signInWithPassword START", { 
+        email,
+        phoneNormalized: normalized,
+        otpLength: code.length
+      });
+      
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (!signInError) {
-        // 2. Immediately force a session refresh/check to ensure persistence in storage
-        await supabase.auth.getSession();
-      }
-      
-      authLog.info("[AUTH] VERIFY RESPONSE RECEIVED");
-      if (authData) {
-        authLog.info("[AUTH] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
-      }
+      const elapsed = Date.now() - startTime;
 
-      if (authData?.session) {
-        setVerifyState("SUCCESS");
-        authLog.info("[AUTH] 11 POST_VERIFY_GET_SESSION");
-
-        // Explicitly confirm persistence
-        console.log("[AUTH] Checking session persistence after verifyOtp...");
-        const { data: sessionCheck } = await supabase.auth.getSession();
-        const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
-
-        if (!isSessionPresent) {
-          authLog.error("[AUTH] Persistence failure - session lost immediately");
-          setError("Account verified, but login failed. Please try again.");
-          setVerifyState("ERROR");
-          setLoading(false);
-          verifyingRef.current = false;
-          return;
-        }
-
-        authLog.info("[AUTH] SUCCESS, navigating to Home");
-        goAfterAuth();
-        return;
-      }
-      
       if (signInError) {
         const details = getAuthErrorDetails(signInError);
-        authLog.error("[AUTH] VERIFY ERROR", details);
+        authLog.error("[AUTH] STAGE 1: VERIFY_OTP_ERROR", { 
+          elapsed, 
+          ...details 
+        });
         
         const msg = (details.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
@@ -195,19 +201,52 @@ function CustomerAuth() {
           setStep("name");
           setVerifyState("IDLE");
         } else {
-          setError(parseAuthError(signInError));
+          setError(signInError); // Passing the raw error object to getDisplayError
           setVerifyState("ERROR");
         }
+        return;
       }
-    } catch (e: any) {
-      if (false) { // Timeout removed
-        authLog.error("[AUTH] VERIFY TIMEOUT");
+
+      authLog.info("[AUTH] STAGE 1: VERIFY_OTP_RESPONSE SUCCESS", { 
+        elapsed, 
+        hasSession: !!authData?.session, 
+        hasUser: !!authData?.user 
+      });
+
+      // STAGE 2: getSession
+      authLog.info("[AUTH] STAGE 2: getSession START");
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      authLog.info("[AUTH] STAGE 2: getSession RESULT", { 
+        present: !!sessionData.session,
+        error: sessionErr ? getAuthErrorDetails(sessionErr) : null
+      });
+
+      // STAGE 3: getUser
+      authLog.info("[AUTH] STAGE 3: getUser START");
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      authLog.info("[AUTH] STAGE 3: getUser RESULT", { 
+        present: !!userData.user,
+        error: userErr ? getAuthErrorDetails(userErr) : null
+      });
+
+      if (sessionData.session) {
+        setVerifyState("SUCCESS");
+        authLog.info("[AUTH] AUTHENTICATION COMPLETE", { 
+          userId: userData.user?.id,
+          clientId: (window as any).__SUPABASE_CLIENT_ID 
+        });
+        goAfterAuth();
       } else {
-        const details = getAuthErrorDetails(e);
-        authLog.error("[AUTH] Unexpected verification error", details);
-        setError(`Something went wrong: ${details.message}`);
+        authLog.error("[AUTH] SESSION MISSING AFTER SUCCESSFUL VERIFY");
+        setError({ message: "Session failed to persist. Please check browser settings.", code: "PERSISTENCE_FAIL" });
         setVerifyState("ERROR");
       }
+    } catch (e: any) {
+      const elapsed = Date.now() - startTime;
+      const details = getAuthErrorDetails(e);
+      authLog.error("[AUTH] VERIFY_OTP_UNEXPECTED_EXCEPTION", { elapsed, ...details });
+      setError(e);
+      setVerifyState("ERROR");
     } finally {
       setLoading(false);
       verifyingRef.current = false;
@@ -220,7 +259,7 @@ function CustomerAuth() {
     setError(null);
     
     if (name.trim().length < 2) { 
-      setError("Enter your full name");
+      setError({ message: "Enter your full name", code: "INVALID_NAME" });
       return; 
     }
     
@@ -245,7 +284,7 @@ function CustomerAuth() {
       
       if (signUpError) {
         authLog.error("Signup failed", signUpError);
-        setError(parseAuthError(signUpError));
+        setError(signUpError); // Passing raw error object to getDisplayError
         setLoading(false);
         return;
       }
@@ -253,7 +292,7 @@ function CustomerAuth() {
       const { data: signInData, error: e2 } = await supabase.auth.signInWithPassword({ email, password });
       if (e2 || !signInData.session) {
         authLog.error("[AUTH] Sign in after signup failed", e2);
-        setError(parseAuthError(e2 || new Error("Session not created after signup")));
+        setError(e2 || { message: "Session not created after signup", code: "SIGNUP_SESSION_FAIL" });
         setLoading(false);
         return;
       }
@@ -281,12 +320,12 @@ function CustomerAuth() {
         goAfterAuth();
       } else {
         authLog.error("[AUTH] 12 SESSION_PERSISTED: NO");
-        setError("Account created, but could not establish session. Please log in.");
+        setError({ message: "Account created, but could not establish session. Please log in.", code: "POST_SIGNUP_SESSION_FAIL" });
         setStep("phone");
       }
     } catch (e) {
       authLog.error("Unexpected signup error", e);
-      setError("Something went wrong. Please try again.");
+      setError(e);
     } finally {
       setLoading(false);
     }
@@ -333,8 +372,8 @@ function CustomerAuth() {
                   Verification Failed
                 </p>
               </div>
-              <p className="text-[13px] font-semibold text-destructive/90 leading-tight">
-                {error}
+              <p className="text-[13px] font-semibold text-destructive/90 leading-tight whitespace-pre-wrap">
+                {getDisplayError(error)}
               </p>
             </div>
           </div>
