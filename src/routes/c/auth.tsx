@@ -217,16 +217,19 @@ function CustomerAuth() {
         return;
       }
       
-      const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
-      if (e2) {
-        authLog.error("Sign in after signup failed", e2);
-        setError(parseAuthError(e2));
+      const { data: signInData, error: e2 } = await supabase.auth.signInWithPassword({ email, password });
+      if (e2 || !signInData.session) {
+        authLog.error("[AUTH-P0] Sign in after signup failed", e2);
+        setError(parseAuthError(e2 || new Error("Session not created after signup")));
         setLoading(false);
         return;
       }
 
+      authLog.info("[AUTH-P0] SESSION PRESENT (after signup)");
+
       const { data: u } = await supabase.auth.getUser();
       if (u?.user) {
+        authLog.info("[AUTH-P0] USER PRESENT", { userId: u.user.id });
         authLog.info("Saving customer profile...", { userId: u.user.id });
         await supabase.from("customer_profiles").upsert({
           user_id: u.user.id,
@@ -236,13 +239,16 @@ function CustomerAuth() {
         }, { onConflict: "user_id" });
       }
       
-      authLog.info("[AUTH][SIGNUP] Signup flow complete. Verifying session persistence...");
+      authLog.info("[AUTH-P0] Signup flow complete. Verifying session persistence...");
+      authLog.info("[AUTH-P0] GET SESSION START");
       const { data: finalCheck } = await supabase.auth.getSession();
       if (finalCheck.session) {
-        authLog.info("[AUTH][SIGNUP] session present = true");
+        authLog.info("[AUTH-P0] GET SESSION RESULT = PRESENT");
+        authLog.info("[AUTH-P0] AUTH STATE CHANGE -> AUTHENTICATED");
+        authLog.info("[AUTH-P0] NAVIGATING HOME");
         goAfterAuth();
       } else {
-        authLog.error("[AUTH][SIGNUP] session present = false (lost after signup)");
+        authLog.error("[AUTH-P0] GET SESSION RESULT = MISSING (lost after signup)");
         setError("Account created, but could not establish session. Please log in.");
         setStep("phone");
       }
