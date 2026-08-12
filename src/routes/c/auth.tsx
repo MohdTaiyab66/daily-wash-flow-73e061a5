@@ -48,7 +48,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const VERIFY_TIMEOUT_MS = 12000; 
+const VERIFY_TIMEOUT_MS = 25000; // Increased for sandbox stability 
 
 
 
