@@ -24,7 +24,7 @@ export const Route = createFileRoute("/c/")({
  */
 const MIN_SPLASH_MS = 300;
 const AUTH_TIMEOUT_MS = 2500;
-const SPLASH_BUILD_ID = "1.0.38-auth-session-fix";
+const SPLASH_BUILD_ID = "1.0.39-auth-real-session";
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -37,26 +37,22 @@ function CustomerSplash() {
     const resolveAuth = async () => {
       let isCustomer = false;
       
-      console.log("[STARTUP] [WEB] [AUTH] Starting auth check...");
-      console.log("[STARTUP] [WEB] [AUTH] Auth status: INITIALIZING");
+      console.log("[AUTH-P0] INITIALIZING");
       
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Auth check timed out")), AUTH_TIMEOUT_MS)
       );
 
       try {
-        // We use getSession because it is much faster (local storage read) than getUser
-        // getUser is expensive and requires a network call to Supabase.
         const authPromise = supabase.auth.getSession();
         const { data }: any = await Promise.race([authPromise, timeoutPromise]);
         
-        console.log("[STARTUP] [WEB] [AUTH] Auth check completed. Session present:", !!data.session);
+        console.log("[AUTH-P0] GET SESSION RESULT =", data.session ? "PRESENT" : "MISSING");
         
         isCustomer = !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
-        console.log("[STARTUP] [WEB] [AUTH] Auth status:", isCustomer ? "AUTHENTICATED" : "UNAUTHENTICATED");
+        console.log("[AUTH-P0] AUTH STATE CHANGE ->", isCustomer ? "AUTHENTICATED" : "UNAUTHENTICATED");
       } catch (err) {
-        console.warn("[STARTUP] [WEB] Auth check failed or timed out:", err);
-        console.log("[STARTUP] [WEB] Auth status: ERROR (Timeout/Failure)");
+        console.warn("[AUTH-P0] GET SESSION RESULT = ERROR (Timeout/Failure)", err);
         isCustomer = false; 
       }
 
@@ -65,11 +61,11 @@ function CustomerSplash() {
       const elapsed = Date.now() - startedAt;
       const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
       
-      console.log(`[STARTUP] [WEB] Routing in ${wait}ms. Target isCustomer:`, isCustomer);
+      console.log(`[AUTH-P0] NAVIGATING HOME in ${wait}ms. Target isCustomer:`, isCustomer);
       
       window.setTimeout(() => {
         if (cancelled) return;
-        console.log("[STARTUP] [WEB] Executing navigation...");
+        console.log("[AUTH-P0] Executing navigation...");
         if (isCustomer) {
           const savedArea = localStorage.getItem("uw_customer_area");
           navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });

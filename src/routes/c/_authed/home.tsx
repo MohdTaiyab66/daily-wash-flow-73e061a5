@@ -345,7 +345,7 @@ function CustomerHome() {
         <div className="fixed bottom-[80px] left-2 right-2 z-[9999] opacity-95 pointer-events-auto">
           <div className="bg-black/95 text-[10px] text-white p-3 rounded-xl border border-white/20 font-mono shadow-2xl space-y-2">
             <div className="flex justify-between border-b border-white/10 pb-1.5 mb-1.5">
-              <span className="font-bold text-[#FF6B00]">BUILD 1.0.38-auth-session-fix</span>
+              <span className="font-bold text-[#FF6B00]">BUILD 1.0.39-auth-real-session</span>
               <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
                 {servicesQ.fetchStatus} | {servicesQ.status}
               </span>
@@ -369,6 +369,9 @@ function CustomerHome() {
                 {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
               </span></div>
 
+              <div>OTP VERIFY: <span className="text-muted-foreground/50">NOT_STARTED</span></div>
+              <div>POST OTP SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
+              <div>GET SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
               <div>TEST DB: <span className="text-blue-400">READY</span></div>
               
               <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
