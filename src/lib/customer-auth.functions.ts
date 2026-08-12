@@ -15,7 +15,7 @@ export const getInitialCustomerContext = createServerFn({ method: "GET" })
 
     const [profileRes, vehiclesRes] = await Promise.all([
       supabase.from("customer_profiles").select("*").eq("user_id", user.id).single(),
-      supabase.from("customer_vehicles").select("*").eq("user_id", user.id).eq("is_active", true)
+      supabase.from("customer_vehicles").select("*").eq("user_id", user.id)
     ]);
 
     return {
