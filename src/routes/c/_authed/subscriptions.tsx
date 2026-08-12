@@ -301,7 +301,7 @@ function MyPlanPage() {
 
                       <div className="mt-5">
                         <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">
-                          <span>Monthly Usage</span>
+                          <span>SERVICE DAYS</span>
                           <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} used</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
@@ -356,7 +356,7 @@ function MyPlanPage() {
                       <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
                         <div className="space-y-2">
                           <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#8A8A8A]">Service Days</span>
+                            <span className="text-[#8A8A8A]">Service days</span>
                             <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
@@ -365,7 +365,7 @@ function MyPlanPage() {
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-[14px] font-medium">
-                             <span className="text-[#1A1A1A]">Interior wash</span>
+                             <span className="text-[#8A8A8A]">Interior wash</span>
                              <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1 used</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
