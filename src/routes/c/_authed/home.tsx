@@ -370,16 +370,21 @@ function CustomerHome() {
                         badge={s.slug.includes('premium') ? 'Premium' : undefined}
                         duration={s.duration_minutes}
                         onOpen={() => {
+                          console.log(`[SERVICE-NAV] Opening ${s.slug}`);
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                        }}
+                        onAdd={() => {
+                          console.log(`[SERVICE-NAV] Adding ${s.slug}`);
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                        }}
+                      />
+                    );
+                  } catch (e) {
+                    console.error("[SERVICE-DATA] Error rendering service card:", e, s);
+                    return null;
+                  }
+                })}
 
-                      console.log(`[SERVICE-NAV] Opening ${s.slug}`);
-                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
-                    }}
-                    onAdd={() => {
-                      console.log(`[SERVICE-NAV] Adding ${s.slug}`);
-                      navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
-                    }}
-                  />
-                ))}
               </div>
 
               <div className="mt-6 mb-4">
