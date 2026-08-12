@@ -260,7 +260,7 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm", tone)}>
+    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm min-h-[260px] flex flex-col justify-center", tone)}>
       {serviceWindow && (
         <div className="mb-4 flex items-center justify-between border-b border-[#F5F5F5] pb-4">
           <div className="flex items-center gap-2.5">

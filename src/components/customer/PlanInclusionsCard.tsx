@@ -66,16 +66,16 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
         className="uw-pressable flex w-full items-center gap-3 px-5 py-4 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">What's included</span>
+          <span className="block text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-3">What's included</span>
           {!open ? (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {data.slice(0, 3).map((i) => (
-                <div key={i.id} className="flex items-center gap-2 text-[15px] font-normal text-[#1A1A1A]">
+                <div key={i.id} className="flex items-center gap-2 text-[14.5px] font-normal text-[#1A1A1A]">
                   <Check className="h-4 w-4 text-[#2E7D32]" />
                   <span className="truncate">{i.title}</span>
                 </div>
               ))}
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-3 pt-1">
                  {data.length > 3 && (
                   <span className="text-[14px] font-normal text-[#8A8A8A]">
                     +{data.length - 3} more benefits <span className="mx-1">·</span>
@@ -87,7 +87,7 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
               </div>
             </div>
           ) : (
-            <span className="text-[16px] font-semibold text-[#1A1A1A]">Full Plan Benefits</span>
+            <span className="text-[15px] font-semibold text-[#1A1A1A]">Full Plan Benefits</span>
           )}
         </span>
         {open && (

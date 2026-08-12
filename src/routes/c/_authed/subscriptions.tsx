@@ -311,14 +311,18 @@ function MyPlanPage() {
 
                       <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
-                          <p className="text-[18px] font-semibold text-[#1A1A1A] mt-0.5">
-                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
-                          </p>
+                          <p className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[16px] font-semibold text-[#1A1A1A]">
+                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                            </p>
+                            {cancelScheduled ? (
+                              <span className="text-[13px] font-medium text-[#E53935]">Scheduled to end</span>
+                            ) : (
+                              <span className="text-[13px] font-medium text-[#2E7D32]">Auto-renews</span>
+                            )}
+                          </div>
                         </div>
-                        {cancelScheduled && (
-                          <p className="text-[13px] font-medium text-[#E53935]">Scheduled to end</p>
-                        )}
                       </div>
                     </div>
 
@@ -348,11 +352,11 @@ function MyPlanPage() {
 
                     {/* DETAILED USAGE */}
                     <div className="space-y-3">
-                      <h3 className="text-[17px] font-semibold tracking-tight text-[#1A1A1A] px-1">Plan Usage</h3>
-                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5">
+                      <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A] px-1">Plan Usage</h3>
+                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[14.5px] font-medium">
-                            <span className="text-[#555555]">Exterior washes</span>
+                          <div className="flex justify-between text-[14px] font-medium">
+                            <span className="text-[#8A8A8A]">Exterior washes</span>
                             <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
