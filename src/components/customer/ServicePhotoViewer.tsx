@@ -192,9 +192,10 @@ export function ServicePhotoViewer({
           <div className="bg-gradient-to-t from-black/90 to-transparent px-8 pb-10 pt-10">
              <div className="flex items-end justify-between">
                 <div className="space-y-3">
-                   <div className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
+                   <div className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-black">
                       {stageLabels[currentPhoto.stage] || currentPhoto.stage}
                    </div>
+
                    <div className="text-[14px] font-medium text-white/90">
                       {currentIndex + 1} / {photos.length}
                    </div>
