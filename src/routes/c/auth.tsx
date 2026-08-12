@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
+import { authLog, parseAuthError } from "@/lib/auth-debug";
 import logo from "@/assets/logo.jpeg";
 import hero from "@/assets/hero-car-wash.jpg";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/c/auth")({
   ssr: false,
