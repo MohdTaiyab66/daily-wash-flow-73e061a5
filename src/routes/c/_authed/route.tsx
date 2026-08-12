@@ -42,6 +42,7 @@ export const Route = createFileRoute("/c/_authed")({
 });
 
 function CustomerAuthedLayout() {
+  const [authStatus, setAuthStatus] = useState<'initializing' | 'authenticated' | 'unauthenticated'>('initializing');
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -50,7 +51,15 @@ function CustomerAuthedLayout() {
     let cancelled = false;
     // Non-blocking UI update for user ID
     supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setUserId(data.session?.user?.id ?? null);
+      if (!cancelled) {
+        if (data.session?.user?.email?.endsWith("@customer.urbanwash.app")) {
+          setAuthStatus('authenticated');
+          setUserId(data.session.user.id);
+        } else {
+          setAuthStatus('unauthenticated');
+          navigate({ to: "/c/auth", replace: true });
+        }
+      }
     });
     return () => { cancelled = true; };
   }, []);
@@ -69,6 +78,21 @@ function CustomerAuthedLayout() {
   }, [navigate, qc]);
 
   useFcmRegistration(userId, "customer");
+
+  if (authStatus === 'initializing') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FFF9F3]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-bold text-muted-foreground/60 uppercase tracking-widest">Verifying Access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'unauthenticated') {
+    return null; // Navigation is already triggered in useEffect
+  }
 
   return (
     <CustomerShell>
