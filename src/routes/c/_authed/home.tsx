@@ -25,6 +25,7 @@ export const Route = createFileRoute("/c/_authed/home")({
   ssr: false,
   head: () => ({ meta: [{ title: "Home — Urban Wash" }] }),
   component: CustomerHome,
+  pendingComponent: () => null, // Prevent top-level route skeletons if already loaded
 });
 
 type Vehicle = {

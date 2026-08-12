@@ -143,10 +143,14 @@ function RootComponent() {
   }, [queryClient]);
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      // Global auth event handler
-      void queryClient.invalidateQueries();
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[ROOT-AUTH] Event:", event, "Session:", session?.user?.id);
+      
+      // Only invalidate on actual auth boundary changes, not on every check or navigation-related event
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        console.log("[ROOT-AUTH] Major auth change, invalidating all queries");
+        void queryClient.invalidateQueries();
+      }
     });
     return () => listener.subscription.unsubscribe();
   }, [queryClient]);

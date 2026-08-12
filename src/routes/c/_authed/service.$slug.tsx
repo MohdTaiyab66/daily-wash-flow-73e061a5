@@ -85,8 +85,11 @@ function ServiceDetail() {
   const search = Route.useSearch();
 
   useEffect(() => {
+    // Check session silently, do not trigger global state resets
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[SERVICE] SESSION_CHECK", { exists: !!session, user: session?.user?.id });
+      if (!session) {
+        console.warn("[SERVICE] No valid session on mount");
+      }
     });
   }, []);
   
