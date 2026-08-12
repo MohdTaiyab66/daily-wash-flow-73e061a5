@@ -182,7 +182,7 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[23px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
+                <h2 className="text-[21px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
               }
               className="mt-[24px] mb-0"
             >
@@ -192,10 +192,10 @@ function CustomerHome() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[20px] px-[22px] h-[50px] flex items-center justify-center text-[15.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
+                      "whitespace-nowrap rounded-[22px] px-[18px] h-[46px] flex items-center justify-center text-[14.5px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white shadow-none" 
-                        : "bg-white text-[#555555] border border-[#EEEEEE] shadow-none"
+                        : "bg-white text-[#555555] border border-[#E5E5E5] shadow-none"
                     )}
                   >
                     {cat}
@@ -203,13 +203,16 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-[15px] gap-y-[17px] mt-[18px]">
+              <div className="grid grid-cols-3 gap-x-[12px] gap-y-[12px] mt-[16px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
                     name={s.name
+                      .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
+                      .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
+                      .replace("Deep Clean (Full)", "Deep Clean (Full)")
                       .replace("One-Time ", "")
                       .replace("Butting Polish", "Buffing Polish")
                       .replace("Root Cleaning", "Roof Cleaning")}

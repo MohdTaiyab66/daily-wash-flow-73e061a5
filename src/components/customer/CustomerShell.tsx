@@ -37,10 +37,10 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                     aria-current="page"
                     className="flex-1 flex flex-col items-center justify-center h-full transition-all duration-300"
                   >
-                    <div className="flex items-center justify-center w-[78px] h-[46px] rounded-[23px] bg-[#FFF2E8] transition-all duration-300">
+                    <div className="flex items-center justify-center w-[72px] h-[44px] rounded-[22px] bg-[#FFF5EF] transition-all duration-300">
                       <div className="flex flex-col items-center justify-center">
-                        <Icon className="h-[22px] w-[22px] text-[#FF6B00]" strokeWidth={1.75} />
-                        <span className="mt-0.5 text-[13px] font-medium text-[#FF6B00] leading-none">
+                        <Icon className="h-[22.5px] w-[22.5px] text-[#FF6B00]" strokeWidth={1.75} />
+                        <span className="mt-0.5 text-[12.5px] font-medium text-[#FF6B00] leading-none">
                           {n.label}
                         </span>
                       </div>
@@ -55,8 +55,8 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   className="flex-1 flex flex-col items-center justify-center transition-all group h-full"
                 >
-                  <Icon className="h-[22px] w-[22px] text-[#8A8A8A] group-active:scale-95 transition-transform" strokeWidth={1.75} />
-                  <span className="mt-1 text-[13px] font-medium text-[#8A8A8A] leading-none">
+                  <Icon className="h-[22.5px] w-[22.5px] text-[#8A8A8A] group-active:scale-95 transition-transform" strokeWidth={1.75} />
+                  <span className="mt-1 text-[12.5px] font-medium text-[#8A8A8A] leading-none">
                     {n.label}
                   </span>
                 </Link>
