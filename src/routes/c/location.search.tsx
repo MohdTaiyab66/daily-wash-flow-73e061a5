@@ -21,9 +21,8 @@ export const Route = createFileRoute("/c/location/search")({
   head: () => ({ meta: [{ title: "Location — Urban Wash" }] }),
   beforeLoad: async () => {
     // Faster initial load check
-    const { data } = await supabase.auth.getSession();
-    const user = data.session?.user;
-    if (!user?.email?.endsWith("@customer.urbanwash.app")) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.email?.endsWith("@customer.urbanwash.app")) {
       throw redirect({ to: "/c/auth" });
     }
   },
@@ -437,6 +436,9 @@ function LocationFlow() {
 
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
+        <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
+          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c/location/search</span>
+        </div>
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-[#FF6B00]/5 blur-3xl rounded-full animate-pulse scale-150" />
           <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-white border border-black/5 shadow-xl">
