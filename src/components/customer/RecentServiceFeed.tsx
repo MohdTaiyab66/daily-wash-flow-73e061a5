@@ -444,13 +444,20 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE PHOTO";
+  const labelMap: Record<string, string> = {
+    before: "BEFORE",
+    after: "AFTER",
+    proof: "SERVICE PHOTO",
+    dirty: "DIRTY VEHICLE"
+  };
+
+  const label = labelMap[stage] || "SERVICE PHOTO";
 
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "uw-pressable relative aspect-square overflow-hidden rounded-[16px] bg-[#F5F5F5]",
+        "uw-pressable relative h-[76px] w-full overflow-hidden rounded-[16px] bg-[#F5F5F5]",
         onClick && "cursor-pointer"
       )}
     >
@@ -461,7 +468,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      <div className="absolute bottom-1.5 left-1.5 rounded-full bg-black/30 px-2 py-0.5 text-[8px] font-bold tracking-widest text-white backdrop-blur-[2px]">
+      <div className="absolute bottom-1 left-1 rounded-full bg-black/30 px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-white backdrop-blur-[2px]">
         {label}
       </div>
     </div>

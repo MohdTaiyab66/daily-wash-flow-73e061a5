@@ -223,7 +223,7 @@ function MyPlanPage() {
       />
 
 
-      <div className="px-5 pt-[68px]">
+      <div className="px-5 pt-[88px]">
         {selectedVehicle && (
           <div className="mb-4 mt-2">
              <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>

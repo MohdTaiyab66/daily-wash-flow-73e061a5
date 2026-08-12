@@ -18,7 +18,9 @@ interface UWHeaderProps {
 }
 
 
-const COLLAPSE_DISTANCE = 40; 
+const COLLAPSE_DISTANCE = 30; 
+const HEADER_HEIGHT_NORMAL = 78;
+const HEADER_HEIGHT_COLLAPSED = 72;
 
 export function UWHeader({ 
   area, 
@@ -58,9 +60,9 @@ export function UWHeader({
       header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(0, 0, 0, ${progress * 0.02})` : 'none';
 
       if (wrapper) {
-        const verticalPadding = 6 - (progress * 1.5);
-        wrapper.style.paddingTop = `calc(${verticalPadding}px + env(safe-area-inset-top))`;
-        wrapper.style.paddingBottom = `${verticalPadding}px`;
+        const height = HEADER_HEIGHT_NORMAL - (progress * (HEADER_HEIGHT_NORMAL - HEADER_HEIGHT_COLLAPSED));
+        wrapper.style.height = `${height}px`;
+        wrapper.style.paddingTop = `env(safe-area-inset-top)`;
       }
 
 
