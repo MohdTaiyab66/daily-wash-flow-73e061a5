@@ -276,7 +276,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
 
       <div className="mt-4 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-black/30">
-          <Clock className="h-3 w-3" />
+          <Clock3 className="h-3 w-3" />
           <span>
              {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
           </span>
