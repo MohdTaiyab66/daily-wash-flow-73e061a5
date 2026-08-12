@@ -6,31 +6,64 @@ import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
+import { authLog } from "@/lib/auth-debug";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
   loader: async ({ context }) => {
-    // Prefetch critical customer context in parallel
+    authLog.trace("Protected route loader started");
+    
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) throw redirect({ to: "/c/auth" });
+    if (!session?.user) {
+      authLog.error("Protected route loader - No session", { location: window.location.pathname });
+      throw redirect({ to: "/c/auth" });
+    }
+    
+    authLog.info("Protected route loader - Session verified", { userId: session.user.id });
     
     // Fire off parallel fetch
-    return context.queryClient.ensureQueryData({
-      queryKey: ["customer-initial-context"],
-      queryFn: () => getInitialCustomerContext(),
-      staleTime: 1000 * 60 * 5, // 5 mins
-    });
+    authLog.info("Customer & Vehicle lookup started (Parallel)");
+    try {
+      const data = await context.queryClient.ensureQueryData({
+        queryKey: ["customer-initial-context"],
+        queryFn: () => getInitialCustomerContext(),
+        staleTime: 1000 * 60 * 5, // 5 mins
+      });
+      authLog.info("Customer & Vehicle lookup completed", { 
+        hasProfile: !!data?.profile, 
+        vehicleCount: data?.vehicles?.length 
+      });
+      return data;
+    } catch (error) {
+      authLog.error("Customer context fetch failed", error);
+      throw error;
+    }
   },
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/c/auth" });
+    authLog.trace("Protected route beforeLoad check");
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      authLog.error("beforeLoad - getUser failed", error);
+      throw redirect({ to: "/c/auth" });
+    }
+    
+    if (!data.user) {
+      authLog.error("beforeLoad - No user");
+      throw redirect({ to: "/c/auth" });
+    }
+    
     if (!data.user.email?.endsWith("@customer.urbanwash.app")) {
+      authLog.error("beforeLoad - Invalid user domain", { email: data.user.email });
       await supabase.auth.signOut({ scope: "local" });
       throw redirect({ to: "/c/auth" });
     }
+    
+    authLog.trace("beforeLoad - Auth confirmed", { userId: data.user.id });
   },
   component: CustomerAuthedLayout,
 });
+
 
 
 function CustomerAuthedLayout() {
