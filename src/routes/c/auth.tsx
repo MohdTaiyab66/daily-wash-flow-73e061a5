@@ -157,12 +157,12 @@ function CustomerAuth() {
       }
       
       if (signInError) {
-        authLog.error("Sign in failed", signInError);
+        authLog.error("[AUTH][OTP] verify response received | success=false", signInError);
         const msg = (signInError.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
-          authLog.info("New customer detected, moving to signup");
+          authLog.info("[AUTH][OTP] user exists = false (moving to signup)");
           setStep("name");
         } else {
           setError(parseAuthError(signInError));
