@@ -39,64 +39,16 @@ export function UWHeader({
   const vehicleSelectorRef = useRef<HTMLDivElement>(null);
   
   useLayoutEffect(() => {
-    const header = containerRef.current;
     const wrapper = contentWrapperRef.current;
-    const locText = locationTextRef.current;
-    const vText = vehicleTextRef.current;
-    const vThumb = vehicleThumbRef.current;
-    const vSelector = vehicleSelectorRef.current;
-    
-    if (!header) return;
-
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const progress = Math.min(Math.max(scrollY / COLLAPSE_DISTANCE, 0), 1);
-      
-      // 1. Header background: White for premium feel
-      header.style.backgroundColor = `rgba(255, 255, 255, ${0.98 + progress * 0.02})`;
-      header.style.backdropFilter = progress > 0.1 ? 'blur(16px)' : 'none';
-      
-      header.style.borderBottom = `1px solid rgba(0, 0, 0, ${0.04 + progress * 0.02})`;
-      header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(0, 0, 0, ${progress * 0.02})` : 'none';
-
-      if (wrapper) {
-        const height = HEADER_HEIGHT_NORMAL - (progress * (HEADER_HEIGHT_NORMAL - HEADER_HEIGHT_COLLAPSED));
-        wrapper.style.height = `${height}px`;
-        wrapper.style.paddingTop = `env(safe-area-inset-top)`;
-      }
-
-
-      if (locText) {
-        locText.style.fontSize = `${progress > 0.5 ? 14.5 : 15}px`;
-        locText.style.fontWeight = '500';
-      }
-
-      if (vText) {
-        vText.style.fontSize = `${progress > 0.5 ? 14.5 : 15}px`;
-        vText.style.fontWeight = '500';
-      }
-
-
-      if (vThumb) {
-        const scale = 1 - progress * 0.05;
-        vThumb.style.transform = `scale(${scale})`;
-      }
-      
-      if (vSelector) {
-        vSelector.style.backgroundColor = `rgba(255, 255, 255, 1)`;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); 
-
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (wrapper) {
+      wrapper.style.paddingTop = `env(safe-area-inset-top)`;
+    }
   }, []);
 
   return (
     <header 
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 z-[60] bg-white will-change-[background-color,border-bottom,box-shadow]"
+      className="bg-white border-b border-[rgba(0,0,0,0.04)]"
     >
       <div 
         ref={contentWrapperRef}
@@ -127,7 +79,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[10px] h-[32px] pl-1 pr-2.5 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-[#F9F9F9] border border-[rgba(0,0,0,0.06)] rounded-[10px] h-[32px] pl-1 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
