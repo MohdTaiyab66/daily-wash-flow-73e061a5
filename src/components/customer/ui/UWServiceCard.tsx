@@ -47,11 +47,11 @@ export function UWServiceCard({
       }}
       className={cn(
         "cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]/40",
-        "p-0 overflow-hidden flex flex-col h-[195px] bg-white border border-[#2D2D2D]/8 rounded-[18px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
+        "p-0 overflow-hidden flex flex-col h-[210px] bg-white border border-[#EAEAEA] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-all active:scale-[0.96] duration-150", 
         className
       )}
     >
-      <div className="relative h-[92px] w-full bg-[#F1F2F3] overflow-hidden shrink-0">
+      <div className="relative h-[95px] w-full bg-[#F5F6F7] overflow-hidden shrink-0">
         {image && loadStatus !== 'error' ? (
           <img 
             src={image} 
@@ -65,34 +65,34 @@ export function UWServiceCard({
             onError={() => setLoadStatus('error')}
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F1F2F3] text-[#7A7A7A] p-2">
-            <Car className="h-8 w-8 mb-1.5 opacity-20" />
-            <span className="text-[9px] font-[800] uppercase tracking-[0.14em] text-[#7A7A7A] text-center">Coming soon</span>
+          <div className="h-full w-full flex flex-col items-center justify-center bg-[#F5F6F7] text-[#7A7A7A] p-2">
+            <Car className="h-7 w-7 mb-1.5 opacity-20" />
+            <span className="text-[8px] font-bold uppercase tracking-wider text-[#7A7A7A] text-center">Coming soon</span>
           </div>
         )}
         
         {badge && (
           <div className="absolute top-2 left-2 rounded-full bg-[#FF6B00] px-2 py-0.5 shadow-sm z-[10]">
-            <span className="text-[8px] font-black uppercase tracking-widest text-white">
+            <span className="text-[8px] font-bold uppercase tracking-widest text-white">
               {badge}
             </span>
           </div>
         )}
       </div>
       
-      <div className="flex flex-col flex-1 px-2.5 pt-2 pb-2.5 min-w-0">
-        <div className="h-[48px] flex items-start justify-center overflow-hidden w-full">
+      <div className="flex flex-col flex-1 px-3 pt-2.5 pb-3 min-w-0">
+        <div className="h-[42px] flex items-start justify-center overflow-hidden w-full">
           <h3 className={cn(
-            "text-[12px] font-bold leading-[1.2] text-[#2D2D2D] text-center break-words line-clamp-2 w-full",
+            "text-[16px] font-semibold leading-[1.25] text-[#2D2D2D] text-center break-words line-clamp-2 w-full",
             isComingSoon && "text-[#7A7A7A]"
           )}>
             {name}
           </h3>
         </div>
         
-        <div className="mt-auto flex items-center justify-between gap-1 h-[30px]">
+        <div className="mt-auto flex items-center justify-between gap-1 h-[34px]">
           <div className="flex items-baseline gap-0.5 overflow-hidden">
-            <span className="text-[14px] font-extrabold text-[#FF6B00] truncate">₹{price}</span>
+            <span className="text-[19px] font-bold text-[#FF6B00] truncate">₹{price}</span>
             {oldPrice && (
               <span className="text-[11px] font-medium text-[#7A7A7A]/30 line-through truncate ml-0.5">
                 ₹{oldPrice}
@@ -104,21 +104,20 @@ export function UWServiceCard({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("Quick add clicked for", name);
               onAdd?.();
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] border border-[#FF6B00]/5 z-10",
+              "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.85] bg-[#FFF2ED] text-[#FF6B00] border border-[#FF6B00]/5 z-10 shadow-sm",
               isAdded && "bg-[#FF6B00] text-white"
             )}
           >
             {isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : isAdded ? (
-              <Check className="h-3 w-3" strokeWidth={3} />
+              <Check className="h-4 w-4" strokeWidth={3} />
             ) : (
-              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+              <Plus className="h-4 w-4" strokeWidth={3} />
             )}
           </button>
         </div>
