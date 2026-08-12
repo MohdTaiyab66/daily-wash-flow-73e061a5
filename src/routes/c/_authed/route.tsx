@@ -10,35 +10,35 @@ import { authLog } from "@/lib/auth-debug";
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
   loader: async () => {
-    authLog.trace("Protected route loader started");
+    authLog.trace("[AUTH][SHELL] Protected route loader started");
     
     // Non-blocking session check for the loader
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      authLog.error("Protected route loader - No session");
+      authLog.error("[AUTH][SHELL] Protected route loader - No session present. Redirecting to login.");
       throw redirect({ to: "/c/auth" });
     }
     
     return null;
   },
   beforeLoad: async () => {
-    authLog.trace("Protected route beforeLoad check");
+    authLog.trace("[AUTH][SHELL] Protected route beforeLoad check");
     
     // We use getSession here because it's nearly instantaneous (local storage)
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
-      authLog.error("beforeLoad - No session");
+      authLog.error("[AUTH][SHELL] beforeLoad - No session present. Redirecting to login.");
       throw redirect({ to: "/c/auth" });
     }
     
     if (!session.user.email?.endsWith("@customer.urbanwash.app")) {
-      authLog.error("beforeLoad - Invalid user domain", { email: session.user.email });
+      authLog.error("[AUTH][SHELL] beforeLoad - Invalid user domain", { email: session.user.email });
       await supabase.auth.signOut({ scope: "local" });
       throw redirect({ to: "/c/auth" });
     }
     
-    authLog.trace("beforeLoad - Auth confirmed", { userId: session.user.id });
+    authLog.trace("[AUTH][SHELL] beforeLoad - Auth confirmed", { userId: session.user.id });
   },
   component: CustomerAuthedLayout,
 });
