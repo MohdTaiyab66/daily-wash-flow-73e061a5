@@ -68,6 +68,10 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   get(_, prop, receiver) {
     if (!_supabase) {
       _supabase = createSupabaseClient();
+      if (typeof window !== 'undefined' && !(window as any).__SUPABASE_CLIENT_ID) {
+        (window as any).__SUPABASE_CLIENT_ID = Math.random().toString(36).substring(7);
+        (window as any).supabase = _supabase;
+      }
     }
     return Reflect.get(_supabase, prop, receiver);
   },

@@ -51,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }));
     };
 
+    // IMMEDIATE: Try to get client ID if it's already set on window
+    if ((window as any).__SUPABASE_CLIENT_ID) {
+      setState(prev => ({ ...prev, clientId: (window as any).__SUPABASE_CLIENT_ID }));
+    }
+
     // Initial check
     supabase.auth.getSession().then(({ data: { session } }) => {
       updateState('INITIAL_SESSION_CHECK', session);
