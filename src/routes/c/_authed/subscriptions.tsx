@@ -217,11 +217,13 @@ function MyPlanPage() {
           color: null
         } : undefined}
         onVehicleClick={() => {
-          // Trigger the vehicle selector from header
+          // Trigger the vehicle selector - handled by local state usually
+          const selector = document.querySelector('[data-vehicle-trigger]');
+          if (selector instanceof HTMLElement) selector.click();
         }}
       />
 
-      <div className="px-5 pt-[82px]">
+      <div className="px-5 pt-[10px]">
         {hasVehicles && (
           <>
             {bookingsQ.isLoading ? (
