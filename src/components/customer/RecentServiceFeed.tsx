@@ -147,10 +147,10 @@ export function RecentServiceFeed({
       <div className="mt-3 space-y-4">
         {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <div className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center space-y-2 bg-white">
-            <p className="text-[15px] font-semibold text-[#1A1A1A]">No completed services yet</p>
-            <p className="text-[13px] font-normal text-[#8A8A8A] max-w-[240px] mx-auto">
-              Service photos will appear here after your service is completed.
+          <div className="rounded-[18px] border border-black/5 p-8 text-center bg-white shadow-sm">
+            <p className="text-[15px] font-black text-[#1A1A1A]">No completed services yet</p>
+            <p className="mt-2 text-[13px] font-bold text-black/20 max-w-[200px] mx-auto leading-relaxed">
+              Your service proof photos will appear here after your first completed wash.
             </p>
           </div>
         )}
