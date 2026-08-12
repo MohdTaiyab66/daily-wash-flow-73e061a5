@@ -416,10 +416,16 @@ function CustomerAuth() {
                   DEMO CODE: <span className="font-mono text-primary">123456</span>
                 </p>
               )}
-              <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
-                AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
-              </p>
+              <div className="flex flex-col items-center gap-0.5 opacity-30">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
+                </p>
+                <p className="text-[9px] font-mono text-muted-foreground uppercase">
+                  STATE: {verifyState}
+                </p>
+              </div>
             </div>
+
 
             <Button
               size="lg"
