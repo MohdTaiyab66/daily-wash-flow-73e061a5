@@ -369,6 +369,9 @@ function CustomerHome() {
                 {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
               </span></div>
 
+              <div>OTP VERIFY: <span className="text-muted-foreground/50">NOT_STARTED</span></div>
+              <div>POST OTP SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
+              <div>GET SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
               <div>TEST DB: <span className="text-blue-400">READY</span></div>
               
               <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
