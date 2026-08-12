@@ -204,7 +204,7 @@ function MyPlanPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FFFCF9] pb-24">
+    <div className="min-h-screen bg-white pb-24">
       <UWHeader
         area="My Plan"
         hideLocationIcon
@@ -222,14 +222,12 @@ function MyPlanPage() {
         }}
       />
 
-
       <div className="px-5 pt-[88px]">
         {selectedVehicle && (
           <div className="mb-4 mt-2">
              <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
              <p className="text-[14px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
           </div>
-
         )}
 
         {hasVehicles && (
@@ -274,7 +272,7 @@ function MyPlanPage() {
 
                     {/* ACTIVE PLAN CARD */}
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between mb-4">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#FF6B00]">
@@ -299,13 +297,25 @@ function MyPlanPage() {
                         </button>
                       </div>
 
-                      <div className="mt-5">
-                        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">
-                          <span>SERVICE DAYS</span>
-                          <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} used</span>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+                            <span>SERVICE DAYS</span>
+                            <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / 25 used</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / 25) * 100}%` }} />
+                          </div>
                         </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                          <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / totalDays) * 100}%` }} />
+                        
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+                            <span>INTERIOR WASH</span>
+                            <span className="text-[#1A1A1A] font-semibold text-[14px]">{interiorCount} / 1 used</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                            <div className="h-full rounded-full bg-[#8A8A8A] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
+                          </div>
                         </div>
                       </div>
 
@@ -324,57 +334,27 @@ function MyPlanPage() {
                           </div>
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-2 gap-3 mt-5">
+                        <button onClick={() => setBookOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                          Book Wash
+                        </button>
+                        <button onClick={() => setBuilderOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform text-[14px] font-semibold">
+                          Modify
+                        </button>
+                      </div>
+                      
                     </div>
 
-                    {/* WHAT'S INCLUDED */}
                     <PlanInclusionsCard planSlug={activePlanSlug} />
-
-                    {/* ACTION BUTTONS */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Book Wash</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">INCLUDED</span>
-                      </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Modify</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mt-0.5">ADJUST PLAN</span>
-                      </button>
-                    </div>
-
-                    {/* PAUSE / CANCEL */}
-                    <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
-                    </div>
-
-                    {/* RECENT SERVICE */}
                     <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
 
-                    {/* DETAILED USAGE */}
-                    <div className="space-y-3">
-                      <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A] px-1">Plan Usage</h3>
-                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#8A8A8A]">Service days</span>
-                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                             <span className="text-[#8A8A8A]">Interior wash</span>
-                             <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1 used</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex justify-center gap-6 mt-8 mb-4">
+                      <button className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Cancel plan</button>
                     </div>
                   </div>
+
                 )}
               </>
             )}
@@ -434,7 +414,6 @@ function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleI
           <p className="mt-2 text-[13px] text-[#8A8A8A]">Your subscription requires completion of payment to activate {planName}.</p>
         </div>
         <ShieldAlert className="h-6 w-6 shrink-0 text-[#FF6B00]" />
-
       </div>
       <div className="mt-5">
         <Button asChild className="h-11 w-full rounded-2xl bg-[#1A1A1A] text-white text-[14px] font-bold">

@@ -220,96 +220,91 @@ export function AwaitingPartnerBanner({
     );
   }
 
-  const tone =
-    state === "completed"
-      ? "border-success/10 bg-success/5"
-      : state === "in_progress"
-      ? "border-primary/10 bg-primary/5"
-      : state === "assigned"
-      ? "border-success/10 bg-success/5"
-      : "border-primary/10 bg-primary/5";
-
-  const titleMap: Record<Exclude<State, "unassignable">, string> = {
-    searching: "Waiting for area assignment",
-    assigned: "Today's service",
-    in_progress: "Service in progress",
-    completed: "Service completed ✓",
-  };
-
   const copyMap: Record<Exclude<State, "unassignable">, string> = {
     searching: "You're all set. We'll notify you once your first service is completed.",
-    assigned: "", // Empty so it's not rendered
+    assigned: "", 
     in_progress: "Your partner is taking care of your vehicle now.",
     completed: completedAt
       ? `Completed at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}.`
       : "All done for today.",
   };
 
-  const Icon =
-    state === "completed"
-      ? CheckCircle2
-      : state === "in_progress"
-      ? PlayCircle
-      : state === "assigned"
-      ? UserCheck
-      : Search;
+  const statusPill = (
 
-  const iconCls =
-    state === "completed" || state === "assigned"
-      ? "text-success"
-      : "text-primary";
+    <div className={cn(
+      "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+      state === "completed" ? "bg-[#E8F5E9] text-[#2E7D32]" : 
+      state === "in_progress" ? "bg-[#FFF3E0] text-[#E65100]" :
+      "bg-[#F5F5F5] text-[#555555]"
+    )}>
+      {state === "completed" ? "Completed ✓" : state === "in_progress" ? "In Progress" : "Scheduled"}
+    </div>
+  );
 
   return (
-    <div className={cn("rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm min-h-[260px] flex flex-col justify-center", tone)}>
-      {serviceWindow && (
-        <div className="mb-4 flex items-center justify-between border-b border-[#F5F5F5] pb-4">
-          <div className="flex items-center gap-2.5">
-            <Clock className="h-4 w-4 text-[#FF6B00]" />
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
-              <p className="text-[17px] font-semibold text-[#1A1A1A] mt-0.5">{serviceWindow}</p>
-            </div>
-          </div>
-          <StatusChip tone={state === "completed" ? "success" : "brand"} className="h-5 px-2.5 text-[9px] font-bold uppercase tracking-wider">
-             {state === "completed" ? "Completed" : "Scheduled"}
-          </StatusChip>
-        </div>
-      )}
-
-      <div className="flex items-start gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
-          {copyMap[state] && <p className="mt-0.5 text-[13px] font-normal leading-relaxed text-[#8A8A8A]">{copyMap[state]}</p>}
-
-          {partner && state !== "searching" && (
-            <div className="mt-4 flex items-center gap-3">
-              {partner.profile_photo_url ? (
-                <img
-                  src={partner.profile_photo_url}
-                  alt={partner.full_name}
-                  className="h-10 w-10 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E8F5E9] text-[14px] font-bold text-[#2E7D32]">
-                  {partner.full_name?.[0] ?? "P"}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-semibold text-[#1A1A1A]">{partner.full_name}</p>
-                <div className="flex items-center gap-2 text-[12px] font-normal text-[#8A8A8A]">
-                  <span className="inline-flex items-center gap-1 text-[#FF6B00] font-medium">
-                    <Star className="h-3 w-3 fill-current" /> {Number(partner.rating ?? 5).toFixed(1)}
-                  </span>
-                  <span className="opacity-30">·</span>
-                  <span>{state === "assigned" ? "Partner assigned" : state === "in_progress" ? "Service in progress" : "Partner"}</span>
-                </div>
-              </div>
+    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A]">Today's Service</p>
+          {serviceWindow && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
+              <span className="text-[15px] font-semibold text-[#1A1A1A]">Before {serviceWindow}</span>
             </div>
           )}
         </div>
+        {statusPill}
       </div>
-    </div>
 
+      {(partner || state === "searching") && (
+        <div className="flex items-center gap-3 pt-3 border-t border-[#F5F5F5]">
+          {state === "searching" ? (
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#F5F5F5] text-[#8A8A8A]">
+              <Search className="h-5 w-5 animate-pulse" />
+            </div>
+          ) : partner?.profile_photo_url ? (
+            <img
+              src={partner.profile_photo_url}
+              alt={partner.full_name}
+              className="h-10 w-10 rounded-xl object-cover"
+            />
+          ) : (
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF1E8] text-[14px] font-bold text-[#FF6B00]">
+              {partner?.full_name?.[0] ?? "P"}
+            </div>
+          )}
+          
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-semibold text-[#1A1A1A]">
+              {state === "searching" ? "Finding your partner..." : partner?.full_name}
+            </p>
+            <div className="flex items-center gap-2 text-[12px] font-normal text-[#8A8A8A]">
+              {state !== "searching" && (
+                <>
+                  <span className="inline-flex items-center gap-0.5 text-[#FF6B00] font-medium">
+                    <Star className="h-3 w-3 fill-current" /> {Number(partner?.rating ?? 5).toFixed(1)}
+                  </span>
+                  <span className="opacity-30">·</span>
+                </>
+              )}
+              <span>
+                {state === "searching" ? "Nearby availability" : 
+                 state === "assigned" ? "Partner assigned" : 
+                 state === "in_progress" ? "Service in progress" : 
+                 completedAt ? `Finished at ${completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}` : "All done"}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {copyMap[state] && state === "searching" && (
+        <p className="text-[12px] font-normal leading-relaxed text-[#8A8A8A] mt-2 italic">
+          {copyMap[state]}
+        </p>
+      )}
+    </div>
   );
 }
+
 
