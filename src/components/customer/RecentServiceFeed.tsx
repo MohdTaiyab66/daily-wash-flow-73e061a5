@@ -427,30 +427,27 @@ function ComplaintButton({ service, canComplain, onSubmitted }: { service: Recen
 
 function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (index: number) => void }) {
   if (!photos.length) return null;
+  
   return (
-    <div className="mt-5 grid grid-cols-4 gap-2">
-      {photos.slice(0, 3).map((p, i) => (
-        <SignedPhoto 
-          key={i} 
-          path={p.storage_path} 
-          stage={p.stage} 
-          onClick={() => onPhotoClick(i)} 
-        />
-      ))}
-      {photos.length > 3 && (
-        <div className="relative cursor-pointer" onClick={() => onPhotoClick(3)}>
-          <SignedPhoto 
-            path={photos[3].storage_path} 
-            stage={photos[3].stage} 
-          />
-          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white backdrop-blur-[1px]">
-            +{photos.length - 3}
+    <div className="mt-5">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+        {photos.map((p, i) => (
+          <div key={i} className="flex-shrink-0 w-[82px]">
+            <SignedPhoto 
+              path={p.storage_path} 
+              stage={p.stage} 
+              onClick={() => onPhotoClick(i)} 
+            />
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+      <div className="flex items-center justify-center gap-1 mt-2">
+        <span className="text-[11px] font-semibold text-[#8A8A8A]">1 / {photos.length}</span>
+      </div>
     </div>
   );
 }
+
 
 function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
