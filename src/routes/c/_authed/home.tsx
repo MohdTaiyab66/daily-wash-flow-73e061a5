@@ -351,43 +351,6 @@ function CustomerHome() {
           </div>
         </div>
 
-      </div>
-    </PullToRefresh>
-  );
-}
-              <button 
-                onClick={async () => {
-                  try {
-                    const { data } = await supabase.auth.getSession();
-                    const { data: userRes } = await supabase.auth.getUser();
-                    alert(`AUTH SESSION TEST\nSESSION: ${data.session ? 'PRESENT' : 'MISSING'}\nUSER: ${userRes.user ? 'PRESENT' : 'MISSING'}\nAUTH STATE: ${data.session ? 'AUTHENTICATED' : 'UNAUTHENTICATED'}`);
-                  } catch (err) {
-                    alert(`AUTH TEST ERROR: ${JSON.stringify(err)}`);
-                  }
-                }}
-                className="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
-              >
-                TEST AUTH
-              </button>
-              <button 
-                onClick={async () => {
-                  try {
-                    const { data, error } = await supabase.from("customer_profiles").select("id").limit(1);
-                    if (error) throw error;
-                    alert(`SIGNED-IN REQUEST: SUCCESS (Found ${data?.length} records)`);
-                  } catch (err) {
-                    alert(`SIGNED-IN REQUEST FAILED: ${JSON.stringify(err)}`);
-                  }
-                }}
-                className="bg-green-600 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
-              >
-                TEST SIGNED-IN REQ
-              </button>
-              <button onClick={() => queryClient.invalidateQueries()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
-            </div>
-          </div>
-        </div>
-
         <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
           <DialogContent className="max-w-md rounded-t-3xl border-none p-0">
             <DialogHeader className="p-6 pb-2"><DialogTitle className="text-xl font-bold">Select Vehicle</DialogTitle></DialogHeader>
