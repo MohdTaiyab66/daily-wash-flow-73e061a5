@@ -9,7 +9,26 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
-import { authLog, parseAuthError, getAuthErrorDetails } from "@/lib/auth-debug";
+const authLog = {
+  trace: (m: string, ...args: any[]) => console.log(`[AUTH][TRACE] ${m}`, ...args),
+  info: (m: string, ...args: any[]) => console.log(`[AUTH][INFO] ${m}`, ...args),
+  error: (m: string, ...args: any[]) => console.error(`[AUTH][ERROR] ${m}`, ...args),
+};
+
+const getAuthErrorDetails = (err: any) => {
+  if (!err) return { message: "Unknown error" };
+  return {
+    message: err.message || "Unknown error",
+    code: err.code || "unknown",
+    status: err.status || 500
+  };
+};
+
+const parseAuthError = (err: any) => {
+  const details = getAuthErrorDetails(err);
+  return details.message;
+};
+
 import logo from "@/assets/logo.jpeg";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +48,8 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const AUTH_BUILD_ID = "1.0.44-auth-sync";
 const VERIFY_TIMEOUT_MS = 10000;
+
 
 type VerifyState = "IDLE" | "VERIFYING" | "SUCCESS" | "ERROR" | "TIMEOUT";
 
@@ -293,9 +312,7 @@ function CustomerAuth() {
   return (
     <div className="relative flex min-h-screen flex-col bg-[#FFF9F3]">
       <div className="relative flex flex-1 flex-col px-6 pb-10 pt-10">
-        <div className="fixed top-10 left-0 right-0 flex flex-col items-center gap-1 opacity-10 pointer-events-none">
-          <span className="text-[10px] font-mono tracking-tighter text-blue-500">ROUTE: /c/auth</span>
-        </div>
+
         {step !== "phone" && (
           <button
             onClick={backToPhone}
@@ -422,14 +439,6 @@ function CustomerAuth() {
                   DEMO CODE: <span className="font-mono text-primary">123456</span>
                 </p>
               )}
-              <div className="flex flex-col items-center gap-0.5 opacity-30">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
-                </p>
-                <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                  STATE: {verifyState}
-                </p>
-              </div>
             </div>
 
 

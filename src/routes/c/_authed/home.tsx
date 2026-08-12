@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 import { Sparkles, Camera, ChevronRight, Plus, Check, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
@@ -63,77 +62,31 @@ function CustomerHome() {
   const [photoOpen, setPhotoOpen] = useState(false);
 
   const fetchWithTimeout = async <T,>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
-    const start = Date.now();
-    console.log(`[NET][${label}] REQUEST START`);
-    
     const timeout = new Promise<never>((_, reject) => 
       setTimeout(() => {
-        console.error(`[NET][${label}] REQUEST TIMEOUT after ${Date.now() - start}ms`);
         reject(new Error(`Timeout: ${label} request took too long`));
       }, timeoutMs)
     );
-
-    try {
-      const result = await Promise.race([promise, timeout]);
-      console.log(`[NET][${label}] REQUEST END | RESULT: success | DURATION: ${Date.now() - start}ms`);
-      return result;
-    } catch (err: any) {
-      if (!err.message?.includes('Timeout')) {
-        console.error(`[NET][${label}] REQUEST END | RESULT: error | DURATION: ${Date.now() - start}ms | ERROR:`, err);
-      }
-      throw err;
-    }
+    return Promise.race([promise, timeout]);
   };
-
-  const testSupabaseRaw = async () => {
-    console.log("[NET][DIAGNOSTIC] Raw database test starting...");
-    try {
-      const res = await fetchWithTimeout(
-        supabase.from("service_catalog").select("id").limit(1) as any,
-        "RAW_DB_TEST"
-      ) as any;
-      if (res.error) throw res.error;
-      console.log("[NET][DIAGNOSTIC] Raw database test SUCCESS:", !!res.data);
-      return { success: true, count: res.data?.length };
-    } catch (err) {
-      console.error("[NET][DIAGNOSTIC] Raw database test FAILED:", err);
-      return { success: false, error: err };
-    }
-  };
-
-  const initialContextQ = useQuery({
-    queryKey: ["customer-initial-context"],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn("[HOME DEBUG] No session, skipping initial context fetch");
-        return null;
-      }
-      console.log("[HOME DEBUG] [STARTUP] Initial context fetch started");
-      try {
-        const res = await getInitialCustomerContext();
-        console.log("[HOME DEBUG] [STARTUP] Initial context success:", !!res);
-        return res;
-      } catch (err) {
-        console.error("[HOME DEBUG] [STARTUP] Initial context error:", err);
-        throw err;
-      }
-    },
-    staleTime: 1000 * 60 * 5,
-    enabled: true, // we check session inside queryFn
-  });
-
-  console.log("[HOME DEBUG] Environment check:", {
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.44-auth-sync",
-    BUILD_ID: "auth-sync-2026-08-12-2006"
-  });
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
     setArea(savedArea);
     setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
   }, []);
+
+  const profileQ = useQuery({
+    queryKey: ["customer-profile"],
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      const { data, error } = await supabase.from("customer_profiles").select("*").eq("user_id", session.user.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
@@ -151,8 +104,7 @@ function CustomerHome() {
         "VEHICLES"
       );
     },
-    retry: 2,
-    enabled: true,
+    retry: 2
   });
 
   const servicesQ = useQuery({
@@ -238,7 +190,8 @@ function CustomerHome() {
       queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
       queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
       queryClient.invalidateQueries({ queryKey: ["service-gallery"] }),
-      queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] })
+      queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] }),
+      queryClient.invalidateQueries({ queryKey: ["customer-profile"] })
     ]);
   };
 

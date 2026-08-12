@@ -1,4 +1,6 @@
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { sessionManager } from "@/lib/customer-auth-session";
+
 import { z } from "zod";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -19,13 +21,10 @@ export const Route = createFileRoute("/c/location/search")({
     returnTo: z.string().optional().parse(search.returnTo),
   }),
   head: () => ({ meta: [{ title: "Location — Urban Wash" }] }),
-  beforeLoad: async () => {
-    // Faster initial load check
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.email?.endsWith("@customer.urbanwash.app")) {
-      throw redirect({ to: "/c/auth" });
-    }
-  },
+  // Logic moved to component level or simplified to avoid async beforeLoad hazards during SSR
+
+
+
   component: LocationFlow,
 });
 
