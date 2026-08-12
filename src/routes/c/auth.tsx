@@ -17,17 +17,27 @@ const authLog = {
 
 
 const getAuthErrorDetails = (err: any) => {
-  if (!err) return { message: "Unknown error" };
-  return {
+  if (!err) return { message: "No error object returned" };
+  
+  // Extract all possible properties to avoid empty "{}" serialization
+  const details = {
     message: err.message || "Unknown error",
-    code: err.code || "unknown",
-    status: err.status || 500
+    name: err.name || "Error",
+    code: err.code || err.status || "no_code",
+    status: err.status || err.statusCode || "no_status",
+    hint: err.hint || "",
+    details: err.details || "",
+    cause: err.cause ? String(err.cause) : "",
+    raw: String(err)
   };
+
+  return details;
 };
 
 const parseAuthError = (err: any) => {
-  const details = getAuthErrorDetails(err);
-  return details.message;
+  const d = getAuthErrorDetails(err);
+  // Return a rich string that actually contains data for the UI
+  return `${d.message}${d.code !== 'no_code' ? ` [${d.code}]` : ''}${d.hint ? ` - ${d.hint}` : ''}`;
 };
 
 import logo from "@/assets/logo.jpeg";
@@ -129,64 +139,47 @@ function CustomerAuth() {
     }
     setError(null);
     setVerifyState("VERIFYING");
-    authLog.info("[AUTH] VERIFY START", { codeLength: code.length, phone: phone.slice(-4) });
+    
+    const startTime = Date.now();
+    const normalized = phone.replace(/\D/g, "").slice(-10);
+    const maskedPhone = `+91 ******${normalized.slice(-4)}`;
+    
+    authLog.info("[AUTH] VERIFY_OTP_START", { 
+      codeLength: code.length, 
+      phone: maskedPhone,
+      normalized,
+      supabaseHost: (supabase as any).supabaseUrl || 'unknown'
+    });
     
     if (code.length !== OTP_LENGTH) {
       setError(`Enter the ${OTP_LENGTH}-digit code`);
       setVerifyState("ERROR");
       return;
     }
-    
 
     verifyingRef.current = true;
     setLoading(true);
-    authLog.info("[AUTH] 09 OTP_VERIFY_START");
     
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
     try {
-      // 1. First sign in
+      // P0: STAGE 1 - verifyOtp (using sign-in as the proxy for the current custom flow)
+      // Note: User mentioned supabase.auth.verifyOtp specifically.
+      // The current code uses signInWithPassword as a workaround for a "shadow password" flow.
+      // I will keep the existing flow but add the requested forensics.
+      
+      authLog.info("[AUTH] STAGE 1: signInWithPassword START", { email });
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (!signInError) {
-        // 2. Immediately force a session refresh/check to ensure persistence in storage
-        await supabase.auth.getSession();
-      }
-      
-      authLog.info("[AUTH] VERIFY RESPONSE RECEIVED");
-      if (authData) {
-        authLog.info("[AUTH] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
-      }
+      const elapsed = Date.now() - startTime;
 
-      if (authData?.session) {
-        setVerifyState("SUCCESS");
-        authLog.info("[AUTH] 11 POST_VERIFY_GET_SESSION");
-
-        // Explicitly confirm persistence
-        console.log("[AUTH] Checking session persistence after verifyOtp...");
-        const { data: sessionCheck } = await supabase.auth.getSession();
-        const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
-
-        if (!isSessionPresent) {
-          authLog.error("[AUTH] Persistence failure - session lost immediately");
-          setError("Account verified, but login failed. Please try again.");
-          setVerifyState("ERROR");
-          setLoading(false);
-          verifyingRef.current = false;
-          return;
-        }
-
-        authLog.info("[AUTH] SUCCESS, navigating to Home");
-        goAfterAuth();
-        return;
-      }
-      
       if (signInError) {
-        const details = getAuthErrorDetails(signInError);
-        authLog.error("[AUTH] VERIFY ERROR", details);
+        authLog.error("[AUTH] STAGE 1: VERIFY_OTP_ERROR", { 
+          elapsed, 
+          ...getAuthErrorDetails(signInError) 
+        });
         
+        const details = getAuthErrorDetails(signInError);
         const msg = (details.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
@@ -198,16 +191,46 @@ function CustomerAuth() {
           setError(parseAuthError(signInError));
           setVerifyState("ERROR");
         }
+        return;
       }
-    } catch (e: any) {
-      if (false) { // Timeout removed
-        authLog.error("[AUTH] VERIFY TIMEOUT");
+
+      authLog.info("[AUTH] STAGE 1: VERIFY_OTP_RESPONSE SUCCESS", { 
+        elapsed, 
+        hasSession: !!authData?.session, 
+        hasUser: !!authData?.user 
+      });
+
+      // STAGE 2: getSession
+      authLog.info("[AUTH] STAGE 2: getSession START");
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      authLog.info("[AUTH] STAGE 2: getSession RESULT", { 
+        present: !!sessionData.session,
+        error: sessionErr ? getAuthErrorDetails(sessionErr) : null
+      });
+
+      // STAGE 3: getUser
+      authLog.info("[AUTH] STAGE 3: getUser START");
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      authLog.info("[AUTH] STAGE 3: getUser RESULT", { 
+        present: !!userData.user,
+        error: userErr ? getAuthErrorDetails(userErr) : null
+      });
+
+      if (sessionData.session) {
+        setVerifyState("SUCCESS");
+        authLog.info("[AUTH] AUTHENTICATION COMPLETE", { userId: userData.user?.id });
+        goAfterAuth();
       } else {
-        const details = getAuthErrorDetails(e);
-        authLog.error("[AUTH] Unexpected verification error", details);
-        setError(`Something went wrong: ${details.message}`);
+        authLog.error("[AUTH] SESSION MISSING AFTER SUCCESSFUL VERIFY");
+        setError("Session failed to persist. Please check browser settings.");
         setVerifyState("ERROR");
       }
+    } catch (e: any) {
+      const elapsed = Date.now() - startTime;
+      const details = getAuthErrorDetails(e);
+      authLog.error("[AUTH] VERIFY_OTP_UNEXPECTED_EXCEPTION", { elapsed, ...details });
+      setError(`System Error: ${details.message}`);
+      setVerifyState("ERROR");
     } finally {
       setLoading(false);
       verifyingRef.current = false;
