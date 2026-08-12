@@ -19,7 +19,7 @@ export function PageTitle({ children, className }: { children: ReactNode; classN
 }
 
 export function SectionTitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <h2 className={cn("text-[16px] font-black tracking-tight text-[#1a1a1a]", className)}>{children}</h2>;
+  return <h2 className={cn("text-[16px] font-semibold tracking-tight text-[#1a1a1a]", className)}>{children}</h2>;
 }
 
 export function Muted({ children, className }: { children: ReactNode; className?: string }) {

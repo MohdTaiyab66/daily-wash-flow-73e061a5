@@ -67,12 +67,12 @@ export function UWHeader({
 
 
       if (locText) {
-        locText.style.fontSize = `${progress > 0.5 ? 15.5 : 16}px`;
+        locText.style.fontSize = `${progress > 0.5 ? 14.5 : 15}px`;
         locText.style.fontWeight = '500';
       }
 
       if (vText) {
-        vText.style.fontSize = `${progress > 0.5 ? 15.5 : 16}px`;
+        vText.style.fontSize = `${progress > 0.5 ? 14.5 : 15}px`;
         vText.style.fontWeight = '500';
       }
 
@@ -110,12 +110,12 @@ export function UWHeader({
           )}
           onClick={hideLocationIcon ? undefined : onAreaClick}
         >
-          {!hideLocationIcon && <MapPin className="h-[20.5px] w-[20.5px] text-[#FF6B00] shrink-0" />}
+          {!hideLocationIcon && <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />}
 
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[16px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[130px]"
+              className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[130px]"
             >
               {area || "Set location"}
             </span>
@@ -127,12 +127,12 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[34px] pl-1.5 pr-2.5 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[10px] h-[32px] pl-1 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[30px] w-[30px] shrink-0 overflow-hidden rounded-[8px] bg-[#F9F9F9] border border-[rgba(0,0,0,0.04)] flex items-center justify-center shadow-inner will-change-transform"
+              className="h-[28px] w-[28px] shrink-0 overflow-hidden rounded-[6px] bg-[#F9F9F9] border border-[rgba(0,0,0,0.04)] flex items-center justify-center shadow-inner will-change-transform"
             >
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
@@ -144,7 +144,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[16px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] leading-tight tracking-tight"
+                className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
