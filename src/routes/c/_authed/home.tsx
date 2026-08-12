@@ -78,6 +78,7 @@ function CustomerHome() {
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
+    staleTime: 1000 * 60 * 60, // 1 hour
     queryFn: async (): Promise<Service[]> => {
       const { data, error } = await supabase.from("service_catalog").select("*").eq("active", true).order("sort_order");
       if (error) throw error;
@@ -115,6 +116,8 @@ function CustomerHome() {
 
   const imagesQ = useQuery({
     queryKey: ["customer-promo-images"],
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("daily_shine_carousel")
@@ -155,9 +158,9 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[48px]">
+        <div className="pt-[78px]">
           <div className="px-4">
-            <div className="mt-[10px]">
+            <div className="mt-[20px]">
               <UWFeaturedCarousel 
                 isLoading={imagesQ.isLoading}
                 items={(imagesQ.data?.length ? imagesQ.data : DEFAULT_PROMO_IMAGES).map((img: any, idx: number) => {
