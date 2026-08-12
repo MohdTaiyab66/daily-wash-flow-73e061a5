@@ -1,3 +1,4 @@
+// src/lib/buildInfo.ts
 export const PARTNER_APP_VERSION = "1.0.33";
 export const PARTNER_BUILD_ID = "manual-2026-08-12";
 export const PARTNER_BUILD_NUMBER = "33";
