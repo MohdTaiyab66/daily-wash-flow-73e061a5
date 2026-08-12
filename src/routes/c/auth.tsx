@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
 const authLog = {
-  trace: (m: string, ...args: any[]) => console.log(`[AUTH][TRACE] ${m}`, ...args),
-  info: (m: string, ...args: any[]) => console.log(`[AUTH][INFO] ${m}`, ...args),
-  error: (m: string, ...args: any[]) => console.error(`[AUTH][ERROR] ${m}`, ...args),
+  trace: (m: string, ...args: any[]) => console.debug(`[AUTH] ${m}`, ...args),
+  info: (m: string, ...args: any[]) => console.log(`[AUTH] ${m}`, ...args),
+  error: (m: string, ...args: any[]) => console.error(`[AUTH] ${m}`, ...args),
 };
+
 
 const getAuthErrorDetails = (err: any) => {
   if (!err) return { message: "Unknown error" };
@@ -47,8 +48,9 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
-const SHOW_DEMO_OTP = true; 
-const VERIFY_TIMEOUT_MS = 25000; // Increased for sandbox stability 
+const SHOW_DEMO_OTP = false; // Disabled for production architecture
+const VERIFY_TIMEOUT_MS = 30000; 
+
 
 
 
@@ -103,7 +105,7 @@ function CustomerAuth() {
       return; 
     }
     
-    authLog.info("[AUTH-P0] OTP SEND START", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
+    authLog.info("[AUTH] OTP SEND START", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -114,7 +116,7 @@ function CustomerAuth() {
     if (resendIn > 0) return;
     setError(null);
     setVerifyState("IDLE");
-    authLog.info("[AUTH-P0] OTP RESEND", { phone });
+    authLog.info("[AUTH] OTP RESEND", { phone });
     setOtp("");
     setResendIn(RESEND_SECONDS);
     toast.success("OTP sent again");
@@ -127,7 +129,7 @@ function CustomerAuth() {
     }
     setError(null);
     setVerifyState("VERIFYING");
-    authLog.info("[OTP-P0] VERIFY START", { codeLength: code.length, phone: phone.slice(-4) });
+    authLog.info("[AUTH] VERIFY START", { codeLength: code.length, phone: phone.slice(-4) });
     
     if (code.length !== OTP_LENGTH) {
       setError(`Enter the ${OTP_LENGTH}-digit code`);
@@ -135,21 +137,10 @@ function CustomerAuth() {
       return;
     }
     
-    // Guard for demo mode
-    if (SHOW_DEMO_OTP && code !== "123456") {
-      authLog.error("[AUTH][OTP] verification failed at guard", { 
-        entered: code, 
-        expected: "123456",
-        reason: "Invalid OTP (demo mode requires 123456)" 
-      });
-      setError("That code doesn't look right. Please try again.");
-      setVerifyState("ERROR");
-      return;
-    }
 
     verifyingRef.current = true;
     setLoading(true);
-    authLog.info("[AUTH-TRACE] 09 OTP_VERIFY_START");
+    authLog.info("[AUTH] 09 OTP_VERIFY_START");
     
     const email = customerEmail(phone);
     const password = customerPassword(phone);
@@ -163,23 +154,23 @@ function CustomerAuth() {
         await supabase.auth.getSession();
       }
       
-      authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
+      authLog.info("[AUTH] VERIFY RESPONSE RECEIVED");
       if (authData) {
-        authLog.info("[OTP-P0] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
+        authLog.info("[AUTH] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
       }
 
       if (authData?.session) {
         setVerifyState("SUCCESS");
-        authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
+        authLog.info("[AUTH] 11 POST_VERIFY_GET_SESSION");
 
         // Explicitly confirm persistence
         console.log("[AUTH] Checking session persistence after verifyOtp...");
         const { data: sessionCheck } = await supabase.auth.getSession();
         const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH-P0] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
+        authLog.info(`[AUTH] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
 
         if (!isSessionPresent) {
-          authLog.error("[AUTH-P0] Persistence failure - session lost immediately");
+          authLog.error("[AUTH] Persistence failure - session lost immediately");
           setError("Account verified, but login failed. Please try again.");
           setVerifyState("ERROR");
           setLoading(false);
@@ -187,20 +178,20 @@ function CustomerAuth() {
           return;
         }
 
-        authLog.info("[AUTH-P0] SUCCESS, navigating to Home");
+        authLog.info("[AUTH] SUCCESS, navigating to Home");
         goAfterAuth();
         return;
       }
       
       if (signInError) {
         const details = getAuthErrorDetails(signInError);
-        authLog.error("[OTP-P0] VERIFY ERROR", details);
+        authLog.error("[AUTH] VERIFY ERROR", details);
         
         const msg = (details.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
-          authLog.info("[AUTH-TRACE] User not found, moving to signup step");
+          authLog.info("[AUTH] User not found, moving to signup step");
           setStep("name");
           setVerifyState("IDLE");
         } else {
@@ -210,10 +201,10 @@ function CustomerAuth() {
       }
     } catch (e: any) {
       if (false) { // Timeout removed
-        authLog.error("[OTP-P0] VERIFY TIMEOUT");
+        authLog.error("[AUTH] VERIFY TIMEOUT");
       } else {
         const details = getAuthErrorDetails(e);
-        authLog.error("[AUTH-TRACE] Unexpected verification error", details);
+        authLog.error("[AUTH] Unexpected verification error", details);
         setError(`Something went wrong: ${details.message}`);
         setVerifyState("ERROR");
       }
@@ -261,17 +252,17 @@ function CustomerAuth() {
       
       const { data: signInData, error: e2 } = await supabase.auth.signInWithPassword({ email, password });
       if (e2 || !signInData.session) {
-        authLog.error("[AUTH-P0] Sign in after signup failed", e2);
+        authLog.error("[AUTH] Sign in after signup failed", e2);
         setError(parseAuthError(e2 || new Error("Session not created after signup")));
         setLoading(false);
         return;
       }
 
-      authLog.info("[AUTH-P0] SESSION PRESENT (after signup)");
+      authLog.info("[AUTH] SESSION PRESENT (after signup)");
 
       const { data: u } = await supabase.auth.getUser();
       if (u?.user) {
-        authLog.info("[AUTH-P0] USER PRESENT", { userId: u.user.id });
+        authLog.info("[AUTH] USER PRESENT", { userId: u.user.id });
         authLog.info("Saving customer profile...", { userId: u.user.id });
         await supabase.from("customer_profiles").upsert({
           user_id: u.user.id,
@@ -281,15 +272,15 @@ function CustomerAuth() {
         }, { onConflict: "user_id" });
       }
       
-      authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
+      authLog.info("[AUTH] 11 POST_VERIFY_GET_SESSION");
       const { data: finalCheck } = await supabase.auth.getSession();
       if (finalCheck.session) {
-        authLog.info("[AUTH-TRACE] 12 SESSION_PERSISTED: YES");
-        authLog.info("[AUTH-TRACE] 13 AUTHENTICATED");
-        authLog.info("[AUTH-TRACE] 14 HOME_NAVIGATION");
+        authLog.info("[AUTH] 12 SESSION_PERSISTED: YES");
+        authLog.info("[AUTH] 13 AUTHENTICATED");
+        authLog.info("[AUTH] 14 HOME_NAVIGATION");
         goAfterAuth();
       } else {
-        authLog.error("[AUTH-TRACE] 12 SESSION_PERSISTED: NO");
+        authLog.error("[AUTH] 12 SESSION_PERSISTED: NO");
         setError("Account created, but could not establish session. Please log in.");
         setStep("phone");
       }

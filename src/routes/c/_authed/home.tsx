@@ -61,20 +61,12 @@ function CustomerHome() {
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
-  const fetchWithTimeout = async <T,>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
-    const timeout = new Promise<never>((_, reject) => 
-      setTimeout(() => {
-        reject(new Error(`Timeout: ${label} request took too long`));
-      }, timeoutMs)
-    );
-    return Promise.race([promise, timeout]);
-  };
-
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
     setArea(savedArea);
     setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
   }, []);
+
 
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
@@ -105,22 +97,17 @@ function CustomerHome() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return [];
       
-      return fetchWithTimeout(
-        (async () => {
-          const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
-          if (error) throw error;
-          return (data ?? []) as Vehicle[];
-        })(),
-        "VEHICLES"
-      );
+      const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
+      if (error) throw error;
+      return (data ?? []) as Vehicle[];
     },
+
     retry: 2
   });
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
-      // Direct query using canonical client
       const { data, error } = await supabase
         .from("service_catalog")
         .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
@@ -129,14 +116,11 @@ function CustomerHome() {
 
       if (error) {
         console.error("[HOME] Service catalog query error:", error);
-        // Fallback services so UI doesn't break
-        return [
-          { id: 'f-1', slug: 'one-time-wash', name: 'Interior & Exterior', description: 'Complete wash', price_hatchback: 499, price_sedan_suv: 599, service_type: 'one_time', sort_order: 1, duration_minutes: 60, banner_url: null },
-          { id: 'f-3', slug: 'deep-clean', name: 'Deep Clean (Full)', description: 'Detailed cleaning', price_hatchback: 1499, price_sedan_suv: 1699, service_type: 'one_time', sort_order: 3, duration_minutes: 180, banner_url: null }
-        ] as Service[];
+        throw error;
       }
       return (data ?? []) as Service[];
     },
+
     retry: 2,
     staleTime: 1000 * 60 * 10,
   });
@@ -146,32 +130,26 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-
       try {
-        const result = await fetchWithTimeout(
-          (async () => {
-            const { data, error } = await (supabase as any)
-              .from("daily_shine_carousel")
-              .select("id, image_url, status, slide_number, updated_at, service_slug")
-              .eq("status", "published")
-              .order("slide_number");
-            if (error) {
-              console.error("[HOME-DATA] Carousel query error:", error);
-              throw error;
-            }
-            return (data || []).map((img: any) => ({
-              ...img,
-              image_url: getDailyShineCarouselImageUrl(img.image_url)
-            }));
-          })(),
-          "CAROUSEL"
-        );
-        return result;
+        const { data, error } = await (supabase as any)
+          .from("daily_shine_carousel")
+          .select("id, image_url, status, slide_number, updated_at, service_slug")
+          .eq("status", "published")
+          .order("slide_number");
+        if (error) {
+          console.error("[HOME-DATA] Carousel query error:", error);
+          throw error;
+        }
+        return (data || []).map((img: any) => ({
+          ...img,
+          image_url: getDailyShineCarouselImageUrl(img.image_url)
+        }));
       } catch (err: any) {
         console.error("[HOME-DATA] Carousel failed:", err);
         return []; // Fallback handled by UWFeaturedCarousel (uses DEFAULT_PROMO_IMAGES)
       }
     },
+
     retry: 1,
 
   });

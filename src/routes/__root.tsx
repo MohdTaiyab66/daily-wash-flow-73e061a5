@@ -145,7 +145,7 @@ function RootComponent() {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      console.log(`[AUTH-P0] GLOBAL AUTH EVENT: ${event}. Invalidating queries...`);
+      // Global auth event handler
       void queryClient.invalidateQueries();
     });
     return () => listener.subscription.unsubscribe();
