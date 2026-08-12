@@ -302,28 +302,32 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between border-t border-black/[0.03] pt-4">
+      <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
         <div className="flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-muted-foreground/40" />
-          <span className="text-[11px] font-bold text-muted-foreground/40">
+          <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
+          <span className="text-[12px] font-medium text-[#8A8A8A]">
             {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `${minutesLeft}m to report issue` : "Window closed"}
           </span>
         </div>
         
         {!isUnavailable && !isMissed && !isPending && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {canComplain && (
               <button 
                 onClick={() => setViewerOpen(true)}
-                className="text-[12px] font-black text-primary active:opacity-60"
+                className="text-[13px] font-semibold text-[#FF6B00]"
               >
                 Report Issue
               </button>
             )}
             <button 
               onClick={() => openViewer(0)}
-              className="text-[12px] font-black text-[#1a1a1a] active:opacity-60"
+              className="text-[13px] font-semibold text-[#1A1A1A]"
             >
+              View Photos
+            </button>
+          </div>
+        )}
               View Photos
             </button>
           </div>
