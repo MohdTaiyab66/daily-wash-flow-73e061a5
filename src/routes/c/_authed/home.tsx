@@ -104,6 +104,11 @@ function CustomerHome() {
   const initialContextQ = useQuery({
     queryKey: ["customer-initial-context"],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("[HOME DEBUG] No session, skipping initial context fetch");
+        return null;
+      }
       console.log("[HOME DEBUG] [STARTUP] Initial context fetch started");
       try {
         const res = await getInitialCustomerContext();
@@ -115,12 +120,13 @@ function CustomerHome() {
       }
     },
     staleTime: 1000 * 60 * 5,
+    enabled: true, // we check session inside queryFn
   });
 
   console.log("[HOME DEBUG] Environment check:", {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.38-auth-session-fix",
-    BUILD_ID: "auth-session-fix-2026-08-12"
+    BUILD: "1.0.40-auth-trace",
+    BUILD_ID: "auth-trace-2026-08-12"
   });
 
   useEffect(() => {
@@ -133,6 +139,9 @@ function CustomerHome() {
     queryKey: ["customer-vehicles"],
     staleTime: 1000 * 60 * 5,
     queryFn: async (): Promise<Vehicle[]> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [];
+      
       return fetchWithTimeout(
         (async () => {
           const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
@@ -143,6 +152,7 @@ function CustomerHome() {
       );
     },
     retry: 2,
+    enabled: true,
   });
 
   const servicesQ = useQuery({
@@ -345,7 +355,7 @@ function CustomerHome() {
         <div className="fixed bottom-[80px] left-2 right-2 z-[9999] opacity-95 pointer-events-auto">
           <div className="bg-black/95 text-[10px] text-white p-3 rounded-xl border border-white/20 font-mono shadow-2xl space-y-2">
             <div className="flex justify-between border-b border-white/10 pb-1.5 mb-1.5">
-              <span className="font-bold text-[#FF6B00]">BUILD 1.0.39-auth-real-session</span>
+              <span className="font-bold text-[#FF6B00]">BUILD 1.0.40-auth-trace</span>
               <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
                 {servicesQ.fetchStatus} | {servicesQ.status}
               </span>
@@ -365,15 +375,6 @@ function CustomerHome() {
                 {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
               </span></div>
 
-              <div>USER: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
-                {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
-              </span></div>
-
-              <div>OTP VERIFY: <span className="text-muted-foreground/50">NOT_STARTED</span></div>
-              <div>POST OTP SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
-              <div>GET SESSION: <span className="text-muted-foreground/50">NOT_CHECKED</span></div>
-              <div>TEST DB: <span className="text-blue-400">READY</span></div>
-              
               <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
                 SERVICES: <span className={cn(
                   servicesQ.isSuccess ? "text-green-400" : 
@@ -395,17 +396,13 @@ function CustomerHome() {
 
             <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
               <button 
-                onClick={() => {
-                  console.log("[DIAGNOSTIC] Manual connectivity test...");
-                  testSupabaseRaw().then(res => alert(`Raw DB Test: ${res.success ? 'SUCCESS' : 'FAILED: ' + JSON.stringify(res.error)}`));
-                }}
+                onClick={() => testSupabaseRaw().then(res => alert(`Raw DB Test: ${res.success ? 'SUCCESS' : 'FAILED: ' + JSON.stringify(res.error)}`))}
                 className="bg-[#FF6B00] text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95"
               >
                 TEST DB
               </button>
               <button 
                 onClick={async () => {
-                  console.log("[DIAGNOSTIC] Auth session test...");
                   try {
                     const { data } = await supabase.auth.getSession();
                     const { data: userRes } = await supabase.auth.getUser();
@@ -420,7 +417,6 @@ function CustomerHome() {
               </button>
               <button 
                 onClick={async () => {
-                  console.log("[DIAGNOSTIC] Signed-in request test...");
                   try {
                     const { data, error } = await supabase.from("customer_profiles").select("id").limit(1);
                     if (error) throw error;
@@ -433,7 +429,7 @@ function CustomerHome() {
               >
                 TEST SIGNED-IN REQ
               </button>
-              <button onClick={() => refreshAll()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
+              <button onClick={() => queryClient.invalidateQueries()} className="bg-white/20 text-white px-2 py-1 rounded text-[9px] font-bold active:scale-95">RETRY ALL</button>
             </div>
           </div>
         </div>

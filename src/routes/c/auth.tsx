@@ -28,8 +28,8 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
-const SHOW_DEMO_OTP = import.meta.env.DEV; 
-const AUTH_BUILD_ID = "1.0.39-auth-real-session";
+const SHOW_DEMO_OTP = true; 
+const AUTH_BUILD_ID = "1.0.40-auth-trace";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -121,60 +121,52 @@ function CustomerAuth() {
 
     verifyingRef.current = true;
     setLoading(true);
+    authLog.info("[AUTH-TRACE] 09 OTP_VERIFY_START");
     
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    authLog.info("[AUTH-P0] OTP VERIFY START", { email });
-    
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      authLog.info("[AUTH-P0] OTP VERIFY RESPONSE", { 
-        success: !!data.session, 
-        hasError: !!signInError,
-        userExists: !!data.user,
-        sessionExists: !!data.session,
-      });
+      authLog.info(`[AUTH-TRACE] 10 OTP_VERIFY_RESULT: ${data.session ? 'SUCCESS' : 'FAILURE'}`);
 
       if (data.session) {
-        authLog.info("[AUTH-P0] USER PRESENT", { userId: data.user?.id });
-        authLog.info("[AUTH-P0] SESSION PRESENT");
+        authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
 
         // Explicitly confirm persistence
-        authLog.info("[AUTH-P0] GET SESSION START");
         const { data: sessionCheck } = await supabase.auth.getSession();
         const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH-P0] GET SESSION RESULT = ${isSessionPresent ? 'PRESENT' : 'MISSING'}`);
+        authLog.info(`[AUTH-TRACE] 12 SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
 
         if (!isSessionPresent) {
-          authLog.error("[AUTH-P0] Persistence failure - session lost immediately");
+          authLog.error("[AUTH-TRACE] REDIRECTING: Persistence failure - session lost immediately");
           setError("Authentication failed: session could not be established. Please try again.");
           setLoading(false);
           verifyingRef.current = false;
           return;
         }
 
-        authLog.info("[AUTH-P0] AUTH STATE CHANGE -> AUTHENTICATED");
-        authLog.info("[AUTH-P0] NAVIGATING HOME");
+        authLog.info("[AUTH-TRACE] 13 AUTHENTICATED");
+        authLog.info("[AUTH-TRACE] 14 HOME_NAVIGATION");
         goAfterAuth();
         return;
       }
       
       if (signInError) {
-        authLog.error("[AUTH-P0] OTP VERIFY ERROR", signInError);
+        authLog.error("[AUTH-TRACE] 10 OTP_VERIFY_RESULT: ERROR", signInError);
         const msg = (signInError.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
-          authLog.info("[AUTH-P0] User not found, moving to signup step");
+          authLog.info("[AUTH-TRACE] User not found, moving to signup step");
           setStep("name");
         } else {
           setError(parseAuthError(signInError));
         }
       }
     } catch (e) {
-      authLog.error("[AUTH-P0] Unexpected verification error", e);
+      authLog.error("[AUTH-TRACE] Unexpected verification error", e);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -239,16 +231,15 @@ function CustomerAuth() {
         }, { onConflict: "user_id" });
       }
       
-      authLog.info("[AUTH-P0] Signup flow complete. Verifying session persistence...");
-      authLog.info("[AUTH-P0] GET SESSION START");
+      authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
       const { data: finalCheck } = await supabase.auth.getSession();
       if (finalCheck.session) {
-        authLog.info("[AUTH-P0] GET SESSION RESULT = PRESENT");
-        authLog.info("[AUTH-P0] AUTH STATE CHANGE -> AUTHENTICATED");
-        authLog.info("[AUTH-P0] NAVIGATING HOME");
+        authLog.info("[AUTH-TRACE] 12 SESSION_PERSISTED: YES");
+        authLog.info("[AUTH-TRACE] 13 AUTHENTICATED");
+        authLog.info("[AUTH-TRACE] 14 HOME_NAVIGATION");
         goAfterAuth();
       } else {
-        authLog.error("[AUTH-P0] GET SESSION RESULT = MISSING (lost after signup)");
+        authLog.error("[AUTH-TRACE] 12 SESSION_PERSISTED: NO");
         setError("Account created, but could not establish session. Please log in.");
         setStep("phone");
       }

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { authLog } from "@/lib/auth-debug";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/c/")({
@@ -23,8 +24,8 @@ export const Route = createFileRoute("/c/")({
  * A short floor keeps it from flashing on very fast devices.
  */
 const MIN_SPLASH_MS = 300;
-const AUTH_TIMEOUT_MS = 2500;
-const SPLASH_BUILD_ID = "1.0.39-auth-real-session";
+const AUTH_TIMEOUT_MS = 2000;
+const SPLASH_BUILD_ID = "1.0.40-auth-trace";
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -32,12 +33,10 @@ function CustomerSplash() {
   useEffect(() => {
     let cancelled = false;
     const startedAt = Date.now();
-    console.log("[STARTUP] [WEB] Splash component mounted at:", startedAt);
+    authLog.info("[AUTH-TRACE] 01 APP_START");
 
     const resolveAuth = async () => {
-      let isCustomer = false;
-      
-      console.log("[AUTH-P0] INITIALIZING");
+      authLog.info("[AUTH-TRACE] 03 SESSION_CHECK_START");
       
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Auth check timed out")), AUTH_TIMEOUT_MS)
@@ -47,38 +46,40 @@ function CustomerSplash() {
         const authPromise = supabase.auth.getSession();
         const { data }: any = await Promise.race([authPromise, timeoutPromise]);
         
-        console.log("[AUTH-P0] GET SESSION RESULT =", data.session ? "PRESENT" : "MISSING");
+        const sessionPresent = !!data.session;
+        authLog.info(`[AUTH-TRACE] 04 SESSION_CHECK_RESULT: ${sessionPresent ? "PRESENT" : "MISSING"}`);
         
-        isCustomer = !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
-        console.log("[AUTH-P0] AUTH STATE CHANGE ->", isCustomer ? "AUTHENTICATED" : "UNAUTHENTICATED");
-      } catch (err) {
-        console.warn("[AUTH-P0] GET SESSION RESULT = ERROR (Timeout/Failure)", err);
-        isCustomer = false; 
-      }
-
-      if (cancelled) return;
-
-      const elapsed = Date.now() - startedAt;
-      const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
-      
-      console.log(`[AUTH-P0] NAVIGATING HOME in ${wait}ms. Target isCustomer:`, isCustomer);
-      
-      window.setTimeout(() => {
+        const isCustomer = sessionPresent && !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
+        authLog.info(`[AUTH-TRACE] 05 AUTH_STATE_SET: ${isCustomer ? "AUTHENTICATED" : "UNAUTHENTICATED"}`);
+        
         if (cancelled) return;
-        console.log("[AUTH-P0] Executing navigation...");
-        if (isCustomer) {
-          const savedArea = localStorage.getItem("uw_customer_area");
-          navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
-        } else {
-          navigate({ to: "/c/auth", replace: true });
-        }
-      }, wait);
+
+        const elapsed = Date.now() - startedAt;
+        const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+        
+        authLog.info(`[AUTH-TRACE] 06 ROUTE_DECISION (in ${wait}ms): ${isCustomer ? "HOME" : "LOGIN"}`);
+
+        window.setTimeout(() => {
+          if (cancelled) return;
+          authLog.info("[AUTH-TRACE] 14 EXECUTING_NAVIGATION");
+          if (isCustomer) {
+            const savedArea = localStorage.getItem("uw_customer_area");
+            navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
+          } else {
+            navigate({ to: "/c/auth", replace: true });
+          }
+        }, wait);
+
+      } catch (err) {
+        authLog.error("[AUTH-TRACE] 04 SESSION_CHECK_RESULT: ERROR", err);
+        if (cancelled) return;
+        navigate({ to: "/c/auth", replace: true });
+      }
     };
 
     resolveAuth();
 
     return () => { 
-      console.log("[STARTUP] [WEB] Splash component unmounting");
       cancelled = true; 
     };
   }, [navigate]);
