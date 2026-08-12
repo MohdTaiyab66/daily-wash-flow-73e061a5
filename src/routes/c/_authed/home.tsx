@@ -208,7 +208,9 @@ function CustomerHome() {
   const galleryQ = useServiceGallery();
   
   const resolvedServiceImage = (slug: string) => {
-    return getServiceImage(slug, galleryQ.data || []);
+    const result = getServiceImage(slug, galleryQ.data || []);
+    // Ensure we always have a URL to prevent "Coming Soon" placeholder
+    return result.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
   };
 
   const refreshAll = () => {
