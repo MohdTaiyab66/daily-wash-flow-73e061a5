@@ -225,9 +225,9 @@ function MyPlanPage() {
 
       <div className="px-5 pt-[68px]">
         {selectedVehicle && (
-          <div className="mb-5 mt-2">
+          <div className="mb-4 mt-2">
              <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[13.5px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
+             <p className="text-[14px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
           </div>
 
         )}
@@ -327,20 +327,20 @@ function MyPlanPage() {
 
                     {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl bg-[#222222] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[16.5px] font-semibold">Book Wash</span>
-                        <span className="text-[11.5px] font-medium uppercase tracking-widest opacity-70 mt-0.5">Included</span>
+                      <button onClick={() => setBookOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Book Wash</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">INCLUDED</span>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[16.5px] font-semibold">Modify</span>
-                        <span className="text-[11.5px] font-medium uppercase tracking-widest text-[#8A8A8A] mt-0.5">Adjust Plan</span>
+                      <button onClick={() => setBuilderOpen(true)} className="h-[95px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
+                        <span className="text-[16px] font-semibold">Modify</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mt-0.5">ADJUST PLAN</span>
                       </button>
                     </div>
 
                     {/* PAUSE / CANCEL */}
                     <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[13.5px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[13.5px] font-medium text-[#8A8A8A]">Cancel plan</button>
+                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
                     {/* RECENT SERVICE */}
