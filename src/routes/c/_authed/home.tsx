@@ -359,7 +359,7 @@ function CustomerHome() {
             </div>
             <div>Services: {servicesQ.isPending ? 'PENDING' : servicesQ.isError ? 'ERROR' : `OK (${servicesQ.data?.length})`}</div>
             <div>Carousel: {imagesQ.isPending ? 'PENDING' : imagesQ.isError ? 'ERROR' : `OK (${imagesQ.data?.length})`}</div>
-            <div>Auth: {initialContextQ.data ? 'READY' : 'WAITING'}</div>
+            <div>Auth: {initialContextQ.data ? 'READY' : initialContextQ.status === 'error' ? 'ERROR' : 'WAITING'} ({initialContextQ.status})</div>
           </div>
         </div>
 
