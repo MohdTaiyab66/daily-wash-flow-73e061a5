@@ -28,7 +28,8 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
-const SHOW_DEMO_OTP = import.meta.env.DEV; // Never show demo OTP in production builds.
+const SHOW_DEMO_OTP = import.meta.env.DEV; 
+const AUTH_BUILD_ID = "1.0.36-debug";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -372,11 +373,16 @@ function CustomerAuth() {
               />
             </div>
 
-            {SHOW_DEMO_OTP && (
-              <p className="mt-6 text-center text-[13px] font-bold text-primary/40 tracking-wider">
-                DEMO CODE: <span className="font-mono text-primary">123456</span>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              {SHOW_DEMO_OTP && (
+                <p className="text-[13px] font-bold text-primary/40 tracking-wider">
+                  DEMO CODE: <span className="font-mono text-primary">123456</span>
+                </p>
+              )}
+              <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
+                AUTH BUILD: {AUTH_BUILD_ID}
               </p>
-            )}
+            </div>
 
             <Button
               size="lg"
