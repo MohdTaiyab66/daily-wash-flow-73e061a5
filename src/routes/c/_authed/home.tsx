@@ -146,24 +146,34 @@ function CustomerHome() {
     queryKey: ["service-catalog"],
     staleTime: 1000 * 30, // Reduced to 30s
     queryFn: async (): Promise<Service[]> => {
-      console.log("[SERVICE-DATA] request started");
-      const { data, error } = await supabase
-        .from("service_catalog")
-        .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
-        .eq("active", true)
-        .order("sort_order", { ascending: true });
+      const start = Date.now();
+      console.log("[SERVICE-CATALOG] REQUEST START");
+      try {
+        const { data, error, status } = await supabase
+          .from("service_catalog")
+          .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
+          .eq("active", true)
+          .order("sort_order", { ascending: true });
 
+        const elapsed = Date.now() - start;
+        console.log(`[SERVICE-CATALOG] RESPONSE: status=${status}, elapsed=${elapsed}ms`);
 
-      if (error) {
-        console.error("[SERVICE-DATA] query error:", error);
-        throw error;
+        if (error) {
+          console.error("[SERVICE-CATALOG] query error:", error);
+          throw error;
+        }
+        
+        const rawData = (data ?? []) as Service[];
+        console.log("[SERVICE-CATALOG] RAW ROW COUNT:", rawData.length);
+        return rawData;
+      } catch (err) {
+        console.error("[SERVICE-CATALOG] FETCH FAILED:", err);
+        throw err;
       }
-      
-      const rawData = (data ?? []) as Service[];
-      console.log("[SERVICE-DATA] response received, raw count:", rawData.length);
-      return rawData;
     },
-    retry: 2,
+    retry: 1,
+    retryDelay: 1000,
+
   });
 
   const imagesQ = useQuery({
