@@ -8,15 +8,21 @@ export const authLog = {
     if (data) console.log(data);
     console.groupEnd();
   },
-  error: (step: string, error: any) => {
+  error: (step: string, error?: any) => {
     console.group(`[AUTH ERROR] ${step}`);
-    console.error(error);
+    if (error) {
+      console.error("Technical details:", {
+        message: error?.message,
+        code: error?.code,
+        status: error?.status,
+        name: error?.name,
+        ...error
+      });
+    }
     console.groupEnd();
   },
-  trace: (message: string) => {
-    if (import.meta.env.DEV) {
-      console.log(`[AUTH TRACE] ${message}`);
-    }
+  trace: (message: string, data?: any) => {
+    console.log(`[AUTH TRACE] ${message}`, data || "");
   }
 };
 
