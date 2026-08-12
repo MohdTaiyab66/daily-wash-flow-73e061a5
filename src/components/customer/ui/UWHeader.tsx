@@ -60,11 +60,11 @@ export function UWHeader({
       }
 
       if (locText) {
-        locText.style.fontSize = `${15 - progress * 1}px`;
+        locText.style.fontSize = `${16 - progress * 1}px`;
       }
 
       if (vText) {
-        vText.style.fontSize = `${15 - progress * 1}px`;
+        vText.style.fontSize = `${16 - progress * 1}px`;
       }
 
       if (vThumb) {
@@ -97,11 +97,11 @@ export function UWHeader({
           className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1 group"
           onClick={onAreaClick}
         >
-          <MapPin className="h-[16px] w-[16px] text-[#FF6B00] shrink-0" />
+          <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[15px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight"
+              className="text-[16px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight"
             >
               {area || "Set location"}
             </span>
@@ -130,7 +130,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
-                className="text-[15px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
+                className="text-[16px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
               </span>
