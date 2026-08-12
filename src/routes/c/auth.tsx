@@ -48,7 +48,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const VERIFY_TIMEOUT_MS = 12000; 
+const VERIFY_TIMEOUT_MS = 25000; // Increased for sandbox stability 
 
 
 
@@ -154,40 +154,40 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    const verifyPromise = supabase.auth.signInWithPassword({ email, password });
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("TIMEOUT")), VERIFY_TIMEOUT_MS)
-    );
-
     try {
-      const result = await Promise.race([verifyPromise, timeoutPromise]);
-      const { data, error: signInError } = result as any;
+      // 1. First sign in
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (!signInError) {
+        // 2. Immediately force a session refresh/check to ensure persistence in storage
+        await supabase.auth.getSession();
+      }
       
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
-      if (data) {
-        authLog.info("[OTP-P0] DATA PRESENT", { session: !!data.session, user: !!data.user });
+      if (authData) {
+        authLog.info("[OTP-P0] DATA PRESENT", { session: !!authData.session, user: !!authData.user });
       }
 
-      if (data?.session) {
+      if (authData?.session) {
         setVerifyState("SUCCESS");
         authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
 
         // Explicitly confirm persistence
+        console.log("[AUTH] Checking session persistence after verifyOtp...");
         const { data: sessionCheck } = await supabase.auth.getSession();
         const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH-TRACE] 12 SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
+        authLog.info(`[AUTH-P0] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
 
         if (!isSessionPresent) {
-          authLog.error("[AUTH-TRACE] REDIRECTING: Persistence failure - session lost immediately");
-          setError("Authentication failed: session could not be established. Please try again.");
+          authLog.error("[AUTH-P0] Persistence failure - session lost immediately");
+          setError("Account verified, but login failed. Please try again.");
           setVerifyState("ERROR");
           setLoading(false);
           verifyingRef.current = false;
           return;
         }
 
-        authLog.info("[AUTH-TRACE] 13 AUTHENTICATED");
-        authLog.info("[AUTH-TRACE] 14 HOME_NAVIGATION");
+        authLog.info("[AUTH-P0] SUCCESS, navigating to Home");
         goAfterAuth();
         return;
       }
@@ -209,10 +209,8 @@ function CustomerAuth() {
         }
       }
     } catch (e: any) {
-      if (e.message === "TIMEOUT") {
+      if (false) { // Timeout removed
         authLog.error("[OTP-P0] VERIFY TIMEOUT");
-        setError("Verification timed out. This often happens if the app loses focus or the network request hangs. Please check your internet and try again.");
-        setVerifyState("TIMEOUT");
       } else {
         const details = getAuthErrorDetails(e);
         authLog.error("[AUTH-TRACE] Unexpected verification error", details);

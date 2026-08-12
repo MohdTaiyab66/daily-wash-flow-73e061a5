@@ -59,9 +59,9 @@ let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
 if (typeof window !== 'undefined') {
   _supabase = createSupabaseClient();
-  (window as any).__SUPABASE_CLIENT_ID = Math.random().toString(36).substring(7);
+  (window as any).__SUPABASE_CLIENT_ID = "CANONICAL_" + Math.random().toString(36).substring(7);
   (window as any).supabase = _supabase;
-  console.log(`[AUTH-P0] Supabase client initialized with ID: ${(window as any).__SUPABASE_CLIENT_ID}`);
+  console.log(`[AUTH-P0] Singleton client initialized: ${(window as any).__SUPABASE_CLIENT_ID}`);
 }
 
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {

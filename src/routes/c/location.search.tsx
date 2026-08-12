@@ -179,64 +179,69 @@ function LocationFlow() {
 
   const persistLocation = async (lat: number, lng: number, fallbackLabel?: string) => {
     const startTime = Date.now();
-    console.log("[LOCATION] reverse geocode start");
+    console.log("[LOCATION] Saving location coordinates:", lat, lng);
     
-    // We start reverse geocoding but don't strictly block coordinate processing
-    const locPromise = reverse({ data: { lat, lng } });
+    // Attempt reverse geocoding via server function
+    const locPromise = reverse({ data: { lat, lng } }).catch(e => {
+       console.error("[LOCATION] Reverse geocode failed:", e);
+       return null;
+    });
     
     const geo = { lat, lng, pincode: '', state: '', city: '' };
     
     try {
       const loc = await locPromise;
-      console.log(`[LOCATION] reverse geocode complete: ${Date.now() - startTime}ms`);
-      const areaName = loc.area || loc.city || fallbackLabel || "Your area";
-      geo.pincode = loc.pincode || '';
-      geo.state = loc.state || '';
-      geo.city = loc.city || '';
+      const areaName = loc?.area || loc?.city || fallbackLabel || "Your area";
+      geo.pincode = loc?.pincode || '';
+      geo.state = loc?.state || '';
+      geo.city = loc?.city || '';
       
       const locationData = {
         area: areaName,
-        fullAddress: loc.formatted_address,
+        fullAddress: loc?.formatted_address || "Custom location",
         geo
       };
 
       if (view === 'manual_entry') {
         setSelectedManualLocation(locationData);
       } else {
-        console.log("[LOCATION] serviceability check start");
         setLocatingStage('checking');
-        // Simulate/Perform serviceability check here if needed
-        console.log("[LOCATION] serviceability check complete");
         
         setLocatingStage('saving');
-        console.log("[LOCATION] location saved");
         setLocation(locationData);
         localStorage.setItem("uw_customer_area", areaName);
-        localStorage.setItem("uw_customer_full_address", loc.formatted_address);
+        localStorage.setItem("uw_customer_full_address", loc?.formatted_address || "");
         localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
         
-        const { data: u } = await supabase.auth.getUser();
-        const uid = u.user?.id;
+        // Use singleton client
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        
         if (uid) {
           const payload = {
             user_id: uid,
             label: "Home",
-            address_line: loc.address_line || loc.formatted_address,
-            area: loc.area,
-            pincode: loc.pincode,
+            address_line: loc?.address_line || loc?.formatted_address || "Custom location",
+            area: loc?.area || areaName,
+            pincode: loc?.pincode,
             latitude: lat,
             longitude: lng,
             is_default: true,
           };
-          const { data: existing } = await supabase.from("customer_addresses").select("id").eq("user_id", uid).eq("is_default", true).maybeSingle();
-          existing?.id
-            ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
-            : await supabase.from("customer_addresses").insert(payload);
+          
+          try {
+            const { data: existing } = await supabase.from("customer_addresses").select("id").eq("user_id", uid).eq("is_default", true).maybeSingle();
+            existing?.id
+              ? await supabase.from("customer_addresses").update(payload).eq("id", existing.id)
+              : await supabase.from("customer_addresses").insert(payload);
+          } catch (dbErr) {
+            console.error("[LOCATION] Database save failed:", dbErr);
+          }
         }
       }
       return areaName;
     } catch (err) {
-      console.error("[LOCATION] persist failed", err);
+      console.error("[LOCATION] Persist failed:", err);
       throw err;
     }
   };
@@ -320,8 +325,8 @@ function LocationFlow() {
       localStorage.setItem("uw_customer_geo", JSON.stringify(selectedManualLocation.geo));
       
       try {
-        const { data: u } = await supabase.auth.getUser();
-        const uid = u.user?.id;
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
         if (uid) {
           const { data: existing } = await supabase
             .from("customer_addresses")

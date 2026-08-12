@@ -80,10 +80,20 @@ function CustomerHome() {
     queryKey: ["customer-profile"],
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
+      // Get session from canonical client
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-      const { data, error } = await supabase.from("customer_profiles").select("*").eq("user_id", session.user.id).maybeSingle();
-      if (error) throw error;
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from("customer_profiles")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("[HOME] Profile query failed:", error);
+        return null; // Return null instead of throwing to keep page alive
+      }
       return data;
     }
   });
@@ -110,37 +120,24 @@ function CustomerHome() {
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
     queryFn: async (): Promise<Service[]> => {
-      try {
-        const result = await fetchWithTimeout(
-          (async () => {
-            const { data, error } = await supabase
-              .from("service_catalog")
-              .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
-              .eq("active", true)
-              .order("sort_order");
-            if (error) {
-              console.error("[HOME-DATA] Service catalog query error:", error);
-              throw error;
-            }
-            return (data ?? []) as Service[];
-          })(),
-          "SERVICES"
-        );
-        return result;
-      } catch (err: any) {
-        console.error("[HOME-DATA] Service catalog failed:", err);
-        // Fallback services if database fails
+      // Direct query using canonical client
+      const { data, error } = await supabase
+        .from("service_catalog")
+        .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
+        .eq("active", true)
+        .order("sort_order");
+
+      if (error) {
+        console.error("[HOME] Service catalog query error:", error);
+        // Fallback services so UI doesn't break
         return [
           { id: 'f-1', slug: 'one-time-wash', name: 'Interior & Exterior', description: 'Complete wash', price_hatchback: 499, price_sedan_suv: 599, service_type: 'one_time', sort_order: 1, duration_minutes: 60, banner_url: null },
-          { id: 'f-2', slug: 'one-time-wash-no-polish', name: 'Wash (No Body Polish)', description: 'Quick wash', price_hatchback: 399, price_sedan_suv: 499, service_type: 'one_time', sort_order: 2, duration_minutes: 45, banner_url: null },
-          { id: 'f-3', slug: 'deep-clean', name: 'Deep Clean (Full)', description: 'Detailed cleaning', price_hatchback: 1499, price_sedan_suv: 1699, service_type: 'one_time', sort_order: 3, duration_minutes: 180, banner_url: null },
-          { id: 'f-4', slug: 'deep-clean-interior', name: 'Interior Deep Clean', description: 'Interior detailing', price_hatchback: 899, price_sedan_suv: 999, service_type: 'one_time', sort_order: 4, duration_minutes: 120, banner_url: null },
-          { id: 'f-5', slug: 'body-polish', name: 'Body Polish', description: 'Exterior shine', price_hatchback: 799, price_sedan_suv: 899, service_type: 'one_time', sort_order: 5, duration_minutes: 90, banner_url: null },
-          { id: 'f-6', slug: 'dusting', name: 'Dusting', description: 'Quick dust', price_hatchback: 199, price_sedan_suv: 249, service_type: 'one_time', sort_order: 6, duration_minutes: 20, banner_url: null }
+          { id: 'f-3', slug: 'deep-clean', name: 'Deep Clean (Full)', description: 'Detailed cleaning', price_hatchback: 1499, price_sedan_suv: 1699, service_type: 'one_time', sort_order: 3, duration_minutes: 180, banner_url: null }
         ] as Service[];
       }
+      return (data ?? []) as Service[];
     },
-    retry: 1,
+    retry: 2,
     staleTime: 1000 * 60 * 10,
   });
 

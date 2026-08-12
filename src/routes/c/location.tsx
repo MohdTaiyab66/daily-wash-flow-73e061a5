@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { sessionManager } from "@/lib/customer-auth-session";
 
 // `/c/location` is a layout for `/c/location/search`. Its own path just
 // forwards to the search screen — but the layout MUST render <Outlet /> so
@@ -9,8 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/c/location")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.email?.endsWith("@customer.urbanwash.app")) {
+    // Rely on sessionManager to use the canonical client
+    const session = await sessionManager.getSession();
+    if (!sessionManager.isCustomer(session)) {
+      console.log("[LOCATION-GATE] Not a customer, redirecting to auth");
       throw redirect({ to: "/c/auth" });
     }
     // Only bounce the bare `/c/location` URL — never intercept children like

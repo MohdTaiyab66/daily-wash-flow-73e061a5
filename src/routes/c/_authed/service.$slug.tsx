@@ -199,18 +199,24 @@ function ServiceDetail() {
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
     queryFn: async () => {
-      // NOTE: We do NOT use supabase.auth.getUser() here as it can trigger 
-      // network requests that might fail or refresh the token unexpectedly 
-      // during navigation. We use the session from AuthProvider or a simple getSession.
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Use the canonical session
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (sessionError || !session?.user) {
-        console.warn("[SERVICE] PROFILE_SESSION_MISSING", sessionError);
+      if (!session?.user?.id) {
+        console.warn("[SERVICE] No user session found for profile query");
         return null;
       }
       
-      const { data, error } = await supabase.from("customer_profiles").select("*").eq("id", session.user.id).maybeSingle();
-      if (error) console.error("[SERVICE] PROFILE_DATA_ERROR", error);
+      const { data, error } = await supabase
+        .from("customer_profiles")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error("[SERVICE] Profile data fetch failed:", error);
+        return null;
+      }
       return data;
     },
     retry: 1

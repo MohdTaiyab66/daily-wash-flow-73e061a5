@@ -37,13 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Initial check
+    console.log("[AUTH-PROVIDER] Checking initial session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[AUTH-PROVIDER] Initial session loaded:", !!session);
       updateState(session);
     });
-
+ 
     // Subscribe
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[AUTH] STATE_CHANGE event=", event, "session_id=", session?.user?.id);
+      console.log("[AUTH-PROVIDER] STATE_CHANGE event=", event, "session_id=", session?.user?.id);
       updateState(session);
     });
 
