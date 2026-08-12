@@ -125,55 +125,56 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    authLog.info("[AUTH][OTP] phone = +91 " + phone.replace(/(\d{6})(\d{4})/, "******$2"));
-    authLog.info("[AUTH][OTP] otp length = " + code.length);
-    authLog.info("[AUTH][OTP] verify request started", { email });
+    authLog.info("[AUTH-P0] OTP VERIFY START", { email });
     
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      authLog.info("[AUTH][OTP] verify response received", { 
+      authLog.info("[AUTH-P0] OTP VERIFY RESPONSE", { 
         success: !!data.session, 
         hasError: !!signInError,
         userExists: !!data.user,
         sessionExists: !!data.session,
-        hasAccessToken: !!data.session?.access_token
       });
 
       if (data.session) {
+        authLog.info("[AUTH-P0] USER PRESENT", { userId: data.user?.id });
+        authLog.info("[AUTH-P0] SESSION PRESENT");
+
         // Explicitly confirm persistence
-        authLog.info("[AUTH][POST-OTP] getSession started");
+        authLog.info("[AUTH-P0] GET SESSION START");
         const { data: sessionCheck } = await supabase.auth.getSession();
         const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH][POST-OTP] session present = ${isSessionPresent}`);
+        authLog.info(`[AUTH-P0] GET SESSION RESULT = ${isSessionPresent ? 'PRESENT' : 'MISSING'}`);
 
         if (!isSessionPresent) {
-          authLog.error("[AUTH] Persistence failure - session lost immediately");
+          authLog.error("[AUTH-P0] Persistence failure - session lost immediately");
           setError("Authentication failed: session could not be established. Please try again.");
           setLoading(false);
           verifyingRef.current = false;
           return;
         }
 
-        authLog.info("Navigation started to Home");
+        authLog.info("[AUTH-P0] AUTH STATE CHANGE -> AUTHENTICATED");
+        authLog.info("[AUTH-P0] NAVIGATING HOME");
         goAfterAuth();
         return;
       }
       
       if (signInError) {
-        authLog.error("[AUTH][OTP] verify response received | success=false", signInError);
+        authLog.error("[AUTH-P0] OTP VERIFY ERROR", signInError);
         const msg = (signInError.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
-          authLog.info("[AUTH][OTP] user exists = false (moving to signup)");
+          authLog.info("[AUTH-P0] User not found, moving to signup step");
           setStep("name");
         } else {
           setError(parseAuthError(signInError));
         }
       }
     } catch (e) {
-      authLog.error("Unexpected verification error", e);
+      authLog.error("[AUTH-P0] Unexpected verification error", e);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
