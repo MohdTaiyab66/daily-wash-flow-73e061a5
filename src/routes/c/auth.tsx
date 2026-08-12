@@ -136,17 +136,6 @@ function CustomerAuth() {
       return;
     }
     
-    // Guard for demo mode
-    if (SHOW_DEMO_OTP && code !== "123456") {
-      authLog.error("[AUTH][OTP] verification failed at guard", { 
-        entered: code, 
-        expected: "123456",
-        reason: "Invalid OTP (demo mode requires 123456)" 
-      });
-      setError("That code doesn't look right. Please try again.");
-      setVerifyState("ERROR");
-      return;
-    }
 
     verifyingRef.current = true;
     setLoading(true);
