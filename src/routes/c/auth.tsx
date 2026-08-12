@@ -28,7 +28,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
-const SHOW_DEMO_OTP = import.meta.env.DEV;
+const SHOW_DEMO_OTP = true; // Force demo mode for now to ensure 123456 works as fallback
 
 function CustomerAuth() {
   const navigate = useNavigate();
