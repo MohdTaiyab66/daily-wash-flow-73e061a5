@@ -325,7 +325,7 @@ function CustomerAuth() {
       }
     } catch (e) {
       authLog.error("Unexpected signup error", e);
-      setError("Something went wrong. Please try again.");
+      setError(e);
     } finally {
       setLoading(false);
     }
