@@ -77,7 +77,7 @@ function CustomerAuth() {
       return; 
     }
     
-    authLog.info("[AUTH][OTP] verification started", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
+    authLog.info("[AUTH-P0] OTP VERIFY START", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -87,7 +87,7 @@ function CustomerAuth() {
   const resendOtp = () => {
     if (resendIn > 0) return;
     setError(null);
-    authLog.info("Resending OTP", { phone });
+    authLog.info("[AUTH-P0] OTP RESEND", { phone });
     setOtp("");
     setResendIn(RESEND_SECONDS);
     toast.success("OTP sent again");
