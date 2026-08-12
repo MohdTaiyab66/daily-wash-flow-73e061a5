@@ -23,8 +23,8 @@ export const Route = createFileRoute("/c/")({
  * A short floor keeps it from flashing on very fast devices.
  */
 const MIN_SPLASH_MS = 300;
-const AUTH_TIMEOUT_MS = 2000;
-const SPLASH_BUILD_ID = "1.0.37-network-diagnostic";
+const AUTH_TIMEOUT_MS = 2500;
+const SPLASH_BUILD_ID = "1.0.38-auth-session-fix";
 
 function CustomerSplash() {
   const navigate = useNavigate();

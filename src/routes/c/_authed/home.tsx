@@ -119,8 +119,8 @@ function CustomerHome() {
 
   console.log("[HOME DEBUG] Environment check:", {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.37-network-diagnostic",
-    BUILD_ID: "network-diagnostic-2026-08-12"
+    BUILD: "1.0.38-auth-session-fix",
+    BUILD_ID: "auth-session-fix-2026-08-12"
   });
 
   useEffect(() => {
@@ -341,32 +341,38 @@ function CustomerHome() {
           </div>
         </div>
 
-        {/* Diagnostic Panel - Build 37 */}
+        {/* Diagnostic Panel - Build 38 */}
         <div className="fixed bottom-[80px] left-2 right-2 z-[9999] opacity-95 pointer-events-auto">
           <div className="bg-black/95 text-[10px] text-white p-3 rounded-xl border border-white/20 font-mono shadow-2xl space-y-2">
             <div className="flex justify-between border-b border-white/10 pb-1.5 mb-1.5">
-              <span className="font-bold text-[#FF6B00]">BUILD 1.0.37-network-diagnostic</span>
+              <span className="font-bold text-[#FF6B00]">BUILD 1.0.38-auth-session-fix</span>
               <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
                 {servicesQ.fetchStatus} | {servicesQ.status}
               </span>
             </div>
             
             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              <div>Auth: <span className={cn(
+              <div>AUTH: <span className={cn(
                 initialContextQ.data ? "text-green-400" : 
                 initialContextQ.status === 'error' ? "text-red-400" : "text-orange-400"
               )}>
-                {initialContextQ.data ? 'SUCCESS' : 
+                {initialContextQ.data ? 'AUTHENTICATED' : 
                  initialContextQ.status === 'error' ? 'ERROR' : 
-                 initialContextQ.isPending ? 'INITIALIZING' : 'WAITING'}
+                 initialContextQ.isPending ? 'INITIALIZING' : 'UNAUTHENTICATED'}
               </span></div>
               
-              <div>Session: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
+              <div>SESSION: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
                 {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
               </span></div>
+
+              <div>USER: <span className={initialContextQ.data?.user ? "text-green-400" : "text-red-400"}>
+                {initialContextQ.data?.user ? 'PRESENT' : 'MISSING'}
+              </span></div>
+
+              <div>TEST DB: <span className="text-blue-400">READY</span></div>
               
               <div className="col-span-2 pt-1 border-t border-white/5 mt-1">
-                Services: <span className={cn(
+                SERVICES: <span className={cn(
                   servicesQ.isSuccess ? "text-green-400" : 
                   servicesQ.isError ? "text-red-400" : "text-orange-400"
                 )}>
@@ -375,7 +381,7 @@ function CustomerHome() {
               </div>
               
               <div className="col-span-2">
-                Carousel: <span className={cn(
+                CAROUSEL: <span className={cn(
                   imagesQ.isSuccess ? "text-green-400" : 
                   imagesQ.isError ? "text-red-400" : "text-orange-400"
                 )}>

@@ -29,7 +29,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = import.meta.env.DEV; 
-const AUTH_BUILD_ID = "1.0.36-debug";
+const AUTH_BUILD_ID = "1.0.38-auth-session-fix";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ function CustomerAuth() {
       return; 
     }
     
-    authLog.info("Requesting OTP", { phone });
+    authLog.info("[AUTH][OTP] verification started", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -123,42 +123,35 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    authLog.info("OTP verification request started", { email });
+    authLog.info("[AUTH][OTP] verify request started", { email });
     
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       
-      authLog.info("OTP verification response received", { 
+      authLog.info("[AUTH][OTP] verify response received", { 
         success: !!data.session, 
-        hasError: !!signInError 
+        hasError: !!signInError,
+        userExists: !!data.user,
+        sessionExists: !!data.session,
+        hasAccessToken: !!data.session?.access_token
       });
 
       if (data.session) {
-        authLog.info("Session received", {
-          userId: data.user?.id,
-          expires_at: data.session.expires_at,
-          hasAccessToken: !!data.session.access_token,
-          hasRefreshToken: !!data.session.refresh_token
-        });
-
-        // Test persistence immediately
+        // Explicitly confirm persistence
+        authLog.info("[AUTH][POST-OTP] getSession started");
         const { data: sessionCheck } = await supabase.auth.getSession();
-        authLog.info("Session persistence check", { 
-          persisted: !!sessionCheck.session,
-          match: sessionCheck.session?.user.id === data.user?.id
-        });
+        const isSessionPresent = !!sessionCheck.session;
+        authLog.info(`[AUTH][POST-OTP] session present = ${isSessionPresent}`);
 
-        // Check if customer profile exists
-        authLog.info("Customer lookup started", { userId: data.user?.id });
-        const { data: profile, error: profileError } = await supabase.from("customer_profiles").select("id").eq("user_id", data.user?.id).maybeSingle();
-        
-        if (profileError) {
-          authLog.error("Customer lookup failed", profileError);
-        } else {
-          authLog.info("Customer lookup completed", { found: !!profile });
+        if (!isSessionPresent) {
+          authLog.error("[AUTH] Persistence failure - session lost immediately");
+          setError("Authentication failed: session could not be established. Please try again.");
+          setLoading(false);
+          verifyingRef.current = false;
+          return;
         }
 
-        authLog.info("Navigation started");
+        authLog.info("Navigation started to Home");
         goAfterAuth();
         return;
       }
