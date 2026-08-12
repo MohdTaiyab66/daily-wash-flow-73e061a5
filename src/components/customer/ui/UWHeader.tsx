@@ -50,21 +50,17 @@ export function UWHeader({
       header.style.backgroundColor = `rgba(255, 255, 255, ${0.98 + progress * 0.02})`;
       header.style.backdropFilter = progress > 0.1 ? 'blur(16px)' : 'none';
       
-      // 6. Header divider: subtle separation (rgba(0,0,0,0.04))
       header.style.borderBottom = `1px solid rgba(0, 0, 0, ${0.04 + progress * 0.02})`;
-      
-      // 7. Header shadow: extremely subtle
       header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(0, 0, 0, ${progress * 0.02})` : 'none';
 
-      // 5. Header height: transitions smoothly (Target 70-80px total height)
       if (wrapper) {
-        const verticalPadding = 14 - (progress * 4);
+        const verticalPadding = 12 - (progress * 4);
         wrapper.style.paddingTop = `calc(${verticalPadding}px + env(safe-area-inset-top))`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
 
       if (locText) {
-        locText.style.fontSize = `${16 - progress * 1}px`;
+        locText.style.fontSize = `${15 - progress * 1}px`;
       }
 
       if (vText) {
@@ -101,11 +97,11 @@ export function UWHeader({
           className="flex items-center gap-1.5 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-1 group"
           onClick={onAreaClick}
         >
-          <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />
+          <MapPin className="h-[16px] w-[16px] text-[#FF6B00] shrink-0" />
           <div className="flex items-center gap-1 min-w-0">
             <span 
               ref={locationTextRef}
-              className="text-[16px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight"
+              className="text-[15px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight"
             >
               {area || "Set location"}
             </span>
@@ -117,7 +113,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[14px] h-[52px] pl-2 pr-3 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[50px] pl-2 pr-3 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 

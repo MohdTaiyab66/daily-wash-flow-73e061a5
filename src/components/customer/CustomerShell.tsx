@@ -17,14 +17,14 @@ export function CustomerShell({ children }: { children: ReactNode }) {
   // Compact Premium Height: 72px
   return (
     <div className={cn(
-      "min-h-screen bg-background pb-[calc(72px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-background pb-[calc(84px+24px+env(safe-area-inset-bottom))]",
       isCheckout && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isCheckout && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.03)] bg-white pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto flex max-w-md items-center justify-between h-[72px] px-2">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto flex max-w-md items-center justify-between h-[82px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/c/home" && pathname.startsWith(n.to));
@@ -37,10 +37,10 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                     aria-current="page"
                     className="flex-1 flex flex-col items-center justify-center h-full transition-all duration-300"
                   >
-                    <div className="flex items-center justify-center w-[84px] h-[45px] rounded-[22px] bg-[#FFF2E8] transition-all duration-300">
+                    <div className="flex items-center justify-center w-[84px] h-[48px] rounded-[24px] bg-[#FFF8F4] transition-all duration-300">
                       <div className="flex flex-col items-center justify-center">
-                        <Icon className="h-[21px] w-[21px] text-[#FF6B00]" strokeWidth={2} />
-                        <span className="mt-0.5 text-[13px] font-medium text-[#FF6B00] leading-none">
+                        <Icon className="h-[22px] w-[22px] text-[#FF6B00]" strokeWidth={2} />
+                        <span className="mt-0.5 text-[13px] font-semibold text-[#FF6B00] leading-none">
                           {n.label}
                         </span>
                       </div>
@@ -55,8 +55,8 @@ export function CustomerShell({ children }: { children: ReactNode }) {
                   to={n.to}
                   className="flex-1 flex flex-col items-center justify-center transition-all group h-full"
                 >
-                  <Icon className="h-[21px] w-[21px] text-[#6B6B6B] group-active:scale-95 transition-transform" strokeWidth={1.75} />
-                  <span className="mt-1 text-[13px] font-medium text-[#666666] leading-none">
+                  <Icon className="h-[22px] w-[22px] text-[#8A8A8A] group-active:scale-95 transition-transform" strokeWidth={1.75} />
+                  <span className="mt-1 text-[13px] font-medium text-[#8A8A8A] leading-none">
                     {n.label}
                   </span>
                 </Link>
