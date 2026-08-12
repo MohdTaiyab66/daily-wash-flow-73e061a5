@@ -223,7 +223,7 @@ function MyPlanPage() {
         }}
       />
 
-      <div className="px-5 pt-[10px]">
+      <div className="px-5 pt-5">
         {hasVehicles && (
           <>
             {bookingsQ.isLoading ? (
