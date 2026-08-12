@@ -90,7 +90,7 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
 /**
  * Lightweight "route preview" for the incoming-offer sheet: how many cars
  * are on today's route right now and today's expected earnings. The card
- * uses this to render `24 → 25 cars` and `₹408 → ₹425` deltas so the
+ * uses this to render `25 → 26 cars` and `₹425 → ₹442` deltas so the
  * partner sees the impact of accepting the offer at a glance.
  */
 export const getPartnerRoutePreview = createServerFn({ method: "GET" })

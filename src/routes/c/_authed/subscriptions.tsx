@@ -150,7 +150,7 @@ function MyPlanPage() {
   ) ?? subs[0];
 
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  const totalDays = 24;
+  const totalDays = 25;
   const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
   const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
@@ -301,8 +301,8 @@ function MyPlanPage() {
 
                       <div className="mt-5">
                         <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">
-                          <span>Monthly Usage</span>
-                          <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} service days</span>
+                          <span>SERVICE DAYS</span>
+                          <span className="text-[#1A1A1A] font-semibold text-[14px]">{elapsed} / {totalDays} used</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
                           <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / totalDays) * 100}%` }} />
@@ -356,17 +356,17 @@ function MyPlanPage() {
                       <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5 shadow-sm">
                         <div className="space-y-2">
                           <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#8A8A8A]">Exterior washes</span>
-                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 24</span>
+                            <span className="text-[#8A8A8A]">Service days</span>
+                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 24) * 100}%` }} />
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#1A1A1A]">Interior wash</span>
-                            <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
+                             <span className="text-[#8A8A8A]">Interior wash</span>
+                             <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1 used</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
                             <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
