@@ -56,7 +56,7 @@ export function UWFeaturedCarousel({ items, onItemClick }: UWFeaturedCarouselPro
     <div className="relative w-full">
       <div 
         ref={scrollRef}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full rounded-[18px] h-[160px]"
+        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full rounded-[18px] h-[150px]"
       >
         {items.map((item, idx) => (
           <div 

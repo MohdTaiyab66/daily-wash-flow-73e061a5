@@ -153,7 +153,7 @@ function CustomerHome() {
           onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}
         />
 
-        <div className="pt-[52px]">
+        <div className="pt-[48px]">
           <div className="px-4">
             <div className="mt-[10px]">
               <UWFeaturedCarousel 
@@ -180,12 +180,12 @@ function CustomerHome() {
 
             <Section 
               title={
-                <h2 className="text-[26px] font-bold text-[#171717] tracking-tight leading-tight">Our Services</h2>
+                <h2 className="text-[25px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>
               }
               className="mt-[24px] mb-0"
             >
               <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px] w-screen max-w-full">
-                {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
+                {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
