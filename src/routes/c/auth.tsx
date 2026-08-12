@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
-import { authLog, parseAuthError } from "@/lib/auth-debug";
+import { authLog, parseAuthError, getAuthErrorDetails } from "@/lib/auth-debug";
 import logo from "@/assets/logo.jpeg";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,10 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = true; 
-const AUTH_BUILD_ID = "1.0.41-routing-fix";
+const AUTH_BUILD_ID = "1.0.42-otp-diagnostic";
+const VERIFY_TIMEOUT_MS = 10000;
+
+type VerifyState = "IDLE" | "VERIFYING" | "SUCCESS" | "ERROR" | "TIMEOUT";
 
 function CustomerAuth() {
   const navigate = useNavigate();
@@ -49,6 +52,7 @@ function CustomerAuth() {
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [verifyState, setVerifyState] = useState<VerifyState>("IDLE");
   const verifyingRef = useRef(false);
 
   useEffect(() => {
@@ -73,12 +77,13 @@ function CustomerAuth() {
 
   const sendOtp = () => {
     setError(null);
+    setVerifyState("IDLE");
     if (!/^\d{10}$/.test(normalizePhone(phone))) { 
       setError("Enter a valid 10-digit mobile number");
       return; 
     }
     
-    authLog.info("[AUTH-P0] OTP VERIFY START", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
+    authLog.info("[AUTH-P0] OTP SEND START", { phone: phone.replace(/(\d{2})(\d{4})(\d{4})/, "+91 $1****$3") });
     setStep("otp");
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -88,6 +93,7 @@ function CustomerAuth() {
   const resendOtp = () => {
     if (resendIn > 0) return;
     setError(null);
+    setVerifyState("IDLE");
     authLog.info("[AUTH-P0] OTP RESEND", { phone });
     setOtp("");
     setResendIn(RESEND_SECONDS);
@@ -100,16 +106,16 @@ function CustomerAuth() {
       return;
     }
     setError(null);
-    authLog.info("Verify button pressed", { codeLength: code.length });
+    setVerifyState("VERIFYING");
+    authLog.info("[OTP-P0] VERIFY START", { codeLength: code.length, phone: phone.slice(-4) });
     
     if (code.length !== OTP_LENGTH) {
       setError(`Enter the ${OTP_LENGTH}-digit code`);
+      setVerifyState("ERROR");
       return;
     }
     
-    // In current project, 123456 is the ONLY accepted OTP in the frontend guard for demo mode.
-    // If we are in production, the backend handles real OTPs and this guard might be bypassed or updated.
-    // For now, we enforce 123456 as the demo standard.
+    // Guard for demo mode
     if (SHOW_DEMO_OTP && code !== "123456") {
       authLog.error("[AUTH][OTP] verification failed at guard", { 
         entered: code, 
@@ -117,6 +123,7 @@ function CustomerAuth() {
         reason: "Invalid OTP (demo mode requires 123456)" 
       });
       setError("That code doesn't look right. Please try again.");
+      setVerifyState("ERROR");
       return;
     }
 
@@ -127,12 +134,21 @@ function CustomerAuth() {
     const email = customerEmail(phone);
     const password = customerPassword(phone);
     
-    try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      
-      authLog.info(`[AUTH-TRACE] 10 OTP_VERIFY_RESULT: ${data.session ? 'SUCCESS' : 'FAILURE'}`);
+    const verifyPromise = supabase.auth.signInWithPassword({ email, password });
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("TIMEOUT")), VERIFY_TIMEOUT_MS)
+    );
 
-      if (data.session) {
+    try {
+      const { data, error: signInError } = await Promise.race([verifyPromise, timeoutPromise]) as any;
+      
+      authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
+      if (data) {
+        authLog.info("[OTP-P0] DATA PRESENT", { session: !!data.session, user: !!data.user });
+      }
+
+      if (data?.session) {
+        setVerifyState("SUCCESS");
         authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
 
         // Explicitly confirm persistence
@@ -143,6 +159,7 @@ function CustomerAuth() {
         if (!isSessionPresent) {
           authLog.error("[AUTH-TRACE] REDIRECTING: Persistence failure - session lost immediately");
           setError("Authentication failed: session could not be established. Please try again.");
+          setVerifyState("ERROR");
           setLoading(false);
           verifyingRef.current = false;
           return;
@@ -155,25 +172,38 @@ function CustomerAuth() {
       }
       
       if (signInError) {
-        authLog.error("[AUTH-TRACE] 10 OTP_VERIFY_RESULT: ERROR", signInError);
-        const msg = (signInError.message ?? "").toLowerCase();
+        const details = getAuthErrorDetails(signInError);
+        authLog.error("[OTP-P0] VERIFY ERROR", details);
+        
+        const msg = (details.message ?? "").toLowerCase();
         const isNewUser = msg.includes("invalid login credentials") || msg.includes("invalid_credentials") || msg.includes("user not found");
           
         if (isNewUser) {
           authLog.info("[AUTH-TRACE] User not found, moving to signup step");
           setStep("name");
+          setVerifyState("IDLE");
         } else {
           setError(parseAuthError(signInError));
+          setVerifyState("ERROR");
         }
       }
-    } catch (e) {
-      authLog.error("[AUTH-TRACE] Unexpected verification error", e);
-      setError("Something went wrong. Please try again.");
+    } catch (e: any) {
+      if (e.message === "TIMEOUT") {
+        authLog.error("[OTP-P0] VERIFY TIMEOUT");
+        setError("Verification timed out. Please check your internet connection and try again.");
+        setVerifyState("TIMEOUT");
+      } else {
+        const details = getAuthErrorDetails(e);
+        authLog.error("[AUTH-TRACE] Unexpected verification error", details);
+        setError(`Something went wrong: ${details.message}`);
+        setVerifyState("ERROR");
+      }
     } finally {
       setLoading(false);
       verifyingRef.current = false;
     }
   };
+
 
   const signUp = async () => {
     if (loading) return;
@@ -288,14 +318,20 @@ function CustomerAuth() {
 
         {error && (
           <div className="mt-6 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2.5 rounded-2xl bg-destructive/5 px-4 py-3.5 border border-destructive/10">
-              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+            <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 px-4 py-3.5 border border-destructive/10">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-[13px] font-bold text-destructive uppercase tracking-widest">
+                  Verification Failed
+                </p>
+              </div>
               <p className="text-[13px] font-semibold text-destructive/90 leading-tight">
                 {error}
               </p>
             </div>
           </div>
         )}
+
 
         {step === "phone" && (
           <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -386,10 +422,16 @@ function CustomerAuth() {
                   DEMO CODE: <span className="font-mono text-primary">123456</span>
                 </p>
               )}
-              <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
-                AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
-              </p>
+              <div className="flex flex-col items-center gap-0.5 opacity-30">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  AUTH BUILD: {AUTH_BUILD_ID} | ROUTE: /c/auth
+                </p>
+                <p className="text-[9px] font-mono text-muted-foreground uppercase">
+                  STATE: {verifyState}
+                </p>
+              </div>
             </div>
+
 
             <Button
               size="lg"
