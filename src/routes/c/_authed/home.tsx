@@ -133,7 +133,7 @@ function CustomerHome() {
     },
   });
 
-  const galleryQ = useServiceGallery({ staleTime: 1000 * 60 * 60 });
+  const galleryQ = useServiceGallery();
   const resolvedServiceImage = (slug: string) => {
     // Pass the entire gallery data to getServiceImage which filters by slug
     return getServiceImage(slug, galleryQ.data || []);
