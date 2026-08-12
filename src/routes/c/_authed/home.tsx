@@ -7,6 +7,8 @@ import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functi
 import { supabase } from "@/integrations/supabase/client";
 import { useAreaAvailability } from "@/lib/area-availability";
 import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { usePlanInclusions } from "@/components/customer/PlanInclusionsCard";
+
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
@@ -184,7 +186,7 @@ function CustomerHome() {
               }
               className="mt-[24px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[14px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-4 w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (
                   <button
                     key={cat}
@@ -201,13 +203,13 @@ function CustomerHome() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-x-[11px] gap-y-3.5 mt-[18px]">
+              <div className="grid grid-cols-3 gap-x-[11px] gap-y-4 mt-[18px]">
                 {servicesQ.isLoading ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
                     key={s.id}
-                    name={s.name}
+                    name={s.name.replace("Butting Polish", "Buffing Polish").replace("Root Cleaning", "Roof Cleaning")}
                     price={priceFor(s)}
                     image={resolvedServiceImage(s.slug).url || undefined}
                     slug={s.slug}
@@ -216,6 +218,7 @@ function CustomerHome() {
                     onOpen={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                     onAdd={() => navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } })}
                   />
+
                 ))}
               </div>
 
