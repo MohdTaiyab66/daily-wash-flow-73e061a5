@@ -242,16 +242,15 @@ function CustomerHome() {
 
   useEffect(() => {
     if (servicesQ.data) {
-      console.log(`[SERVICE-DATA] processing lifecycle:
-        - raw: ${servicesQ.data.length}
-        - oneTime: ${oneTime.length}
-        - selectedCategory: ${selectedCategory}
-        - filtered: ${filteredServices.length}
-        - loading: ${servicesQ.isLoading}
-        - error: ${servicesQ.isError}
+      console.log(`[SERVICE-CATALOG] TRANSFORMATION:
+        - RAW ROWS = ${servicesQ.data.length}
+        - AFTER NORMALIZATION = ${oneTime.length}
+        - CATEGORY = ${selectedCategory}
+        - FINAL RENDER LIST = ${filteredServices.length}
       `);
     }
-  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length, servicesQ.isLoading, servicesQ.isError]);
+  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length]);
+
 
   const galleryQ = useServiceGallery();
   
