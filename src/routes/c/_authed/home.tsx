@@ -151,7 +151,8 @@ function CustomerHome() {
         .from("service_catalog")
         .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
         .eq("active", true)
-        .order("sort_order");
+        .order("sort_order", { ascending: true });
+
 
       if (error) {
         console.error("[SERVICE-DATA] query error:", error);
