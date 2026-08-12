@@ -177,7 +177,9 @@ function CustomerHome() {
 
   const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
   const services = servicesQ.data ?? [];
-  const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
+  
+  // FIX: Include all one-time services regardless of PLAN_INCLUDED_SERVICE_SLUGS for the catalog
+  const oneTime = services.filter((s) => s.service_type !== "subscription");
 
   const filteredServices = oneTime.filter((s) => {
     let matches = true;
@@ -290,15 +292,14 @@ function CustomerHome() {
               </div>
 
               <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
-                {servicesQ.isLoading ? (
+                {servicesQ.isLoading && services.length === 0 ? (
                    [1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]" />)
-                ) : servicesQ.isError && servicesQ.data?.length === 0 ? (
+                ) : servicesQ.isError && services.length === 0 ? (
                   <div className="col-span-3 py-8 text-center bg-[#F5F5F5] rounded-[16px]">
                     <p className="text-[#555] text-sm mb-3">Unable to load services</p>
                     <button onClick={() => servicesQ.refetch()} className="px-4 py-1.5 bg-[#FF6B00] text-white text-xs font-semibold rounded-full">Try Again</button>
                   </div>
-
-                ) : filteredServices.length === 0 ? (
+                ) : services.length > 0 && filteredServices.length === 0 ? (
                   <div className="col-span-3 py-8 text-center"><p className="text-[#888] text-sm">No services found in this category.</p></div>
                 ) : filteredServices.map((s) => (
                   <UWServiceCard
