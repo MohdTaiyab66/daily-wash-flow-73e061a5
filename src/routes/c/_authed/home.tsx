@@ -69,6 +69,7 @@ function CustomerHome() {
 
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
+    staleTime: 1000 * 60 * 5, // 5 minutes
     queryFn: async (): Promise<Vehicle[]> => {
       const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
       if (error) throw error;
@@ -132,7 +133,7 @@ function CustomerHome() {
     },
   });
 
-  const galleryQ = useServiceGallery();
+  const galleryQ = useServiceGallery({ staleTime: 1000 * 60 * 60 });
   const resolvedServiceImage = (slug: string) => {
     // Pass the entire gallery data to getServiceImage which filters by slug
     return getServiceImage(slug, galleryQ.data || []);
