@@ -54,9 +54,9 @@ function getDisplayError(err: any): string {
   if (typeof err === "string") return err;
   
   const d = {
-    message: err.message || "Unknown error",
-    code: err.code || err.status || "no_code",
-    hint: err.hint || ""
+    message: String(err.message || "Unknown error"),
+    code: String(err.code || err.status || "no_code"),
+    hint: String(err.hint || "")
   };
   
   return `${d.message}${d.code !== 'no_code' ? ` [${d.code}]` : ''}${d.hint ? ` - ${d.hint}` : ''}`;
