@@ -277,19 +277,21 @@ function MyPlanPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <span className="flex h-5 items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black">
-                              Daily Shine
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">
+                              Premium Service
                             </span>
-                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#2E7D32]">
+                            <div className="flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-sm">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[18px] font-black text-[#1A1A1A] leading-tight">
+                          <h2 className="text-[20px] font-black text-[#1A1A1A] leading-tight tracking-tight">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
-                          <div className="mt-1.5 text-[15px] font-bold text-[#1A1A1A]">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
-                            <span className="text-[13px] text-[#8A8A8A] font-medium ml-2">· {daysLeft} days left</span>
+                          <div className="mt-2 text-[16px] font-black text-[#1A1A1A] flex items-center gap-2">
+                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}
+                            <span className="h-1 w-1 rounded-full bg-black/10" />
+                            <span className="text-[13px] text-black/20 uppercase tracking-widest">{daysLeft} days remaining</span>
                           </div>
                         </div>
                       </div>
