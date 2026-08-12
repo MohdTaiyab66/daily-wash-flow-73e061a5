@@ -199,9 +199,14 @@ export function ServicePhotoViewer({
                    )}
                 </div>
 
-                {currentPhoto.partner_name && (
-                  <div className="text-[13px] font-bold text-white/40">
-                    Serviced by {currentPhoto.partner_name}
+                {(currentPhoto.partner_name || (currentPhoto as any).vehicle_label) && (
+                  <div className="text-[13px] font-bold text-white/40 space-y-1">
+                    {(currentPhoto as any).vehicle_label && (
+                      <p>{(currentPhoto as any).vehicle_label} · {(currentPhoto as any).vehicle_registration}</p>
+                    )}
+                    {currentPhoto.partner_name && (
+                      <p>Serviced by {currentPhoto.partner_name}</p>
+                    )}
                   </div>
                 )}
 
