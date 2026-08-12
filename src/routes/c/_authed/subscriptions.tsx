@@ -355,8 +355,6 @@ function MyPlanPage() {
 
                         {/* RECENT SERVICE */}
                         <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
-
-                        {/* Remove redundant detailed usage section as it is now in the main plan card */}
                       </div>
                     )}
                   </>
@@ -366,32 +364,7 @@ function MyPlanPage() {
           </>
         )}
       </div>
-    </div>
-  );
-}
 
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                             <span className="text-[#8A8A8A]">Interior wash</span>
-                             <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1 used</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
 
       <CancelPlanDialog
         open={cancelDialogOpen}
