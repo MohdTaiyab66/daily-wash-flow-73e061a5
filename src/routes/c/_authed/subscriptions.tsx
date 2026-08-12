@@ -339,25 +339,37 @@ function MyPlanPage() {
 
                     {/* PAUSE / CANCEL */}
                     <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[15px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[15px] font-medium text-[#8A8A8A]">Cancel plan</button>
+                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
+                    {/* RECENT SERVICE */}
+                    <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+
                     {/* DETAILED USAGE */}
-                    <div className="space-y-4">
-                      <h3 className="text-[15px] font-semibold tracking-tight text-[#8A8A8A] px-1">Detailed Usage</h3>
-                      <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-6 space-y-6">
-                        <div className="space-y-2.5">
-                          <div className="flex justify-between text-[15px] font-medium">
+                    <div className="space-y-3">
+                      <h3 className="text-[16px] font-semibold tracking-tight text-[#8A8A8A] px-1">Detailed Usage</h3>
+                      <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[14px] font-medium">
                             <span className="text-[#1A1A1A]">Exterior washes</span>
                             <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
                             <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
                           </div>
                         </div>
-                        <div className="space-y-2.5">
-                          <div className="flex justify-between text-[15px] font-medium">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[14px] font-medium">
+                            <span className="text-[#1A1A1A]">Interior wash</span>
+                            <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                             <span className="text-[#1A1A1A]">Interior wash</span>
                             <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
                           </div>
