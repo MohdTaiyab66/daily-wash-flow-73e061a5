@@ -344,7 +344,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
       {label && (
         <div className="absolute inset-0 bg-black/5" />
       )}
-      {(stage === 'before' || stage === 'after') && (
+      {label && (
         <div className="absolute top-1.5 left-1.5 rounded-sm bg-black/60 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white backdrop-blur-[2px]">
           {label}
         </div>
