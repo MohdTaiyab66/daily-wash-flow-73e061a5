@@ -134,7 +134,7 @@ export function RecentServiceFeed({
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
         <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
-          {showAll ? "Full History" : "Recent Service"}
+          {showAll ? "Full History" : "RECENT SERVICE"}
         </h3>
         <button
           type="button"
@@ -147,9 +147,10 @@ export function RecentServiceFeed({
       <div className="mt-3 space-y-4">
         {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
-          <p className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center text-[13px] font-medium text-[#8A8A8A]">
-            No service records found.
-          </p>
+          <div className="rounded-[18px] border border-dashed border-[#EEEEEE] p-8 text-center space-y-2 bg-white">
+            <p className="text-[15px] font-semibold text-[#1A1A1A]">No completed services yet</p>
+            <p className="text-[13px] font-normal text-[#8A8A8A] max-w-[240px] mx-auto">Your service photos and history will appear here after your first completed service.</p>
+          </div>
         )}
         {list.map((s) => <ServiceCard key={s.service_id} service={s} onSubmitted={invalidateAll} />)}
       </div>
@@ -232,23 +233,19 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">
-              {status.label}
+            <span className="text-[17px] font-semibold text-[#1A1A1A] leading-tight">
+              {service.service_name ?? "Daily Shine"} · <span className={cn(
+                "text-[14px] font-medium",
+                status.tone === "success" ? "text-[#2E7D32]" : 
+                status.tone === "danger" ? "text-[#E53935]" :
+                status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
+              )}>{status.label} {status.tone === "success" && "✓"}</span>
             </span>
-            <div className={`h-2 w-2 rounded-full ${
-              status.tone === "success" ? "bg-[#2E7D32]" : 
-              status.tone === "danger" ? "bg-[#E53935]" :
-              status.tone === "warning" ? "bg-[#FF6B00]" : "bg-[#FF6B00]"
-            }`} />
           </div>
           
-          <p className="mt-1 text-[15px] font-semibold text-[#1A1A1A]">
-            {service.service_name ?? "Daily Shine"}
-          </p>
-
-          <p className="mt-0.5 text-[14px] font-normal text-[#8A8A8A]">
+          <p className="mt-1.5 text-[14px] font-normal text-[#8A8A8A]">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
-            {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
           </p>
 
@@ -306,7 +303,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         <div className="flex items-center gap-1.5">
           <Clock3 className="h-3.5 w-3.5 text-[#8A8A8A]" />
           <span className="text-[12px] font-medium text-[#8A8A8A]">
-            {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `${minutesLeft}m to report issue` : "Window closed"}
+            {isMissed ? "Plan extended" : isPending ? "Scheduled" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? `Report an issue · ${minutesLeft} min left` : "Issue reporting closed"}
           </span>
         </div>
         
@@ -317,14 +314,14 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
                 onClick={() => setViewerOpen(true)}
                 className="text-[13px] font-semibold text-[#FF6B00]"
               >
-                Report Issue
+                Report an issue
               </button>
             )}
             <button 
               onClick={() => openViewer(0)}
-              className="text-[13px] font-semibold text-[#1A1A1A]"
+              className="text-[13.5px] font-semibold text-[#FF6B00]"
             >
-              View Photos
+              View all photos →
             </button>
           </div>
         )}
@@ -427,7 +424,7 @@ function PhotoStrip({ photos, onPhotoClick }: { photos: Photo[]; onPhotoClick: (
             path={photos[3].storage_path} 
             stage={photos[3].stage} 
           />
-          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 text-[18px] font-semibold text-white">
+          <div className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/50 text-[18px] font-semibold text-white backdrop-blur-[1px]">
             +{photos.length - 3}
           </div>
         </div>
@@ -447,7 +444,7 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE";
+  const label = stage === "before" ? "BEFORE" : stage === "after" ? "AFTER" : "SERVICE PHOTO";
 
   return (
     <div 

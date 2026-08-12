@@ -226,8 +226,8 @@ function MyPlanPage() {
       <div className="px-5 pt-[68px]">
         {selectedVehicle && (
           <div className="mb-5 mt-2">
-             <h2 className="text-[21px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-             <p className="text-[13px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
+             <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
+             <p className="text-[13.5px] text-[#8A8A8A] font-normal mt-0.5">{selectedVehicle.registration_number}</p>
           </div>
 
         )}
@@ -286,7 +286,7 @@ function MyPlanPage() {
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[21px] font-semibold text-[#1A1A1A] leading-tight">
+                          <h2 className="text-[20px] font-semibold text-[#1A1A1A] leading-[1.3]">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
                           <div className="mt-1 text-[16px] font-semibold text-[#1A1A1A]">
@@ -327,20 +327,20 @@ function MyPlanPage() {
 
                     {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl bg-[#181818] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Book Wash</span>
-                        <span className="text-[11px] font-medium uppercase tracking-widest opacity-60 mt-0.5">Included</span>
+                      <button onClick={() => setBookOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl bg-[#222222] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[16.5px] font-semibold">Book Wash</span>
+                        <span className="text-[11.5px] font-medium uppercase tracking-widest opacity-70 mt-0.5">Included</span>
                       </button>
                       <button onClick={() => setBuilderOpen(true)} className="h-[76px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[16px] font-semibold">Modify</span>
-                        <span className="text-[11px] font-medium uppercase tracking-widest text-[#8A8A8A] mt-0.5">Adjust Plan</span>
+                        <span className="text-[16.5px] font-semibold">Modify</span>
+                        <span className="text-[11.5px] font-medium uppercase tracking-widest text-[#8A8A8A] mt-0.5">Adjust Plan</span>
                       </button>
                     </div>
 
                     {/* PAUSE / CANCEL */}
                     <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
+                      <button className="text-[13.5px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[13.5px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
                     {/* RECENT SERVICE */}
@@ -348,11 +348,11 @@ function MyPlanPage() {
 
                     {/* DETAILED USAGE */}
                     <div className="space-y-3">
-                      <h3 className="text-[16px] font-semibold tracking-tight text-[#8A8A8A] px-1">Detailed Usage</h3>
+                      <h3 className="text-[17px] font-semibold tracking-tight text-[#1A1A1A] px-1">Plan Usage</h3>
                       <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 space-y-5">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                            <span className="text-[#1A1A1A]">Exterior washes</span>
+                          <div className="flex justify-between text-[14.5px] font-medium">
+                            <span className="text-[#555555]">Exterior washes</span>
                             <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">

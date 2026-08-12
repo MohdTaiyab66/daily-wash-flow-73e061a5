@@ -77,12 +77,12 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
               ))}
               <div className="flex items-center gap-2 mt-2">
                  {data.length > 3 && (
-                  <span className="text-[14px] font-semibold text-[#FF6B00]">
-                    +{data.length - 3} more 
+                  <span className="text-[14px] font-normal text-[#8A8A8A]">
+                    +{data.length - 3} more benefits <span className="mx-1">·</span>
                   </span>
                 )}
                 <span className="text-[14px] font-semibold text-[#FF6B00] flex items-center gap-0.5">
-                  View all <ChevronDown className="h-3.5 w-3.5" />
+                  View all →
                 </span>
               </div>
             </div>
