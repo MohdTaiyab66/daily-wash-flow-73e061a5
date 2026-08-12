@@ -49,17 +49,17 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
   });
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white shadow-sm transition-all duration-300">
-      <div className="px-5 py-5">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A] mb-4">WHAT'S INCLUDED</h3>
+    <div className="overflow-hidden rounded-[20px] border border-black/5 bg-white shadow-sm transition-all duration-300">
+      <div className="px-6 py-6">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20 mb-5">Plan Inclusions</h3>
         
-        <div className="space-y-3">
+        <div className="space-y-4">
           {(open ? processedData : processedData.slice(0, 3)).map((item) => (
-            <div key={item.id} className="flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-300">
-              <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
-                <Check className="h-2.5 w-2.5" />
+            <div key={item.id} className="flex items-start gap-3.5 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#FF6B00] text-white">
+                <Check className="h-3 w-3" />
               </div>
-              <span className="text-[14px] font-bold text-[#1A1A1A] leading-tight">{item.title}</span>
+              <span className="text-[14px] font-black text-[#1A1A1A] leading-tight">{item.title}</span>
             </div>
           ))}
         </div>
@@ -67,12 +67,12 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
         {processedData.length > 3 && (
           <button
             onClick={() => setOpen(!open)}
-            className="mt-5 flex w-full items-center justify-center gap-2 border-t border-[#F5F5F5] pt-4 text-[13px] font-bold text-[#FF6B00] active:opacity-60 transition-all"
+            className="mt-6 flex w-full items-center justify-center gap-2 border-t border-black/5 pt-5 text-[12px] font-black uppercase tracking-[0.05em] text-[#FF6B00] active:scale-95 transition-all"
           >
             {open ? (
-              <>Show less ↑</>
+              <>Show less</>
             ) : (
-              <>+{processedData.length - 3} more benefits · View all →</>
+              <>+{processedData.length - 3} More Benefits · View Details</>
             )}
           </button>
         )}
