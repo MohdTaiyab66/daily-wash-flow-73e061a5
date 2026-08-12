@@ -104,9 +104,9 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
                   <Icon className="h-3 w-3" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[14px] font-semibold text-[#1A1A1A] leading-snug">{inc.title}</p>
+                  <p className="text-[15px] font-semibold text-[#1A1A1A] leading-snug">{inc.title}</p>
                   {inc.description && (
-                    <p className="mt-0.5 text-[12.5px] text-[#8A8A8A] font-medium leading-normal">{inc.description}</p>
+                    <p className="mt-0.5 text-[14px] text-[#8A8A8A] font-medium leading-normal">{inc.description}</p>
                   )}
                 </div>
               </li>

@@ -65,12 +65,13 @@ export function UWHeader({
 
 
       if (locText) {
-        locText.style.fontSize = `${17 - progress * 1}px`;
+        locText.style.fontSize = `${17.5 - progress * 0.5}px`;
+        locText.style.fontWeight = '600';
       }
 
-
       if (vText) {
-        vText.style.fontSize = `${17 - progress * 1}px`;
+        vText.style.fontSize = `${17.5 - progress * 0.5}px`;
+        vText.style.fontWeight = '600';
       }
 
 
@@ -114,7 +115,6 @@ export function UWHeader({
               ref={locationTextRef}
               className="text-[17px] font-semibold text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis leading-tight tracking-tight max-w-[140px]"
             >
-
               {area || "Set location"}
             </span>
             {!hideLocationIcon && <ChevronDown className="h-3.5 w-3.5 text-[#8A8A8A] shrink-0 transition-colors" />}
