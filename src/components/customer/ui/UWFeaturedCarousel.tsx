@@ -16,9 +16,11 @@ interface UWFeaturedCarouselProps {
   items: CarouselItem[];
   onItemClick?: (item: CarouselItem) => void;
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
-export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeaturedCarouselProps) {
+export function UWFeaturedCarousel({ items, onItemClick, isLoading, isError, onRetry }: UWFeaturedCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +60,16 @@ export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeatured
     <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px] bg-neutral-100/50 isolate shadow-sm border border-black/[0.03]" style={{ minHeight: '140px' }}>
       {isLoading ? (
         <div className="w-full h-full animate-pulse bg-neutral-100/80 rounded-[16px]" />
+      ) : isError ? (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-50/50 rounded-[16px] border border-dashed border-neutral-200">
+          <p className="text-xs text-neutral-400 mb-2">Carousel unavailable</p>
+          <button 
+            onClick={onRetry}
+            className="text-[10px] font-bold text-[#FF6B00] uppercase tracking-wider"
+          >
+            Retry
+          </button>
+        </div>
       ) : (
 
         <>
