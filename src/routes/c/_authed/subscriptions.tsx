@@ -294,25 +294,24 @@ function MyPlanPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A]">
-                            <span>SERVICE DAYS</span>
-                            <span className="text-[#1A1A1A] text-[13px]">{elapsed} / 25</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / 25) * 100}%` }} />
+                      <div className="flex items-end justify-between pt-2">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Service Days</p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-[36px] font-black leading-none tracking-tighter text-[#1A1A1A]">
+                              {elapsed}
+                            </span>
+                            <span className="text-[18px] font-black text-black/20">/25</span>
                           </div>
                         </div>
-                        
-                        <div className="space-y-2 opacity-60">
-                          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A]">
-                            <span>INTERIOR WASH</span>
-                            <span className="text-[#1A1A1A] text-[13px]">{interiorCount} / 1</span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
-                            <div className="h-full rounded-full bg-[#8A8A8A] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
-                          </div>
+                        <div className="text-right pb-1">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20 mb-1">Interior Wash</p>
+                          <span className={cn(
+                            "text-[14px] font-black tracking-tight",
+                            interiorCount > 0 ? "text-[#FF6B00]" : "text-black/30"
+                          )}>
+                            {interiorCount > 0 ? "1 OF 1 USED" : "0 OF 1 USED"}
+                          </span>
                         </div>
                       </div>
 
