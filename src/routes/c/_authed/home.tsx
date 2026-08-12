@@ -130,32 +130,26 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-
       try {
-        const result = await fetchWithTimeout(
-          (async () => {
-            const { data, error } = await (supabase as any)
-              .from("daily_shine_carousel")
-              .select("id, image_url, status, slide_number, updated_at, service_slug")
-              .eq("status", "published")
-              .order("slide_number");
-            if (error) {
-              console.error("[HOME-DATA] Carousel query error:", error);
-              throw error;
-            }
-            return (data || []).map((img: any) => ({
-              ...img,
-              image_url: getDailyShineCarouselImageUrl(img.image_url)
-            }));
-          })(),
-          "CAROUSEL"
-        );
-        return result;
+        const { data, error } = await (supabase as any)
+          .from("daily_shine_carousel")
+          .select("id, image_url, status, slide_number, updated_at, service_slug")
+          .eq("status", "published")
+          .order("slide_number");
+        if (error) {
+          console.error("[HOME-DATA] Carousel query error:", error);
+          throw error;
+        }
+        return (data || []).map((img: any) => ({
+          ...img,
+          image_url: getDailyShineCarouselImageUrl(img.image_url)
+        }));
       } catch (err: any) {
         console.error("[HOME-DATA] Carousel failed:", err);
         return []; // Fallback handled by UWFeaturedCarousel (uses DEFAULT_PROMO_IMAGES)
       }
     },
+
     retry: 1,
 
   });
