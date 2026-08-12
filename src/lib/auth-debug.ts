@@ -1,4 +1,4 @@
-import { supabase } from "./client";
+import { supabase } from "@/integrations/supabase/client";
 
 export const authLog = {
   trace: (msg: string, data?: any) => {
