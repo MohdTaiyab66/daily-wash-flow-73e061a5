@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const updateState = async (event: string, session: any | null) => {
+      // Use the window ID primarily to ensure we catch it after it is initialized
       const clientId = (window as any).__SUPABASE_CLIENT_ID || 'initializing';
       
       authLog.info(`[AUTH-SYNC] EVENT: ${event}`, { 
@@ -72,5 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={state}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
