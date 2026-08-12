@@ -50,7 +50,7 @@ export function VehicleSelector({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex max-w-[10.5rem] items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-sm"
+        className="inline-flex max-w-[10.5rem] items-center gap-1.5 rounded-xl border border-[rgba(0,0,0,0.06)] bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition-opacity active:opacity-60"
       >
         <Car className="h-3.5 w-3.5 text-primary" />
         <span className="truncate">

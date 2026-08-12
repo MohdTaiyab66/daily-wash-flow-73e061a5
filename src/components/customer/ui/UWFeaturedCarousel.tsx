@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CarouselItem {
   id: string;
@@ -14,9 +15,10 @@ interface CarouselItem {
 interface UWFeaturedCarouselProps {
   items: CarouselItem[];
   onItemClick?: (item: CarouselItem) => void;
+  isLoading?: boolean;
 }
 
-export function UWFeaturedCarousel({ items, onItemClick }: UWFeaturedCarouselProps) {
+export function UWFeaturedCarousel({ items, onItemClick, isLoading }: UWFeaturedCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -53,38 +55,46 @@ export function UWFeaturedCarousel({ items, onItemClick }: UWFeaturedCarouselPro
   }, [activeIndex, items.length]);
 
   return (
-    <div className="relative w-full">
-      <div 
-        ref={scrollRef}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full rounded-[16px] h-[150px]"
-      >
-        {items.map((item, idx) => (
+    <div className="relative w-full aspect-[21/9] overflow-hidden rounded-[16px]">
+      {isLoading ? (
+        <Skeleton className="w-full h-full rounded-[16px]" />
+      ) : (
+        <>
           <div 
-            key={item.id || idx}
-            onClick={() => onItemClick?.(item)}
-            className="flex-shrink-0 w-full h-full snap-center cursor-pointer overflow-hidden"
+            ref={scrollRef}
+            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full h-full"
           >
-            <img 
-              src={item.image} 
-              alt={item.title} 
-              className="w-full h-full object-cover"
-            />
+            {items.map((item, idx) => (
+              <div 
+                key={item.id || idx}
+                onClick={() => onItemClick?.(item)}
+                className="flex-shrink-0 w-full h-full snap-center cursor-pointer overflow-hidden"
+              >
+                <img 
+                  src={item.image} 
+                  alt={item.title} 
+                  className="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+                  onLoad={(e) => (e.currentTarget.style.opacity = "1")}
+                  style={{ opacity: 0 }}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {items.length > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-          {items.map((_, idx) => (
-            <div 
-              key={idx}
-              className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
-                idx === activeIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
-              )}
-            />
-          ))}
-        </div>
+          
+          {items.length > 1 && (
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {items.map((_, idx) => (
+                <div 
+                  key={idx}
+                  className={cn(
+                    "h-1 rounded-full transition-all duration-300",
+                    idx === activeIndex ? "w-3 bg-white" : "w-1 bg-white/40"
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
