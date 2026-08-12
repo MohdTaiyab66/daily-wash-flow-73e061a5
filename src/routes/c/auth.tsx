@@ -173,21 +173,21 @@ function CustomerAuth() {
         authLog.info("[AUTH-TRACE] 11 POST_VERIFY_GET_SESSION");
 
         // Explicitly confirm persistence
+        console.log("[AUTH] Checking session persistence after verifyOtp...");
         const { data: sessionCheck } = await supabase.auth.getSession();
         const isSessionPresent = !!sessionCheck.session;
-        authLog.info(`[AUTH-TRACE] 12 SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
+        authLog.info(`[AUTH-P0] SESSION_PERSISTED: ${isSessionPresent ? 'YES' : 'NO'}`);
 
         if (!isSessionPresent) {
-          authLog.error("[AUTH-TRACE] REDIRECTING: Persistence failure - session lost immediately");
-          setError("Authentication failed: session could not be established. Please try again.");
+          authLog.error("[AUTH-P0] Persistence failure - session lost immediately");
+          setError("Account verified, but login failed. Please try again.");
           setVerifyState("ERROR");
           setLoading(false);
           verifyingRef.current = false;
           return;
         }
 
-        authLog.info("[AUTH-TRACE] 13 AUTHENTICATED");
-        authLog.info("[AUTH-TRACE] 14 HOME_NAVIGATION");
+        authLog.info("[AUTH-P0] SUCCESS, navigating to Home");
         goAfterAuth();
         return;
       }

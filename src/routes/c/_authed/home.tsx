@@ -80,10 +80,20 @@ function CustomerHome() {
     queryKey: ["customer-profile"],
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
+      // Get session from canonical client
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-      const { data, error } = await supabase.from("customer_profiles").select("*").eq("user_id", session.user.id).maybeSingle();
-      if (error) throw error;
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from("customer_profiles")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("[HOME] Profile query failed:", error);
+        return null; // Return null instead of throwing to keep page alive
+      }
       return data;
     }
   });
