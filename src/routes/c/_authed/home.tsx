@@ -228,15 +228,7 @@ function CustomerHome() {
     return result.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
   };
 
-  const refreshAll = () => {
-    return Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
-      queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
-      queryClient.invalidateQueries({ queryKey: ["service-gallery"] }),
-      queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] }),
-      queryClient.invalidateQueries({ queryKey: ["customer-profile"] })
-    ]);
-  };
+  // refreshAll is now defined earlier to be used in the useEffect
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
