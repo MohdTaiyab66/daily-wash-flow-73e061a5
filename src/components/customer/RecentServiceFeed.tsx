@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { ServicePhotoViewer } from "./ServicePhotoViewer";
 import { cn } from "@/lib/utils";
 
-type Photo = { stage: string; angle: string; storage_path: string; captured_at: string };
+type Photo = { stage: string; angle: string; storage_path: string; captured_at: string; partner_name?: string | null };
 type DirtyReport = {
   reason: string | null; notes: string | null;
   photo_front: string | null; photo_rear: string | null;
