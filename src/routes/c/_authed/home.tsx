@@ -79,11 +79,51 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 5,
   });
 
-  console.log("[HOME DEBUG] Environment check:", {
+  console.log("[HOME DEBUG] [STARTUP] Environment check:", {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.36-auth-arch",
-    BUILD_ID: "auth-arch-fix-2026-08-12"
+    BUILD: "1.0.37-network-diagnostic",
+    BUILD_ID: "network-diagnostic-2026-08-12"
   });
+
+  const fetchWithTimeout = async <T>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
+    const start = Date.now();
+    console.log(`[NET][${label}] REQUEST START`);
+    
+    const timeout = new Promise<never>((_, reject) => 
+      setTimeout(() => {
+        console.error(`[NET][${label}] REQUEST TIMEOUT after ${Date.now() - start}ms`);
+        reject(new Error(`Timeout: ${label} request took too long`));
+      }, timeoutMs)
+    );
+
+    try {
+      const result = await Promise.race([promise, timeout]);
+      console.log(`[NET][${label}] REQUEST END | RESULT: success | DURATION: ${Date.now() - start}ms`);
+      return result;
+    } catch (err: any) {
+      if (!err.message?.includes('Timeout')) {
+        console.error(`[NET][${label}] REQUEST END | RESULT: error | DURATION: ${Date.now() - start}ms | ERROR:`, err);
+      }
+      throw err;
+    }
+  };
+
+  const testSupabaseRaw = async () => {
+    console.log("[NET][DIAGNOSTIC] Raw database test starting...");
+    try {
+      // Test 1: Simple select from a known public table
+      const { data, error } = await fetchWithTimeout(
+        supabase.from("service_catalog").select("id").limit(1),
+        "RAW_DB_TEST"
+      );
+      if (error) throw error;
+      console.log("[NET][DIAGNOSTIC] Raw database test SUCCESS:", !!data);
+      return { success: true, count: data?.length };
+    } catch (err) {
+      console.error("[NET][DIAGNOSTIC] Raw database test FAILED:", err);
+      return { success: false, error: err };
+    }
+  };
 
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
@@ -95,14 +135,14 @@ function CustomerHome() {
     queryKey: ["customer-vehicles"],
     staleTime: 1000 * 60 * 5,
     queryFn: async (): Promise<Vehicle[]> => {
-      console.log("[HOME DEBUG] [REQUEST] Vehicles request started");
-      const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
-      if (error) {
-        console.error("[HOME DEBUG] [REQUEST] Vehicles request failed:", error);
-        throw error;
-      }
-      console.log("[HOME DEBUG] [REQUEST] Vehicles request success:", data?.length ?? 0);
-      return (data ?? []) as Vehicle[];
+      return fetchWithTimeout(
+        (async () => {
+          const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
+          if (error) throw error;
+          return (data ?? []) as Vehicle[];
+        })(),
+        "VEHICLES"
+      );
     },
     retry: 2,
   });
@@ -111,14 +151,19 @@ function CustomerHome() {
     queryKey: ["service-catalog"],
     staleTime: 1000 * 60 * 60,
     queryFn: async (): Promise<Service[]> => {
-      console.log("[HOME DEBUG] [REQUEST] Services request started");
-      const { data, error } = await supabase.from("service_catalog").select("*").eq("active", true).order("sort_order");
-      if (error) {
-        console.error("[HOME DEBUG] [REQUEST] Services request failed:", error);
-        throw error;
-      }
-      console.log("[HOME DEBUG] [REQUEST] Services request success:", data?.length ?? 0);
-      return (data ?? []) as Service[];
+      return fetchWithTimeout(
+        (async () => {
+          // Minimal query for diagnosis
+          const { data, error } = await supabase
+            .from("service_catalog")
+            .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes, active")
+            .eq("active", true)
+            .order("sort_order");
+          if (error) throw error;
+          return (data ?? []) as Service[];
+        })(),
+        "SERVICES"
+      );
     },
     retry: 2,
   });
@@ -168,21 +213,21 @@ function CustomerHome() {
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-      console.log("[HOME DEBUG] [REQUEST] Carousel request started");
-      const { data, error } = await (supabase as any)
-        .from("daily_shine_carousel")
-        .select("*")
-        .eq("status", "published")
-        .order("slide_number");
-      if (error) {
-        console.error("[HOME DEBUG] [REQUEST] Carousel request failed:", error);
-        throw error;
-      }
-      console.log("[HOME DEBUG] [REQUEST] Carousel request success:", data?.length ?? 0);
-      return data.map((img: any) => ({
-        ...img,
-        image_url: getDailyShineCarouselImageUrl(img.image_url)
-      }));
+      return fetchWithTimeout(
+        (async () => {
+          const { data, error } = await (supabase as any)
+            .from("daily_shine_carousel")
+            .select("id, image_url, status, slide_number, updated_at, service_slug")
+            .eq("status", "published")
+            .order("slide_number");
+          if (error) throw error;
+          return (data || []).map((img: any) => ({
+            ...img,
+            image_url: getDailyShineCarouselImageUrl(img.image_url)
+          }));
+        })(),
+        "CAROUSEL"
+      );
     },
     retry: 2,
   });
