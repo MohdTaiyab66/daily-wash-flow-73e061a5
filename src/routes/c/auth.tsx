@@ -284,7 +284,7 @@ function CustomerAuth() {
       
       if (signUpError) {
         authLog.error("Signup failed", signUpError);
-        setError(parseAuthError(signUpError));
+        setError(signUpError); // Passing raw error object to getDisplayError
         setLoading(false);
         return;
       }
@@ -292,7 +292,7 @@ function CustomerAuth() {
       const { data: signInData, error: e2 } = await supabase.auth.signInWithPassword({ email, password });
       if (e2 || !signInData.session) {
         authLog.error("[AUTH] Sign in after signup failed", e2);
-        setError(parseAuthError(e2 || new Error("Session not created after signup")));
+        setError(e2 || { message: "Session not created after signup", code: "SIGNUP_SESSION_FAIL" });
         setLoading(false);
         return;
       }
@@ -320,7 +320,7 @@ function CustomerAuth() {
         goAfterAuth();
       } else {
         authLog.error("[AUTH] 12 SESSION_PERSISTED: NO");
-        setError("Account created, but could not establish session. Please log in.");
+        setError({ message: "Account created, but could not establish session. Please log in.", code: "POST_SIGNUP_SESSION_FAIL" });
         setStep("phone");
       }
     } catch (e) {
