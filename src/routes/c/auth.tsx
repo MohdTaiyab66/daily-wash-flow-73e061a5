@@ -235,8 +235,16 @@ function CustomerAuth() {
         }, { onConflict: "user_id" });
       }
       
-      authLog.info("Signup flow complete");
-      goAfterAuth();
+      authLog.info("[AUTH][SIGNUP] Signup flow complete. Verifying session persistence...");
+      const { data: finalCheck } = await supabase.auth.getSession();
+      if (finalCheck.session) {
+        authLog.info("[AUTH][SIGNUP] session present = true");
+        goAfterAuth();
+      } else {
+        authLog.error("[AUTH][SIGNUP] session present = false (lost after signup)");
+        setError("Account created, but could not establish session. Please log in.");
+        setStep("phone");
+      }
     } catch (e) {
       authLog.error("Unexpected signup error", e);
       setError("Something went wrong. Please try again.");
