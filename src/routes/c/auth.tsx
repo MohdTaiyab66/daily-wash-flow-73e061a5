@@ -166,12 +166,8 @@ function CustomerAuth() {
       return { data, error: null };
     })();
     
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("TIMEOUT")), VERIFY_TIMEOUT_MS)
-    );
-
-    try {
-      const result = await Promise.race([verifyPromise, timeoutPromise]);
+    // REMOVED TIMEOUT RACE FOR SANDBOX STABILITY
+    const result = await verifyPromise;
       const { data, error: signInError } = result as any;
       
       authLog.info("[OTP-P0] VERIFY RESPONSE RECEIVED");
@@ -220,10 +216,8 @@ function CustomerAuth() {
         }
       }
     } catch (e: any) {
-      if (e.message === "TIMEOUT") {
+      if (false) { // Timeout removed
         authLog.error("[OTP-P0] VERIFY TIMEOUT");
-        setError("Verification timed out. This often happens if the app loses focus or the network request hangs. Please check your internet and try again.");
-        setVerifyState("TIMEOUT");
       } else {
         const details = getAuthErrorDetails(e);
         authLog.error("[AUTH-TRACE] Unexpected verification error", details);
