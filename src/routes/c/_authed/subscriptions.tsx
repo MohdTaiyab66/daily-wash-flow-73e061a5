@@ -273,49 +273,51 @@ function MyPlanPage() {
                     )}
 
                     {/* ACTIVE PLAN CARD */}
-                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-6 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#FF6B00]">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF6B00]">
                               <Sparkles className="h-2.5 w-2.5" />
                               Daily Shine
                             </span>
-                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#2E7D32]">
+                            <div className="flex items-center gap-1 rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#2E7D32]">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[24px] font-semibold text-[#1A1A1A]">
+                          <h2 className="text-[24px] font-semibold text-[#1A1A1A] leading-tight">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
-                          <div className="mt-1 text-[15px] font-medium text-[#1A1A1A]">
+                          <div className="mt-1.5 text-[17px] font-semibold text-[#1A1A1A]">
                             ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
-                            <span className="text-[#8A8A8A] ml-2">· {daysLeft} days left</span>
+                            <span className="text-[15px] text-[#8A8A8A] font-medium ml-2">· {daysLeft} days left</span>
                           </div>
                         </div>
-                        <button onClick={() => setManageOpen(true)} className="text-[14px] font-semibold text-[#FF6B00]">
+                        <button onClick={() => setManageOpen(true)} className="text-[17px] font-semibold text-[#FF6B00] mt-1">
                           Manage
                         </button>
                       </div>
 
                       <div className="mt-6">
-                        <div className="flex items-center justify-between text-[12px] font-medium uppercase tracking-wider text-[#8A8A8A] mb-2">
+                        <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A] mb-2.5">
                           <span>Monthly Usage</span>
-                          <span className="text-[#1A1A1A] font-semibold">{elapsed} / {totalDays} service days</span>
+                          <span className="text-[#1A1A1A] font-semibold text-[15px]">{elapsed} / {totalDays} service days</span>
                         </div>
-                        <Meter value={elapsed} max={totalDays} className="h-2" />
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                          <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(elapsed / totalDays) * 100}%` }} />
+                        </div>
                       </div>
 
-                      <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
+                      <div className="mt-6 pt-5 border-t border-[#F5F5F5] flex items-center justify-between">
                         <div>
-                          <p className="text-[11px] font-bold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
-                          <p className="text-[16px] font-semibold text-[#1A1A1A] mt-0.5">
+                          <p className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                          <p className="text-[18px] font-semibold text-[#1A1A1A] mt-0.5">
                             {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
                           </p>
                         </div>
                         {cancelScheduled && (
-                          <p className="text-[13px] font-medium text-[#E53935]">Scheduled to end</p>
+                          <p className="text-[14px] font-medium text-[#E53935]">Scheduled to end</p>
                         )}
                       </div>
                     </div>
@@ -325,39 +327,43 @@ function MyPlanPage() {
 
                     {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="h-[72px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
-                        <span className="text-[15px] font-semibold">Book Wash</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Included</span>
+                      <button onClick={() => setBookOpen(true)} className="h-[105px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[18px] font-semibold">Book Wash</span>
+                        <span className="text-[13px] font-bold uppercase tracking-widest opacity-60 mt-1">Included</span>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="h-[72px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
-                        <span className="text-[15px] font-semibold">Modify</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Adjust Plan</span>
+                      <button onClick={() => setBuilderOpen(true)} className="h-[105px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
+                        <span className="text-[18px] font-semibold">Modify</span>
+                        <span className="text-[13px] font-bold uppercase tracking-widest text-[#8A8A8A] mt-1">Adjust Plan</span>
                       </button>
                     </div>
 
                     {/* PAUSE / CANCEL */}
                     <div className="flex justify-center gap-6 py-1">
-                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
+                      <button className="text-[15px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[15px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
                     {/* DETAILED USAGE */}
                     <div className="space-y-4">
-                      <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A] px-1">Detailed Usage</h3>
-                      <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-5 space-y-5">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                            <span>Exterior washes</span>
+                      <h3 className="text-[15px] font-semibold tracking-tight text-[#8A8A8A] px-1">Detailed Usage</h3>
+                      <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-6 space-y-6">
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between text-[15px] font-medium">
+                            <span className="text-[#1A1A1A]">Exterior washes</span>
                             <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
-                          <Meter value={exteriorCount} max={25} className="h-1.5" />
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(exteriorCount / 25) * 100}%` }} />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-[14px] font-medium">
-                            <span>Interior wash</span>
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between text-[15px] font-medium">
+                            <span className="text-[#1A1A1A]">Interior wash</span>
                             <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
                           </div>
-                          <Meter value={interiorCount} max={1} className="h-1.5" />
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEEEEE]">
+                            <div className="h-full rounded-full bg-[#FF6B00] transition-[width] duration-500" style={{ width: `${(interiorCount / 1) * 100}%` }} />
+                          </div>
                         </div>
                       </div>
                     </div>

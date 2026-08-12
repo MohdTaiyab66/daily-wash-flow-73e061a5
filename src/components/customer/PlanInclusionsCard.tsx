@@ -66,26 +66,26 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
         className="uw-pressable flex w-full items-center gap-3 px-5 py-4 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A] mb-1">What's included</span>
+          <span className="block text-[15px] font-bold uppercase tracking-tight text-[#8A8A8A] mb-2">What's included</span>
           {!open ? (
-            <div className="space-y-1">
+            <div className="space-y-2">
               {data.slice(0, 3).map((i) => (
-                <div key={i.id} className="flex items-center gap-2 text-[14px] font-medium text-[#1A1A1A]">
-                  <Check className="h-3.5 w-3.5 text-[#2E7D32]" />
+                <div key={i.id} className="flex items-center gap-2 text-[15px] font-medium text-[#1A1A1A]">
+                  <Check className="h-4 w-4 text-[#2E7D32]" />
                   <span className="truncate">{i.title}</span>
                 </div>
               ))}
               {data.length > 3 && (
-                <span className="mt-1 block text-[13px] font-semibold text-[#FF6B00]">
+                <span className="mt-2 block text-[14px] font-semibold text-[#FF6B00]">
                   +{data.length - 3} more benefits
                 </span>
               )}
-              <span className="mt-2 block text-[13px] font-semibold text-[#FF6B00] flex items-center gap-0.5">
+              <span className="mt-3 block text-[14px] font-semibold text-[#FF6B00] flex items-center gap-0.5">
                 View all <ChevronDown className="h-3.5 w-3.5" />
               </span>
             </div>
           ) : (
-            <span className="text-[14px] font-semibold text-[#1A1A1A]">Full Plan Benefits</span>
+            <span className="text-[16px] font-semibold text-[#1A1A1A]">Full Plan Benefits</span>
           )}
         </span>
         {open && (
