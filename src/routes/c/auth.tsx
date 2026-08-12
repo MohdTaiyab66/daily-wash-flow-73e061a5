@@ -29,7 +29,7 @@ const customerPassword = (phone: string) => `UWC@${normalizePhone(phone)}#2026`;
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 const SHOW_DEMO_OTP = import.meta.env.DEV; 
-const AUTH_BUILD_ID = "1.0.38-auth-session-fix";
+const AUTH_BUILD_ID = "1.0.39-auth-real-session";
 
 function CustomerAuth() {
   const navigate = useNavigate();
