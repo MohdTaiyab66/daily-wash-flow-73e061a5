@@ -63,9 +63,23 @@ function CustomerHome() {
   const [photoOpen, setPhotoOpen] = useState(false);
 
   useEffect(() => {
-    const savedArea = localStorage.getItem("uw_customer_area") ?? "";
-    setArea(savedArea);
-    setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
+    const syncState = () => {
+      const savedArea = localStorage.getItem("uw_customer_area") ?? "";
+      setArea(savedArea);
+      setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
+    };
+
+    syncState();
+    
+    // Listen for storage events (e.g., from Location flow)
+    window.addEventListener("storage", syncState);
+    // Also listen for a custom event if we want faster updates within the same window
+    window.addEventListener("uw-location-updated", syncState);
+    
+    return () => {
+      window.removeEventListener("storage", syncState);
+      window.removeEventListener("uw-location-updated", syncState);
+    };
   }, []);
 
 
@@ -174,7 +188,7 @@ function CustomerHome() {
 
   const availability = useAreaAvailability();
   const a = availability.data;
-  const showCatalog = !area || (a && (a.daily_shine || a.premium));
+  const showCatalog = true; // DO NOT block catalog on area availability for now to prevent skeletons
 
   const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
   const services = servicesQ.data ?? [];

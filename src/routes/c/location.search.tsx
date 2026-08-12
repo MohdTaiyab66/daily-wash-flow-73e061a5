@@ -212,6 +212,8 @@ function LocationFlow() {
         localStorage.setItem("uw_customer_area", areaName);
         localStorage.setItem("uw_customer_full_address", loc?.formatted_address || "");
         localStorage.setItem("uw_customer_geo", JSON.stringify(geo));
+        window.dispatchEvent(new Event("uw-location-updated"));
+        window.dispatchEvent(new Event("storage")); // Trigger useAreaAvailability listener
         
         // Use singleton client
         const { data: { session } } = await supabase.auth.getSession();
@@ -323,6 +325,8 @@ function LocationFlow() {
       localStorage.setItem("uw_customer_area", selectedManualLocation.area);
       localStorage.setItem("uw_customer_full_address", selectedManualLocation.fullAddress);
       localStorage.setItem("uw_customer_geo", JSON.stringify(selectedManualLocation.geo));
+      window.dispatchEvent(new Event("uw-location-updated"));
+      window.dispatchEvent(new Event("storage")); // Trigger useAreaAvailability listener
       
       try {
         const { data: { session } } = await supabase.auth.getSession();
