@@ -5,16 +5,14 @@ import { CustomerShell } from "@/components/customer/CustomerShell";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getInitialCustomerContext } from "@/lib/customer-auth.functions";
 import { authLog } from "@/lib/auth-debug";
 
 export const Route = createFileRoute("/c/_authed")({
   ssr: false,
-  loader: async ({ context }) => {
+  loader: async () => {
     authLog.trace("Protected route loader started");
     
-    // We do NOT block on getInitialCustomerContext here.
-    // We let the page load and fetch what it needs.
+    // Non-blocking session check for the loader
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       authLog.error("Protected route loader - No session");
@@ -24,9 +22,9 @@ export const Route = createFileRoute("/c/_authed")({
     return null;
   },
   beforeLoad: async () => {
-    authLog.trace("Protected route beforeLoad check (async start)");
+    authLog.trace("Protected route beforeLoad check");
     
-    // Non-blocking session check
+    // We use getSession here because it's nearly instantaneous (local storage)
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
@@ -45,8 +43,6 @@ export const Route = createFileRoute("/c/_authed")({
   component: CustomerAuthedLayout,
 });
 
-
-
 function CustomerAuthedLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -54,16 +50,13 @@ function CustomerAuthedLayout() {
 
   useEffect(() => {
     let cancelled = false;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) setUserId(data.user?.id ?? null);
+    // Non-blocking UI update for user ID
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) setUserId(data.session?.user?.id ?? null);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // Session expiry / remote sign-out: land on the login screen with a clear
-  // message instead of a silently failing screen full of empty queries.
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || (event === "TOKEN_REFRESHED" && !session)) {
@@ -77,11 +70,10 @@ function CustomerAuthedLayout() {
   }, [navigate, qc]);
 
   useFcmRegistration(userId, "customer");
-  // No live ETA / route sync for customers by design.
+
   return (
     <CustomerShell>
       <Outlet />
     </CustomerShell>
   );
 }
-
