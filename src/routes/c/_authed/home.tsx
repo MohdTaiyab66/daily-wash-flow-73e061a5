@@ -178,45 +178,19 @@ function CustomerHome() {
               />
             </div>
 
-            {/* Compact Benefits Strip */}
-            {/* Compact Benefits Strip - Target ~84px total height */}
-            <div className="flex justify-between items-center px-4 w-full h-[84px] mt-[18px] bg-[#FFF9F4] rounded-[16px] border border-[#FF6B00]/5 shadow-sm">
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Sparkles className="h-[12px] w-[12px]" />
-                </div>
-                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Expert Care</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1 border-x border-[#FF6B00]/5">
-                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <Camera className="h-[12px] w-[12px]" />
-                </div>
-                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Photo Proof</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="h-[22px] w-[22px] rounded-full bg-white flex items-center justify-center text-[#FF6B00] shadow-sm">
-                  <ShieldCheck className="h-[12px] w-[12px]" />
-                </div>
-                <span className="text-[12px] font-medium text-[#555555] tracking-tight">Safe & Secure</span>
-              </div>
-            </div>
-
             <Section 
               title={
-                <div className="flex flex-col gap-0.5">
-                  <h2 className="text-[28px] font-bold text-[#1A1A1A] tracking-tight leading-tight">CAR CARE SERVICES</h2>
-                  <p className="text-[15px] text-[#7A7A7A] font-medium">Everything your car needs</p>
-                </div>
+                <h2 className="text-[20px] font-bold text-[#171717] tracking-tight">Our Services</h2>
               }
-              className="mt-[28px] mb-0"
+              className="mt-[20px] mb-0"
             >
-              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[16px] w-screen max-w-full">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-[10px] w-screen max-w-full">
                 {["Popular", "Wash", "Interior", "Polish", "Detailing", "Premium"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "whitespace-nowrap rounded-[20px] px-4 h-[38px] flex items-center justify-center text-[13px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
+                      "whitespace-nowrap rounded-[24px] px-5 h-[44px] flex items-center justify-center text-[14px] font-semibold transition-all duration-200 active:scale-[0.96] shrink-0",
                       selectedCategory === cat 
                         ? "bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20" 
                         : "bg-white text-[#555555] border border-[#EAEAEA]"
