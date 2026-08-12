@@ -58,7 +58,7 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-[22px] border border-[#EEEEEE] bg-white shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white shadow-sm">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -66,23 +66,25 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
         className="uw-pressable flex w-full items-center gap-3 px-5 py-4 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-bold uppercase tracking-tight text-[#8A8A8A] mb-2">What's included</span>
+          <span className="block text-[12px] font-semibold uppercase tracking-widest text-[#8A8A8A] mb-2">What's included</span>
           {!open ? (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {data.slice(0, 3).map((i) => (
-                <div key={i.id} className="flex items-center gap-2 text-[15px] font-medium text-[#1A1A1A]">
+                <div key={i.id} className="flex items-center gap-2 text-[15px] font-normal text-[#1A1A1A]">
                   <Check className="h-4 w-4 text-[#2E7D32]" />
                   <span className="truncate">{i.title}</span>
                 </div>
               ))}
-              {data.length > 3 && (
-                <span className="mt-2 block text-[14px] font-semibold text-[#FF6B00]">
-                  +{data.length - 3} more benefits
+              <div className="flex items-center gap-2 mt-2">
+                 {data.length > 3 && (
+                  <span className="text-[14px] font-semibold text-[#FF6B00]">
+                    +{data.length - 3} more 
+                  </span>
+                )}
+                <span className="text-[14px] font-semibold text-[#FF6B00] flex items-center gap-0.5">
+                  View all <ChevronDown className="h-3.5 w-3.5" />
                 </span>
-              )}
-              <span className="mt-3 block text-[14px] font-semibold text-[#FF6B00] flex items-center gap-0.5">
-                View all <ChevronDown className="h-3.5 w-3.5" />
-              </span>
+              </div>
             </div>
           ) : (
             <span className="text-[16px] font-semibold text-[#1A1A1A]">Full Plan Benefits</span>
@@ -106,7 +108,7 @@ export function PlanInclusionsCard({ planSlug }: { planSlug: string | null | und
                 <div className="min-w-0">
                   <p className="text-[15px] font-semibold text-[#1A1A1A] leading-snug">{inc.title}</p>
                   {inc.description && (
-                    <p className="mt-0.5 text-[14px] text-[#8A8A8A] font-medium leading-normal">{inc.description}</p>
+                    <p className="mt-0.5 text-[14px] text-[#8A8A8A] font-normal leading-normal">{inc.description}</p>
                   )}
                 </div>
               </li>
