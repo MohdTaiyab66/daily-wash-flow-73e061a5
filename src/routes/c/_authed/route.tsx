@@ -20,8 +20,10 @@ function CustomerAuthedLayout() {
     if (authStatus === 'initializing') return;
 
     if (authStatus === 'unauthenticated') {
+      console.warn("[GATE] Unauthenticated, redirecting to auth");
       navigate({ to: "/c/auth", replace: true });
     } else if (authStatus === 'authenticated') {
+      console.log("[GATE] Authenticated, ready");
       setIsReady(true);
     }
   }, [authStatus, navigate]);
