@@ -14,6 +14,7 @@ interface UWServiceCardProps {
   isLoading?: boolean;
   slug?: string;
   className?: string;
+  duration?: number | null;
 }
 
 export function UWServiceCard({
@@ -28,6 +29,7 @@ export function UWServiceCard({
   isLoading,
   slug,
   className,
+  duration,
 }: UWServiceCardProps) {
   const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>(image ? 'loading' : 'error');
 
@@ -81,13 +83,18 @@ export function UWServiceCard({
       </div>
       
       <div className="flex flex-col flex-1 px-3 pt-2.5 pb-3 min-w-0">
-        <div className="h-[44px] flex items-start overflow-hidden w-full">
+        <div className="h-[44px] flex flex-col items-start overflow-hidden w-full">
           <h3 className={cn(
             "text-[14px] font-semibold leading-[1.3] text-[#1A1A1A] break-words line-clamp-2 w-full",
             isComingSoon && "text-[#7A7A7A]"
           )}>
             {name}
           </h3>
+          {duration && (
+            <span className="text-[11px] text-[#8A8A8A] font-medium leading-none mt-0.5">
+              {duration} min
+            </span>
+          )}
         </div>
         
         <div className="mt-auto flex items-end justify-between gap-1">
@@ -108,7 +115,7 @@ export function UWServiceCard({
             }}
             disabled={isLoading}
             className={cn(
-              "flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.9] bg-[#FFF8F4] text-[#FF6B00] border border-[#FF6B00]/10 z-10",
+              "flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full transition-all active:scale-[0.9] bg-[#FFF2E8] text-[#FF6B00] border border-[#FF6B00]/5 z-10",
               isAdded && "bg-[#FF6B00] text-white"
             )}
           >

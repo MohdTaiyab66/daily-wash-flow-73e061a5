@@ -54,7 +54,7 @@ export function UWHeader({
       header.style.boxShadow = progress > 0.5 ? `0 4px 16px rgba(0, 0, 0, ${progress * 0.02})` : 'none';
 
       if (wrapper) {
-        const verticalPadding = 12 - (progress * 4);
+        const verticalPadding = 8 - (progress * 2);
         wrapper.style.paddingTop = `calc(${verticalPadding}px + env(safe-area-inset-top))`;
         wrapper.style.paddingBottom = `${verticalPadding}px`;
       }
@@ -113,12 +113,12 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
-            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[50px] pl-2 pr-3 shadow-sm"
+            className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-white border border-[rgba(0,0,0,0.06)] rounded-[12px] h-[44px] pl-1.5 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
             <div 
               ref={vehicleThumbRef}
-              className="h-[36px] w-[36px] shrink-0 overflow-hidden rounded-[10px] bg-[#F9F9F9] border border-[rgba(0,0,0,0.04)] flex items-center justify-center shadow-inner will-change-transform"
+              className="h-[32px] w-[32px] shrink-0 overflow-hidden rounded-[8px] bg-[#F9F9F9] border border-[rgba(0,0,0,0.04)] flex items-center justify-center shadow-inner will-change-transform"
             >
               {vehicleImage ? (
                 <img src={vehicleImage} alt={activeVehicle.make} className="h-full w-full object-contain p-0.5" />
