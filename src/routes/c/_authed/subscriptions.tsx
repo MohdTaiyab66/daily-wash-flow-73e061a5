@@ -377,12 +377,6 @@ function MyPlanPage() {
           </>
         )}
       </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
 
       <CancelPlanDialog
         open={cancelDialogOpen}
