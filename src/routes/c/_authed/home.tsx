@@ -61,20 +61,12 @@ function CustomerHome() {
   const [editOpen, setEditOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
-  const fetchWithTimeout = async <T,>(promise: Promise<T>, label: string, timeoutMs: number = 8000): Promise<T> => {
-    const timeout = new Promise<never>((_, reject) => 
-      setTimeout(() => {
-        reject(new Error(`Timeout: ${label} request took too long`));
-      }, timeoutMs)
-    );
-    return Promise.race([promise, timeout]);
-  };
-
   useEffect(() => {
     const savedArea = localStorage.getItem("uw_customer_area") ?? "";
     setArea(savedArea);
     setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
   }, []);
+
 
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
