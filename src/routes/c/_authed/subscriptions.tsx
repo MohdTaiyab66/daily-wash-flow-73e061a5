@@ -217,20 +217,13 @@ function MyPlanPage() {
           color: null
         } : undefined}
         onVehicleClick={() => {
-          // Trigger the vehicle selector from header
+          // Trigger the vehicle selector - handled by local state usually
+          const selector = document.querySelector('[data-vehicle-trigger]');
+          if (selector instanceof HTMLElement) selector.click();
         }}
       />
 
-      <div className="px-5 pt-[82px]">
-        {selectedVehicle && (
-          <div className="mb-6">
-             <div className="flex items-baseline gap-2">
-               <h2 className="text-[20px] font-black text-[#1A1A1A] tracking-tight">{selectedVehicle.make} {selectedVehicle.model}</h2>
-               <span className="text-[12px] font-bold text-black/20 uppercase tracking-widest">{selectedVehicle.registration_number}</span>
-             </div>
-          </div>
-        )}
-
+      <div className="px-5 pt-5">
         {hasVehicles && (
           <>
             {bookingsQ.isLoading ? (
@@ -272,71 +265,77 @@ function MyPlanPage() {
                     )}
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-6">
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">
-                              Premium Service
-                            </span>
-                            <div className="flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-sm">
-                              <CheckCircle2 className="h-2.5 w-2.5" />
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <h2 className="text-[13px] font-black uppercase tracking-[0.1em] text-[#1A1A1A]">
+                              Daily Shine
+                            </h2>
+                            <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-green-600">
                               Active
                             </div>
                           </div>
-                          <h2 className="text-[20px] font-black text-[#1A1A1A] leading-tight tracking-tight">
-                            {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
-                          </h2>
-                          <div className="mt-2 text-[16px] font-black text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")}
+                          <p className="text-[14px] font-medium text-black/40 leading-tight">
+                            Daily Shine Subscription
+                          </p>
+                          <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
+                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month
                             <span className="h-1 w-1 rounded-full bg-black/10" />
-                            <span className="text-[13px] text-black/20 uppercase tracking-widest">{daysLeft} days remaining</span>
+                            <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-end justify-between pt-2">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Service Days</p>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-[36px] font-black leading-none tracking-tighter text-[#1A1A1A]">
-                              {elapsed}
-                            </span>
-                            <span className="text-[18px] font-black text-black/20">/25</span>
+                      <div className="space-y-6">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Service Days</p>
+                            <p className="text-[12px] font-black text-[#1A1A1A]">{elapsed} / 25 USED</p>
+                          </div>
+                          <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-[#FF6B00] rounded-full transition-all duration-500" 
+                              style={{ width: `${(elapsed / 25) * 100}%` }}
+                            />
                           </div>
                         </div>
-                        <div className="text-right pb-1">
-                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20 mb-1">Interior Wash</p>
-                          <span className={cn(
-                            "text-[14px] font-black tracking-tight",
-                            interiorCount > 0 ? "text-[#FF6B00]" : "text-black/30"
-                          )}>
-                            {interiorCount > 0 ? "1 OF 1 USED" : "0 OF 1 USED"}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="mt-8 pt-6 border-t border-black/5">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Next Cycle</p>
-                            <p className="text-[17px] font-black text-[#1A1A1A] mt-1.5">
-                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <div className="pt-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Interior Wash</p>
+                            <p className={cn(
+                              "text-[12px] font-black",
+                              interiorCount > 0 ? "text-[#FF6B00]" : "text-black/30"
+                            )}>
+                              {interiorCount > 0 ? "1 / 1 USED" : "0 / 1 USED"}
                             </p>
                           </div>
-                          <div className={cn(
-                            "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-[0.1em]",
-                            cancelScheduled ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
-                          )}>
-                            {cancelScheduled ? "Ending Soon" : "Auto-Renew"}
+                          <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+                            <div 
+                              className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                interiorCount > 0 ? "bg-[#FF6B00]" : "bg-black/10"
+                              )}
+                              style={{ width: interiorCount > 0 ? "100%" : "0%" }}
+                            />
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-5 border-t border-black/5 flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Next Renewal</p>
+                          <p className="text-[14px] font-semibold text-[#1A1A1A] mt-1">
+                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })} · {cancelScheduled ? "Scheduled to end" : "Auto-renew"}
+                          </p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 mt-6">
-                        <button onClick={() => setBookOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-all text-[14px] font-black shadow-lg shadow-black/5">
+                        <button onClick={() => setBookOpen(true)} className="h-11 flex items-center justify-center rounded-xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-all text-[13px] font-black shadow-lg shadow-black/5">
                           Book Wash
                         </button>
-                        <button onClick={() => setBuilderOpen(true)} className="h-[52px] flex items-center justify-center rounded-xl border border-black/5 bg-white text-[#1A1A1A] active:scale-[0.98] transition-all text-[14px] font-black">
+                        <button onClick={() => setBuilderOpen(true)} className="h-11 flex items-center justify-center rounded-xl border border-black/5 bg-white text-[#1A1A1A] active:scale-[0.98] transition-all text-[13px] font-black">
                           Modify
                         </button>
                       </div>
@@ -348,10 +347,9 @@ function MyPlanPage() {
                       <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
                     </div>
 
-                    <div className="flex justify-center gap-4 mt-8 mb-6">
-                      <button className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Pause</button>
-                      <span className="h-4 w-[1px] bg-black/5" />
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-widest">Cancel</button>
+                    <div className="flex justify-center gap-6 mt-12 mb-8">
+                      <button className="text-[11px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-[0.2em]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[11px] font-black text-black/20 active:opacity-60 transition-all uppercase tracking-[0.2em]">Cancel plan</button>
                     </div>
                   </div>
 

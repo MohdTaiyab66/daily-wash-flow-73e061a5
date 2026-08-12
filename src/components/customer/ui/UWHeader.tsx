@@ -48,7 +48,7 @@ export function UWHeader({
   return (
     <header 
       ref={containerRef}
-      className="bg-white border-b border-[rgba(0,0,0,0.04)]"
+      className="bg-white border-b border-[rgba(0,0,0,0.04)] sticky top-0 z-50"
     >
       <div 
         ref={contentWrapperRef}

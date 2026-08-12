@@ -134,23 +134,23 @@ export function RecentServiceFeed({
   return (
     <div className="pt-2">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-[#8A8A8A]">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">
           {showAll ? "Full History" : "RECENT SERVICE"}
         </h3>
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="text-[13px] font-semibold text-[#FF6B00] active:opacity-60"
+          className="text-[12px] font-black text-[#FF6B00] active:opacity-60 uppercase tracking-wider"
         >
           {showAll ? "Show Recent" : "View All"}
         </button>
       </div>
-      <div className="mt-3 space-y-4">
+      <div className="mt-4 space-y-4">
         {showAll && historyQ.isLoading && <div className="h-24 animate-pulse rounded-[18px] bg-white border border-[#EEEEEE]" />}
         {showAll && !historyQ.isLoading && list.length === 0 && (
           <div className="rounded-[18px] border border-black/5 p-8 text-center bg-white shadow-sm">
-            <p className="text-[15px] font-black text-[#1A1A1A]">No completed services yet</p>
-            <p className="mt-2 text-[13px] font-bold text-black/20 max-w-[200px] mx-auto leading-relaxed">
+            <p className="text-[14px] font-black text-[#1A1A1A]">No completed services yet</p>
+            <p className="mt-2 text-[12px] font-medium text-black/20 max-w-[200px] mx-auto leading-relaxed">
               Your service proof photos will appear here after your first completed wash.
             </p>
           </div>
@@ -232,24 +232,24 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const reason = isUnavailable ? cleanReason(service.unavailable_reason ?? null) : hasDirty ? cleanReason(service.dirty_report?.reason ?? null) : null;
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[17px] font-black tracking-tight text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[14px] font-black tracking-tight text-[#1A1A1A]">{service.service_name ?? "Daily Shine"}</span>
               <span className={cn(
-                "text-[10px] font-black uppercase tracking-[0.15em]",
-                status.tone === "success" ? "text-[#2E7D32]" : 
-                status.tone === "danger" ? "text-[#E53935]" :
-                status.tone === "warning" ? "text-[#FF6B00]" : "text-[#FF6B00]"
+                "text-[10px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full",
+                status.tone === "success" ? "bg-green-50 text-green-600" : 
+                status.tone === "danger" ? "bg-red-50 text-red-600" :
+                status.tone === "warning" ? "bg-orange-50 text-orange-600" : "bg-black/5 text-black/40"
               )}>
                 {status.label} {status.tone === "success" && "✓"}
               </span>
             </div>
           </div>
           
-          <p className="mt-2 text-[13px] font-bold text-black/20">
+          <p className="mt-2 text-[12px] font-medium text-black/40">
             {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
@@ -258,31 +258,32 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
       </div>
 
       {!isUnavailable && !isMissed && service.photos.length > 0 && (
-        <div className="mt-5 flex gap-2">
-          {service.photos.slice(0, 3).map((p, i) => (
-             <SignedPhoto key={i} path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
-          ))}
-          {service.photos.length > 3 && (
-            <button 
-              onClick={() => openViewer(3)}
-              className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[12px] bg-neutral-100 overflow-hidden group active:scale-95 transition-all"
-            >
-              <SignedPhoto path={service.photos[3].storage_path} stage={service.photos[3].stage} />
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-                <span className="text-[13px] font-black text-white">+{service.photos.length - 3} photos</span>
+        <div className="mt-5 relative">
+          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar snap-x">
+            {service.photos.map((p, i) => (
+              <div key={i} className="snap-start">
+                <SignedPhoto path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
               </div>
-            </button>
-          )}
+            ))}
+          </div>
+          <div className="flex justify-center mt-1">
+            <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">
+              Swipe to view · {service.photos.length} photos
+            </span>
+          </div>
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
-        <span className="text-[12px] font-bold text-black/20">
-           {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
-        </span>
+      <div className="mt-4 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-black/30">
+          <Clock3 className="h-3 w-3" />
+          <span>
+             {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
+          </span>
+        </div>
         {!isUnavailable && !isMissed && !isPending && service.photos.length > 0 && (
-          <button onClick={() => openViewer(0)} className="text-[13px] font-black text-[#FF6B00] active:opacity-60 transition-all">
-            View all photos →
+          <button onClick={() => openViewer(0)} className="text-[12px] font-black text-[#FF6B00] active:opacity-60 transition-all uppercase tracking-wider">
+            View all →
           </button>
         )}
       </div>
@@ -323,13 +324,13 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
     return () => { cancelled = true; };
   }, [path]);
 
-  const label = stage === 'before' ? 'BEFORE' : stage === 'after' ? 'AFTER' : 'SERVICE PHOTO';
+  const label = stage === 'before' ? 'BEFORE' : stage === 'after' ? 'AFTER' : null;
 
   return (
     <div 
       onClick={onClick}
       className={cn(
-        "uw-pressable relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] bg-[#F5F5F5]",
+        "uw-pressable relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#F5F5F5]",
         onClick && "cursor-pointer"
       )}
     >
@@ -340,11 +341,11 @@ function SignedPhoto({ path, stage, onClick }: { path: string; stage: string; on
           <Loader2 className="h-4 w-4 animate-spin text-[#8A8A8A]" />
         </div>
       )}
-      {(stage === 'before' || stage === 'after') && (
+      {label && (
         <div className="absolute inset-0 bg-black/5" />
       )}
-      {(stage === 'before' || stage === 'after') && (
-        <div className="absolute top-1 left-1 rounded-sm bg-black/40 px-1 py-0.5 text-[7px] font-black tracking-widest text-white backdrop-blur-[2px]">
+      {label && (
+        <div className="absolute top-1.5 left-1.5 rounded-sm bg-black/60 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white backdrop-blur-[2px]">
           {label}
         </div>
       )}

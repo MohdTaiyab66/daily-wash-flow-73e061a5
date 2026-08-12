@@ -192,7 +192,7 @@ export function ServicePhotoViewer({
                         <span>{new Date(currentPhoto.captured_at || serviceDate || "").toLocaleTimeString("en-IN", { hour: 'numeric', minute: '2-digit' })}</span>
                       </div>
                    </div>
-                   {(currentPhoto.stage === 'before' || currentPhoto.stage === 'after') && (
+                   {currentPhoto.stage && (
                      <div className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-black shadow-lg">
                        {currentPhoto.stage}
                      </div>
