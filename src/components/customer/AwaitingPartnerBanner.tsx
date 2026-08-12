@@ -260,29 +260,29 @@ export function AwaitingPartnerBanner({
       : "text-primary";
 
   return (
-    <div className={cn("rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-sm", tone)}>
+    <div className={cn("rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm", tone)}>
       {serviceWindow && (
-        <div className="mb-3 flex items-center gap-3 border-b border-[#F5F5F5] pb-3">
-          <Clock className="h-4 w-4 text-[#FF6B00]" />
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
-            <p className="text-[15px] font-bold text-[#1A1A1A]">{serviceWindow}</p>
+        <div className="mb-4 flex items-center justify-between border-b border-[#F5F5F5] pb-4">
+          <div className="flex items-center gap-3">
+            <Clock className="h-4 w-4 text-[#FF6B00]" />
+            <div className="min-w-0">
+              <p className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A]">Today's window</p>
+              <p className="text-[16px] font-semibold text-[#1A1A1A] mt-0.5">{serviceWindow}</p>
+            </div>
           </div>
-          <div className="ml-auto">
-            <StatusChip tone={state === "completed" ? "success" : "brand"} className="h-5 px-2 text-[9px] font-bold uppercase tracking-wider">
-               {state === "completed" ? "Completed" : "Scheduled"}
-            </StatusChip>
-          </div>
+          <StatusChip tone={state === "completed" ? "success" : "brand"} className="h-6 px-3 text-[10px] font-bold uppercase tracking-wider">
+             {state === "completed" ? "Completed" : "Scheduled"}
+          </StatusChip>
         </div>
       )}
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
-          {copyMap[state] && <p className="mt-1 text-[13px] font-medium leading-relaxed text-[#555555]">{copyMap[state]}</p>}
+          <p className="text-[16px] font-semibold tracking-tight text-[#1A1A1A]">{titleMap[state]}</p>
+          {copyMap[state] && <p className="mt-1 text-[14px] font-medium leading-relaxed text-[#555555]">{copyMap[state]}</p>}
 
           {partner && state !== "searching" && (
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3">
               {partner.profile_photo_url ? (
                 <img
                   src={partner.profile_photo_url}
@@ -295,8 +295,8 @@ export function AwaitingPartnerBanner({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-bold text-[#1A1A1A]">{partner.full_name}</p>
-                <div className="flex items-center gap-2 text-[11px] font-medium text-[#8A8A8A]">
+                <p className="truncate text-[15px] font-semibold text-[#1A1A1A]">{partner.full_name}</p>
+                <div className="flex items-center gap-2 text-[12px] font-medium text-[#8A8A8A]">
                   <span className="inline-flex items-center gap-1 text-[#FF6B00]">
                     <Star className="h-3 w-3 fill-current" /> {Number(partner.rating ?? 5).toFixed(1)}
                   </span>
@@ -309,6 +309,7 @@ export function AwaitingPartnerBanner({
         </div>
       </div>
     </div>
+
   );
 }
 

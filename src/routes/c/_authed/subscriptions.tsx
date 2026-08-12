@@ -272,10 +272,11 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
-                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-4 shadow-sm">
+                    {/* ACTIVE PLAN CARD */}
+                    <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mb-2">
                             <span className="flex h-5 items-center gap-1 rounded-full bg-[#FF6B00]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#FF6B00]">
                               <Sparkles className="h-2.5 w-2.5" />
                               Daily Shine
@@ -285,95 +286,84 @@ function MyPlanPage() {
                               Active
                             </div>
                           </div>
-                          <h2 className="mt-2 text-[19px] font-bold text-[#1A1A1A]">
+                          <h2 className="text-[24px] font-semibold text-[#1A1A1A]">
                             {activeSub.service_catalog?.name ?? "Daily Shine Subscription"}
                           </h2>
-                          <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium text-[#8A8A8A]">
-                            <span className="text-[#1A1A1A] font-bold">₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / mo</span>
-                            <span className="opacity-30">·</span>
-                            <span>{daysLeft} days left</span>
-
+                          <div className="mt-1 text-[15px] font-medium text-[#1A1A1A]">
+                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month 
+                            <span className="text-[#8A8A8A] ml-2">· {daysLeft} days left</span>
                           </div>
                         </div>
-                        <button onClick={() => setManageOpen(true)} className="text-[13px] font-bold text-[#FF6B00] flex items-center gap-0.5">
-                          Manage <ChevronRight className="h-4 w-4" />
+                        <button onClick={() => setManageOpen(true)} className="text-[14px] font-semibold text-[#FF6B00]">
+                          Manage
                         </button>
                       </div>
 
                       <div className="mt-6">
-                        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-[#8A8A8A]">
+                        <div className="flex items-center justify-between text-[12px] font-medium uppercase tracking-wider text-[#8A8A8A] mb-2">
                           <span>Monthly Usage</span>
-                          <span className="text-[#1A1A1A]">{elapsed} / {totalDays} days used</span>
+                          <span className="text-[#1A1A1A] font-semibold">{elapsed} / {totalDays} service days</span>
                         </div>
-
-                        <Meter value={elapsed} max={totalDays} className="mt-2 h-2" />
+                        <Meter value={elapsed} max={totalDays} className="h-2" />
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between border-t border-[#F5F5F5] pt-4">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</span>
-                          <span className="text-[15px] font-bold text-[#1A1A1A]">
-                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) || "4 Sept"}
-                          </span>
+                      <div className="mt-5 pt-4 border-t border-[#F5F5F5] flex items-center justify-between">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-[#8A8A8A]">Next Renewal</p>
+                          <p className="text-[16px] font-semibold text-[#1A1A1A] mt-0.5">
+                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                          </p>
                         </div>
                         {cancelScheduled && (
-                          <div className="flex items-center gap-1 text-[11px] font-bold text-[#8A8A8A]">
-                            {cancelScheduled ? (subRow?.cancel_at ? `Ends ${new Date(subRow.cancel_at).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}` : "Auto-renewal off") : "Auto-renewal on"}
-                          </div>
-
+                          <p className="text-[13px] font-medium text-[#E53935]">Scheduled to end</p>
                         )}
                       </div>
                     </div>
 
+                    {/* WHAT'S INCLUDED */}
+                    <PlanInclusionsCard planSlug={activePlanSlug} />
+
+                    {/* ACTION BUTTONS */}
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => setBookOpen(true)} className="flex h-[76px] items-center gap-3 rounded-[18px] bg-[#1A1A1A] p-3.5 active:scale-[0.98] transition-transform">
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white">
-                          <CalendarPlus className="h-5 w-5" />
-                        </div>
-                        <div className="text-left">
-                          <div className="text-[14px] font-bold text-white">Book Wash</div>
-                          <div className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">INCLUDED</div>
-                        </div>
+                      <button onClick={() => setBookOpen(true)} className="h-[72px] flex flex-col items-center justify-center rounded-2xl bg-[#1A1A1A] text-white active:scale-[0.98] transition-transform">
+                        <span className="text-[15px] font-semibold">Book Wash</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Included</span>
                       </button>
-                      <button onClick={() => setBuilderOpen(true)} className="flex h-[76px] items-center gap-3 rounded-[18px] border border-[#EEEEEE] bg-white p-3.5 active:scale-[0.98] transition-transform">
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF2E8] text-[#FF6B00]">
-                          <Settings2 className="h-5 w-5" />
-                        </div>
-                        <div className="text-left">
-                          <div className="text-[14px] font-bold text-[#1A1A1A]">Modify</div>
-                          <div className="text-[10px] font-bold text-[#8A8A8A] uppercase tracking-tighter">ADJUST PLAN</div>
-                        </div>
+                      <button onClick={() => setBuilderOpen(true)} className="h-[72px] flex flex-col items-center justify-center rounded-2xl border border-[#EEEEEE] bg-white text-[#1A1A1A] active:scale-[0.98] transition-transform">
+                        <span className="text-[15px] font-semibold">Modify</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#8A8A8A]">Adjust Plan</span>
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-center gap-8 py-2">
-                      <button className="text-[13px] font-medium text-[#8A8A8A] active:text-[#FF6B00]">Pause subscription</button>
-                      <button onClick={() => setCancelDialogOpen(true)} className="text-[13px] font-medium text-[#8A8A8A] active:text-[#E53935]">Cancel plan</button>
+                    {/* PAUSE / CANCEL */}
+                    <div className="flex justify-center gap-6 py-1">
+                      <button className="text-[14px] font-medium text-[#8A8A8A]">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[14px] font-medium text-[#8A8A8A]">Cancel plan</button>
                     </div>
 
-                    <div className="space-y-3">
-                      <h3 className="text-[14px] font-bold uppercase tracking-widest text-[#8A8A8A] px-1">Detailed usage</h3>
-                      <div className="space-y-3 rounded-[18px] border border-[#EEEEEE] bg-white p-4">
+                    {/* DETAILED USAGE */}
+                    <div className="space-y-4">
+                      <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8A8A8A] px-1">Detailed Usage</h3>
+                      <div className="rounded-[22px] border border-[#EEEEEE] bg-white p-5 space-y-5">
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-[13px] font-bold">
-                            <span className="text-[#1A1A1A]">Exterior washes</span>
-                            <span className="text-[#8A8A8A]">{exteriorCount} / 25 washes used</span>
+                          <div className="flex justify-between text-[14px] font-medium">
+                            <span>Exterior washes</span>
+                            <span className="text-[#1A1A1A] font-semibold">{exteriorCount} / 25</span>
                           </div>
                           <Meter value={exteriorCount} max={25} className="h-1.5" />
                         </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-[13px] font-bold">
-                             <span className="text-[#1A1A1A]">Interior wash</span>
-                             <span className="text-[#8A8A8A]">{interiorCount} / 1 wash used</span>
-
+                          <div className="flex justify-between text-[14px] font-medium">
+                            <span>Interior wash</span>
+                            <span className="text-[#1A1A1A] font-semibold">{interiorCount} / 1</span>
                           </div>
                           <Meter value={interiorCount} max={1} className="h-1.5" />
                         </div>
                       </div>
                     </div>
 
-                    <PlanInclusionsCard planSlug={activePlanSlug} />
                     <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+
                   </div>
                 )}
               </>
