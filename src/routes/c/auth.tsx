@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, AlertCircle } from "lucide-react";
 import { OtpInput } from "@/components/customer/ui/OtpInput";
-import { authLog, parseAuthError } from "@/lib/auth-debug";
+import { authLog, parseAuthError, getAuthErrorDetails } from "@/lib/auth-debug";
 import logo from "@/assets/logo.jpeg";
 import { cn } from "@/lib/utils";
 
