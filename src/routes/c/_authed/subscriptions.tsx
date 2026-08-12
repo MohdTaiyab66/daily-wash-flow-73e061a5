@@ -344,15 +344,17 @@ function MyPlanPage() {
                         </button>
                       </div>
                       
-                      <div className="flex justify-center gap-6 mt-4">
-                        <button className="text-[12px] font-medium text-[#8A8A8A]">Pause subscription</button>
-                        <button onClick={() => setCancelDialogOpen(true)} className="text-[12px] font-medium text-[#8A8A8A]">Cancel plan</button>
-                      </div>
                     </div>
 
                     <PlanInclusionsCard planSlug={activePlanSlug} />
                     <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+
+                    <div className="flex justify-center gap-6 mt-8 mb-4">
+                      <button className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Pause subscription</button>
+                      <button onClick={() => setCancelDialogOpen(true)} className="text-[11px] font-semibold text-[#8A8A8A] uppercase tracking-widest active:opacity-60">Cancel plan</button>
+                    </div>
                   </div>
+
                 )}
               </>
             )}
