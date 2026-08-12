@@ -13,66 +13,34 @@ export const Route = createFileRoute("/c/_authed")({
   loader: async ({ context }) => {
     authLog.trace("Protected route loader started");
     
+    // We do NOT block on getInitialCustomerContext here.
+    // We let the page load and fetch what it needs.
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      authLog.error("Protected route loader - No session", { location: window.location.pathname });
+      authLog.error("Protected route loader - No session");
       throw redirect({ to: "/c/auth" });
     }
     
-    authLog.info("Protected route loader - Session verified", { userId: session.user.id });
-    
-    // Fire off parallel fetch
-    authLog.info("Customer & Vehicle lookup started (Parallel)");
-    try {
-      // Don't block the whole app if context fetch is slow, but try to get it
-      const dataPromise = context.queryClient.ensureQueryData({
-        queryKey: ["customer-initial-context"],
-        queryFn: () => getInitialCustomerContext(),
-        staleTime: 1000 * 60 * 5, // 5 mins
-      });
-
-      // We still wait for it in the loader to avoid layout flash, 
-      // but we add a timeout so the app shell isn't blocked forever.
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Context fetch timeout")), 2000)
-      );
-
-      const data = await Promise.race([dataPromise, timeoutPromise]).catch(err => {
-        authLog.error("Customer context fetch partial failure", err);
-        return null; // Let the component handle partial data
-      });
-
-      authLog.info("Customer & Vehicle lookup resolved", { 
-        hasProfile: !!(data as any)?.profile, 
-        vehicleCount: (data as any)?.vehicles?.length 
-      });
-      return data;
-    } catch (error) {
-      authLog.error("Critical customer context fetch failed", error);
-      return null;
-    }
+    return null;
   },
   beforeLoad: async () => {
-    authLog.trace("Protected route beforeLoad check");
-    const { data, error } = await supabase.auth.getUser();
+    authLog.trace("Protected route beforeLoad check (async start)");
     
-    if (error) {
-      authLog.trace("beforeLoad - getUser failed", error);
+    // Non-blocking session check
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      authLog.error("beforeLoad - No session");
       throw redirect({ to: "/c/auth" });
     }
     
-    if (!data.user) {
-      authLog.error("beforeLoad - No user");
-      throw redirect({ to: "/c/auth" });
-    }
-    
-    if (!data.user.email?.endsWith("@customer.urbanwash.app")) {
-      authLog.error("beforeLoad - Invalid user domain", { email: data.user.email });
+    if (!session.user.email?.endsWith("@customer.urbanwash.app")) {
+      authLog.error("beforeLoad - Invalid user domain", { email: session.user.email });
       await supabase.auth.signOut({ scope: "local" });
       throw redirect({ to: "/c/auth" });
     }
     
-    authLog.trace("beforeLoad - Auth confirmed", { userId: data.user.id });
+    authLog.trace("beforeLoad - Auth confirmed", { userId: session.user.id });
   },
   component: CustomerAuthedLayout,
 });

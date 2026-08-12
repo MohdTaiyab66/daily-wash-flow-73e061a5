@@ -23,7 +23,7 @@ export const Route = createFileRoute("/c/")({
  * A short floor keeps it from flashing on very fast devices.
  */
 const MIN_SPLASH_MS = 300;
-const AUTH_TIMEOUT_MS = 3000;
+const AUTH_TIMEOUT_MS = 2500;
 
 function CustomerSplash() {
   const navigate = useNavigate();
@@ -31,21 +31,28 @@ function CustomerSplash() {
   useEffect(() => {
     let cancelled = false;
     const startedAt = Date.now();
+    console.log("[STARTUP] [WEB] Splash component mounted at:", startedAt);
 
     const resolveAuth = async () => {
       let isCustomer = false;
+      
+      console.log("[STARTUP] [WEB] Starting auth check...");
       
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Auth check timed out")), AUTH_TIMEOUT_MS)
       );
 
       try {
+        // We use getSession because it is much faster (local storage read) than getUser
         const authPromise = supabase.auth.getSession();
         const { data }: any = await Promise.race([authPromise, timeoutPromise]);
+        
+        console.log("[STARTUP] [WEB] Auth check completed. Session present:", !!data.session);
+        
         isCustomer = !!data.session?.user?.email?.endsWith("@customer.urbanwash.app");
       } catch (err) {
-        console.warn("[SPLASH] Auth check failed or timed out:", err);
-        isCustomer = false; // Fall back to login
+        console.warn("[STARTUP] [WEB] Auth check failed or timed out:", err);
+        isCustomer = false; 
       }
 
       if (cancelled) return;
@@ -53,8 +60,11 @@ function CustomerSplash() {
       const elapsed = Date.now() - startedAt;
       const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
       
+      console.log(`[STARTUP] [WEB] Routing in ${wait}ms. Target isCustomer:`, isCustomer);
+      
       window.setTimeout(() => {
         if (cancelled) return;
+        console.log("[STARTUP] [WEB] Executing navigation...");
         if (isCustomer) {
           const savedArea = localStorage.getItem("uw_customer_area");
           navigate({ to: savedArea ? "/c/home" : "/c/location/search", replace: true });
@@ -66,11 +76,17 @@ function CustomerSplash() {
 
     resolveAuth();
 
-    return () => { cancelled = true; };
+    return () => { 
+      console.log("[STARTUP] [WEB] Splash component unmounting");
+      cancelled = true; 
+    };
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#FFF9F3] px-6">
+    <div 
+      className="flex min-h-screen flex-col items-center justify-center bg-[#FFF9F3] px-6"
+      data-startup-marker="customer-splash"
+    >
       <div className="-mt-16 flex flex-col items-center animate-in zoom-in-95 duration-1000">
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
@@ -81,6 +97,11 @@ function CustomerSplash() {
           <div className="h-1 w-1 rounded-full bg-primary" />
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Lucknow</p>
           <div className="h-1 w-1 rounded-full bg-primary" />
+        </div>
+        
+        {/* Unmistakable diagnostic marker visible only in dev or via inspection */}
+        <div className="fixed bottom-10 left-0 right-0 flex justify-center opacity-10 pointer-events-none">
+          <span className="text-[10px] font-mono">APP_START_TRACE_ACTIVE</span>
         </div>
       </div>
     </div>
