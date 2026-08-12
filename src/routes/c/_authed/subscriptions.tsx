@@ -342,7 +342,10 @@ function MyPlanPage() {
                     </div>
 
                     <PlanInclusionsCard planSlug={activePlanSlug} />
-                    <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+                    
+                    <div className="mt-8">
+                      <RecentServiceFeed userId={userId} vehicleId={selectedVehicleId} />
+                    </div>
 
                     <div className="flex justify-center gap-4 mt-6 mb-4">
                       <button className="text-[12px] font-bold text-[#8A8A8A] active:opacity-60">Pause subscription</button>
