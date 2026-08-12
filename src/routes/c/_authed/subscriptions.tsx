@@ -315,18 +315,20 @@ function MyPlanPage() {
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-4 border-t border-[#F5F5F5]">
-                        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8A8A8A]">Next Renewal</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[15px] font-black text-[#1A1A1A]">
-                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
-                          </p>
-                          <span className={cn(
-                            "text-[12px] font-bold",
-                            cancelScheduled ? "text-[#E53935]" : "text-[#2E7D32]"
+                      <div className="mt-8 pt-6 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Next Cycle</p>
+                            <p className="text-[17px] font-black text-[#1A1A1A] mt-1.5">
+                              {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <div className={cn(
+                            "px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-[0.1em]",
+                            cancelScheduled ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
                           )}>
-                            {cancelScheduled ? "Scheduled to end" : "Auto-renews"}
-                          </span>
+                            {cancelScheduled ? "Ending Soon" : "Auto-Renew"}
+                          </div>
                         </div>
                       </div>
 
