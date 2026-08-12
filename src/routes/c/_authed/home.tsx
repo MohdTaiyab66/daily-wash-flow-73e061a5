@@ -91,7 +91,7 @@ function CustomerHome() {
       const res = await fetchWithTimeout(
         supabase.from("service_catalog").select("id").limit(1) as any,
         "RAW_DB_TEST"
-      );
+      ) as any;
       if (res.error) throw res.error;
       console.log("[NET][DIAGNOSTIC] Raw database test SUCCESS:", !!res.data);
       return { success: true, count: res.data?.length };
