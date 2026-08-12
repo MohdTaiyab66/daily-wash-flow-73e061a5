@@ -180,13 +180,28 @@ function CustomerHome() {
   const oneTime = services.filter((s) => s.service_type !== "subscription" && !PLAN_INCLUDED_SERVICE_SLUGS.includes(s.slug));
 
   const filteredServices = oneTime.filter((s) => {
-    if (selectedCategory === "Popular") return true;
-    if (selectedCategory === "Wash") return s.slug.includes("wash");
-    if (selectedCategory === "Interior") return s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
-    if (selectedCategory === "Polish") return s.slug.includes("polish") || s.slug.includes("scratch");
-    if (selectedCategory === "Detailing") return s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
-    return true;
+    let matches = true;
+    if (selectedCategory === "Popular") matches = true;
+    else if (selectedCategory === "Wash") matches = s.slug.includes("wash");
+    else if (selectedCategory === "Interior") matches = s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
+    else if (selectedCategory === "Polish") matches = s.slug.includes("polish") || s.slug.includes("scratch");
+    else if (selectedCategory === "Detailing") matches = s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
+    
+    return matches;
   });
+
+  useEffect(() => {
+    if (servicesQ.data) {
+      console.log(`[SERVICE-DATA] processing lifecycle:
+        - raw: ${servicesQ.data.length}
+        - oneTime: ${oneTime.length}
+        - selectedCategory: ${selectedCategory}
+        - filtered: ${filteredServices.length}
+        - loading: ${servicesQ.isLoading}
+        - error: ${servicesQ.isError}
+      `);
+    }
+  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length, servicesQ.isLoading, servicesQ.isError]);
 
   const galleryQ = useServiceGallery();
   
