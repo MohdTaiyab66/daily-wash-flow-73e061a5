@@ -81,8 +81,8 @@ function CustomerHome() {
 
   console.log("[HOME DEBUG] Environment check:", {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    BUILD: "1.0.35",
-    BUILD_ID: "debug-pipeline-2026-08-12"
+    BUILD: "1.0.36",
+    BUILD_ID: "auth-arch-fix-2026-08-12"
   });
 
   useEffect(() => {
@@ -352,7 +352,7 @@ function CustomerHome() {
         <div className="fixed bottom-[80px] left-2 right-2 z-[9999] pointer-events-none opacity-80">
           <div className="bg-black/90 text-[9px] text-white p-2 rounded-lg border border-white/20 font-mono space-y-0.5">
             <div className="flex justify-between border-b border-white/10 pb-1 mb-1">
-              <span>DEBUG BUILD 1.0.35</span>
+              <span>DEBUG BUILD 1.0.36</span>
               <span className={cn(servicesQ.isSuccess ? "text-green-400" : "text-orange-400")}>
                 {servicesQ.fetchStatus} | {servicesQ.status}
               </span>
