@@ -95,7 +95,15 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
       .select("id")
       .single();
     
-    if (claimError || !claim?.id) return false;
+    if (claimError || !claim?.id) {
+      if (claimError?.code === "23505") {
+        // Idempotency check: already claimed by another process (e.g., cron vs immediate)
+        return false;
+      }
+      return false;
+    }
+    
+    console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
     const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
