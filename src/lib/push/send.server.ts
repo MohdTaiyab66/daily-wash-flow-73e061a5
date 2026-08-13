@@ -330,12 +330,12 @@ export async function sendOfferPush(args: {
     .is("invalid_at", null);
   if (error) throw error;
   if (!tokens || tokens.length === 0) {
-    console.log(`[CUSTOMER-E2E:COMPLETE:05] ACTIVE_TOKEN_COUNT user_id=${args.userId} token_count=0`);
+    console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = 0 (user_id=${args.userId})`);
     return { sent: 0, failed: 0, results: [] };
   }
-  console.log(`[CUSTOMER-E2E:COMPLETE:05] ACTIVE_TOKEN_COUNT user_id=${args.userId} token_count=${tokens.length}`);
+  console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = ${tokens.length} (user_id=${args.userId})`);
 
-  console.log(`[CUSTOMER-E2E:COMPLETE:06] FCM_SEND_STARTED token_count=${tokens.length}`);
+  console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED token_count=${tokens.length} type=${args.data.type}`);
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
       sendOne({
@@ -353,7 +353,7 @@ export async function sendOfferPush(args: {
 
   const successCount = results.filter(r => r.ok).length;
   const failureCount = results.filter(r => !r.ok).length;
-  console.log(`[CUSTOMER-E2E:COMPLETE:07] FCM_SEND_SUCCESS success_count=${successCount} failure_count=${failureCount}`);
+  console.log(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT success_count=${successCount} failure_count=${failureCount}`);
 
 
   const failures = results.filter((r) => !r.ok);
