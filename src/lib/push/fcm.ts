@@ -128,7 +128,13 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   // 3) Token registration + persistence
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
-    if (!token) return;
+    if (!token) {
+      console.error("[CUSTOMER-FCM-REGISTRATION] received empty token");
+      return;
+    }
+    
+    console.log(`[CUSTOMER-FCM-REGISTRATION] upsertToken starting. token_length: ${token.length}, token_tail: ${token.slice(-8)}`);
+
     try {
       await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
       await Preferences.set({ key: "urbanwash.current_token", value: token });
@@ -139,33 +145,33 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
         await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
+        console.log(`[CUSTOMER-FCM-REGISTRATION] token upload SUCCESS`);
       } catch { /* noop */ }
     };
     const markErr = async (msg: string) => {
       try {
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: msg });
       } catch { /* noop */ }
-      console.error("[fcm] push_tokens registration failed", msg);
+      console.error("[CUSTOMER-FCM-REGISTRATION] token upload FAILED:", msg);
     };
 
-    // Server-side registration: `push_tokens.token` is globally unique, so the
-    // row may already belong to another user/device (re-install, account
-    // switch). RLS forbids the client from moving that row, so the server fn
-    // claims it with admin rights — idempotent, never a 23505.
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      await registerPushToken({
+      console.log(`[CUSTOMER-FCM-REGISTRATION] calling registerPushToken RPC...`);
+      const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
+      console.log(`[CUSTOMER-FCM-REGISTRATION] registerPushToken RPC result: ${JSON.stringify(res)}`);
       await markOk();
       return;
     } catch (e: any) {
+      console.error(`[CUSTOMER-FCM-REGISTRATION] RPC catch: ${e?.message ?? String(e)}`);
       await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);
     }
 
-    // Fallback (offline / server fn unreachable): best-effort direct write on
-    // the device-scoped conflict target.
+    // Fallback (offline / server fn unreachable)
     try {
+      console.log(`[CUSTOMER-FCM-REGISTRATION] falling back to direct Supabase upsert...`);
       const { error } = await supabase.from("push_tokens").upsert(
         {
           user_id: userId,
@@ -178,21 +184,26 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         } as any,
         { onConflict: "user_id,device_id,app" } as any,
       );
-      if (!error) await markOk();
-      else await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
+      if (!error) {
+        console.log(`[CUSTOMER-FCM-REGISTRATION] direct upsert SUCCESS`);
+        await markOk();
+      } else {
+        console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert FAILED: ${error.code} ${error.message}`);
+        await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
+      }
     } catch (e: any) {
+      console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert catch: ${e?.message ?? String(e)}`);
       await markErr(String(e?.message ?? e ?? "unknown"));
     }
   };
 
-
-
-
   try {
+    console.log(`[CUSTOMER-FCM-REGISTRATION] calling FirebaseMessaging.getToken()...`);
     const { token } = await FirebaseMessaging.getToken();
+    console.log(`[CUSTOMER-FCM-REGISTRATION] getToken result: ${token ? 'PRESENT' : 'MISSING'}`);
     if (token) await upsertToken(token);
-  } catch {
-    /* noop */
+  } catch (e: any) {
+    console.error(`[CUSTOMER-FCM-REGISTRATION] getToken failed: ${e?.message ?? String(e)}`);
   }
 
   FirebaseMessaging.addListener("tokenReceived", async ({ token }) => {
