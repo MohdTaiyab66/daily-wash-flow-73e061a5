@@ -14,8 +14,40 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
 
     @PluginMethod
+    public void getNativeInfo(PluginCall call) {
+        Log.d("CUSTOMER-PUSH-HANDSHAKE", "getNativeInfo invoked [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-05]");
+        try {
+            SharedPreferences capPrefs = getContext().getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+            String currentToken = capPrefs.getString("urbanwash.current_token", null);
+
+            JSObject ret = new JSObject();
+            ret.put("nativeToken", currentToken);
+            ret.put("tokenTail", currentToken != null && currentToken.length() > 8 
+                ? currentToken.substring(currentToken.length() - 8) 
+                : currentToken);
+            ret.put("packageName", getContext().getPackageName());
+            ret.put("buildId", "FCM-P0-NATIVE-FCM-RECEIPT-05");
+            
+            // Firebase identification (safe to expose in diag panel)
+            try {
+                com.google.firebase.FirebaseOptions options = com.google.firebase.FirebaseApp.getInstance().getOptions();
+                ret.put("senderId", options.getGcmSenderId());
+                ret.put("projectId", options.getProjectId());
+                ret.put("googleAppId", options.getApplicationId());
+            } catch (Exception fe) {
+                ret.put("firebaseError", fe.getMessage());
+            }
+
+            call.resolve(ret);
+        } catch (Exception e) {
+            Log.e("CUSTOMER-PUSH-HANDSHAKE", "getNativeInfo failed", e);
+            call.reject("ERROR_GETTING_NATIVE_INFO", e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void getLastFcmReceipt(PluginCall call) {
-        Log.d("CUSTOMER-PUSH-HANDSHAKE", "JS_REQUEST_RECEIVED [BUILD: FCM-P0-FIREBASE-MERGE-05]");
+        Log.d("CUSTOMER-PUSH-HANDSHAKE", "getLastFcmReceipt invoked");
         try {
             SharedPreferences diagPrefs = getContext().getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE);
             
@@ -27,10 +59,6 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
             String notifId = diagPrefs.getString("last_notif_posted_id", null);
             long postedAt = diagPrefs.getLong("last_notif_posted_at", 0);
 
-            // Fetch current native token for comparison
-            SharedPreferences capPrefs = getContext().getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
-            String currentToken = capPrefs.getString("urbanwash.current_token", null);
-
             JSObject ret = new JSObject();
             ret.put("received", msgId != null);
             ret.put("messageId", msgId);
@@ -39,14 +67,10 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
             ret.put("title", title);
             ret.put("notifId", notifId);
             ret.put("postedAt", postedAt > 0 ? String.valueOf(postedAt) : null);
-            ret.put("nativeTokenSuffix", currentToken != null && currentToken.length() > 8 
-                ? currentToken.substring(currentToken.length() - 8) 
-                : currentToken);
-            ret.put("buildId", "FCM-P0-FIREBASE-MERGE-05");
             
             call.resolve(ret);
         } catch (Exception e) {
-            Log.e("CUSTOMER-PUSH-HANDSHAKE", "Error reading diagnostics", e);
+            Log.e("CUSTOMER-PUSH-HANDSHAKE", "getLastFcmReceipt failed", e);
             call.reject("ERROR_READING_DIAGNOSTICS", e.getMessage());
         }
     }
