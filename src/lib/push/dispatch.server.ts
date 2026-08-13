@@ -35,8 +35,12 @@ type PendingOfferRow = {
 };
 
 async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
+  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS_RESOLVING`);
   const { data: offers, error } = await sb.rpc("list_pending_push_offers");
-  if (!error && offers) return offers as PendingOfferRow[];
+  if (!error && offers) {
+    console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${offers.length}`);
+    return offers as PendingOfferRow[];
+  }
   // Fallback when the RPC isn't installed.
   const { data: fallback, error: fbErr } = await sb
     .from("subscription_offers")
@@ -48,6 +52,7 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
     .order("offered_at", { ascending: false })
     .limit(50);
   if (fbErr) throw fbErr;
+  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${fallback?.length ?? 0} (fallback)`);
   return (fallback ?? []).map((o: any) => ({
     offer_id: o.id,
     queue_id: o.queue_id,
