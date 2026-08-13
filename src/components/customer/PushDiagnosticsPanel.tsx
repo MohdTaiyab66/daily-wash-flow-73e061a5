@@ -189,7 +189,7 @@ export function PushDiagnosticsPanel() {
       // Trigger production dispatch sweep to pick up any pending notifications
       try {
         const { triggerCustomerDispatch } = await import("@/lib/push/dispatch-trigger.functions");
-        await triggerCustomerDispatch({ userId: targetUserId });
+        await triggerCustomerDispatch({ data: { userId: targetUserId } });
       } catch (e) {
         console.warn("[CUSTOMER-PROD-E2E:TRIGGER] Manual sweep trigger failed", e);
       }
