@@ -87,6 +87,42 @@ function ServiceDetail() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
+  const vehiclesQ = useQuery({
+    queryKey: ["customer-vehicles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_vehicles").select("*");
+      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
+      return (data ?? []) as Vehicle[];
+    }
+  });
+
+  const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
+
+  const vehicle = useMemo(() => {
+    const targetId = search.vehicleId || vehicleId;
+    if (!targetId) {
+      console.error("[VEHICLE-FLOW] P0: No vehicleId in URL or state");
+      return null;
+    }
+    
+    const found = (vehiclesQ.data ?? []).find(v => v.id === targetId);
+    if (!found) {
+      console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
+    }
+    
+    return found || null;
+  }, [vehiclesQ.data, vehicleId, search.vehicleId]);
+
+  useEffect(() => {
+    console.log("[SERVICE-DETAIL-CONTEXT]", {
+      routeVehicleId: search.vehicleId,
+      routeSlug: slug,
+      resolvedVehicleId: vehicle?.id,
+      resolvedVehicleModel: vehicle?.model,
+      resolvedVehicleCategory: vehicle?.category,
+    });
+  }, [search.vehicleId, slug, vehicle]);
+
   useEffect(() => {
     // Check session silently, do not trigger global state resets
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -98,8 +134,6 @@ function ServiceDetail() {
   
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
-  
-  const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
@@ -175,14 +209,7 @@ function ServiceDetail() {
     staleTime: 5 * 60 * 1000
   });
 
-  const vehiclesQ = useQuery({
-    queryKey: ["customer-vehicles"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("customer_vehicles").select("*");
-      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
-      return (data ?? []) as Vehicle[];
-    }
-  });
+  const service = serviceQ.data;
 
   const addressesQ = useQuery({
     queryKey: ["customer-addresses"],
@@ -192,6 +219,8 @@ function ServiceDetail() {
       return (data ?? []) as Address[];
     }
   });
+
+  const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
 
   const addonsQ = useQuery({
     queryKey: ["service-addons"],
@@ -205,50 +234,21 @@ function ServiceDetail() {
   const profileQ = useQuery({
     queryKey: ["customer-profile"],
     queryFn: async () => {
-      // Use the canonical session
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user?.id) {
-        console.warn("[SERVICE] No user session found for profile query");
-        return null;
-      }
-      
+      if (!session?.user?.id) return null;
       const { data, error } = await supabase
         .from("customer_profiles")
         .select("*")
         .eq("user_id", session.user.id)
         .maybeSingle();
-        
-      if (error) {
-        console.error("[SERVICE] Profile data fetch failed:", error);
-        return null;
-      }
+      if (error) return null;
       return data;
     },
     retry: 1
   });
 
-  const service = serviceQ.data;
-  const vehicles = vehiclesQ.data ?? [];
-  const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
   const profile = profileQ.data;
 
-  // P0 FIX: Strictly use search.vehicleId. Fallback ONLY to home's selected vehicle if possible, but NEVER vehicles[0] blindly if search was provided.
-  // If search.vehicleId is present, we MUST find THAT vehicle.
-  const vehicle = useMemo(() => {
-    const targetId = search.vehicleId || vehicleId;
-    if (!targetId) {
-      console.error("[VEHICLE-FLOW] P0: No vehicleId in URL or state");
-      return null;
-    }
-    
-    const found = vehicles.find(v => v.id === targetId);
-    if (!found) {
-      console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
-    }
-    
-    return found || null;
-  }, [vehicles, vehicleId, search.vehicleId]);
   const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
   
