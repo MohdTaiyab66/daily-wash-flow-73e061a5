@@ -645,7 +645,7 @@ export function BookAWashSheet({
       <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
-              <DrawerTitle>Choose date</DrawerTitle>
+              <DrawerTitle className="text-[18px] font-black text-[#1A1A1A]">Choose date</DrawerTitle>
             </DrawerHeader>
             <div className="mt-2 grid grid-cols-4 gap-2">
               {[...Array(14)].map((_, i) => {
@@ -668,7 +668,7 @@ export function BookAWashSheet({
                     }}
                     className={cn(
                       "uw-pressable flex flex-col items-center justify-center rounded-2xl border py-3 transition-all",
-                      isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card",
+                      isSelected ? "border-[#FF6B00] bg-[#FF6B00] text-white" : "border-black/[0.04] bg-white",
                       isMon && "opacity-30"
                     )}
                   >
@@ -690,7 +690,7 @@ export function BookAWashSheet({
         <Drawer open={addressPickerOpen} onOpenChange={setAddressPickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
-              <DrawerTitle>Choose service location</DrawerTitle>
+              <DrawerTitle className="text-[18px] font-black text-[#1A1A1A]">Choose service location</DrawerTitle>
             </DrawerHeader>
             <div className="mt-2 space-y-3">
               {(addrQ.data ?? []).map((a) => (
@@ -702,15 +702,15 @@ export function BookAWashSheet({
                   }}
                   className={cn(
                     "uw-pressable flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-all",
-                    addressId === a.id ? "border-primary bg-primary/5" : "border-border bg-card"
+                    addressId === a.id ? "border-[#FF6B00] bg-[#FFF6EF]" : "border-black/[0.04] bg-white"
                   )}
                 >
                   <div>
-                    <div className="font-bold">{a.label || "Address"}</div>
-                    <div className="text-[13px] text-muted-foreground">{a.area}</div>
+                    <div className="text-[15px] font-bold text-[#1A1A1A]">{a.label || "Address"}</div>
+                    <div className="text-[12px] font-medium text-[#A6A6A6]">{a.area}</div>
                   </div>
                   {addressId === a.id && (
-                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                    <div className="h-6 w-6 rounded-full bg-[#FF6B00] flex items-center justify-center">
                       <Check className="h-3.5 w-3.5 text-white" />
                     </div>
                   )}
@@ -718,7 +718,7 @@ export function BookAWashSheet({
               ))}
               <Button asChild variant="outline" className="w-full rounded-2xl py-6" onClick={() => setAddressPickerOpen(false)}>
                 <Link to="/c/profile">
-                  <Plus className="mr-2 h-4 w-4" /> Add new address
+                  <Plus className="mr-2 h-4 w-4" /> <span className="text-[14px] font-black">Add new address</span>
                 </Link>
               </Button>
             </div>
