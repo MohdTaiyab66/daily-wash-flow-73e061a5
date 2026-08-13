@@ -217,7 +217,7 @@ export function PushDiagnosticsPanel() {
 
                   </div>
                   <div className="text-[9px] text-right">
-                    Seen: {new Date(t.last_seen).toLocaleTimeString()}
+                    Seen: {t?.last_seen ? new Date(t.last_seen).toLocaleTimeString() : "—"}
                   </div>
                 </div>
               ))}
@@ -245,7 +245,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-ANDROID-RECEIPT-02</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-ANDROID-RECEIPT-03</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
@@ -266,7 +266,7 @@ export function PushDiagnosticsPanel() {
               <div className="pt-2 border-t border-white/10 mt-1">
                 <p className="text-orange-400 font-bold mb-1 underline">ANDROID NATIVE HANDSHAKE</p>
                 
-                {nativeState?.fcm?.id === lastTestResult.messageId ? (
+                {nativeMatchesTest ? (
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <span>ANDROID FCM:</span>
@@ -274,27 +274,27 @@ export function PushDiagnosticsPanel() {
                     </div>
                     <div className="flex justify-between">
                       <span>NATIVE MSG ID:</span>
-                      <span className="truncate max-w-[140px] text-green-300">{nativeState.fcm.id}</span>
+                      <span className="truncate max-w-[140px] text-green-300">{safeNative.fcm.id ?? "NONE"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>RECEIVED AT:</span>
-                      <span>{nativeState.fcm.receivedAt}</span>
+                      <span>{safeNative.fcm.receivedAt}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>TYPE:</span>
-                      <span className="text-blue-300">{nativeState.fcm.type}</span>
+                      <span className="text-blue-300">{safeNative.fcm.type}</span>
                     </div>
                     
                     <div className="flex justify-between pt-1">
                       <span>NOTIFICATION:</span>
-                      <span className={nativeState.notif?.id ? "text-green-400 font-bold" : "text-orange-400"}>
-                        {nativeState.notif?.id ? "✅ POSTED" : "⏳ POSTING..."}
+                      <span className={safeNative.notif.id ? "text-green-400 font-bold" : "text-orange-400"}>
+                        {safeNative.notif.id ? "✅ POSTED" : "⏳ POSTING..."}
                       </span>
                     </div>
-                    {nativeState.notif?.postedAt && (
+                    {safeNative.notif.postedAt && (
                       <div className="flex justify-between">
                         <span>POSTED AT:</span>
-                        <span>{nativeState.notif.postedAt}</span>
+                        <span>{safeNative.notif.postedAt}</span>
                       </div>
                     )}
                   </div>
@@ -302,7 +302,9 @@ export function PushDiagnosticsPanel() {
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <span>ANDROID FCM:</span>
-                      <span className="text-orange-400 animate-pulse uppercase font-bold">⏳ WAITING...</span>
+                      <span className="text-orange-400 animate-pulse uppercase font-bold">
+                        {androidLabel === "UNAVAILABLE" ? "UNAVAILABLE" : "⏳ WAITING..."}
+                      </span>
                     </div>
                     <p className="text-[8px] text-white/30 mt-1 italic">
                       If stuck here, message is NOT reaching Android service. Check Firebase Project / App ID.
@@ -325,7 +327,7 @@ export function PushDiagnosticsPanel() {
               
               <div className="pt-2 border-t border-white/10 mt-1 flex justify-between items-center">
                 <span className="font-bold">FINAL STATUS:</span>
-                {nativeState?.fcm?.id === lastTestResult.messageId && nativeState?.notif?.id ? (
+                {nativeMatchesTest && safeNative.notif.id ? (
                   <span className="bg-green-600 px-2 py-0.5 rounded text-white font-bold animate-bounce">DIRECT TEST: PASS</span>
                 ) : (
                   <span className="bg-orange-600 px-2 py-0.5 rounded text-white font-bold animate-pulse">DIRECT TEST: PENDING</span>
@@ -336,16 +338,16 @@ export function PushDiagnosticsPanel() {
         )}
 
         {/* STEP 11: LAST RECEIVED FCM (HISTORICAL) */}
-        {!lastTestResult && nativeState?.fcm && (
+        {!lastTestResult && safeNative.fcm.id && (
           <div className="rounded-2xl bg-muted/30 p-4 text-[10px] font-mono border border-black/5">
              <p className="font-bold text-muted-foreground uppercase mb-3 border-b border-black/5 pb-2 tracking-widest">LAST FCM ON THIS DEVICE</p>
              <div className="space-y-1.5 opacity-80">
-               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[140px] text-primary">{nativeState.fcm.id}</span></div>
-               <div className="flex justify-between"><span>TYPE:</span><span className="text-primary">{nativeState.fcm.type}</span></div>
-               <div className="flex justify-between"><span>RECEIVED:</span><span>{nativeState.fcm.receivedAt}</span></div>
-               {nativeState.notif?.postedAt && (
+               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[140px] text-primary">{safeNative.fcm.id}</span></div>
+               <div className="flex justify-between"><span>TYPE:</span><span className="text-primary">{safeNative.fcm.type}</span></div>
+               <div className="flex justify-between"><span>RECEIVED:</span><span>{safeNative.fcm.receivedAt}</span></div>
+               {safeNative.notif.postedAt && (
                  <div className="flex justify-between border-t border-black/5 pt-1.5 mt-1.5">
-                   <span className="font-bold">POSTED:</span><span className="text-success font-bold">✅ {nativeState.notif.postedAt}</span>
+                   <span className="font-bold">POSTED:</span><span className="text-success font-bold">✅ {safeNative.notif.postedAt}</span>
                  </div>
                )}
              </div>
