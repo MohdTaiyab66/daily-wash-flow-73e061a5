@@ -194,6 +194,8 @@ function ServiceDetail() {
   const start = useMutation({
     mutationFn: async () => {
       const pos = await getPosition();
+      const ts_action = Date.now();
+      console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_action}`);
       
       const { error } = await supabase.from("services").update({
         status: "in_progress",
@@ -201,12 +203,14 @@ function ServiceDetail() {
         start_lat: pos?.lat ?? null,
         start_lng: pos?.lng ?? null,
       }).eq("id", id);
-      if (error) {
-        
-        throw error;
-      }
+      if (error) throw error;
       
+      console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
+      import("@/lib/push/immediate.functions").then(m => {
+        m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
+      });
     },
+
     onSuccess: () => { setStep("cleaning"); qc.invalidateQueries({ queryKey: ["service", id] }); },
     onError: (e: any) => toast.error(e.message ?? "Could not start"),
   });
@@ -231,7 +235,10 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
+      const ts_action = Date.now();
+      console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_action}`);
       console.log(`[CUSTOMER-E2E:01-COMPLETE] PARTNER_HANDLER_STARTED service_id=${id}`);
+
       
       if (!beforeDone) throw new Error("Take the before photo first");
       if (!afterAllDone) throw new Error("Take all 4 after photos first");
@@ -251,7 +258,9 @@ function ServiceDetail() {
         throw new Error((error as any).message ?? "Could not complete service");
       }
       
+      console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
       console.log(`[CUSTOMER-E2E:02-COMPLETE] SERVICE_RPC_SUCCESS service_id=${id} status=completed`);
+
       console.log(`[CUSTOMER-E2E:03-CUSTOMER] CUSTOMER_RESOLVED customer_id=${(service as any)?.customers?.id} user_id=${(service as any)?.customers?.user_id}`);
       
       if (service?.started_at) {
