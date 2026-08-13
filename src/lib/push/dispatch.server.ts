@@ -35,10 +35,8 @@ type PendingOfferRow = {
 };
 
 async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
-  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS_RESOLVING`);
   const { data: offers, error } = await sb.rpc("list_pending_push_offers");
   if (!error && offers) {
-    console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${offers.length}`);
     return offers as PendingOfferRow[];
   }
   // Fallback when the RPC isn't installed.
@@ -52,7 +50,6 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
     .order("offered_at", { ascending: false })
     .limit(50);
   if (fbErr) throw fbErr;
-  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${fallback?.length ?? 0} (fallback)`);
   return (fallback ?? []).map((o: any) => ({
     offer_id: o.id,
     queue_id: o.queue_id,
@@ -77,8 +74,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
   const sb = await admin();
   const sendOfferPush = await sender();
   const rows = await listPendingOffers(sb);
-
-  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${rows.length} claimed_by=${claimedBy}`);
+  const totalEligible = rows.length;
+  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
+  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
 
   let dispatched = 0;
   // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
@@ -122,6 +120,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
+      console.log(`[BOOKING-PUSH:06] TOKENS_RESOLVED success=1 missing=0 partner_id=${r.partner_id}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
