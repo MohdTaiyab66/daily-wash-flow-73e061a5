@@ -272,8 +272,10 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
+                    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
                         const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
+
                         // PRECEDENCE FIX: Calculate resolved price first. 
                         // If it differs from the DB amount, the vehicle-specific rule WINS.
                         const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
