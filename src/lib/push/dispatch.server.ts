@@ -292,12 +292,15 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
+        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Success id=${r.id} sent=${result.sent}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
+        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Skipped (No Tokens) id=${r.id}`);
         // No devices registered at all — nothing to retry for.
-        console.log(`[CUSTOMER-SERVICE-PUSH] Result for id=${r.id}: sent=${result.sent} failed=${result.failed}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+      } else {
+        console.error(`[CUSTOMER-SERVICE-PUSH] FCM Failure id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
