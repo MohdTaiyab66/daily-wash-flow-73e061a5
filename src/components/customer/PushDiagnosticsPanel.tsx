@@ -325,6 +325,11 @@ export function PushDiagnosticsPanel() {
                 <span>PROJECT:</span>
                 <span className="text-blue-300">{lastTestResult.projectId || "—"}</span>
               </div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold">BUILD:</span>
+                <span className="bg-primary/20 text-primary px-1 rounded text-[9px]">FCM-P0-NATIVE-FCM-RECEIPT-07</span>
+              </div>
+              
               <div className="flex justify-between">
                 <span>SERVER MSG ID:</span>
                 <span className="truncate max-w-[140px] text-yellow-200">{lastTestResult.messageId || "—"}</span>
