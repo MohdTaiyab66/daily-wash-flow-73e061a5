@@ -47,7 +47,7 @@ export const getPushDiagnostics = createServerFn({ method: "GET" })
 
 export const sendDirectTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ targetUserId: z.string().uuid() }).parse(data))
+  .inputValidator((data) => z.object({ targetUserId: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
