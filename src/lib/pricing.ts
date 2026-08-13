@@ -9,7 +9,7 @@ export const resolveDailyShinePrice = (
   category: string | null | undefined, 
   service: { price_hatchback: number; price_sedan_suv: number } | null | undefined
 ) => {
-  const cat = category?.toLowerCase() || 'hatchback_compact_sedan'; // DEFAULT TO HATCHBACK
+  const cat = category?.toLowerCase() || '';
   
   // Use service catalog prices if available, otherwise fall back to strict defaults
   const hatchbackPrice = service?.price_hatchback ?? 999;
@@ -18,12 +18,29 @@ export const resolveDailyShinePrice = (
   /**
    * VEHICLE CLASSIFICATION MAPPING:
    * 
-   * 'hatchback_compact_sedan' (DB Key) -> Hatchback Pricing
-   * 'sedan_suv' (DB Key) -> SUV Pricing
+   * 'hatchback_compact_sedan' (DB Key) -> Hatchback Pricing (₹999)
+   * 'sedan_suv' (DB Key) -> SUV Pricing (₹1199)
    */
-  const isHighTier = cat === 'sedan_suv';
-  
-  const resolvedPrice = isHighTier ? suvPrice : hatchbackPrice;
+  let resolvedPrice = 0;
+  let resolvedCategory = 'unknown';
+
+  if (cat === 'hatchback_compact_sedan') {
+    resolvedPrice = hatchbackPrice;
+    resolvedCategory = 'hatchback_compact_sedan';
+  } else if (cat === 'sedan_suv') {
+    resolvedPrice = suvPrice;
+    resolvedCategory = 'sedan_suv';
+  }
+
+  // FORENSIC LOGGING
+  console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
+    stage: "RESOLVER",
+    vehicleCategory: category,
+    resolvedCategory,
+    resolvedPrice,
+    databasePrice: service?.price_hatchback,
+    databaseAmount: service?.price_sedan_suv
+  });
 
   return resolvedPrice;
 };
