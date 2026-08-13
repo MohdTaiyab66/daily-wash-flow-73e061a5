@@ -396,6 +396,14 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of rows ?? []) {
     const type = String(r.type ?? "");
+    // Canonical mapping for P0-B Reliability
+    const canonicalTypeMap: Record<string, string> = {
+      "new_assignments": "new_booking",
+      "assignment_created": "new_booking",
+      "partner_assigned": "new_booking",
+    };
+    const mappedType = canonicalTypeMap[type] || type;
+    
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
@@ -405,7 +413,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
         title: r.title,
         body: r.body ?? "",
         data: {
-          type,
+          type: mappedType,
           link: r.link ?? (isAssignment ? "/app/assignments" : ""),
           // REQUIRED CONTRACT — UrbanwashMessagingService.postAssignment()
           // or postOffer() returns early unless broadcast_id and action_token
