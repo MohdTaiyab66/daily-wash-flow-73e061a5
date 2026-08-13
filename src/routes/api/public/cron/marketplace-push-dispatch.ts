@@ -27,10 +27,12 @@ function workingDaysBetween(start?: string | null, end?: string | null) {
 async function dispatchPending() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendOfferPush } = await import("@/lib/push/send.server");
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
 
   const { data: offerRows, error } = await (supabaseAdmin as any)
     .from("marketplace_offers")
     .select("id, partner_id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at")
+
     .eq("response", "pending")
     .is("viewed_at", null)
     .gt("sent_at", new Date(Date.now() - 5 * 60_000).toISOString())
