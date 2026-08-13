@@ -78,7 +78,10 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   
   if (pBookingId) {
@@ -112,7 +115,10 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       return false;
     }
     
+    const ts_created = Date.now();
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${ts_created}`);
     console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
+
 
     const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
     
@@ -162,8 +168,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       console.log(`[BOOKING-PUSH:06] TOKENS_RESOLVED success=1 missing=0 partner_id=${r.partner_id}`);
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -369,11 +379,16 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
+      const ts_dispatch = Date.now();
       if (isUnavailable) {
         console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
+        console.log(`[UNAVAILABLE-E2E:05] IMMEDIATE_DISPATCH_TRIGGERED`);
+        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       } else {
         console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
+        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       }
+
 
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
@@ -384,7 +399,12 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         offer_id: String(r.id),
       };
 
-      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
+        console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
+      }
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
 
       const result = await sendOfferPush({
         userId: r.user_id,
@@ -399,9 +419,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       if (result.sent > 0) {
         if (isUnavailable) {
           console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
+          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED`);
         } else {
           console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
         }
+
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
@@ -410,7 +432,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
 
-      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
+        console.log(`[UNAVAILABLE-E2E:09] ANDROID_RECEIVED (pending receipt)`);
+      }
+
 
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
