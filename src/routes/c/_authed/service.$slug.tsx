@@ -87,6 +87,42 @@ function ServiceDetail() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
+  const vehiclesQ = useQuery({
+    queryKey: ["customer-vehicles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_vehicles").select("*");
+      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
+      return (data ?? []) as Vehicle[];
+    }
+  });
+
+  const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
+
+  const vehicle = useMemo(() => {
+    const targetId = search.vehicleId || vehicleId;
+    if (!targetId) {
+      console.error("[VEHICLE-FLOW] P0: No vehicleId in URL or state");
+      return null;
+    }
+    
+    const found = (vehiclesQ.data ?? []).find(v => v.id === targetId);
+    if (!found) {
+      console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
+    }
+    
+    return found || null;
+  }, [vehiclesQ.data, vehicleId, search.vehicleId]);
+
+  useEffect(() => {
+    console.log("[SERVICE-DETAIL-CONTEXT]", {
+      routeVehicleId: search.vehicleId,
+      routeSlug: slug,
+      resolvedVehicleId: vehicle?.id,
+      resolvedVehicleModel: vehicle?.model,
+      resolvedVehicleCategory: vehicle?.category,
+    });
+  }, [search.vehicleId, slug, vehicle]);
+
   useEffect(() => {
     // Check session silently, do not trigger global state resets
     supabase.auth.getSession().then(({ data: { session } }) => {
