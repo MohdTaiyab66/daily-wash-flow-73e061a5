@@ -27,7 +27,7 @@ export function PushDiagnosticsPanel() {
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
       setLastTestResult({
-        status: res.sent > 0 ? "FCM ACCEPTED" : "FCM FAILED",
+        status: res.sent > 0 ? "FCM SERVER ACCEPTED" : "FCM FAILED",
         userId: data?.user_id?.slice(0, 8),
         tokenTail: res.tokenTail,
         projectId: res.projectId,
@@ -158,11 +158,17 @@ export function PushDiagnosticsPanel() {
                 <span>SENT AT:</span>
                 <span>{lastTestResult.sentAt || "—"}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
-                <span>FCM RESULT:</span>
-                <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
-                  {lastTestResult.result}
-                </span>
+              <div className="flex flex-col gap-1 pt-1 border-t border-white/10 mt-1">
+                <div className="flex justify-between">
+                  <span>FCM SERVER:</span>
+                  <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
+                    {lastTestResult.result === "SUCCESS" ? "✅ ACCEPTED" : lastTestResult.result}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>ANDROID:</span>
+                  <span className="text-orange-400 animate-pulse uppercase">Waiting for delivery</span>
+                </div>
               </div>
             </div>
           </div>
