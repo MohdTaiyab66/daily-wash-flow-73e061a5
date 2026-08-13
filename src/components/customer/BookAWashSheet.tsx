@@ -426,39 +426,29 @@ export function BookAWashSheet({
           )}
 
           {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div>
-                <div className="relative overflow-hidden rounded-3xl bg-white border border-black/[0.04] p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)]">
+                <div className="relative overflow-hidden rounded-[24px] bg-white border border-black/[0.04] p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)]">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2 font-black text-[#FF6B00]">
                         <Sparkles className="h-4 w-4" />
-                        <span className="text-[14px]">Included Wash</span>
+                        <span className="text-[13px]">Included Wash</span>
                       </div>
                       <p className="mt-1 text-[12px] font-bold text-[#1A1A1A]">Full Interior + Exterior</p>
                     </div>
                     <div className="rounded-full bg-green-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-green-600">
-                      Free ✓
+                      FREE ✓
                     </div>
                   </div>
-                  <div className="mt-6 flex items-baseline justify-between">
+                  <div className="mt-4 flex items-baseline justify-between">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
+                      <span className="text-3xl font-black tracking-tight text-[#1a1a1a]">
                         {includedRow?.unlimited ? "∞" : includedRemaining}
                       </span>
-                      <span className="text-[11px] font-black text-[#A6A6A6] uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-[#A6A6A6] uppercase tracking-widest">
                         WASH LEFT
                       </span>
-                    </div>
-                    <div className="flex -space-x-1.5 opacity-60">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="h-6 w-6 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[#A6A6A6]"
-                        >
-                          <Droplets className="h-3 w-3" />
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -470,18 +460,17 @@ export function BookAWashSheet({
                         window.location.href = `/c/service/${INCLUDED.slug}?vehicleId=${vehicleId}`;
                       }, 100);
                     }}
-                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-[#FF6B00] hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-1 text-[13px] font-black text-[#FF6B00] hover:opacity-80 transition-opacity"
                   >
-                    Need another wash? <span className="underline underline-offset-4">Buy more</span>
-                    <ChevronRight className="h-4 w-4" />
+                    Need another wash? Buy more →
                   </button>
                 </div>
               </div>
 
               {/* Selection Summary */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {/* When */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">When</Label>
                   <button
                     onClick={() => setDatePickerOpen(true)}
@@ -498,7 +487,7 @@ export function BookAWashSheet({
                 </div>
 
                 {/* Where */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Where</Label>
                   <button
                     onClick={() => setAddressPickerOpen(true)}
@@ -516,7 +505,7 @@ export function BookAWashSheet({
               <div className="space-y-4">
                 <div>
                   <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Preferred time</Label>
-                  <p className="mt-1 ml-1 text-[12px] font-medium text-[#555555]">Choose your arrival window</p>
+                  <p className="mt-1 ml-1 text-[12px] font-medium text-[#A6A6A6]">Choose your arrival window</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {SLOT_OPTIONS.map((s) => {
@@ -533,61 +522,27 @@ export function BookAWashSheet({
                             : "border-black/[0.04] bg-white text-[#1a1a1a] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]"
                         )}
                       >
-                        {s}
-                        {isSelected && (
-                          <div className="absolute top-2 right-2">
-                            <Check className="h-3.5 w-3.5" />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {s}
+                          {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-black/[0.03] px-4 py-2.5 text-[11px] font-bold text-[#A6A6A6]">
+                
+                <div className="flex items-center gap-2 rounded-xl bg-[#F5F5F5] px-4 py-2.5 text-[11px] font-bold text-[#A6A6A6]">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Our partner may arrive anytime within this window.</span>
+                  <span>Partner may arrive anytime within this window.</span>
                 </div>
               </div>
 
               {/* Success Indicator */}
-              <div className="flex items-center justify-between rounded-2xl bg-green-50/50 px-5 py-4 text-[13px] border border-green-600/10">
-                <div className="flex items-center gap-2.5 text-green-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-black uppercase tracking-[0.1em]">Plan Benefit</span>
-                </div>
-                <span className="font-black text-green-600">Included</span>
+              <div className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#F0FDF4] py-3 text-[13px] border border-green-600/10">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="font-black uppercase tracking-[0.1em] text-green-600">✓ PLAN BENEFIT | Included</span>
               </div>
 
-              {/* Premium Add-ons Suggestion */}
-              <div className="space-y-4 pb-4">
-                <div className="flex items-center justify-between px-1">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Make it even better</Label>
-                  <span className="text-[9px] font-black text-[#FF6B00] uppercase tracking-widest">Premium upgrades</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all">
-                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-[#FF6B00]">
-                      <Droplets className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-[#1A1A1A]">Body Polish</div>
-                      <div className="text-[10px] font-black text-[#A6A6A6] uppercase tracking-widest">FROM ₹199</div>
-                    </div>
-                  </button>
-                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all">
-                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-500">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-[#1A1A1A]">Deep Clean</div>
-                      <div className="text-[10px] font-black text-[#A6A6A6] uppercase tracking-widest">FROM ₹499</div>
-                    </div>
-                  </button>
-                </div>
-                <p className="px-1 text-[11px] font-medium leading-relaxed text-muted-foreground/40 italic">
-                  *Upgrades require separate booking and payment.
-                </p>
-              </div>
 
               {/* Error Banner */}
               {error && (
