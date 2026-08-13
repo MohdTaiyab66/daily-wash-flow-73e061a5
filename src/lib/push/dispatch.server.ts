@@ -88,9 +88,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${pBookingId}`);
   }
   const rows = await listPendingOffers(sb);
+  const ts_dispatch = Date.now();
+  console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
   console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
   console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
+
 
   let dispatched = 0;
   // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
@@ -169,10 +172,8 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
 
     try {
       const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      console.log(`[BOOKING-PUSH:06] TOKENS_RESOLVED success=1 missing=0 partner_id=${r.partner_id}`);
-      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+
 
       const result = await sendOfferPush({
         userId: r.partner_id,
@@ -335,7 +336,10 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  * Types outside the allow-list are stamped without a send (H-2 safety net).
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
@@ -347,7 +351,9 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
   let sentCount = 0;
   for (const r of (rows ?? [])) {
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
+
     // Canonical mapping to prevent unknown events
     const canonicalTypeMap: Record<string, string> = {
       "vehicle_not_found": "vehicle_unavailable",
@@ -448,7 +454,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("partner_notifications")
@@ -462,7 +471,9 @@ export async function dispatchPartnerNotifications(): Promise<number> {
 
   let sentCount = 0;
   for (const r of rows ?? []) {
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
+
     // Canonical mapping for P0-B Reliability
     const canonicalTypeMap: Record<string, string> = {
       "new_assignments": "new_booking",
@@ -474,7 +485,11 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
