@@ -92,8 +92,9 @@ export async function resolvePartnerBookingDistance(params: {
   }
 
   const distKm = haversineKm(
-    { latitude: partnerLoc.lat, longitude: partnerLoc.lng },
-    { latitude: customerLat, longitude: customerLng }
+    { lat: partnerLoc.lat, lng: partnerLoc.lng },
+    { lat: customerLat, lng: customerLng }
+
   );
   
   const rounded = Math.round(distKm * 10) / 10;
