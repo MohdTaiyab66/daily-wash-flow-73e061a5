@@ -96,7 +96,7 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
-      console.log(`[CUSTOMER-E2E:UNAVAILABLE:01] PARTNER_HANDLER. service_id: ${serviceId}, reason: ${reason}`);
+      console.log(`[CUSTOMER-E2E:01-COMPLETE] PARTNER_HANDLER_STARTED (unavailable) service_id=${serviceId} reason=${reason}`);
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
@@ -109,19 +109,20 @@ export function GuidedReport({
         p_lng: pos?.lng ?? null,
       } as any);
       if (error) {
-        console.error(`[CUSTOMER-E2E:UNAVAILABLE:ERR] RPC_ERROR`, error);
+        console.error(`[CUSTOMER-E2E:COMPLETE:ERR] RPC_ERROR (unavailable)`, error);
         throw error;
       }
-      console.log(`[CUSTOMER-E2E:UNAVAILABLE:02] SERVICE_UPDATED. status: unavailable`);
+      console.log(`[CUSTOMER-E2E:02-COMPLETE] SERVICE_RPC_SUCCESS service_id=${serviceId} status=unavailable`);
       
       const r: any = data ?? {};
+      console.log(`[CUSTOMER-E2E:03-CUSTOMER] CUSTOMER_RESOLVED (unavailable) customer_id=${r.customer_id} notification_id=${r.notification_id}`);
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       
-      console.log("[CUSTOMER-E2E:UNAVAILABLE:03] NOTIFICATION_CREATED (triggering flush)");
+      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED");
       import("@/lib/push/immediate.functions").then(m => {
         m.flushNotificationPush().then(res => {
-          console.log("[CUSTOMER-E2E:UNAVAILABLE:03:RESULT] flush result:", res);
-        }).catch(e => console.error("[CUSTOMER-E2E:UNAVAILABLE:03:ERR] flush failed", e));
+          console.log(`[CUSTOMER-E2E:07-FLUSH] FLUSH_FINISHED result: customer=${res.customer} partner=${res.partner}`);
+        }).catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
       });
       qc.setQueryData(["service", serviceId], (current: any) =>
         current ? { ...current, status: "unavailable", unavailable_reason: rpcReason, unavailable_notes: rpcNotes } : current,
