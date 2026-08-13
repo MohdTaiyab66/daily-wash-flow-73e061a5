@@ -525,21 +525,24 @@ function ServiceDetail() {
       </div>
     );
   }
-          </Button>
-          <Button 
-            variant="ghost"
-            onClick={() => navigate({ to: "/c/home" })}
-            className="mt-4 block w-full text-[#7A7A7A] font-bold"
-          >
-            Back to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
 
   return (
+    <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
+      {/* UNMISTAKABLE BUILD MARKER */}
+      <div className="fixed top-20 right-4 z-[9999] pointer-events-none">
+        <div className="bg-black/90 text-white text-[10px] font-black px-3 py-2 rounded-lg border border-white/20 shadow-2xl backdrop-blur-md">
+          <div className="text-[#FF6B00] mb-0.5">BUILD: {BUILD_ID}</div>
+          <div className="flex flex-col gap-0.5 opacity-90">
+            <div>V: {vehicle?.model || 'NONE'}</div>
+            <div>P: ₹{resolveDailyShinePrice(vehicle?.category, service)}</div>
+            <div>C: ServiceDetail</div>
+            <div className="mt-1 text-[8px] opacity-50 border-t border-white/10 pt-1">
+              URL: {search.vehicleId ? 'HAS_V_ID' : 'NO_V_ID'}
+            </div>
+          </div>
+        </div>
+      </div>
     <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
       <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-6 h-[64px] flex items-center gap-3 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 rounded-full active:bg-black/5 transition-colors">
