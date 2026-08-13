@@ -134,8 +134,6 @@ function ServiceDetail() {
   
   const createOrder = useServerFn(createRazorpayOrder);
   const verifyPayment = useServerFn(verifyRazorpayPayment);
-  
-  const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
   const [slot, setSlot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showAddonDrawer, setShowAddonDrawer] = useState(false);
