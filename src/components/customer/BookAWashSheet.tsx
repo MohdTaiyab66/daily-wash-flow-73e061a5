@@ -357,7 +357,7 @@ export function BookAWashSheet({
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-24">
+        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-40 no-scrollbar">
           {/* Info context */}
           <div className="flex items-start gap-3 rounded-2xl bg-[#FFF6EF] p-4 border border-[#FF6B00]/10">
             <Info className="mt-0.5 h-4 w-4 text-[#FF6B00] shrink-0" />
