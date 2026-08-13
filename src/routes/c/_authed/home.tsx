@@ -282,7 +282,7 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
         <UWHeader 
-          buildId="1.0.56-data-truth"
+          buildId="1.0.32-FIX-B-01"
           area={area} 
 
           onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
@@ -396,11 +396,11 @@ function CustomerHome() {
                         duration={s.duration_minutes}
                         onOpen={() => {
                           console.log(`[SERVICE-NAV] Opening ${s.slug}`);
-                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } });
                         }}
                         onAdd={() => {
                           console.log(`[SERVICE-NAV] Adding ${s.slug}`);
-                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || undefined } });
+                          navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } });
                         }}
                       />
                     );
@@ -414,7 +414,7 @@ function CustomerHome() {
 
               <div className="mt-6 mb-4">
                 <button 
-                  onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || undefined } } as any)}
+                  onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } } as any)}
                   className="w-full bg-[#FFF2ED] border border-[#FF6B00]/5 rounded-[16px] p-4 text-left active:scale-[0.98] transition-transform h-[96px] flex items-center"
                 >
                   <div className="flex flex-row items-center justify-between gap-4 w-full">

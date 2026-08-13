@@ -7,8 +7,8 @@ BUILD_TIME: 2026-08-11T00:45:00Z
 TARGET: ANDROID_NATIVE_RAZORPAY_1.7.18
 */
 export const APK_EVIDENCE = {
-  version: "1.0.32-PAYMENT-FINAL-01",
-  timestamp: "2026-08-11T00:45:00Z",
+  version: "1.0.32-FIX-B-01",
+  timestamp: "2026-08-13T10:45:00Z",
   resolvedSdk: "com.razorpay:standard-core:1.7.18",
   bridge: "UrbanWashCheckout"
 };
