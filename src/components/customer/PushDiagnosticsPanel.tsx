@@ -312,7 +312,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-NATIVE-FCM-RECEIPT-05"}</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-NATIVE-FCM-RECEIPT-06"}</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
