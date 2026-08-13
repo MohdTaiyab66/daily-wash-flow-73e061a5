@@ -5,44 +5,49 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getPushDiagnostics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const userId = (context as any).userId;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const sb = supabaseAdmin as any;
+    try {
+      const userId = (context as any).userId;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const sb = supabaseAdmin as any;
 
-    const { data: profile } = await sb
-      .from("customer_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .single();
+      const { data: profile } = await sb
+        .from("customer_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    const { data: tokens } = await sb
-      .from("push_tokens")
-      .select("*")
-      .eq("user_id", userId)
-      .is("invalid_at", null);
+      const { data: tokens } = await sb
+        .from("push_tokens")
+        .select("*")
+        .eq("user_id", userId)
+        .is("invalid_at", null);
 
-    const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
-    const firebaseClientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
+      const firebaseClientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
-    console.log(`[CUSTOMER-FCM-CONFIG] Backend Diagnostics Check - Project: ${firebaseProjectId}, Tokens: ${tokens?.length || 0}`);
+      console.log(`[CUSTOMER-FCM-CONFIG] Backend Diagnostics Check - Project: ${firebaseProjectId}, Tokens: ${tokens?.length || 0}`);
 
-    return {
-      user_id: userId,
-      is_customer: !!profile,
-      firebase_config: {
-        project_id: firebaseProjectId || "MISSING",
-        client_email: firebaseClientEmail ? `${firebaseClientEmail.split('@')[0]}@...` : "MISSING",
-        has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
-      },
+      return {
+        user_id: userId,
+        is_customer: !!profile,
+        firebase_config: {
+          project_id: firebaseProjectId || "MISSING",
+          client_email: firebaseClientEmail ? `${firebaseClientEmail.split('@')[0]}@...` : "MISSING",
+          has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
+        },
 
-      tokens: tokens?.map((t: any) => ({
-        id: t.id,
-        platform: t.platform,
-        app: t.app,
-        last_seen: t.last_seen,
-        token_tail: t.token ? `...${t.token.slice(-8)}` : "EMPTY",
-      })) || [],
-    };
+        tokens: tokens?.map((t: any) => ({
+          id: t.id,
+          platform: t.platform,
+          app: t.app,
+          last_seen: t.last_seen,
+          token_tail: t.token ? `...${t.token.slice(-8)}` : "EMPTY",
+        })) || [],
+      };
+    } catch (e: any) {
+      console.error("[getPushDiagnostics] FAILED", e);
+      throw e;
+    }
   });
 
 export const sendDirectTestPush = createServerFn({ method: "POST" })
