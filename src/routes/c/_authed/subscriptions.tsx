@@ -285,14 +285,14 @@ function MyPlanPage() {
                           ? dbAmount 
                           : resolvedPrice;
                         
-                        console.log("[PRICE-TRACE-07] [SUBSCRIPTION]", {
-                          vehicleId: selectedVehicle?.id,
-                          vehicleModel: selectedVehicle?.model,
-                          vehicleCategory: selectedVehicle?.category,
-                          resolvedPrice,
-                          dbAmount,
-                          finalPrice: price,
-                          precedence: dbAmount && dbAmount !== resolvedPrice ? "DB_OVERRIDE" : "VEHICLE_RESOLVER"
+                        console.log("[VEHICLE-PROPAGATION] Subscription vehicleId =", selectedVehicle?.id);
+                        console.log("[DAILY-SHINE-FORENSIC] 6. SUBSCRIPTION", {
+                          subscription_id: activeSub?.id,
+                          subscription_price: price,
+                          subscription_amount: price,
+                          resolved_price: resolvedPrice,
+                          db_amount: dbAmount,
+                          vehicle_category: selectedVehicle?.category
                         });
 
 
