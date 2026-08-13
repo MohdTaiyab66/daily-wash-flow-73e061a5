@@ -117,8 +117,8 @@ export function PushDiagnosticsPanel() {
     onSettled: () => setIsTesting(false),
   });
 
-  if (isLoading) return <div className="p-4 text-center text-xs opacity-50">Forensic Panel Loading...</div>;
-  if (error) return <div className="p-4 text-destructive border-2 border-destructive/20 bg-destructive/5 rounded-lg text-xs font-mono">Forensic Panel Error: {error.message}</div>;
+  if (isLoading) return <div className="p-4 text-center text-[10px] font-mono opacity-40 uppercase tracking-widest">Forensic Panel Loading...</div>;
+  if (error) return <div className="p-4 text-destructive border-2 border-destructive/20 bg-destructive/5 rounded-2xl text-[10px] font-mono leading-tight">FORENSIC ERROR: {error.message}</div>;
 
   const hasTokens = data?.tokens && data.tokens.length > 0;
   const configOk = data?.firebase_config?.project_id !== "MISSING" && data?.firebase_config?.has_private_key;
