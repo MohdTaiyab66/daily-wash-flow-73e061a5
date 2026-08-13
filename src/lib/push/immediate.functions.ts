@@ -53,7 +53,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION id=${data.serviceId} type=${data.type}`);
+    console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION id=${data.serviceId} type=${data.type} customer_id=${data.customerId}`);
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -73,7 +73,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       return { ok: false, error: "no_user_id" };
     }
     const userId = customer.user_id;
-    console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${data.type}`);
+    console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${data.type} user_id=${userId}`);
 
     // 3. Verify notification row
     const { data: notif } = await supabaseAdmin
