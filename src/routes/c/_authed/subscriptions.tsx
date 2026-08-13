@@ -285,6 +285,21 @@ function MyPlanPage() {
                           ? dbAmount 
                           : resolvedPrice;
 
+                        if (selectedVehicle) {
+                          console.log("[VEHICLE-PROPAGATION] Subscription vehicleId =", selectedVehicle.id);
+                          console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
+                            stage: "SUBSCRIPTION",
+                            vehicleId: selectedVehicle.id,
+                            vehicleMake: selectedVehicle.make,
+                            vehicleModel: selectedVehicle.model,
+                            vehicleCategory: selectedVehicle.category,
+                            subscriptionPrice: price,
+                            subscriptionAmount: price,
+                            resolvedPrice: resolvedPrice,
+                            databaseAmount: dbAmount
+                          });
+                        }
+
 
                         return (
                           <div className="flex items-start justify-between mb-6">
