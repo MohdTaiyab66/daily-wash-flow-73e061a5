@@ -230,16 +230,6 @@ function CustomerHome() {
     });
   }
 
-    console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
-      stage: "HOME",
-      vehicleId: activeVehicle.id,
-      vehicleMake: activeVehicle.make,
-      vehicleModel: activeVehicle.model,
-      vehicleCategory: activeVehicle.category,
-      displayPrice: dailyShinePrice
-    });
-  }
-
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
     model: activeVehicle?.model,
