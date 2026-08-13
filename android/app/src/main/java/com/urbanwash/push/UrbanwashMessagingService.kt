@@ -350,6 +350,9 @@ Log.d("UW_AUDIT", "2b_ids broadcastId=$broadcastId offerId=$offerId " +
 Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen())
 Log.d("UW_AUDIT", "2b_ids notifKey=$notifKey notifId=${notifKey.hashCode()} link=$link")
 
+// [CUSTOMER-PUSH-NATIVE:E3] NOTIFICATION_POST_STARTED
+Log.d("CUSTOMER-PUSH-NATIVE", "E3 NOTIFICATION_POST_STARTED notifKey=$notifKey notifId=${notifKey.hashCode()} type=${data["type"]}")
+
 auditNotify(
     NotificationManagerCompat.from(ctx),
     notifKey.hashCode(),
@@ -358,6 +361,8 @@ auditNotify(
     "assignment_id|service_id|offer_id|link",
     builder.build(),
 )
+// [CUSTOMER-PUSH-NATIVE:E4] NOTIFICATION_POSTED
+Log.d("CUSTOMER-PUSH-NATIVE", "E4 NOTIFICATION_POSTED id=${notifKey.hashCode()}")
 }
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
