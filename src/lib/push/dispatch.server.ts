@@ -70,9 +70,13 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  *
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
-export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): Promise<number> {
+export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
   const sb = await admin();
   const sendOfferPush = await sender();
+  
+  if (pBookingId) {
+    console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${pBookingId}`);
+  }
   const rows = await listPendingOffers(sb);
   const totalEligible = rows.length;
   console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
