@@ -666,21 +666,7 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockC
           disabled={!navUrl || locked}
           onClick={async () => {
             if (locked) return;
-            await logApkEvidence({
-              eventType: "navigation_open_attempt",
-              serviceId: stop.id,
-              assignmentId: stop.assignment_id ?? null,
-              status: navUrl ? "info" : "blocked",
-              payload: { destination_lat: gps.lat, destination_lng: gps.lng, destination_source: stop.destination_source ?? null, customer_name: c?.full_name ?? null },
-            });
-            const opened = await openGoogleMapsDirections(gps.lat, gps.lng);
-            await logApkEvidence({
-              eventType: "navigation_open_result",
-              serviceId: stop.id,
-              assignmentId: stop.assignment_id ?? null,
-              status: opened ? "success" : "error",
-              payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
-            });
+            await openGoogleMapsDirections(gps.lat, gps.lng);
           }}
         />
         {locked ? (

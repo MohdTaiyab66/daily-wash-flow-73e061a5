@@ -779,20 +779,7 @@ function CustomerCard({
             className="h-14 text-base"
             disabled={!hasNavigation}
             onClick={async () => {
-              await logApkEvidence({
-                eventType: "navigation_open_attempt",
-                serviceId,
-                assignmentId: service?.assignment_id ?? null,
-                status: hasNavigation ? "info" : "blocked",
-                payload: { destination_lat: destLat, destination_lng: destLng },
-              });
-              const opened = await openGoogleMapsDirections(destLat, destLng);
-              await logApkEvidence({
-                eventType: "navigation_open_result",
-                serviceId,
-                status: opened ? "success" : "error",
-                payload: { opened },
-              });
+              await openGoogleMapsDirections(destLat, destLng);
             }}
           >
             <Navigation className="mr-1.5 h-5 w-5" /> {hasNavigation ? "Navigate" : "No GPS"}
