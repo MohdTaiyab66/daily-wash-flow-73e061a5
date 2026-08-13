@@ -27,7 +27,7 @@ export function PushDiagnosticsPanel() {
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
       setLastTestResult({
-        status: res.sent > 0 ? "FCM ACCEPTED" : "FCM FAILED",
+        status: res.sent > 0 ? "FCM SERVER ACCEPTED" : "FCM FAILED",
         userId: data?.user_id?.slice(0, 8),
         tokenTail: res.tokenTail,
         projectId: res.projectId,

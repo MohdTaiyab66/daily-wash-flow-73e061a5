@@ -222,6 +222,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
   console.log(`[DIRECT-FCM-E2E:FIREBASE] project_id=${projectId} client_email=${clientEmail}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] notification.title=${input.title} notification.body=${input.body} data.type=${input.data.type} data.broadcast_id=${input.data.broadcast_id} data.action_token=${input.data.action_token} data.offer_id=${input.data.offer_id} android.notification.channel_id=${input.channelId ?? "general"}`);
   const accessToken = await getAccessToken();
 
   const dataOnly = input.dataOnly === true;
