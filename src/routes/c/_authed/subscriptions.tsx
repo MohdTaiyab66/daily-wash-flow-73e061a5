@@ -405,7 +405,7 @@ function MyPlanPage() {
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
         basePlanPrice={(() => {
           const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
-          const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+          const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category || undefined, dailyShineService);
           const dbAmount = subRow?.amount ?? activeSub?.total_amount;
           if (selectedVehicle?.category === 'hatchback_compact_sedan') return 999;
           if (selectedVehicle?.category === 'sedan_suv') return 1199;
