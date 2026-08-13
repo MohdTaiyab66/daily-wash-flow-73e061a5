@@ -149,11 +149,23 @@ export function PushDiagnosticsPanel() {
     onSettled: () => setIsTesting(false),
   });
 
-  if (isLoading) return <div className="p-4 text-center text-[10px] font-mono opacity-40 uppercase tracking-widest">Forensic Panel Loading...</div>;
-  if (error) return <div className="p-4 text-destructive border-2 border-destructive/20 bg-destructive/5 rounded-2xl text-[10px] font-mono leading-tight">FORENSIC ERROR: {error.message}</div>;
+  // NORMALIZED STATE — never render directly from a nullable object.
+  const safeDiagnostics = data ?? DEFAULT_DIAGNOSTICS;
+  const safeNative: NativeFcmState = nativeState ?? DEFAULT_NATIVE_STATE;
+  const safeTokens = Array.isArray(safeDiagnostics.tokens) ? safeDiagnostics.tokens : [];
+  const hasTokens = safeTokens.length > 0;
+  const configOk =
+    safeDiagnostics.firebase_config?.project_id !== "MISSING" &&
+    !!safeDiagnostics.firebase_config?.has_private_key;
 
-  const hasTokens = data?.tokens && data.tokens.length > 0;
-  const configOk = data?.firebase_config?.project_id !== "MISSING" && data?.firebase_config?.has_private_key;
+  const authLabel = isLoading ? "LOADING" : safeDiagnostics.user_id ? "READY" : "NOT READY";
+  const permissionLabel = hasTokens ? "GRANTED" : isLoading ? "UNKNOWN" : "UNKNOWN";
+  const fcmLabel = isLoading ? "INITIALIZING" : hasTokens ? "INITIALIZED" : "UNKNOWN";
+  const backendLabel = isLoading ? "LOADING" : error ? "ERROR" : hasTokens ? "SUCCESS" : "UNKNOWN";
+  const androidLabel = safeNative.android ?? "WAITING";
+  const nativeMatchesTest =
+    !!lastTestResult?.messageId && safeNative.fcm.id === lastTestResult.messageId;
+
 
   return (
     <Card className="border border-black/5 bg-white shadow-sm rounded-2xl overflow-hidden">
