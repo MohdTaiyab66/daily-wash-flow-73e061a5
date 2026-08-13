@@ -1,0 +1,337 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, Plus, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getServiceImage, useServiceGallery } from "@/lib/service-image-resolver";
+import { getDailyShineCarouselImageUrl } from "@/lib/daily-shine-carousel.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { useAreaAvailability } from "@/lib/area-availability";
+import { vehicleBodyLabel } from "@/lib/vehicle-category";
+import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
+import { useVehicleImageUrl } from "@/lib/vehicle-image";
+import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { resolveDailyShinePrice } from "@/lib/pricing";
+import { SkeletonCard } from "@/components/customer/ui/Skeletons";
+import { UWHeader } from "@/components/customer/ui/UWHeader";
+import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
+import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
+import { ListGroup, ListRow, Section } from "@/components/customer/ui/kit";
+import { cn } from "@/lib/utils";
+import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+export const Route = createFileRoute("/c/_authed/home")({
+    ssr: false,
+    head: () => ({ meta: [{ title: "Home — Urban Wash" }] }),
+    component: CustomerHome,
+    pendingComponent: () => null, // Prevent top-level route skeletons if already loaded
+});
+const PLAN_INCLUDED_SERVICE_SLUGS = ["daily-shine-exterior", "daily-shine-interior", "daily-shine-dusting"];
+function CustomerHome() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [area, setArea] = useState("");
+    const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState("Popular");
+    const [vehicleSheetOpen, setVehicleSheetOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [photoOpen, setPhotoOpen] = useState(false);
+    useEffect(() => {
+        const syncState = () => {
+            const savedArea = localStorage.getItem("uw_customer_area") ?? "";
+            setArea(savedArea);
+            setSelectedVehicleId(localStorage.getItem("uw_customer_vehicle") ?? null);
+        };
+        syncState();
+        // Listen for storage events (e.g., from Location flow)
+        window.addEventListener("storage", syncState);
+        // Also listen for a custom event if we want faster updates within the same window
+        window.addEventListener("uw-location-updated", syncState);
+        return () => {
+            window.removeEventListener("storage", syncState);
+            window.removeEventListener("uw-location-updated", syncState);
+        };
+    }, []);
+    const refreshAll = async () => {
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["coverage-at"] }),
+            queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
+            queryClient.invalidateQueries({ queryKey: ["service-catalog"] }),
+            queryClient.invalidateQueries({ queryKey: ["service-gallery"] }),
+            queryClient.invalidateQueries({ queryKey: ["customer-promo-images"] }),
+            queryClient.invalidateQueries({ queryKey: ["customer-profile"] }),
+        ]);
+    };
+    useEffect(() => {
+        // Re-fetch on location update
+        const handleLocationUpdate = () => {
+            console.log("[HOME] Location updated event caught, invalidating queries...");
+            refreshAll();
+        };
+        window.addEventListener("uw-location-updated", handleLocationUpdate);
+        return () => window.removeEventListener("uw-location-updated", handleLocationUpdate);
+    }, [queryClient]);
+    const profileQ = useQuery({
+        queryKey: ["customer-profile"],
+        staleTime: 1000 * 60 * 5,
+        queryFn: async () => {
+            // Get session from canonical client
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user?.id)
+                return null;
+            const { data, error } = await supabase
+                .from("customer_profiles")
+                .select("*")
+                .eq("user_id", session.user.id)
+                .maybeSingle();
+            if (error) {
+                console.error("[HOME] Profile query failed:", error);
+                return null; // Return null instead of throwing to keep page alive
+            }
+            return data;
+        }
+    });
+    const vehiclesQ = useQuery({
+        queryKey: ["customer-vehicles"],
+        staleTime: 1000 * 60 * 5,
+        queryFn: async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session)
+                return [];
+            const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
+            if (error)
+                throw error;
+            return (data ?? []);
+        },
+        retry: 2
+    });
+    const servicesQ = useQuery({
+        queryKey: ["service-catalog"],
+        staleTime: 1000 * 30, // Reduced to 30s
+        queryFn: async () => {
+            const start = Date.now();
+            try {
+                const { data, error, status } = await supabase
+                    .from("service_catalog")
+                    .select("id, slug, name, description, banner_url, price_hatchback, price_sedan_suv, service_type, sort_order, duration_minutes")
+                    .eq("active", true)
+                    .order("sort_order", { ascending: true });
+                if (error) {
+                    console.error("[SERVICE-CATALOG] query error:", error);
+                    throw error;
+                }
+                const rawData = (data ?? []);
+                return rawData;
+            }
+            catch (err) {
+                console.error("[SERVICE-CATALOG] FETCH FAILED:", err);
+                throw err;
+            }
+        },
+        retry: false,
+    });
+    const imagesQ = useQuery({
+        queryKey: ["customer-promo-images"],
+        staleTime: 1000 * 30, // Reduced to 30s for freshness
+        gcTime: 1000 * 60 * 5,
+        queryFn: async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("daily_shine_carousel")
+                    .select("id, image_url, status, slide_number, updated_at, service_slug")
+                    .eq("status", "published")
+                    .order("slide_number");
+                if (error) {
+                    console.error("[CAROUSEL-DATA] query error:", error);
+                    throw error;
+                }
+                const rawSlides = data || [];
+                return rawSlides.map((img) => ({
+                    ...img,
+                    image_url: getDailyShineCarouselImageUrl(img.image_url)
+                }));
+            }
+            catch (err) {
+                console.error("[CAROUSEL-DATA] failed:", err);
+                return [];
+            }
+        },
+        retry: 1,
+    });
+    const vehicles = vehiclesQ.data ?? [];
+    const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
+    const category = activeVehicle?.category;
+    // Resolve Daily Shine price dynamically for banner
+    const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
+    const dailyShinePrice = resolveDailyShinePrice(category, dailyShineService);
+    const catalogImageQ = useVehicleImageUrl({
+        make: activeVehicle?.make,
+        model: activeVehicle?.model,
+        imagePath: activeVehicle?.image_path,
+        transform: { width: 120, height: 120, quality: 72, resize: "contain" },
+    });
+    const availability = useAreaAvailability();
+    const a = availability.data;
+    const showCatalog = true; // DO NOT block catalog on area availability for now to prevent skeletons
+    const priceFor = (s) => {
+        if (activeVehicle?.category === 'hatchback_compact_sedan')
+            return s.price_hatchback;
+        if (activeVehicle?.category === 'sedan_suv')
+            return s.price_sedan_suv;
+        return s.price_hatchback; // Default to hatchback price if unknown
+    };
+    const services = servicesQ.data ?? [];
+    // FIX: Include all one-time services regardless of PLAN_INCLUDED_SERVICE_SLUGS for the catalog
+    const oneTime = services.filter((s) => s.service_type !== "subscription");
+    const filteredServices = oneTime.filter((s) => {
+        let matches = true;
+        if (selectedCategory === "Popular")
+            matches = true;
+        else if (selectedCategory === "Wash")
+            matches = s.slug.includes("wash");
+        else if (selectedCategory === "Interior")
+            matches = s.slug.includes("interior") || s.slug.includes("clean") || s.slug.includes("dusting");
+        else if (selectedCategory === "Polish")
+            matches = s.slug.includes("polish") || s.slug.includes("scratch");
+        else if (selectedCategory === "Detailing")
+            matches = s.slug.includes("premium") || s.slug.includes("full") || s.slug.includes("polish");
+        return matches;
+    });
+    const galleryQ = useServiceGallery();
+    const resolvedServiceImage = (service) => {
+        // 1. Check Banner URL from Catalog (Direct Source)
+        if (service.banner_url)
+            return service.banner_url;
+        // 2. Check Gallery
+        const galleryResult = getServiceImage(service.slug, galleryQ.data || []);
+        if (galleryResult.source === 'GALLERY')
+            return galleryResult.url;
+        // 3. Check hardcoded fallbacks
+        return galleryResult.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
+    };
+    // refreshAll is now defined earlier to be used in the useEffect
+    return (<PullToRefresh onRefresh={refreshAll}>
+      <div className="min-h-screen bg-white">
+        <UWHeader area={area} onAreaClick={() => { navigate({ to: "/c/location/search", search: {} }); }} activeVehicle={activeVehicle} vehicleImage={catalogImageQ.data} onVehicleClick={() => (vehicles.length > 1 ? setVehicleSheetOpen(true) : setEditOpen(true))}/>
+
+        <div className="flex flex-col">
+          <div className="px-4">
+            <div className="mt-3">
+              <UWFeaturedCarousel isLoading={imagesQ.isLoading} isError={imagesQ.isError && (!imagesQ.data || imagesQ.data.length === 0)} onRetry={() => imagesQ.refetch()} items={(imagesQ.data?.length ? imagesQ.data : []).map((img, idx) => {
+            const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
+            const isFallback = !img.id || img.id.startsWith('static-');
+            let finalImage = img.image_url || DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length].image;
+            if (finalImage && finalImage.includes('supabase.co')) {
+                const separator = finalImage.includes('?') ? '&' : '?';
+                finalImage = `${finalImage}${separator}v=${bust}`;
+            }
+            return {
+                id: img.id || `static-${idx}`,
+                title: "",
+                subtitle: "",
+                price: 0,
+                image: finalImage,
+                link: img.service_slug ? `/c/service/${img.service_slug}` : "/c/service/daily-shine",
+                slideNumber: img.slide_number || idx + 1
+            };
+        })} onItemClick={(item) => {
+            const targetVehicleId = selectedVehicleId || activeVehicle?.id;
+            // Extract slug from link if it matches /c/service/$slug
+            const serviceSlugMatch = item.link.match(/\/c\/service\/([^\/]+)/);
+            if (serviceSlugMatch) {
+                navigate({
+                    to: "/c/service/$slug",
+                    params: { slug: serviceSlugMatch[1] },
+                    search: { vehicleId: targetVehicleId || undefined }
+                });
+            }
+            else {
+                navigate({ to: item.link });
+            }
+        }}/>
+            </div>
+
+            <Section title={<h2 className="text-[19px] font-semibold text-[#171717] tracking-tight leading-tight">Our Services</h2>} className="mt-[20px] mb-0">
+              <div className="relative flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 no-scrollbar touch-pan-x mt-3 w-screen max-w-full">
+                {["Popular", "Wash", "Interior", "Polish", "Detailing"].map((cat) => (<button key={cat} onClick={() => setSelectedCategory(cat)} className={cn("whitespace-nowrap rounded-[22px] px-[16px] h-[42px] flex items-center justify-center text-[14px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0", selectedCategory === cat
+                ? "bg-[#171717] text-white font-bold"
+                : "bg-white text-[#555555] border border-[#E5E5E5]")}>
+                    {cat}
+                  </button>))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-x-[10px] gap-y-[12px] mt-[12px]">
+                {servicesQ.isError && services.length === 0 ? (<div className="col-span-3 py-8 text-center bg-[#FFF2ED] rounded-[16px] border border-[#FF6B00]/20">
+                    <p className="text-[#D32F2F] font-bold text-[15px] mb-1">SERVICE ERROR</p>
+                    <p className="text-[#666] text-[12px] mb-4 px-6 leading-relaxed">
+                      The service catalog is currently unreachable.<br />
+                      Please check your connection and try again.
+                    </p>
+                    <button onClick={() => {
+                console.log("[SERVICE-CATALOG] Manual retry clicked");
+                servicesQ.refetch();
+            }} className="h-[40px] px-8 bg-[#FF6B00] text-white text-[14px] font-bold rounded-full active:scale-[0.96] transition-transform shadow-md shadow-[#FF6B00]/20">
+                      TRY AGAIN
+                    </button>
+                  </div>) : (servicesQ.isLoading || (servicesQ.fetchStatus === 'fetching' && services.length === 0)) ? ([1, 2, 3].map(i => <SkeletonCard key={i} className="aspect-[1/1.4]"/>)) : services.length > 0 && filteredServices.length === 0 ? (<div className="col-span-3 py-8 text-center">
+                    <p className="text-[#888] text-sm font-medium">No services found in this category.</p>
+                  </div>) : filteredServices.map((s) => {
+            try {
+                return (<UWServiceCard key={s.id} name={s.name
+                        .replace("One-Time Interior & Exterior Wash", "Interior & Exterior")
+                        .replace("One-Time Wash (No Body Polish)", "Wash (No Body Polish)")
+                        .replace("Deep Clean (Full)", "Deep Clean (Full)")
+                        .replace("One-Time ", "")
+                        .replace("Butting Polish", "Buffing Polish")
+                        .replace("Root Cleaning", "Roof Cleaning")} price={priceFor(s)} image={resolvedServiceImage(s)} slug={s.slug} badge={s.slug.includes('premium') ? 'Premium' : undefined} duration={s.duration_minutes} onOpen={() => {
+                        navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } });
+                    }} onAdd={() => {
+                        console.log(`[SERVICE-NAV] Adding ${s.slug}`);
+                        navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } });
+                    }}/>);
+            }
+            catch (e) {
+                console.error("[SERVICE-DATA] Error rendering service card:", e, s);
+                return null;
+            }
+        })}
+
+              </div>
+
+              <div className="mt-6 mb-4">
+                <button onClick={() => navigate({ to: "/c/service/$slug", params: { slug: "daily-shine" }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } })} className="w-full bg-[#FFF2ED] border border-[#FF6B00]/5 rounded-[16px] p-4 text-left active:scale-[0.98] transition-transform h-[96px] flex items-center">
+                  <div className="flex flex-row items-center justify-between gap-4 w-full">
+                    <div className="flex-1">
+                      <p className="text-[11px] font-semibold text-[#FF6B00] uppercase tracking-wider mb-1">Your car deserves better</p>
+                      <h3 className="text-[16px] font-semibold text-[#2D2D2D] leading-tight">Keep it clean every day <br /> with Daily Shine.</h3>
+                      <div className="text-[8px] opacity-40 font-mono">B:2026-08-13-FIX-B V:{activeVehicle?.model} ID:{activeVehicle?.id?.slice(-4)} P:₹{dailyShinePrice}</div>
+                      <p className="text-[12px] font-bold text-[#FF6B00] mt-1">Starting at ₹{dailyShinePrice}/mo</p>
+                    </div>
+                    <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[13.5px] font-semibold shrink-0">
+                      EXPLORE <ChevronRight className="ml-1 h-3.5 w-3.5"/>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </Section>
+          </div>
+        </div>
+
+        <Dialog open={vehicleSheetOpen} onOpenChange={setVehicleSheetOpen}>
+          <DialogContent className="max-w-md rounded-t-3xl border-none p-0">
+            <DialogHeader className="p-6 pb-2"><DialogTitle className="text-xl font-bold">Select Vehicle</DialogTitle></DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto p-4 pt-0">
+              <ListGroup>
+                {vehicles.map((v) => (<ListRow key={v.id} title={`${v.make} ${v.model}`} subtitle={`${v.registration_number} · ${vehicleBodyLabel(v.make, v.model, v.category)}`} onClick={() => { setSelectedVehicleId(v.id); localStorage.setItem("uw_customer_vehicle", v.id); setVehicleSheetOpen(false); }} trailing={v.id === selectedVehicleId ? <div className="rounded-full bg-[#FF6B00] p-1 text-white"><Check className="h-3 w-3"/></div> : undefined} chevron={v.id !== selectedVehicleId}/>))}
+                <ListRow title="Add a new car" onClick={() => { setVehicleSheetOpen(false); navigate({ to: "/c/vehicles/add" }); }} icon={Plus}/>
+              </ListGroup>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {activeVehicle && (<>
+            <EditVehicleDialog open={editOpen} onOpenChange={setEditOpen} vehicle={activeVehicle}/>
+            <ChangePhotoDialog open={photoOpen} onOpenChange={setPhotoOpen} vehicle={activeVehicle}/>
+          </>)}
+      </div>
+    </PullToRefresh>);
+}

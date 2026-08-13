@@ -20,7 +20,7 @@ import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { logApkEvidence } from "@/lib/apkEvidence";
+
 
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
 
@@ -169,23 +169,6 @@ function RoutePage() {
   const currentStop = pending[0] ?? null;
   const currentSeq = currentStop ? (total - remaining + 1) : null;
 
-  useEffect(() => {
-    if (!services) return;
-    void logApkEvidence({
-      eventType: "route_loaded",
-      status: "success",
-      payload: {
-        total,
-        pending: pending.length,
-        completed: completedCount,
-        unavailable: unavailable.length,
-        dirty: dirty.length,
-        route_visible: routeUnlocked,
-        first_service_id: currentStop?.id ?? null,
-        first_destination: currentStop ? { lat: (currentStop as any).lat, lng: (currentStop as any).lng } : null,
-      },
-    });
-  }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeUnlocked, currentStop?.id]);
 
   const nextStop = pending[0] ?? null;
   const queueStops = pending.slice(1);
@@ -683,21 +666,7 @@ function NextCustomerHero({ stop, seqNo, total, locked, previewDayLabel, unlockC
           disabled={!navUrl || locked}
           onClick={async () => {
             if (locked) return;
-            await logApkEvidence({
-              eventType: "navigation_open_attempt",
-              serviceId: stop.id,
-              assignmentId: stop.assignment_id ?? null,
-              status: navUrl ? "info" : "blocked",
-              payload: { destination_lat: gps.lat, destination_lng: gps.lng, destination_source: stop.destination_source ?? null, customer_name: c?.full_name ?? null },
-            });
-            const opened = await openGoogleMapsDirections(gps.lat, gps.lng);
-            await logApkEvidence({
-              eventType: "navigation_open_result",
-              serviceId: stop.id,
-              assignmentId: stop.assignment_id ?? null,
-              status: opened ? "success" : "error",
-              payload: { opened, destination_lat: gps.lat, destination_lng: gps.lng },
-            });
+            await openGoogleMapsDirections(gps.lat, gps.lng);
           }}
         />
         {locked ? (

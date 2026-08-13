@@ -64,7 +64,7 @@ export function UWHeader({
           )}
           onClick={hideLocationIcon ? undefined : onAreaClick}
         >
-          {buildId && <span className="text-[8px] opacity-30 absolute -top-3 left-0">{buildId}</span>}
+          
           {!hideLocationIcon && <MapPin className="h-[18px] w-[18px] text-[#FF6B00] shrink-0" />}
 
           <div className="flex items-center gap-1 min-w-0">

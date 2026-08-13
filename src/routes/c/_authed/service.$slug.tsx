@@ -24,9 +24,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
-import { APK_EVIDENCE } from "@/lib/apkEvidence";
 
-const BUILD_ID = "2026-08-13-FIX-B";
+
+
 
 
 const serviceSearchSchema = z.object({
@@ -113,15 +113,6 @@ function ServiceDetail() {
     return found || null;
   }, [vehiclesQ.data, vehicleId, search.vehicleId]);
 
-  useEffect(() => {
-    console.log("[SERVICE-DETAIL-CONTEXT]", {
-      routeVehicleId: search.vehicleId,
-      routeSlug: slug,
-      resolvedVehicleId: vehicle?.id,
-      resolvedVehicleModel: vehicle?.model,
-      resolvedVehicleCategory: vehicle?.category,
-    });
-  }, [search.vehicleId, slug, vehicle]);
 
   useEffect(() => {
     // Check session silently, do not trigger global state resets
@@ -156,27 +147,11 @@ function ServiceDetail() {
     };
   }>({
     open: false,
-    steps: [
-      { id: 'click', label: '1. PAY NOW CLICKED', status: 'pending' },
-      { id: 'validation', label: '2. VALIDATION', status: 'pending' },
-      { id: 'rpc', label: '3. CONFIRM CUSTOMER BOOKING RPC', status: 'pending' },
-      { id: 'order', label: '4. RAZORPAY ORDER CREATION', status: 'pending' },
-      { id: 'orderId', label: '5. ORDER ID RECEIVED', status: 'pending' },
-      { id: 'bridge', label: '6. CAPACITOR BRIDGE CALLED', status: 'pending' },
-      { id: 'plugin', label: '7. URBANWASHCHECKOUT NATIVE PLUGIN RECEIVED', status: 'pending' },
-      { id: 'sdk_call', label: '8. RAZORPAY SDK OPEN CALLED', status: 'pending' },
-      { id: 'ui_open', label: '9. RAZORPAY CHECKOUT OPENED', status: 'pending' },
-      { id: 'result', label: '10. PAYMENT RESULT', status: 'pending' },
-    ]
+    steps: []
   });
 
   const updateDiagStep = (id: string, status: 'ok' | 'err', error?: string, details?: string) => {
-    setDiag(prev => ({
-      ...prev,
-      steps: prev.steps.map(s => 
-        s.id === id ? { ...s, status, time: new Date().toLocaleTimeString(), error, details } : s
-      )
-    }));
+    // No-op for production
   };
 
   const { items: cartItems, updateQuantity, setBaseService } = useCartStore();
@@ -196,13 +171,11 @@ function ServiceDetail() {
   const serviceQ = useQuery({
     queryKey: ["service", slug],
     queryFn: async () => {
-      console.log("[SERVICE] QUERY_START slug=", slug);
       const { data, error } = await supabase.from("service_catalog").select("*").eq("slug", slug).maybeSingle();
       if (error) {
-        console.error("[SERVICE] QUERY_ERROR", error);
         throw error;
       }
-      console.log("[SERVICE] QUERY_SUCCESS", data?.name);
+      return data as Service | null;
       return data as Service | null;
     },
     retry: 1,
@@ -283,7 +256,7 @@ function ServiceDetail() {
     }));
 
     updateDiagStep('click', 'ok');
-    console.log("[PAY_NOW] APK Evidence:", APK_EVIDENCE.version);
+    
 
 
     if (totalPayable <= 0) {
@@ -302,14 +275,6 @@ function ServiceDetail() {
     setSubmitting(true);
 
     try {
-      console.log("[PAY_NOW] Invoking confirm_customer_booking", {
-        p_service_id: service.id,
-        p_vehicle_id: vehicle.id,
-        p_address_id: activeAddress.id,
-        p_scheduled_date: new Date().toISOString().slice(0, 10),
-        p_scheduled_time: slot,
-        p_addons: cartAddons.map(a => ({ id: a.id, quantity: a.quantity })),
-      });
       
       const { data: bId, error: rpcErr } = await supabase.rpc("confirm_customer_booking", {
         p_service_id: service.id,
@@ -335,14 +300,11 @@ function ServiceDetail() {
       console.log("[PAY_NOW] RPC SUCCESS:", bId);
       updateDiagStep('rpc', 'ok');
 
-      console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
       let order;
       try {
         order = await createOrder({ data: { bookingId: bId } });
-        console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
         updateDiagStep('order', 'ok');
       } catch (err: any) {
-        console.error("[PAYMENT] ORDER_CREATION_FAILED", err);
         updateDiagStep('order', 'err', err.message);
         throw err;
       }
@@ -511,9 +473,6 @@ function ServiceDetail() {
           <Car className="h-12 w-12 text-[#FF6B00] mx-auto mb-4" />
           <h2 className="text-[20px] font-black text-[#1a1a1a] mb-2">Vehicle required</h2>
           <p className="text-[14px] text-[#7A7A7A] mb-4">Please select a vehicle from the home screen before booking this service.</p>
-          <div className="text-[10px] font-mono text-black/40 bg-black/5 p-2 rounded">
-            DEBUG: {search.vehicleId ? `V_ID:${search.vehicleId}` : 'NO_PARAM'}
-          </div>
         </div>
         <Button 
           onClick={() => navigate({ to: "/c/home" })}
@@ -528,20 +487,6 @@ function ServiceDetail() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
-      {/* UNMISTAKABLE BUILD MARKER */}
-      <div className="fixed top-20 right-4 z-[9999] pointer-events-none">
-        <div className="bg-black/90 text-white text-[10px] font-black px-3 py-2 rounded-lg border border-white/20 shadow-2xl backdrop-blur-md">
-          <div className="text-[#FF6B00] mb-0.5">BUILD: {BUILD_ID}</div>
-          <div className="flex flex-col gap-0.5 opacity-90">
-            <div>V: {vehicle?.model || 'NONE'}</div>
-            <div>P: ₹{resolveDailyShinePrice(vehicle?.category, service)}</div>
-            <div>C: ServiceDetail</div>
-            <div className="mt-1 text-[8px] opacity-50 border-t border-white/10 pt-1">
-              URL: {search.vehicleId ? 'HAS_V_ID' : 'NO_V_ID'}
-            </div>
-          </div>
-        </div>
-      </div>
       <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-6 h-[64px] flex items-center gap-3 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 rounded-full active:bg-black/5 transition-colors">
           <ArrowLeft className="h-6 w-6 text-[#1a1a1a]" />
@@ -774,7 +719,7 @@ function ServiceDetail() {
         <div className="bg-white border-t border-black/[0.05] p-6 flex justify-between items-center shadow-[0_-12px_40px_rgba(0,0,0,0.08)] pointer-events-auto gap-4 min-h-[88px]">
           <div className="flex flex-col min-w-0">
             <span className="text-[9px] font-[900] text-[#7A7A7A] uppercase tracking-[0.18em] mb-0.5">TOTAL PAYABLE</span>
-            <div className="text-[8px] opacity-40 font-mono">B:2026-08-13-DIAG-A V:{vehicle?.model} P:₹{totalPayable} C:ServiceDetail</div>
+            
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
@@ -782,12 +727,6 @@ function ServiceDetail() {
               // Stop any potential parent clicks or form submissions
               e.preventDefault();
               e.stopPropagation();
-              console.log("[PAY_NOW] button_physical_click_received", { 
-                submitting, 
-                hasSlot: !!slot,
-                pointerEvents: window.getComputedStyle(e.currentTarget).pointerEvents,
-                zIndex: window.getComputedStyle(e.currentTarget).zIndex
-              });
               confirm();
             }}
             disabled={submitting || !slot}
@@ -805,70 +744,6 @@ function ServiceDetail() {
         </div>
       </div>
 
-      {/* Diagnostic Panel */}
-      <Drawer open={diag.open} onOpenChange={(o) => setDiag(prev => ({ ...prev, open: o }))} dismissible={true}>
-        <DrawerContent className="max-h-[90vh] bg-[#0A0A0A] text-white font-mono p-6 border-t border-white/10">
-          <DrawerHeader className="p-0 mb-4 flex justify-between items-center border-b border-white/10 pb-4">
-            <div className="flex flex-col">
-              <DrawerTitle className="text-white text-[14px] font-black uppercase tracking-widest">DEVICE DIAGNOSTICS</DrawerTitle>
-              <span className="text-[10px] text-[#4ade80] font-bold mt-1">REAL-TIME EXECUTION TRACE</span>
-            </div>
-            <button onClick={() => setDiag(prev => ({ ...prev, open: false }))} className="p-2 -mr-2 text-white/30 active:scale-90"><X className="h-5 w-5" /></button>
-          </DrawerHeader>
-
-          <div className="space-y-3 overflow-y-auto pb-12 pr-1">
-            {diag.orderInfo && (
-              <div className="bg-white/5 border border-white/10 p-3 rounded-xl mb-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] text-white/40 font-bold uppercase">ORDER ID</span>
-                  <span className="text-[11px] text-[#4ade80] font-black">{diag.orderInfo.id}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-white/40 font-bold uppercase">AMOUNT</span>
-                  <span className="text-[11px] text-white font-black">₹{diag.orderInfo.amount / 100} (INR)</span>
-                </div>
-              </div>
-            )}
-
-            {diag.steps.map((step, idx) => (
-              <div key={step.id} className={cn(
-                "flex flex-col gap-1 p-2 rounded-lg transition-colors",
-                step.status === 'pending' ? "opacity-30" : "bg-white/5"
-              )}>
-                <div className="flex items-center justify-between">
-                  <span className={cn(
-                    "text-[12px] font-bold",
-                    step.status === 'ok' ? "text-white" : 
-                    step.status === 'err' ? "text-[#f87171]" : "text-white/60"
-                  )}>
-                    {step.label}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {step.time && <span className="text-[9px] text-white/30">{step.time}</span>}
-                    <span className={cn(
-                      "text-[11px] font-black w-5 h-5 flex items-center justify-center rounded-full",
-                      step.status === 'ok' ? "bg-[#4ade80]/20 text-[#4ade80]" : 
-                      step.status === 'err' ? "bg-[#f87171]/20 text-[#f87171]" : "bg-white/10 text-white/20"
-                    )}>
-                      {step.status === 'ok' ? '✓' : step.status === 'err' ? '✗' : '...'}
-                    </span>
-                  </div>
-                </div>
-                {step.error && (
-                  <div className="text-[10px] text-[#f87171]/80 leading-tight pl-0 mt-1 font-medium bg-[#f87171]/5 p-2 rounded border border-[#f87171]/10">
-                    ERR: {step.error}
-                  </div>
-                )}
-                {step.details && (
-                  <div className="text-[10px] text-[#4ade80]/80 font-black tracking-widest mt-0.5">
-                    {step.details}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </DrawerContent>
-      </Drawer>
 
     </div>
   );

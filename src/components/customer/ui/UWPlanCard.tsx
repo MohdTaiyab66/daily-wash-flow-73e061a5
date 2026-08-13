@@ -60,7 +60,7 @@ export function UWPlanCard({
           </h3>
           
           <div className="mt-1 flex items-center gap-2 text-[12px] font-bold text-muted-foreground/60">
-            {price && <div className="flex flex-col"><div className="text-[7px] opacity-40 font-mono">B:2026-08-13-DIAG-A P:₹{price} C:UWPlanCard</div><span>₹{price.toLocaleString("en-IN")} / mo</span></div>}
+            {price && <span>₹{price.toLocaleString("en-IN")} / mo</span>}
             {price && daysLeft !== undefined && <span className="opacity-30">·</span>}
             {daysLeft !== undefined && (
               <span className={cn(isExpiring && "text-destructive font-black")}>

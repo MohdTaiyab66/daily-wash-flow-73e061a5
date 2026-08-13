@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isNative } from "@/lib/platform";
-import { logApkEvidence } from "@/lib/apkEvidence";
+
 
 export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<readonly unknown[]>) {
   const queryClient = useQueryClient();
@@ -21,13 +21,6 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     });
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") refresh();
-      if (isNative() && (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT")) {
-        void logApkEvidence({
-          eventType: "realtime_status",
-          status: status === "SUBSCRIBED" ? "success" : "error",
-          payload: { status, tables },
-        });
-      }
     });
 
     const onVisible = () => {
@@ -43,7 +36,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
         .then(({ App }) => App.addListener("appStateChange", ({ isActive }) => {
           if (isActive) {
             refresh();
-            void logApkEvidence({ eventType: "native_app_resume_refresh", status: "success", payload: { tables } });
+            
           }
         }))
         .then((listener) => { nativeListener = listener; })

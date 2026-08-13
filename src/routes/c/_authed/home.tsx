@@ -84,7 +84,7 @@ function CustomerHome() {
   }, []);
 
   const refreshAll = async () => {
-    console.log("[HOME] Manual refresh started");
+    
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["coverage-at"] }),
       queryClient.invalidateQueries({ queryKey: ["customer-vehicles"] }),
@@ -148,7 +148,7 @@ function CustomerHome() {
     staleTime: 1000 * 30, // Reduced to 30s
     queryFn: async (): Promise<Service[]> => {
       const start = Date.now();
-      console.log("[SERVICE-CATALOG] REQUEST START");
+      
       try {
         const { data, error, status } = await supabase
           .from("service_catalog")
@@ -156,8 +156,6 @@ function CustomerHome() {
           .eq("active", true)
           .order("sort_order", { ascending: true });
 
-        const elapsed = Date.now() - start;
-        console.log(`[SERVICE-CATALOG] RESPONSE: status=${status}, elapsed=${elapsed}ms`);
 
         if (error) {
           console.error("[SERVICE-CATALOG] query error:", error);
@@ -165,7 +163,7 @@ function CustomerHome() {
         }
         
         const rawData = (data ?? []) as Service[];
-        console.log("[SERVICE-CATALOG] RAW ROW COUNT:", rawData.length);
+        
         return rawData;
       } catch (err) {
         console.error("[SERVICE-CATALOG] FETCH FAILED:", err);
@@ -183,7 +181,7 @@ function CustomerHome() {
     gcTime: 1000 * 60 * 5,
     queryFn: async () => {
       try {
-        console.log("[CAROUSEL-DATA] request started");
+        
         const { data, error } = await (supabase as any)
           .from("daily_shine_carousel")
           .select("id, image_url, status, slide_number, updated_at, service_slug")
@@ -195,7 +193,7 @@ function CustomerHome() {
         }
         
         const rawSlides = data || [];
-        console.log("[CAROUSEL-DATA] response received, raw count:", rawSlides.length);
+        
         
         return rawSlides.map((img: any) => ({
           ...img,
@@ -250,16 +248,6 @@ function CustomerHome() {
     return matches;
   });
 
-  useEffect(() => {
-    if (servicesQ.data) {
-      console.log(`[SERVICE-CATALOG] TRANSFORMATION:
-        - RAW ROWS = ${servicesQ.data.length}
-        - AFTER NORMALIZATION = ${oneTime.length}
-        - CATEGORY = ${selectedCategory}
-        - FINAL RENDER LIST = ${filteredServices.length}
-      `);
-    }
-  }, [servicesQ.data, oneTime.length, selectedCategory, filteredServices.length]);
 
 
   const galleryQ = useServiceGallery();
@@ -282,7 +270,7 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
         <UWHeader 
-          buildId="1.0.32-FIX-B-01"
+          
           area={area} 
 
           onAreaClick={() => { navigate({ to: "/c/location/search", search: {} as any }); }}
@@ -303,14 +291,6 @@ function CustomerHome() {
                   const bust = img.updated_at ? new Date(img.updated_at).getTime() : Date.now();
                   const isFallback = !img.id || img.id.startsWith('static-');
                   
-                  // LOG CAROUSEL URLS FOR TRACING
-                  console.log(`[CAROUSEL-DATA] Slide ${idx + 1}:
-                    - ID: ${img.id}
-                    - Source: ${isFallback ? 'FALLBACK' : 'DATABASE'}
-                    - URL: ${img.image_url}
-                    - UpdatedAt: ${img.updated_at}
-                    - Bust: ${bust}
-                  `);
 
                   let finalImage = img.image_url || (DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] as any).image;
                   if (finalImage && finalImage.includes('supabase.co')) {
@@ -329,12 +309,6 @@ function CustomerHome() {
                 })}
                 onItemClick={(item) => {
                   const targetVehicleId = selectedVehicleId || activeVehicle?.id;
-                  console.log("[DAILY-SHINE-CAROUSEL]", {
-                    selectedVehicleId: targetVehicleId,
-                    selectedVehicleModel: activeVehicle?.model,
-                    selectedVehicleCategory: activeVehicle?.category,
-                    targetLink: item.link
-                  });
                   
                   // Extract slug from link if it matches /c/service/$slug
                   const serviceSlugMatch = item.link.match(/\/c\/service\/([^\/]+)/);
@@ -415,7 +389,7 @@ function CustomerHome() {
                         badge={s.slug.includes('premium') ? 'Premium' : undefined}
                         duration={s.duration_minutes}
                         onOpen={() => {
-                          console.log(`[SERVICE-NAV] Opening ${s.slug}`);
+                          
                           navigate({ to: "/c/service/$slug", params: { slug: s.slug }, search: { vehicleId: selectedVehicleId || activeVehicle?.id || undefined } });
                         }}
                         onAdd={() => {

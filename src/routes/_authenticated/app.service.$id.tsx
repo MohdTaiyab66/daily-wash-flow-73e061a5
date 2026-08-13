@@ -15,7 +15,7 @@ import { formatTime12 } from "@/lib/format";
 import { VehiclePhotoViewer } from "@/components/VehiclePhotoViewer";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { logApkEvidence, evidenceError } from "@/lib/apkEvidence";
+
 import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
 import { PhotoSlot, getPosition, type ServicePhotoRow } from "@/components/partner/service/photo-slot";
 import { GuidedReport } from "@/components/partner/service/GuidedReport";
@@ -194,7 +194,7 @@ function ServiceDetail() {
   const start = useMutation({
     mutationFn: async () => {
       const pos = await getPosition();
-      await logApkEvidence({ eventType: "service_start_attempt", serviceId: id, assignmentId: (service as any)?.assignment_id ?? null, gps: pos, payload: { previous_status: status } });
+      
       const { error } = await supabase.from("services").update({
         status: "in_progress",
         started_at: new Date().toISOString(),
@@ -202,10 +202,10 @@ function ServiceDetail() {
         start_lng: pos?.lng ?? null,
       }).eq("id", id);
       if (error) {
-        await logApkEvidence({ eventType: "service_start_result", serviceId: id, gps: pos, status: "error", payload: evidenceError(error) });
+        
         throw error;
       }
-      await logApkEvidence({ eventType: "service_start_result", serviceId: id, gps: pos, status: "success", payload: { next_status: "in_progress" } });
+      
     },
     onSuccess: () => { setStep("cleaning"); qc.invalidateQueries({ queryKey: ["service", id] }); },
     onError: (e: any) => toast.error(e.message ?? "Could not start"),
@@ -217,7 +217,7 @@ function ServiceDetail() {
         .update({ status: "pending", started_at: null, start_lat: null, start_lng: null })
         .eq("id", id);
       if (error) throw error;
-      await logApkEvidence({ eventType: "service_start_cancelled", serviceId: id, status: "success", payload: { reason } });
+      
     },
     onSuccess: () => {
       toast.success("Service start cancelled");
@@ -235,7 +235,7 @@ function ServiceDetail() {
       if (!afterAllDone) throw new Error("Take all 4 after photos first");
       const pos = await getPosition();
       const completedAt = new Date().toISOString();
-      await logApkEvidence({ eventType: "service_complete_attempt", serviceId: id, gps: pos, payload: { before_done: beforeDone, after_done_count: afterDone.size } });
+      
       const { data, error } = await (supabase as any).rpc("partner_complete_service", {
         p_service_id: id,
         p_lat: pos?.lat ?? null,
@@ -243,12 +243,12 @@ function ServiceDetail() {
         p_notes: serviceNotes.trim() || null,
       });
       if (error) {
-        await logApkEvidence({ eventType: "service_complete_result", serviceId: id, gps: pos, status: "error", payload: evidenceError(error) });
+        
         const code = (error as any).code ?? "";
         if (code === "P04PHOTO") throw new Error("Some photos are missing. Please take them again.");
         throw new Error((error as any).message ?? "Could not complete service");
       }
-      await logApkEvidence({ eventType: "service_complete_result", serviceId: id, gps: pos, status: "success", payload: { rpc: data } });
+      
       if (service?.started_at) {
         const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
         const { data: u } = await supabase.auth.getUser();
@@ -779,20 +779,7 @@ function CustomerCard({
             className="h-14 text-base"
             disabled={!hasNavigation}
             onClick={async () => {
-              await logApkEvidence({
-                eventType: "navigation_open_attempt",
-                serviceId,
-                assignmentId: service?.assignment_id ?? null,
-                status: hasNavigation ? "info" : "blocked",
-                payload: { destination_lat: destLat, destination_lng: destLng },
-              });
-              const opened = await openGoogleMapsDirections(destLat, destLng);
-              await logApkEvidence({
-                eventType: "navigation_open_result",
-                serviceId,
-                status: opened ? "success" : "error",
-                payload: { opened },
-              });
+              await openGoogleMapsDirections(destLat, destLng);
             }}
           >
             <Navigation className="mr-1.5 h-5 w-5" /> {hasNavigation ? "Navigate" : "No GPS"}
