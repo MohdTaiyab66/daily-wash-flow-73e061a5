@@ -7,7 +7,11 @@ import { startFcm } from "./fcm";
  */
 export function useFcmRegistration(userId: string | null | undefined, app: "partner" | "customer") {
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log("[CUSTOMER-FCM-REGISTRATION] No userId available in useFcmRegistration");
+      return;
+    }
+    console.log(`[CUSTOMER-FCM-REGISTRATION] Triggering startFcm for user ${userId}`);
     void startFcm(userId, app);
   }, [userId, app]);
 }

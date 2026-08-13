@@ -49,6 +49,7 @@ export const registerPushToken = createServerFn({ method: "POST" })
     //    to the current user/device instead of throwing 23505.
     const { error: tokenErr } = await sb.from("push_tokens").upsert(row, { onConflict: "token" });
     if (tokenErr) {
+      console.warn(`[CUSTOMER-FCM-REGISTRATION:SERVER] Conflict on token, attempting update by device_id: ${tokenErr.message}`);
       // Fallback: the (user_id, device_id, app) row exists with a different
       // token — update it in place.
       const { error: devErr } = await sb
