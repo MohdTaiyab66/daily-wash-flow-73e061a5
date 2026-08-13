@@ -18,6 +18,7 @@ import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
 import { ListGroup, ListRow, Section } from "@/components/customer/ui/kit";
+import { PushDiagnosticsPanel } from "@/components/customer/PushDiagnosticsPanel";
 import { cn } from "@/lib/utils";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -269,6 +270,14 @@ function CustomerHome() {
   return (
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
+        {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="px-4 pt-4 mb-6">
+            <PushDiagnosticsPanel />
+          </div>
+        )}
+
+
         <UWHeader 
           
           area={area} 
