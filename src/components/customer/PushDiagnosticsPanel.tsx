@@ -22,22 +22,30 @@ export function PushDiagnosticsPanel() {
 
     const checkNative = async () => {
       try {
-        // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
-        const { value: lastMsgId } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_message_id' });
-        const { value: lastReceivedAt } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_received_at' });
-        const { value: lastType } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_type' });
-        const { value: lastTitle } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_title' });
+        const Plugins = (window as any).Capacitor?.Plugins;
+        const Preferences = Plugins?.Preferences;
         
-        const { value: lastNotifId } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_notif_posted_id' });
-        const { value: lastNotifAt } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_notif_posted_at' });
+        if (!Preferences) {
+          console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Preferences plugin not found");
+          return;
+        }
+
+        // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
+        const { value: lastMsgId } = await Preferences.get({ key: 'last_fcm_message_id' });
+        const { value: lastReceivedAt } = await Preferences.get({ key: 'last_fcm_received_at' });
+        const { value: lastType } = await Preferences.get({ key: 'last_fcm_type' });
+        const { value: lastTitle } = await Preferences.get({ key: 'last_fcm_title' });
+        
+        const { value: lastNotifId } = await Preferences.get({ key: 'last_notif_posted_id' });
+        const { value: lastNotifAt } = await Preferences.get({ key: 'last_notif_posted_at' });
         
         if (lastMsgId) {
           setNativeState({
             fcm: {
               id: lastMsgId,
               receivedAt: lastReceivedAt ? new Date(parseInt(lastReceivedAt)).toLocaleTimeString() : 'N/A',
-              type: lastType,
-              title: lastTitle
+              type: lastType || 'unknown',
+              title: lastTitle || ''
             },
             notif: {
               id: lastNotifId,
@@ -46,7 +54,7 @@ export function PushDiagnosticsPanel() {
           });
         }
       } catch (e) {
-        console.warn("Native diag read failed", e);
+        console.error("[CUSTOMER-PUSH-NATIVE-DIAG] Native diag read failed", e);
       }
     };
 
@@ -92,8 +100,8 @@ export function PushDiagnosticsPanel() {
     onSettled: () => setIsTesting(false),
   });
 
-  if (isLoading) return <div className="p-4 text-center">Loading diagnostics...</div>;
-  if (error) return <div className="p-4 text-destructive">Error: {error.message}</div>;
+  if (isLoading) return <div className="p-4 text-center text-xs opacity-50">Forensic Panel Loading...</div>;
+  if (error) return <div className="p-4 text-destructive border-2 border-destructive/20 bg-destructive/5 rounded-lg text-xs font-mono">Forensic Panel Error: {error.message}</div>;
 
   const hasTokens = data?.tokens && data.tokens.length > 0;
   const configOk = data?.firebase_config?.project_id !== "MISSING" && data?.firebase_config?.has_private_key;
@@ -109,9 +117,9 @@ export function PushDiagnosticsPanel() {
             </CardTitle>
             <div className="text-[10px] space-y-0.5 mt-1 font-mono text-muted-foreground uppercase">
               <div>AUTH: <span className={data?.user_id ? "text-success" : "text-destructive"}>{data?.user_id ? "READY" : "NOT READY"}</span></div>
-              <div>PERMISSION: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "GRANTED" : "CHECK APP"}</span></div>
-              <div>FCM: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "INITIALIZED" : "PENDING"}</span></div>
-              <div>BACKEND: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "SUCCESS" : "WAITING"}</span></div>
+              <div>PERMISSION: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "GRANTED" : "UNKNOWN"}</span></div>
+              <div>FCM: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "INITIALIZED" : "UNKNOWN"}</span></div>
+              <div>BACKEND: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "SUCCESS" : "UNKNOWN"}</span></div>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => refetch()}>
@@ -174,7 +182,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-lg bg-black text-white p-3 text-[10px] border border-orange-500/50 font-mono mt-4">
             <p className="font-bold text-orange-500 uppercase mb-2 border-b border-orange-500/20 pb-1 flex justify-between">
               <span>DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/40">BUILD: FCM-P0-ANDROID-RECEIPT-01</span>
+              <span className="text-[8px] text-white/40">BUILD: FCM-P0-ANDROID-RECEIPT-02</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
