@@ -9,12 +9,43 @@ import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 
+type NativeFcmState = {
+  fcm: { id: string | null; receivedAt: string; type: string; title: string };
+  notif: { id: string | null; postedAt: string | null };
+  android: "WAITING" | "RECEIVED" | "UNAVAILABLE";
+};
+
+const DEFAULT_NATIVE_STATE: NativeFcmState = {
+  fcm: { id: null, receivedAt: "NONE", type: "UNKNOWN", title: "" },
+  notif: { id: null, postedAt: null },
+  android: "WAITING",
+};
+
+type TestResultState = {
+  status: string;
+  userId?: string;
+  tokenTail?: string;
+  projectId?: string;
+  messageId: string | null;
+  sentAt?: string;
+  result: string;
+  raw?: unknown;
+};
+
+const DEFAULT_DIAGNOSTICS = {
+  user_id: null as string | null,
+  is_customer: false,
+  firebase_config: { project_id: "UNKNOWN", client_email: "UNKNOWN", has_private_key: false },
+  tokens: [] as any[],
+};
+
 export function PushDiagnosticsPanel() {
   const getDiags = useServerFn(getPushDiagnostics);
   const sendTest = useServerFn(sendDirectTestPush);
   const [isTesting, setIsTesting] = useState(false);
-  const [lastTestResult, setLastTestResult] = useState<any>(null);
-  const [nativeState, setNativeState] = useState<any>(null);
+  const [lastTestResult, setLastTestResult] = useState<TestResultState | null>(null);
+  const [nativeState, setNativeState] = useState<NativeFcmState>(DEFAULT_NATIVE_STATE);
+
 
   // Poll native SharedPreferences via Capacitor bridge
   useEffect(() => {
