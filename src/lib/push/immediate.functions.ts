@@ -53,15 +53,15 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    console.log(`[UNAVAILABLE-E2E:01] PARTNER_UNAVAILABLE_ACTION id=${data.serviceId} type=${data.type}`);
+    console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION id=${data.serviceId} type=${data.type}`);
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Resolve status (Checkpoint 02)
+    // 1. Resolve status
     const { data: svc } = await supabaseAdmin.from("services").select("status").eq("id", data.serviceId).maybeSingle();
-    console.log(`[UNAVAILABLE-E2E:02] SERVICE_STATUS_UPDATED status=${svc?.status}`);
+    console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED status=${svc?.status}`);
 
-    // 2. Resolve user_id (Checkpoint 05)
+    // 2. Resolve user_id
     const { data: customer } = await (supabaseAdmin as any)
       .from("customer_profiles")
       .select("user_id")
@@ -69,13 +69,13 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .single();
 
     if (!customer?.user_id) {
-      console.error(`[UNAVAILABLE-E2E:FAILURE] Could not resolve user_id for customer_id=${data.customerId}`);
+      console.error(`[UNAVAILABLE-PUSH:FAILURE] Could not resolve user_id for customer_id=${data.customerId}`);
       return { ok: false, error: "no_user_id" };
     }
     const userId = customer.user_id;
-    console.log(`[UNAVAILABLE-E2E:05] CUSTOMER_USER_RESOLVED user_id=${userId}`);
+    console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${data.type}`);
 
-    // 3. Verify notification row (Checkpoint 03/04)
+    // 3. Verify notification row
     const { data: notif } = await supabaseAdmin
       .from("customer_notifications")
       .select("id, type")
@@ -86,11 +86,13 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (notif) {
-      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${notif.id}`);
-      console.log(`[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${notif.type}`);
+      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${notif.id}`);
     }
+    
+    console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED user_id=${userId}`);
+    console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
 
-    // 4. Send (Checkpoint 07/08)
+    // 4. Send
     const res = await sendOfferPush({
       userId,
       title: data.title,
@@ -108,10 +110,11 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     });
 
     if (res.sent > 0) {
-      console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED message_id=${res.results[0]?.messageId}`);
+      console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${res.results[0]?.messageId}`);
     } else {
-      console.error(`[UNAVAILABLE-E2E:FAILURE] FCM_SEND_FAILED result=${JSON.stringify(res)}`);
+      console.error(`[UNAVAILABLE-PUSH:FAILURE] FCM_SEND_FAILED result=${JSON.stringify(res)}`);
     }
 
+    console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE`);
     return { ok: true, ...res };
   });

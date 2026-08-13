@@ -119,8 +119,11 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const payload = (await response.json().catch(() => ({}))) as any;
     if (!response.ok || !payload?.id) {
+      console.error(`[PAYMENT-E2E:01] ORDER_CREATED failed - error=${payload?.error?.description}`);
       throw new Error(payload?.error?.description || "Could not create Razorpay order");
     }
+
+    console.log(`[PAYMENT-E2E:01] ORDER_CREATED order_id=${payload.id}`);
 
     const { error: updateError } = await supabaseAdmin
       .from("bookings")
@@ -171,12 +174,17 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
     };
 
     try {
+      console.log(`[PAYMENT-E2E:03] PAYMENT_CREDENTIALS_RECEIVED booking_id=${data.bookingId} order_id=${data.razorpayOrderId}`);
       const { keyId, keySecret } = requireRazorpayConfig();
       const { createHmac } = await import("crypto");
+      
+      console.log(`[PAYMENT-E2E:04] SERVER_VERIFY_STARTED`);
       const expectedSignature = createHmac("sha256", keySecret)
         .update(`${data.razorpayOrderId}|${data.razorpayPaymentId}`)
         .digest("hex");
+      
       if (expectedSignature !== data.razorpaySignature) {
+        console.error(`[PAYMENT-E2E:05] SERVER_VERIFY_RESULT failed - signature mismatch`);
         throw new Error("Payment verification failed");
       }
 
@@ -206,8 +214,11 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         const capture = (await captureResponse.json().catch(() => ({}))) as any;
         if (!captureResponse.ok) throw new Error(capture?.error?.description || "Could not capture Razorpay payment");
       } else if (payment.status !== "captured") {
+        console.error(`[PAYMENT-E2E:05] SERVER_VERIFY_RESULT failed - payment status: ${payment.status}`);
         throw new Error(`Razorpay payment is ${payment.status ?? "not captured"}`);
       }
+
+      console.log(`[PAYMENT-E2E:05] SERVER_VERIFY_RESULT success`);
 
       const { supabase } = context as any;
       const { data: result, error } = await (supabase as any).rpc("activate_paid_booking", {
@@ -222,7 +233,11 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
           payment_status: payment.status,
         },
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error(`[PAYMENT-E2E:06] ACTIVATION_RESULT error=${error.message}`);
+        throw new Error(error.message);
+      }
+      console.log(`[PAYMENT-E2E:06] ACTIVATION_RESULT success`);
 
       // Phase 2 shadow: fire the new orchestrator in parallel with legacy.
       // Never blocks or alters production activation.
