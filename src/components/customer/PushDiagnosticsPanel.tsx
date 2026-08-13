@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { useServerFn } from "@tanstack/react-start";
 import { getPushDiagnostics, sendDirectTestPush } from "@/lib/push/diagnostics.functions";
 import { Button } from "@/components/ui/button";
@@ -145,7 +146,10 @@ export function PushDiagnosticsPanel() {
             notif: {
               id: lastNotifId ?? null,
               postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : null
-            }
+            },
+            nativeTokenSuffix: null,
+            buildId: null,
+            errorReason: null
           });
         }
       } catch (e) {
