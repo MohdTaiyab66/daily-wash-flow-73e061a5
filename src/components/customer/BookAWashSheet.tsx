@@ -433,9 +433,7 @@ export function BookAWashSheet({
 
           {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
             <div className="space-y-8">
-              {/* Wash Card */}
               <div>
-                <div className="relative overflow-hidden rounded-[32px] bg-white border border-black/5 p-6 shadow-sm">
                 <div className="relative overflow-hidden rounded-3xl bg-white border border-black/[0.04] p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)]">
                   <div className="flex items-start justify-between">
                     <div>
@@ -459,8 +457,11 @@ export function BookAWashSheet({
                       </span>
                     </div>
                     <div className="flex -space-x-1.5 opacity-60">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[#A6A6A6]">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-6 w-6 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[#A6A6A6]"
+                        >
                           <Droplets className="h-3 w-3" />
                         </div>
                       ))}
@@ -468,14 +469,14 @@ export function BookAWashSheet({
                   </div>
                 </div>
                 <div className="mt-4 px-1">
-                  <button 
+                  <button
                     onClick={() => {
                       onOpenChange(false);
                       setTimeout(() => {
                         window.location.href = `/c/service/${INCLUDED.slug}?vehicleId=${vehicleId}`;
                       }, 100);
                     }}
-                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
+                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-[#FF6B00] hover:opacity-80 transition-opacity"
                   >
                     Need another wash? <span className="underline underline-offset-4">Buy more</span>
                     <ChevronRight className="h-4 w-4" />
