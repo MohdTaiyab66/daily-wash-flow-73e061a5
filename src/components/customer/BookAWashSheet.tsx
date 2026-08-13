@@ -339,30 +339,30 @@ export function BookAWashSheet({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
-      <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-[#FFF9F3] p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
+      <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-white p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-5 border-b border-black/[0.04]">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
-            <div className="mt-1 flex items-center gap-2">
-               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Included premium wash</p>
+            <h2 className="text-[20px] font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
+            <div className="mt-1 flex items-center gap-1.5">
+               <div className="h-1 w-1 rounded-full bg-[#FF6B00]" />
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Included premium wash</p>
             </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9F3] shadow-sm border border-black/5 transition-transform active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm border border-black/[0.04] transition-transform active:scale-90"
           >
-            <X className="h-5 w-5 text-[#1a1a1a]" />
+            <X className="h-4 w-4 text-[#1a1a1a]" />
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-24">
+        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-40 no-scrollbar">
           {/* Info context */}
-          <div className="flex items-start gap-3 rounded-3xl bg-primary/5 p-4 border border-primary/10">
-            <Info className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-            <p className="text-[12px] font-medium leading-relaxed text-[#1a1a1a]/70">
-              <span className="font-bold text-primary">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
+          <div className="flex items-start gap-3 rounded-2xl bg-[#FFF6EF] p-4 border border-[#FF6B00]/10">
+            <Info className="mt-0.5 h-4 w-4 text-[#FF6B00] shrink-0" />
+            <p className="text-[12px] font-medium leading-relaxed text-[#555555]">
+              <span className="font-bold text-[#FF6B00]">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
             </p>
           </div>
 
@@ -433,19 +433,17 @@ export function BookAWashSheet({
 
           {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
             <div className="space-y-8">
-              {/* Wash Card */}
               <div>
-                <div className="relative overflow-hidden rounded-[32px] bg-white border border-black/5 p-6 shadow-sm">
-                  <div className="absolute top-0 right-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-primary/5 blur-3xl" />
+                <div className="relative overflow-hidden rounded-3xl bg-white border border-black/[0.04] p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)]">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2 font-black text-primary">
-                        <Sparkles className="h-5 w-5" />
-                        <span className="text-[16px]">Included Wash</span>
+                      <div className="flex items-center gap-2 font-black text-[#FF6B00]">
+                        <Sparkles className="h-4 w-4" />
+                        <span className="text-[14px]">Included Wash</span>
                       </div>
-                      <p className="mt-1 text-[13px] font-medium text-muted-foreground/60">Full Interior + Exterior</p>
+                      <p className="mt-1 text-[12px] font-bold text-[#1A1A1A]">Full Interior + Exterior</p>
                     </div>
-                    <div className="rounded-full bg-success/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-success">
+                    <div className="rounded-full bg-green-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-green-600">
                       Free ✓
                     </div>
                   </div>
@@ -454,28 +452,31 @@ export function BookAWashSheet({
                       <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
                         {includedRow?.unlimited ? "∞" : includedRemaining}
                       </span>
-                      <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                        wash{includedRemaining !== 1 ? "es" : ""} left
+                      <span className="text-[11px] font-black text-[#A6A6A6] uppercase tracking-widest">
+                        WASH LEFT
                       </span>
                     </div>
-                    <div className="flex -space-x-2">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary">
-                          <Droplets className="h-4 w-4" />
+                    <div className="flex -space-x-1.5 opacity-60">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-6 w-6 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[#A6A6A6]"
+                        >
+                          <Droplets className="h-3 w-3" />
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
                 <div className="mt-4 px-1">
-                  <button 
+                  <button
                     onClick={() => {
                       onOpenChange(false);
                       setTimeout(() => {
                         window.location.href = `/c/service/${INCLUDED.slug}?vehicleId=${vehicleId}`;
                       }, 100);
                     }}
-                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-primary hover:opacity-80 transition-opacity"
+                    className="flex items-center justify-center gap-1.5 text-[13px] font-black text-[#FF6B00] hover:opacity-80 transition-opacity"
                   >
                     Need another wash? <span className="underline underline-offset-4">Buy more</span>
                     <ChevronRight className="h-4 w-4" />
@@ -487,30 +488,30 @@ export function BookAWashSheet({
               <div className="grid grid-cols-2 gap-4">
                 {/* When */}
                 <div className="space-y-2">
-                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">When</Label>
+                  <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">When</Label>
                   <button
                     onClick={() => setDatePickerOpen(true)}
-                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a]">
-                      <Calendar className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2 text-[13px] font-bold text-[#1A1A1A]">
+                      <Calendar className="h-3.5 w-3.5 text-[#FF6B00]" />
                       {formatDateHuman(date) || "Select date"}
                     </div>
                     {isMonday && (
-                      <div className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Monday rest day</div>
+                      <div className="text-[9px] font-black text-destructive uppercase tracking-widest">Monday rest day</div>
                     )}
                   </button>
                 </div>
 
                 {/* Where */}
                 <div className="space-y-2">
-                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Where</Label>
+                  <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Where</Label>
                   <button
                     onClick={() => setAddressPickerOpen(true)}
-                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+                    className="flex w-full flex-col items-start gap-1 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-transform active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-2 text-[14px] font-black text-[#1a1a1a] w-full">
-                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                    <div className="flex items-center gap-2 text-[13px] font-bold text-[#1A1A1A] w-full">
+                      <MapPin className="h-3.5 w-3.5 text-[#FF6B00] shrink-0" />
                       <span className="truncate">{selectedAddress?.label || "Select area"}</span>
                     </div>
                   </button>
@@ -520,8 +521,8 @@ export function BookAWashSheet({
               {/* Time Slots */}
               <div className="space-y-4">
                 <div>
-                  <Label className="ml-1 text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Preferred time</Label>
-                  <p className="mt-1 ml-1 text-[12px] font-medium text-muted-foreground/60">Choose your arrival window</p>
+                  <Label className="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Preferred time</Label>
+                  <p className="mt-1 ml-1 text-[12px] font-medium text-[#555555]">Choose your arrival window</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {SLOT_OPTIONS.map((s) => {
@@ -532,10 +533,10 @@ export function BookAWashSheet({
                         type="button"
                         onClick={() => setSlot(s)}
                         className={cn(
-                          "relative flex h-14 items-center justify-center rounded-2xl border text-[14px] font-black transition-all active:scale-[0.98]",
+                          "relative flex h-14 items-center justify-center rounded-2xl border text-[13px] font-bold transition-all active:scale-[0.98]",
                           isSelected
-                            ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                            : "border-black/5 bg-white text-[#1a1a1a] shadow-sm hover:bg-black/5"
+                            ? "border-[#FF6B00] bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20"
+                            : "border-black/[0.04] bg-white text-[#1a1a1a] shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]"
                         )}
                       >
                         {s}
@@ -548,44 +549,44 @@ export function BookAWashSheet({
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl bg-black/5 px-4 py-3 text-[11px] font-bold text-muted-foreground/60">
+                <div className="flex items-center gap-2 rounded-xl bg-black/[0.03] px-4 py-2.5 text-[11px] font-bold text-[#A6A6A6]">
                   <Clock className="h-3.5 w-3.5" />
                   <span>Our partner may arrive anytime within this window.</span>
                 </div>
               </div>
 
               {/* Success Indicator */}
-              <div className="flex items-center justify-between rounded-2xl bg-success/10 px-5 py-4 text-[13px] border border-success/10">
-                <div className="flex items-center gap-2.5 text-success">
+              <div className="flex items-center justify-between rounded-2xl bg-green-50/50 px-5 py-4 text-[13px] border border-green-600/10">
+                <div className="flex items-center gap-2.5 text-green-600">
                   <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-black uppercase tracking-wider">Plan Benefit</span>
+                  <span className="font-black uppercase tracking-[0.1em]">Plan Benefit</span>
                 </div>
-                <span className="font-black text-success">✓ Included</span>
+                <span className="font-black text-green-600">Included</span>
               </div>
 
               {/* Premium Add-ons Suggestion */}
               <div className="space-y-4 pb-4">
                 <div className="flex items-center justify-between px-1">
-                  <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">Make it even better</Label>
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-tight">Premium upgrades</span>
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Make it even better</Label>
+                  <span className="text-[9px] font-black text-[#FF6B00] uppercase tracking-widest">Premium upgrades</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
-                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-orange-500">
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all">
+                    <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-50 text-[#FF6B00]">
                       <Droplets className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-[13px] font-black text-[#1a1a1a]">Body Polish</div>
-                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹199</div>
+                      <div className="text-[13px] font-bold text-[#1A1A1A]">Body Polish</div>
+                      <div className="text-[10px] font-black text-[#A6A6A6] uppercase tracking-widest">FROM ₹199</div>
                     </div>
                   </button>
-                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm active:scale-[0.98] transition-all">
+                  <button className="flex flex-col items-start gap-2 rounded-2xl border border-black/[0.04] bg-white p-4 text-left shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all">
                     <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-500">
                       <Sparkles className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-[13px] font-black text-[#1a1a1a]">Deep Clean</div>
-                      <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tighter">from ₹499</div>
+                      <div className="text-[13px] font-bold text-[#1A1A1A]">Deep Clean</div>
+                      <div className="text-[10px] font-black text-[#A6A6A6] uppercase tracking-widest">FROM ₹499</div>
                     </div>
                   </button>
                 </div>
@@ -622,18 +623,18 @@ export function BookAWashSheet({
               data-testid="book-wash-button"
               onClick={() => void confirm()}
               disabled={phase !== "idle" || !addressId || !date || isMonday}
-              className="h-15 w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+              className="h-15 w-full rounded-2xl bg-[#FF6B00] hover:bg-[#FF6B00] text-[16px] font-black shadow-lg shadow-[#FF6B00]/20 transition-all active:scale-[0.98]"
             >
               {phase === "booking" ? (
                 <div className="flex items-center gap-3">
-                   <Loader2 className="h-5 w-5 animate-spin" />
-                   <span>Scheduling...</span>
+                   <Loader2 className="h-5 w-5 animate-spin text-white" />
+                   <span className="text-white">Scheduling...</span>
                 </div>
               ) : (
-                "Book this wash →"
+                <span className="text-white">Book this wash →</span>
               )}
             </Button>
-            <p className="mt-4 text-center text-[12px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+            <p className="mt-4 text-center text-[10px] font-black text-[#A6A6A6] uppercase tracking-[0.2em]">
               Included with Daily Shine · ₹0
             </p>
           </div>
@@ -644,7 +645,7 @@ export function BookAWashSheet({
       <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
-              <DrawerTitle>Choose date</DrawerTitle>
+              <DrawerTitle className="text-[18px] font-black text-[#1A1A1A]">Choose date</DrawerTitle>
             </DrawerHeader>
             <div className="mt-2 grid grid-cols-4 gap-2">
               {[...Array(14)].map((_, i) => {
@@ -667,7 +668,7 @@ export function BookAWashSheet({
                     }}
                     className={cn(
                       "uw-pressable flex flex-col items-center justify-center rounded-2xl border py-3 transition-all",
-                      isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card",
+                      isSelected ? "border-[#FF6B00] bg-[#FF6B00] text-white" : "border-black/[0.04] bg-white",
                       isMon && "opacity-30"
                     )}
                   >
@@ -689,7 +690,7 @@ export function BookAWashSheet({
         <Drawer open={addressPickerOpen} onOpenChange={setAddressPickerOpen}>
           <DrawerContent className="px-6 pb-8">
             <DrawerHeader className="px-0">
-              <DrawerTitle>Choose service location</DrawerTitle>
+              <DrawerTitle className="text-[18px] font-black text-[#1A1A1A]">Choose service location</DrawerTitle>
             </DrawerHeader>
             <div className="mt-2 space-y-3">
               {(addrQ.data ?? []).map((a) => (
@@ -701,15 +702,15 @@ export function BookAWashSheet({
                   }}
                   className={cn(
                     "uw-pressable flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-all",
-                    addressId === a.id ? "border-primary bg-primary/5" : "border-border bg-card"
+                    addressId === a.id ? "border-[#FF6B00] bg-[#FFF6EF]" : "border-black/[0.04] bg-white"
                   )}
                 >
                   <div>
-                    <div className="font-bold">{a.label || "Address"}</div>
-                    <div className="text-[13px] text-muted-foreground">{a.area}</div>
+                    <div className="text-[15px] font-bold text-[#1A1A1A]">{a.label || "Address"}</div>
+                    <div className="text-[12px] font-medium text-[#A6A6A6]">{a.area}</div>
                   </div>
                   {addressId === a.id && (
-                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                    <div className="h-6 w-6 rounded-full bg-[#FF6B00] flex items-center justify-center">
                       <Check className="h-3.5 w-3.5 text-white" />
                     </div>
                   )}
@@ -717,7 +718,7 @@ export function BookAWashSheet({
               ))}
               <Button asChild variant="outline" className="w-full rounded-2xl py-6" onClick={() => setAddressPickerOpen(false)}>
                 <Link to="/c/profile">
-                  <Plus className="mr-2 h-4 w-4" /> Add new address
+                  <Plus className="mr-2 h-4 w-4" /> <span className="text-[14px] font-black">Add new address</span>
                 </Link>
               </Button>
             </div>
