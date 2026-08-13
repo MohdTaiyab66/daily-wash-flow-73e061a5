@@ -133,7 +133,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       return;
     }
     
-    console.log(`[CUSTOMER-FCM-REGISTRATION] upsertToken starting. token_length: ${token.length}, token_tail: ${token.slice(-8)}`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION] upsertToken starting. user_id: ${userId}, token_length: ${token.length}, token_tail: ${token.slice(-8)}`);
 
     try {
       await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
@@ -182,7 +182,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
           last_seen: new Date().toISOString(),
           invalid_at: null,
         } as any,
-        { onConflict: "user_id,device_id,app" } as any,
+        { onConflict: "token" } as any,
       );
       if (!error) {
         console.log(`[CUSTOMER-FCM-REGISTRATION] direct upsert SUCCESS`);
