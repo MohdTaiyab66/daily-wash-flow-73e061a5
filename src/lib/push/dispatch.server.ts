@@ -219,6 +219,8 @@ export const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
   "partner_assigned",
   "daily_shine",
   "daily_shine_offer",
+  "marketplace_offer",
+  "marketplace_offer_update",
   "new_booking",
   "new_customers",
   "route_updated",
@@ -238,6 +240,8 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
   "service_completed",
   "payment_success",
   "payment_failed",
+  "subscription_activated",
+  "booking_confirmed",
 ]);
 
 /**
@@ -271,7 +275,14 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
-        data: { type, link: r.link || (headsUp ? "/app" : "") },
+        data: {
+          type,
+          link: r.link || (headsUp ? "/app" : ""),
+          // Unified Kotlin contract: require broadcast_id and action_token
+          broadcast_id: `customer:${r.id}`,
+          action_token: String(r.id),
+          offer_id: String(r.id),
+        },
         channelId: headsUp ? "assignments_v4" : "general",
         dataOnly: headsUp,
         ...(headsUp ? { tag: `customer:${r.id}` } : {}),
@@ -318,6 +329,12 @@ export async function dispatchPartnerNotifications(): Promise<number> {
         data: {
           type,
           link: r.link ?? (isAssignment ? "/app/assignments" : ""),
+          // REQUIRED CONTRACT — UrbanwashMessagingService.postAssignment()
+          // or postOffer() returns early unless broadcast_id and action_token
+          // are present.
+          broadcast_id: String(r.id),
+          action_token: String(r.id),
+          offer_id: String(r.id),
           // Kotlin uses these to key the notification and deep link.
           ...(r.metadata?.assignment_id ? { assignment_id: String(r.metadata.assignment_id) } : {}),
           ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),

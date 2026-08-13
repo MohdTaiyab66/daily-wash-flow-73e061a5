@@ -243,10 +243,14 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       // Immediate FCM push for the offers we just created (~2s to partner).
       // Same shared dispatcher the cron uses; cron remains the retry path.
       try {
-        const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
-        await dispatchPendingOffers("immediate:payment-verified");
+        const { dispatchPendingOffers, dispatchCustomerNotifications, dispatchPartnerNotifications } = await import("@/lib/push/dispatch.server");
+        await Promise.all([
+          dispatchPendingOffers("immediate:payment-verified"),
+          dispatchCustomerNotifications(),
+          dispatchPartnerNotifications(),
+        ]);
       } catch (e) {
-        console.warn("[payment] immediate offer push failed (non-fatal)", e);
+        console.warn("[payment] immediate push dispatch failed (non-fatal)", e);
       }
 
       await logAttempt({ outcome: "success", metadata: { razorpay_status: payment.status } });
