@@ -658,7 +658,7 @@ function ServiceDetail() {
                       <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
                         <div className="font-black text-[13px] truncate text-[#1a1a1a]">{a.name}</div>
-                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{addonPrice}</div>
                       </div>
                     </div>
                     <QuantityControl id={a.id} name={a.name} price={addonPrice} type="addon" />
