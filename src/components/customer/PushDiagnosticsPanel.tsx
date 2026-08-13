@@ -87,7 +87,9 @@ export function PushDiagnosticsPanel() {
       setIsTesting(true);
       setLastTestResult({ status: "SENDING..." });
       
-      return sendTest({ data: { targetUserId: data?.user_id! } });
+      const targetUserId = data?.user_id;
+      if (!targetUserId) throw new Error("User ID missing");
+      return sendTest({ data: { targetUserId } });
     },
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
