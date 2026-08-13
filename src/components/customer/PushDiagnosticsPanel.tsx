@@ -158,7 +158,8 @@ export function PushDiagnosticsPanel() {
             },
             nativeTokenSuffix: null,
             buildId: null,
-            errorReason: null
+            errorReason: null,
+            nativeInfo: null
           });
         }
       } catch (e) {
