@@ -92,7 +92,7 @@ function MyPlanPage() {
     queryFn: async (): Promise<SelectorVehicle[]> => {
       const { data } = await (supabase as any)
         .from("customer_vehicles")
-        .select("id, make, model, registration_number, is_default")
+        .select("id, make, model, registration_number, is_default, category")
         .order("created_at");
       return (data ?? []) as SelectorVehicle[];
     },
