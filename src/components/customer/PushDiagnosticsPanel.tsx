@@ -9,12 +9,43 @@ import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 
+type NativeFcmState = {
+  fcm: { id: string | null; receivedAt: string; type: string; title: string };
+  notif: { id: string | null; postedAt: string | null };
+  android: "WAITING" | "RECEIVED" | "UNAVAILABLE";
+};
+
+const DEFAULT_NATIVE_STATE: NativeFcmState = {
+  fcm: { id: null, receivedAt: "NONE", type: "UNKNOWN", title: "" },
+  notif: { id: null, postedAt: null },
+  android: "WAITING",
+};
+
+type TestResultState = {
+  status: string;
+  userId?: string;
+  tokenTail?: string;
+  projectId?: string;
+  messageId: string | null;
+  sentAt?: string;
+  result: string;
+  raw?: unknown;
+};
+
+const DEFAULT_DIAGNOSTICS = {
+  user_id: null as string | null,
+  is_customer: false,
+  firebase_config: { project_id: "UNKNOWN", client_email: "UNKNOWN", has_private_key: false },
+  tokens: [] as any[],
+};
+
 export function PushDiagnosticsPanel() {
   const getDiags = useServerFn(getPushDiagnostics);
   const sendTest = useServerFn(sendDirectTestPush);
   const [isTesting, setIsTesting] = useState(false);
-  const [lastTestResult, setLastTestResult] = useState<any>(null);
-  const [nativeState, setNativeState] = useState<any>(null);
+  const [lastTestResult, setLastTestResult] = useState<TestResultState | null>(null);
+  const [nativeState, setNativeState] = useState<NativeFcmState>(DEFAULT_NATIVE_STATE);
+
 
   // Poll native SharedPreferences via Capacitor bridge
   useEffect(() => {
@@ -26,7 +57,10 @@ export function PushDiagnosticsPanel() {
       console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Platform check failed", e);
     }
 
-    if (platform !== 'android') return;
+    if (platform !== 'android') {
+      setNativeState((prev) => ({ ...(prev ?? DEFAULT_NATIVE_STATE), android: "UNAVAILABLE" }));
+      return;
+    }
 
     const checkNative = async () => {
       try {
@@ -34,7 +68,10 @@ export function PushDiagnosticsPanel() {
         const Plugins = (window as any).Capacitor?.Plugins;
         const Preferences = Plugins?.Preferences;
         
-        if (!Preferences) return;
+        if (!Preferences) {
+          setNativeState((prev) => ({ ...(prev ?? DEFAULT_NATIVE_STATE), android: "UNAVAILABLE" }));
+          return;
+        }
 
         // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
         // We use .get() which returns { value: string | null }
@@ -56,6 +93,7 @@ export function PushDiagnosticsPanel() {
 
         if (lastMsgId) {
           setNativeState({
+            android: "RECEIVED",
             fcm: {
               id: lastMsgId,
               receivedAt: lastReceivedAt ? new Date(parseInt(lastReceivedAt)).toLocaleTimeString() : 'N/A',
@@ -63,8 +101,8 @@ export function PushDiagnosticsPanel() {
               title: lastTitle || ''
             },
             notif: {
-              id: lastNotifId,
-              postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : 'N/A'
+              id: lastNotifId ?? null,
+              postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : null
             }
           });
         }
@@ -85,7 +123,7 @@ export function PushDiagnosticsPanel() {
   const testMutation = useMutation({
     mutationFn: async () => {
       setIsTesting(true);
-      setLastTestResult({ status: "SENDING..." });
+      setLastTestResult({ status: "SENDING...", messageId: null, result: "PENDING" });
       
       const targetUserId = data?.user_id;
       if (!targetUserId) throw new Error("User ID missing");
@@ -111,17 +149,29 @@ export function PushDiagnosticsPanel() {
       }
     },
     onError: (err) => {
-      setLastTestResult({ status: "FCM FAILED", result: err.message });
+      setLastTestResult({ status: "FCM FAILED", messageId: null, result: err.message });
       toast.error(`Test failed: ${err.message}`);
     },
     onSettled: () => setIsTesting(false),
   });
 
-  if (isLoading) return <div className="p-4 text-center text-[10px] font-mono opacity-40 uppercase tracking-widest">Forensic Panel Loading...</div>;
-  if (error) return <div className="p-4 text-destructive border-2 border-destructive/20 bg-destructive/5 rounded-2xl text-[10px] font-mono leading-tight">FORENSIC ERROR: {error.message}</div>;
+  // NORMALIZED STATE — never render directly from a nullable object.
+  const safeDiagnostics = data ?? DEFAULT_DIAGNOSTICS;
+  const safeNative: NativeFcmState = nativeState ?? DEFAULT_NATIVE_STATE;
+  const safeTokens = Array.isArray(safeDiagnostics.tokens) ? safeDiagnostics.tokens : [];
+  const hasTokens = safeTokens.length > 0;
+  const configOk =
+    safeDiagnostics.firebase_config?.project_id !== "MISSING" &&
+    !!safeDiagnostics.firebase_config?.has_private_key;
 
-  const hasTokens = data?.tokens && data.tokens.length > 0;
-  const configOk = data?.firebase_config?.project_id !== "MISSING" && data?.firebase_config?.has_private_key;
+  const authLabel = isLoading ? "LOADING" : safeDiagnostics.user_id ? "READY" : "NOT READY";
+  const permissionLabel = hasTokens ? "GRANTED" : isLoading ? "UNKNOWN" : "UNKNOWN";
+  const fcmLabel = isLoading ? "INITIALIZING" : hasTokens ? "INITIALIZED" : "UNKNOWN";
+  const backendLabel = isLoading ? "LOADING" : error ? "ERROR" : hasTokens ? "SUCCESS" : "UNKNOWN";
+  const androidLabel = safeNative.android ?? "WAITING";
+  const nativeMatchesTest =
+    !!lastTestResult?.messageId && safeNative.fcm.id === lastTestResult.messageId;
+
 
   return (
     <Card className="border border-black/5 bg-white shadow-sm rounded-2xl overflow-hidden">
@@ -133,10 +183,12 @@ export function PushDiagnosticsPanel() {
               Push Notification Forensic Panel
             </CardTitle>
             <div className="text-[10px] space-y-0.5 mt-1 font-mono text-muted-foreground uppercase">
-              <div>AUTH: <span className={data?.user_id ? "text-success" : "text-destructive"}>{data?.user_id ? "READY" : "NOT READY"}</span></div>
-              <div>PERMISSION: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "GRANTED" : "UNKNOWN"}</span></div>
-              <div>FCM: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "INITIALIZED" : "UNKNOWN"}</span></div>
-              <div>BACKEND: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "SUCCESS" : "UNKNOWN"}</span></div>
+              <div>AUTH: <span className={safeDiagnostics.user_id ? "text-success" : ""}>{authLabel}</span></div>
+              <div>PERMISSION: <span className={hasTokens ? "text-success" : ""}>{permissionLabel}</span></div>
+              <div>FCM: <span className={hasTokens ? "text-success" : ""}>{fcmLabel}</span></div>
+              <div>BACKEND: <span className={backendLabel === "SUCCESS" ? "text-success" : backendLabel === "ERROR" ? "text-destructive" : ""}>{backendLabel}</span></div>
+              <div>ANDROID: <span className={androidLabel === "RECEIVED" ? "text-success" : ""}>{androidLabel}</span></div>
+              {error && <div className="text-destructive normal-case">FORENSIC ERROR: {String((error as any)?.message ?? error)}</div>}
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => refetch()}>
@@ -150,28 +202,28 @@ export function PushDiagnosticsPanel() {
         <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
           <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Backend Config</p>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
-            <div>Project: <span className="font-mono text-primary">{data?.firebase_config?.project_id}</span></div>
+            <div>Project: <span className="font-mono text-primary">{safeDiagnostics.firebase_config?.project_id ?? "UNKNOWN"}</span></div>
             <div className="flex items-center gap-1">
               Auth: {configOk ? <CheckCircle2 className="h-3 w-3 text-success" /> : <AlertTriangle className="h-3 w-3 text-destructive" />}
             </div>
-            <div className="col-span-2 text-[9px] opacity-60">Email: <span className="font-mono">{data?.firebase_config?.client_email}</span></div>
+            <div className="col-span-2 text-[9px] opacity-60">Email: <span className="font-mono">{safeDiagnostics.firebase_config?.client_email ?? "UNKNOWN"}</span></div>
           </div>
         </div>
 
         {/* Tokens */}
         <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
-          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Active Tokens ({data?.tokens?.length || 0})</p>
+          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Active Tokens ({safeTokens.length})</p>
           {hasTokens ? (
             <div className="space-y-2">
-              {data.tokens.map((t: any) => (
-                <div key={t.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
+              {safeTokens.map((t: any) => (
+                <div key={t?.id ?? Math.random()} className="flex items-center justify-between p-2 rounded border bg-muted/50">
                   <div>
-                    <div className="font-bold uppercase text-[10px]">{t.platform} • {t.app}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground">ID: {data.user_id?.slice(0, 8)}... | {t.token_tail}</div>
+                    <div className="font-bold uppercase text-[10px]">{t?.platform ?? "?"} • {t?.app ?? "?"}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">ID: {safeDiagnostics.user_id?.slice(0, 8) ?? "—"}... | {t?.token_tail ?? "—"}</div>
 
                   </div>
                   <div className="text-[9px] text-right">
-                    Seen: {new Date(t.last_seen).toLocaleTimeString()}
+                    Seen: {t?.last_seen ? new Date(t.last_seen).toLocaleTimeString() : "—"}
                   </div>
                 </div>
               ))}
@@ -199,7 +251,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-ANDROID-RECEIPT-02</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-ANDROID-RECEIPT-03</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
@@ -220,7 +272,7 @@ export function PushDiagnosticsPanel() {
               <div className="pt-2 border-t border-white/10 mt-1">
                 <p className="text-orange-400 font-bold mb-1 underline">ANDROID NATIVE HANDSHAKE</p>
                 
-                {nativeState?.fcm?.id === lastTestResult.messageId ? (
+                {nativeMatchesTest ? (
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <span>ANDROID FCM:</span>
@@ -228,27 +280,27 @@ export function PushDiagnosticsPanel() {
                     </div>
                     <div className="flex justify-between">
                       <span>NATIVE MSG ID:</span>
-                      <span className="truncate max-w-[140px] text-green-300">{nativeState.fcm.id}</span>
+                      <span className="truncate max-w-[140px] text-green-300">{safeNative.fcm.id ?? "NONE"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>RECEIVED AT:</span>
-                      <span>{nativeState.fcm.receivedAt}</span>
+                      <span>{safeNative.fcm.receivedAt}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>TYPE:</span>
-                      <span className="text-blue-300">{nativeState.fcm.type}</span>
+                      <span className="text-blue-300">{safeNative.fcm.type}</span>
                     </div>
                     
                     <div className="flex justify-between pt-1">
                       <span>NOTIFICATION:</span>
-                      <span className={nativeState.notif?.id ? "text-green-400 font-bold" : "text-orange-400"}>
-                        {nativeState.notif?.id ? "✅ POSTED" : "⏳ POSTING..."}
+                      <span className={safeNative.notif.id ? "text-green-400 font-bold" : "text-orange-400"}>
+                        {safeNative.notif.id ? "✅ POSTED" : "⏳ POSTING..."}
                       </span>
                     </div>
-                    {nativeState.notif?.postedAt && (
+                    {safeNative.notif.postedAt && (
                       <div className="flex justify-between">
                         <span>POSTED AT:</span>
-                        <span>{nativeState.notif.postedAt}</span>
+                        <span>{safeNative.notif.postedAt}</span>
                       </div>
                     )}
                   </div>
@@ -256,7 +308,9 @@ export function PushDiagnosticsPanel() {
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <span>ANDROID FCM:</span>
-                      <span className="text-orange-400 animate-pulse uppercase font-bold">⏳ WAITING...</span>
+                      <span className="text-orange-400 animate-pulse uppercase font-bold">
+                        {androidLabel === "UNAVAILABLE" ? "UNAVAILABLE" : "⏳ WAITING..."}
+                      </span>
                     </div>
                     <p className="text-[8px] text-white/30 mt-1 italic">
                       If stuck here, message is NOT reaching Android service. Check Firebase Project / App ID.
@@ -279,7 +333,7 @@ export function PushDiagnosticsPanel() {
               
               <div className="pt-2 border-t border-white/10 mt-1 flex justify-between items-center">
                 <span className="font-bold">FINAL STATUS:</span>
-                {nativeState?.fcm?.id === lastTestResult.messageId && nativeState?.notif?.id ? (
+                {nativeMatchesTest && safeNative.notif.id ? (
                   <span className="bg-green-600 px-2 py-0.5 rounded text-white font-bold animate-bounce">DIRECT TEST: PASS</span>
                 ) : (
                   <span className="bg-orange-600 px-2 py-0.5 rounded text-white font-bold animate-pulse">DIRECT TEST: PENDING</span>
@@ -290,16 +344,16 @@ export function PushDiagnosticsPanel() {
         )}
 
         {/* STEP 11: LAST RECEIVED FCM (HISTORICAL) */}
-        {!lastTestResult && nativeState?.fcm && (
+        {!lastTestResult && safeNative.fcm.id && (
           <div className="rounded-2xl bg-muted/30 p-4 text-[10px] font-mono border border-black/5">
              <p className="font-bold text-muted-foreground uppercase mb-3 border-b border-black/5 pb-2 tracking-widest">LAST FCM ON THIS DEVICE</p>
              <div className="space-y-1.5 opacity-80">
-               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[140px] text-primary">{nativeState.fcm.id}</span></div>
-               <div className="flex justify-between"><span>TYPE:</span><span className="text-primary">{nativeState.fcm.type}</span></div>
-               <div className="flex justify-between"><span>RECEIVED:</span><span>{nativeState.fcm.receivedAt}</span></div>
-               {nativeState.notif?.postedAt && (
+               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[140px] text-primary">{safeNative.fcm.id}</span></div>
+               <div className="flex justify-between"><span>TYPE:</span><span className="text-primary">{safeNative.fcm.type}</span></div>
+               <div className="flex justify-between"><span>RECEIVED:</span><span>{safeNative.fcm.receivedAt}</span></div>
+               {safeNative.notif.postedAt && (
                  <div className="flex justify-between border-t border-black/5 pt-1.5 mt-1.5">
-                   <span className="font-bold">POSTED:</span><span className="text-success font-bold">✅ {nativeState.notif.postedAt}</span>
+                   <span className="font-bold">POSTED:</span><span className="text-success font-bold">✅ {safeNative.notif.postedAt}</span>
                  </div>
                )}
              </div>
