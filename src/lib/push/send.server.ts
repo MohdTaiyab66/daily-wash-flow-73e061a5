@@ -314,11 +314,14 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     } catch {
       lastErr = { message: text };
     }
+    
     // Permanent failures — bail immediately so caller can mark token invalid.
     if (code && ["UNREGISTERED", "INVALID_ARGUMENT", "SENDER_ID_MISMATCH", "NOT_FOUND"].includes(code)) {
       return { token: input.token, ok: false, errorCode: code, errorMessage: lastErr.message };
     }
+    
     // Backoff for transient errors (UNAVAILABLE, INTERNAL, QUOTA_EXCEEDED).
+    // Bounded retries with exponential backoff (250ms, 500ms, 1000ms).
     await new Promise((r) => setTimeout(r, 250 * Math.pow(2, attempt)));
   }
   return { token: input.token, ok: false, errorCode: lastErr.code, errorMessage: lastErr.message };
