@@ -264,16 +264,17 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    console.log(`[CUSTOMER-SERVICE-PUSH] Processing id=${r.id} type=${type} user=${r.user_id}`);
+    console.log(`[CUSTOMER-SERVICE-PUSH:E3] Processing id=${r.id} type=${type} user=${r.user_id}`);
 
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[push-dispatch] blocked customer notification type="${type}" id=${r.id}`);
+      console.warn(`[CUSTOMER-SERVICE-PUSH:BLOCKED] blocked type="${type}" id=${r.id}`);
       continue;
     }
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
-      console.log(`[CUSTOMER-SERVICE-PUSH] Dispatching type=${type} to user=${r.user_id} notification_id=${r.id}`);
+      console.log(`[CUSTOMER-SERVICE-PUSH:E4] DISPATCH_STARTED event_id=${r.id} type=${type} recipient_id=${r.user_id}`);
+      
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -281,7 +282,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         data: {
           type,
           link: r.link || (headsUp ? "/app" : ""),
-          // Unified Kotlin contract: require broadcast_id and action_token
           broadcast_id: `customer:${r.id}`,
           action_token: String(r.id),
           offer_id: String(r.id),
@@ -292,15 +292,14 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Success id=${r.id} sent=${result.sent}`);
+        console.log(`[CUSTOMER-SERVICE-PUSH:E7] FCM_SUCCESS event_id=${r.id} sent=${result.sent}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Skipped (No Tokens) id=${r.id}`);
-        // No devices registered at all — nothing to retry for.
+        console.log(`[CUSTOMER-SERVICE-PUSH:E6] DISPATCH_TARGET_RESOLVED user=${r.user_id} token_count=0`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
-        console.error(`[CUSTOMER-SERVICE-PUSH] FCM Failure id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
+        console.error(`[CUSTOMER-SERVICE-PUSH:E8] FCM_FAILURE event_id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {

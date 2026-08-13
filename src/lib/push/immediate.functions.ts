@@ -20,12 +20,12 @@ export const flushNotificationPush = createServerFn({ method: "POST" })
       "@/lib/push/dispatch.server"
     );
     try {
-      console.log("[CUSTOMER-SERVICE-PUSH] flushNotificationPush manual trigger started");
+      console.log("[CUSTOMER-SERVICE-PUSH:E4] flushNotificationPush manual trigger started");
       const [customer, partner] = await Promise.all([
         dispatchCustomerNotifications(),
         dispatchPartnerNotifications(),
       ]);
-      console.log(`[CUSTOMER-SERVICE-PUSH] flushNotificationPush results: customer=${customer}, partner=${partner}`);
+      console.log(`[CUSTOMER-SERVICE-PUSH:E5] flushNotificationPush results: customer=${customer}, partner=${partner}`);
       return { ok: true as const, customer, partner };
     } catch (e: any) {
       // Never surface push failures to the UI — cron picks it up.
