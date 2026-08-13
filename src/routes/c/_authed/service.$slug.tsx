@@ -543,7 +543,6 @@ function ServiceDetail() {
           </div>
         </div>
       </div>
-    <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
       <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-6 h-[64px] flex items-center gap-3 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 rounded-full active:bg-black/5 transition-colors">
           <ArrowLeft className="h-6 w-6 text-[#1a1a1a]" />
