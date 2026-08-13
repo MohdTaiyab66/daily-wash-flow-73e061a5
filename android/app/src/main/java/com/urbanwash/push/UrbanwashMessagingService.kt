@@ -149,6 +149,63 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:02] PAYLOAD_PARSED type=$type title=${data["title"]} body=${data["body"]}")
 
         when {
+            type == "direct_test" -> {
+                // [CUSTOMER-PUSH-NATIVE:03] DIRECT_TEST_RECOGNIZED
+                Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:03] DIRECT_TEST_RECOGNIZED")
+                
+                val title = data["title"] ?: "Urban Wash Test"
+                val body = data["body"] ?: "Direct FCM test notification"
+                val broadcastId = data["broadcast_id"] ?: "test:${System.currentTimeMillis()}"
+                
+                // [CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_BUILD_START
+                Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_BUILD_START messageId=$msgId notificationId=${broadcastId.hashCode()} channelId=$CHANNEL_ASSIGNMENTS")
+                
+                ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
+                    "New customer assignments — wake screen with heads-up")
+                
+                val nm = NotificationManagerCompat.from(applicationContext)
+                if (!nm.areNotificationsEnabled()) {
+                    // [CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_FAILED
+                    Log.w("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_FAILED reason=POST_NOTIFICATIONS_DENIED")
+                    return
+                }
+
+                val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val contentPI = PendingIntent.getActivity(
+                    applicationContext, broadcastId.hashCode(), launch,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val iconRes = resources.getIdentifier(
+                    "ic_stat_notify", "drawable", packageName
+                ).let { if (it != 0) it else applicationInfo.icon }
+
+                val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ASSIGNMENTS)
+                    .setSmallIcon(iconRes)
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setDefaults(NotificationCompat.DEFAULT_ALL)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setAutoCancel(true)
+                    .setContentIntent(contentPI)
+
+                auditNotify(
+                    nm,
+                    broadcastId.hashCode(),
+                    null,
+                    CHANNEL_ASSIGNMENTS,
+                    "broadcast_id",
+                    builder.build()
+                )
+                
+                // [CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POSTED
+                Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POSTED messageId=$msgId notificationId=${broadcastId.hashCode()} channelId=$CHANNEL_ASSIGNMENTS")
+            }
             type == "marketplace_offer" ||
             type == "daily_shine_offer" -> {
                 Log.d("UW_AUDIT", "2_branch=offer_new type=$type")
