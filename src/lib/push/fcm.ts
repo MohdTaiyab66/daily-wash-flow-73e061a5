@@ -85,7 +85,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   }
   (window as any)._fcm_last_user = userId;
 
-  if (started) {
+  if (started && lastUser === userId) {
     console.log(`[CUSTOMER-FCM-REGISTRATION:01] startFcm already started for user: ${userId}`);
     return;
   }
