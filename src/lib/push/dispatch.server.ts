@@ -21,6 +21,12 @@ async function sender() {
   return sendOfferPush;
 }
 
+async function resolvers() {
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
+  return { resolvePartnerBookingEarning, resolvePartnerBookingDistance };
+}
+
+
 /* ------------------------------------------------------------------ *
  * Daily Shine offer pushes (partner side)
  * ------------------------------------------------------------------ */
@@ -107,8 +113,26 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     
     console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
-    const title = "🚗 New Daily Shine Customer";
-    const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
+    const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await resolvers();
+    
+    // Resolve Partner-specific Earnings and Distance
+    const [earnings, distance] = await Promise.all([
+      resolvePartnerBookingEarning({
+        sb,
+        offerId: r.offer_id,
+        partnerId: r.partner_id,
+        incentive: 0, // Fallback for Daily Shine if incentive not in r
+      }),
+      resolvePartnerBookingDistance({
+        sb,
+        partnerId: r.partner_id,
+        customerLat: null, // Need to resolve from subscription/booking
+        customerLng: null,
+      }),
+    ]);
+
+    const title = `🚗 New Booking • Earn ${earnings.display}`;
+    const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
     
     const data: Record<string, string> = {
       type: "daily_shine_offer",
@@ -119,7 +143,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       partner_id: r.partner_id,
       category: "daily_shine",
       link: `/app`,
+      earning_display: earnings.display,
+      earning_amount: String(earnings.amount),
+      distance_display: distance.display,
+      distance_km: distance.km ? String(distance.km) : "",
     };
+
     if (r.area) data.area = r.area;
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
