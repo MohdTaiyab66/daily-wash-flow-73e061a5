@@ -25,7 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
 import { APK_EVIDENCE } from "@/lib/apkEvidence";
-import { resolveDailyShinePrice } from "@/lib/pricing";
 
 const BUILD_ID = "2026-08-13-FIX-B";
 
