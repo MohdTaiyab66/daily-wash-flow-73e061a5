@@ -27,7 +27,7 @@ function workingDaysBetween(start?: string | null, end?: string | null) {
 async function dispatchPending() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendOfferPush } = await import("@/lib/push/send.server");
-  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await import("@/lib/push/resolvers.server");
 
   const { data: offerRows, error } = await (supabaseAdmin as any)
     .from("marketplace_offers")
@@ -126,12 +126,19 @@ async function dispatchPending() {
     const workingDays = workingDaysBetween(sub?.start_date, sub?.renewal_date);
 
     // Resolve Partner-specific Earnings and Distance
-    const [earnings, distance] = await Promise.all([
+    const [earnings, monthly, distance] = await Promise.all([
       resolvePartnerBookingEarning({
         sb: supabaseAdmin,
         offerId: r.id,
         partnerId: r.partner_id,
         incentive: r.incentive,
+      }),
+      resolvePartnerMonthlyEarning({
+        sb: supabaseAdmin,
+        partnerId: r.partner_id,
+        incentive: r.incentive,
+        startDate: sub?.start_date,
+        renewalDate: sub?.renewal_date,
       }),
       resolvePartnerBookingDistance({
         sb: supabaseAdmin,
@@ -160,7 +167,7 @@ async function dispatchPending() {
     const actionToken = String(tokenRow);
 
     // Optimized for Android heads-up visibility
-    const title = `🚗 New Booking • Earn ${earnings.display}`;
+    const title = `🚗 New Booking • ${monthly.display}`;
     const body = `${vehicleLabel} • ${area} • ${distance.display}`;
     
     const data: Record<string, string> = {
@@ -176,9 +183,10 @@ async function dispatchPending() {
       distance: distance.display,
       distance_km: distance.km ? String(distance.km) : "",
       distance_display: distance.display,
-      incentive: earnings.display,
-      earning_amount: String(earnings.amount),
-      earning_display: earnings.display,
+      incentive: monthly.display,
+      earning_amount: String(monthly.monthlyAmount),
+      earning_display: monthly.display,
+      earning_monthly: monthly.display,
       working_days: String(workingDays),
       link: "/app",
     };

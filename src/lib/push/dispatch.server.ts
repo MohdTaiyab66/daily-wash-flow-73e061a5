@@ -114,15 +114,22 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     
     console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
-    const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await resolvers();
+    const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
     
     // Resolve Partner-specific Earnings and Distance
-    const [earnings, distance] = await Promise.all([
+    const [earnings, monthly, distance] = await Promise.all([
       resolvePartnerBookingEarning({
         sb,
         offerId: r.offer_id,
         partnerId: r.partner_id,
-        incentive: 0, // Fallback for Daily Shine if incentive not in r
+        incentive: 0, 
+      }),
+      resolvePartnerMonthlyEarning({
+        sb,
+        partnerId: r.partner_id,
+        incentive: 0,
+        startDate: (r as any).subscription_start_date ?? null,
+        renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
       resolvePartnerBookingDistance({
         sb,
@@ -132,8 +139,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }),
     ]);
 
-
-    const title = `🚗 New Booking • Earn ${earnings.display}`;
+    const title = `🚗 New Booking • ${monthly.display}`;
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
     
     const data: Record<string, string> = {
@@ -145,8 +151,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       partner_id: r.partner_id,
       category: "daily_shine",
       link: `/app`,
-      earning_display: earnings.display,
-      earning_amount: String(earnings.amount),
+      earning_display: monthly.display,
+      earning_amount: String(monthly.monthlyAmount),
+      earning_monthly: monthly.display,
       distance_display: distance.display,
       distance_km: distance.km ? String(distance.km) : "",
     };
@@ -340,12 +347,15 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     };
     const mappedType = canonicalTypeMap[type] || type;
 
-    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
+    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle" || mappedType === "vehicle_not_found" || mappedType === "dirty";
     
     if (isUnavailable) {
       console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
       console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
+      console.log(`[UNAVAILABLE-E2E:03] EVENT_TYPE_RESOLVED type=${mappedType}`);
+      console.log(`[UNAVAILABLE-E2E:04] CUSTOMER_NOTIFICATION_CREATED`);
     } else {
+
       console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
       console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
       console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
