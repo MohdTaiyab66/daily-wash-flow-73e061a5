@@ -30,6 +30,7 @@ import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPre
 import { Meter } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
+import { resolveDailyShinePrice } from "@/lib/pricing";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -148,6 +149,13 @@ function MyPlanPage() {
   const activeSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
+  const { data: services } = useQuery({
+    queryKey: ["service-catalog"],
+    queryFn: async () => {
+      const { data } = await supabase.from("service_catalog").select("*");
+      return data ?? [];
+    }
+  });
 
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
   const totalDays = 25;
@@ -266,7 +274,9 @@ function MyPlanPage() {
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
-                        const price = subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999);
+                        const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
+                        const price = subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        
                         console.log("[DAILY-SHINE-PRICE]", {
                           vehicleId: selectedVehicle?.id,
                           vehicleModel: selectedVehicle?.model,
@@ -275,28 +285,30 @@ function MyPlanPage() {
                           resolvedPrice: price,
                           priceSource: subRow?.amount || activeSub?.total_amount ? "DATABASE_SUB" : "CALCULATED_FALLBACK"
                         });
-                        return null;
-                      })()}
-                      <div className="flex items-start justify-between mb-6">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2.5">
-                            <h2 className="text-[13px] font-black uppercase tracking-[0.1em] text-[#1A1A1A]">
-                              Daily Shine
-                            </h2>
-                            <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-green-600">
-                              Active
+
+                        return (
+                          <div className="flex items-start justify-between mb-6">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2.5">
+                                <h2 className="text-[13px] font-black uppercase tracking-[0.1em] text-[#1A1A1A]">
+                                  Daily Shine
+                                </h2>
+                                <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-green-600">
+                                  Active
+                                </div>
+                              </div>
+                              <p className="text-[14px] font-medium text-black/40 leading-tight">
+                                Daily Shine Subscription
+                              </p>
+                              <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
+                                ₹{Number(price).toLocaleString("en-IN")} / month
+                                <span className="h-1 w-1 rounded-full bg-black/10" />
+                                <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-[14px] font-medium text-black/40 leading-tight">
-                            Daily Shine Subscription
-                          </p>
-                          <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999)).toLocaleString("en-IN")} / month
-                            <span className="h-1 w-1 rounded-full bg-black/10" />
-                            <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       <div className="space-y-6">
                         <div>
@@ -384,7 +396,7 @@ function MyPlanPage() {
         open={builderOpen}
         onOpenChange={setBuilderOpen}
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
-        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? 1199)}
+        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, services?.find((s: any) => s.slug === 'daily-shine')))}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
 

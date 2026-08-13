@@ -12,6 +12,7 @@ import { usePlanInclusions } from "@/components/customer/PlanInclusionsCard";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { resolveDailyShinePrice } from "@/lib/pricing";
 import { SkeletonCard } from "@/components/customer/ui/Skeletons";
 import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
@@ -214,9 +215,7 @@ function CustomerHome() {
   
   // Resolve Daily Shine price dynamically for banner
   const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
-  const dailyShinePrice = dailyShineService 
-    ? (category === 'sedan_suv' ? dailyShineService.price_sedan_suv : dailyShineService.price_hatchback)
-    : (category === 'sedan_suv' ? 1199 : 999);
+  const dailyShinePrice = resolveDailyShinePrice(category, dailyShineService);
 
   if (dailyShineService) {
     console.log("[DAILY-SHINE-PRICE]", {
