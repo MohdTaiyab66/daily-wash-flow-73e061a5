@@ -278,10 +278,12 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
 
   let lastErr: { code?: string; message?: string } = {};
   for (let attempt = 0; attempt < 3; attempt++) {
+    const bodyStr = JSON.stringify(message);
+    console.log(`[CUSTOMER-E2E:10-PAYLOAD] FCM_PAYLOAD: ${bodyStr}`);
     const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
       method: "POST",
       headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify(message),
+      body: bodyStr,
     });
     if (res.ok) {
       const json = (await res.json()) as { name: string };
