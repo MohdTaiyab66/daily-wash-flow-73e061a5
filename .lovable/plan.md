@@ -16,7 +16,7 @@ Fixing P0 production issue where push notifications are failing on real Android 
 - **Fix Data Key Names**: Ensure `assignment_id` and `service_id` are consistently passed to Kotlin for deep-linking.
 
 ### Native Android Bridge
-- **Sync Kotlin Types**: Update `UrbanwashMessagingService.kt` (via `code--exec sed` if possible, or complete rewrite) to include all `PARTNER_ASSIGNMENT_TYPES` defined in the backend.
+- **Sync Kotlin Types**: Update `UrbanwashMessagingService.kt` to include all `PARTNER_ASSIGNMENT_TYPES` defined in the backend.
 
 ### Infrastructure & Cleanup
 - **Immediate Dispatch**: Wire `dispatchCustomerNotifications` and `dispatchPartnerNotifications` into `verifyRazorpayPayment` and `razorpay-webhook.ts` so standard notifications don't wait for the cron tick.
