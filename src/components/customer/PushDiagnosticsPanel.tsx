@@ -64,10 +64,7 @@ export function PushDiagnosticsPanel() {
       setIsTesting(true);
       setLastTestResult({ status: "SENDING..." });
       
-      // OPTIONAL: Delete existing token to force fresh registration
-      // This is step 5 in the plan.
-      
-      return sendTest({ targetUserId: data?.user_id! });
+      return sendTest({ data: { targetUserId: data?.user_id! } });
     },
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
