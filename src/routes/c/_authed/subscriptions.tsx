@@ -279,7 +279,7 @@ function MyPlanPage() {
                             Daily Shine Subscription
                           </p>
                           <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month
+                            ₹{Number(subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999)).toLocaleString("en-IN")} / month
                             <span className="h-1 w-1 rounded-full bg-black/10" />
                             <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
                           </div>
