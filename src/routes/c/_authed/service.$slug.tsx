@@ -209,6 +209,46 @@ function ServiceDetail() {
     staleTime: 5 * 60 * 1000
   });
 
+  const service = serviceQ.data;
+
+  const addressesQ = useQuery({
+    queryKey: ["customer-addresses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) console.error("[SERVICE] ADDRESSES_ERROR", error);
+      return (data ?? []) as Address[];
+    }
+  });
+
+  const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
+
+  const addonsQ = useQuery({
+    queryKey: ["service-addons"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_addons").select("*").eq("active", true).order("sort_order");
+      if (error) console.error("[SERVICE] ADDONS_ERROR", error);
+      return (data ?? []) as Addon[];
+    }
+  });
+
+  const profileQ = useQuery({
+    queryKey: ["customer-profile"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return null;
+      const { data, error } = await supabase
+        .from("customer_profiles")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    retry: 1
+  });
+
+  const profile = profileQ.data;
+
   const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
   
