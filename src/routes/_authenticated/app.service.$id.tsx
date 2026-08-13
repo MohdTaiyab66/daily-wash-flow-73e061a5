@@ -231,7 +231,7 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
-      console.log("[CUSTOMER-E2E:COMPLETE:01] PARTNER_HANDLER. service_id:", id);
+      console.log(`[CUSTOMER-E2E:01-COMPLETE] PARTNER_HANDLER_STARTED service_id=${id}`);
       
       if (!beforeDone) throw new Error("Take the before photo first");
       if (!afterAllDone) throw new Error("Take all 4 after photos first");
@@ -251,7 +251,8 @@ function ServiceDetail() {
         throw new Error((error as any).message ?? "Could not complete service");
       }
       
-      console.log("[CUSTOMER-E2E:COMPLETE:02] SERVICE_UPDATED. status: completed");
+      console.log(`[CUSTOMER-E2E:02-COMPLETE] SERVICE_RPC_SUCCESS service_id=${id} status=completed`);
+      console.log(`[CUSTOMER-E2E:03-CUSTOMER] CUSTOMER_RESOLVED customer_id=${(service as any)?.customers?.id} user_id=${(service as any)?.customers?.user_id}`);
       
       if (service?.started_at) {
         const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
@@ -270,11 +271,11 @@ function ServiceDetail() {
     onSuccess: (data: any) => {
       try { window.localStorage.removeItem(stepKey(id)); window.localStorage.removeItem(notesKey(id)); } catch { /* noop */ }
       
-      console.log("[CUSTOMER-E2E:COMPLETE:03] NOTIFICATION_CREATED (triggering flush)");
+      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED");
       import("@/lib/push/immediate.functions").then(m => {
         m.flushNotificationPush().then(res => {
-          console.log("[CUSTOMER-E2E:COMPLETE:03:RESULT] flush result:", res);
-        }).catch(e => console.error("[CUSTOMER-E2E:COMPLETE:03:ERR] flush failed", e));
+          console.log(`[CUSTOMER-E2E:07-FLUSH] FLUSH_FINISHED result: customer=${res.customer} partner=${res.partner}`);
+        }).catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
       });
 
       if (data?.already) { void goNext(); return; }

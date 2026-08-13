@@ -83,8 +83,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         val data = msg.data
         val type = data["type"] ?: ""
 
-        // [CUSTOMER-PUSH-NATIVE:E1] MESSAGE_RECEIVED
-        Log.d("CUSTOMER-PUSH-NATIVE", "E1 MESSAGE_RECEIVED msgId=${msg.messageId} type=$type data=$data")
+        // [CUSTOMER-PUSH-NATIVE:01] MESSAGE_RECEIVED
+        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=${msg.messageId} type=$type data=$data")
         Log.d("UW_AUDIT", "1_fcm_received msgId=${msg.messageId} from=${msg.from} " +
             "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
             "hasNotifBlock=${msg.notification != null} " +
@@ -111,8 +111,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                 postOffer(data, isUpdate = true)
             }
             ASSIGNMENT_TYPES.contains(type) -> {
-                // [CUSTOMER-PUSH-NATIVE:E2] EVENT_RECOGNIZED
-                Log.d("CUSTOMER-PUSH-NATIVE", "E2 EVENT_RECOGNIZED type=$type broadcast_id=${data[EXTRA_BROADCAST]} action_token=${data[EXTRA_TOKEN]}")
+                // [CUSTOMER-PUSH-NATIVE:02] TYPE_RECOGNIZED = $type
+                Log.d("CUSTOMER-PUSH-NATIVE", "02 TYPE_RECOGNIZED type=$type broadcast_id=${data[EXTRA_BROADCAST]} action_token=${data[EXTRA_TOKEN]}")
                 Log.d("UW_AUDIT", "2_branch=assignment type=$type")
                 ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
                     "New customer assignments — wake screen with heads-up")
@@ -366,8 +366,8 @@ auditNotify(
     "assignment_id|service_id|offer_id|link",
     builder.build(),
 )
-// [CUSTOMER-PUSH-NATIVE:E4] NOTIFICATION_POSTED
-Log.d("CUSTOMER-PUSH-NATIVE", "E4 NOTIFICATION_POSTED id=${notifKey.hashCode()}")
+// [CUSTOMER-PUSH-NATIVE:03] NOTIFICATION_POSTED
+Log.d("CUSTOMER-PUSH-NATIVE", "03 NOTIFICATION_POSTED id=${notifKey.hashCode()}")
 }
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
