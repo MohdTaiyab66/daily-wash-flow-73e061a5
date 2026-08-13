@@ -284,9 +284,11 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     });
     if (res.ok) {
       const json = (await res.json()) as { name: string };
+      console.log("[PUSH-FORENSIC] FCM Success:", { token: input.token.slice(-8), messageId: json.name, type: input.data.type });
       return { token: input.token, ok: true, messageId: json.name };
     }
     const text = await res.text();
+    console.error("[PUSH-FORENSIC] FCM Error Response:", { status: res.status, body: text, token: input.token.slice(-8), type: input.data.type });
     let code: string | undefined;
     try {
       const j = JSON.parse(text);

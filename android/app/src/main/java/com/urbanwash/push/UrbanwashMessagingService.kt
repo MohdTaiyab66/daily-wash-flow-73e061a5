@@ -51,9 +51,19 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "assignment_updated",
             "partner_assigned",
             "daily_shine",
+            "daily_shine_offer",
+            "marketplace_offer",
+            "marketplace_offer_update",
             "new_booking",
             "new_customers",
-            "route_updated"
+            "route_updated",
+            "subscription_activated",
+            "booking_confirmed",
+            "partner_accepted",
+            "service_started",
+            "service_completed",
+            "payment_success",
+            "payment_failed"
         )
     }
 
