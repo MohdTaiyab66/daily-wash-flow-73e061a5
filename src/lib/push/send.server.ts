@@ -220,7 +220,8 @@ type SendInput = {
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
-  console.log(`[CUSTOMER-FCM-CONFIG] BACKEND_FIREBASE_PROJECT: ${projectId}`);
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
+  console.log(`[DIRECT-FCM-E2E:FIREBASE] project_id=${projectId} client_email=${clientEmail}`);
   const accessToken = await getAccessToken();
 
   const dataOnly = input.dataOnly === true;
@@ -286,11 +287,12 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     });
     if (res.ok) {
       const json = (await res.json()) as { name: string };
-      console.log(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${json.name}`);
+      const msgId = json.name.split('/').pop() || json.name;
+      console.log(`[DIRECT-FCM-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${msgId}`);
       return { token: input.token, ok: true, messageId: json.name };
     }
     const text = await res.text();
-    console.error(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT FAILURE status=${res.status} body=${text} token=${input.token.slice(-8)}`);
+    console.error(`[DIRECT-FCM-E2E:11-FCM] FCM_SEND_RESULT FAILURE status=${res.status} body=${text} token=${input.token.slice(-8)}`);
     let code: string | undefined;
     try {
       const j = JSON.parse(text);
@@ -334,8 +336,8 @@ export async function sendOfferPush(args: {
     console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = 0 (user_id=${args.userId})`);
     return { sent: 0, failed: 0, results: [] };
   }
-  console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = ${tokens.length} (user_id=${args.userId})`);
-  console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+  console.log(`[DIRECT-FCM-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = ${tokens.length} (user_id=${args.userId})`);
+  console.log(`[DIRECT-FCM-E2E:10-FCM] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
       sendOne({
