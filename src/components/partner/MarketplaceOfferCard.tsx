@@ -210,8 +210,9 @@ export function MarketplaceOfferCard({
   // Use resolved earning/distance if available (from Push payload or backend enrich)
   // Fallback to existing calculation for backwards compatibility/local UI
   const earningAmount = (offer as any).earning_amount ?? offer.incentive;
-  const earningDisplay = (offer as any).earning_display ?? `₹${earningAmount}/day`;
+  const earningDisplay = (offer as any).earning_monthly ?? (offer as any).earning_display ?? `₹${earningAmount}/day`;
   const distanceDisplay = (offer as any).distance_display ?? fmtDist(offer.distance_from_route_m);
+
 
   const workingDays = workingDaysBetween(
     offer.broadcast.subscription?.start_date,
