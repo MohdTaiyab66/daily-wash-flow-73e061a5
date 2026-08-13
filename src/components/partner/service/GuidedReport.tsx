@@ -96,7 +96,7 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
-      console.log(`[CUSTOMER-E2E:01-COMPLETE] PARTNER_HANDLER_STARTED (unavailable) service_id=${serviceId} reason=${reason}`);
+      console.log(`[UNAVAILABLE-E2E:01] PARTNER_UNAVAILABLE_ACTION service_id=${serviceId} kind=${kind} reason=${reason}`);
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
