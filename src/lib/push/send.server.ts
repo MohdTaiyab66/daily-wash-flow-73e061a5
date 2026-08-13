@@ -332,7 +332,7 @@ export async function sendOfferPush(args: {
     console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=0 active_token_count=0`);
     return { sent: 0, failed: 0, results: [] };
   }
-  console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=${tokens.length} tokens=${JSON.stringify(tokens.map(t => ({ id: t.id, tail: t.token.slice(-8) })))}`);
+  console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=${tokens.length} tokens=${JSON.stringify(tokens.map((t: { id: string, token: string }) => ({ id: t.id, tail: t.token.slice(-8) })))}`);
 
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
