@@ -87,6 +87,7 @@ export function PushDiagnosticsPanel() {
 
         if (lastMsgId) {
           setNativeState({
+            android: "RECEIVED",
             fcm: {
               id: lastMsgId,
               receivedAt: lastReceivedAt ? new Date(parseInt(lastReceivedAt)).toLocaleTimeString() : 'N/A',
@@ -94,8 +95,8 @@ export function PushDiagnosticsPanel() {
               title: lastTitle || ''
             },
             notif: {
-              id: lastNotifId,
-              postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : 'N/A'
+              id: lastNotifId ?? null,
+              postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : null
             }
           });
         }
