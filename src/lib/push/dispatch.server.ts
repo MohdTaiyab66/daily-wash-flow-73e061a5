@@ -271,6 +271,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     }
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
+      console.log(`[CUSTOMER-SERVICE-PUSH] Dispatching type=${type} to user=${r.user_id} notification_id=${r.id}`);
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -293,6 +294,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         sentCount++;
       } else if (result.failed === 0) {
         // No devices registered at all — nothing to retry for.
+        console.log(`[CUSTOMER-SERVICE-PUSH] Result for id=${r.id}: sent=${result.sent} failed=${result.failed}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.

@@ -271,6 +271,12 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["wallet-balance"] });
+
+      // [CUSTOMER-SERVICE-PUSH] Immediate dispatch to avoid cron delay
+      import("@/lib/push/immediate.functions").then(m => {
+        m.flushNotificationPush().catch(e => console.warn("[PUSH-FORENSIC] immediate flush failed", e));
+      });
+
       if (data?.already) { void goNext(); return; }
       setCelebration({
         amount: Number(data?.amount ?? 17),
