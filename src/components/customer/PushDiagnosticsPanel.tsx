@@ -386,11 +386,11 @@ export function PushDiagnosticsPanel() {
                 <p className="text-white/40 font-bold mb-1">APK CONFIG (LIVE)</p>
                 <div className="grid grid-cols-2 gap-x-2 opacity-60">
                   <span>PACKAGE:</span>
-                  <span>com.urbanwash.customer</span>
+                  <span>{safeNative.nativeInfo?.packageName || "com.urbanwash.customer"}</span>
                   <span>SENDER ID:</span>
-                  <span>781422718869</span>
+                  <span>{safeNative.nativeInfo?.senderId || "781422718869"}</span>
                   <span>PROJECT:</span>
-                  <span>uw-partner-app</span>
+                  <span>{safeNative.nativeInfo?.projectId || "uw-partner-app"}</span>
                 </div>
               </div>
               
