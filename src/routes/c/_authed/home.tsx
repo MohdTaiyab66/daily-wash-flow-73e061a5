@@ -272,8 +272,333 @@ function CustomerHome() {
       {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            Load the security issues from the scan results and fix the selected issues. */}
+                                            🚨 NEXT P0 — REAL PRODUCTION CUSTOMER NOTIFICATION E2E TEST
+
+The Direct FCM P0 is now physically FIXED.
+
+BUILD 07 was installed on the real Android device and we have physical proof:
+
+[CUSTOMER-PUSH-NATIVE:01] FCM_MESSAGE_RECEIVED
+
+[CUSTOMER-PUSH-NATIVE:02] PAYLOAD_PARSED
+
+[CUSTOMER-PUSH-NATIVE:03] DIRECT_TEST_RECOGNIZED
+
+[CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_BUILD_START
+
+CHANNEL_INFO ID=assignments_v4 IMPORTANCE=5 ENABLED=true
+
+[CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POSTED
+
+The phone physically received the "Urban Wash Test" notification.
+
+Therefore:
+
+Firebase → Android FCM → native service → notification posting is WORKING.
+
+DO NOT MODIFY THE NATIVE FCM RECEIVER OR FIREBASE CONFIGURATION.
+
+==================================================
+
+NOW INVESTIGATE THE REAL PRODUCTION EVENT
+
+==================================================
+
+We need to test:
+
+Partner completes service
+
+        ↓
+
+service status becomes completed
+
+        ↓
+
+customer notification row/event created
+
+        ↓
+
+notification dispatcher
+
+        ↓
+
+FCM server
+
+        ↓
+
+Android
+
+        ↓
+
+customer receives notification
+
+The previous failure was that customers did not receive service completion notifications.
+
+==================================================
+
+TEST CUSTOMER / VEHICLE
+
+==================================================
+
+Customer:
+
+Umair
+
+Phone: 7007929318
+
+Vehicle:
+
+Toyota Fortuner
+
+Partner:
+
+Deepak
+
+Phone/ID: 9000000006
+
+Use the actual authenticated IDs from the database rather than relying only on phone numbers.
+
+==================================================
+
+IMPORTANT — DO NOT ASSUME THE BACKEND IS WORKING
+
+==================================================
+
+Perform a forensic trace of ONE real service completion.
+
+Do not just report:
+
+FCM SUCCESS
+
+We need to prove every checkpoint.
+
+==================================================
+
+REQUIRED LOGGING
+
+==================================================
+
+Add/retain clear markers:
+
+[CUSTOMER-PROD-E2E:01]
+
+PARTNER_COMPLETION_STARTED
+
+[CUSTOMER-PROD-E2E:02]
+
+SERVICE_STATUS_UPDATED
+
+[CUSTOMER-PROD-E2E:03]
+
+CUSTOMER_NOTIFICATION_CREATED
+
+[CUSTOMER-PROD-E2E:04]
+
+NOTIFICATION_TYPE_RESOLVED
+
+[CUSTOMER-PROD-E2E:05]
+
+CUSTOMER_USER_RESOLVED
+
+[CUSTOMER-PROD-E2E:06]
+
+ACTIVE_TOKEN_RESOLVED
+
+[CUSTOMER-PROD-E2E:07]
+
+FCM_SEND_STARTED
+
+[CUSTOMER-PROD-E2E:08]
+
+FCM_SERVER_ACCEPTED
+
+Do NOT fabricate these markers.
+
+Each marker must only be emitted after the corresponding operation actually succeeds.
+
+==================================================
+
+EXPECTED PRODUCTION EVENT
+
+==================================================
+
+For service completion the canonical event should be:
+
+service_completed
+
+Verify the exact value stored in the notification/event row.
+
+Do not silently normalize different event names unless the existing application contract explicitly requires it.
+
+==================================================
+
+PAYLOAD
+
+==================================================
+
+Verify the actual FCM payload sent to the customer contains at minimum:
+
+type=service_completed
+
+title=<appropriate customer title>
+
+body=<appropriate customer message>
+
+broadcast_id=<real ID>
+
+action_token=<real token>
+
+All data values must be strings for Android FCM.
+
+==================================================
+
+NATIVE VERIFICATION
+
+==================================================
+
+The Android native receiver is already proven to work.
+
+Therefore do NOT add another diagnostic event.
+
+Instead verify the existing production event:
+
+service_completed
+
+The physical Android log must show:
+
+[CUSTOMER-PUSH-NATIVE:01]
+
+FCM_MESSAGE_RECEIVED ... type=service_completed
+
+[CUSTOMER-PUSH-NATIVE:02]
+
+PAYLOAD_PARSED type=service_completed
+
+Then the existing production routing must recognize it and eventually show:
+
+NOTIFICATION_POSTED
+
+If service_completed is currently rejected by the native allow-list, fix ONLY that production event routing.
+
+Do not break direct_test.
+
+==================================================
+
+CRITICAL ACCEPTANCE TEST
+
+==================================================
+
+Perform ONE real service completion from:
+
+Deepak / partner
+
+→
+
+Umair / Toyota Fortuner
+
+Customer phone must have:
+
+- BUILD 07
+
+- notification permission granted
+
+- active FCM token
+
+- logcat running:
+
+adb logcat -s CUSTOMER-PUSH-NATIVE
+
+Complete the service.
+
+Then verify:
+
+1. Partner completion succeeds.
+
+2. Customer notification row/event is created.
+
+3. Customer token is resolved.
+
+4. FCM server accepts the message.
+
+5. Android receives service_completed.
+
+6. Android posts the notification.
+
+7. Customer physically receives the notification.
+
+==================================================
+
+DO NOT CHANGE BUSINESS LOGIC
+
+==================================================
+
+Do not modify:
+
+- Daily Shine pricing
+
+- vehicle selection
+
+- cart
+
+- subscription
+
+- payment
+
+- service completion business rules
+
+Only fix the customer production notification pipeline if the forensic trace identifies an actual failure.
+
+==================================================
+
+FINAL REPORT MUST SHOW THE ACTUAL CHECKPOINT
+
+==================================================
+
+Report:
+
+PARTNER COMPLETION:
+
+PASS/FAIL
+
+NOTIFICATION CREATED:
+
+PASS/FAIL
+
+CUSTOMER USER RESOLVED:
+
+PASS/FAIL
+
+ACTIVE TOKEN:
+
+PASS/FAIL
+
+FCM SERVER:
+
+ACCEPTED/FAILED
+
+ANDROID FCM RECEIVED:
+
+YES/NO
+
+NATIVE EVENT:
+
+service_completed
+
+NOTIFICATION POSTED:
+
+YES/NO
+
+PHYSICAL CUSTOMER DEVICE:
+
+RECEIVED/NOT RECEIVED
+
+EXACT FAILURE CHECKPOINT:
+
+<actual checkpoint>
+
+Do not claim the production notification is fixed until the customer physically receives it. */}
       <div className="min-h-screen bg-white">
+
         {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
         <div className="px-4 pt-4 mb-2">
           <PushDiagnosticsPanel />

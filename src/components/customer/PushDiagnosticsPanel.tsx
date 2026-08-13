@@ -183,7 +183,18 @@ export function PushDiagnosticsPanel() {
       
       const targetUserId = data?.user_id;
       if (!targetUserId) throw new Error("User ID missing");
-      return sendTest({ data: { targetUserId } });
+      
+      const res = await sendTest({ data: { targetUserId } });
+      
+      // Trigger production dispatch sweep to pick up any pending notifications
+      try {
+        const { triggerCustomerDispatch } = await import("@/lib/push/dispatch-trigger.functions");
+        await triggerCustomerDispatch({ userId: targetUserId });
+      } catch (e) {
+        console.warn("[CUSTOMER-PROD-E2E:TRIGGER] Manual sweep trigger failed", e);
+      }
+      
+      return res;
     },
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
@@ -194,9 +205,10 @@ export function PushDiagnosticsPanel() {
         projectId: res.projectId,
         messageId: firstRes?.messageId || "N/A",
         sentAt: new Date(res.sentAt).toLocaleTimeString(),
-        result: res.sent > 0 ? "SUCCESS" : `ERROR: ${firstRes?.errorCode || "Unknown"}`,
+        result: res.sent > 0 ? "SUCCESS" : `ERROR: ${firstRes?.errorCode || "No tokens"}`,
         raw: res
       });
+
 
       if (res.sent > 0) {
         toast.success(`FCM accepted test notification`);
@@ -312,7 +324,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-NATIVE-FCM-RECEIPT-06"}</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-PROD-E2E-07"}</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
@@ -327,7 +339,7 @@ export function PushDiagnosticsPanel() {
               </div>
               <div className="flex justify-between items-center mb-1">
                 <span className="font-bold">BUILD:</span>
-                <span className="bg-primary/20 text-primary px-1 rounded text-[9px]">FCM-P0-NATIVE-FCM-RECEIPT-07</span>
+                <span className="bg-primary/20 text-primary px-1 rounded text-[9px]">FCM-P0-PROD-E2E-07</span>
               </div>
               
               <div className="flex justify-between">

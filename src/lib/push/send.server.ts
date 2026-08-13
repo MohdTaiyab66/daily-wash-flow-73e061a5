@@ -300,7 +300,8 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
       const json = (await res.json()) as { name: string };
       const msgId = json.name.split('/').pop() || json.name;
       console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: ${msgId}`);
-      console.log(`[DIRECT-FCM-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${msgId}`);
+      console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED token=${input.token.slice(-8)} messageId=${msgId}`);
+
       return { token: input.token, ok: true, messageId: msgId };
     }
     const text = await res.text();
@@ -345,11 +346,12 @@ export async function sendOfferPush(args: {
     .is("invalid_at", null);
   if (error) throw error;
   if (!tokens || tokens.length === 0) {
-    console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = 0 (user_id=${args.userId})`);
+    console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=0 (user_id=${args.userId})`);
     return { sent: 0, failed: 0, results: [] };
   }
-  console.log(`[DIRECT-FCM-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = ${tokens.length} (user_id=${args.userId})`);
-  console.log(`[DIRECT-FCM-E2E:10-FCM] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+  console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=${tokens.length} (user_id=${args.userId})`);
+  console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
       sendOne({
