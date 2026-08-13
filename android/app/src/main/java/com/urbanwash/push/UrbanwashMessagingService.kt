@@ -29,8 +29,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded")
-        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BUILD] FCM-P0-FIREBASE-MERGE-05")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-05]")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BUILD] FCM-P0-NATIVE-FCM-RECEIPT-05")
     }
 
     companion object {
@@ -81,9 +81,18 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
 
     override fun onNewToken(token: String) {
-        // [CUSTOMER-FCM-NATIVE:TOKEN]
+        // [CUSTOMER-PUSH-NATIVE:TOKEN]
         val tail = if (token.length > 8) token.substring(token.length - 8) else token
-        Log.d("CUSTOMER-FCM-NATIVE", "TOKEN_SUFFIX=$tail PROJECT=uw-partner-app PACKAGE=com.urbanwash.customer SENDER_ID=781422718869")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:TOKEN] TOKEN_SUFFIX=$tail PROJECT=uw-partner-app PACKAGE=com.urbanwash.customer SENDER_ID=781422718869")
+        
+        // Persist token for handshake
+        try {
+            val capPrefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+            capPrefs.edit().putString("urbanwash.current_token", token).apply()
+        } catch (e: Exception) {
+            Log.e("CUSTOMER-PUSH-NATIVE", "Failed to persist new token", e)
+        }
+        
         super.onNewToken(token)
     }
 

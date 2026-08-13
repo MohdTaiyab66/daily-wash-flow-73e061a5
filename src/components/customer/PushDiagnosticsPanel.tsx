@@ -17,6 +17,13 @@ type NativeFcmState = {
   nativeTokenSuffix: string | null;
   buildId: string | null;
   errorReason: string | null;
+  nativeInfo: {
+    tokenTail?: string;
+    packageName?: string;
+    senderId?: string;
+    projectId?: string;
+    googleAppId?: string;
+  } | null;
 };
 
 const DEFAULT_NATIVE_STATE: NativeFcmState = {
@@ -26,6 +33,7 @@ const DEFAULT_NATIVE_STATE: NativeFcmState = {
   nativeTokenSuffix: null,
   buildId: null,
   errorReason: null,
+  nativeInfo: null,
 };
 
 type TestResultState = {
@@ -84,32 +92,33 @@ export function PushDiagnosticsPanel() {
         const NativeDiag = Plugins?.UrbanwashNativeDiagnostics;
         if (NativeDiag) {
           try {
+            const info = await NativeDiag.getNativeInfo();
             const res = await NativeDiag.getLastFcmReceipt();
-            if (res && res.received) {
-              setNativeState({
-                android: res.received ? "RECEIVED" : "WAITING",
-                fcm: {
-                  id: res.messageId,
-                  receivedAt: res.receivedAt ? new Date(parseInt(res.receivedAt)).toLocaleTimeString() : 'N/A',
-                  type: res.type || 'unknown',
-                  title: res.title || ''
-                },
-                notif: {
-                  id: res.notifId ?? null,
-                  postedAt: res.postedAt ? new Date(parseInt(res.postedAt)).toLocaleTimeString() : null
-                },
-                nativeTokenSuffix: res.nativeTokenSuffix || null,
-                buildId: res.buildId || null,
-                errorReason: null
-              });
-              return; // Handshake successful
-            }
+            
+            setNativeState({
+              android: res.received ? "RECEIVED" : "WAITING",
+              fcm: {
+                id: res.messageId,
+                receivedAt: res.receivedAt ? new Date(parseInt(res.receivedAt)).toLocaleTimeString() : 'N/A',
+                type: res.type || 'unknown',
+                title: res.title || ''
+              },
+              notif: {
+                id: res.notifId ?? null,
+                postedAt: res.postedAt ? new Date(parseInt(res.postedAt)).toLocaleTimeString() : null
+              },
+              nativeTokenSuffix: info.tokenTail || null,
+              buildId: info.buildId || null,
+              errorReason: null,
+              nativeInfo: info
+            });
+            return;
           } catch (e: any) {
             console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Native plugin call failed", e);
             setNativeState(prev => ({ ...prev, android: "ERROR", errorReason: e.message || String(e) }));
           }
         } else {
-           setNativeState(prev => ({ ...prev, android: "UNAVAILABLE", errorReason: "PLUGIN_NOT_FOUND" }));
+            setNativeState(prev => ({ ...prev, android: "UNAVAILABLE", errorReason: "PLUGIN_NOT_FOUND" }));
         }
 
         // 2. Fallback to Capacitor Preferences (Legacy/Secondary)
@@ -149,7 +158,8 @@ export function PushDiagnosticsPanel() {
             },
             nativeTokenSuffix: null,
             buildId: null,
-            errorReason: null
+            errorReason: null,
+            nativeInfo: null
           });
         }
       } catch (e) {
@@ -302,7 +312,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-FIREBASE-MERGE-05"}</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: {safeNative.buildId || "FCM-P0-NATIVE-FCM-RECEIPT-05"}</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
@@ -376,11 +386,11 @@ export function PushDiagnosticsPanel() {
                 <p className="text-white/40 font-bold mb-1">APK CONFIG (LIVE)</p>
                 <div className="grid grid-cols-2 gap-x-2 opacity-60">
                   <span>PACKAGE:</span>
-                  <span>com.urbanwash.customer</span>
+                  <span>{safeNative.nativeInfo?.packageName || "com.urbanwash.customer"}</span>
                   <span>SENDER ID:</span>
-                  <span>781422718869</span>
+                  <span>{safeNative.nativeInfo?.senderId || "781422718869"}</span>
                   <span>PROJECT:</span>
-                  <span>uw-partner-app</span>
+                  <span>{safeNative.nativeInfo?.projectId || "uw-partner-app"}</span>
                 </div>
               </div>
               
