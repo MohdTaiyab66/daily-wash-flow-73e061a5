@@ -97,7 +97,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   if (nativePlatform() === "android") {
     try {
       await FirebaseMessaging.createChannel({
-        id: "offers",
+        id: "offers_v4",
         name: "Offers",
         description: "New customer offers — accept within 90 seconds",
         importance: 5, // MAX
@@ -107,7 +107,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         visibility: 1,
       });
       await FirebaseMessaging.createChannel({
-        id: "assignments",
+        id: "assignments_v4",
         name: "Assignments",
         description: "Updates about your assigned customers",
         importance: 4,
