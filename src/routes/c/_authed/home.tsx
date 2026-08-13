@@ -211,11 +211,24 @@ function CustomerHome() {
 
   const vehicles = vehiclesQ.data ?? [];
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
-  const category = activeVehicle?.category ?? "hatchback_compact_sedan";
+  const category = activeVehicle?.category;
   
   // Resolve Daily Shine price dynamically for banner
   const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
   const dailyShinePrice = resolveDailyShinePrice(category, dailyShineService);
+
+  // FORENSIC LOGGING
+  if (activeVehicle) {
+    console.log("[VEHICLE-PROPAGATION] Home vehicleId =", activeVehicle.id);
+    console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
+      stage: "HOME",
+      vehicleId: activeVehicle.id,
+      vehicleMake: activeVehicle.make,
+      vehicleModel: activeVehicle.model,
+      vehicleCategory: activeVehicle.category,
+      displayPrice: dailyShinePrice
+    });
+  }
 
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
