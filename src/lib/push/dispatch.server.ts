@@ -297,37 +297,50 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
+    // Canonical mapping to prevent unknown events
+    const canonicalTypeMap: Record<string, string> = {
+      "vehicle_not_found": "vehicle_unavailable",
+      "dirty": "vehicle_dirty",
+      "completed": "service_completed",
+      "assigned": "partner_assigned",
+    };
+    const mappedType = canonicalTypeMap[type] || type;
+
+    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
     
     if (isUnavailable) {
-      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
-      console.log(`[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
-      console.log(`[UNAVAILABLE-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
+      console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
+      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
     } else {
-      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
-      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
+      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
+      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
       console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
     }
 
-    if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
+    if (!CUSTOMER_ALLOWED_TYPES.has(mappedType)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${type}" id=${r.id}`);
+      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${mappedType}" id=${r.id}`);
       continue;
     }
     
-    const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
+    const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
-      console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${type}`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
+      } else {
+        console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
+      }
 
-      
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
-        type,
+        type: mappedType,
         link: r.link || (headsUp ? "/app" : ""),
         broadcast_id: `customer:${r.id}`,
         action_token: String(r.id),
         offer_id: String(r.id),
       };
+
+      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
 
       const result = await sendOfferPush({
         userId: r.user_id,
@@ -341,18 +354,19 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
       if (result.sent > 0) {
         if (isUnavailable) {
-          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
+          console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
         } else {
           console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
         }
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        // [CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED logged as count=0 inside sendOfferPush
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
         console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
+
+      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
 
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
