@@ -267,18 +267,20 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    console.log(`[CUSTOMER-E2E:08-DISPATCH] NOTIFICATION_PICKED_UP id=${r.id} type=${type} user_id=${r.user_id}`);
+    console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
+    console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
+    console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
 
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-E2E:DISPATCH:BLOCKED] blocked type="${type}" id=${r.id}`);
+      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${type}" id=${r.id}`);
       continue;
     }
     
-    console.log(`[CUSTOMER-E2E:05-TYPE] TYPE_NORMALIZED = ${type} (id=${r.id})`);
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
-      console.log(`[CUSTOMER-E2E:04-NOTIFICATION] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${type}`);
+      console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${type}`);
+
       
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
@@ -300,16 +302,16 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        console.log(`[CUSTOMER-E2E:11-SUCCESS] NOTIFICATION_PUSHED id=${r.id} message_id=${result.results[0]?.messageId}`);
+        console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        // [CUSTOMER-E2E:09-TOKEN] = 0 logged inside sendOfferPush. 
-        // Mark as pushed so we don't keep picking up users with no tokens.
+        // [CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED logged as count=0 inside sendOfferPush
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
-        console.error(`[CUSTOMER-E2E:11-FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
+        console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
+
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
       console.warn("[push-dispatch] customer send failed, leaving for cron retry", r.id, e);
