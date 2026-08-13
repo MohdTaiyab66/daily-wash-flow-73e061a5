@@ -278,7 +278,7 @@ function MyPlanPage() {
 
                         // PRECEDENCE FIX: Calculate resolved price first. 
                         // If it differs from the DB amount, the vehicle-specific rule WINS.
-                        const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category || undefined, dailyShineService);
                         const dbAmount = subRow?.amount ?? activeSub?.total_amount;
                         
                         // STRICT OVERRIDE: If the vehicle is a Hatchback, it MUST be 999.
@@ -307,7 +307,7 @@ function MyPlanPage() {
                                 Daily Shine Subscription
                               </p>
                               <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                                <div className="text-[8px] opacity-40 font-mono block w-full">B:2026-08-13-DIAG-A V:{selectedVehicle?.model} P:₹{price} SRC:plan_card</div>
+                                <div className="text-[8px] opacity-40 font-mono block w-full">B:2026-08-13-FIX-B V:{selectedVehicle?.model} ID:{selectedVehicle?.id?.slice(-4)} P:₹{price} SRC:plan_card</div>
                                 ₹{Number(price).toLocaleString("en-IN")} / month
                                 <span className="h-1 w-1 rounded-full bg-black/10" />
                                 <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
@@ -405,7 +405,7 @@ function MyPlanPage() {
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
         basePlanPrice={(() => {
           const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
-          const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+          const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category || undefined, dailyShineService);
           const dbAmount = subRow?.amount ?? activeSub?.total_amount;
           if (selectedVehicle?.category === 'hatchback_compact_sedan') return 999;
           if (selectedVehicle?.category === 'sedan_suv') return 1199;
@@ -438,7 +438,7 @@ function MyPlanPage() {
   );
 }
 
-function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | null }) {
+function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | undefined | null }) {
   const slug = booking.service_catalog?.slug ?? "daily-shine";
   const planName = booking.service_catalog?.name ?? "Daily Shine";
   const statusLabel = booking.status === "cancelled" ? "Payment cancelled" : booking.payment_status === "failed" ? "Payment failed" : "Payment pending";

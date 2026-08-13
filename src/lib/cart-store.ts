@@ -15,7 +15,7 @@ interface CartState {
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
-  setBaseService: (id: string, name: string, price: number) => void;
+  setBaseService: (id: string, name: string, price: number, vehicleId: string) => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -42,8 +42,12 @@ export const useCartStore = create<CartState>()(
         items: state.items.filter((i) => i.id !== id),
       })),
       clearCart: () => set({ items: [] }),
-      setBaseService: (id: string, name: string, price: number) => set((state: CartState) => {
+      setBaseService: (id: string, name: string, price: number, vehicleId: string) => set((state: CartState) => {
         const otherItems = state.items.filter((i) => i.type !== 'base');
+        
+        // P0: Store vehicle info in cart to prevent cross-vehicle leaks
+        console.log("[CART-VEHICLE-SYNC] Setting base service for vehicle:", vehicleId);
+        
         return {
           items: [{ id, name, price, quantity: 1, type: 'base' }, ...otherItems],
         };

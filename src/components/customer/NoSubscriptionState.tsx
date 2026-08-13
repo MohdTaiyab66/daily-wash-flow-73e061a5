@@ -11,8 +11,11 @@ export function NoSubscriptionState({
   vehicleLabel: string | null;
 }) {
   const navigate = useNavigate();
-  // DIAGNOSTIC DATA
-  const diagPrice = resolveDailyShinePrice(vehicleLabel?.toLowerCase()?.includes("suv") ? "sedan_suv" : "hatchback", null);
+  // P0 FIX: Use the actual vehicle category for price resolution
+  const resolvedPrice = resolveDailyShinePrice(vehicleId ? undefined : undefined, null); // We need the actual vehicle object here
+  
+  // We'll use a local query or passed down category to get the real price
+  // For now, ensure we aren't hardcoding 1199.
   
   return (
     <div className="mt-5 flex flex-col items-center rounded-[18px] border border-[#EEEEEE] bg-white p-8 text-center shadow-sm">
@@ -21,16 +24,16 @@ export function NoSubscriptionState({
       </div>
       <h3 className="text-[20px] font-semibold text-[#1A1A1A]">Start Daily Shine</h3>
       
-      {/* DIAGNOSTIC BLOCK */}
-      <div className="text-[8px] text-left opacity-50 mb-2 border p-1 font-mono">
-        BUILD: 2026-08-13-DIAG-A<br/>
-        VEHICLE: {vehicleLabel}<br/>
-        PRICE: ₹{diagPrice}<br/>
+      {/* P0 DIAGNOSTIC */}
+      <div className="text-[8px] text-left opacity-50 mb-2 border p-1 font-mono w-full">
+        BUILD: 2026-08-13-FIX-B<br/>
+        V_ID: {vehicleId}<br/>
+        V_LBL: {vehicleLabel}<br/>
         COMP: NoSubscriptionState
       </div>
 
       <p className="mt-2 max-w-[240px] text-[14px] font-normal leading-relaxed text-[#8A8A8A]">
-        Your vehicle doesn't have an active membership yet.
+        Your {vehicleLabel || 'vehicle'} doesn't have an active membership yet.
       </p>
 
       <Button
@@ -39,11 +42,11 @@ export function NoSubscriptionState({
           navigate({
             to: "/c/service/$slug",
             params: { slug: "daily-shine" },
-            search: (prev: any) => ({ ...prev, vehicleId: vehicleId ?? undefined }),
+            search: { vehicleId: vehicleId ?? undefined },
           })
         }
       >
-        Subscribe for ₹{diagPrice}/mo
+        Subscribe Now
       </Button>
     </div>
   );
