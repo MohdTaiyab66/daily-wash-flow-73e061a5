@@ -19,7 +19,7 @@ export const resolveDailyShinePrice = (category: string | null | undefined, serv
   
   const resolvedPrice = isHighTier ? suvPrice : hatchbackPrice;
 
-  console.log("[DAILY-SHINE-PRICE-RESOLVER]", {
+  console.log("[PRICE-TRACE-04] [DAILY-SHINE-PRICE-RESOLVER]", {
     category: category,
     isHighTier,
     resolvedPrice,

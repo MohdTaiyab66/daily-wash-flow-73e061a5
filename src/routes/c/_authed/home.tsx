@@ -216,6 +216,8 @@ function CustomerHome() {
   // Resolve Daily Shine price dynamically for banner
   const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
   const dailyShinePrice = resolveDailyShinePrice(category, dailyShineService);
+  console.log("[PRICE-TRACE-01]", { vehicleId: activeVehicle?.id, vehicleModel: activeVehicle?.model, rawVehicleCategory: activeVehicle?.category });
+  console.log("[PRICE-TRACE-03]", { pricing_resolver_input: { category, service_slug: dailyShineService?.slug } });
 
   if (dailyShineService) {
     console.log("[DAILY-SHINE-PRICE]", {
