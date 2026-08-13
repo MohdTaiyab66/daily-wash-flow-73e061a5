@@ -72,14 +72,19 @@ function isOffer(data: unknown): data is OfferPayload {
  * already started or running on web).
  */
 export async function startFcm(userId: string, app: "partner" | "customer" = appVariant()) {
-  if (!isNative() || started || !userId) return;
+  if (!isNative() || !userId) return;
+  // started check moved inside to allow re-checking permissions/token if user changes
+  if (started) {
+    console.log(`[CUSTOMER-FCM-REGISTRATION:01] startFcm already started for user: ${userId}`);
+    return;
+  }
   started = true;
 
-  console.log(`[CUSTOMER-FCM-REGISTRATION] startFcm called. userId: ${userId}, app: ${app}`);
+  console.log(`[CUSTOMER-FCM-REGISTRATION:01] AUTH_SESSION_AVAILABLE. user: ${userId}, app: ${app}`);
 
   // 1) Permission
   let perm = await FirebaseMessaging.checkPermissions();
-  console.log(`[CUSTOMER-FCM-REGISTRATION] checkPermissions: ${JSON.stringify(perm)}`);
+  console.log(`[CUSTOMER-FCM-REGISTRATION:02] NOTIFICATION_PERMISSION_STATUS: ${JSON.stringify(perm)}`);
   
   if (perm.receive !== "granted") {
     console.log(`[CUSTOMER-FCM-REGISTRATION] requesting permissions...`);
@@ -129,11 +134,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
     if (!token) {
-      console.error("[CUSTOMER-FCM-REGISTRATION] received empty token");
+      console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED: empty token");
       return;
     }
     
-    console.log(`[CUSTOMER-FCM-REGISTRATION] upsertToken starting. user_id: ${userId}, token_length: ${token.length}, token_tail: ${token.slice(-8)}`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:05] TOKEN_BACKEND_REGISTRATION_STARTED. user_id: ${userId}, platform: ${nativePlatform()}, app: ${app}, token_len: ${token.length}, tail: ${token.slice(-4)}`);
 
     try {
       await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
@@ -145,19 +150,19 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
         await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
-        console.log(`[CUSTOMER-FCM-REGISTRATION] token upload SUCCESS`);
+        console.log(`[CUSTOMER-FCM-REGISTRATION:06] TOKEN_BACKEND_REGISTRATION_SUCCESS`);
       } catch { /* noop */ }
     };
     const markErr = async (msg: string) => {
       try {
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: msg });
       } catch { /* noop */ }
-      console.error("[CUSTOMER-FCM-REGISTRATION] token upload FAILED:", msg);
+      console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED:", msg);
     };
 
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      console.log(`[CUSTOMER-FCM-REGISTRATION] calling registerPushToken RPC...`);
+      console.log(`[CUSTOMER-FCM-REGISTRATION] RPC registration attempt...`);
       const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
@@ -198,9 +203,9 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   };
 
   try {
-    console.log(`[CUSTOMER-FCM-REGISTRATION] calling FirebaseMessaging.getToken()...`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:03] FCM_TOKEN_REQUEST_STARTED`);
     const { token } = await FirebaseMessaging.getToken();
-    console.log(`[CUSTOMER-FCM-REGISTRATION] getToken result: ${token ? 'PRESENT' : 'MISSING'}`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:04] FCM_TOKEN_RECEIVED. exists: ${!!token}, len: ${token?.length || 0}`);
     if (token) await upsertToken(token);
   } catch (e: any) {
     console.error(`[CUSTOMER-FCM-REGISTRATION] getToken failed: ${e?.message ?? String(e)}`);
