@@ -567,12 +567,12 @@ export function BookAWashSheet({
 
         {/* Sticky CTA Bar */}
         {!loading && !entQ.isError && !subQ.isError && !noActivePlan && canBookIncluded && (
-          <div className="absolute bottom-0 left-0 right-0 border-t border-black/5 bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] safe-area-bottom">
+          <div className="absolute bottom-0 left-0 right-0 border-t border-black/[0.04] bg-white p-6 pb-8 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] safe-area-bottom">
             <Button
               data-testid="book-wash-button"
               onClick={() => void confirm()}
               disabled={phase !== "idle" || !addressId || !date || isMonday}
-              className="h-15 w-full rounded-2xl bg-[#FF6B00] hover:bg-[#FF6B00] text-[16px] font-black shadow-lg shadow-[#FF6B00]/20 transition-all active:scale-[0.98]"
+              className="h-15 w-full rounded-[20px] bg-[#FF6B00] hover:bg-[#FF6B00] text-[16px] font-black shadow-lg shadow-[#FF6B00]/20 transition-all active:scale-[0.98]"
             >
               {phase === "booking" ? (
                 <div className="flex items-center gap-3">
@@ -580,7 +580,7 @@ export function BookAWashSheet({
                    <span className="text-white">Scheduling...</span>
                 </div>
               ) : (
-                <span className="text-white">Book this wash →</span>
+                <span className="text-white uppercase tracking-wider">Book this wash →</span>
               )}
             </Button>
             <p className="mt-4 text-center text-[10px] font-black text-[#A6A6A6] uppercase tracking-[0.2em]">
@@ -588,6 +588,7 @@ export function BookAWashSheet({
             </p>
           </div>
         )}
+
       </DialogContent>
 
       {/* Date Picker Drawer */}
