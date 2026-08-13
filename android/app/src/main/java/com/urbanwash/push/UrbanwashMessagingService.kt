@@ -29,8 +29,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-06]")
-        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BUILD] FCM-P0-NATIVE-FCM-RECEIPT-06")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-07]")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BUILD] FCM-P0-NATIVE-FCM-RECEIPT-07")
         Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:SERVICE] UrbanwashMessagingService loaded")
     }
 
