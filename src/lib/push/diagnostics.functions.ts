@@ -97,7 +97,7 @@ export const sendDirectTestPush = createServerFn({ method: "POST" })
         title: "🚨 Test Notification",
         body: "This is a direct FCM test from the diagnostics panel.",
         data: {
-          type: "test_notification",
+          type: "direct_test",
           title: "Urban Wash Test", // Redundant but safe
           body: "Direct FCM test notification",
           broadcast_id: `test:${Date.now()}`,
@@ -105,8 +105,10 @@ export const sendDirectTestPush = createServerFn({ method: "POST" })
           sent_at: new Date().toISOString(),
         },
         channelId: "assignments_v4",
-        // STEP 6: TEST WITH NOTIFICATION + DATA (Explicitly proven to work with FCM Server)
-        dataOnly: false,
+        // P0: Use dataOnly: true for a deterministic test of the native Kotlin service.
+        // This ensures system auto-display doesn't intercept the message, forcing 
+        // the Kotlin UrbanwashMessagingService to process it and log markers.
+        dataOnly: true,
       });
 
       const successCount = res.results.filter((r: any) => r.ok).length;
