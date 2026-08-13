@@ -345,12 +345,24 @@ export async function sendOfferPush(args: {
     .eq("user_id", args.userId)
     .is("invalid_at", null);
   if (error) throw error;
+  const type = args.data.type || "";
+  const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
+  const isDS = type === "daily_shine_offer";
+
   if (!tokens || tokens.length === 0) {
+    if (isUnavailable) console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED count=0`);
+    if (isDS) console.log(`[PARTNER-BOOKING-E2E:05] PARTNER_TOKEN_RESOLVED count=0`);
     console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=0 (user_id=${args.userId})`);
     return { sent: 0, failed: 0, results: [] };
   }
+  
+  if (isUnavailable) console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED count=${tokens.length}`);
+  if (isDS) console.log(`[PARTNER-BOOKING-E2E:05] PARTNER_TOKEN_RESOLVED count=${tokens.length}`);
   console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=${tokens.length} (user_id=${args.userId})`);
-  console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+
+  if (isUnavailable) console.log(`[UNAVAILABLE-E2E:07] FCM_SEND_STARTED type=${type}`);
+  if (isDS) console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=${type}`);
+  console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
 
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
