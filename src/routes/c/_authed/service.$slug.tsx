@@ -240,18 +240,6 @@ function ServiceDetail() {
     if (service && vehicle) {
       const price = resolveDailyShinePrice(category, service);
       
-      console.log("[VEHICLE-PROPAGATION] ServiceDetail vehicleId =", vehicle.id);
-      console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
-        stage: "SERVICE_DETAIL",
-        vehicleId: vehicle.id,
-        vehicleMake: vehicle.make,
-        vehicleModel: vehicle.model,
-        vehicleCategory: vehicle.category,
-        serviceSlug: slug,
-        servicePrice: price,
-        serviceAmount: price
-      });
-
       setBaseService(service.id, service.name, price);
     }
   }, [service, category, vehicle?.id, setBaseService, slug]);
