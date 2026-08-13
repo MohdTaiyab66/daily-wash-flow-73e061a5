@@ -96,6 +96,7 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
+      console.log(`[CUSTOMER-E2E:UNAVAILABLE:01] PARTNER_UNAVAILABLE_HANDLER`, { serviceId, kind, reason });
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
@@ -107,9 +108,21 @@ export function GuidedReport({
         p_lat: pos?.lat ?? null,
         p_lng: pos?.lng ?? null,
       } as any);
-      if (error) throw error;
+      if (error) {
+        console.error(`[CUSTOMER-E2E:UNAVAILABLE:ERR] RPC_ERROR`, error);
+        throw error;
+      }
+      console.log(`[CUSTOMER-E2E:UNAVAILABLE:02] STATUS_UPDATED`, data);
+      
       const r: any = data ?? {};
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
+      
+      console.log("[CUSTOMER-E2E:UNAVAILABLE:03] FLUSH_NOTIFICATION_PUSH_ENTERED");
+      import("@/lib/push/immediate.functions").then(m => {
+        m.flushNotificationPush().then(res => {
+          console.log("[CUSTOMER-E2E:UNAVAILABLE:03:RESULT] flush result:", res);
+        }).catch(e => console.error("[CUSTOMER-E2E:UNAVAILABLE:03:ERR] flush failed", e));
+      });
       qc.setQueryData(["service", serviceId], (current: any) =>
         current ? { ...current, status: "unavailable", unavailable_reason: rpcReason, unavailable_notes: rpcNotes } : current,
       );

@@ -330,10 +330,10 @@ export async function sendOfferPush(args: {
     .is("invalid_at", null);
   if (error) throw error;
   if (!tokens || tokens.length === 0) {
-    console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=0 active_token_count=0`);
+    console.log(`[CUSTOMER-E2E:COMPLETE:04] CUSTOMER_RESOLVED user_id=${args.userId} token_count=0`);
     return { sent: 0, failed: 0, results: [] };
   }
-  console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=${tokens.length} tokens=${JSON.stringify(tokens.map((t: { id: string, token: string }) => ({ id: t.id, tail: t.token.slice(-8) })))}`);
+  console.log(`[CUSTOMER-E2E:COMPLETE:04] CUSTOMER_RESOLVED user_id=${args.userId} token_count=${tokens.length}`);
 
   console.log(`[CUSTOMER-SERVICE-PUSH:FCM] request_started=true token_count=${tokens.length}`);
   const results = await Promise.all(

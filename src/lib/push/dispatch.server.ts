@@ -267,17 +267,20 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    console.log(`[CUSTOMER-SERVICE-PUSH:E3] Processing id=${r.id} type=${type} user=${r.user_id}`);
+    console.log(`[CUSTOMER-E2E:DISPATCH:01] DISPATCH_ENTERED id=${r.id} type=${type} user=${r.user_id}`);
 
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-SERVICE-PUSH:BLOCKED] blocked type="${type}" id=${r.id}`);
+      console.warn(`[CUSTOMER-E2E:DISPATCH:BLOCKED] blocked type="${type}" id=${r.id}`);
       continue;
     }
+    
+    console.log(`[CUSTOMER-E2E:DISPATCH:02] EVENT_ACCEPTED id=${r.id} type=${type}`);
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
-      console.log(`[CUSTOMER-SERVICE-PUSH:E4] DISPATCH_STARTED event_id=${r.id} type=${type} recipient_id=${r.user_id}`);
+      console.log(`[CUSTOMER-E2E:DISPATCH:03] TARGET_FOUND user_id=${r.user_id}`);
       
+      console.log(`[CUSTOMER-E2E:DISPATCH:04] FCM_SEND_STARTED event_id=${r.id}`);
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -295,14 +298,14 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        console.log(`[CUSTOMER-SERVICE-PUSH:E7] FCM_SUCCESS event_id=${r.id} sent=${result.sent}`);
+        console.log(`[CUSTOMER-E2E:DISPATCH:05] FCM_SEND_SUCCESS event_id=${r.id} sent=${result.sent}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        console.log(`[CUSTOMER-SERVICE-PUSH:E6] DISPATCH_TARGET_RESOLVED user=${r.user_id} token_count=0`);
+        console.log(`[CUSTOMER-E2E:DISPATCH:06] TARGET_RESOLVED_BUT_NO_TOKENS user=${r.user_id}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
-        console.error(`[CUSTOMER-SERVICE-PUSH:E8] FCM_FAILURE event_id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
+        console.error(`[CUSTOMER-E2E:DISPATCH:ERR] FCM_FAILURE event_id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
