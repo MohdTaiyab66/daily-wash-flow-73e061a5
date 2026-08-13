@@ -397,6 +397,18 @@ auditNotify(
 )
 // [CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_SUCCESS
 Log.d("CUSTOMER-PUSH-NATIVE", "05 NOTIFICATION_POST_SUCCESS id=${notifKey.hashCode()}")
+
+try {
+    val prefs = getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE)
+    prefs.edit().apply {
+        putString("last_notif_posted_id", notifKey.hashCode().toString())
+        putLong("last_notif_posted_at", System.currentTimeMillis())
+        putString("last_notif_channel", CHANNEL_ASSIGNMENTS)
+        apply()
+    }
+} catch (e: Exception) {
+    Log.e("CUSTOMER-PUSH-NATIVE", "Failed to persist notif diagnostic receipt", e)
+}
 }
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
