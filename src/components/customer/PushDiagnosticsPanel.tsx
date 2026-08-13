@@ -18,26 +18,44 @@ export function PushDiagnosticsPanel() {
 
   // Poll native SharedPreferences via Capacitor bridge
   useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return;
+    // Safety check for platform
+    let platform = 'web';
+    try {
+      platform = Capacitor.getPlatform();
+    } catch (e) {
+      console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Platform check failed", e);
+    }
+
+    if (platform !== 'android') return;
 
     const checkNative = async () => {
       try {
+        // Safe access to Capacitor.Plugins
         const Plugins = (window as any).Capacitor?.Plugins;
         const Preferences = Plugins?.Preferences;
         
         if (!Preferences) {
-          console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Preferences plugin not found");
+          // Silent fallback, don't log every 2s
           return;
         }
 
         // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
-        const { value: lastMsgId } = await Preferences.get({ key: 'last_fcm_message_id' });
-        const { value: lastReceivedAt } = await Preferences.get({ key: 'last_fcm_received_at' });
-        const { value: lastType } = await Preferences.get({ key: 'last_fcm_type' });
-        const { value: lastTitle } = await Preferences.get({ key: 'last_fcm_title' });
-        
-        const { value: lastNotifId } = await Preferences.get({ key: 'last_notif_posted_id' });
-        const { value: lastNotifAt } = await Preferences.get({ key: 'last_notif_posted_at' });
+        // We use .get() which returns { value: string | null }
+        const [
+          { value: lastMsgId },
+          { value: lastReceivedAt },
+          { value: lastType },
+          { value: lastTitle },
+          { value: lastNotifId },
+          { value: lastNotifAt }
+        ] = await Promise.all([
+          Preferences.get({ key: 'last_fcm_message_id' }).catch(() => ({ value: null })),
+          Preferences.get({ key: 'last_fcm_received_at' }).catch(() => ({ value: null })),
+          Preferences.get({ key: 'last_fcm_type' }).catch(() => ({ value: null })),
+          Preferences.get({ key: 'last_fcm_title' }).catch(() => ({ value: null })),
+          Preferences.get({ key: 'last_notif_posted_id' }).catch(() => ({ value: null })),
+          Preferences.get({ key: 'last_notif_posted_at' }).catch(() => ({ value: null }))
+        ]);
         
         if (lastMsgId) {
           setNativeState({
@@ -54,7 +72,7 @@ export function PushDiagnosticsPanel() {
           });
         }
       } catch (e) {
-        console.error("[CUSTOMER-PUSH-NATIVE-DIAG] Native diag read failed", e);
+        console.error("[CUSTOMER-PUSH-NATIVE-DIAG] Native check failed", e);
       }
     };
 
