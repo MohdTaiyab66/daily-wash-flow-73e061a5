@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ShieldCheck, RefreshCcw, Send, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function PushDiagnosticsPanel() {
   const getDiags = useServerFn(getPushDiagnostics);
   const sendTest = useServerFn(sendDirectTestPush);
   const [isTesting, setIsTesting] = useState(false);
+  const [lastTestResult, setLastTestResult] = useState<any>(null);
 
   const { data, isLoading, refetch, error } = useQuery({
     queryKey: ["push-diagnostics"],
@@ -20,16 +21,30 @@ export function PushDiagnosticsPanel() {
   const testMutation = useMutation({
     mutationFn: async () => {
       setIsTesting(true);
+      setLastTestResult({ status: "SENDING..." });
       return sendTest({ data: { targetUserId: data?.user_id! } });
     },
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
+      const firstRes = res.results?.[0];
+      setLastTestResult({
+        status: res.sent > 0 ? "FCM ACCEPTED" : "FCM FAILED",
+        userId: data?.user_id?.slice(0, 8),
+        tokenTail: res.tokenTail,
+        projectId: res.projectId,
+        messageId: firstRes?.messageId?.split('/').pop() || "N/A",
+        sentAt: new Date(res.sentAt).toLocaleTimeString(),
+        result: res.sent > 0 ? "SUCCESS" : `ERROR: ${firstRes?.errorCode || "Unknown"}`,
+        raw: res
+      });
+
       if (res.sent > 0) {
-        toast.success(`Sent ${res.sent} test notification(s)`);
+        toast.success(`FCM accepted test notification`);
       } else {
-        toast.error("Failed to send: No active tokens or FCM error");
+        toast.error(`FCM Failed: ${firstRes?.errorCode || "No tokens"}`);
       }
     },
     onError: (err) => {
+      setLastTestResult({ status: "FCM FAILED", result: err.message });
       toast.error(`Test failed: ${err.message}`);
     },
     onSettled: () => setIsTesting(false),
@@ -111,6 +126,47 @@ export function PushDiagnosticsPanel() {
           {isTesting ? <RefreshCcw className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
           SEND DIRECT TEST PUSH
         </Button>
+
+        {/* STEP 7: LAST SEND RESULT PANEL */}
+        {lastTestResult && (
+          <div className="rounded-lg bg-black text-white p-3 text-[10px] border border-orange-500/50 font-mono mt-4">
+            <p className="font-bold text-orange-500 uppercase mb-2 border-b border-orange-500/20 pb-1">DIRECT TEST RESULT</p>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>STATUS:</span>
+                <span className={lastTestResult.status.includes("ACCEPTED") ? "text-green-400" : "text-orange-400"}>
+                  {lastTestResult.status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>USER:</span>
+                <span>{lastTestResult.userId || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>TOKEN:</span>
+                <span>......{lastTestResult.tokenTail || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>PROJECT:</span>
+                <span className="text-blue-300">{lastTestResult.projectId || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>MSG ID:</span>
+                <span className="truncate max-w-[120px]">{lastTestResult.messageId || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>SENT AT:</span>
+                <span>{lastTestResult.sentAt || "—"}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+                <span>FCM RESULT:</span>
+                <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
+                  {lastTestResult.result}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
