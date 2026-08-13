@@ -258,6 +258,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     .from("customer_notifications")
     .select("id,user_id,title,body,type,link")
     .is("pushed_at", null)
+    .order("created_at", { ascending: false })
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(50);
 
