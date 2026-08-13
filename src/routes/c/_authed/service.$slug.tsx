@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { resolveDailyShinePrice } from "@/lib/pricing";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   ArrowLeft, Check, ChevronRight, Loader2, Sparkles, Car, X, ZapIcon as ZapIconLucide,
