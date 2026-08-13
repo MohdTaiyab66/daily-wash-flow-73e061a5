@@ -10,6 +10,18 @@ import { haversineKm } from "@/lib/assignment.functions";
 type LatLng = { lat: number; lng: number };
 
 /**
+ * Helper to calculate working days in a billing cycle.
+ */
+function calculateWorkingDays(start?: string | null, end?: string | null) {
+  if (!start || !end) return 26; // Default to standard 26-day cycle
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  const days = Math.max(1, Math.round((e - s) / 86400000));
+  // Cap at 31, minimum 1
+  return Math.min(Math.max(days, 1), 31);
+}
+
+/**
  * Resolves the partner's expected earning for a specific booking/offer.
  * Currently uses the marketplace incentive as the primary earning source.
  */
@@ -22,7 +34,6 @@ export async function resolvePartnerBookingEarning(params: {
   console.log(`[PARTNER-BOOKING-CONTEXT:01] BOOKING_CONTEXT_START partner=${params.partnerId} offer=${params.offerId}`);
   
   // Existing business rule: Earning = Marketplace Incentive
-  // We use the provided incentive which was resolved during broadcast creation/round advancement.
   const amount = params.incentive;
   
   console.log(`[PARTNER-BOOKING-CONTEXT:02] EARNING_RESOLVED partner=${params.partnerId} amount=${amount}`);
@@ -30,6 +41,32 @@ export async function resolvePartnerBookingEarning(params: {
   return {
     amount,
     display: `₹${amount}`
+  };
+}
+
+/**
+ * Resolves the estimated TOTAL MONTHLY EARNING from a vehicle/service.
+ */
+export async function resolvePartnerMonthlyEarning(params: {
+  sb: any;
+  partnerId: string;
+  incentive: number;
+  startDate?: string | null;
+  renewalDate?: string | null;
+}) {
+  const { incentive, startDate, renewalDate } = params;
+  
+  // Earning per service day = incentive
+  const workingDays = calculateWorkingDays(startDate, renewalDate);
+  const monthlyAmount = incentive * workingDays;
+  
+  console.log(`[PARTNER-BOOKING-CONTEXT:02-MONTHLY] EARNING_RESOLVED partner=${params.partnerId} daily=${incentive} days=${workingDays} monthly=${monthlyAmount}`);
+  
+  return {
+    dailyAmount: incentive,
+    monthlyAmount,
+    workingDays,
+    display: `+₹${monthlyAmount}/month`
   };
 }
 
@@ -94,7 +131,6 @@ export async function resolvePartnerBookingDistance(params: {
   const distKm = haversineKm(
     { lat: partnerLoc.lat, lng: partnerLoc.lng },
     { lat: customerLat, lng: customerLng }
-
   );
   
   const rounded = Math.round(distKm * 10) / 10;

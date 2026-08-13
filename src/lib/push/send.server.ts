@@ -219,6 +219,9 @@ type SendInput = {
 };
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
+  const ts_start = Date.now();
+  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)}`);
+
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
   console.log(`[DIRECT-FCM-PAYLOAD] PROJECT_ID: ${projectId}`);
@@ -300,7 +303,10 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
       const json = (await res.json()) as { name: string };
       const msgId = json.name.split('/').pop() || json.name;
       console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: ${msgId}`);
+      const ts_accepted = Date.now();
+      console.log(`[PUSH-LATENCY:06] FCM_ACCEPTED ts=${ts_accepted} latency_ms=${ts_accepted - ts_start} messageId=${msgId}`);
       console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED token=${input.token.slice(-8)} messageId=${msgId}`);
+
 
       return { token: input.token, ok: true, messageId: msgId };
     }
@@ -373,9 +379,12 @@ export async function sendOfferPush(args: {
   if (isDS) console.log(`[PARTNER-BOOKING-E2E:05] PARTNER_TOKEN_RESOLVED count=${tokens.length}`);
   console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=${tokens.length} (user_id=${args.userId})`);
 
+  const ts_resolved = Date.now();
   if (isUnavailable) console.log(`[UNAVAILABLE-E2E:07] FCM_SEND_STARTED type=${type}`);
   if (isDS) console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=${type}`);
+  console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${ts_resolved}`);
   console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+
 
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>

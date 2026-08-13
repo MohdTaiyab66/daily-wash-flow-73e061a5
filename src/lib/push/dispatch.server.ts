@@ -22,9 +22,10 @@ async function sender() {
 }
 
 async function resolvers() {
-  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
-  return { resolvePartnerBookingEarning, resolvePartnerBookingDistance };
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await import("@/lib/push/resolvers.server");
+  return { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning };
 }
+
 
 
 /* ------------------------------------------------------------------ *
@@ -77,16 +78,22 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   
   if (pBookingId) {
     console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${pBookingId}`);
   }
   const rows = await listPendingOffers(sb);
+  const ts_dispatch = Date.now();
+  console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
   console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
   console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
+
 
   let dispatched = 0;
   // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
@@ -111,17 +118,27 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       return false;
     }
     
+    const ts_created = Date.now();
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${ts_created}`);
     console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
-    const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await resolvers();
+
+    const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
     
     // Resolve Partner-specific Earnings and Distance
-    const [earnings, distance] = await Promise.all([
+    const [earnings, monthly, distance] = await Promise.all([
       resolvePartnerBookingEarning({
         sb,
         offerId: r.offer_id,
         partnerId: r.partner_id,
-        incentive: 0, // Fallback for Daily Shine if incentive not in r
+        incentive: 0, 
+      }),
+      resolvePartnerMonthlyEarning({
+        sb,
+        partnerId: r.partner_id,
+        incentive: 0,
+        startDate: (r as any).subscription_start_date ?? null,
+        renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
       resolvePartnerBookingDistance({
         sb,
@@ -131,8 +148,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }),
     ]);
 
-
-    const title = `🚗 New Booking • Earn ${earnings.display}`;
+    const title = `🚗 New Booking • ${monthly.display}`;
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
     
     const data: Record<string, string> = {
@@ -144,8 +160,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       partner_id: r.partner_id,
       category: "daily_shine",
       link: `/app`,
-      earning_display: earnings.display,
-      earning_amount: String(earnings.amount),
+      earning_display: monthly.display,
+      earning_amount: String(monthly.monthlyAmount),
+      earning_monthly: monthly.display,
       distance_display: distance.display,
       distance_km: distance.km ? String(distance.km) : "",
     };
@@ -154,8 +171,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      console.log(`[BOOKING-PUSH:06] TOKENS_RESOLVED success=1 missing=0 partner_id=${r.partner_id}`);
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+
+
+
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -317,7 +338,10 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  * Types outside the allow-list are stamped without a send (H-2 safety net).
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
@@ -329,7 +353,9 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
   let sentCount = 0;
   for (const r of (rows ?? [])) {
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
+
     // Canonical mapping to prevent unknown events
     const canonicalTypeMap: Record<string, string> = {
       "vehicle_not_found": "vehicle_unavailable",
@@ -339,12 +365,15 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     };
     const mappedType = canonicalTypeMap[type] || type;
 
-    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
+    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle" || mappedType === "vehicle_not_found" || mappedType === "dirty";
     
     if (isUnavailable) {
       console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
       console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
+      console.log(`[UNAVAILABLE-E2E:03] EVENT_TYPE_RESOLVED type=${mappedType}`);
+      console.log(`[UNAVAILABLE-E2E:04] CUSTOMER_NOTIFICATION_CREATED`);
     } else {
+
       console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
       console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
       console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
@@ -358,11 +387,16 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
+      const ts_dispatch = Date.now();
       if (isUnavailable) {
         console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
+        console.log(`[UNAVAILABLE-E2E:05] IMMEDIATE_DISPATCH_TRIGGERED`);
+        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       } else {
         console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
+        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       }
+
 
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
@@ -373,7 +407,12 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         offer_id: String(r.id),
       };
 
-      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
+        console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
+      }
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
 
       const result = await sendOfferPush({
         userId: r.user_id,
@@ -388,9 +427,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       if (result.sent > 0) {
         if (isUnavailable) {
           console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
+          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED`);
         } else {
           console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
         }
+
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
@@ -399,7 +440,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
 
-      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
+        console.log(`[UNAVAILABLE-E2E:09] ANDROID_RECEIVED (pending receipt)`);
+      }
+
 
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
@@ -411,7 +456,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
+  const ts_event = Date.now();
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
   const sb = await admin();
+
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("partner_notifications")
@@ -425,7 +473,9 @@ export async function dispatchPartnerNotifications(): Promise<number> {
 
   let sentCount = 0;
   for (const r of rows ?? []) {
+    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
+
     // Canonical mapping for P0-B Reliability
     const canonicalTypeMap: Record<string, string> = {
       "new_assignments": "new_booking",
@@ -437,7 +487,11 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,

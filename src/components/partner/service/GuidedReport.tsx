@@ -96,7 +96,11 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
+      const ts_action = Date.now();
+      console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_action}`);
       console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION service_id=${serviceId} kind=${kind} reason=${reason}`);
+      console.log(`[UNAVAILABLE-E2E:01] PARTNER_UNAVAILABLE_ACTION`);
+
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
@@ -113,6 +117,8 @@ export function GuidedReport({
         throw error;
       }
       console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED service_id=${serviceId} status=unavailable`);
+      console.log(`[UNAVAILABLE-E2E:02] SERVICE_STATUS_UPDATED`);
+
       
       const r: any = data ?? {};
       console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED notification_id=${r.notification_id}`);
@@ -120,7 +126,9 @@ export function GuidedReport({
       
       import("@/lib/push/immediate.functions").then(m => {
         // Direct Send (Proven Path)
+        console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
         m.sendDirectCompletionPush({
+
           data: {
             customerId: r.customer_id,
             serviceId,
