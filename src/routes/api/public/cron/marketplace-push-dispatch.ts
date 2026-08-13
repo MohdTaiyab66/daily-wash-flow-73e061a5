@@ -27,10 +27,12 @@ function workingDaysBetween(start?: string | null, end?: string | null) {
 async function dispatchPending() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendOfferPush } = await import("@/lib/push/send.server");
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
 
   const { data: offerRows, error } = await (supabaseAdmin as any)
     .from("marketplace_offers")
     .select("id, partner_id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at")
+
     .eq("response", "pending")
     .is("viewed_at", null)
     .gt("sent_at", new Date(Date.now() - 5 * 60_000).toISOString())
@@ -120,10 +122,27 @@ async function dispatchPending() {
     const v = (r as any).broadcast?.vehicle;
     const vehicleLabel = v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
     const area = (r as any).broadcast?.service_area?.name ?? "Nearby area";
-    const distM = r.distance_from_route_m ?? 0;
-    const distStr = distM < 1000 ? `${distM} m` : `${(distM / 1000).toFixed(1)} km`;
     const sub = (r as any).broadcast?.subscription;
     const workingDays = workingDaysBetween(sub?.start_date, sub?.renewal_date);
+
+    // Resolve Partner-specific Earnings and Distance
+    const [earnings, distance] = await Promise.all([
+      resolvePartnerBookingEarning({
+        sb: supabaseAdmin,
+        offerId: r.id,
+        partnerId: r.partner_id,
+        incentive: r.incentive,
+      }),
+      resolvePartnerBookingDistance({
+        sb: supabaseAdmin,
+        partnerId: r.partner_id,
+        customerLat: (r as any).broadcast?.customer_lat ?? null,
+        customerLng: (r as any).broadcast?.customer_lng ?? null,
+      }),
+    ]);
+
+    // Forensic logging
+    console.log(`[PARTNER-BOOKING-CONTEXT:04] PAYLOAD_BUILT partner=${r.partner_id} earning=${earnings.display} distance=${distance.display}`);
 
     // Mint the single-use action token (3-minute TTL, tied to this partner + broadcast).
     const { data: tokenRow, error: tokenErr } = await (supabaseAdmin as any).rpc(
@@ -140,8 +159,10 @@ async function dispatchPending() {
     }
     const actionToken = String(tokenRow);
 
-    const title = "🚗 New Daily Shine Customer";
-    const body = `${vehicleLabel} · ${area} · ${distStr} · ₹${r.incentive}/day`;
+    // Optimized for Android heads-up visibility
+    const title = `🚗 New Booking • Earn ${earnings.display}`;
+    const body = `${vehicleLabel} • ${area} • ${distance.display}`;
+    
     const data: Record<string, string> = {
       type: isUpdate ? "marketplace_offer_update" : "marketplace_offer",
       broadcast_id: String(r.broadcast_id),
@@ -152,11 +173,16 @@ async function dispatchPending() {
       body,
       vehicle: vehicleLabel,
       area,
-      distance: distStr,
-      incentive: `₹${r.incentive}/day`,
+      distance: distance.display,
+      distance_km: distance.km ? String(distance.km) : "",
+      distance_display: distance.display,
+      incentive: earnings.display,
+      earning_amount: String(earnings.amount),
+      earning_display: earnings.display,
       working_days: String(workingDays),
       link: "/app",
     };
+
 
     try {
       console.log(`[BOOKING-PUSH:CANDIDATE] partner=${r.partner_id} eligible=true reason=sending_push type=${data.type}`);
