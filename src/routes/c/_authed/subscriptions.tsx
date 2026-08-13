@@ -406,7 +406,13 @@ function MyPlanPage() {
         open={builderOpen}
         onOpenChange={setBuilderOpen}
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
-        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, services?.find((s: any) => s.slug === 'daily-shine')))}
+        basePlanPrice={(() => {
+          const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
+          const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+          const dbAmount = subRow?.amount ?? activeSub?.total_amount;
+          return Number((dbAmount && dbAmount !== 1199 && dbAmount !== 999) ? dbAmount : resolvedPrice);
+        })()}
+
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
 
