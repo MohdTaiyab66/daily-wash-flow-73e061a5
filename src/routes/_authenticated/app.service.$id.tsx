@@ -231,8 +231,7 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
-      // [CUSTOMER-SERVICE-PUSH:E1] Start partner completion
-      console.log("[CUSTOMER-SERVICE-PUSH:E1] START_COMPLETION", { service_id: id });
+      console.log("[CUSTOMER-E2E:COMPLETE:01] PARTNER_COMPLETE_HANDLER_ENTERED", { service_id: id });
       
       if (!beforeDone) throw new Error("Take the before photo first");
       if (!afterAllDone) throw new Error("Take all 4 after photos first");
@@ -246,13 +245,13 @@ function ServiceDetail() {
         p_notes: serviceNotes.trim() || null,
       });
       if (error) {
-        console.error("[CUSTOMER-SERVICE-PUSH:E1] RPC_ERROR", error);
+        console.error("[CUSTOMER-E2E:COMPLETE:ERR] RPC_ERROR", error);
         const code = (error as any).code ?? "";
         if (code === "P04PHOTO") throw new Error("Some photos are missing. Please take them again.");
         throw new Error((error as any).message ?? "Could not complete service");
       }
       
-      console.log("[CUSTOMER-SERVICE-PUSH:E1] RPC_SUCCESS", data);
+      console.log("[CUSTOMER-E2E:COMPLETE:02] SERVICE_STATUS_UPDATED", data);
       
       if (service?.started_at) {
         const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
@@ -270,13 +269,12 @@ function ServiceDetail() {
     },
     onSuccess: (data: any) => {
       try { window.localStorage.removeItem(stepKey(id)); window.localStorage.removeItem(notesKey(id)); } catch { /* noop */ }
-      // [CUSTOMER-SERVICE-PUSH:E2] Partner complete success handler
-      console.log("[CUSTOMER-SERVICE-PUSH:E2] COMPLETE_SUCCESS", { service_id: id });
+      
+      console.log("[CUSTOMER-E2E:COMPLETE:03] FLUSH_NOTIFICATION_PUSH_ENTERED");
       import("@/lib/push/immediate.functions").then(m => {
-        console.log("[CUSTOMER-SERVICE-PUSH:E2] Triggering flushNotificationPush");
         m.flushNotificationPush().then(res => {
-          console.log("[CUSTOMER-SERVICE-PUSH:E2] flushNotificationPush result:", res);
-        }).catch(e => console.error("[CUSTOMER-SERVICE-PUSH:E2] flushNotificationPush failed", e));
+          console.log("[CUSTOMER-E2E:COMPLETE:03:RESULT] flush result:", res);
+        }).catch(e => console.error("[CUSTOMER-E2E:COMPLETE:03:ERR] flush failed", e));
       });
 
       if (data?.already) { void goNext(); return; }
@@ -288,7 +286,10 @@ function ServiceDetail() {
         nextName: routeProgress?.nextName ?? null,
       });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error("[CUSTOMER-E2E:COMPLETE:ERR] mutation failed", e);
+      toast.error(e.message);
+    },
   });
 
   const goNext = async () => {
