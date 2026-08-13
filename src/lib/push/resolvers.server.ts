@@ -5,7 +5,7 @@
  * FORENSIC MARKERS: [PARTNER-BOOKING-CONTEXT:*]
  */
 
-import { haversineKm } from "@/lib/utils";
+import { haversineKm } from "@/lib/assignment.functions";
 
 type LatLng = { lat: number; lng: number };
 
