@@ -265,16 +265,13 @@ function ServiceDetail() {
     },
     onSuccess: (data: any) => {
       try { window.localStorage.removeItem(stepKey(id)); window.localStorage.removeItem(notesKey(id)); } catch { /* noop */ }
-      qc.invalidateQueries({ queryKey: ["service", id] });
-      qc.invalidateQueries({ queryKey: ["next-pending-service", id] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
-
-      // [CUSTOMER-SERVICE-PUSH] Immediate dispatch to avoid cron delay
+      // [CUSTOMER-SERVICE-PUSH:E2] Partner complete success handler
+      console.log("[CUSTOMER-SERVICE-PUSH:E2] COMPLETE_SUCCESS", { service_id: id });
       import("@/lib/push/immediate.functions").then(m => {
-        m.flushNotificationPush().catch(e => console.warn("[PUSH-FORENSIC] immediate flush failed", e));
+        console.log("[CUSTOMER-SERVICE-PUSH:E2] Triggering flushNotificationPush");
+        m.flushNotificationPush().then(res => {
+          console.log("[CUSTOMER-SERVICE-PUSH:E2] flushNotificationPush result:", res);
+        }).catch(e => console.error("[CUSTOMER-SERVICE-PUSH:E2] flushNotificationPush failed", e));
       });
 
       if (data?.already) { void goNext(); return; }
