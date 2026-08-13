@@ -3,15 +3,56 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPushDiagnostics, sendDirectTestPush } from "@/lib/push/diagnostics.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldCheck, RefreshCcw, Send, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, RefreshCcw, Send, AlertTriangle, CheckCircle2, Smartphone, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PushDiagnosticsPanel() {
   const getDiags = useServerFn(getPushDiagnostics);
   const sendTest = useServerFn(sendDirectTestPush);
   const [isTesting, setIsTesting] = useState(false);
   const [lastTestResult, setLastTestResult] = useState<any>(null);
+  const [nativeState, setNativeState] = useState<any>(null);
+
+  // Poll native SharedPreferences via Capacitor bridge
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return;
+
+    const checkNative = async () => {
+      try {
+        // We use the direct Preferences API to read what the Kotlin service wrote
+        const { value: lastMsgId } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_message_id' });
+        const { value: lastReceivedAt } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_received_at' });
+        const { value: lastType } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_type' });
+        const { value: lastTitle } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_title' });
+        
+        const { value: lastNotifId } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_notif_posted_id' });
+        const { value: lastNotifAt } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_notif_posted_at' });
+        
+        if (lastMsgId) {
+          setNativeState({
+            fcm: {
+              id: lastMsgId,
+              receivedAt: lastReceivedAt ? new Date(parseInt(lastReceivedAt)).toLocaleTimeString() : 'N/A',
+              type: lastType,
+              title: lastTitle
+            },
+            notif: {
+              id: lastNotifId,
+              postedAt: lastNotifAt ? new Date(parseInt(lastNotifAt)).toLocaleTimeString() : 'N/A'
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Native diag read failed", e);
+      }
+    };
+
+    const timer = setInterval(checkNative, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { data, isLoading, refetch, error } = useQuery({
     queryKey: ["push-diagnostics"],
@@ -22,6 +63,7 @@ export function PushDiagnosticsPanel() {
     mutationFn: async () => {
       setIsTesting(true);
       setLastTestResult({ status: "SENDING..." });
+      
       return sendTest({ data: { targetUserId: data?.user_id! } });
     },
     onSuccess: (res: any) => {
@@ -31,7 +73,7 @@ export function PushDiagnosticsPanel() {
         userId: data?.user_id?.slice(0, 8),
         tokenTail: res.tokenTail,
         projectId: res.projectId,
-        messageId: firstRes?.messageId?.split('/').pop() || "N/A",
+        messageId: firstRes?.messageId || "N/A",
         sentAt: new Date(res.sentAt).toLocaleTimeString(),
         result: res.sent > 0 ? "SUCCESS" : `ERROR: ${firstRes?.errorCode || "Unknown"}`,
         raw: res
@@ -127,50 +169,115 @@ export function PushDiagnosticsPanel() {
           SEND DIRECT TEST PUSH
         </Button>
 
-        {/* STEP 7: LAST SEND RESULT PANEL */}
+        {/* STEP 7 & 11: DETAILED RESULT PANEL */}
         {lastTestResult && (
           <div className="rounded-lg bg-black text-white p-3 text-[10px] border border-orange-500/50 font-mono mt-4">
-            <p className="font-bold text-orange-500 uppercase mb-2 border-b border-orange-500/20 pb-1">DIRECT TEST RESULT</p>
+            <p className="font-bold text-orange-500 uppercase mb-2 border-b border-orange-500/20 pb-1 flex justify-between">
+              <span>DIRECT TEST RESULT</span>
+              <span className="text-[8px] text-white/40">BUILD: FCM-P0-ANDROID-RECEIPT-01</span>
+            </p>
             <div className="space-y-1">
               <div className="flex justify-between">
-                <span>STATUS:</span>
-                <span className={lastTestResult.status.includes("ACCEPTED") ? "text-green-400" : "text-orange-400"}>
-                  {lastTestResult.status}
+                <span>FCM SERVER:</span>
+                <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
+                  {lastTestResult.result === "SUCCESS" ? "✅ ACCEPTED" : lastTestResult.result}
                 </span>
-              </div>
-              <div className="flex justify-between">
-                <span>USER:</span>
-                <span>{lastTestResult.userId || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>TOKEN:</span>
-                <span>......{lastTestResult.tokenTail || "—"}</span>
               </div>
               <div className="flex justify-between">
                 <span>PROJECT:</span>
                 <span className="text-blue-300">{lastTestResult.projectId || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span>MSG ID:</span>
-                <span className="truncate max-w-[120px]">{lastTestResult.messageId || "—"}</span>
+                <span>SERVER MSG ID:</span>
+                <span className="truncate max-w-[140px] text-yellow-200">{lastTestResult.messageId || "—"}</span>
               </div>
-              <div className="flex justify-between">
-                <span>SENT AT:</span>
-                <span>{lastTestResult.sentAt || "—"}</span>
+              
+              <div className="pt-2 border-t border-white/10 mt-1">
+                <p className="text-orange-400 font-bold mb-1 underline">ANDROID NATIVE HANDSHAKE</p>
+                
+                {nativeState?.fcm?.id === lastTestResult.messageId ? (
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span>ANDROID FCM:</span>
+                      <span className="text-green-400 font-bold">✅ RECEIVED</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>NATIVE MSG ID:</span>
+                      <span className="truncate max-w-[140px] text-green-300">{nativeState.fcm.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>RECEIVED AT:</span>
+                      <span>{nativeState.fcm.receivedAt}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>TYPE:</span>
+                      <span className="text-blue-300">{nativeState.fcm.type}</span>
+                    </div>
+                    
+                    <div className="flex justify-between pt-1">
+                      <span>NOTIFICATION:</span>
+                      <span className={nativeState.notif?.id ? "text-green-400 font-bold" : "text-orange-400"}>
+                        {nativeState.notif?.id ? "✅ POSTED" : "⏳ POSTING..."}
+                      </span>
+                    </div>
+                    {nativeState.notif?.postedAt && (
+                      <div className="flex justify-between">
+                        <span>POSTED AT:</span>
+                        <span>{nativeState.notif.postedAt}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span>ANDROID FCM:</span>
+                      <span className="text-orange-400 animate-pulse uppercase font-bold">⏳ WAITING...</span>
+                    </div>
+                    <p className="text-[8px] text-white/30 mt-1 italic">
+                      If stuck here, message is NOT reaching Android service. Check Firebase Project / App ID.
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="flex flex-col gap-1 pt-1 border-t border-white/10 mt-1">
-                <div className="flex justify-between">
-                  <span>FCM SERVER:</span>
-                  <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
-                    {lastTestResult.result === "SUCCESS" ? "✅ ACCEPTED" : lastTestResult.result}
-                  </span>
+              
+              <div className="pt-2 border-t border-white/10 mt-1">
+                <p className="text-white/40 font-bold mb-1">APK CONFIG (LIVE)</p>
+                <div className="grid grid-cols-2 gap-x-2 opacity-60">
+                  <span>PACKAGE:</span>
+                  <span>com.urbanwash.customer</span>
+                  <span>SENDER ID:</span>
+                  <span>781422718869</span>
+                  <span>PROJECT:</span>
+                  <span>uw-partner-app</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>ANDROID:</span>
-                  <span className="text-orange-400 animate-pulse uppercase">⏳ Waiting</span>
-                </div>
+              </div>
+              
+              <div className="pt-2 border-t border-white/10 mt-1 flex justify-between items-center">
+                <span className="font-bold">FINAL STATUS:</span>
+                {nativeState?.fcm?.id === lastTestResult.messageId && nativeState?.notif?.id ? (
+                  <span className="bg-green-600 px-2 py-0.5 rounded text-white font-bold animate-bounce">DIRECT TEST: PASS</span>
+                ) : (
+                  <span className="bg-orange-600 px-2 py-0.5 rounded text-white font-bold animate-pulse">DIRECT TEST: PENDING</span>
+                )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* STEP 11: LAST RECEIVED FCM (HISTORICAL) */}
+        {!lastTestResult && nativeState?.fcm && (
+          <div className="rounded-lg bg-muted p-3 text-[10px] font-mono border">
+             <p className="font-bold text-muted-foreground uppercase mb-2 border-b pb-1">LAST FCM ON THIS DEVICE</p>
+             <div className="space-y-1">
+               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[120px]">{nativeState.fcm.id}</span></div>
+               <div className="flex justify-between"><span>TYPE:</span><span>{nativeState.fcm.type}</span></div>
+               <div className="flex justify-between"><span>RECEIVED:</span><span>{nativeState.fcm.receivedAt}</span></div>
+               {nativeState.notif?.postedAt && (
+                 <div className="flex justify-between border-t border-muted-foreground/10 pt-1 mt-1">
+                   <span>POSTED:</span><span>{nativeState.notif.postedAt}</span>
+                 </div>
+               )}
+             </div>
           </div>
         )}
       </CardContent>
