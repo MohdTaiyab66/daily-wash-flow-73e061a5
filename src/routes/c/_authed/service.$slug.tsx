@@ -728,6 +728,7 @@ function ServiceDetail() {
         <div className="bg-white border-t border-black/[0.05] p-6 flex justify-between items-center shadow-[0_-12px_40px_rgba(0,0,0,0.08)] pointer-events-auto gap-4 min-h-[88px]">
           <div className="flex flex-col min-w-0">
             <span className="text-[9px] font-[900] text-[#7A7A7A] uppercase tracking-[0.18em] mb-0.5">TOTAL PAYABLE</span>
+            <div className="text-[8px] opacity-40 font-mono">B:2026-08-13-DIAG-A V:{vehicle?.model} P:₹{totalPayable} C:ServiceDetail</div>
             <div className="text-[24px] font-[900] text-[#1a1a1a] leading-none tracking-tight">₹{totalPayable}</div>
           </div>
           <Button 
