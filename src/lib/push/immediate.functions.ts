@@ -46,7 +46,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .object({
         customerId: z.string().uuid(),
         serviceId: z.string().uuid(),
-        type: z.enum(["service_completed", "service_unavailable", "vehicle_unavailable"]),
+        type: z.enum(["service_completed", "service_unavailable", "vehicle_unavailable", "vehicle_dirty", "dirty_vehicle"]),
         title: z.string(),
         body: z.string(),
       })
