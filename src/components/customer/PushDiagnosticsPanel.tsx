@@ -124,7 +124,7 @@ export function PushDiagnosticsPanel() {
   const configOk = data?.firebase_config?.project_id !== "MISSING" && data?.firebase_config?.has_private_key;
 
   return (
-    <Card className="border-2 border-primary/20 bg-primary/5">
+    <Card className="border border-black/5 bg-white shadow-sm rounded-2xl overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
@@ -149,12 +149,12 @@ export function PushDiagnosticsPanel() {
         {/* Firebase Config */}
         <div className="rounded-lg bg-background p-3 text-xs border">
           <p className="font-bold text-muted-foreground uppercase mb-2">Backend Config</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>Project: <span className="font-mono">{data?.firebase_config?.project_id}</span></div>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div>Project: <span className="font-mono text-primary">{data?.firebase_config?.project_id}</span></div>
             <div className="flex items-center gap-1">
               Auth: {configOk ? <CheckCircle2 className="h-3 w-3 text-success" /> : <AlertTriangle className="h-3 w-3 text-destructive" />}
             </div>
-            <div className="col-span-2">Email: <span className="font-mono text-[10px]">{data?.firebase_config?.client_email}</span></div>
+            <div className="col-span-2 text-[9px] opacity-60">Email: <span className="font-mono">{data?.firebase_config?.client_email}</span></div>
           </div>
         </div>
 
