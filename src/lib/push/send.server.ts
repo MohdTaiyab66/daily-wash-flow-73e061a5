@@ -328,7 +328,11 @@ export async function sendOfferPush(args: {
     .eq("user_id", args.userId)
     .is("invalid_at", null);
   if (error) throw error;
-  if (!tokens || tokens.length === 0) return { sent: 0, failed: 0, results: [] };
+  if (!tokens || tokens.length === 0) {
+    console.log(`[CUSTOMER-SERVICE-PUSH] No active tokens found for user=${args.userId}`);
+    return { sent: 0, failed: 0, results: [] };
+  }
+  console.log(`[CUSTOMER-SERVICE-PUSH] Found ${tokens.length} active tokens for user=${args.userId}`);
 
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>

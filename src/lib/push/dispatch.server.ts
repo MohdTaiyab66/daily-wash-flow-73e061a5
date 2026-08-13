@@ -262,8 +262,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     .limit(50);
 
   let sentCount = 0;
-  for (const r of rows ?? []) {
+  for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
+    console.log(`[CUSTOMER-SERVICE-PUSH] Processing id=${r.id} type=${type} user=${r.user_id}`);
+
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       console.warn(`[push-dispatch] blocked customer notification type="${type}" id=${r.id}`);
@@ -324,6 +326,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const type = String(r.type ?? "");
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(type);
     try {
+      console.log(`[CUSTOMER-SERVICE-PUSH] sendOfferPush start id=${r.id} type=${type}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
