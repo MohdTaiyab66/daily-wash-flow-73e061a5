@@ -147,8 +147,8 @@ export function PushDiagnosticsPanel() {
 
       <CardContent className="space-y-4">
         {/* Firebase Config */}
-        <div className="rounded-lg bg-background p-3 text-xs border">
-          <p className="font-bold text-muted-foreground uppercase mb-2">Backend Config</p>
+        <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
+          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Backend Config</p>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             <div>Project: <span className="font-mono text-primary">{data?.firebase_config?.project_id}</span></div>
             <div className="flex items-center gap-1">
@@ -159,8 +159,8 @@ export function PushDiagnosticsPanel() {
         </div>
 
         {/* Tokens */}
-        <div className="rounded-lg bg-background p-3 text-xs border">
-          <p className="font-bold text-muted-foreground uppercase mb-2">Active Tokens ({data?.tokens?.length || 0})</p>
+        <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
+          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Active Tokens ({data?.tokens?.length || 0})</p>
           {hasTokens ? (
             <div className="space-y-2">
               {data.tokens.map((t: any) => (
@@ -186,7 +186,7 @@ export function PushDiagnosticsPanel() {
 
         {/* Test Trigger */}
         <Button 
-          className="w-full font-bold" 
+          className="w-full font-black rounded-xl h-12 shadow-md active:scale-[0.98] transition-transform" 
           disabled={!hasTokens || isTesting}
           onClick={() => testMutation.mutate()}
         >
