@@ -291,15 +291,15 @@ export function PushDiagnosticsPanel() {
 
         {/* STEP 11: LAST RECEIVED FCM (HISTORICAL) */}
         {!lastTestResult && nativeState?.fcm && (
-          <div className="rounded-lg bg-muted p-3 text-[10px] font-mono border">
-             <p className="font-bold text-muted-foreground uppercase mb-2 border-b pb-1">LAST FCM ON THIS DEVICE</p>
-             <div className="space-y-1">
-               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[120px]">{nativeState.fcm.id}</span></div>
-               <div className="flex justify-between"><span>TYPE:</span><span>{nativeState.fcm.type}</span></div>
+          <div className="rounded-2xl bg-muted/30 p-4 text-[10px] font-mono border border-black/5">
+             <p className="font-bold text-muted-foreground uppercase mb-3 border-b border-black/5 pb-2 tracking-widest">LAST FCM ON THIS DEVICE</p>
+             <div className="space-y-1.5 opacity-80">
+               <div className="flex justify-between"><span>MSG ID:</span><span className="truncate max-w-[140px] text-primary">{nativeState.fcm.id}</span></div>
+               <div className="flex justify-between"><span>TYPE:</span><span className="text-primary">{nativeState.fcm.type}</span></div>
                <div className="flex justify-between"><span>RECEIVED:</span><span>{nativeState.fcm.receivedAt}</span></div>
                {nativeState.notif?.postedAt && (
-                 <div className="flex justify-between border-t border-muted-foreground/10 pt-1 mt-1">
-                   <span>POSTED:</span><span>{nativeState.notif.postedAt}</span>
+                 <div className="flex justify-between border-t border-black/5 pt-1.5 mt-1.5">
+                   <span className="font-bold">POSTED:</span><span className="text-success font-bold">✅ {nativeState.notif.postedAt}</span>
                  </div>
                )}
              </div>
