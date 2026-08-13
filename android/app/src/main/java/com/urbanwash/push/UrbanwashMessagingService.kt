@@ -82,10 +82,11 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: ""
+        val msgId = msg.messageId
 
         // [CUSTOMER-PUSH-NATIVE:01] MESSAGE_RECEIVED
-        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=${msg.messageId} type=$type data=$data")
-        Log.d("UW_AUDIT", "1_fcm_received msgId=${msg.messageId} from=${msg.from} " +
+        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=$msgId type=$type data=$data")
+        Log.d("UW_AUDIT", "1_fcm_received msgId=$msgId from=${msg.from} " +
             "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
             "hasNotifBlock=${msg.notification != null} " +
             "notifChannel=${msg.notification?.channelId} notifTag=${msg.notification?.tag} " +
@@ -95,6 +96,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             Log.w("UW_AUDIT", "2_branch=DROPPED_NO_TYPE data=$data")
             return
         }
+
+        // [CUSTOMER-PUSH-NATIVE:02] PAYLOAD_PARSED
+        Log.d("CUSTOMER-PUSH-NATIVE", "02 PAYLOAD_PARSED type=$type title=${data["title"]} body=${data["body"]}")
 
         when {
             type == "marketplace_offer" ||
@@ -110,9 +114,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                     "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = true)
             }
-            ASSIGNMENT_TYPES.contains(type) -> {
-                // [CUSTOMER-PUSH-NATIVE:02] TYPE_RECOGNIZED = $type
-                Log.d("CUSTOMER-PUSH-NATIVE", "02 TYPE_RECOGNIZED type=$type broadcast_id=${data[EXTRA_BROADCAST]} action_token=${data[EXTRA_TOKEN]}")
+            ASSIGNMENT_TYPES.contains(type) || type == "test_notification" -> {
+                // [CUSTOMER-PUSH-NATIVE:03] CHANNEL_SELECTED
+                Log.d("CUSTOMER-PUSH-NATIVE", "03 CHANNEL_SELECTED channelId=$CHANNEL_ASSIGNMENTS")
                 Log.d("UW_AUDIT", "2_branch=assignment type=$type")
                 ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
                     "New customer assignments — wake screen with heads-up")
@@ -355,8 +359,8 @@ Log.d("UW_AUDIT", "2b_ids broadcastId=$broadcastId offerId=$offerId " +
 Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen())
 Log.d("UW_AUDIT", "2b_ids notifKey=$notifKey notifId=${notifKey.hashCode()} link=$link")
 
-// [CUSTOMER-PUSH-NATIVE:E3] NOTIFICATION_POST_STARTED
-Log.d("CUSTOMER-PUSH-NATIVE", "E3 NOTIFICATION_POST_STARTED notifKey=$notifKey notifId=${notifKey.hashCode()} type=${data["type"]}")
+// [CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_POST_ATTEMPT
+Log.d("CUSTOMER-PUSH-NATIVE", "04 NOTIFICATION_POST_ATTEMPT notifKey=$notifKey notifId=${notifKey.hashCode()} type=${data["type"]}")
 
 auditNotify(
     NotificationManagerCompat.from(ctx),
@@ -366,8 +370,8 @@ auditNotify(
     "assignment_id|service_id|offer_id|link",
     builder.build(),
 )
-// [CUSTOMER-PUSH-NATIVE:03] NOTIFICATION_POSTED
-Log.d("CUSTOMER-PUSH-NATIVE", "03 NOTIFICATION_POSTED id=${notifKey.hashCode()}")
+// [CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_SUCCESS
+Log.d("CUSTOMER-PUSH-NATIVE", "05 NOTIFICATION_POST_SUCCESS id=${notifKey.hashCode()}")
 }
     private fun postGeneric(msg: RemoteMessage) {
         val n = msg.notification ?: return
