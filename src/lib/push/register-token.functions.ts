@@ -66,5 +66,9 @@ export const registerPushToken = createServerFn({ method: "POST" })
       .match({ user_id: userId, device_id: data.device_id, app: data.app })
       .neq("token", data.token);
 
+    const { data: currentTokens } = await sb.from("push_tokens").select("id").eq("user_id", userId).is("invalid_at", null);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:06] active token count after upsert = ${currentTokens?.length || 0}`);
+
     return { ok: true as const, user_id: userId };
+
   });

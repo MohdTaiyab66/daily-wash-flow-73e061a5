@@ -270,10 +270,11 @@ function CustomerHome() {
   return (
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
-        {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel - Force visible in all environments until P0 is resolved */}
-        <div className="px-4 pt-4 mb-6">
+        {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
+        <div className="px-4 pt-4 mb-2">
           <PushDiagnosticsPanel />
         </div>
+
 
 
         <UWHeader 
