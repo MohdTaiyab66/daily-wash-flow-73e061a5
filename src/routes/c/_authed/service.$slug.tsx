@@ -26,6 +26,8 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
 import { APK_EVIDENCE } from "@/lib/apkEvidence";
 
+const BUILD_ID = "2026-08-13-FIX-B";
+
 
 const serviceSearchSchema = z.object({
   vehicleId: z.string().optional(),
@@ -235,14 +237,17 @@ function ServiceDetail() {
   // If search.vehicleId is present, we MUST find THAT vehicle.
   const vehicle = useMemo(() => {
     const targetId = search.vehicleId || vehicleId;
-    if (!targetId) return vehicles[0]; // Only fallback if absolutely no context
-    const found = vehicles.find(v => v.id === targetId);
+    if (!targetId) {
+      console.error("[VEHICLE-FLOW] P0: No vehicleId in URL or state");
+      return null;
+    }
     
-    if (!found && targetId) {
+    const found = vehicles.find(v => v.id === targetId);
+    if (!found) {
       console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
     }
     
-    return found || vehicles[0];
+    return found || null;
   }, [vehicles, vehicleId, search.vehicleId]);
   const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
@@ -483,24 +488,39 @@ function ServiceDetail() {
 
   if (serviceQ.isError || !service) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAF9F7] px-6">
-        <div className="text-center">
-          <h2 className="text-[18px] font-black text-[#1a1a1a] mb-2">Couldn't load service details</h2>
-          <p className="text-[14px] text-[#7A7A7A] mb-6">Something went wrong while fetching the service information.</p>
-          <Button 
-            onClick={() => serviceQ.refetch()}
-            className="bg-[#EA580C] text-white rounded-full font-black px-8"
-          >
-            Try Again
-          </Button>
-          <Button 
-            variant="ghost"
-            onClick={() => navigate({ to: "/c/home" })}
-            className="mt-4 block w-full text-[#7A7A7A] font-bold"
-          >
-            Back to Home
-          </Button>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF9F7] px-6 text-center">
+        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 mb-6">
+          <X className="h-10 w-10 text-red-500 mx-auto mb-2" />
+          <h2 className="text-[18px] font-black text-[#1a1a1a]">Service not found</h2>
+          <p className="text-[14px] text-[#7A7A7A]">We couldn't load the details for this service.</p>
         </div>
+        <Button 
+          onClick={() => navigate({ to: "/c/home" })}
+          className="bg-[#1a1a1a] text-white rounded-full font-black px-8"
+        >
+          Back to Home
+        </Button>
+      </div>
+    );
+  }
+
+  if (vehiclesQ.isSuccess && !vehicle) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF9F7] px-6 text-center">
+        <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 mb-6 w-full max-w-xs">
+          <Car className="h-12 w-12 text-[#FF6B00] mx-auto mb-4" />
+          <h2 className="text-[20px] font-black text-[#1a1a1a] mb-2">Vehicle required</h2>
+          <p className="text-[14px] text-[#7A7A7A] mb-4">Please select a vehicle from the home screen before booking this service.</p>
+          <div className="text-[10px] font-mono text-black/40 bg-black/5 p-2 rounded">
+            DEBUG: {search.vehicleId ? `V_ID:${search.vehicleId}` : 'NO_PARAM'}
+          </div>
+        </div>
+        <Button 
+          onClick={() => navigate({ to: "/c/home" })}
+          className="bg-[#FF6B00] text-white rounded-full font-black px-10 h-12 w-full max-w-xs shadow-lg shadow-orange-200"
+        >
+          Select Vehicle
+        </Button>
       </div>
     );
   }
@@ -508,6 +528,20 @@ function ServiceDetail() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] pb-[180px]">
+      {/* UNMISTAKABLE BUILD MARKER */}
+      <div className="fixed top-20 right-4 z-[9999] pointer-events-none">
+        <div className="bg-black/90 text-white text-[10px] font-black px-3 py-2 rounded-lg border border-white/20 shadow-2xl backdrop-blur-md">
+          <div className="text-[#FF6B00] mb-0.5">BUILD: {BUILD_ID}</div>
+          <div className="flex flex-col gap-0.5 opacity-90">
+            <div>V: {vehicle?.model || 'NONE'}</div>
+            <div>P: ₹{resolveDailyShinePrice(vehicle?.category, service)}</div>
+            <div>C: ServiceDetail</div>
+            <div className="mt-1 text-[8px] opacity-50 border-t border-white/10 pt-1">
+              URL: {search.vehicleId ? 'HAS_V_ID' : 'NO_V_ID'}
+            </div>
+          </div>
+        </div>
+      </div>
       <header className="sticky top-0 z-[70] bg-[#FAF9F7]/90 backdrop-blur-md px-6 h-[64px] flex items-center gap-3 border-b border-black/[0.03]">
         <button onClick={() => navigate({ to: "/c/home" })} className="p-2 -ml-2 rounded-full active:bg-black/5 transition-colors">
           <ArrowLeft className="h-6 w-6 text-[#1a1a1a]" />
