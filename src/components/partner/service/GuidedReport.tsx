@@ -112,13 +112,13 @@ export function GuidedReport({
         console.error(`[CUSTOMER-E2E:COMPLETE:ERR] RPC_ERROR (unavailable)`, error);
         throw error;
       }
-      console.log(`[CUSTOMER-E2E:02-COMPLETE] SERVICE_RPC_SUCCESS service_id=${serviceId} status=unavailable`);
+      console.log(`[UNAVAILABLE-E2E:02] SERVICE_STATUS_UPDATED service_id=${serviceId} status=unavailable`);
       
       const r: any = data ?? {};
-      console.log(`[CUSTOMER-E2E:03-CUSTOMER] CUSTOMER_RESOLVED (unavailable) customer_id=${r.customer_id} notification_id=${r.notification_id}`);
+      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED notification_id=${r.notification_id}`);
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       
-      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED (Direct Completion Path - Unavailable)");
+      console.log("[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED");
       import("@/lib/push/immediate.functions").then(m => {
         // Direct Send (Proven Path)
         m.sendDirectCompletionPush({
