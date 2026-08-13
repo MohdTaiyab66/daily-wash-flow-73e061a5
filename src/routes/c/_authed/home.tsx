@@ -428,6 +428,7 @@ function CustomerHome() {
                     <div className="flex-1">
                       <p className="text-[11px] font-semibold text-[#FF6B00] uppercase tracking-wider mb-1">Your car deserves better</p>
                       <h3 className="text-[16px] font-semibold text-[#2D2D2D] leading-tight">Keep it clean every day <br/> with Daily Shine.</h3>
+                      <p className="text-[12px] font-bold text-[#FF6B00] mt-1">Starting at ₹{dailyShinePrice}/mo</p>
                     </div>
                     <div className="inline-flex items-center justify-center px-3.5 py-1.5 bg-[#FF6B00] rounded-full text-white text-[13.5px] font-semibold shrink-0">
                       EXPLORE <ChevronRight className="ml-1 h-3.5 w-3.5" />
