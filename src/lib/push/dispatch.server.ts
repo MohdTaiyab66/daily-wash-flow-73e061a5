@@ -172,7 +172,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
 
     try {
       const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+
 
 
       const result = await sendOfferPush({
