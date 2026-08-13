@@ -73,8 +73,11 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
   const sendOfferPush = await sender();
   const rows = await listPendingOffers(sb);
 
+  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${rows.length} claimed_by=${claimedBy}`);
+
   let dispatched = 0;
-  for (const r of rows) {
+  // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
+  const fanoutPromises = rows.map(async (r) => {
     const { data: claim, error: claimError } = await sb
       .from("offer_delivery_events")
       .insert({
@@ -86,22 +89,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
       })
       .select("id")
       .single();
-    if (claimError || !claim?.id) continue;
+    
+    if (claimError || !claim?.id) return false;
 
     const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
-    // NOTE: `type` must be in the Kotlin ASSIGNMENT_TYPES set so the native
-    // service routes this through `postAssignment` (high-importance channel,
-    // full-screen intent, custom sound, vibration, wake screen). `dataOnly`
-    // suppresses the FCM notification block so background/killed devices
-    // always dispatch through onMessageReceived instead of the system tray.
-    // REQUIRED CONTRACT — UrbanwashMessagingService.postOffer() returns early
-    // (no notify() call, no visible notification) unless ALL THREE of
-    // `action_token`, `broadcast_id` and `offer_id` are present in `data`.
-    // Daily Shine offers live in subscription_offers / subscription_assignment_queue,
-    // which have no marketplace broadcast row, so we map queue_id -> broadcast_id
-    // and use the offer id as the action nonce — exactly the shape the Offer
-    // Self-Test sends (push-selftest.functions.ts).
+    
     const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
@@ -115,10 +108,8 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     if (r.area) data.area = r.area;
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
-
-
     try {
-      console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=daily_shine_offer partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+      console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -128,9 +119,11 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
         dataOnly: true,
         tag: r.offer_id,
       });
-      if (result.sent > 0) {
-        console.log(`[PARTNER-BOOKING-E2E:07] FCM_SERVER_ACCEPTED offer_id=${r.offer_id} message_id=${result.results[0]?.messageId}`);
-      }
+
+      const successCount = result.sent;
+      const failureCount = result.failed;
+      console.log(`[BOOKING-PUSH:08] FCM_BATCH_DISPATCH_RESULT success=${successCount} failed=${failureCount} offer_id=${r.offer_id}`);
+
       const { error: logError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -144,15 +137,18 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
           },
         })
         .eq("id", claim.id);
+      
       if (logError) throw logError;
+      
       await sb
         .from("partner_notifications")
         .update({ pushed_at: new Date().toISOString() })
         .eq("type", "daily_shine_offer")
         .eq("metadata->>offer_id", r.offer_id);
-      if (result.sent > 0) dispatched++;
+      
+      return result.sent > 0;
     } catch (e: any) {
-      // Leave the event as push_failed; the cron sweep is the retry path.
+      console.error(`[BOOKING-PUSH:ERROR] Dispatch failed for partner_id=${r.partner_id}`, e);
       const { error: failLogError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -160,9 +156,15 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
           meta: { error: e?.message ?? String(e), claimed_event_id: claim.id, claimed_by: claimedBy },
         })
         .eq("id", claim.id);
-      if (failLogError) throw failLogError;
+      if (failLogError) console.warn("Failed to log push failure", failLogError);
+      return false;
     }
-  }
+  });
+
+  const results = await Promise.all(fanoutPromises);
+  dispatched = results.filter(Boolean).length;
+  
+  console.log(`[BOOKING-PUSH:09] FANOUT_COMPLETE total_dispatched=${dispatched}`);
   return dispatched;
 }
 
