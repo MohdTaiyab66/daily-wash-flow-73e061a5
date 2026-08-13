@@ -341,28 +341,28 @@ export function BookAWashSheet({
     <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
       <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-[#FFF9F3] p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white px-6 py-5">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-5 border-b border-black/[0.04]">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
-            <div className="mt-1 flex items-center gap-2">
-               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-               <p className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground/60">Included premium wash</p>
+            <h2 className="text-[20px] font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
+            <div className="mt-1 flex items-center gap-1.5">
+               <div className="h-1 w-1 rounded-full bg-[#FF6B00]" />
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Included premium wash</p>
             </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF9F3] shadow-sm border border-black/5 transition-transform active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm border border-black/[0.04] transition-transform active:scale-90"
           >
-            <X className="h-5 w-5 text-[#1a1a1a]" />
+            <X className="h-4 w-4 text-[#1a1a1a]" />
           </button>
         </div>
 
         <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-24">
           {/* Info context */}
-          <div className="flex items-start gap-3 rounded-3xl bg-primary/5 p-4 border border-primary/10">
-            <Info className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-            <p className="text-[12px] font-medium leading-relaxed text-[#1a1a1a]/70">
-              <span className="font-bold text-primary">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
+          <div className="flex items-start gap-3 rounded-2xl bg-[#FFF6EF] p-4 border border-[#FF6B00]/10">
+            <Info className="mt-0.5 h-4 w-4 text-[#FF6B00] shrink-0" />
+            <p className="text-[12px] font-medium leading-relaxed text-[#555555]">
+              <span className="font-bold text-[#FF6B00]">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
             </p>
           </div>
 
@@ -436,16 +436,16 @@ export function BookAWashSheet({
               {/* Wash Card */}
               <div>
                 <div className="relative overflow-hidden rounded-[32px] bg-white border border-black/5 p-6 shadow-sm">
-                  <div className="absolute top-0 right-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-primary/5 blur-3xl" />
+                <div className="relative overflow-hidden rounded-3xl bg-white border border-black/[0.04] p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)]">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2 font-black text-primary">
-                        <Sparkles className="h-5 w-5" />
-                        <span className="text-[16px]">Included Wash</span>
+                      <div className="flex items-center gap-2 font-black text-[#FF6B00]">
+                        <Sparkles className="h-4 w-4" />
+                        <span className="text-[14px]">Included Wash</span>
                       </div>
-                      <p className="mt-1 text-[13px] font-medium text-muted-foreground/60">Full Interior + Exterior</p>
+                      <p className="mt-1 text-[12px] font-bold text-[#1A1A1A]">Full Interior + Exterior</p>
                     </div>
-                    <div className="rounded-full bg-success/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-success">
+                    <div className="rounded-full bg-green-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-green-600">
                       Free ✓
                     </div>
                   </div>
@@ -454,14 +454,14 @@ export function BookAWashSheet({
                       <span className="text-4xl font-black tracking-tight text-[#1a1a1a]">
                         {includedRow?.unlimited ? "∞" : includedRemaining}
                       </span>
-                      <span className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                        wash{includedRemaining !== 1 ? "es" : ""} left
+                      <span className="text-[11px] font-black text-[#A6A6A6] uppercase tracking-widest">
+                        WASH LEFT
                       </span>
                     </div>
-                    <div className="flex -space-x-2">
+                    <div className="flex -space-x-1.5 opacity-60">
                       {[1,2,3].map(i => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-primary/10 flex items-center justify-center text-primary">
-                          <Droplets className="h-4 w-4" />
+                        <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[#A6A6A6]">
+                          <Droplets className="h-3 w-3" />
                         </div>
                       ))}
                     </div>
