@@ -6931,19 +6931,30 @@ export type Database = {
         Returns: Json
       }
       mp_decline_offer: { Args: { p_broadcast_id: string }; Returns: Json }
-      mp_eligible_partners: {
-        Args: {
-          p_broadcast_id: string
-          p_include_neighbours?: boolean
-          p_radius_m: number
-        }
-        Returns: {
-          distance_m: number
-          partner_id: string
-          remaining_capacity: number
-          today_cars: number
-        }[]
-      }
+      mp_eligible_partners:
+        | {
+            Args: { p_broadcast_id: string }
+            Returns: {
+              distance_from_route_m: number
+              is_exact_zone_match: boolean
+              partner_id: string
+              remaining_capacity: number
+              route_impact_m: number
+            }[]
+          }
+        | {
+            Args: {
+              p_broadcast_id: string
+              p_include_neighbours?: boolean
+              p_radius_m: number
+            }
+            Returns: {
+              distance_m: number
+              partner_id: string
+              remaining_capacity: number
+              today_cars: number
+            }[]
+          }
       mp_expire_stale_offers: { Args: never; Returns: undefined }
       mp_generate_services_for_broadcast: {
         Args: { p_broadcast_id: string }
