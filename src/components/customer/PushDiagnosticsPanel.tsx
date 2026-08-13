@@ -158,11 +158,17 @@ export function PushDiagnosticsPanel() {
                 <span>SENT AT:</span>
                 <span>{lastTestResult.sentAt || "—"}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
-                <span>FCM RESULT:</span>
-                <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
-                  {lastTestResult.result}
-                </span>
+              <div className="flex flex-col gap-1 pt-1 border-t border-white/10 mt-1">
+                <div className="flex justify-between">
+                  <span>FCM SERVER:</span>
+                  <span className={lastTestResult.result === "SUCCESS" ? "text-green-400 font-bold" : "text-red-400"}>
+                    {lastTestResult.result === "SUCCESS" ? "✅ ACCEPTED" : lastTestResult.result}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>ANDROID:</span>
+                  <span className="text-orange-400 animate-pulse uppercase">Waiting for delivery</span>
+                </div>
               </div>
             </div>
           </div>
