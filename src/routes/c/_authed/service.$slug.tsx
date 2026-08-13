@@ -232,16 +232,29 @@ function ServiceDetail() {
   const profile = profileQ.data;
 
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
-  const category = vehicle?.category ?? "hatchback_compact_sedan";
+  const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
   
   // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
     if (service && vehicle) {
       const price = resolveDailyShinePrice(category, service);
+      
+      console.log("[VEHICLE-PROPAGATION] ServiceDetail vehicleId =", vehicle.id);
+      console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
+        stage: "SERVICE_DETAIL",
+        vehicleId: vehicle.id,
+        vehicleMake: vehicle.make,
+        vehicleModel: vehicle.model,
+        vehicleCategory: vehicle.category,
+        serviceSlug: slug,
+        servicePrice: price,
+        serviceAmount: price
+      });
+
       setBaseService(service.id, service.name, price);
     }
-  }, [service, category, vehicle?.id, setBaseService]);
+  }, [service, category, vehicle?.id, setBaseService, slug]);
 
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
