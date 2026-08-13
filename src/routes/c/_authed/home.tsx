@@ -230,6 +230,16 @@ function CustomerHome() {
     });
   }
 
+    console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
+      stage: "HOME",
+      vehicleId: activeVehicle.id,
+      vehicleMake: activeVehicle.make,
+      vehicleModel: activeVehicle.model,
+      vehicleCategory: activeVehicle.category,
+      displayPrice: dailyShinePrice
+    });
+  }
+
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
     model: activeVehicle?.model,
@@ -241,7 +251,11 @@ function CustomerHome() {
   const a = availability.data;
   const showCatalog = true; // DO NOT block catalog on area availability for now to prevent skeletons
 
-  const priceFor = (s: Service) => category === "sedan_suv" ? s.price_sedan_suv : s.price_hatchback;
+  const priceFor = (s: Service) => {
+    if (activeVehicle?.category === 'hatchback_compact_sedan') return s.price_hatchback;
+    if (activeVehicle?.category === 'sedan_suv') return s.price_sedan_suv;
+    return s.price_hatchback; // Default to hatchback price if unknown
+  };
   const services = servicesQ.data ?? [];
   
   // FIX: Include all one-time services regardless of PLAN_INCLUDED_SERVICE_SLUGS for the catalog

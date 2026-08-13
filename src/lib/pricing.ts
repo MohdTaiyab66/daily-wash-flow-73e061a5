@@ -21,26 +21,15 @@ export const resolveDailyShinePrice = (
    * 'hatchback_compact_sedan' (DB Key) -> Hatchback Pricing (₹999)
    * 'sedan_suv' (DB Key) -> SUV Pricing (₹1199)
    */
-  let resolvedPrice = 0;
-  let resolvedCategory = 'unknown';
-
   if (cat === 'hatchback_compact_sedan') {
-    resolvedPrice = hatchbackPrice;
-    resolvedCategory = 'hatchback_compact_sedan';
-  } else if (cat === 'sedan_suv') {
-    resolvedPrice = suvPrice;
-    resolvedCategory = 'sedan_suv';
+    return hatchbackPrice;
+  } 
+  
+  if (cat === 'sedan_suv') {
+    return suvPrice;
   }
 
-  // FORENSIC LOGGING
-  console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
-    stage: "RESOLVER",
-    vehicleCategory: category,
-    resolvedCategory,
-    resolvedPrice,
-    databasePrice: service?.price_hatchback,
-    databaseAmount: service?.price_sedan_suv
-  });
-
-  return resolvedPrice;
+  // FALLBACK: If category is unknown, we check the global catalog defaults
+  // but strictly default to 999 to avoid overcharging customers.
+  return 999;
 };

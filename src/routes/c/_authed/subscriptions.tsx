@@ -281,9 +281,14 @@ function MyPlanPage() {
                         const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
                         const dbAmount = subRow?.amount ?? activeSub?.total_amount;
                         
-                        const price = (dbAmount && dbAmount !== 1199 && dbAmount !== 999) 
-                          ? dbAmount 
-                          : resolvedPrice;
+                        // STRICT OVERRIDE: If the vehicle is a Hatchback, it MUST be 999.
+                        // If it is a Sedan/SUV, it MUST be 1199.
+                        // We ONLY trust the DB amount if it's a non-standard custom price.
+                        const price = (selectedVehicle?.category === 'hatchback_compact_sedan') 
+                          ? 999 
+                          : (selectedVehicle?.category === 'sedan_suv') 
+                            ? 1199 
+                            : (dbAmount && dbAmount !== 1199 && dbAmount !== 999) ? dbAmount : resolvedPrice;
 
                         if (selectedVehicle) {
                           console.log("[VEHICLE-PROPAGATION] Subscription vehicleId =", selectedVehicle.id);
@@ -415,6 +420,8 @@ function MyPlanPage() {
           const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
           const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
           const dbAmount = subRow?.amount ?? activeSub?.total_amount;
+          if (selectedVehicle?.category === 'hatchback_compact_sedan') return 999;
+          if (selectedVehicle?.category === 'sedan_suv') return 1199;
           return Number((dbAmount && dbAmount !== 1199 && dbAmount !== 999) ? dbAmount : resolvedPrice);
         })()}
 
