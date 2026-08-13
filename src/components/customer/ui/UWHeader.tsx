@@ -82,6 +82,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
+            data-testid="uw-header-vehicle-btn"
             className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-[#F9F9F9] border border-[rgba(0,0,0,0.06)] rounded-[10px] h-[32px] pl-1 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
