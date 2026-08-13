@@ -274,20 +274,26 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   FirebaseMessaging.addListener("notificationReceived", async (event) => {
     try {
       await Preferences.set({ key: "urbanwash.last_push_at", value: new Date().toISOString() });
-    } catch { /* noop */ }
-    const data = (event.notification?.data ?? {}) as Record<string, unknown>;
-    const hasNotifPayload = !!(event.notification?.title || event.notification?.body);
-    await recordLastFcm(
-      event,
-      hasNotifPayload
-        ? "System Notification (foreground)"
-        : "UrbanwashMessagingService → data-only (foreground)",
-      hasNotifPayload,
-    );
-    if (isOffer(data)) {
-      await recordEvent("push_delivered", data, { in_app: true });
-      // OfferPopup is already mounted globally and listens to realtime; no
-      // further action required for the foreground case.
+      const data = (event.notification?.data ?? {}) as Record<string, unknown>;
+      const hasNotifPayload = !!(event.notification?.title || event.notification?.body);
+      
+      console.log(`[CUSTOMER-FCM-ANDROID:FOREGROUND] RECEIVED messageId=${event.notification?.id} hasNotif=${hasNotifPayload}`);
+
+      await recordLastFcm(
+        event,
+        hasNotifPayload
+          ? "System Notification (foreground)"
+          : "UrbanwashMessagingService → data-only (foreground)",
+        hasNotifPayload,
+      );
+
+      if (isOffer(data)) {
+        await recordEvent("push_delivered", data, { in_app: true });
+        // OfferPopup is already mounted globally and listens to realtime; no
+        // further action required for the foreground case.
+      }
+    } catch (e) {
+      console.error("[CUSTOMER-FCM-ANDROID:FOREGROUND:ERR]", e);
     }
   });
 
