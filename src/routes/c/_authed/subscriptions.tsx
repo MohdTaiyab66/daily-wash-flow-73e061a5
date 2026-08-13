@@ -284,16 +284,6 @@ function MyPlanPage() {
                         const price = (dbAmount && dbAmount !== 1199 && dbAmount !== 999) 
                           ? dbAmount 
                           : resolvedPrice;
-                        
-                        console.log("[VEHICLE-PROPAGATION] Subscription vehicleId =", selectedVehicle?.id);
-                        console.log("[DAILY-SHINE-FORENSIC] 6. SUBSCRIPTION", {
-                          subscription_id: activeSub?.id,
-                          subscription_price: price,
-                          subscription_amount: price,
-                          resolved_price: resolvedPrice,
-                          db_amount: dbAmount,
-                          vehicle_category: selectedVehicle?.category
-                        });
 
 
                         return (

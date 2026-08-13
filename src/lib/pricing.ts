@@ -25,13 +25,5 @@ export const resolveDailyShinePrice = (
   
   const resolvedPrice = isHighTier ? suvPrice : hatchbackPrice;
 
-  console.log("[DAILY-SHINE-FORENSIC] 3. DAILY SHINE RESOLVER", {
-    resolver_input: category,
-    resolver_category: cat,
-    resolver_output: resolvedPrice,
-    is_high_tier: isHighTier,
-    source: service ? 'SERVICE_CATALOG' : 'STRICT_FALLBACK'
-  });
-
   return resolvedPrice;
 };
