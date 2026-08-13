@@ -22,9 +22,10 @@ async function sender() {
 }
 
 async function resolvers() {
-  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance } = await import("@/lib/push/resolvers.server");
-  return { resolvePartnerBookingEarning, resolvePartnerBookingDistance };
+  const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await import("@/lib/push/resolvers.server");
+  return { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning };
 }
+
 
 
 /* ------------------------------------------------------------------ *
