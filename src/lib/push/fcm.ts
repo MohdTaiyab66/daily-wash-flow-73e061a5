@@ -72,19 +72,37 @@ function isOffer(data: unknown): data is OfferPayload {
  * already started or running on web).
  */
 export async function startFcm(userId: string, app: "partner" | "customer" = appVariant()) {
-  if (!isNative() || !userId) return;
-  // started check moved inside to allow re-checking permissions/token if user changes
+  if (!isNative() || !userId) {
+    console.log(`[CUSTOMER-FCM-ANDROID:00] startFcm aborted: native=${isNative()}, userId=${!!userId}`);
+    return;
+  }
+  
+  // Reset started to false if it's a new user to allow re-registration
+  const lastUser = (window as any)._fcm_last_user;
+  if (lastUser && lastUser !== userId) {
+    console.log(`[CUSTOMER-FCM-REGISTRATION] User changed from ${lastUser} to ${userId}, resetting registration state`);
+    started = false;
+  }
+  (window as any)._fcm_last_user = userId;
+
   if (started) {
     console.log(`[CUSTOMER-FCM-REGISTRATION:01] startFcm already started for user: ${userId}`);
     return;
   }
   started = true;
 
+  console.log(`[CUSTOMER-FCM-ANDROID:01] Firebase initialized (Capacitor)`);
+  console.log(`[CUSTOMER-FCM-ANDROID:02] Firebase project ID: (via google-services.json)`);
+  console.log(`[CUSTOMER-FCM-ANDROID:03] Application/package ID: com.urbanwash.${app}`);
   console.log(`[CUSTOMER-FCM-REGISTRATION:01] AUTH_SESSION_AVAILABLE. user: ${userId}, app: ${app}`);
 
+
   // 1) Permission
+  console.log(`[CUSTOMER-FCM-ANDROID:05] getToken started`);
   let perm = await FirebaseMessaging.checkPermissions();
+  console.log(`[CUSTOMER-FCM-ANDROID:04] Notification permission: ${perm.receive}`);
   console.log(`[CUSTOMER-FCM-REGISTRATION:02] NOTIFICATION_PERMISSION_STATUS: ${JSON.stringify(perm)}`);
+
   
   if (perm.receive !== "granted") {
     console.log(`[CUSTOMER-FCM-REGISTRATION] requesting permissions...`);
@@ -134,11 +152,16 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
     if (!token) {
+      console.error("[CUSTOMER-FCM-ANDROID:06] getToken failed: empty token");
       console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED: empty token");
       return;
     }
     
+    console.log(`[CUSTOMER-FCM-ANDROID:06] getToken success`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:02] token received = true`);
+    console.log(`[CUSTOMER-FCM-REGISTRATION:03] platform = ${nativePlatform()}`);
     console.log(`[CUSTOMER-FCM-REGISTRATION:05] TOKEN_BACKEND_REGISTRATION_STARTED. user_id: ${userId}, platform: ${nativePlatform()}, app: ${app}, token_len: ${token.length}, tail: ${token.slice(-4)}`);
+
 
     try {
       await Preferences.set({ key: "urbanwash.last_token_refresh_at", value: new Date().toISOString() });
@@ -162,13 +185,15 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      console.log(`[CUSTOMER-FCM-REGISTRATION] RPC registration attempt...`);
+      console.log(`[CUSTOMER-FCM-REGISTRATION:04] upsert started`);
       const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
-      console.log(`[CUSTOMER-FCM-REGISTRATION] registerPushToken RPC result: ${JSON.stringify(res)}`);
+      console.log(`[CUSTOMER-FCM-ANDROID:07] backend registration success`);
+      console.log(`[CUSTOMER-FCM-REGISTRATION:05] upsert success`);
       await markOk();
       return;
+
     } catch (e: any) {
       console.error(`[CUSTOMER-FCM-REGISTRATION] RPC catch: ${e?.message ?? String(e)}`);
       await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);

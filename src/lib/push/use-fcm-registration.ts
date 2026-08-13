@@ -11,7 +11,27 @@ export function useFcmRegistration(userId: string | null | undefined, app: "part
       console.log("[CUSTOMER-FCM-REGISTRATION] No userId available in useFcmRegistration");
       return;
     }
-    console.log(`[CUSTOMER-FCM-REGISTRATION] Triggering startFcm for user ${userId}`);
-    void startFcm(userId, app);
+
+    const runRegistration = async () => {
+      console.log(`[CUSTOMER-FCM-REGISTRATION] Triggering startFcm for user ${userId}`);
+      try {
+        await startFcm(userId, app);
+      } catch (err) {
+        console.error("[CUSTOMER-FCM-REGISTRATION:ERR] startFcm failed:", err);
+      }
+    };
+
+    runRegistration();
+
+    // Re-register when app comes to foreground to ensure token is fresh
+    if (typeof window !== 'undefined') {
+      const handleFocus = () => {
+        console.log("[CUSTOMER-FCM-REGISTRATION] Window focused, checking FCM...");
+        runRegistration();
+      };
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
   }, [userId, app]);
 }
+

@@ -50,15 +50,19 @@ export function PushDiagnosticsPanel() {
               <ShieldCheck className="h-5 w-5 text-primary" />
               Push Notification Forensic Panel
             </CardTitle>
-            <CardDescription>
-              [CUSTOMER-FCM-CONFIG] Diagnostic Chain
-            </CardDescription>
+            <div className="text-[10px] space-y-0.5 mt-1 font-mono text-muted-foreground uppercase">
+              <div>AUTH: <span className={data?.user_id ? "text-success" : "text-destructive"}>{data?.user_id ? "READY" : "NOT READY"}</span></div>
+              <div>PERMISSION: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "GRANTED" : "CHECK APP"}</span></div>
+              <div>FCM: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "INITIALIZED" : "PENDING"}</span></div>
+              <div>BACKEND: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "SUCCESS" : "WAITING"}</span></div>
+            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => refetch()}>
             <RefreshCcw className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
         {/* Firebase Config */}
         <div className="rounded-lg bg-background p-3 text-xs border">
@@ -81,7 +85,8 @@ export function PushDiagnosticsPanel() {
                 <div key={t.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
                   <div>
                     <div className="font-bold uppercase text-[10px]">{t.platform} • {t.app}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground">{t.token_tail}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">ID: {data.user_id?.slice(0, 8)}... | {t.token_tail}</div>
+
                   </div>
                   <div className="text-[9px] text-right">
                     Seen: {new Date(t.last_seen).toLocaleTimeString()}
