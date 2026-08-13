@@ -398,7 +398,7 @@ function MyPlanPage() {
         renewalDate={subRow?.renewal_date ?? planEnd ?? null}
         planName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
-      <BookAWashSheet open={bookOpen} onOpenChange={setBookOpen} vehicleId={selectedVehicleId} userId={userId || undefined} />
+      <BookAWashSheet open={bookOpen} onOpenChange={setBookOpen} vehicleId={selectedVehicleId} userId={userId} />
       <PackageBuilderSheet
         open={builderOpen}
         onOpenChange={setBuilderOpen}
@@ -438,7 +438,7 @@ function MyPlanPage() {
   );
 }
 
-function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | null }) {
+function PendingPaymentCard({ booking, vehicleId }: { booking: Booking; vehicleId: string | undefined | null }) {
   const slug = booking.service_catalog?.slug ?? "daily-shine";
   const planName = booking.service_catalog?.name ?? "Daily Shine";
   const statusLabel = booking.status === "cancelled" ? "Payment cancelled" : booking.payment_status === "failed" ? "Payment failed" : "Payment pending";
