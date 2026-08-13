@@ -335,7 +335,7 @@ export async function sendOfferPush(args: {
     return { sent: 0, failed: 0, results: [] };
   }
   console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = ${tokens.length} (user_id=${args.userId})`);
-  console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map(t => t.token.slice(-8)).join(", ")}]`);
+  console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED type=${args.data.type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
       sendOne({
