@@ -211,6 +211,23 @@ function CustomerHome() {
   const vehicles = vehiclesQ.data ?? [];
   const activeVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0];
   const category = activeVehicle?.category ?? "hatchback_compact_sedan";
+  
+  // Resolve Daily Shine price dynamically for banner
+  const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
+  const dailyShinePrice = dailyShineService 
+    ? (category === 'sedan_suv' ? dailyShineService.price_sedan_suv : dailyShineService.price_hatchback)
+    : (category === 'sedan_suv' ? 1199 : 999);
+
+  if (dailyShineService) {
+    console.log("[DAILY-SHINE-PRICE]", {
+      vehicleId: activeVehicle?.id,
+      vehicleModel: activeVehicle?.model,
+      vehicleCategory: category,
+      package: "Daily Shine",
+      resolvedPrice: dailyShinePrice,
+      priceSource: "SERVICE_CATALOG"
+    });
+  }
 
   const catalogImageQ = useVehicleImageUrl({
     make: activeVehicle?.make,
