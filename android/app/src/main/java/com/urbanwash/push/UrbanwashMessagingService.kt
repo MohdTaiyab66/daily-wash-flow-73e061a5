@@ -77,20 +77,22 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(msg: RemoteMessage) {
-    // [CUSTOMER-PUSH-NATIVE:E1] MESSAGE_RECEIVED
-    Log.d("CUSTOMER-PUSH-NATIVE", "E1 MESSAGE_RECEIVED msgId=${msg.messageId} data=${msg.data}")
-    Log.d("UW_AUDIT", "1_fcm_received msgId=${msg.messageId} from=${msg.from} " +
-        "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
-        "hasNotifBlock=${msg.notification != null} " +
-        "notifChannel=${msg.notification?.channelId} notifTag=${msg.notification?.tag} " +
-        "sentTime=${msg.sentTime} ttl=${msg.ttl}")
+        val data = msg.data
+        val type = data["type"] ?: ""
 
+        // [CUSTOMER-PUSH-NATIVE:E1] MESSAGE_RECEIVED
+        Log.d("CUSTOMER-PUSH-NATIVE", "E1 MESSAGE_RECEIVED msgId=${msg.messageId} type=$type data=$data")
+        Log.d("UW_AUDIT", "1_fcm_received msgId=${msg.messageId} from=${msg.from} " +
+            "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
+            "hasNotifBlock=${msg.notification != null} " +
+            "notifChannel=${msg.notification?.channelId} notifTag=${msg.notification?.tag} " +
+            "sentTime=${msg.sentTime} ttl=${msg.ttl}")
 
-    val data = msg.data
-    val type = data["type"] ?: run {
-        Log.w("UW_AUDIT", "2_branch=DROPPED_NO_TYPE data=$data")
-        return
-    }
+        if (type.isEmpty()) {
+            Log.w("UW_AUDIT", "2_branch=DROPPED_NO_TYPE data=$data")
+            return
+        }
+
         when {
             type == "marketplace_offer" ||
             type == "daily_shine_offer" -> {
