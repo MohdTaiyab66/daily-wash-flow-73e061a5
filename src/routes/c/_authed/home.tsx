@@ -269,6 +269,10 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
+      {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            Load the security issues from the scan results and fix the selected issues. */}
       <div className="min-h-screen bg-white">
         {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
         <div className="px-4 pt-4 mb-2">
