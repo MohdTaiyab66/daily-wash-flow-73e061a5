@@ -349,8 +349,18 @@ export async function sendOfferPush(args: {
     .is("invalid_at", null);
   if (error) throw error;
   const type = args.data.type || "";
-  const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
-  const isDS = type === "daily_shine_offer";
+  // Canonical mapping for P0-B Reliability
+  const canonicalTypeMap: Record<string, string> = {
+    "vehicle_not_found": "vehicle_unavailable",
+    "dirty": "vehicle_dirty",
+    "completed": "service_completed",
+    "assigned": "partner_assigned",
+    "new_assignments": "new_booking",
+  };
+  const mappedType = canonicalTypeMap[type] || type;
+  
+  const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
+  const isDS = mappedType === "daily_shine_offer";
 
   if (!tokens || tokens.length === 0) {
     if (isUnavailable) console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED count=0`);
