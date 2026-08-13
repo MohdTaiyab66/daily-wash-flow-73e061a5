@@ -36,7 +36,14 @@ async function dispatchPending() {
     .gt("sent_at", new Date(Date.now() - 5 * 60_000).toISOString())
     .order("sent_at", { ascending: false })
     .limit(100);
-  if (error) throw error;
+  if (error) {
+    console.error("[BOOKING-PUSH:ERROR] FAILED_TO_FETCH_OFFERS", error);
+    throw error;
+  }
+
+  if (!offerRows?.length) {
+    return 0;
+  }
 
   // marketplace_broadcasts has no FK constraints, so PostgREST cannot embed
   // vehicle/zone/subscription. Resolve them with explicit lookups instead.
@@ -82,9 +89,14 @@ async function dispatchPending() {
     }
   }
 
-  let dispatched = 0;
+  let dispatchedCount = 0;
+  console.log(`[BOOKING-PUSH:06] FCM_FANOUT_STARTED count=${rows.length}`);
+  
   for (const r of rows ?? []) {
-    if ((r as any).broadcast?.status !== "open") continue;
+    if ((r as any).broadcast?.status !== "open") {
+      console.log(`[BOOKING-PUSH:CANDIDATE] partner=${r.partner_id} eligible=false reason=broadcast_not_open status=${(r as any).broadcast?.status}`);
+      continue;
+    }
 
     // Is this a subsequent round for the same partner+broadcast? If so we
     // silently UPDATE the existing notification instead of posting a new one.
@@ -122,7 +134,10 @@ async function dispatchPending() {
         p_partner_id: r.partner_id,
       },
     );
-    if (tokenErr || !tokenRow) continue;
+    if (tokenErr || !tokenRow) {
+      console.log(`[BOOKING-PUSH:CANDIDATE] partner=${r.partner_id} eligible=false reason=token_mint_failed error=${tokenErr?.message}`);
+      continue;
+    }
     const actionToken = String(tokenRow);
 
     const title = "🚗 New Daily Shine Customer";
@@ -144,47 +159,53 @@ async function dispatchPending() {
     };
 
     try {
-      console.log("DISPATCHING OFFER", {
-    partner: r.partner_id,
-    offer: r.id,
-    type: data.type,
-})
-        const result = await sendOfferPush({
+      console.log(`[BOOKING-PUSH:CANDIDATE] partner=${r.partner_id} eligible=true reason=sending_push type=${data.type}`);
+      const result = await sendOfferPush({
         userId: r.partner_id,
         title,
         body,
         data,
-        // MUST stay data-only. With an FCM `notification` block, a
-        // backgrounded/locked/killed app never reaches
-        // UrbanwashMessagingService.onMessageReceived: firebase-messaging's
-        // own display path handles the message instead, alerting on the
-        // legacy `offers` channel with no heads-up, no full-screen intent and
-        // no Accept/Decline actions.
         channelId: "offers_v4",
         dataOnly: true,
         silent: isUpdate,
         tag: String(r.broadcast_id),
       });
-      dispatched++;
+      
+      if (result.sent > 0) {
+        dispatchedCount++;
+        console.log(`[BOOKING-PUSH:RESULT] partner=${r.partner_id} success=true`);
+      } else {
+        console.log(`[BOOKING-PUSH:RESULT] partner=${r.partner_id} success=false reason=fcm_failed`);
+      }
+
       // Delivery tracking — non-blocking
       await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
         offer_id: r.id,
         broadcast_id: r.broadcast_id,
         partner_id: r.partner_id,
         stage: result.sent > 0 ? (isUpdate ? "push_update_sent" : "push_sent") : "push_failed",
-        meta: { round: r.round, incentive: r.incentive, sent: result.sent, failed: result.failed },
+        meta: { 
+          round: r.round, 
+          incentive: r.incentive, 
+          sent: result.sent, 
+          failed: result.failed, 
+          error: (result as any).results?.[0]?.error 
+        },
       });
-    } catch {
+    } catch (e: any) {
+      console.error(`[BOOKING-PUSH:RESULT] partner=${r.partner_id} success=false reason=exception error=${e?.message}`);
       await (supabaseAdmin as any).from("marketplace_delivery_events").insert({
         offer_id: r.id,
         broadcast_id: r.broadcast_id,
         partner_id: r.partner_id,
         stage: "push_failed",
-        meta: { round: r.round },
+        meta: { round: r.round, error: e?.message },
       });
     }
   }
-  return dispatched;
+  console.log(`[BOOKING-PUSH:08] FANOUT_COMPLETE dispatched=${dispatchedCount}`);
+
+  return dispatchedCount;
 }
 
 async function handle(request: Request) {
