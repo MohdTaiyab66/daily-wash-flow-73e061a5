@@ -92,7 +92,7 @@ function MyPlanPage() {
     queryFn: async (): Promise<SelectorVehicle[]> => {
       const { data } = await (supabase as any)
         .from("customer_vehicles")
-        .select("id, make, model, registration_number, is_default")
+        .select("id, make, model, registration_number, is_default, category")
         .order("created_at");
       return (data ?? []) as SelectorVehicle[];
     },
@@ -265,6 +265,18 @@ function MyPlanPage() {
                     )}
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+                      {(() => {
+                        const price = subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999);
+                        console.log("[DAILY-SHINE-PRICE]", {
+                          vehicleId: selectedVehicle?.id,
+                          vehicleModel: selectedVehicle?.model,
+                          vehicleCategory: selectedVehicle?.category,
+                          package: "Daily Shine",
+                          resolvedPrice: price,
+                          priceSource: subRow?.amount || activeSub?.total_amount ? "DATABASE_SUB" : "CALCULATED_FALLBACK"
+                        });
+                        return null;
+                      })()}
                       <div className="flex items-start justify-between mb-6">
                         <div>
                           <div className="flex items-center gap-2 mb-2.5">
@@ -279,7 +291,7 @@ function MyPlanPage() {
                             Daily Shine Subscription
                           </p>
                           <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(subRow?.amount ?? activeSub.total_amount ?? 0).toLocaleString("en-IN")} / month
+                            ₹{Number(subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999)).toLocaleString("en-IN")} / month
                             <span className="h-1 w-1 rounded-full bg-black/10" />
                             <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
                           </div>

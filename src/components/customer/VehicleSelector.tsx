@@ -9,6 +9,7 @@ export type SelectorVehicle = {
   model: string;
   registration_number: string | null;
   is_default?: boolean | null;
+  category?: string | null;
 };
 
 // Unified with Home + service pages. Was sessionStorage — that caused the

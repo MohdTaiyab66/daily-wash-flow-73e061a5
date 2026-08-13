@@ -237,7 +237,14 @@ function ServiceDetail() {
   useEffect(() => {
     if (service && vehicle) {
       const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
-      console.log("Setting base service in cart", { id: service.id, name: service.name, price });
+      console.log("[DAILY-SHINE-PRICE]", {
+        vehicleId: vehicle.id,
+        vehicleModel: vehicle.model,
+        vehicleCategory: vehicle.category,
+        package: service.slug,
+        resolvedPrice: price,
+        priceSource: "SERVICE_CATALOG_DETAIL"
+      });
       setBaseService(service.id, service.name, price);
     }
   }, [service, isSUV, vehicle?.id, setBaseService]);
