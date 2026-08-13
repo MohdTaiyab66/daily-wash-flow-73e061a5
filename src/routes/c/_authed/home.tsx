@@ -332,7 +332,9 @@ function CustomerHome() {
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
                       "whitespace-nowrap rounded-[22px] px-[16px] h-[42px] flex items-center justify-center text-[14px] font-medium transition-all duration-200 active:scale-[0.97] shrink-0",
-                      selectedCategory === cat ? "bg-[#FF6B00] text-white" : "bg-white text-[#555555] border border-[#E5E5E5]"
+                      selectedCategory === cat 
+                        ? "bg-[#171717] text-white font-bold" 
+                        : "bg-white text-[#555555] border border-[#E5E5E5]"
                     )}
                   >
                     {cat}
