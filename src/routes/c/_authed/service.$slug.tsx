@@ -231,7 +231,19 @@ function ServiceDetail() {
   const activeAddress = addressesQ.data?.find(a => a.is_default) ?? addressesQ.data?.[0];
   const profile = profileQ.data;
 
-  const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
+  // P0 FIX: Strictly use search.vehicleId. Fallback ONLY to home's selected vehicle if possible, but NEVER vehicles[0] blindly if search was provided.
+  // If search.vehicleId is present, we MUST find THAT vehicle.
+  const vehicle = useMemo(() => {
+    const targetId = search.vehicleId || vehicleId;
+    if (!targetId) return vehicles[0]; // Only fallback if absolutely no context
+    const found = vehicles.find(v => v.id === targetId);
+    
+    if (!found && targetId) {
+      console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
+    }
+    
+    return found || vehicles[0];
+  }, [vehicles, vehicleId, search.vehicleId]);
   const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
   
@@ -240,7 +252,7 @@ function ServiceDetail() {
     if (service && vehicle) {
       const price = resolveDailyShinePrice(category, service);
       
-      setBaseService(service.id, service.name, price);
+      setBaseService(service.id, service.name, price, vehicle.id);
     }
   }, [service, category, vehicle?.id, setBaseService, slug]);
 
