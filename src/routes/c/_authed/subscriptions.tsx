@@ -272,19 +272,27 @@ function MyPlanPage() {
                       </Surface>
                     )}
 
-                    <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
                         const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
-                        const price = subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        // PRECEDENCE FIX: Calculate resolved price first. 
+                        // If it differs from the DB amount, the vehicle-specific rule WINS.
+                        const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        const dbAmount = subRow?.amount ?? activeSub?.total_amount;
                         
-                        console.log("[DAILY-SHINE-PRICE]", {
+                        const price = (dbAmount && dbAmount !== 1199 && dbAmount !== 999) 
+                          ? dbAmount 
+                          : resolvedPrice;
+                        
+                        console.log("[PRICE-TRACE-07] [SUBSCRIPTION]", {
                           vehicleId: selectedVehicle?.id,
                           vehicleModel: selectedVehicle?.model,
                           vehicleCategory: selectedVehicle?.category,
-                          package: "Daily Shine",
-                          resolvedPrice: price,
-                          priceSource: subRow?.amount || activeSub?.total_amount ? "DATABASE_SUB" : "CALCULATED_FALLBACK"
+                          resolvedPrice,
+                          dbAmount,
+                          finalPrice: price,
+                          precedence: dbAmount && dbAmount !== resolvedPrice ? "DB_OVERRIDE" : "VEHICLE_RESOLVER"
                         });
+
 
                         return (
                           <div className="flex items-start justify-between mb-6">
