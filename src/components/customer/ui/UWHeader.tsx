@@ -100,6 +100,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
+                data-testid="uw-header-vehicle-name"
                 className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}
