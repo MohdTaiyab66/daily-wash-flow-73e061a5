@@ -203,13 +203,19 @@ export function MarketplaceOfferCard({
   const v = offer.broadcast.vehicle;
   const label = v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
   const areaName = offer.broadcast.service_area?.name ?? "Nearby area";
-  const dist = offer.distance_from_route_m ?? null;
-  const impact = offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
+  
+  // Use resolved earning/distance if available (from Push payload or backend enrich)
+  // Fallback to existing calculation for backwards compatibility/local UI
+  const earningAmount = (offer as any).earning_amount ?? offer.incentive;
+  const earningDisplay = (offer as any).earning_display ?? `₹${earningAmount}/day`;
+  const distanceDisplay = (offer as any).distance_display ?? fmtDist(offer.distance_from_route_m);
+
   const workingDays = workingDaysBetween(
     offer.broadcast.subscription?.start_date,
     offer.broadcast.subscription?.renewal_date,
   );
-  const monthEarnings = Math.round(Number(offer.incentive) * workingDays);
+  const monthEarnings = Math.round(Number(earningAmount) * workingDays);
+
   const finishOffsetMin = useMemo(
     () => (impact ? Math.round((impact / 1000) * 4) : 0),
     [impact],
@@ -361,23 +367,24 @@ export function MarketplaceOfferCard({
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-muted/50 px-2.5 py-2">
             <div className="flex items-center gap-1 text-[11px] uppercase text-muted-foreground">
-              <MapPin className="h-3 w-3" /> Area
+              <MapPin className="h-3 w-3" /> Distance
             </div>
-            <div className="mt-0.5 truncate font-semibold">{areaName}</div>
+            <div className="mt-0.5 truncate font-semibold">{distanceDisplay}</div>
             <div className="text-[11px] text-muted-foreground">
-              {fmtDist(dist)} from route
+              {areaName}
             </div>
           </div>
           <div className="rounded-lg bg-primary/10 px-2.5 py-2">
             <div className="flex items-center gap-1 text-[11px] uppercase text-primary/80">
               <IndianRupee className="h-3 w-3" /> Earnings
             </div>
-            <div className="mt-0.5 font-bold text-primary">₹{offer.incentive}/day</div>
+            <div className="mt-0.5 font-bold text-primary">{earningDisplay}</div>
             <div className="text-[11px] text-muted-foreground">
               ₹{monthEarnings.toLocaleString("en-IN")} · {workingDays}d
             </div>
           </div>
         </div>
+
 
         {/* Expandable details */}
         {!compact && (

@@ -126,10 +126,11 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       resolvePartnerBookingDistance({
         sb,
         partnerId: r.partner_id,
-        customerLat: null, // Need to resolve from subscription/booking
-        customerLng: null,
+        customerLat: (r as any).customer_lat ?? null,
+        customerLng: (r as any).customer_lng ?? null,
       }),
     ]);
+
 
     const title = `🚗 New Booking • Earn ${earnings.display}`;
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
