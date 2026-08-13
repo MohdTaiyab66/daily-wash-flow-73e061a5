@@ -118,6 +118,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
 
 
     try {
+      console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=daily_shine_offer partner_id=${r.partner_id} offer_id=${r.offer_id}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -127,6 +128,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
         dataOnly: true,
         tag: r.offer_id,
       });
+      if (result.sent > 0) {
+        console.log(`[PARTNER-BOOKING-E2E:07] FCM_SERVER_ACCEPTED offer_id=${r.offer_id} message_id=${result.results[0]?.messageId}`);
+      }
       const { error: logError } = await sb
         .from("offer_delivery_events")
         .update({
