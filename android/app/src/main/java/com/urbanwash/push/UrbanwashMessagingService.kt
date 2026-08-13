@@ -27,6 +27,11 @@ import android.util.Log
  */
 class UrbanwashMessagingService : FirebaseMessagingService() {
 
+    override fun onCreate() {
+        super.onCreate()
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded")
+    }
+
     companion object {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
@@ -75,7 +80,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
 
     override fun onNewToken(token: String) {
-        // The JS layer (fcm.ts → tokenReceived listener) upserts push_tokens.
+        // [CUSTOMER-FCM-NATIVE:TOKEN]
+        val tail = if (token.length > 8) token.substring(token.length - 8) else token
+        Log.d("CUSTOMER-FCM-NATIVE", "TOKEN_SUFFIX=$tail PROJECT=uw-partner-app PACKAGE=com.urbanwash.customer SENDER_ID=781422718869")
         super.onNewToken(token)
     }
 
