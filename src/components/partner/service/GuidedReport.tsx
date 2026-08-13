@@ -96,7 +96,7 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
-      console.log(`[CUSTOMER-E2E:UNAVAILABLE:01] PARTNER_UNAVAILABLE_HANDLER`, { serviceId, kind, reason });
+      console.log(`[CUSTOMER-E2E:UNAVAILABLE:01] PARTNER_HANDLER. service_id: ${serviceId}, reason: ${reason}`);
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
@@ -112,12 +112,12 @@ export function GuidedReport({
         console.error(`[CUSTOMER-E2E:UNAVAILABLE:ERR] RPC_ERROR`, error);
         throw error;
       }
-      console.log(`[CUSTOMER-E2E:UNAVAILABLE:02] STATUS_UPDATED`, data);
+      console.log(`[CUSTOMER-E2E:UNAVAILABLE:02] SERVICE_UPDATED. status: unavailable`);
       
       const r: any = data ?? {};
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       
-      console.log("[CUSTOMER-E2E:UNAVAILABLE:03] FLUSH_NOTIFICATION_PUSH_ENTERED");
+      console.log("[CUSTOMER-E2E:UNAVAILABLE:03] NOTIFICATION_CREATED (triggering flush)");
       import("@/lib/push/immediate.functions").then(m => {
         m.flushNotificationPush().then(res => {
           console.log("[CUSTOMER-E2E:UNAVAILABLE:03:RESULT] flush result:", res);
