@@ -265,6 +265,18 @@ function MyPlanPage() {
                     )}
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
+                      {(() => {
+                        const price = subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999);
+                        console.log("[DAILY-SHINE-PRICE]", {
+                          vehicleId: selectedVehicle?.id,
+                          vehicleModel: selectedVehicle?.model,
+                          vehicleCategory: selectedVehicle?.category,
+                          package: "Daily Shine",
+                          resolvedPrice: price,
+                          priceSource: subRow?.amount || activeSub?.total_amount ? "DATABASE_SUB" : "CALCULATED_FALLBACK"
+                        });
+                        return null;
+                      })()}
                       <div className="flex items-start justify-between mb-6">
                         <div>
                           <div className="flex items-center gap-2 mb-2.5">
