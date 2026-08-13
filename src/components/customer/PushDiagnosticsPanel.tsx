@@ -167,7 +167,7 @@ export function PushDiagnosticsPanel() {
                 </div>
                 <div className="flex justify-between">
                   <span>ANDROID:</span>
-                  <span className="text-orange-400 animate-pulse uppercase">Waiting for delivery</span>
+                  <span className="text-orange-400 animate-pulse uppercase">⏳ Waiting</span>
                 </div>
               </div>
             </div>
