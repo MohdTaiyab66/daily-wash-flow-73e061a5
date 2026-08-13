@@ -117,7 +117,7 @@ export function PushDiagnosticsPanel() {
   const testMutation = useMutation({
     mutationFn: async () => {
       setIsTesting(true);
-      setLastTestResult({ status: "SENDING..." });
+      setLastTestResult({ status: "SENDING...", messageId: null, result: "PENDING" });
       
       const targetUserId = data?.user_id;
       if (!targetUserId) throw new Error("User ID missing");
@@ -143,7 +143,7 @@ export function PushDiagnosticsPanel() {
       }
     },
     onError: (err) => {
-      setLastTestResult({ status: "FCM FAILED", result: err.message });
+      setLastTestResult({ status: "FCM FAILED", messageId: null, result: err.message });
       toast.error(`Test failed: ${err.message}`);
     },
     onSettled: () => setIsTesting(false),
