@@ -92,32 +92,33 @@ export function PushDiagnosticsPanel() {
         const NativeDiag = Plugins?.UrbanwashNativeDiagnostics;
         if (NativeDiag) {
           try {
+            const info = await NativeDiag.getNativeInfo();
             const res = await NativeDiag.getLastFcmReceipt();
-            if (res && res.received) {
-              setNativeState({
-                android: res.received ? "RECEIVED" : "WAITING",
-                fcm: {
-                  id: res.messageId,
-                  receivedAt: res.receivedAt ? new Date(parseInt(res.receivedAt)).toLocaleTimeString() : 'N/A',
-                  type: res.type || 'unknown',
-                  title: res.title || ''
-                },
-                notif: {
-                  id: res.notifId ?? null,
-                  postedAt: res.postedAt ? new Date(parseInt(res.postedAt)).toLocaleTimeString() : null
-                },
-                nativeTokenSuffix: res.nativeTokenSuffix || null,
-                buildId: res.buildId || null,
-                errorReason: null
-              });
-              return; // Handshake successful
-            }
+            
+            setNativeState({
+              android: res.received ? "RECEIVED" : "WAITING",
+              fcm: {
+                id: res.messageId,
+                receivedAt: res.receivedAt ? new Date(parseInt(res.receivedAt)).toLocaleTimeString() : 'N/A',
+                type: res.type || 'unknown',
+                title: res.title || ''
+              },
+              notif: {
+                id: res.notifId ?? null,
+                postedAt: res.postedAt ? new Date(parseInt(res.postedAt)).toLocaleTimeString() : null
+              },
+              nativeTokenSuffix: info.tokenTail || null,
+              buildId: info.buildId || null,
+              errorReason: null,
+              nativeInfo: info
+            });
+            return;
           } catch (e: any) {
             console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Native plugin call failed", e);
             setNativeState(prev => ({ ...prev, android: "ERROR", errorReason: e.message || String(e) }));
           }
         } else {
-           setNativeState(prev => ({ ...prev, android: "UNAVAILABLE", errorReason: "PLUGIN_NOT_FOUND" }));
+            setNativeState(prev => ({ ...prev, android: "UNAVAILABLE", errorReason: "PLUGIN_NOT_FOUND" }));
         }
 
         // 2. Fallback to Capacitor Preferences (Legacy/Secondary)
