@@ -220,6 +220,7 @@ type SendInput = {
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
+  console.log(`[CUSTOMER-FCM-CONFIG] BACKEND_FIREBASE_PROJECT: ${projectId}`);
   const accessToken = await getAccessToken();
 
   const dataOnly = input.dataOnly === true;
