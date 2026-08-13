@@ -327,7 +327,27 @@ function CustomerHome() {
                     slideNumber: img.slide_number || idx + 1
                   };
                 })}
-                onItemClick={(item) => navigate({ to: item.link as any })}
+                onItemClick={(item) => {
+                  const targetVehicleId = selectedVehicleId || activeVehicle?.id;
+                  console.log("[DAILY-SHINE-CAROUSEL]", {
+                    selectedVehicleId: targetVehicleId,
+                    selectedVehicleModel: activeVehicle?.model,
+                    selectedVehicleCategory: activeVehicle?.category,
+                    targetLink: item.link
+                  });
+                  
+                  // Extract slug from link if it matches /c/service/$slug
+                  const serviceSlugMatch = item.link.match(/\/c\/service\/([^\/]+)/);
+                  if (serviceSlugMatch) {
+                    navigate({ 
+                      to: "/c/service/$slug", 
+                      params: { slug: serviceSlugMatch[1] }, 
+                      search: { vehicleId: targetVehicleId || undefined } 
+                    });
+                  } else {
+                    navigate({ to: item.link as any });
+                  }
+                }}
               />
             </div>
 
