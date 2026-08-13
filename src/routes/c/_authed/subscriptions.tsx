@@ -307,6 +307,7 @@ function MyPlanPage() {
                                 Daily Shine Subscription
                               </p>
                               <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
+                                <div className="text-[8px] opacity-40 font-mono block w-full">B:2026-08-13-DIAG-A V:{selectedVehicle?.model} P:₹{price} SRC:plan_card</div>
                                 ₹{Number(price).toLocaleString("en-IN")} / month
                                 <span className="h-1 w-1 rounded-full bg-black/10" />
                                 <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
