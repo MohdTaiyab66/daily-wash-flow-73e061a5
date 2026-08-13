@@ -64,7 +64,7 @@ export function PushDiagnosticsPanel() {
       setIsTesting(true);
       setLastTestResult({ status: "SENDING..." });
       
-      return sendTest({ targetUserId: data?.user_id! });
+      return sendTest({ data: { targetUserId: data?.user_id! } });
     },
     onSuccess: (res: any) => {
       const firstRes = res.results?.[0];
