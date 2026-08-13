@@ -341,30 +341,24 @@ export function BookAWashSheet({
     <Dialog open={open} onOpenChange={(v) => { if (phase !== "booking") onOpenChange(v); }}>
       <DialogContent className="max-h-[92vh] max-w-md overflow-hidden bg-white p-0 border-none shadow-2xl sm:rounded-[32px]" aria-describedby="book-a-wash-desc">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-5 border-b border-black/[0.04]">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-5">
           <div>
             <h2 className="text-[20px] font-black tracking-tight text-[#1a1a1a]">Schedule a wash</h2>
             <div className="mt-1 flex items-center gap-1.5">
-               <div className="h-1 w-1 rounded-full bg-[#FF6B00]" />
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A6A6A6]">Included premium wash</p>
+               <Sparkles className="h-3 w-3 text-[#FF6B00]" />
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">INCLUDED PREMIUM WASH</p>
             </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm border border-black/[0.04] transition-transform active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F5] transition-transform active:scale-90"
           >
             <X className="h-4 w-4 text-[#1a1a1a]" />
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-8 px-6 py-6 pb-40 no-scrollbar">
-          {/* Info context */}
-          <div className="flex items-start gap-3 rounded-2xl bg-[#FFF6EF] p-4 border border-[#FF6B00]/10">
-            <Info className="mt-0.5 h-4 w-4 text-[#FF6B00] shrink-0" />
-            <p className="text-[12px] font-medium leading-relaxed text-[#555555]">
-              <span className="font-bold text-[#FF6B00]">Daily cleaning</span> happens automatically every morning. Use this to schedule your monthly full interior + exterior wash.
-            </p>
-          </div>
+        <div className="overflow-y-auto max-h-[calc(92vh-88px)] space-y-6 px-6 py-2 pb-40 no-scrollbar">
+
 
           {loading && (
             <div className="space-y-4">
