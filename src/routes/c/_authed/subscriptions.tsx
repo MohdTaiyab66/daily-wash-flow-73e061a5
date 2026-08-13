@@ -290,20 +290,6 @@ function MyPlanPage() {
                             ? 1199 
                             : (dbAmount && dbAmount !== 1199 && dbAmount !== 999) ? dbAmount : resolvedPrice;
 
-                        if (selectedVehicle) {
-                          console.log("[VEHICLE-PROPAGATION] Subscription vehicleId =", selectedVehicle.id);
-                          console.log("[DAILY-SHINE-PRICE-FORENSIC]", {
-                            stage: "SUBSCRIPTION",
-                            vehicleId: selectedVehicle.id,
-                            vehicleMake: selectedVehicle.make,
-                            vehicleModel: selectedVehicle.model,
-                            vehicleCategory: selectedVehicle.category,
-                            subscriptionPrice: price,
-                            subscriptionAmount: price,
-                            resolvedPrice: resolvedPrice,
-                            databaseAmount: dbAmount
-                          });
-                        }
 
 
                         return (
