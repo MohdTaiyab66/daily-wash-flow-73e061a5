@@ -271,11 +271,22 @@ function ServiceDetail() {
     onSuccess: (data: any) => {
       try { window.localStorage.removeItem(stepKey(id)); window.localStorage.removeItem(notesKey(id)); } catch { /* noop */ }
       
-      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED");
+      
+      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED (Direct Completion Path)");
       import("@/lib/push/immediate.functions").then(m => {
-        m.flushNotificationPush().then(res => {
-          console.log(`[CUSTOMER-E2E:07-FLUSH] FLUSH_FINISHED result: customer=${res.customer} partner=${res.partner}`);
-        }).catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
+        // Direct Send (Proven Path)
+        m.sendDirectCompletionPush({
+          customerId: (service as any).customers.id,
+          serviceId: id,
+          type: "service_completed",
+          title: "Daily Shine completed",
+          body: "Your Daily Shine service has been completed. Tap My Plan to view your service photos."
+        }).then(res => {
+          console.log(`[CUSTOMER-COMPLETE-PUSH:05] DIRECT_SEND_FINISHED result:`, res);
+        }).catch(e => console.error("[CUSTOMER-COMPLETE-PUSH:ERR] direct send failed", e));
+
+        // Background queue flush (still run it for production row cleanup)
+        m.flushNotificationPush().catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
       });
 
       if (data?.already) { void goNext(); return; }
