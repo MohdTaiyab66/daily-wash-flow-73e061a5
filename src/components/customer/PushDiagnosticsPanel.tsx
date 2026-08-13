@@ -57,7 +57,10 @@ export function PushDiagnosticsPanel() {
       console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Platform check failed", e);
     }
 
-    if (platform !== 'android') return;
+    if (platform !== 'android') {
+      setNativeState((prev) => ({ ...(prev ?? DEFAULT_NATIVE_STATE), android: "UNAVAILABLE" }));
+      return;
+    }
 
     const checkNative = async () => {
       try {
@@ -65,7 +68,10 @@ export function PushDiagnosticsPanel() {
         const Plugins = (window as any).Capacitor?.Plugins;
         const Preferences = Plugins?.Preferences;
         
-        if (!Preferences) return;
+        if (!Preferences) {
+          setNativeState((prev) => ({ ...(prev ?? DEFAULT_NATIVE_STATE), android: "UNAVAILABLE" }));
+          return;
+        }
 
         // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
         // We use .get() which returns { value: string | null }
