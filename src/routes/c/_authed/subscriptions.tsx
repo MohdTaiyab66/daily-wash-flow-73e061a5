@@ -278,7 +278,7 @@ function MyPlanPage() {
 
                         // PRECEDENCE FIX: Calculate resolved price first. 
                         // If it differs from the DB amount, the vehicle-specific rule WINS.
-                        const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        const resolvedPrice = resolveDailyShinePrice(selectedVehicle?.category || undefined, dailyShineService);
                         const dbAmount = subRow?.amount ?? activeSub?.total_amount;
                         
                         // STRICT OVERRIDE: If the vehicle is a Hatchback, it MUST be 999.
@@ -398,7 +398,7 @@ function MyPlanPage() {
         renewalDate={subRow?.renewal_date ?? planEnd ?? null}
         planName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
-      <BookAWashSheet open={bookOpen} onOpenChange={setBookOpen} vehicleId={selectedVehicleId} userId={userId} />
+      <BookAWashSheet open={bookOpen} onOpenChange={setBookOpen} vehicleId={selectedVehicleId} userId={userId || undefined} />
       <PackageBuilderSheet
         open={builderOpen}
         onOpenChange={setBuilderOpen}
