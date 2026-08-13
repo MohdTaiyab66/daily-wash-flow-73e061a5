@@ -61,8 +61,11 @@ export const sendDirectTestPush = createServerFn({ method: "POST" })
         type: "service_completed", // Use a known high-importance type
         test_mode: "true",
         sent_at: new Date().toISOString(),
+        broadcast_id: `test:${Date.now()}`,
+        action_token: "test_token",
+        offer_id: "test_offer",
       },
-      channelId: "assignments",
+      channelId: "assignments_v4",
     });
 
     console.log(`[CUSTOMER-SERVICE-PUSH:DIRECT-TEST] Result:`, res);

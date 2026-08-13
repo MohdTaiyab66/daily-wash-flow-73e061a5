@@ -278,19 +278,22 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     console.log(`[CUSTOMER-E2E:05-TYPE] TYPE_NORMALIZED = ${type} (id=${r.id})`);
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
-      console.log(`[CUSTOMER-E2E:04-NOTIFICATION] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id}`);
+      console.log(`[CUSTOMER-E2E:04-NOTIFICATION] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${type}`);
       
+      // Checkpointed Payload (Checkpoint 9)
+      const dataPayload: Record<string, string> = {
+        type,
+        link: r.link || (headsUp ? "/app" : ""),
+        broadcast_id: `customer:${r.id}`,
+        action_token: String(r.id),
+        offer_id: String(r.id),
+      };
+
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
         body: r.body ?? "",
-        data: {
-          type,
-          link: r.link || (headsUp ? "/app" : ""),
-          broadcast_id: `customer:${r.id}`,
-          action_token: String(r.id),
-          offer_id: String(r.id),
-        },
+        data: dataPayload,
         channelId: headsUp ? "assignments_v4" : "general",
         dataOnly: headsUp,
         ...(headsUp ? { tag: `customer:${r.id}` } : {}),
@@ -301,7 +304,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        console.log(`[CUSTOMER-E2E:09-TOKEN] ACTIVE_TOKEN_COUNT_AT_DISPATCH = 0 (user_id=${r.user_id})`);
+        // [CUSTOMER-E2E:09-TOKEN] is logged inside sendOfferPush
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
         console.error(`[CUSTOMER-E2E:DISPATCH:ERR] FCM_FAILURE id=${r.id} failed=${result.failed}`);

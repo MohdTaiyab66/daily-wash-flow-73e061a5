@@ -278,18 +278,19 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
 
   let lastErr: { code?: string; message?: string } = {};
   for (let attempt = 0; attempt < 3; attempt++) {
+    const bodyStr = JSON.stringify(message);
     const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
       method: "POST",
       headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify(message),
+      body: bodyStr,
     });
     if (res.ok) {
       const json = (await res.json()) as { name: string };
-      console.log("[CUSTOMER-E2E:DISPATCH:05] FCM Success:", { token: input.token.slice(-8), messageId: json.name, type: input.data.type });
+      console.log(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${json.name}`);
       return { token: input.token, ok: true, messageId: json.name };
     }
     const text = await res.text();
-    console.error("[PUSH-FORENSIC] FCM Error Response:", { status: res.status, body: text, token: input.token.slice(-8), type: input.data.type });
+    console.error(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT FAILURE status=${res.status} body=${text} token=${input.token.slice(-8)}`);
     let code: string | undefined;
     try {
       const j = JSON.parse(text);
