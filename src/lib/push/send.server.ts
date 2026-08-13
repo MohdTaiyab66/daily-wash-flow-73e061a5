@@ -335,6 +335,7 @@ export async function sendOfferPush(args: {
   }
   console.log(`[CUSTOMER-SERVICE-PUSH:TOKEN] customer_id=${args.userId} token_count=${tokens.length} tokens=${JSON.stringify(tokens.map((t: { id: string, token: string }) => ({ id: t.id, tail: t.token.slice(-8) })))}`);
 
+  console.log(`[CUSTOMER-SERVICE-PUSH:FCM] request_started=true token_count=${tokens.length}`);
   const results = await Promise.all(
     tokens.map((t: { token: string }) =>
       sendOne({
@@ -349,6 +350,10 @@ export async function sendOfferPush(args: {
       }),
     ),
   );
+
+  const successCount = results.filter(r => r.ok).length;
+  const failureCount = results.filter(r => !r.ok).length;
+  console.log(`[CUSTOMER-SERVICE-PUSH:FCM] request_finished=true success_count=${successCount} failure_count=${failureCount}`);
 
 
   const failures = results.filter((r) => !r.ok);
