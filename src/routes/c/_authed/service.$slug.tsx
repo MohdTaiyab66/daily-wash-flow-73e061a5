@@ -240,6 +240,8 @@ function ServiceDetail() {
     if (service && vehicle) {
       const price = resolveDailyShinePrice(category, service);
       console.log("[PRICE-TRACE-06] service detail price =", price);
+      console.log("[PRICE-TRACE-08] cart price updated =", price);
+
       console.log("[DAILY-SHINE-PRICE]", {
         vehicleId: vehicle.id,
         vehicleModel: vehicle.model,
