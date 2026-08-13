@@ -82,10 +82,26 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(msg: RemoteMessage) {
         val data = msg.data
         val type = data["type"] ?: ""
-        val msgId = msg.messageId
+        val msgId = msg.messageId ?: "unknown"
 
         // [CUSTOMER-PUSH-NATIVE:01] MESSAGE_RECEIVED
-        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=$msgId type=$type data=$data")
+        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=$msgId from=${msg.from} sentTime=${msg.sentTime} ttl=${msg.ttl} type=$type data=$data")
+        
+        // Persist receipt for handshake with JS forensic panel
+        try {
+            val prefs = getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE)
+            prefs.edit().apply {
+                putString("last_fcm_message_id", msgId)
+                putLong("last_fcm_received_at", System.currentTimeMillis())
+                putString("last_fcm_type", type)
+                putString("last_fcm_title", data["title"] ?: msg.notification?.title)
+                putString("last_fcm_body", data["body"] ?: msg.notification?.body)
+                apply()
+            }
+        } catch (e: Exception) {
+            Log.e("CUSTOMER-PUSH-NATIVE", "Failed to persist diagnostic receipt", e)
+        }
+
         Log.d("UW_AUDIT", "1_fcm_received msgId=$msgId from=${msg.from} " +
             "collapseKey=${msg.collapseKey} priority=${msg.priority}/${msg.originalPriority} " +
             "hasNotifBlock=${msg.notification != null} " +
