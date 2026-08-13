@@ -30,6 +30,7 @@ import { INCLUDED_PLAN_MESSAGE, exhaustedEntitlementMessage, normalizeBookingPre
 import { Meter } from "@/components/customer/ui/kit";
 import { cn } from "@/lib/utils";
 import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscription-cancel.functions";
+import { resolveDailyShinePrice } from "@/lib/pricing";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
   ssr: false,
@@ -266,7 +267,9 @@ function MyPlanPage() {
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
-                        const price = subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999);
+                        const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
+                        const price = subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
+                        
                         console.log("[DAILY-SHINE-PRICE]", {
                           vehicleId: selectedVehicle?.id,
                           vehicleModel: selectedVehicle?.model,
@@ -291,7 +294,7 @@ function MyPlanPage() {
                             Daily Shine Subscription
                           </p>
                           <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(subRow?.amount ?? activeSub?.total_amount ?? (selectedVehicle?.category === 'sedan_suv' ? 1199 : 999)).toLocaleString("en-IN")} / month
+                            ₹{Number(price).toLocaleString("en-IN")} / month
                             <span className="h-1 w-1 rounded-full bg-black/10" />
                             <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
                           </div>
@@ -384,7 +387,7 @@ function MyPlanPage() {
         open={builderOpen}
         onOpenChange={setBuilderOpen}
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
-        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? 1199)}
+        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, servicesQ.data?.find(s => s.slug === 'daily-shine')))}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
 

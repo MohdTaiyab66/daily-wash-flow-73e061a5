@@ -231,12 +231,12 @@ function ServiceDetail() {
   const profile = profileQ.data;
 
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
-  const isSUV = vehicle?.category === "sedan_suv";
+  const category = vehicle?.category;
   
   // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
     if (service && vehicle) {
-      const price = isSUV ? service.price_sedan_suv : service.price_hatchback;
+      const price = resolveDailyShinePrice(category, service);
       console.log("[DAILY-SHINE-PRICE]", {
         vehicleId: vehicle.id,
         vehicleModel: vehicle.model,
@@ -247,7 +247,7 @@ function ServiceDetail() {
       });
       setBaseService(service.id, service.name, price);
     }
-  }, [service, isSUV, vehicle?.id, setBaseService]);
+  }, [service, category, vehicle?.id, setBaseService]);
 
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
