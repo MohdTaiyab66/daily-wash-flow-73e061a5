@@ -3,9 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPushDiagnostics, sendDirectTestPush } from "@/lib/push/diagnostics.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldCheck, RefreshCcw, Send, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, RefreshCcw, Send, AlertTriangle, CheckCircle2, Smartphone, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PushDiagnosticsPanel() {
   const getDiags = useServerFn(getPushDiagnostics);
