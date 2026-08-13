@@ -600,17 +600,22 @@ function ServiceDetail() {
             </div>
             <div className="space-y-4">
               {relevantAddons.slice(0, 3).map(a => {
-                const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                const price = resolveDailyShinePrice(category, service); // Fixed: Should use resolver, but this is add-ons. Wait, add-ons have their own prices.
+                // For add-ons, we use the isSUV check which is correct for SUV/Hatchback split.
+                const addonPrice = isSUV ? a.price_sedan_suv : a.price_hatchback;
+
                 return (
                   <div key={a.id} className="flex items-center justify-between gap-3 p-1">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-full bg-[#FFF2ED] flex items-center justify-center text-[#EA580C] shrink-0 border border-[#EA580C]/10"><ZapIconLucide className="h-4.5 w-4.5" /></div>
                       <div className="min-w-0">
                         <div className="text-[13px] font-black text-[#1a1a1a] truncate">{a.name}</div>
-                        <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
+                        <div className="text-[11px] font-black text-[#EA580C]">₹{addonPrice}</div>
+
                       </div>
                     </div>
-                    <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
+                    <QuantityControl id={a.id} name={a.name} price={addonPrice} type="addon" />
+
                   </div>
                 );
               })}
@@ -646,7 +651,7 @@ function ServiceDetail() {
           <div className="flex-1 overflow-y-auto px-6">
             <div className="space-y-4 pb-[160px]">
               {relevantAddons.map(a => {
-                const price = isSUV ? a.price_sedan_suv : a.price_hatchback;
+                const addonPrice = isSUV ? a.price_sedan_suv : a.price_hatchback;
                 return (
                   <div key={a.id} className="flex items-center justify-between p-4 bg-[#F1F2F3]/50 rounded-xl border border-black/5">
                     <div className="flex items-center gap-3 min-w-0 mr-4">
@@ -656,7 +661,7 @@ function ServiceDetail() {
                         <div className="text-[11px] font-black text-[#EA580C]">₹{price}</div>
                       </div>
                     </div>
-                    <QuantityControl id={a.id} name={a.name} price={price} type="addon" />
+                    <QuantityControl id={a.id} name={a.name} price={addonPrice} type="addon" />
                   </div>
                 );
               })}
