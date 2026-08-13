@@ -15,7 +15,7 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
 
     @PluginMethod
     public void getNativeInfo(PluginCall call) {
-        Log.d("CUSTOMER-PUSH-HANDSHAKE", "getNativeInfo invoked [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-05]");
+        Log.d("CUSTOMER-PUSH-HANDSHAKE", "getNativeInfo invoked [BUILD: FCM-P0-NATIVE-FCM-RECEIPT-06]");
         try {
             SharedPreferences capPrefs = getContext().getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
             String currentToken = capPrefs.getString("urbanwash.current_token", null);
@@ -26,7 +26,7 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
                 ? currentToken.substring(currentToken.length() - 8) 
                 : currentToken);
             ret.put("packageName", getContext().getPackageName());
-            ret.put("buildId", "FCM-P0-NATIVE-FCM-RECEIPT-05");
+            ret.put("buildId", "FCM-P0-NATIVE-FCM-RECEIPT-06");
             
             // Firebase identification (safe to expose in diag panel)
             try {
