@@ -27,6 +27,11 @@ import android.util.Log
  */
 class UrbanwashMessagingService : FirebaseMessagingService() {
 
+    override fun onCreate() {
+        super.onCreate()
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded")
+    }
+
     companion object {
         // Bump this suffix when you change the custom sound. Android bakes
         // channel sound at creation and refuses to update it later.
@@ -75,7 +80,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
 
 
     override fun onNewToken(token: String) {
-        // The JS layer (fcm.ts → tokenReceived listener) upserts push_tokens.
+        // [CUSTOMER-FCM-NATIVE:TOKEN]
+        val tail = if (token.length > 8) token.substring(token.length - 8) else token
+        Log.d("CUSTOMER-FCM-NATIVE", "TOKEN_SUFFIX=$tail PROJECT=uw-partner-app PACKAGE=com.urbanwash.customer SENDER_ID=781422718869")
         super.onNewToken(token)
     }
 
@@ -85,7 +92,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         val msgId = msg.messageId ?: "unknown"
 
         // [CUSTOMER-PUSH-NATIVE:01] MESSAGE_RECEIVED
-        Log.d("CUSTOMER-PUSH-NATIVE", "01 MESSAGE_RECEIVED msgId=$msgId from=${msg.from} sentTime=${msg.sentTime} ttl=${msg.ttl} type=$type data=$data")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:01] FCM_MESSAGE_RECEIVED msgId=$msgId from=${msg.from} sentTime=${msg.sentTime} ttl=${msg.ttl} type=$type data=$data")
         
         // Persist receipt for handshake with JS forensic panel
         try {
@@ -124,7 +131,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
         }
 
         // [CUSTOMER-PUSH-NATIVE:02] PAYLOAD_PARSED
-        Log.d("CUSTOMER-PUSH-NATIVE", "02 PAYLOAD_PARSED type=$type title=${data["title"]} body=${data["body"]}")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:02] PAYLOAD_PARSED type=$type title=${data["title"]} body=${data["body"]}")
 
         when {
             type == "marketplace_offer" ||
@@ -142,7 +149,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             }
             ASSIGNMENT_TYPES.contains(type) || type == "test_notification" -> {
                 // [CUSTOMER-PUSH-NATIVE:03] CHANNEL_SELECTED
-                Log.d("CUSTOMER-PUSH-NATIVE", "03 CHANNEL_SELECTED channelId=$CHANNEL_ASSIGNMENTS")
+                Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:03] CHANNEL_SELECTED channelId=$CHANNEL_ASSIGNMENTS")
                 Log.d("UW_AUDIT", "2_branch=assignment type=$type")
                 ensureUrgentChannel(CHANNEL_ASSIGNMENTS, "New assignments",
                     "New customer assignments — wake screen with heads-up")
@@ -395,7 +402,7 @@ Log.d("UW_PUSH", "CHANNEL=" + CHANNEL_ASSIGNMENTS + " fsi=" + canUseFullScreen()
 Log.d("UW_AUDIT", "2b_ids notifKey=$notifKey notifId=${notifKey.hashCode()} link=$link")
 
 // [CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_POST_ATTEMPT
-Log.d("CUSTOMER-PUSH-NATIVE", "04 NOTIFICATION_POST_ATTEMPT notifKey=$notifKey notifId=${notifKey.hashCode()} type=${data["type"]}")
+Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_POST_ATTEMPT notifKey=$notifKey notifId=${notifKey.hashCode()} type=${data["type"]}")
 
 auditNotify(
     NotificationManagerCompat.from(ctx),
@@ -406,7 +413,7 @@ auditNotify(
     builder.build(),
 )
 // [CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_SUCCESS
-Log.d("CUSTOMER-PUSH-NATIVE", "05 NOTIFICATION_POST_SUCCESS id=${notifKey.hashCode()}")
+Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:05] NOTIFICATION_POST_SUCCESS id=${notifKey.hashCode()}")
 
 try {
     val prefs = getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE)

@@ -73,8 +73,38 @@ export function PushDiagnosticsPanel() {
           return;
         }
 
-        // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
-        // We use .get() which returns { value: string | null }
+        // 1. Try custom Native Diagnostics Plugin first (Real Handshake)
+        const NativeDiag = Plugins?.UrbanwashNativeDiagnostics;
+        if (NativeDiag) {
+          try {
+            const res = await NativeDiag.getLastFcmReceipt();
+            if (res && res.received) {
+              setNativeState({
+                android: "RECEIVED",
+                fcm: {
+                  id: res.messageId,
+                  receivedAt: res.receivedAt ? new Date(parseInt(res.receivedAt)).toLocaleTimeString() : 'N/A',
+                  type: res.type || 'unknown',
+                  title: res.title || ''
+                },
+                notif: {
+                  id: res.notifId ?? null,
+                  postedAt: res.postedAt ? new Date(parseInt(res.postedAt)).toLocaleTimeString() : null
+                }
+              });
+              return; // Handshake successful
+            }
+          } catch (e) {
+            console.warn("[CUSTOMER-PUSH-NATIVE-DIAG] Native plugin call failed", e);
+          }
+        }
+
+        // 2. Fallback to Capacitor Preferences (Legacy/Secondary)
+        if (!Preferences) {
+          setNativeState((prev) => ({ ...(prev ?? DEFAULT_NATIVE_STATE), android: "UNAVAILABLE" }));
+          return;
+        }
+
         const results = await Promise.all([
           Preferences.get({ key: 'last_fcm_message_id' }).catch(() => ({ value: null })),
           Preferences.get({ key: 'last_fcm_received_at' }).catch(() => ({ value: null })),
@@ -251,7 +281,7 @@ export function PushDiagnosticsPanel() {
           <div className="rounded-2xl bg-black text-white p-4 text-[10px] border border-orange-500/30 font-mono mt-4 shadow-xl">
             <p className="font-bold text-orange-500 uppercase mb-3 border-b border-white/10 pb-2 flex justify-between items-center">
               <span className="flex items-center gap-2"><Smartphone className="h-3 w-3" /> DIRECT TEST RESULT</span>
-              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-ANDROID-RECEIPT-03</span>
+              <span className="text-[8px] text-white/30 font-normal">BUILD: FCM-P0-NATIVE-HANDSHAKE-04</span>
             </p>
             <div className="space-y-1">
               <div className="flex justify-between">
@@ -309,7 +339,7 @@ export function PushDiagnosticsPanel() {
                     <div className="flex justify-between">
                       <span>ANDROID FCM:</span>
                       <span className="text-orange-400 animate-pulse uppercase font-bold">
-                        {androidLabel === "UNAVAILABLE" ? "UNAVAILABLE" : "⏳ WAITING..."}
+                        {androidLabel === "UNAVAILABLE" ? "UNAVAILABLE (CHECK PLUGIN)" : "⏳ WAITING..."}
                       </span>
                     </div>
                     <p className="text-[8px] text-white/30 mt-1 italic">

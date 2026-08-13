@@ -8,6 +8,7 @@ import com.getcapacitor.BridgeActivity;
 import com.razorpay.PaymentData;
 import com.razorpay.PaymentResultWithDataListener;
 import com.urbanwash.payments.UrbanWashCheckoutPlugin;
+import com.urbanwash.push.UrbanwashNativeDiagnosticsPlugin;
 
 /**
  * The Razorpay SDK delivers checkout results by reflectively invoking
@@ -23,6 +24,7 @@ public class MainActivity extends BridgeActivity implements PaymentResultWithDat
     public void onCreate(Bundle savedInstanceState) {
         // The single payment bridge. No other checkout plugin exists.
         registerPlugin(UrbanWashCheckoutPlugin.class);
+        registerPlugin(UrbanwashNativeDiagnosticsPlugin.class);
         super.onCreate(savedInstanceState);
     }
 
