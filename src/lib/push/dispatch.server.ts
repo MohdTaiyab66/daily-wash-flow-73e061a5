@@ -118,6 +118,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
 
 
     try {
+      console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=daily_shine_offer partner_id=${r.partner_id} offer_id=${r.offer_id}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -127,6 +128,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
         dataOnly: true,
         tag: r.offer_id,
       });
+      if (result.sent > 0) {
+        console.log(`[PARTNER-BOOKING-E2E:07] FCM_SERVER_ACCEPTED offer_id=${r.offer_id} message_id=${result.results[0]?.messageId}`);
+      }
       const { error: logError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -244,6 +248,8 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
   "booking_confirmed",
   "vehicle_unavailable",
   "service_unavailable",
+  "vehicle_dirty",
+  "dirty_vehicle",
 ]);
 
 /**
@@ -267,9 +273,17 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
-    console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
-    console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
+    const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
+    
+    if (isUnavailable) {
+      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
+      console.log(`[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
+      console.log(`[UNAVAILABLE-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
+    } else {
+      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
+      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
+      console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
+    }
 
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
@@ -302,7 +316,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
+        if (isUnavailable) {
+          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
+        } else {
+          console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
+        }
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
