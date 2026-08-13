@@ -252,13 +252,12 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       try {
         console.log(`[BOOKING-PUSH:01] PAYMENT_VERIFIED_TRIGGER booking_id=${data.bookingId}`);
         await (supabaseAdmin as any).rpc("sweep_subscription_offers");
-        console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${data.bookingId}`);
         
         // Immediate FCM push for the offers we just created (~2s to partner).
         // Same shared dispatcher the cron uses; cron remains the retry path.
         const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
         console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${data.bookingId}`);
-        await dispatchPendingOffers("immediate:payment-verified");
+        await dispatchPendingOffers("immediate:payment-verified", data.bookingId);
       } catch (e) {
         console.warn("[payment] immediate push dispatch failed (non-fatal)", e);
       }

@@ -76,12 +76,11 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         try {
           console.log(`[BOOKING-PUSH:01] PAYMENT_VERIFIED_TRIGGER webhook booking_id=${booking.id}`);
           await (supabaseAdmin as any).rpc("sweep_subscription_offers");
-          console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${booking.id}`);
           
           // Immediate FCM push for the offers just created; cron is the retry path.
           const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
           console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${booking.id}`);
-          await dispatchPendingOffers("immediate:razorpay-webhook");
+          await dispatchPendingOffers("immediate:razorpay-webhook", booking.id);
         } catch (e) { console.warn("[razorpay-webhook] immediate push dispatch failed", e); }
         
         return Response.json({ ok: true, result: data });
