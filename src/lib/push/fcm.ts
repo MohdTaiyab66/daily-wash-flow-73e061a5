@@ -75,12 +75,20 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   if (!isNative() || started || !userId) return;
   started = true;
 
+  console.log(`[CUSTOMER-FCM-REGISTRATION] startFcm called. userId: ${userId}, app: ${app}`);
+
   // 1) Permission
   let perm = await FirebaseMessaging.checkPermissions();
+  console.log(`[CUSTOMER-FCM-REGISTRATION] checkPermissions: ${JSON.stringify(perm)}`);
+  
   if (perm.receive !== "granted") {
+    console.log(`[CUSTOMER-FCM-REGISTRATION] requesting permissions...`);
     perm = await FirebaseMessaging.requestPermissions();
+    console.log(`[CUSTOMER-FCM-REGISTRATION] requestPermissions result: ${JSON.stringify(perm)}`);
   }
+  
   if (perm.receive !== "granted") {
+    console.warn(`[CUSTOMER-FCM-REGISTRATION] permission DENIED`);
     started = false;
     return;
   }
