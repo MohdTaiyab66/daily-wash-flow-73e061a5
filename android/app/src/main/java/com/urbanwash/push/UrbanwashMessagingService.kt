@@ -192,9 +192,16 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     private fun ensureUrgentChannel(id: String, name: String, desc: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
-        if (nm.getNotificationChannel(id) != null) return
-
-
+        
+        val existing = nm.getNotificationChannel(id)
+        if (existing != null) {
+            // [CUSTOMER-PUSH-NATIVE:CHANNEL]
+            Log.d("CUSTOMER-PUSH-NATIVE", "CHANNEL_INFO ID=${existing.id} IMPORTANCE=${existing.importance} ENABLED=${nm.areNotificationsEnabled()}")
+            if (existing.importance < NotificationManager.IMPORTANCE_HIGH) {
+                Log.w("CUSTOMER-PUSH-NATIVE", "CHANNEL_WARNING ID=$id has LOW importance (${existing.importance}) but needs HIGH")
+            }
+            return
+        }
 
         val soundUri: Uri = runCatching {
             val resId = resources.getIdentifier("uw_offer", "raw", packageName)
@@ -222,7 +229,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             setSound(soundUri, audioAttrs)
         }
         nm.createNotificationChannel(ch)
+        Log.d("CUSTOMER-PUSH-NATIVE", "CHANNEL_CREATED ID=$id IMPORTANCE=HIGH")
     }
+
 
 
     private fun postOffer(data: Map<String, String>, isUpdate: Boolean) {

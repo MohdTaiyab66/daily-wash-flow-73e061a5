@@ -221,8 +221,18 @@ type SendInput = {
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
-  console.log(`[DIRECT-FCM-E2E:FIREBASE] project_id=${projectId} client_email=${clientEmail}`);
-  console.log(`[DIRECT-FCM-PAYLOAD] notification.title=${input.title} notification.body=${input.body} data.type=${input.data.type} data.broadcast_id=${input.data.broadcast_id} data.action_token=${input.data.action_token} data.offer_id=${input.data.offer_id} android.notification.channel_id=${input.channelId ?? "general"}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] PROJECT_ID: ${projectId}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: PENDING`);
+  console.log(`[DIRECT-FCM-PAYLOAD] TOKEN_LAST_6: ${input.token.slice(-6)}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] NOTIFICATION_TITLE: ${input.title}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] NOTIFICATION_BODY: ${input.body}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] DATA_TYPE: ${input.data.type}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] DATA_BROADCAST_ID: ${input.data.broadcast_id}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] DATA_ACTION_TOKEN: ${input.data.action_token}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] DATA_OFFER_ID: ${input.data.offer_id}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] ANDROID_CHANNEL_ID: ${input.channelId ?? "general"}`);
+  console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_TYPE: ${(!input.silent && !input.dataOnly) ? "notification + data" : "data-only"}`);
+
   const accessToken = await getAccessToken();
 
   const dataOnly = input.dataOnly === true;
@@ -289,8 +299,9 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     if (res.ok) {
       const json = (await res.json()) as { name: string };
       const msgId = json.name.split('/').pop() || json.name;
+      console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: ${msgId}`);
       console.log(`[DIRECT-FCM-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${msgId}`);
-      return { token: input.token, ok: true, messageId: json.name };
+      return { token: input.token, ok: true, messageId: msgId };
     }
     const text = await res.text();
     console.error(`[DIRECT-FCM-E2E:11-FCM] FCM_SEND_RESULT FAILURE status=${res.status} body=${text} token=${input.token.slice(-8)}`);
