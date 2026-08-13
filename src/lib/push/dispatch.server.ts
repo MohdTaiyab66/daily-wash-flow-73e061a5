@@ -201,11 +201,16 @@ export const CUSTOMER_ALLOWED_TYPES = new Set<string>([
   "subscription_activated",
   "booking_confirmed",
   "refund_processing",
+  "booking_created",
+  "new_booking",
+  "booking_cancelled",
   // Service lifecycle (customer-visible only)
   "service_completed",
   "service_started",
   "partner_accepted",
   "partner_assigned",
+  "partner_assigned_immediate",
+  "service_rescheduled",
 
   "completed",
   "vehicle_unavailable",
