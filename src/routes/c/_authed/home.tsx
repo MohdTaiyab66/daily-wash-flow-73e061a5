@@ -271,13 +271,12 @@ function CustomerHome() {
     <PullToRefresh onRefresh={refreshAll}>
       <div className="min-h-screen bg-white">
         {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
-        <div className="px-4 pt-4">
-          <import.meta.env.DEV && (
-            <div className="mb-6">
-              <PushDiagnosticsPanel />
-            </div>
-          )}
-        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="px-4 pt-4 mb-6">
+            <PushDiagnosticsPanel />
+          </div>
+        )}
+
 
         <UWHeader 
           
