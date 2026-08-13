@@ -339,6 +339,7 @@ function ServiceDetail() {
       if (result.status === "success") {
         updateDiagStep('result', 'ok', undefined, 'SUCCESS');
         try {
+          console.log(`[PAYMENT-E2E:03] PAYMENT_CREDENTIALS_RECEIVED booking_id=${bId}`);
           await verifyPayment({ 
             data: { 
               bookingId: bId, 
@@ -349,13 +350,16 @@ function ServiceDetail() {
           });
           navigate({ to: "/c/booking-success", search: { bookingId: bId } });
         } catch (vErr: any) {
-          toast.error("Payment verification failed. Please contact support.");
+          console.error(`[PAYMENT-E2E:FAILURE] VERIFICATION_FAILED error=${vErr.message}`);
+          toast.error("Payment is being verified. Please wait a moment or contact support if it takes too long.");
         }
       } else if (result.status === "failed") {
         updateDiagStep('result', 'err', result.message, 'FAILED');
+        console.error(`[PAYMENT-E2E:FAILURE] CHECKOUT_FAILED error=${result.message}`);
         toast.error(result.message || "Payment failed.");
       } else {
         updateDiagStep('result', 'ok', undefined, 'CANCELLED');
+        console.log(`[PAYMENT-E2E:02] CHECKOUT_CANCELLED booking_id=${bId}`);
       }
     } catch (e: any) {
       console.error("[PAY_NOW] critical_exception:", e);

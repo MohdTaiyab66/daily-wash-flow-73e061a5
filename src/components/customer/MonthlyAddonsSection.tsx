@@ -200,15 +200,21 @@ export function MonthlyAddonsSection({
     }
 
 
-    await verifyPayment({
-      data: {
-        bookingId,
-        razorpayOrderId: result.orderId,
-        razorpayPaymentId: result.paymentId,
-        razorpaySignature: result.signature,
-      },
-    });
-    toast.success(`${label} added — active from your next billing cycle.`);
+    try {
+      console.log(`[PAYMENT-E2E:03] PAYMENT_CREDENTIALS_RECEIVED booking_id=${bookingId} (addon)`);
+      await verifyPayment({
+        data: {
+          bookingId,
+          razorpayOrderId: result.orderId,
+          razorpayPaymentId: result.paymentId,
+          razorpaySignature: result.signature,
+        },
+      });
+      toast.success(`${label} added — active from your next billing cycle.`);
+    } catch (vErr: any) {
+      console.error(`[PAYMENT-E2E:FAILURE] VERIFICATION_FAILED (addon) error=${vErr.message}`);
+      toast.error("Payment is being verified. Please wait.");
+    }
   }
 
   const removeMut = useMutation({

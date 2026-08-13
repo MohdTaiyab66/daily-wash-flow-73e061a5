@@ -314,11 +314,14 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     } catch {
       lastErr = { message: text };
     }
+    
     // Permanent failures — bail immediately so caller can mark token invalid.
     if (code && ["UNREGISTERED", "INVALID_ARGUMENT", "SENDER_ID_MISMATCH", "NOT_FOUND"].includes(code)) {
       return { token: input.token, ok: false, errorCode: code, errorMessage: lastErr.message };
     }
+    
     // Backoff for transient errors (UNAVAILABLE, INTERNAL, QUOTA_EXCEEDED).
+    // Bounded retries with exponential backoff (250ms, 500ms, 1000ms).
     await new Promise((r) => setTimeout(r, 250 * Math.pow(2, attempt)));
   }
   return { token: input.token, ok: false, errorCode: lastErr.code, errorMessage: lastErr.message };
@@ -346,8 +349,18 @@ export async function sendOfferPush(args: {
     .is("invalid_at", null);
   if (error) throw error;
   const type = args.data.type || "";
-  const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
-  const isDS = type === "daily_shine_offer";
+  // Canonical mapping for P0-B Reliability
+  const canonicalTypeMap: Record<string, string> = {
+    "vehicle_not_found": "vehicle_unavailable",
+    "dirty": "vehicle_dirty",
+    "completed": "service_completed",
+    "assigned": "partner_assigned",
+    "new_assignments": "new_booking",
+  };
+  const mappedType = canonicalTypeMap[type] || type;
+  
+  const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
+  const isDS = mappedType === "daily_shine_offer";
 
   if (!tokens || tokens.length === 0) {
     if (isUnavailable) console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED count=0`);

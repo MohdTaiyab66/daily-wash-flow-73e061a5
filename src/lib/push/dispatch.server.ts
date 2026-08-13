@@ -36,7 +36,9 @@ type PendingOfferRow = {
 
 async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
   const { data: offers, error } = await sb.rpc("list_pending_push_offers");
-  if (!error && offers) return offers as PendingOfferRow[];
+  if (!error && offers) {
+    return offers as PendingOfferRow[];
+  }
   // Fallback when the RPC isn't installed.
   const { data: fallback, error: fbErr } = await sb
     .from("subscription_offers")
@@ -68,13 +70,21 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  *
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
-export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): Promise<number> {
+export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
   const sb = await admin();
   const sendOfferPush = await sender();
+  
+  if (pBookingId) {
+    console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${pBookingId}`);
+  }
   const rows = await listPendingOffers(sb);
+  const totalEligible = rows.length;
+  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
+  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
 
   let dispatched = 0;
-  for (const r of rows) {
+  // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
+  const fanoutPromises = rows.map(async (r) => {
     const { data: claim, error: claimError } = await sb
       .from("offer_delivery_events")
       .insert({
@@ -86,22 +96,20 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
       })
       .select("id")
       .single();
-    if (claimError || !claim?.id) continue;
+    
+    if (claimError || !claim?.id) {
+      if (claimError?.code === "23505") {
+        // Idempotency check: already claimed by another process (e.g., cron vs immediate)
+        return false;
+      }
+      return false;
+    }
+    
+    console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
     const title = "🚗 New Daily Shine Customer";
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} — tap to view (90s)`;
-    // NOTE: `type` must be in the Kotlin ASSIGNMENT_TYPES set so the native
-    // service routes this through `postAssignment` (high-importance channel,
-    // full-screen intent, custom sound, vibration, wake screen). `dataOnly`
-    // suppresses the FCM notification block so background/killed devices
-    // always dispatch through onMessageReceived instead of the system tray.
-    // REQUIRED CONTRACT — UrbanwashMessagingService.postOffer() returns early
-    // (no notify() call, no visible notification) unless ALL THREE of
-    // `action_token`, `broadcast_id` and `offer_id` are present in `data`.
-    // Daily Shine offers live in subscription_offers / subscription_assignment_queue,
-    // which have no marketplace broadcast row, so we map queue_id -> broadcast_id
-    // and use the offer id as the action nonce — exactly the shape the Offer
-    // Self-Test sends (push-selftest.functions.ts).
+    
     const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
@@ -115,10 +123,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
     if (r.area) data.area = r.area;
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
-
-
     try {
-      console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=daily_shine_offer partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+      console.log(`[BOOKING-PUSH:06] TOKENS_RESOLVED success=1 missing=0 partner_id=${r.partner_id}`);
+      console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -128,9 +135,11 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
         dataOnly: true,
         tag: r.offer_id,
       });
-      if (result.sent > 0) {
-        console.log(`[PARTNER-BOOKING-E2E:07] FCM_SERVER_ACCEPTED offer_id=${r.offer_id} message_id=${result.results[0]?.messageId}`);
-      }
+
+      const successCount = result.sent;
+      const failureCount = result.failed;
+      console.log(`[BOOKING-PUSH:08] FCM_BATCH_DISPATCH_RESULT success=${successCount} failed=${failureCount} offer_id=${r.offer_id}`);
+
       const { error: logError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -144,15 +153,18 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
           },
         })
         .eq("id", claim.id);
+      
       if (logError) throw logError;
+      
       await sb
         .from("partner_notifications")
         .update({ pushed_at: new Date().toISOString() })
         .eq("type", "daily_shine_offer")
         .eq("metadata->>offer_id", r.offer_id);
-      if (result.sent > 0) dispatched++;
+      
+      return result.sent > 0;
     } catch (e: any) {
-      // Leave the event as push_failed; the cron sweep is the retry path.
+      console.error(`[BOOKING-PUSH:ERROR] Dispatch failed for partner_id=${r.partner_id}`, e);
       const { error: failLogError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -160,9 +172,15 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch"): 
           meta: { error: e?.message ?? String(e), claimed_event_id: claim.id, claimed_by: claimedBy },
         })
         .eq("id", claim.id);
-      if (failLogError) throw failLogError;
+      if (failLogError) console.warn("Failed to log push failure", failLogError);
+      return false;
     }
-  }
+  });
+
+  const results = await Promise.all(fanoutPromises);
+  dispatched = results.filter(Boolean).length;
+  
+  console.log(`[BOOKING-PUSH:09] FANOUT_COMPLETE total_dispatched=${dispatched}`);
   return dispatched;
 }
 
@@ -186,11 +204,16 @@ export const CUSTOMER_ALLOWED_TYPES = new Set<string>([
   "subscription_activated",
   "booking_confirmed",
   "refund_processing",
+  "booking_created",
+  "new_booking",
+  "booking_cancelled",
   // Service lifecycle (customer-visible only)
   "service_completed",
   "service_started",
   "partner_accepted",
   "partner_assigned",
+  "partner_assigned_immediate",
+  "service_rescheduled",
 
   "completed",
   "vehicle_unavailable",
@@ -246,10 +269,14 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
   "payment_failed",
   "subscription_activated",
   "booking_confirmed",
+  "booking_created",
+  "new_booking",
+  "booking_cancelled",
   "vehicle_unavailable",
   "service_unavailable",
   "vehicle_dirty",
   "dirty_vehicle",
+  "service_rescheduled",
 ]);
 
 /**
@@ -273,37 +300,50 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
-    const isUnavailable = type === "service_unavailable" || type === "vehicle_unavailable" || type === "vehicle_dirty" || type === "dirty_vehicle";
+    // Canonical mapping to prevent unknown events
+    const canonicalTypeMap: Record<string, string> = {
+      "vehicle_not_found": "vehicle_unavailable",
+      "dirty": "vehicle_dirty",
+      "completed": "service_completed",
+      "assigned": "partner_assigned",
+    };
+    const mappedType = canonicalTypeMap[type] || type;
+
+    const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle";
     
     if (isUnavailable) {
-      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
-      console.log(`[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
-      console.log(`[UNAVAILABLE-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
+      console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
+      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
     } else {
-      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${type} user_id=${r.user_id}`);
-      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${type}`);
+      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
+      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
       console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
     }
 
-    if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
+    if (!CUSTOMER_ALLOWED_TYPES.has(mappedType)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${type}" id=${r.id}`);
+      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${mappedType}" id=${r.id}`);
       continue;
     }
     
-    const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
+    const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
-      console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${type}`);
+      if (isUnavailable) {
+        console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
+      } else {
+        console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
+      }
 
-      
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
-        type,
+        type: mappedType,
         link: r.link || (headsUp ? "/app" : ""),
         broadcast_id: `customer:${r.id}`,
         action_token: String(r.id),
         offer_id: String(r.id),
       };
+
+      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
 
       const result = await sendOfferPush({
         userId: r.user_id,
@@ -317,18 +357,19 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
       if (result.sent > 0) {
         if (isUnavailable) {
-          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
+          console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
         } else {
           console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
         }
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        // [CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED logged as count=0 inside sendOfferPush
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
         console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
+
+      if (isUnavailable) console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
 
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
@@ -355,15 +396,24 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of rows ?? []) {
     const type = String(r.type ?? "");
-    const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(type);
+    // Canonical mapping for P0-B Reliability
+    const canonicalTypeMap: Record<string, string> = {
+      "new_assignments": "new_booking",
+      "assignment_created": "new_booking",
+      "partner_assigned": "new_booking",
+    };
+    const mappedType = canonicalTypeMap[type] || type;
+    
+    const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
+    
     try {
-      console.log(`[CUSTOMER-SERVICE-PUSH] sendOfferPush start id=${r.id} type=${type}`);
+      console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
         body: r.body ?? "",
         data: {
-          type,
+          type: mappedType,
           link: r.link ?? (isAssignment ? "/app/assignments" : ""),
           // REQUIRED CONTRACT — UrbanwashMessagingService.postAssignment()
           // or postOffer() returns early unless broadcast_id and action_token

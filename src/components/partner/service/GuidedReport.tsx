@@ -96,7 +96,7 @@ export function GuidedReport({
     let pos: { lat: number; lng: number } | null = null;
     try {
       pos = await getPosition();
-      console.log(`[UNAVAILABLE-E2E:01] PARTNER_UNAVAILABLE_ACTION service_id=${serviceId} kind=${kind} reason=${reason}`);
+      console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION service_id=${serviceId} kind=${kind} reason=${reason}`);
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
@@ -109,16 +109,15 @@ export function GuidedReport({
         p_lng: pos?.lng ?? null,
       } as any);
       if (error) {
-        console.error(`[CUSTOMER-E2E:COMPLETE:ERR] RPC_ERROR (unavailable)`, error);
+        console.error(`[UNAVAILABLE-PUSH:FAILURE] RPC_ERROR (unavailable)`, error);
         throw error;
       }
-      console.log(`[UNAVAILABLE-E2E:02] SERVICE_STATUS_UPDATED service_id=${serviceId} status=unavailable`);
+      console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED service_id=${serviceId} status=unavailable`);
       
       const r: any = data ?? {};
-      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED notification_id=${r.notification_id}`);
+      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED notification_id=${r.notification_id}`);
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       
-      console.log("[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED");
       import("@/lib/push/immediate.functions").then(m => {
         // Direct Send (Proven Path)
         m.sendDirectCompletionPush({
@@ -132,11 +131,11 @@ export function GuidedReport({
               : "We couldn't complete your service today. View details in My Plan."
           }
         }).then(res => {
-          console.log(`[CUSTOMER-COMPLETE-PUSH:05] DIRECT_SEND_FINISHED (unavailable) result:`, res);
-        }).catch(e => console.error("[CUSTOMER-COMPLETE-PUSH:ERR] direct send failed", e));
+          console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE (direct send finished)`);
+        }).catch(e => console.error("[UNAVAILABLE-PUSH:ERR] direct send failed", e));
 
         // Background queue flush
-        m.flushNotificationPush().catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
+        m.flushNotificationPush().catch(e => console.error("[UNAVAILABLE-PUSH:ERR] flush failed", e));
       });
       qc.setQueryData(["service", serviceId], (current: any) =>
         current ? { ...current, status: "unavailable", unavailable_reason: rpcReason, unavailable_notes: rpcNotes } : current,

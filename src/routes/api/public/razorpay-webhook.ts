@@ -63,26 +63,26 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           p_signature: signature,
           p_raw_payload: event,
         });
-        if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
+        if (error) {
+          console.error(`[PAYMENT-E2E:06] ACTIVATION_RESULT webhook_error=${error.message}`);
+          return Response.json({ ok: false, error: error.message }, { status: 500 });
+        }
+        console.log(`[PAYMENT-E2E:06] ACTIVATION_RESULT webhook_success`);
+        
         // Phase 2 shadow: log payment_verified in the new pipeline in parallel with legacy.
         try { await (supabaseAdmin as any).rpc("ds_on_payment_verified", { p_booking_id: booking.id }); } catch {}
+        
         // Instant partner dispatch: don't wait for the cron tick.
         try {
-          console.log(`[PARTNER-BOOKING-E2E:01] CUSTOMER_BOOKING_CREATED booking_id=${booking.id}`);
+          console.log(`[BOOKING-PUSH:01] PAYMENT_VERIFIED_TRIGGER webhook booking_id=${booking.id}`);
           await (supabaseAdmin as any).rpc("sweep_subscription_offers");
-          console.log(`[PARTNER-BOOKING-E2E:02] ELIGIBLE_PARTNERS_RESOLVED booking_id=${booking.id}`);
-        } catch {}
-        // Immediate FCM push for the offers just created; cron is the retry path.
-        try {
-          console.log(`[PARTNER-BOOKING-E2E:03] PARTNER_NOTIFICATION_CREATED`);
-          const { dispatchPendingOffers, dispatchCustomerNotifications, dispatchPartnerNotifications } = await import("@/lib/push/dispatch.server");
-          console.log(`[PARTNER-BOOKING-E2E:04] REALTIME_DISPATCH_TRIGGERED`);
-          await Promise.all([
-            dispatchPendingOffers("immediate:razorpay-webhook"),
-            dispatchCustomerNotifications(),
-            dispatchPartnerNotifications(),
-          ]);
+          
+          // Immediate FCM push for the offers just created; cron is the retry path.
+          const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
+          console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${booking.id}`);
+          await dispatchPendingOffers("immediate:razorpay-webhook", booking.id);
         } catch (e) { console.warn("[razorpay-webhook] immediate push dispatch failed", e); }
+        
         return Response.json({ ok: true, result: data });
       },
     },
