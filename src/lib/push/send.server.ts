@@ -222,7 +222,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const projectId = process.env.FIREBASE_PROJECT_ID!;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
   console.log(`[DIRECT-FCM-PAYLOAD] PROJECT_ID: ${projectId}`);
-  console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: PENDING`);
+  console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_ID: PENDING (PROJECT: ${projectId})`);
   console.log(`[DIRECT-FCM-PAYLOAD] TOKEN_LAST_6: ${input.token.slice(-6)}`);
   console.log(`[DIRECT-FCM-PAYLOAD] NOTIFICATION_TITLE: ${input.title}`);
   console.log(`[DIRECT-FCM-PAYLOAD] NOTIFICATION_BODY: ${input.body}`);

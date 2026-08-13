@@ -92,12 +92,14 @@ export const sendDirectTestPush = createServerFn({ method: "POST" })
       body: "This is a direct FCM test from the diagnostics panel.",
       data: {
         type: "test_notification",
+        title: "Urban Wash Test", // Redundant but safe
+        body: "Direct FCM test notification",
         broadcast_id: `test:${Date.now()}`,
         action_token: `test_token:${Date.now()}`,
         sent_at: new Date().toISOString(),
       },
       channelId: "assignments_v4",
-      // STEP 5: Ensure notification + data (NOT data-only for this test)
+      // STEP 6: TEST WITH NOTIFICATION + DATA (Explicitly proven to work with FCM Server)
       dataOnly: false,
     });
 
