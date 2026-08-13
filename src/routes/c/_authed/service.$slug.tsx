@@ -232,6 +232,7 @@ function ServiceDetail() {
 
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
   const category = vehicle?.category;
+  const isSUV = category === "sedan_suv";
   
   // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {

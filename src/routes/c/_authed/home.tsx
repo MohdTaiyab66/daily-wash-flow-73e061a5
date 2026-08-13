@@ -12,6 +12,7 @@ import { usePlanInclusions } from "@/components/customer/PlanInclusionsCard";
 import { EditVehicleDialog, ChangePhotoDialog } from "@/components/customer/EditVehicleInline";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
+import { resolveDailyShinePrice } from "@/lib/pricing";
 import { SkeletonCard } from "@/components/customer/ui/Skeletons";
 import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";

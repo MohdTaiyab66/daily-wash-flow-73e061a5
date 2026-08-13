@@ -149,6 +149,13 @@ function MyPlanPage() {
   const activeSub = subs.find(
     (s) => s.status !== "cancelled" && s.status !== "expired" && new Date(s.scheduled_date) <= new Date(),
   ) ?? subs[0];
+  const { data: services } = useQuery({
+    queryKey: ["service-catalog"],
+    queryFn: async () => {
+      const { data } = await supabase.from("service_catalog").select("*");
+      return data ?? [];
+    }
+  });
 
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
   const totalDays = 25;
@@ -267,7 +274,7 @@ function MyPlanPage() {
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
-                        const dailyShineService = servicesQ.data?.find(s => s.slug === 'daily-shine');
+                        const dailyShineService = services?.find(s => s.slug === 'daily-shine');
                         const price = subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
                         
                         console.log("[DAILY-SHINE-PRICE]", {
@@ -387,7 +394,7 @@ function MyPlanPage() {
         open={builderOpen}
         onOpenChange={setBuilderOpen}
         basePlanSlug={activePlanSlug ?? "daily_shine_monthly"}
-        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, servicesQ.data?.find(s => s.slug === 'daily-shine')))}
+        basePlanPrice={Number(subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, services?.find((s: any) => s.slug === 'daily-shine')))}
         basePlanName={activeSub?.service_catalog?.name ?? "Daily Shine"}
       />
 
