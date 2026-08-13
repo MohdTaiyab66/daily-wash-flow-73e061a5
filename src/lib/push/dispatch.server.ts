@@ -262,8 +262,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     .limit(50);
 
   let sentCount = 0;
-  for (const r of rows ?? []) {
+  for (const r of (rows ?? [])) {
     const type = String(r.type ?? "");
+    console.log(`[CUSTOMER-SERVICE-PUSH] Processing id=${r.id} type=${type} user=${r.user_id}`);
+
     if (!CUSTOMER_ALLOWED_TYPES.has(type)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       console.warn(`[push-dispatch] blocked customer notification type="${type}" id=${r.id}`);
@@ -271,6 +273,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     }
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(type);
     try {
+      console.log(`[CUSTOMER-SERVICE-PUSH] Dispatching type=${type} to user=${r.user_id} notification_id=${r.id}`);
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -289,11 +292,15 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
+        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Success id=${r.id} sent=${result.sent}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
+        console.log(`[CUSTOMER-SERVICE-PUSH] FCM Skipped (No Tokens) id=${r.id}`);
         // No devices registered at all — nothing to retry for.
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+      } else {
+        console.error(`[CUSTOMER-SERVICE-PUSH] FCM Failure id=${r.id} failed=${result.failed} errors=`, result.results.filter(x => !x.ok).map(x => x.errorCode));
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
@@ -322,6 +329,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const type = String(r.type ?? "");
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(type);
     try {
+      console.log(`[CUSTOMER-SERVICE-PUSH] sendOfferPush start id=${r.id} type=${type}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
