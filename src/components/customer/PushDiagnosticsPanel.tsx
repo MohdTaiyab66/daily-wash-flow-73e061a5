@@ -177,10 +177,12 @@ export function PushDiagnosticsPanel() {
               Push Notification Forensic Panel
             </CardTitle>
             <div className="text-[10px] space-y-0.5 mt-1 font-mono text-muted-foreground uppercase">
-              <div>AUTH: <span className={data?.user_id ? "text-success" : "text-destructive"}>{data?.user_id ? "READY" : "NOT READY"}</span></div>
-              <div>PERMISSION: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "GRANTED" : "UNKNOWN"}</span></div>
-              <div>FCM: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "INITIALIZED" : "UNKNOWN"}</span></div>
-              <div>BACKEND: <span className={data?.tokens?.length ? "text-success" : ""}>{data?.tokens?.length ? "SUCCESS" : "UNKNOWN"}</span></div>
+              <div>AUTH: <span className={safeDiagnostics.user_id ? "text-success" : ""}>{authLabel}</span></div>
+              <div>PERMISSION: <span className={hasTokens ? "text-success" : ""}>{permissionLabel}</span></div>
+              <div>FCM: <span className={hasTokens ? "text-success" : ""}>{fcmLabel}</span></div>
+              <div>BACKEND: <span className={backendLabel === "SUCCESS" ? "text-success" : backendLabel === "ERROR" ? "text-destructive" : ""}>{backendLabel}</span></div>
+              <div>ANDROID: <span className={androidLabel === "RECEIVED" ? "text-success" : ""}>{androidLabel}</span></div>
+              {error && <div className="text-destructive normal-case">FORENSIC ERROR: {String((error as any)?.message ?? error)}</div>}
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => refetch()}>
@@ -194,24 +196,24 @@ export function PushDiagnosticsPanel() {
         <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
           <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Backend Config</p>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
-            <div>Project: <span className="font-mono text-primary">{data?.firebase_config?.project_id}</span></div>
+            <div>Project: <span className="font-mono text-primary">{safeDiagnostics.firebase_config?.project_id ?? "UNKNOWN"}</span></div>
             <div className="flex items-center gap-1">
               Auth: {configOk ? <CheckCircle2 className="h-3 w-3 text-success" /> : <AlertTriangle className="h-3 w-3 text-destructive" />}
             </div>
-            <div className="col-span-2 text-[9px] opacity-60">Email: <span className="font-mono">{data?.firebase_config?.client_email}</span></div>
+            <div className="col-span-2 text-[9px] opacity-60">Email: <span className="font-mono">{safeDiagnostics.firebase_config?.client_email ?? "UNKNOWN"}</span></div>
           </div>
         </div>
 
         {/* Tokens */}
         <div className="rounded-xl bg-muted/30 p-3 border border-black/5">
-          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Active Tokens ({data?.tokens?.length || 0})</p>
+          <p className="font-bold text-[10px] text-muted-foreground uppercase mb-2 tracking-widest">Active Tokens ({safeTokens.length})</p>
           {hasTokens ? (
             <div className="space-y-2">
-              {data.tokens.map((t: any) => (
-                <div key={t.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
+              {safeTokens.map((t: any) => (
+                <div key={t?.id ?? Math.random()} className="flex items-center justify-between p-2 rounded border bg-muted/50">
                   <div>
-                    <div className="font-bold uppercase text-[10px]">{t.platform} • {t.app}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground">ID: {data.user_id?.slice(0, 8)}... | {t.token_tail}</div>
+                    <div className="font-bold uppercase text-[10px]">{t?.platform ?? "?"} • {t?.app ?? "?"}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">ID: {safeDiagnostics.user_id?.slice(0, 8) ?? "—"}... | {t?.token_tail ?? "—"}</div>
 
                   </div>
                   <div className="text-[9px] text-right">
