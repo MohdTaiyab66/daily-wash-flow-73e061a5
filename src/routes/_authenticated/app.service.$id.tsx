@@ -231,6 +231,9 @@ function ServiceDetail() {
 
   const complete = useMutation({
     mutationFn: async () => {
+      // [CUSTOMER-SERVICE-PUSH:E1] Start partner completion
+      console.log("[CUSTOMER-SERVICE-PUSH:E1] START_COMPLETION", { service_id: id });
+      
       if (!beforeDone) throw new Error("Take the before photo first");
       if (!afterAllDone) throw new Error("Take all 4 after photos first");
       const pos = await getPosition();
@@ -243,11 +246,13 @@ function ServiceDetail() {
         p_notes: serviceNotes.trim() || null,
       });
       if (error) {
-        
+        console.error("[CUSTOMER-SERVICE-PUSH:E1] RPC_ERROR", error);
         const code = (error as any).code ?? "";
         if (code === "P04PHOTO") throw new Error("Some photos are missing. Please take them again.");
         throw new Error((error as any).message ?? "Could not complete service");
       }
+      
+      console.log("[CUSTOMER-SERVICE-PUSH:E1] RPC_SUCCESS", data);
       
       if (service?.started_at) {
         const total = Math.max(0, Math.floor((Date.parse(completedAt) - Date.parse(service.started_at)) / 1000));
