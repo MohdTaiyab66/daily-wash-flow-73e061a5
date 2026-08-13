@@ -34,21 +34,11 @@ export function PushDiagnosticsPanel() {
         const Plugins = (window as any).Capacitor?.Plugins;
         const Preferences = Plugins?.Preferences;
         
-        if (!Preferences) {
-          // Silent fallback, don't log every 2s
-          return;
-        }
+        if (!Preferences) return;
 
         // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
         // We use .get() which returns { value: string | null }
-        const [
-          { value: lastMsgId },
-          { value: lastReceivedAt },
-          { value: lastType },
-          { value: lastTitle },
-          { value: lastNotifId },
-          { value: lastNotifAt }
-        ] = await Promise.all([
+        const results = await Promise.all([
           Preferences.get({ key: 'last_fcm_message_id' }).catch(() => ({ value: null })),
           Preferences.get({ key: 'last_fcm_received_at' }).catch(() => ({ value: null })),
           Preferences.get({ key: 'last_fcm_type' }).catch(() => ({ value: null })),
@@ -57,6 +47,13 @@ export function PushDiagnosticsPanel() {
           Preferences.get({ key: 'last_notif_posted_at' }).catch(() => ({ value: null }))
         ]);
         
+        const lastMsgId = results[0]?.value;
+        const lastReceivedAt = results[1]?.value;
+        const lastType = results[2]?.value;
+        const lastTitle = results[3]?.value;
+        const lastNotifId = results[4]?.value;
+        const lastNotifAt = results[5]?.value;
+
         if (lastMsgId) {
           setNativeState({
             fcm: {
