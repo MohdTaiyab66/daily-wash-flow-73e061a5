@@ -53,12 +53,15 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
+    console.log(`[UNAVAILABLE-E2E:01] PARTNER_UNAVAILABLE_ACTION id=${data.serviceId} type=${data.type}`);
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    console.log(`[CUSTOMER-COMPLETE-PUSH:01] START customer_id=${data.customerId} service_id=${data.serviceId} type=${data.type}`);
+    // 1. Resolve status (Checkpoint 02)
+    const { data: svc } = await supabaseAdmin.from("services").select("status").eq("id", data.serviceId).maybeSingle();
+    console.log(`[UNAVAILABLE-E2E:02] SERVICE_STATUS_UPDATED status=${svc?.status}`);
 
-    // Resolve the customer's user_id from their customer_id
+    // 2. Resolve user_id (Checkpoint 05)
     const { data: customer } = await (supabaseAdmin as any)
       .from("customer_profiles")
       .select("user_id")
@@ -66,13 +69,28 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .single();
 
     if (!customer?.user_id) {
-      console.error(`[CUSTOMER-COMPLETE-PUSH:ERR] Could not resolve user_id for customer_id=${data.customerId}`);
+      console.error(`[UNAVAILABLE-E2E:FAILURE] Could not resolve user_id for customer_id=${data.customerId}`);
       return { ok: false, error: "no_user_id" };
     }
-
     const userId = customer.user_id;
+    console.log(`[UNAVAILABLE-E2E:05] CUSTOMER_USER_RESOLVED user_id=${userId}`);
 
-    // Use the SAME proven send function and payload structure as Direct Test Push
+    // 3. Verify notification row (Checkpoint 03/04)
+    const { data: notif } = await supabaseAdmin
+      .from("customer_notifications")
+      .select("id, type")
+      .eq("user_id", userId)
+      .eq("metadata->>service_id", data.serviceId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (notif) {
+      console.log(`[UNAVAILABLE-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${notif.id}`);
+      console.log(`[UNAVAILABLE-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${notif.type}`);
+    }
+
+    // 4. Send (Checkpoint 07/08)
     const res = await sendOfferPush({
       userId,
       title: data.title,
@@ -89,6 +107,11 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       dataOnly: true, // Native heads-up path
     });
 
-    console.log(`[CUSTOMER-COMPLETE-PUSH:05] FCM_RESPONSE`, res);
+    if (res.sent > 0) {
+      console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED message_id=${res.results[0]?.messageId}`);
+    } else {
+      console.error(`[UNAVAILABLE-E2E:FAILURE] FCM_SEND_FAILED result=${JSON.stringify(res)}`);
+    }
+
     return { ok: true, ...res };
   });
