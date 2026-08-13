@@ -276,11 +276,13 @@ function ServiceDetail() {
       import("@/lib/push/immediate.functions").then(m => {
         // Direct Send (Proven Path)
         m.sendDirectCompletionPush({
-          customerId: (service as any).customers.id,
-          serviceId: id,
-          type: "service_completed",
-          title: "Daily Shine completed",
-          body: "Your Daily Shine service has been completed. Tap My Plan to view your service photos."
+          data: {
+            customerId: (service as any).customers.id,
+            serviceId: id,
+            type: "service_completed",
+            title: "Daily Shine completed",
+            body: "Your Daily Shine service has been completed. Tap My Plan to view your service photos."
+          }
         }).then(res => {
           console.log(`[CUSTOMER-COMPLETE-PUSH:05] DIRECT_SEND_FINISHED result:`, res);
         }).catch(e => console.error("[CUSTOMER-COMPLETE-PUSH:ERR] direct send failed", e));
