@@ -98,6 +98,16 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                 putString("last_fcm_body", data["body"] ?: msg.notification?.body)
                 apply()
             }
+            // Also write to Capacitor Preferences default storage (CapacitorStorage)
+            // so the JS Preferences plugin can read it without custom native code.
+            val capPrefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+            capPrefs.edit().apply {
+                putString("last_fcm_message_id", msgId)
+                putString("last_fcm_received_at", System.currentTimeMillis().toString())
+                putString("last_fcm_type", type)
+                putString("last_fcm_title", data["title"] ?: msg.notification?.title)
+                apply()
+            }
         } catch (e: Exception) {
             Log.e("CUSTOMER-PUSH-NATIVE", "Failed to persist diagnostic receipt", e)
         }
@@ -404,6 +414,12 @@ try {
         putString("last_notif_posted_id", notifKey.hashCode().toString())
         putLong("last_notif_posted_at", System.currentTimeMillis())
         putString("last_notif_channel", CHANNEL_ASSIGNMENTS)
+        apply()
+    }
+    val capPrefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+    capPrefs.edit().apply {
+        putString("last_notif_posted_id", notifKey.hashCode().toString())
+        putString("last_notif_posted_at", System.currentTimeMillis().toString())
         apply()
     }
 } catch (e: Exception) {

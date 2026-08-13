@@ -22,7 +22,7 @@ export function PushDiagnosticsPanel() {
 
     const checkNative = async () => {
       try {
-        // We use the direct Preferences API to read what the Kotlin service wrote
+        // The Capacitor Preferences plugin reads from the "CapacitorStorage" SharedPreferences by default.
         const { value: lastMsgId } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_message_id' });
         const { value: lastReceivedAt } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_received_at' });
         const { value: lastType } = await (window as any).Capacitor.Plugins.Preferences.get({ key: 'last_fcm_type' });
