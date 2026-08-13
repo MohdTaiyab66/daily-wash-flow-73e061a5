@@ -300,14 +300,15 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        console.log(`[CUSTOMER-E2E:DISPATCH:SUCCESS] sent=${result.sent} id=${r.id}`);
+        console.log(`[CUSTOMER-E2E:11-SUCCESS] NOTIFICATION_PUSHED id=${r.id} message_id=${result.results[0]?.messageId}`);
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
-        // [CUSTOMER-E2E:09-TOKEN] is logged inside sendOfferPush
+        // [CUSTOMER-E2E:09-TOKEN] = 0 logged inside sendOfferPush. 
+        // Mark as pushed so we don't keep picking up users with no tokens.
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
       } else {
-        console.error(`[CUSTOMER-E2E:DISPATCH:ERR] FCM_FAILURE id=${r.id} failed=${result.failed}`);
+        console.error(`[CUSTOMER-E2E:11-FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
       }
       // sent === 0 && failed > 0 → leave pushed_at null so cron retries.
     } catch (e) {
