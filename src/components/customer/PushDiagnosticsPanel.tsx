@@ -17,6 +17,13 @@ type NativeFcmState = {
   nativeTokenSuffix: string | null;
   buildId: string | null;
   errorReason: string | null;
+  nativeInfo: {
+    tokenTail?: string;
+    packageName?: string;
+    senderId?: string;
+    projectId?: string;
+    googleAppId?: string;
+  } | null;
 };
 
 const DEFAULT_NATIVE_STATE: NativeFcmState = {
@@ -26,6 +33,7 @@ const DEFAULT_NATIVE_STATE: NativeFcmState = {
   nativeTokenSuffix: null,
   buildId: null,
   errorReason: null,
+  nativeInfo: null,
 };
 
 type TestResultState = {
