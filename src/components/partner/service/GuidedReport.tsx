@@ -118,11 +118,25 @@ export function GuidedReport({
       console.log(`[CUSTOMER-E2E:03-CUSTOMER] CUSTOMER_RESOLVED (unavailable) customer_id=${r.customer_id} notification_id=${r.notification_id}`);
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       
-      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED");
+      console.log("[CUSTOMER-E2E:06-FLUSH] FLUSH_STARTED (Direct Completion Path - Unavailable)");
       import("@/lib/push/immediate.functions").then(m => {
-        m.flushNotificationPush().then(res => {
-          console.log(`[CUSTOMER-E2E:07-FLUSH] FLUSH_FINISHED result: customer=${res.customer} partner=${res.partner}`);
-        }).catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
+        // Direct Send (Proven Path)
+        m.sendDirectCompletionPush({
+          data: {
+            customerId: r.customer_id,
+            serviceId,
+            type: kind === "dirty" ? "vehicle_dirty" : "vehicle_unavailable",
+            title: kind === "dirty" ? "Vehicle needs attention" : "Service update",
+            body: kind === "dirty" 
+              ? "Your vehicle requires attention. View details in My Plan."
+              : "We couldn't complete your service today. View details in My Plan."
+          }
+        }).then(res => {
+          console.log(`[CUSTOMER-COMPLETE-PUSH:05] DIRECT_SEND_FINISHED (unavailable) result:`, res);
+        }).catch(e => console.error("[CUSTOMER-COMPLETE-PUSH:ERR] direct send failed", e));
+
+        // Background queue flush
+        m.flushNotificationPush().catch(e => console.error("[CUSTOMER-E2E:07-FLUSH:ERR] flush failed", e));
       });
       qc.setQueryData(["service", serviceId], (current: any) =>
         current ? { ...current, status: "unavailable", unavailable_reason: rpcReason, unavailable_notes: rpcNotes } : current,
