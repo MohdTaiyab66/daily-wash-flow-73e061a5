@@ -274,7 +274,7 @@ function MyPlanPage() {
 
                     <div className="rounded-[18px] border border-[#EEEEEE] bg-white p-5 shadow-sm">
                       {(() => {
-                        const dailyShineService = services?.find(s => s.slug === 'daily-shine');
+                        const dailyShineService = services?.find((s: any) => s.slug === 'daily-shine');
                         const price = subRow?.amount ?? activeSub?.total_amount ?? resolveDailyShinePrice(selectedVehicle?.category, dailyShineService);
                         
                         console.log("[DAILY-SHINE-PRICE]", {
@@ -285,28 +285,30 @@ function MyPlanPage() {
                           resolvedPrice: price,
                           priceSource: subRow?.amount || activeSub?.total_amount ? "DATABASE_SUB" : "CALCULATED_FALLBACK"
                         });
-                        return null;
-                      })()}
-                      <div className="flex items-start justify-between mb-6">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2.5">
-                            <h2 className="text-[13px] font-black uppercase tracking-[0.1em] text-[#1A1A1A]">
-                              Daily Shine
-                            </h2>
-                            <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-green-600">
-                              Active
+
+                        return (
+                          <div className="flex items-start justify-between mb-6">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2.5">
+                                <h2 className="text-[13px] font-black uppercase tracking-[0.1em] text-[#1A1A1A]">
+                                  Daily Shine
+                                </h2>
+                                <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-green-600">
+                                  Active
+                                </div>
+                              </div>
+                              <p className="text-[14px] font-medium text-black/40 leading-tight">
+                                Daily Shine Subscription
+                              </p>
+                              <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
+                                ₹{Number(price).toLocaleString("en-IN")} / month
+                                <span className="h-1 w-1 rounded-full bg-black/10" />
+                                <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-[14px] font-medium text-black/40 leading-tight">
-                            Daily Shine Subscription
-                          </p>
-                          <div className="mt-1.5 text-[15px] font-semibold text-[#1A1A1A] flex items-center gap-2">
-                            ₹{Number(price).toLocaleString("en-IN")} / month
-                            <span className="h-1 w-1 rounded-full bg-black/10" />
-                            <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       <div className="space-y-6">
                         <div>
