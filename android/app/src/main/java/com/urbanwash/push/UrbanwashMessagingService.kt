@@ -114,6 +114,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                 putString("last_fcm_type", type)
                 putString("last_fcm_title", data["title"] ?: msg.notification?.title)
                 putString("last_fcm_body", data["body"] ?: msg.notification?.body)
+                putString("last_notif_posted_id", "pending")
+                putLong("last_notif_posted_at", 0)
                 apply()
             }
             // Also write to Capacitor Preferences default storage (CapacitorStorage)
@@ -124,6 +126,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                 putString("last_fcm_received_at", System.currentTimeMillis().toString())
                 putString("last_fcm_type", type)
                 putString("last_fcm_title", data["title"] ?: msg.notification?.title)
+                putString("last_notif_posted_id", "pending")
+                putString("last_notif_posted_at", "0")
                 apply()
             }
         } catch (e: Exception) {
@@ -209,7 +213,28 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             }.getOrDefault(emptyList())
             val alive = active.contains(id)
             Log.d("UW_AUDIT", "5_probe_$at id=$id alive=$alive active=$active")
-            if (!alive) Log.e("UW_AUDIT", "5_DISAPPEARED_$at id=$id channel=$channelId")
+            
+            if (alive) {
+                // Update diagnostic prefs that notification was actually posted
+                try {
+                    val prefs = getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE)
+                    prefs.edit().apply {
+                        putString("last_notif_posted_id", id.toString())
+                        putLong("last_notif_posted_at", System.currentTimeMillis())
+                        apply()
+                    }
+                    val capPrefs = getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE)
+                    capPrefs.edit().apply {
+                        putString("last_notif_posted_id", id.toString())
+                        putString("last_notif_posted_at", System.currentTimeMillis().toString())
+                        apply()
+                    }
+                } catch (e: Exception) {
+                    Log.e("CUSTOMER-PUSH-NATIVE", "Failed to update post-receipt diagnostics", e)
+                }
+            } else {
+                Log.e("UW_AUDIT", "5_DISAPPEARED_$at id=$id channel=$channelId")
+            }
         }
         val h = Handler(Looper.getMainLooper())
         h.post { probe("t0") }
