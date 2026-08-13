@@ -160,27 +160,12 @@ export function PhotoSlot({
         }
       }
       if (lastError) throw lastError;
-      await logApkEvidence({
-        eventType: workflowEventName(workflow, "photo_upload_result"),
-        serviceId,
-        assignmentId,
-        gps: pos,
-        status: "success",
-        payload: { stage, angle, slot, path, elapsed_ms: Date.now() - startedAt },
-      });
       await deleteQueuedPhoto(queueKey);
       try { window.localStorage.removeItem(pathKey); } catch { /* noop */ }
       setQueuedPath(null);
       onUploaded(path);
       if (workflow === "service_photo") toast.success(`✓ ${label} saved`, { duration: 1100 });
     } catch (err) {
-      await logApkEvidence({
-        eventType: workflowEventName(workflow, "photo_upload_result"),
-        serviceId,
-        assignmentId,
-        status: "error",
-        payload: { slot, angle, ...evidenceError(err) },
-      });
       console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
       toast.error(typeof navigator !== "undefined" && navigator.onLine === false ? "Photo saved offline. It will retry automatically." : ((err as any)?.message ?? "Photo saved locally. Upload will retry."));
     } finally {
@@ -203,18 +188,12 @@ export function PhotoSlot({
     } finally {
       setCapturing(false);
     }
-    void logApkEvidence({
-      eventType: workflowEventName(workflow, "camera_attempt"),
-      serviceId,
-      assignmentId,
-      payload: { stage, angle, slot },
-    });
     if (!file) {
-      await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "blocked", payload: { stage, angle, slot, cancelled: true } });
+      
       toast.error(CAMERA_UNAVAILABLE_MESSAGE);
       return;
     }
-    await logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, size: file.size, type: file.type } });
+    
     await uploadCapturedFile(file, t0);
   };
 
@@ -251,7 +230,7 @@ export function PhotoSlot({
     void (async () => {
       const restored = await consumeRestoredCameraCapture({ slot });
       if (cancelled || !restored) return;
-      void logApkEvidence({ eventType: workflowEventName(workflow, "camera_result"), serviceId, assignmentId, status: "success", payload: { stage, angle, slot, restored: true, size: restored.size, type: restored.type } });
+      
       void uploadCapturedFile(restored);
     })();
     return () => { cancelled = true; };

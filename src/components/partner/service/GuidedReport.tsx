@@ -99,13 +99,6 @@ export function GuidedReport({
       const rpcReason = kind === "dirty" ? "dirty_vehicle" : reason;
       const label = reasons.find((r) => r.value === reason)?.label ?? reason;
       const rpcNotes = kind === "dirty" ? `${label}${notes ? ` · ${notes}` : ""}` : notes || "";
-      await logApkEvidence({
-        eventType: `${kind === "dirty" ? "dirty" : "unavailable"}_submit_attempt`,
-        serviceId,
-        assignmentId,
-        gps: pos,
-        payload: { reason: rpcReason, photo_count: capturedPaths.length },
-      });
       const { data, error } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
         p_reason: rpcReason,
@@ -116,14 +109,6 @@ export function GuidedReport({
       } as any);
       if (error) throw error;
       const r: any = data ?? {};
-      await logApkEvidence({
-        eventType: `${kind === "dirty" ? "dirty" : "unavailable"}_submit_result`,
-        serviceId,
-        assignmentId,
-        gps: pos,
-        status: "success",
-        payload: { rpc: data },
-      });
       toast.success(`Reported · ₹${Number(r.credit_amount ?? compensation)} credited`);
       qc.setQueryData(["service", serviceId], (current: any) =>
         current ? { ...current, status: "unavailable", unavailable_reason: rpcReason, unavailable_notes: rpcNotes } : current,
@@ -131,7 +116,7 @@ export function GuidedReport({
       writeDraft(serviceId, kind, { reason: "", notes: "" });
       onSubmitted();
     } catch (error: any) {
-      await logApkEvidence({ eventType: `${kind === "dirty" ? "dirty" : "unavailable"}_submit_result`, serviceId, assignmentId, gps: pos, status: "error", payload: evidenceError(error) });
+      
       toast.error(error?.message ?? "Could not send the report");
     } finally {
       inFlight.current = false;

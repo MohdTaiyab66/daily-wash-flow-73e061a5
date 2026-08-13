@@ -169,23 +169,6 @@ function RoutePage() {
   const currentStop = pending[0] ?? null;
   const currentSeq = currentStop ? (total - remaining + 1) : null;
 
-  useEffect(() => {
-    if (!services) return;
-    void logApkEvidence({
-      eventType: "route_loaded",
-      status: "success",
-      payload: {
-        total,
-        pending: pending.length,
-        completed: completedCount,
-        unavailable: unavailable.length,
-        dirty: dirty.length,
-        route_visible: routeUnlocked,
-        first_service_id: currentStop?.id ?? null,
-        first_destination: currentStop ? { lat: (currentStop as any).lat, lng: (currentStop as any).lng } : null,
-      },
-    });
-  }, [services, total, pending.length, completedCount, unavailable.length, dirty.length, routeUnlocked, currentStop?.id]);
 
   const nextStop = pending[0] ?? null;
   const queueStops = pending.slice(1);
