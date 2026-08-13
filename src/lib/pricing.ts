@@ -9,7 +9,7 @@ export const resolveDailyShinePrice = (
   category: string | null | undefined, 
   service: { price_hatchback: number; price_sedan_suv: number } | null | undefined
 ) => {
-  const cat = category?.toLowerCase() || '';
+  const cat = category?.toLowerCase() || 'hatchback_compact_sedan'; // DEFAULT TO HATCHBACK
   
   // Use service catalog prices if available, otherwise fall back to strict defaults
   const hatchbackPrice = service?.price_hatchback ?? 999;
@@ -20,20 +20,10 @@ export const resolveDailyShinePrice = (
    * 
    * 'hatchback_compact_sedan' (DB Key) -> Hatchback Pricing
    * 'sedan_suv' (DB Key) -> SUV Pricing
-   * 
-   * We also check for keywords to be safe if a raw string is passed.
    */
-  const isHighTier = cat === 'sedan_suv' || (cat.includes('suv') && !cat.includes('compact')) || (cat.includes('sedan') && !cat.includes('compact'));
+  const isHighTier = cat === 'sedan_suv';
   
   const resolvedPrice = isHighTier ? suvPrice : hatchbackPrice;
-
-  console.log("[PRICE-TRACE-04] [DAILY-SHINE-PRICE-RESOLVER]", {
-    inputCategory: category,
-    normalizedCategory: cat,
-    isHighTier,
-    resolvedPrice,
-    source: service ? 'SERVICE_CATALOG' : 'STRICT_FALLBACK'
-  });
 
   return resolvedPrice;
 };

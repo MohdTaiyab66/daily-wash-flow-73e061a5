@@ -232,24 +232,13 @@ function ServiceDetail() {
   const profile = profileQ.data;
 
   const vehicle = useMemo(() => vehicles.find(v => v.id === (vehicleId || search.vehicleId)) || vehicles[0], [vehicles, vehicleId, search.vehicleId]);
-  const category = vehicle?.category;
+  const category = vehicle?.category ?? "hatchback_compact_sedan";
   const isSUV = category === "sedan_suv";
   
   // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
     if (service && vehicle) {
       const price = resolveDailyShinePrice(category, service);
-      console.log("[PRICE-TRACE-06] service detail price =", price);
-      console.log("[PRICE-TRACE-08] cart price updated =", price);
-
-      console.log("[DAILY-SHINE-PRICE]", {
-        vehicleId: vehicle.id,
-        vehicleModel: vehicle.model,
-        vehicleCategory: vehicle.category,
-        package: service.slug,
-        resolvedPrice: price,
-        priceSource: "SERVICE_CATALOG_DETAIL"
-      });
       setBaseService(service.id, service.name, price);
     }
   }, [service, category, vehicle?.id, setBaseService]);

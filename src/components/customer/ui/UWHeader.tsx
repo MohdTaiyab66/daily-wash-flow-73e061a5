@@ -82,6 +82,7 @@ export function UWHeader({
         {activeVehicle && (
           <div 
             ref={vehicleSelectorRef}
+            data-testid="uw-header-vehicle-btn"
             className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity min-w-0 flex-shrink-0 bg-[#F9F9F9] border border-[rgba(0,0,0,0.06)] rounded-[10px] h-[32px] pl-1 pr-2.5 shadow-sm"
             onClick={onVehicleClick}
           >
@@ -99,6 +100,7 @@ export function UWHeader({
             <div className="flex items-center gap-1 min-w-0">
               <span 
                 ref={vehicleTextRef}
+                data-testid="uw-header-vehicle-name"
                 className="text-[15px] font-medium text-[#1A1A1A] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] leading-tight tracking-tight"
               >
                 {activeVehicle.make} {activeVehicle.model}

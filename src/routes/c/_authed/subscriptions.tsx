@@ -284,16 +284,6 @@ function MyPlanPage() {
                         const price = (dbAmount && dbAmount !== 1199 && dbAmount !== 999) 
                           ? dbAmount 
                           : resolvedPrice;
-                        
-                        console.log("[PRICE-TRACE-07] [SUBSCRIPTION]", {
-                          vehicleId: selectedVehicle?.id,
-                          vehicleModel: selectedVehicle?.model,
-                          vehicleCategory: selectedVehicle?.category,
-                          resolvedPrice,
-                          dbAmount,
-                          finalPrice: price,
-                          precedence: dbAmount && dbAmount !== resolvedPrice ? "DB_OVERRIDE" : "VEHICLE_RESOLVER"
-                        });
 
 
                         return (
