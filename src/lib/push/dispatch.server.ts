@@ -244,6 +244,8 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
   "booking_confirmed",
   "vehicle_unavailable",
   "service_unavailable",
+  "vehicle_dirty",
+  "dirty_vehicle",
 ]);
 
 /**
