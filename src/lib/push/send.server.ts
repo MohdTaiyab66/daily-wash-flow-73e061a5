@@ -285,11 +285,11 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     });
     if (res.ok) {
       const json = (await res.json()) as { name: string };
-      console.log("[CUSTOMER-E2E:DISPATCH:05] FCM Success:", { token: input.token.slice(-8), messageId: json.name, type: input.data.type });
+      console.log(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT SUCCESS token=${input.token.slice(-8)} messageId=${json.name}`);
       return { token: input.token, ok: true, messageId: json.name };
     }
     const text = await res.text();
-    console.error("[PUSH-FORENSIC] FCM Error Response:", { status: res.status, body: text, token: input.token.slice(-8), type: input.data.type });
+    console.error(`[CUSTOMER-E2E:11-FCM] FCM_SEND_RESULT FAILURE status=${res.status} body=${text} token=${input.token.slice(-8)}`);
     let code: string | undefined;
     try {
       const j = JSON.parse(text);
