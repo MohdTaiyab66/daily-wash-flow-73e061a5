@@ -5,7 +5,7 @@ import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { evidenceError, logApkEvidence } from "@/lib/apkEvidence";
+
 import { PhotoSlot, getPosition, pickPhotoPaths, type ServicePhotoRow } from "./photo-slot";
 
 export type ReportReason = { value: string; label: string };

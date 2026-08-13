@@ -24,7 +24,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCartStore } from "@/lib/cart-store";
-import { APK_EVIDENCE } from "@/lib/apkEvidence";
+
 
 
 
@@ -316,14 +316,11 @@ function ServiceDetail() {
       console.log("[PAY_NOW] RPC SUCCESS:", bId);
       updateDiagStep('rpc', 'ok');
 
-      console.log("[PAYMENT] ORDER_CREATION_START", { bookingId: bId });
       let order;
       try {
         order = await createOrder({ data: { bookingId: bId } });
-        console.log("[PAYMENT] ORDER_CREATION_SUCCESS", { orderId: order.orderId });
         updateDiagStep('order', 'ok');
       } catch (err: any) {
-        console.error("[PAYMENT] ORDER_CREATION_FAILED", err);
         updateDiagStep('order', 'err', err.message);
         throw err;
       }

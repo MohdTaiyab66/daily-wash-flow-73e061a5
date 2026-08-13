@@ -20,7 +20,7 @@ import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { logApkEvidence } from "@/lib/apkEvidence";
+
 
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
 

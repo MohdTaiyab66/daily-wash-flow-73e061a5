@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isNative } from "@/lib/platform";
-import { logApkEvidence } from "@/lib/apkEvidence";
+
 
 export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<readonly unknown[]>) {
   const queryClient = useQueryClient();

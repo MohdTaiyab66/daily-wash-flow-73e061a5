@@ -15,7 +15,7 @@ import { formatTime12 } from "@/lib/format";
 import { VehiclePhotoViewer } from "@/components/VehiclePhotoViewer";
 import { VehicleImage } from "@/components/VehicleImage";
 import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
-import { logApkEvidence, evidenceError } from "@/lib/apkEvidence";
+
 import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
 import { PhotoSlot, getPosition, type ServicePhotoRow } from "@/components/partner/service/photo-slot";
 import { GuidedReport } from "@/components/partner/service/GuidedReport";
