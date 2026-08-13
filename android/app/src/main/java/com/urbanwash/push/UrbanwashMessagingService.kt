@@ -30,6 +30,7 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
     override fun onCreate() {
         super.onCreate()
         Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BOOT] UrbanwashMessagingService loaded")
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:BUILD] FCM-P0-FIREBASE-MERGE-05")
     }
 
     companion object {

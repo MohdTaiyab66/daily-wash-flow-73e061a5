@@ -15,17 +15,21 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
 
     @PluginMethod
     public void getLastFcmReceipt(PluginCall call) {
-        Log.d("CUSTOMER-PUSH-HANDSHAKE", "JS_REQUEST_RECEIVED");
+        Log.d("CUSTOMER-PUSH-HANDSHAKE", "JS_REQUEST_RECEIVED [BUILD: FCM-P0-FIREBASE-MERGE-05]");
         try {
-            SharedPreferences prefs = getContext().getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE);
+            SharedPreferences diagPrefs = getContext().getSharedPreferences("fcm_diagnostics", Context.MODE_PRIVATE);
             
-            String msgId = prefs.getString("last_fcm_message_id", null);
-            long receivedAt = prefs.getLong("last_fcm_received_at", 0);
-            String type = prefs.getString("last_fcm_type", "unknown");
-            String title = prefs.getString("last_fcm_title", "");
+            String msgId = diagPrefs.getString("last_fcm_message_id", null);
+            long receivedAt = diagPrefs.getLong("last_fcm_received_at", 0);
+            String type = diagPrefs.getString("last_fcm_type", "unknown");
+            String title = diagPrefs.getString("last_fcm_title", "");
             
-            String notifId = prefs.getString("last_notif_posted_id", null);
-            long postedAt = prefs.getLong("last_notif_posted_at", 0);
+            String notifId = diagPrefs.getString("last_notif_posted_id", null);
+            long postedAt = diagPrefs.getLong("last_notif_posted_at", 0);
+
+            // Fetch current native token for comparison
+            SharedPreferences capPrefs = getContext().getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+            String currentToken = capPrefs.getString("urbanwash.current_token", null);
 
             JSObject ret = new JSObject();
             ret.put("received", msgId != null);
@@ -35,11 +39,15 @@ public class UrbanwashNativeDiagnosticsPlugin extends Plugin {
             ret.put("title", title);
             ret.put("notifId", notifId);
             ret.put("postedAt", postedAt > 0 ? String.valueOf(postedAt) : null);
+            ret.put("nativeTokenSuffix", currentToken != null && currentToken.length() > 8 
+                ? currentToken.substring(currentToken.length() - 8) 
+                : currentToken);
+            ret.put("buildId", "FCM-P0-FIREBASE-MERGE-05");
             
             call.resolve(ret);
         } catch (Exception e) {
             Log.e("CUSTOMER-PUSH-HANDSHAKE", "Error reading diagnostics", e);
-            call.reject("ERROR_READING_DIAGNOSTICS", e);
+            call.reject("ERROR_READING_DIAGNOSTICS", e.getMessage());
         }
     }
 }
