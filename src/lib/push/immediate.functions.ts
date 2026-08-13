@@ -53,7 +53,10 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
+    const ts_action = Date.now();
+    console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_action}`);
     console.log(`[UNAVAILABLE-PUSH:01] PARTNER_ACTION id=${data.serviceId} type=${data.type} customer_id=${data.customerId}`);
+
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -86,11 +89,17 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (notif) {
+      console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
       console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${notif.id}`);
     }
+
     
+    const ts_dispatch = Date.now();
+    console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
     console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED user_id=${userId}`);
+    console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
     console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
+
 
     // 4. Send
     const res = await sendOfferPush({
