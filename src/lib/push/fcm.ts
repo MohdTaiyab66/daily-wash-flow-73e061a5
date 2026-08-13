@@ -133,10 +133,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         id: "assignments_v4",
         name: "Assignments",
         description: "Updates about your assigned customers",
-        importance: 4,
+        importance: 5, // MAX importance for customer heads-up
         sound: "default",
         vibration: true,
       });
+
       await FirebaseMessaging.createChannel({
         id: "general",
         name: "General",

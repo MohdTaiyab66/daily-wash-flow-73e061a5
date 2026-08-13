@@ -66,8 +66,11 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "payment_failed",
             "completed",
             "vehicle_unavailable",
-            "service_unavailable"
+            "service_unavailable",
+            "dirty_vehicle",
+            "vehicle_dirty"
         )
+
     }
 
 

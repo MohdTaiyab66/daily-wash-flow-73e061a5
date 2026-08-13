@@ -24,6 +24,8 @@ export const getPushDiagnostics = createServerFn({ method: "GET" })
     const firebaseProjectId = process.env.FIREBASE_PROJECT_ID;
     const firebaseClientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
+    console.log(`[CUSTOMER-FCM-CONFIG] Backend Diagnostics Check - Project: ${firebaseProjectId}, Tokens: ${tokens?.length || 0}`);
+
     return {
       user_id: userId,
       is_customer: !!profile,
@@ -32,6 +34,7 @@ export const getPushDiagnostics = createServerFn({ method: "GET" })
         client_email: firebaseClientEmail ? `${firebaseClientEmail.split('@')[0]}@...` : "MISSING",
         has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
       },
+
       tokens: tokens?.map((t: any) => ({
         id: t.id,
         platform: t.platform,
