@@ -396,9 +396,10 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   let sentCount = 0;
   for (const r of rows ?? []) {
     const type = String(r.type ?? "");
-    const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(type);
+    const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
+    
     try {
-      console.log(`[CUSTOMER-SERVICE-PUSH] sendOfferPush start id=${r.id} type=${type}`);
+      console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
