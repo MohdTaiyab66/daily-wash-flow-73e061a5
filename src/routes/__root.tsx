@@ -41,11 +41,13 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("[ROOT-ERROR]", error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  const isDev = import.meta.env.MODE === 'development';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -56,6 +58,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        
+        {isDev && (
+          <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-left overflow-auto max-h-[300px]">
+             <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1">BUILD: FCM-P0-ANDROID-RECEIPT-02</p>
+             <p className="text-xs font-bold text-destructive">{error.name}: {error.message}</p>
+             {error.stack && (
+               <pre className="mt-2 text-[10px] font-mono text-muted-foreground leading-tight">
+                 {error.stack.split('\n').slice(0, 8).join('\n')}
+               </pre>
+             )}
+          </div>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
