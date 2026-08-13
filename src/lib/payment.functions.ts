@@ -235,24 +235,15 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       // Instant partner dispatch: sweep pending offers immediately so the newly
       // paid subscription reaches partners without waiting for the cron tick.
       try {
-        console.log(`[PARTNER-BOOKING-E2E:01] CUSTOMER_BOOKING_CREATED booking_id=${data.bookingId}`);
+        console.log(`[BOOKING-PUSH:01] PAYMENT_VERIFIED_TRIGGER booking_id=${data.bookingId}`);
         await (supabaseAdmin as any).rpc("sweep_subscription_offers");
-        console.log(`[PARTNER-BOOKING-E2E:02] ELIGIBLE_PARTNERS_RESOLVED booking_id=${data.bookingId}`);
-      } catch (e) {
-        console.warn("[payment] sweep_subscription_offers failed (non-fatal)", e);
-      }
-
-      // Immediate FCM push for the offers we just created (~2s to partner).
-      // Same shared dispatcher the cron uses; cron remains the retry path.
-      try {
-        console.log(`[PARTNER-BOOKING-E2E:03] PARTNER_NOTIFICATION_CREATED`);
-        const { dispatchPendingOffers, dispatchCustomerNotifications, dispatchPartnerNotifications } = await import("@/lib/push/dispatch.server");
-        console.log(`[PARTNER-BOOKING-E2E:04] REALTIME_DISPATCH_TRIGGERED`);
-        await Promise.all([
-          dispatchPendingOffers("immediate:payment-verified"),
-          dispatchCustomerNotifications(),
-          dispatchPartnerNotifications(),
-        ]);
+        console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${data.bookingId}`);
+        
+        // Immediate FCM push for the offers we just created (~2s to partner).
+        // Same shared dispatcher the cron uses; cron remains the retry path.
+        const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
+        console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${data.bookingId}`);
+        await dispatchPendingOffers("immediate:payment-verified");
       } catch (e) {
         console.warn("[payment] immediate push dispatch failed (non-fatal)", e);
       }
