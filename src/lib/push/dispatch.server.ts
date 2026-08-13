@@ -266,10 +266,14 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
   "payment_failed",
   "subscription_activated",
   "booking_confirmed",
+  "booking_created",
+  "new_booking",
+  "booking_cancelled",
   "vehicle_unavailable",
   "service_unavailable",
   "vehicle_dirty",
   "dirty_vehicle",
+  "service_rescheduled",
 ]);
 
 /**
