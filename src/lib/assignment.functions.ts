@@ -165,6 +165,9 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; code: string; message: string }> => {
     const supabase = (context as any).supabase;
     const userId = (context as any).userId;
+    
+    console.log(`[CANCEL-ASSIGNMENT:08] CANCEL_REQUEST partner_id=${userId} assignment_id=${data.assignment_id}`);
+    
     const { error } = await supabase.rpc("cancel_assignment", { p_assignment_id: data.assignment_id });
     if (error) {
       const msg = error.message || "";
@@ -180,9 +183,21 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
       e.code = err.code;
       throw e;
     }
-    console.info("[cancelMyAssignment] partner=%s assignment=%s cancelled ok", userId, data.assignment_id);
+    
+    console.info(`[CANCEL-ASSIGNMENT:09] CANCEL_SUCCESS assignment_id=${data.assignment_id}`);
+    
+    // Trigger re-broadcast fan-out notification
+    // We import dynamically to avoid circular dependencies in server fns
+    import("@/lib/push/immediate.functions").then(m => {
+      console.log(`[CANCEL-ASSIGNMENT:10] TRIGGER_RELEASE_PUSH assignment_id=${data.assignment_id}`);
+      m.flushReleasedWorkPush({ assignmentId: data.assignment_id }).catch(e => 
+        console.error("[cancelMyAssignment] release push failed", e)
+      );
+    });
+
     return { ok: true };
   });
+
 
 // ============== Wallet Ledger (partner self-view) ==============
 export const getMyLedger = createServerFn({ method: "GET" })

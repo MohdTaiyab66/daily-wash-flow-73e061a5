@@ -207,9 +207,11 @@ function ServiceDetail() {
       
       console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
       import("@/lib/push/immediate.functions").then(m => {
+        // [CUSTOMER-PROD-E2E:01-08] Trigger customer notification for service start
         m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
       });
     },
+
 
     onSuccess: () => { setStep("cleaning"); qc.invalidateQueries({ queryKey: ["service", id] }); },
     onError: (e: any) => toast.error(e.message ?? "Could not start"),
