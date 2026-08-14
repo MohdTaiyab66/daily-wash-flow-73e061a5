@@ -408,7 +408,7 @@ export function MarketplaceOfferCard({
             ) : (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                {compact ? "Add" : "Accept Customer"}
+                {compact ? "Add" : isRelease ? "View Customers" : "Accept Customer"}
               </>
             )}
           </Button>
