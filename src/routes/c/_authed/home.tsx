@@ -114,10 +114,28 @@ function CustomerHome() {
    * 
    * Please think step-by-step in order to resolve it.
    * ```
+   * # Error number 1:
+   * #################
+   * 
+   * The app returned 500 while handling POST /_serverFn/eyJmaWxlIjoiL3NyYy9saWIvc3RhZmYtYXV0aC5mdW5jdGlvbnMudHM_dHNzLXNlcnZlcmZuLXNwbGl0IiwiZXhwb3J0IjoicmVxdWVzdFN0YWZmT3RwX2NyZWF0ZVNlcnZlckZuX2hhbmRsZXIifQ. The error was handled by a route or error boundary, so no stack was captured — check the failing loader/route code and the dev server output.
+   * 
+   * {
+   *   "timestamp": 1786739183733,
+   *   "error_type": "RUNTIME_ERROR",
+   *   "filename": "Unknown file",
+   *   "lineno": 0,
+   *   "colno": 0,
+   *   "stack": "Unavailable",
+   *   "has_blank_screen": true
+   * }
+   * 
+   * # Error number 2:
+   * #################
+   * 
    * Failed to connect to MetaMask
    * 
    * {
-   *   "timestamp": 1786739134281,
+   *   "timestamp": 1786739194503,
    *   "error_type": "UNHANDLED_PROMISE_REJECTION",
    *   "filename": "Unknown file",
    *   "lineno": 0,
@@ -127,6 +145,7 @@ function CustomerHome() {
    * }
    * ```
    */
+
 
   const profileQ = useQuery({
 
