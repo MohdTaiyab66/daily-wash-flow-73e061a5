@@ -358,7 +358,7 @@ function AssignmentsPage() {
 
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
-  const animMonthly = useAnimatedNumber(monthlyEarn);
+  const animMonthly = useAnimatedNumber(totalPotentialMonthly);
   const animMonthlyServices = useAnimatedNumber(monthlyServices);
   const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
