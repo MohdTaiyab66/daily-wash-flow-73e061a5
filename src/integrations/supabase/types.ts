@@ -6976,6 +6976,10 @@ export type Database = {
         Args: { p_subscription_id: string }
         Returns: string
       }
+      mp_reconcile_partner_offers: {
+        Args: { p_partner_id: string }
+        Returns: number
+      }
       mp_tick: { Args: never; Returns: number }
       offer_next_for_queue: { Args: { p_queue_id: string }; Returns: string }
       partner_complete_service: {

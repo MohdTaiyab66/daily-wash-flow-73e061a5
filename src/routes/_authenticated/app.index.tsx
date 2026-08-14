@@ -24,7 +24,10 @@ import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersLis
 import { formatTime12 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
+
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
@@ -63,6 +66,21 @@ function HomePage() {
     refetchInterval: 30000,
   });
 
+  // MISSED-WORK RECOVERY — the marketplace (database) is the source of truth,
+  // never FCM history. This runs on every mount/login and surfaces still-open,
+  // unclaimed opportunities the partner is currently eligible for, including
+  // ones broadcast while they were logged out.
+  const fetchOpenOffers = useServerFn(getPartnerOpenOffers);
+  const { data: openOffers = [] } = useQuery<any[]>({
+    queryKey: ["partner-open-offers-home"],
+    queryFn: async () => (await fetchOpenOffers()) as any[],
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always",
+  });
+
+
 
   if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
@@ -98,10 +116,31 @@ function HomePage() {
     }
   };
 
-  const availableCount = Number(availableWork?.available_customers ?? 0);
+  // Recovered marketplace opportunities (new_booking + assignment_released).
+  const recoveredCount = openOffers.reduce(
+    (sum: number, o: any) => sum + Math.max(1, Number(o?.customer_count ?? 1)),
+    0,
+  );
+  const recoveredMonthly = openOffers.reduce(
+    (sum: number, o: any) =>
+      sum +
+      Number(
+        o?.earning_monthly ??
+          (Number(o?.broadcast?.subscription?.amount ?? 0) || Number(o?.incentive ?? 0) * 26),
+      ),
+    0,
+  );
+  const recoveredDistanceM = openOffers
+    .map((o: any) => Number(o?.distance_from_route_m ?? NaN))
+    .filter((d: number) => Number.isFinite(d) && d > 0)
+    .sort((a: number, b: number) => a - b)[0];
+
+  const availableCount = Number(availableWork?.available_customers ?? 0) + recoveredCount;
   const potentialEarnings = Number(availableWork?.total_earnings ?? availableWork?.daily_earnings ?? 0);
-  const potentialMonthlyExtra = Number((availableWork as any)?.monthly_earnings ?? (potentialEarnings * 26));
+  const potentialMonthlyExtra =
+    Number((availableWork as any)?.monthly_earnings ?? potentialEarnings * 26) + recoveredMonthly;
   const areaName = partner?.home_area ?? "Your Area";
+
 
 
   return (
@@ -241,7 +280,9 @@ function HomePage() {
           <Card className="overflow-hidden border border-primary/20 shadow-md bg-white p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Work Available</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {recoveredCount > 0 ? "New Work Available" : "Work Available"}
+                </p>
                 <h2 className="text-xl font-bold mt-1">{(availableCount + (bookingRequests?.length ?? 0))} Customers</h2>
               </div>
               <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -256,9 +297,16 @@ function HomePage() {
                 <p className="text-[9px] text-primary/60 font-bold">+₹{potentialMonthlyExtra.toLocaleString("en-IN")}/mo</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">Area</p>
-                <p className="text-lg font-bold truncate max-w-[120px]">{areaName}</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold">
+                  {Number.isFinite(recoveredDistanceM) ? "Distance" : "Area"}
+                </p>
+                <p className="text-lg font-bold truncate max-w-[120px]">
+                  {Number.isFinite(recoveredDistanceM)
+                    ? `${(Number(recoveredDistanceM) / 1000).toFixed(1)} km`
+                    : areaName}
+                </p>
               </div>
+
             </div>
 
             <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
