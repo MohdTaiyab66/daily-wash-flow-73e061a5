@@ -234,6 +234,12 @@ export function MarketplaceOfferCard({
 
   const handleAccept = async () => {
     if (busy || accepted) return;
+
+    if (isRelease) {
+      onAccept?.();
+      return;
+    }
+
     traceStateCall("setState", { component: "MarketplaceOfferCard", function: "handleAccept setBusy", reason: "accept clicked", offer_id: offer.id, next: true });
     setBusy(true);
     try {
