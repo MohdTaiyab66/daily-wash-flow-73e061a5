@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /**
  * Triggers the marketplace broadcast fan-out logic.
  * Used by the cron job to periodically retry and broadcast all open bookings.
- * Includes detailed logs for [BOOKING-PUSH:01-09].
+ * Includes detailed logs for [BOOKING-PUSH:01-09] and [ASSIGNMENT-RELEASE:01-08].
  */
 export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
   .handler(async () => {
@@ -24,6 +24,7 @@ export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
       
       // RECALCULATE ELIGIBILITY ON EVERY TICK
       // This ensures partners who just logged in or came online are included
+      // and honors the 5-minute decline cooldown
       for (const b of openBookings) {
         await (supabaseAdmin as any).rpc("mp_reconcile_all_partners_for_broadcast", { p_broadcast_id: b.broadcast_id });
       }
@@ -34,5 +35,26 @@ export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
     } catch (e: any) {
       console.error("[BOOKING-PUSH:ERROR] Dispatch tick failed", e);
       return { ok: false, error: e?.message ?? String(e) };
+    }
+  });
+
+/**
+ * [RELEASED-WORK-PUSH]
+ * Internal helper to trigger assignment release fan-out.
+ */
+export const flushReleasedWorkPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ assignmentId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { dispatchAssignmentReleased } = await import("./dispatch.server");
+    const userId = (context as any).userId;
+    try {
+      console.log(`[ASSIGNMENT-RELEASE:01] CANCELLATION_STARTED assignment_id=${data.assignmentId} canceller=${userId}`);
+      const count = await dispatchAssignmentReleased(data.assignmentId, userId);
+      console.log(`[ASSIGNMENT-RELEASE:04] FANOUT_COMPLETED count=${count}`);
+      return { ok: true as const, count };
+    } catch (e: any) {
+      console.warn("[immediate-push] flushReleasedWorkPush failed", e);
+      return { ok: false as const, count: 0 };
     }
   });

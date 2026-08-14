@@ -13,11 +13,12 @@ type LatLng = { lat: number; lng: number };
  * Helper to calculate working days in a billing cycle.
  */
 function calculateWorkingDays(start?: string | null, end?: string | null) {
-  if (!start || !end) return 26; // Default to standard 26-day cycle
+  // P0 Business Rule: Monthly earnings always lead with 26 service days unless specified
+  if (!start || !end) return 26; 
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
   const days = Math.max(1, Math.floor((e - s) / 86400000) + 1); // Inclusive
-  return Math.min(Math.max(days, 7), 31); // Business rule: min 7 days for earnings resolution
+  return Math.min(Math.max(days, 7), 31); 
 }
 
 /**

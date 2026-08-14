@@ -144,6 +144,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         partnerId: r.partner_id,
         incentive: Number((r as any).incentive || 0),
+        // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] uses 26 days default
         startDate: (r as any).subscription_start_date ?? null,
         renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
