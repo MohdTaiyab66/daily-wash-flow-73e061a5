@@ -280,7 +280,9 @@ function HomePage() {
           <Card className="overflow-hidden border border-primary/20 shadow-md bg-white p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Work Available</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {recoveredCount > 0 ? "New Work Available" : "Work Available"}
+                </p>
                 <h2 className="text-xl font-bold mt-1">{(availableCount + (bookingRequests?.length ?? 0))} Customers</h2>
               </div>
               <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -295,9 +297,16 @@ function HomePage() {
                 <p className="text-[9px] text-primary/60 font-bold">+₹{potentialMonthlyExtra.toLocaleString("en-IN")}/mo</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">Area</p>
-                <p className="text-lg font-bold truncate max-w-[120px]">{areaName}</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold">
+                  {Number.isFinite(recoveredDistanceM) ? "Distance" : "Area"}
+                </p>
+                <p className="text-lg font-bold truncate max-w-[120px]">
+                  {Number.isFinite(recoveredDistanceM)
+                    ? `${(Number(recoveredDistanceM) / 1000).toFixed(1)} km`
+                    : areaName}
+                </p>
               </div>
+
             </div>
 
             <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
