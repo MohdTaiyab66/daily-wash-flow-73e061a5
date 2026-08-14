@@ -127,3 +127,25 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE`);
     return { ok: true, ...res };
   });
+
+/**
+ * [RELEASED-WORK-PUSH]
+ * Immediate trigger for assignment-released fan-out.
+ */
+export const flushReleasedWorkPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ assignmentId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { dispatchAssignmentReleased } = await import("./dispatch.server");
+    const userId = (context as any).userId;
+    try {
+      console.log(`[RELEASED-WORK-PUSH:E1] flushReleasedWorkPush trigger started assignment_id=${data.assignmentId}`);
+      const count = await dispatchAssignmentReleased(data.assignmentId, userId);
+      console.log(`[RELEASED-WORK-PUSH:E2] flushReleasedWorkPush result count=${count}`);
+      return { ok: true as const, count };
+    } catch (e: any) {
+      console.warn("[immediate-push] flushReleasedWorkPush failed", e);
+      return { ok: false as const, count: 0 };
+    }
+  });
+
