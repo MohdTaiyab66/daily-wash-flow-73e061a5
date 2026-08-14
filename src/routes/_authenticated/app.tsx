@@ -155,7 +155,7 @@ function BottomNav() {
               </div>
               <span className={cn(
                 "mt-1 text-[13px] font-medium tracking-tight transition-colors",
-                active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
+                active ? "text-[#1A1A1A]" : "text-[#8A8A8A] opacity-60"
               )}>
                 {t.label}
               </span>
