@@ -459,8 +459,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   return sentCount;
 }
 
-const PARTNER_ASSIGNMENT_TYPES = new Set(["new_booking", "assignment_created", "partner_assigned", "assignment_released", "assignment_cancelled"]);
-
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
   const ts_event = Date.now();
