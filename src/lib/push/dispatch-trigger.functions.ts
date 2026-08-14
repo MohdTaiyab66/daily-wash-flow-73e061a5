@@ -21,6 +21,13 @@ export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
       }
 
       console.log(`[BOOKING-PUSH:CRON] OPEN_BOOKINGS_FOUND count=${openBookings.length}`);
+      
+      // RECALCULATE ELIGIBILITY ON EVERY TICK
+      // This ensures partners who just logged in or came online are included
+      for (const b of openBookings) {
+        await (supabaseAdmin as any).rpc("mp_reconcile_all_partners_for_broadcast", { p_broadcast_id: b.broadcast_id });
+      }
+
       const totalDispatched = await dispatchBookingPushes(openBookings);
       
       return { ok: true, totalDispatched };
