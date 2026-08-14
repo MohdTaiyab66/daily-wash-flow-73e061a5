@@ -110,7 +110,21 @@ function HomePage() {
 
       {/* PRIMARY WORK AREA */}
       <section className="space-y-4">
-        {inProgressService ? (
+        {!online ? (
+          /* STATE: OFFLINE */
+          <Card className="flex flex-col items-center text-center p-8 py-10 border-2 border-red-100 bg-red-50/10">
+            <div className="h-20 w-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <Car className="h-10 w-10 text-red-400" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-red-900">You're Offline</h3>
+            <p className="text-sm text-red-700/70 mb-8 max-w-[240px]">
+              Go online to receive new assignments and start your journey.
+            </p>
+            <Button onClick={() => handleToggle(true)} className="w-full h-12 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200">
+              Go Online Now
+            </Button>
+          </Card>
+        ) : inProgressService ? (
           /* STATE: SERVICE IN PROGRESS */
           <Card className="overflow-hidden border-2 border-primary/20 bg-card p-5">
             <div className="flex items-center justify-between mb-4">
