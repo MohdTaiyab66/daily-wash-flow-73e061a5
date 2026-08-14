@@ -373,7 +373,14 @@ export function MarketplaceOffersList() {
         <MarketplaceOfferSheet
           offer={top}
           onClose={closeTop}
-          onAccept={() => handleAccept(top)}
+          onAccept={() => {
+            const offerType = (top as any).type || (top as any).payload?.type;
+            if (offerType === "assignment_released") {
+              setSelectedAssignment((top as any).assignment_id || (top as any).payload?.assignment_id);
+            } else {
+              handleAccept(top);
+            }
+          }}
           onDecline={() => handleDecline(top)}
         />
       )}
