@@ -43,11 +43,23 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error("[ROOT-ERROR]", error);
   const router = useRouter();
+  
+  const isExtensionError = 
+    error?.stack?.includes("chrome-extension://") || 
+    error?.message?.includes("MetaMask");
+
   useEffect(() => {
+    if (isExtensionError) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, isExtensionError]);
+
+  if (isExtensionError) {
+    // If it's a browser extension error, don't crash the whole UI
+    return <Outlet />;
+  }
 
   const isDev = import.meta.env.MODE === 'development';
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
