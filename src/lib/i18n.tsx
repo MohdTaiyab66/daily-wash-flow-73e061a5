@@ -104,11 +104,12 @@ const DICT = {
     lifetime: "कुल",
     hours: "घंटे",
     level: "स्तर",
-    assignments: "असाइनमेंट",
+    assignments: "उपलब्ध काम",
     earnings: "कमाई",
     rewards: "इनाम",
     profile: "प्रोफ़ाइल",
     home: "होम",
+
     locations_online_note: "ग्राहक की लोकेशन तभी दिखेगी जब आप ऑनलाइन होंगे।",
     starts: "शुरू",
     day_of: (n: number, total: number) => `दिन ${n} / ${total}`,
