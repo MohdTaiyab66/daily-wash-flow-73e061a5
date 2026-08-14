@@ -66,6 +66,21 @@ function HomePage() {
     refetchInterval: 30000,
   });
 
+  // MISSED-WORK RECOVERY — the marketplace (database) is the source of truth,
+  // never FCM history. This runs on every mount/login and surfaces still-open,
+  // unclaimed opportunities the partner is currently eligible for, including
+  // ones broadcast while they were logged out.
+  const fetchOpenOffers = useServerFn(getPartnerOpenOffers);
+  const { data: openOffers = [] } = useQuery<any[]>({
+    queryKey: ["partner-open-offers-home"],
+    queryFn: async () => (await fetchOpenOffers()) as any[],
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always",
+  });
+
+
 
   if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
