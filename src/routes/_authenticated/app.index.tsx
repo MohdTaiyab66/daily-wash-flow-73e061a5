@@ -188,8 +188,7 @@ function HomePage() {
                 <Clock className="h-3.5 w-3.5" />
                 <span>Start Before {formatTime12(assignment.expected_start_time)}</span>
               </div>
-            )}
-          </Card>
+            </Card>
         ) : (
           /* STATE: NO ASSIGNMENT YET */
           <Card className="flex flex-col items-center text-center p-8 py-10 border-dashed border-2">
