@@ -385,8 +385,9 @@ export function MarketplaceOffersList() {
               offer={o}
               compact
               onAccept={() => {
-                if ((o as any).type === "assignment_released") {
-                  setSelectedAssignment((o as any).assignment_id);
+                const offerType = (o as any).type || (o as any).payload?.type;
+                if (offerType === "assignment_released") {
+                  setSelectedAssignment((o as any).assignment_id || (o as any).payload?.assignment_id);
                 } else {
                   handleAccept(o);
                 }
