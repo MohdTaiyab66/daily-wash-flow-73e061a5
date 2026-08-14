@@ -683,8 +683,11 @@ export async function dispatchAdminAlerts(): Promise<number> {
     }
     await sb.from("admin_alerts").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
   }
+  return rows.length;
+}
 
 /**
+
  * Fans out new_booking pushes for a list of open bookings.
  * Recalculates eligibility for every partner on every tick.
  */
