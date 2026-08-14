@@ -26,11 +26,12 @@ const DICT = {
     lifetime: "Lifetime",
     hours: "Hours",
     level: "Level",
-    assignments: "Assignments",
+    assignments: "Available Work",
     earnings: "Earnings",
     rewards: "Rewards",
     profile: "Profile",
     home: "Home",
+
     locations_online_note: "Customer locations show only when you are online.",
     starts: "starts",
     day_of: (n: number, total: number) => `Day ${n} of ${total}`,
