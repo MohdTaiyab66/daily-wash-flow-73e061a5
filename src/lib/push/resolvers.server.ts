@@ -17,8 +17,7 @@ function calculateWorkingDays(start?: string | null, end?: string | null) {
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
   const days = Math.max(1, Math.floor((e - s) / 86400000) + 1); // Inclusive
-  // Cap at 31, minimum 1
-  return Math.min(Math.max(days, 1), 31);
+  return Math.min(Math.max(days, 7), 31); // Business rule: min 7 days for earnings resolution
 }
 
 /**
