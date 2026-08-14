@@ -118,20 +118,24 @@ function HomePage() {
           </Card>
         ) : inProgressService ? (
           /* STATE: SERVICE IN PROGRESS */
-          <Card className="overflow-hidden border-2 border-primary/20 bg-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                Service In Progress
-              </span>
-            </div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
-                <Car className="h-6 w-6" />
+          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">In Progress</p>
+                  <h2 className="text-xl font-bold mt-1 text-white">Active Wash</h2>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                  <Navigation className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">Active Customer</p>
-                <h3 className="text-xl font-bold">Current Wash</h3>
-              </div>
+              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/30">
+                <Link to="/app/live">
+                  Continue Service
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
             </div>
             <Button asChild className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg shadow-primary/20">
               <Link to="/app/live">
