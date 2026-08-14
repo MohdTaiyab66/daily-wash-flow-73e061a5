@@ -489,13 +489,6 @@ function AssignmentsPage() {
             <p className="text-xl font-bold tabular-nums">₹{animPerDay}</p>
           </div>
         </div>
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] tabular-nums text-muted-foreground">
-            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> services</span>
-            <span><span className="font-semibold text-foreground">{workingDays}</span> days</span>
-            <span><span className="font-semibold text-foreground">₹{animPerDay.toLocaleString("en-IN")}</span>/day</span>
-          </div>
-        </div>
-
       </Card>
 
       {previewError && (
