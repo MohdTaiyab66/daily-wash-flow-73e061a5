@@ -52,6 +52,18 @@ function HomePage() {
     refetchInterval: 30000,
   });
 
+  const { data: bookingRequests = [] } = useQuery({
+    queryKey: ["partner-booking-requests"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_partner_booking_requests");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: online && !!partner?.home_area,
+    refetchInterval: 30000,
+  });
+
+
   if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
   }
