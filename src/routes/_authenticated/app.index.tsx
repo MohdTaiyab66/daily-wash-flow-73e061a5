@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 function HomePage() {
+  const navigate = useNavigate();
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
