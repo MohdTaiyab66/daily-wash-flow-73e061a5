@@ -151,8 +151,10 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }),
     ]);
 
-    const title = `🚗 New Booking • ${monthly.display}`;
+    const title = monthly.display;
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
+
+
     
     const data: Record<string, string> = {
       type: "daily_shine_offer",
@@ -602,8 +604,9 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         customerLng: firstCust?.longitude ?? null,
       });
 
-      const title = `🚗 ${customerCount} Customers Available`;
-      const body = `Earn up to ${monthlyDisplay} · ${distance.display}`;
+      const title = monthlyDisplay;
+      const body = `${customerCount} customers · ${areaName} · ${distance.display}`;
+
 
       const dataPayload: Record<string, string> = {
         type: "assignment_released",

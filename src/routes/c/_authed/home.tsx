@@ -18,7 +18,7 @@ import { UWHeader } from "@/components/customer/ui/UWHeader";
 import { UWFeaturedCarousel } from "@/components/customer/ui/UWFeaturedCarousel";
 import { UWServiceCard } from "@/components/customer/ui/UWServiceCard";
 import { ListGroup, ListRow, Section } from "@/components/customer/ui/kit";
-import { PushDiagnosticsPanel } from "@/components/customer/PushDiagnosticsPanel";
+
 import { cn } from "@/lib/utils";
 import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -269,31 +269,8 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            For the code present, I get the error below.
-
-Please think step-by-step in order to resolve it.
-```
-Failed to connect to MetaMask
-
-{
-  "timestamp": 1786737631547,
-  "error_type": "UNHANDLED_PROMISE_REJECTION",
-  "filename": "Unknown file",
-  "lineno": 0,
-  "colno": 0,
-  "stack": "i: Failed to connect to MetaMask\n    at Object.connect (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:7:84292)",
-  "has_blank_screen": true
-}
-``` */}
       <div className="min-h-screen bg-white">
 
-        {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
-        <div className="px-4 pt-4 mb-2">
-          <PushDiagnosticsPanel />
-        </div>
 
 
 

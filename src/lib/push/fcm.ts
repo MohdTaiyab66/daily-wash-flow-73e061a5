@@ -10,6 +10,8 @@
  *  - record `push_delivered` / `opened` events in `offer_delivery_events`
  */
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
+import { InAppNotification } from "@/components/ui/notification-banner";
+
 import { App as CapApp } from "@capacitor/app";
 import { Preferences } from "@capacitor/preferences";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +67,45 @@ async function recordEvent(stage: string, offer: OfferPayload, extra: Record<str
 function isOffer(data: unknown): data is OfferPayload {
   return !!data && typeof data === "object" && (data as any).type === "offer" && !!(data as any).offer_id;
 }
+
+const EVENT_TYPE_MAP: Record<string, { title: string; body: string }> = {
+  new_booking: { title: "🚗 New Booking Available", body: "Check available work for earnings details." },
+  assignment_released: { title: "🔄 Work Available", body: "New assignments have been released in your area." },
+  service_started: { title: "🚗 Service Started", body: "Your vehicle service has started." },
+  service_completed: { title: "✓ Service Completed", body: "Your vehicle has been serviced. Photos are ready." },
+  vehicle_unavailable: { title: "⚠ Vehicle Unavailable", body: "Your vehicle could not be located today." },
+  vehicle_dirty: { title: "⚠ Vehicle Needs Attention", body: "The partner marked your vehicle as dirty." },
+  partner_accepted: { title: "✅ Partner Assigned", body: "A partner has accepted your service booking." },
+  booking_confirmed: { title: "📅 Booking Confirmed", body: "Your service booking has been confirmed." },
+};
+
+function dispatchInAppNotification(data: Record<string, any>, notif: any) {
+  const type = data.type || "default";
+  const mapped = EVENT_TYPE_MAP[type];
+  
+  const payload: InAppNotification = {
+    id: notif.id || `notif-${Date.now()}`,
+    title: mapped?.title || notif.title || "Urban Wash Update",
+    body: mapped?.body || notif.body || "You have a new notification",
+    type: type,
+    link: data.link || (type.includes('booking') || type.includes('assignment') ? '/app/assignments' : ''),
+    data: data
+  };
+
+  // Enhance body with dynamic earnings/distance if present in payload
+  if (type === 'new_booking' || type === 'assignment_released') {
+    const earnings = data.earning_monthly || data.monthly_earnings;
+    const count = data.customer_count;
+    const distance = data.distance_display || (data.distance_km ? `${data.distance_km} km away` : '');
+    
+    if (earnings && count) {
+      payload.body = `${count} customers · ${earnings} potential${distance ? ` · ${distance}` : ''}`;
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('urbanwash:in-app-notification', { detail: payload }));
+}
+
 
 /**
  * Idempotently register the device for FCM and wire listeners. Call once after
@@ -280,7 +321,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       
       console.log(`[CUSTOMER-FCM-ANDROID:FOREGROUND] RECEIVED messageId=${event.notification?.id} hasNotif=${hasNotifPayload}`);
 
+      // Dispatch Premium In-App Notification Banner
+      dispatchInAppNotification(data, event.notification);
+
       await recordLastFcm(
+
         event,
         hasNotifPayload
           ? "System Notification (foreground)"

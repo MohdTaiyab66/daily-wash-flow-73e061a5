@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/components/customer/AuthProvider";
 import { installCameraRouteRestore } from "@/lib/cameraRestore";
 import { installPartnerRuntimeInstrumentation } from "@/lib/partner-runtime-instrumentation";
+import { NotificationBanner } from "@/components/ui/notification-banner";
+
 
 function NotFoundComponent() {
   return (
@@ -73,7 +75,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         
         {isDev && (
           <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-left overflow-auto max-h-[300px]">
-             <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1">BUILD: FCM-P0-ANDROID-RECEIPT-02</p>
              <p className="text-xs font-bold text-destructive">{error.name}: {error.message}</p>
              {error.stack && (
                <pre className="mt-2 text-[10px] font-mono text-muted-foreground leading-tight">
@@ -189,6 +190,7 @@ function RootComponent() {
         <I18nProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          <NotificationBanner />
           <Toaster richColors position="top-center" />
         </I18nProvider>
       </AuthProvider>

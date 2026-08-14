@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2 } from "lucide-react";
+import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/notifications")({
   component: NotificationsPage,
@@ -118,25 +120,66 @@ function NotificationsPage() {
       )}
 
       <div className="mt-4 space-y-2">
-        {filtered.map((n: any) => (
-          <Card
-            key={n.id}
-            className={`p-4 cursor-pointer transition-colors ${n.read_at ? "" : "border-primary/40 bg-primary/5"}`}
-            onClick={() => openNotification(n)}
-          >
-            <div className="flex items-start gap-3">
-              <Bell className={`mt-0.5 h-4 w-4 ${n.read_at ? "text-muted-foreground" : "text-primary"}`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold">{n.title}</p>
-                {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
-                <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
-                  <span>{new Date(n.created_at).toLocaleString("en-IN")}</span>
-                  {n.link && <span className="font-medium text-primary">Open →</span>}
+        {filtered.map((n: any) => {
+          const isWork = n.type === 'new_booking' || n.type === 'assignment_released' || n.category === 'daily_shine' || n.category === 'assignments';
+          const earnings = n.metadata?.earning_monthly || n.metadata?.monthly_earnings;
+          const distance = n.metadata?.distance_display || (n.metadata?.distance_km ? `${n.metadata?.distance_km} km away` : '');
+          
+          return (
+            <Card
+              key={n.id}
+              className={cn(
+                "p-4 cursor-pointer transition-all active:scale-[0.98]",
+                n.read_at ? "bg-white border-neutral-100" : "border-primary/30 bg-primary/[0.02]"
+              )}
+              onClick={() => openNotification(n)}
+            >
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                  n.read_at ? "bg-neutral-50 text-neutral-400" : "bg-primary/10 text-primary"
+                )}>
+                  {isWork ? <Sparkles className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={cn(
+                      "text-[15px] tracking-tight truncate",
+                      n.read_at ? "font-bold text-neutral-600" : "font-black text-neutral-900"
+                    )}>
+                      {n.title}
+                    </p>
+                    {!n.read_at && (
+                      <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,107,0,0.4)]" />
+                    )}
+                  </div>
+                  
+                  {isWork && earnings ? (
+                    <div className="flex flex-col gap-1 mb-2">
+                      <p className="text-sm font-black text-primary">{earnings}</p>
+                      <p className="text-[12px] font-medium text-neutral-500">
+                        {n.body} {distance && `· ${distance}`}
+                      </p>
+                    </div>
+                  ) : (
+                    n.body && <p className="text-[13px] font-medium text-neutral-500 leading-snug line-clamp-2">{n.body}</p>
+                  )}
+                  
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                      {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {n.link && (
+                      <span className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-1">
+                        View {isWork ? 'Work' : 'Details'} <ChevronRight className="h-3 w-3" />
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
