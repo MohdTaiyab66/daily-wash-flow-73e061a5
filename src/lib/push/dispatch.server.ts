@@ -598,7 +598,7 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         })
       ));
       const totalMonthly = monthlyRes.reduce((sum: number, m: any) => sum + m.monthlyAmount, 0);
-      const monthlyDisplay = `+₹${totalMonthly}/month`;
+      const monthlyDisplay = `+₹${Math.round(totalMonthly).toLocaleString("en-IN")}/month`;
 
       // 5. Resolve partner-specific distance (from first customer as representative)
       const firstCust = services[0]?.customer;
@@ -746,7 +746,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
           })
         ]);
 
-        const title = b.assignment_id ? `🔄 Assignment Available` : `🚗 New Booking Available`;
+        const title = b.assignment_id ? `🔄 Assignment Available: ${monthly.display}` : `🚗 New Booking Available`;
         const body = b.assignment_id 
           ? `${b.customer_count || 'Multiple'} Customers · ${b.area || 'Nearby'} · ${monthly.display}`
           : `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
