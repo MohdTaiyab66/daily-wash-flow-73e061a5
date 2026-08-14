@@ -356,7 +356,7 @@ function AuthPage() {
 
           {step === "phone" && (
             <div className="space-y-4">
-              <div>
+              <div onClick={() => console.log("[PARTNER-AUTH:01] PHONE_SUBMITTED")}>
                 <Label htmlFor="phone" className="text-xs uppercase tracking-wider text-white/60">Phone number</Label>
                 <div className="mt-2 flex h-[58px] overflow-hidden rounded-xl border border-white/10 bg-black/30 focus-within:border-orange-400/60 focus-within:ring-2 focus-within:ring-orange-400/20 transition">
                   <span className="inline-flex items-center border-r border-white/5 bg-white/[0.04] px-4 text-sm font-medium text-white/75">+91</span>
