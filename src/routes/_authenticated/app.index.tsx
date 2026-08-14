@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
 import { Card } from "@/components/ui/card";
