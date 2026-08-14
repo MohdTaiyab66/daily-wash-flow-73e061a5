@@ -324,6 +324,7 @@ function AssignmentsPage() {
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
   const acceptableEarn = acceptableCars * rate;
+
   const fullyAvailable = !!previewSafe && availableInArea >= cars;
   const partialAvailable = !!previewSafe && availableInArea > 0 && availableInArea < cars;
   const noneAvailable = !!previewSafe && availableInArea === 0;
