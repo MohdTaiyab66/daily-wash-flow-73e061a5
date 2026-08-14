@@ -203,11 +203,15 @@ export function MarketplaceOfferCard({
     staleTime: 30_000,
   });
 
+  const isRelease = (offer as any).type === "assignment_released";
   const v = offer.broadcast.vehicle;
-  const label = v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
-  const areaName = offer.broadcast.service_area?.name ?? "Nearby area";
+  const label = isRelease 
+    ? `🚗 ${(offer as any).customer_count ?? "Multiple"} Customers` 
+    : v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
+  const areaName = (offer as any).area ?? offer.broadcast.service_area?.name ?? "Nearby area";
   const dist = offer.distance_from_route_m ?? null;
-  const impact = offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
+  const impact = isRelease ? null : offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
+
 
   
   // Use resolved earning/distance if available (from Push payload or backend enrich)
