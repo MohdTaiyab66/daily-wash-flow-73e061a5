@@ -89,7 +89,7 @@ function AuthPage() {
           const digits = code.replace(/\D/g, "").slice(0, otpLength).split("");
           const next = Array(otpLength).fill("").map((_, i) => digits[i] ?? "");
           setOtpDigits(next);
-          if (next.every((d) => d !== "")) await submitOtp(next.join(""));
+          if (next.every((d) => d !== "")) void submitOtp(next.join(""));
         }
       })
       .catch(() => {});
@@ -192,14 +192,14 @@ function AuthPage() {
       const lastFilled = Math.min(idx + chars.length, otpLength - 1);
       otpRefs.current[lastFilled]?.focus();
       haptic(8);
-      if (next.every((d) => d !== "")) await submitOtp(next.join(""));
+      if (next.every((d) => d !== "")) void submitOtp(next.join(""));
       return;
     }
     next[idx] = clean[0];
     setOtpDigits(next);
     haptic(8);
     if (idx < otpLength - 1) otpRefs.current[idx + 1]?.focus();
-    if (next.every((d) => d !== "")) await submitOtp(next.join(""));
+    if (next.every((d) => d !== "")) void submitOtp(next.join(""));
   };
 
   const handleOtpKey = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
