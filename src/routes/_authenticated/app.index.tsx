@@ -101,6 +101,7 @@ function HomePage() {
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;
+  const anyStarted = today.some(s => !!s.started_at);
   
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const now = new Date();
