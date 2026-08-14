@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-// Checkbox no longer used after Working Days removal.
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
   AlertTriangle, Inbox, UserRound, TrendingUp,
-  ArrowRight, ChevronDown,
+  ArrowRight, ChevronDown, Clock, Navigation,
 } from "lucide-react";
+import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
+
 
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
