@@ -393,89 +393,163 @@ function AssignmentsPage() {
 
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-6">
-      <header>
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Today's Work</p>
-          <Link to="/app/area" className="flex items-center gap-1.5 px-3 py-1 bg-neutral-100 rounded-full text-[10px] font-bold text-neutral-600 uppercase tracking-wider">
-            <MapPin className="h-3 w-3" />
-            {partner.home_area}
-          </Link>
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight">Available Work</h1>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-8">
+      <header className="space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Assignment Builder</p>
+        <h1 className="text-3xl font-bold tracking-tight">Build your plan</h1>
+        <p className="text-xs text-muted-foreground">Choose how much you want to work.</p>
       </header>
 
-      {/* COMPACT SUMMARY */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-          <p className="text-lg font-bold">{availableInArea}</p>
-          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Customers</p>
-        </div>
-        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-          <p className="text-lg font-bold text-primary">₹{Math.round(totalPotentialMonthly / 1000)}k</p>
-          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Potential</p>
-        </div>
-        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-          <p className="text-lg font-bold">{estKm}km</p>
-          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Distance</p>
-        </div>
-      </div>
-
-      {/* CUSTOMER AVAILABILITY LIST */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Nearby Customers</h3>
-          <span className="text-[10px] font-medium text-muted-foreground">Updated {updatedAgoLabel}</span>
-        </div>
-
-        {isFetching && !previewSafe && (
-          <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin mb-3 opacity-20" />
-            <p className="text-xs">Finding customers nearby...</p>
+      {/* AREA SELECTION HEADER */}
+      <section>
+        <Link 
+          to="/app/area" 
+          className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Your Work Area</p>
+              <p className="text-sm font-bold">{partner.home_area}</p>
+            </div>
           </div>
-        )}
+          <ArrowRight className="h-4 w-4 text-neutral-300" />
+        </Link>
+      </section>
 
-        {noneAvailable && !isFetching && (
-          <Card className="p-8 text-center border-dashed bg-neutral-50/50">
-            <Inbox className="h-10 w-10 text-neutral-200 mx-auto mb-3" />
-            <h3 className="text-sm font-bold mb-1">No customers right now</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              We'll notify you as soon as new work arrives in {partner.home_area}.
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-xl h-9 font-bold"
-              onClick={() => toggleNotify.mutate(!partner.notify_when_customers_added)}
-            >
-              <BellRing className={cn("mr-2 h-3.5 w-3.5", partner.notify_when_customers_added && "fill-primary text-primary")} />
-              {partner.notify_when_customers_added ? "Notifications On" : "Notify Me"}
-            </Button>
-          </Card>
-        )}
-
-        <div className="space-y-3">
-          {/* MarketplaceOffersList handles the actual customer cards/offers */}
-          <MarketplaceOffersList />
+      {/* INPUT SLIDERS */}
+      <section className="space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">How much per day?</label>
+            <span className="text-sm font-black text-primary">{hours} HOURS / DAY</span>
+          </div>
+          <Slider
+            value={[hours]}
+            min={minHours}
+            max={maxHours}
+            step={0.5}
+            onValueChange={([v]) => setHours(v)}
+            className="py-2"
+          />
+          <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase">
+            <span>{minHours} hrs</span>
+            <span>{maxHours} hrs</span>
+          </div>
         </div>
 
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">For how many days?</label>
+            <span className="text-sm font-black text-primary">{duration} DAYS</span>
+          </div>
+          <Slider
+            value={[duration]}
+            min={minDays}
+            max={maxDays}
+            step={1}
+            onValueChange={([v]) => {
+              setDuration(v);
+              setDurationTouched(true);
+            }}
+            className="py-2"
+          />
+          <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase">
+            <span>{minDays} days</span>
+            <span>{maxDays} days</span>
+          </div>
+        </div>
+      </section>
+
+      {/* TODAY'S PLAN CARD */}
+      <section className="space-y-3">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Today's Plan</h3>
+        <Card className="p-5 border-neutral-100 shadow-sm bg-white overflow-hidden relative">
+          {isFetching && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-y-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
+                <Clock className="h-3 w-3" /> Working Hours
+              </p>
+              <p className="text-sm font-bold">{hours} Hours</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
+                <Car className="h-3 w-3" /> Customers
+              </p>
+              <p className={cn("text-sm font-bold", acceptableCars < cars ? "text-amber-600" : "text-neutral-900")}>
+                {acceptableCars} <span className="text-neutral-400 font-normal">/ {cars} target</span>
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
+                <TrendingUp className="h-3 w-3" /> Start
+              </p>
+              <p className="text-sm font-bold">{formatTime12(startTime)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
+                <Navigation className="h-3 w-3" /> Finish
+              </p>
+              <p className="text-sm font-bold">{formatTime12(finishTime)}</p>
+            </div>
+          </div>
+
+          {acceptableCars < cars && !isFetching && (
+             <div className="mt-6 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
+               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+               <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
+                 {availableInArea === 0 
+                   ? `No customers available in ${partner.home_area} right now. More may arrive soon.`
+                   : `Only ${availableInArea} customers currently available. Your route will start with what's available.`}
+               </p>
+             </div>
+          )}
+        </Card>
+      </section>
+
+      {/* EARNINGS DISPLAY */}
+      <section className="space-y-3">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
+        <Card className="overflow-hidden border-0 bg-neutral-900 text-white shadow-xl shadow-neutral-200">
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Estimated Today</p>
+                <p className="text-sm font-bold text-white">₹{acceptableEarn}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Estimated Fuel</p>
+                <p className="text-sm font-bold text-white/60">−₹{Math.round(acceptableCars * fuelPerCar)}</p>
+              </div>
+              <div className="space-y-1 text-right">
+                <p className="text-[9px] font-bold uppercase text-primary tracking-wider">Net Today</p>
+                <p className="text-sm font-bold text-primary">₹{Math.round(acceptableEarn - (acceptableCars * fuelPerCar))}</p>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Estimated Over Commitment</p>
+                <p className="text-2xl font-black text-white tracking-tight">₹{animMonthly.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="bg-primary/20 text-primary text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">
+                {commitment.label}
+              </div>
+            </div>
+          </div>
+        </Card>
       </section>
 
       {/* STICKY BOTTOM CTA */}
-      {/* Only show build CTA if there are no bookings/released work visible (managed by MarketplaceOffersList) */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-md p-4">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Earnings</span>
-              <span className="text-lg font-bold">₹{dailyEarn}</span>
-            </div>
-            <div className="text-right flex flex-col items-end">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Potential Total</span>
-              <span className="text-xs font-bold text-primary">+₹{totalPotentialMonthly.toLocaleString("en-IN")}/mo</span>
-            </div>
-          </div>
-          
           <Button 
             size="lg" 
             className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200 active:scale-[0.98] transition-all disabled:opacity-50"
@@ -486,8 +560,7 @@ function AssignmentsPage() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <>
-                Build Route ({acceptableCars} Cars)
-                <ArrowRight className="ml-2 h-5 w-5" />
+                Start with {acceptableCars} Customers →
               </>
             )}
           </Button>
@@ -498,36 +571,27 @@ function AssignmentsPage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Confirm Selection</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">Start your assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              You are accepting {acceptableCars} customer(s) in {partner.home_area}. 
-              Your estimated earning is ₹{acceptableEarn}.
+              You are accepting {acceptableCars} customer(s) in {partner.home_area} for a {duration}-day commitment.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4 space-y-3">
-             <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
-               <div className="h-10 w-10 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
-                 <Clock className="h-5 w-5 text-primary" />
-               </div>
+          <div className="py-2 space-y-3">
+             <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                <div>
-                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Start Time</p>
-                 <p className="text-sm font-bold">{formatTime12(startTime)}</p>
+                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Today's Net</p>
+                 <p className="text-lg font-black text-neutral-900">₹{Math.round(acceptableEarn - (acceptableCars * fuelPerCar))}</p>
                </div>
-             </div>
-             <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
-               <div className="h-10 w-10 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
-                 <Navigation className="h-5 w-5 text-primary" />
-               </div>
-               <div>
-                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Route Distance</p>
-                 <p className="text-sm font-bold">{estKm} km total</p>
+               <div className="text-right">
+                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Total Commitment</p>
+                 <p className="text-lg font-black text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
                </div>
              </div>
           </div>
           <AlertDialogFooter className="flex-row gap-3">
             <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              className="flex-1 h-12 rounded-xl bg-primary text-white font-bold"
+              className="flex-1 h-12 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/20"
               onClick={() => accept.mutate(acceptableCars)}
             >
               Confirm
@@ -538,6 +602,7 @@ function AssignmentsPage() {
     </div>
   );
 }
+
 
 
 
