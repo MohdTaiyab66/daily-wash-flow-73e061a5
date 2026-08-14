@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/c/_authed/profile")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Profile — Urban Wash" }] }),
   component: ProfilePage,
 });

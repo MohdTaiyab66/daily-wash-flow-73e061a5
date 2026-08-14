@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useLocationFlowStore } from "@/lib/location-flow-store";
 
 export const Route = createFileRoute("/c/location/search")({
-  ssr: false,
+  ssr: true,
   validateSearch: (search: Record<string, unknown>) => ({
     returnTo: z.string().optional().parse(search.returnTo),
   }),

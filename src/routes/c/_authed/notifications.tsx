@@ -20,7 +20,7 @@ import { PullToRefresh } from "@/components/customer/ui/PullToRefresh";
 import { ListGroup, Section, Surface } from "@/components/customer/ui/kit";
 
 export const Route = createFileRoute("/c/_authed/notifications")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Notifications — Urban Wash" }] }),
   component: NotificationsPage,
 });

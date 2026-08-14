@@ -24,7 +24,7 @@ import { DEFAULT_PROMO_IMAGES } from "@/lib/promo.constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/c/_authed/home")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Home — Urban Wash" }] }),
   component: CustomerHome,
   pendingComponent: () => null, // Prevent top-level route skeletons if already loaded

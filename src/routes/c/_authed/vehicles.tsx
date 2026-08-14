@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/customer/ui/EmptyState";
 import { SkeletonList } from "@/components/customer/ui/Skeletons";
 
 export const Route = createFileRoute("/c/_authed/vehicles")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "My Vehicles — Urban Wash" }] }),
   component: VehiclesPage,
 });

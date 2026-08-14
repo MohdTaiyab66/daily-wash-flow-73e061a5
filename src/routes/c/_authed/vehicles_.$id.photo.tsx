@@ -9,7 +9,7 @@ import { VehicleAvatar } from "@/components/VehicleAvatar";
 import { useVehicleImageUrl } from "@/lib/vehicle-image";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/$id/photo")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Vehicle photo — Urban Wash" }] }),
   component: VehiclePhotoPage,
 });

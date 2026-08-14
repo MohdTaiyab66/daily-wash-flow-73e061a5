@@ -15,7 +15,7 @@ import { PageTitle, Muted, Surface, StatusChip } from "@/components/customer/ui/
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/$id")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Edit vehicle — Urban Wash" }] }),
   component: EditVehiclePage,
 });

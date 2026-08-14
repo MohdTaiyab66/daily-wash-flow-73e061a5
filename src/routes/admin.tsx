@@ -12,7 +12,7 @@ import {
 import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
   beforeLoad: async () => {
     // Admin gate – designed to NEVER sign the user out on transient errors

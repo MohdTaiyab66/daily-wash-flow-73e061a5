@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/customer/ui/kit";
 
 export const Route = createFileRoute("/c/_authed/booking-success")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Booking confirmed — Urban Wash" }] }),
   validateSearch: z.object({
     bookingId: z.string().optional().catch(undefined),
