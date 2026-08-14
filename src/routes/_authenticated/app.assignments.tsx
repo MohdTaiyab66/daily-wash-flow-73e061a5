@@ -456,13 +456,7 @@ function AssignmentsPage() {
 
         <div className="space-y-3">
           {/* MarketplaceOffersList handles the actual customer cards/offers */}
-          <MarketplaceOffersList 
-            onViewCustomers={(assignmentId) => {
-              // This could open a dedicated modal or navigate to a details view
-              console.log("Viewing customers for assignment:", assignmentId);
-              toast.info("Loading customer details...");
-            }}
-          />
+          <MarketplaceOffersList />
         </div>
 
       </section>

@@ -64,6 +64,8 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "new_booking",
             "new_customers",
             "route_updated",
+            "assignment_released",
+            "assignment_cancelled",
             "subscription_activated",
             "booking_confirmed",
             "partner_accepted",
@@ -219,7 +221,10 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
                     "Uber-style heads-up for new Daily Shine customers")
                 postOffer(data, isUpdate = true)
             }
-            ASSIGNMENT_TYPES.contains(type) || type == "test_notification" -> {
+            ASSIGNMENT_TYPES.contains(type) || type == "assignment_released" || type == "test_notification" -> {
+                if (type == "assignment_released") {
+                    Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:03] ASSIGNMENT_RELEASED_RECOGNIZED")
+                }
                 // [CUSTOMER-PUSH-NATIVE:03] CHANNEL_SELECTED
                 Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:03] CHANNEL_SELECTED channelId=$CHANNEL_ASSIGNMENTS")
                 Log.d("UW_AUDIT", "2_branch=assignment type=$type")
@@ -479,6 +484,9 @@ Log.d("UW_AUDIT", "2b_ids broadcastId=$broadcastId offerId=$offerId " +
             "ic_stat_notify", "drawable", packageName
         ).let { if (it != 0) it else applicationInfo.icon }
 
+        // [CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_BUILD_START
+        Log.d("CUSTOMER-PUSH-NATIVE", "[CUSTOMER-PUSH-NATIVE:04] NOTIFICATION_BUILD_START type=${data["type"]}")
+        
         val builder = NotificationCompat.Builder(ctx, CHANNEL_ASSIGNMENTS)
             .setSmallIcon(iconRes)
             .setContentTitle(title)

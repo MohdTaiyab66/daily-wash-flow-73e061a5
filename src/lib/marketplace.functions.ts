@@ -82,6 +82,13 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
         subscription: r.subscription_id ? subById.get(r.subscription_id) ?? null : null,
       },
       server_now: r.server_now,
+      type: r.type,
+      customer_count: r.customer_count,
+      earning_monthly: r.earning_monthly,
+      earning_amount: r.earning_amount,
+      distance_display: r.distance_display,
+      area: r.area,
+      assignment_id: r.assignment_id,
     }));
   });
 

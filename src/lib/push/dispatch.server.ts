@@ -38,6 +38,7 @@ type PendingOfferRow = {
   partner_id: string;
   area: string | null;
   vehicle_category: string | null;
+  incentive?: number;
   expires_at: string;
 };
 
@@ -50,7 +51,7 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
   const { data: fallback, error: fbErr } = await sb
     .from("subscription_offers")
     .select(
-      "id, queue_id, partner_id, expires_at, response, subscription_assignment_queue!inner(area,vehicle_category)",
+      "id, queue_id, partner_id, expires_at, response, subscription_assignment_queue!inner(area,vehicle_category,current_incentive)",
     )
     .eq("response", "pending")
     .gt("expires_at", new Date().toISOString())
@@ -63,6 +64,7 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
     partner_id: o.partner_id,
     area: o.subscription_assignment_queue?.area ?? null,
     vehicle_category: o.subscription_assignment_queue?.vehicle_category ?? null,
+    incentive: Number(o.subscription_assignment_queue?.current_incentive ?? 0),
     expires_at: o.expires_at,
   }));
 }
@@ -131,12 +133,13 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         offerId: r.offer_id,
         partnerId: r.partner_id,
-        incentive: 0, 
+        incentive: Number((r as any).incentive || 0), 
+
       }),
       resolvePartnerMonthlyEarning({
         sb,
         partnerId: r.partner_id,
-        incentive: 0,
+        incentive: Number((r as any).incentive || 0),
         startDate: (r as any).subscription_start_date ?? null,
         renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
@@ -303,6 +306,7 @@ export const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
   "new_customers",
   "route_updated",
   "assignment_released",
+  "assignment_cancelled",
 ]);
 
 /**
