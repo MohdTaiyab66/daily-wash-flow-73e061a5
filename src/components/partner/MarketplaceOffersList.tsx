@@ -7,6 +7,9 @@ import { logMarketplaceEvent } from "@/lib/marketplace-tracking";
 import { MarketplaceOfferCard } from "./MarketplaceOfferCard";
 import { MarketplaceOfferSheet } from "./MarketplaceOfferSheet";
 import { popupDebug, remainingSecondsFrom, traceComponentMount, traceComponentUnmount, tracePopupOpen, traceStateCall } from "@/lib/offer-popup-debug";
+import { Car, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /** How long (ms) to suppress the auto-popup after a decline, unless a better
  * offer arrives (higher incentive or a different broadcast). */
