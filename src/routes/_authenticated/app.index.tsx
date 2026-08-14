@@ -255,22 +255,22 @@ function HomePage() {
         </div>
       </section>
 
-      {/* SUPPORT */}
-      <section className="bg-neutral-50 rounded-3xl p-5 border border-neutral-100">
-        <h3 className="text-sm font-bold uppercase tracking-wider mb-4">Need help?</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <a href="tel:+919999999999" className="flex flex-col items-center justify-center gap-2 p-4 bg-white border rounded-2xl">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <Phone className="h-5 w-5" />
-            </div>
-            <span className="font-bold text-xs">Support</span>
-          </a>
-          <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center gap-2 p-4 bg-white border rounded-2xl">
-            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-              <MessageCircle className="h-5 w-5" />
-            </div>
-            <span className="font-bold text-xs">WhatsApp</span>
-          </a>
+      {/* SUPPORT COMPACT */}
+      <section className="bg-neutral-900 rounded-[2rem] p-6 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold">Need Help?</h3>
+            <p className="text-xs text-white/50 mt-1">Our support team is online</p>
+          </div>
+          <div className="flex gap-2">
+            <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+              <Phone className="h-5 w-5 text-primary" />
+            </a>
+            <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+              <MessageCircle className="h-5 w-5 text-emerald-400" />
+            </a>
+          </div>
         </div>
       </section>
     </div>
