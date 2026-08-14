@@ -127,7 +127,7 @@ function HomePage() {
       sum +
       Number(
         o?.earning_monthly ??
-          (Number(o?.broadcast?.subscription?.amount ?? 0) || Number(o?.incentive ?? 0) * 26),
+          (Number(o?.incentive ?? 0) * 26),
       ),
     0,
   );
