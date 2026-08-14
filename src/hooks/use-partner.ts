@@ -7,15 +7,18 @@ export function usePartner() {
   return useQuery({
     queryKey: ["me-partner"],
     queryFn: async () => {
-      const { data: u, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!u.user) return null;
-      const { data, error } = await supabase.from("partners").select("*").eq("id", u.user.id).maybeSingle();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user) return null;
+      
+      const { data, error } = await supabase
+        .from("partners")
+        .select("*")
+        .eq("id", session.user.id)
+        .maybeSingle();
+        
       if (error) throw error;
       return data;
     },
-    // Don't flip the local online switch off just because the tab regained focus
-    // and a refetch is in-flight. Availability is authoritative; we keep cached value.
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });
@@ -29,13 +32,18 @@ export function useIsOnline() {
 export function useToggleOnline() {
   const qc = useQueryClient();
   return async (on: boolean) => {
-    const { data: u, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!u.user) throw new Error("Please sign in again");
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session?.user) {
+      // If we're toggling availability and have no session, we should probably force a reload or re-auth
+      // rather than letting an unhandled rejection bubble up from getUser()
+      window.location.href = '/auth';
+      return;
+    }
+    
     const { error } = await supabase
       .from("partners")
       .update({ availability: on ? "online" : "offline", last_seen: new Date().toISOString() })
-      .eq("id", u.user.id);
+      .eq("id", session.user.id);
     if (error) throw error;
     // Optimistic local update; do NOT call invalidateQueries — a stale refetch
     // returning the previous value would visibly flip the switch back.

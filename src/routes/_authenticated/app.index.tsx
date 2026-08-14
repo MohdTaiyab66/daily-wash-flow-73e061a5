@@ -64,8 +64,12 @@ function HomePage() {
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
   const handleToggle = async (on: boolean) => {
-    await toggle(on);
-    if (!on) navigate({ to: "/app" });
+    try {
+      await toggle(on);
+      if (!on) navigate({ to: "/app" });
+    } catch (err) {
+      console.error("[TOGGLE_ONLINE_ERROR]", err);
+    }
   };
 
   return (
