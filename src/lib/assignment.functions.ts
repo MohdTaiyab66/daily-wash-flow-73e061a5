@@ -190,10 +190,11 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
     // We import dynamically to avoid circular dependencies in server fns
     import("@/lib/push/immediate.functions").then(m => {
       console.log(`[CANCEL-ASSIGNMENT:10] TRIGGER_RELEASE_PUSH assignment_id=${data.assignment_id}`);
-      m.flushReleasedWorkPush({ assignmentId: data.assignment_id }).catch(e => 
+      m.flushReleasedWorkPush({ data: { assignmentId: data.assignment_id } }).catch(e => 
         console.error("[cancelMyAssignment] release push failed", e)
       );
     });
+
 
     return { ok: true };
   });
