@@ -382,12 +382,13 @@ function AssignmentsPage() {
 
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Build Today's Route</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose your working hours. We'll build the best route automatically.
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-1">Route Builder</p>
+          <h1 className="text-2xl font-bold tracking-tight">Available Work</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground leading-relaxed">
+            Adjust your hours and commitment. We'll automatically build the most efficient route for you.
           </p>
         </div>
         <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
