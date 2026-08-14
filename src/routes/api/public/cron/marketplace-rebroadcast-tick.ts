@@ -17,6 +17,7 @@ export const Route = createFileRoute("/api/public/cron/marketplace-rebroadcast-t
 
 
         try {
+          console.log("[BOOKING-PUSH:CRON] TICK_STARTED");
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           
           // 1. Clean up stale/expired offers
@@ -24,10 +25,15 @@ export const Route = createFileRoute("/api/public/cron/marketplace-rebroadcast-t
           
           // 2. Dispatch the fan-out
           const { dispatchMarketplacePushes } = await import("@/lib/push/dispatch-trigger.functions");
-          await dispatchMarketplacePushes();
+          const result = await dispatchMarketplacePushes();
+          
+          if (result.ok) {
+            console.log("[BOOKING-PUSH:CRON] NEXT_TICK");
+          }
           
           return new Response("ok");
         } catch (e: any) {
+          console.error("[BOOKING-PUSH:CRON] TICK_FAILED", e);
           return new Response(JSON.stringify({ error: e?.message }), { status: 500 });
         }
       },

@@ -22,6 +22,10 @@ export const acceptMarketplaceOffer = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     if (!res) throw new Error("Offer already accepted by another partner");
+
+    console.log(`[BOOKING-PUSH:CRON] BOOKING_ACCEPTED broadcast_id=${data.broadcastId} partner_id=${(context as any).userId}`);
+    console.log(`[BOOKING-PUSH:CRON] BROADCAST_STOPPED broadcast_id=${data.broadcastId}`);
+
     return { ok: true } as { ok: boolean; reason?: string; assignment_id?: string; subscription_id?: string };
 
   });
