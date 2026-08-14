@@ -137,12 +137,6 @@ function HomePage() {
                 </Link>
               </Button>
             </div>
-            <Button asChild className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg shadow-primary/20">
-              <Link to="/app/live">
-                Continue Service
-                <Navigation className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </Card>
         ) : allDone ? (
           /* STATE: ALL SERVICES COMPLETED */
