@@ -705,7 +705,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
     
     // 1. Reconcile/Recalculate eligibility for ALL partners
-    // We run the RPC to ensure subscription_offers exist for all currently eligible partners
+    // This includes newly online partners and honors the 5m decline cooldown
     const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
       p_broadcast_id: b.broadcast_id
     });
@@ -745,13 +745,16 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
           })
         ]);
 
-        const title = `🚗 New Booking Available`;
-        const body = `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
+        const title = b.assignment_id ? `🔄 Assignment Available` : `🚗 New Booking Available`;
+        const body = b.assignment_id 
+          ? `${b.customer_count || 'Multiple'} Customers · ${b.area || 'Nearby'} · ${monthly.display}`
+          : `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
 
         const dataPayload: Record<string, string> = {
-          type: "new_booking",
+          type: b.assignment_id ? "assignment_released" : "new_booking",
           broadcast_id: String(b.broadcast_id),
-          booking_id: String(b.booking_id),
+          booking_id: String(b.booking_id ?? ""),
+          assignment_id: String(b.assignment_id ?? ""),
           monthly_earnings: monthly.display,
           area: b.area || '',
           distance_km: distance.km ? String(distance.km) : "",
