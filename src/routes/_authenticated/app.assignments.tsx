@@ -462,16 +462,17 @@ function AssignmentsPage() {
       </section>
 
       {/* STICKY BOTTOM CTA */}
+      {/* Only show build CTA if there are no bookings/released work visible (managed by MarketplaceOffersList) */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-md p-4">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Potential Total</span>
-              <span className="text-lg font-bold">₹{acceptableEarn}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Earnings</span>
+              <span className="text-lg font-bold">₹{dailyEarn}</span>
             </div>
             <div className="text-right flex flex-col items-end">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Target Start</span>
-              <span className="text-xs font-bold">{formatTime12(startTime)}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Potential Total</span>
+              <span className="text-xs font-bold text-primary">+₹{totalPotentialMonthly.toLocaleString("en-IN")}/mo</span>
             </div>
           </div>
           
@@ -485,7 +486,7 @@ function AssignmentsPage() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <>
-                Start with {acceptableCars} Customer{acceptableCars !== 1 ? 's' : ''}
+                Build Route ({acceptableCars} Cars)
                 <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}
