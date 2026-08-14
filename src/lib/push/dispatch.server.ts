@@ -604,8 +604,9 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         customerLng: firstCust?.longitude ?? null,
       });
 
-      const title = `🚗 ${customerCount} Customers Available`;
-      const body = `Earn up to ${monthlyDisplay} · ${distance.display}`;
+      const title = monthlyDisplay;
+      const body = `${customerCount} customers · ${areaName} · ${distance.display}`;
+
 
       const dataPayload: Record<string, string> = {
         type: "assignment_released",
