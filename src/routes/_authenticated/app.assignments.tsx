@@ -383,322 +383,149 @@ function AssignmentsPage() {
 
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-32">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-1">Schedule Builder</p>
-          <h1 className="text-2xl font-bold tracking-tight">Available Work</h1>
-          <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
-            Optimize your daily goal and commitment. We'll automatically build the most efficient route for you.
-          </p>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-6">
+      <header>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Today's Work</p>
+          <Link to="/app/area" className="flex items-center gap-1.5 px-3 py-1 bg-neutral-100 rounded-full text-[10px] font-bold text-neutral-600 uppercase tracking-wider">
+            <MapPin className="h-3 w-3" />
+            {partner.home_area}
+          </Link>
         </div>
-        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-neutral-100 px-3.5 py-2 text-[11px] font-bold text-neutral-900 border border-neutral-200 active:scale-95 transition-transform">
-          <MapPin className="h-3.5 w-3.5 text-primary" />
-          <span className="uppercase tracking-wider">{partner.home_area}</span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-        </Link>
+        <h1 className="text-3xl font-bold tracking-tight">Available Work</h1>
+      </header>
+
+      {/* COMPACT SUMMARY */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
+          <p className="text-lg font-bold">{availableInArea}</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Customers</p>
+        </div>
+        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
+          <p className="text-lg font-bold text-primary">₹{acceptableEarn}</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Earnings</p>
+        </div>
+        <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
+          <p className="text-lg font-bold">{estKm}km</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Distance</p>
+        </div>
       </div>
 
-      {/* Work today — Premium Dark Card */}
-      <Card className="mt-5 overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
-        <div className="relative z-10">
-          <div className="flex items-baseline justify-between mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Work today</p>
-            <p className="text-3xl font-bold tracking-tight text-white">{hours}<span className="ml-1 text-sm font-medium text-white/40 uppercase">Hrs</span></p>
-          </div>
-          <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-6 mb-2" />
-          <div className="flex justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">
-            <span>{minHours}H Min</span>
-            <span>{maxHours}H Max</span>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-6 border-t border-white/10 pt-6">
-            <div className="space-y-1">
-              <p className="text-2xl font-bold tabular-nums text-white">{animCars}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Customers</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Today's Earn</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xl font-bold tabular-nums text-white">~{estKm}<span className="ml-0.5 text-xs font-medium text-white/40">km</span></p>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Distance</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xl font-bold tabular-nums text-white">{formatTime12(startTime).replace(/:00 /, " ")}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Start Time</p>
-            </div>
-          </div>
-          {isFetching && <p className="mt-4 flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-primary animate-pulse"><Loader2 className="h-3 w-3 animate-spin" />Refreshing Estimate…</p>}
+      {/* CUSTOMER AVAILABILITY LIST */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Nearby Customers</h3>
+          <span className="text-[10px] font-medium text-muted-foreground">Updated {updatedAgoLabel}</span>
         </div>
-      </Card>
 
-      {/* Trust indicator */}
-      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground/70">
-        <p className="flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-          Live estimates based on current bookings in your area.
-        </p>
-        {updatedAgoLabel && !isFetching ? (
-          <span className="shrink-0 tabular-nums">Updated {updatedAgoLabel}</span>
-        ) : null}
-      </div>
-
-
-      {/* Commitment — Premium White Card */}
-      <Card className="mt-3 p-6 border-0 shadow-sm">
-        <div className="flex items-baseline justify-between mb-2">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Commitment</p>
-            <span className={cn(
-              "mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors",
-              commitment.tone === "max" ? "bg-primary/10 text-primary"
-              : commitment.tone === "reco" ? "bg-emerald-50 text-emerald-600"
-              : "bg-neutral-100 text-neutral-500"
-            )}>
-              <span className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                commitment.tone === "max" ? "bg-primary animate-pulse"
-                : commitment.tone === "reco" ? "bg-emerald-500"
-                : "bg-neutral-400"
-              )} />
-              {commitment.label}
-            </span>
+        {isFetching && !previewSafe && (
+          <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin mb-3 opacity-20" />
+            <p className="text-xs">Finding customers nearby...</p>
           </div>
-          <p className="text-3xl font-bold tracking-tight">{duration}<span className="ml-1 text-sm font-medium text-muted-foreground/40 uppercase">Days</span></p>
-        </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-6 mb-2" />
-        <div className="flex justify-between text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest px-1">
-          <span>{minDays} Days Min</span>
-          <span>{maxDays} Days Max</span>
-        </div>
-        <p className="mt-5 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider flex items-center gap-2">
-          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-          Weekly Payout • {offDayFull}s Off
-        </p>
+        )}
 
-        {/* Monthly Estimate Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-neutral-100">
-          <div className="bg-neutral-50 rounded-2xl p-4">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Monthly Earn</p>
-            <p className="text-xl font-bold tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
-          </div>
-          <div className="bg-neutral-50 rounded-2xl p-4">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Avg per day</p>
-            <p className="text-xl font-bold tabular-nums">₹{animPerDay}</p>
-          </div>
-        </div>
-      </Card>
-
-      {previewError && (
-        <Card className="mt-3 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{friendlyError(previewError)}</span></div>
-        </Card>
-      )}
-
-      {/* Today's availability — simplified */}
-      {preview && (
-        <Card className={`mt-3 p-5 ${fullyAvailable ? "border-success/40 bg-success/5" : "border-warning/40 bg-warning/5"}`}>
-          {fullyAvailable ? (
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <p><span className="font-semibold">{cars} customers ready</span> in {partner.home_area}</p>
-            </div>
-          ) : partialAvailable ? (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's availability</p>
-              <div className="mt-2 flex items-end justify-between">
-                <div>
-                  <p className="text-3xl font-bold tabular-nums">{availableInArea}</p>
-                  <p className="text-[11px] text-muted-foreground">Customers ready</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Today's target</p>
-                  <p className="text-lg font-semibold tabular-nums">{cars} Customers</p>
-                </div>
-              </div>
-              <Progress value={growthPct} className="mt-3 h-2" />
-              <p className="mt-2 text-[11px] text-muted-foreground">More customers are added automatically until your route starts.</p>
-              <Button asChild size="sm" variant="outline" className="mt-3 w-full">
-                <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
-              </Button>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-start gap-2">
-                <TrendingUp className="mt-0.5 h-4 w-4 text-warning" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Looking for customers…</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    We'll notify you instantly when routes become available in {partner.home_area}.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 grid gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Use current location</Link>
-                </Button>
-                <Button asChild size="sm" variant="ghost">
-                  <Link to="/app/area"><MapPin className="mr-2 h-4 w-4" />Change area</Link>
-                </Button>
-                <Button size="sm" variant="ghost"
-                  disabled={toggleNotify.isPending || partner.notify_when_customers_added}
-                  onClick={() => toggleNotify.mutate(true)}>
-                  <BellRing className="mr-2 h-4 w-4" />
-                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
-
-
-
-      {/* Nearby requests — only when relevant */}
-      {(loadingBookings || bookingRequests.length > 0) && (
-        <Card className="mt-4 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nearby requests</p>
-              <h2 className="mt-1 text-base font-semibold">
-                {bookingRequests.length > 0 ? `${bookingRequests.length} pending booking${bookingRequests.length === 1 ? "" : "s"}` : "Checking…"}
-              </h2>
-            </div>
-            <Inbox className="h-5 w-5 text-primary" />
-          </div>
-          <div className="mt-3 space-y-2">
-            {bookingRequests.slice(0, 4).map((b: any) => (
-              <div key={b.booking_id} className="rounded-xl border border-border p-3">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><UserRound className="h-4 w-4" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{b.service_name}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{b.customer_name} · {b.vehicle_label || "Vehicle"} {b.registration_number ? `· ${b.registration_number}` : ""}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{b.scheduled_date} · {b.scheduled_time || "Flexible"} · ₹{b.total_amount}</p>
-                  </div>
-                </div>
-                <Button size="sm" className="mt-3 w-full" disabled={claimBooking.isPending} onClick={() => claimBooking.mutate(b.booking_id)}>
-                  {claimBooking.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  Accept booking
-                </Button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {previewMessage && fullyAvailable && (
-        <Card className="mt-3 border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">{previewMessage}</Card>
-      )}
-
-      {/* First-payout details and motivation tips moved to the Learn More page — kept out of the daily flow. */}
-
-
-
-
-
-      {/* Today's Goal — becomes an emotional anchor above the CTA */}
-      {preview && (fullyAvailable || partialAvailable) && (
-        <Card className="mt-4 p-5 border-0 bg-neutral-50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12" />
-          <div className="flex items-center justify-between mb-4 relative z-10">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Today's Goal</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums">
-                0 <span className="text-sm font-medium text-muted-foreground/40 uppercase">/ {acceptableCars} Customers</span>
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Potential</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
-            </div>
-          </div>
-          <Progress value={0} className="h-1.5 bg-neutral-200" />
-        </Card>
-      )}
-
-      {/* Sticky CTA — always primary, action varies with availability */}
-      <div className="fixed inset-x-0 bottom-[64px] z-30 bg-white/95 backdrop-blur-md border-t border-neutral-100 pb-safe">
-        <div className="mx-auto max-w-md px-5 py-4">
-          {accept.isPending ? (
-            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200" disabled>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />Building Route…
-            </Button>
-          ) : isFetching && !preview ? (
-            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-100 text-neutral-400 font-bold" disabled>
-              Finding Customers…
-            </Button>
-          ) : noneAvailable ? (
-            <Button
-              size="lg"
-              className={cn(
-                "w-full h-14 rounded-2xl font-bold transition-all active:scale-[0.98]",
-                partner.notify_when_customers_added 
-                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
-                  : "bg-neutral-900 text-white shadow-xl shadow-neutral-200"
-              )}
-              disabled={toggleNotify.isPending}
-              onClick={() => !partner.notify_when_customers_added && toggleNotify.mutate(true)}
+        {noneAvailable && !isFetching && (
+          <Card className="p-8 text-center border-dashed bg-neutral-50/50">
+            <Inbox className="h-10 w-10 text-neutral-200 mx-auto mb-3" />
+            <h3 className="text-sm font-bold mb-1">No customers right now</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              We'll notify you as soon as new work arrives in {partner.home_area}.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-xl h-9 font-bold"
+              onClick={() => toggleNotify.mutate(!partner.notify_when_customers_added)}
             >
-              <span className="flex items-center justify-center gap-3">
-                {partner.notify_when_customers_added ? (
-                  <>
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Monitoring Area</span>
-                  </>
-                ) : (
-                  <>
-                    <BellRing className="h-5 w-5" />
-                    <span>Notify When Open</span>
-                  </>
-                )}
-              </span>
+              <BellRing className={cn("mr-2 h-3.5 w-3.5", partner.notify_when_customers_added && "fill-primary text-primary")} />
+              {partner.notify_when_customers_added ? "Notifications On" : "Notify Me"}
             </Button>
-          ) : (
-            <Button
-              size="lg"
-              className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-xl shadow-primary/30 transition-all active:scale-[0.98]"
-              onClick={() => { 
-                setConfirmCars(partialAvailable ? availableInArea : cars); 
-                setConfirmOpen(true); 
-              }}
-            >
-              <span className="flex items-center justify-center gap-2">
-                {partialAvailable ? `Start with ${availableInArea} Customers` : "Start Route Now"}
-                <ArrowRight className="h-5 w-5" />
-              </span>
-            </Button>
-          )}
+          </Card>
+        )}
+
+        <div className="space-y-3">
+          {/* MarketplaceOffersList handles the actual customer cards/offers */}
+          <MarketplaceOffersList />
+        </div>
+      </section>
+
+      {/* STICKY BOTTOM CTA */}
+      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto max-w-md p-4">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Potential Total</span>
+              <span className="text-lg font-bold">₹{acceptableEarn}</span>
+            </div>
+            <div className="text-right flex flex-col items-end">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Target Start</span>
+              <span className="text-xs font-bold">{formatTime12(startTime)}</span>
+            </div>
+          </div>
+          
+          <Button 
+            size="lg" 
+            className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200 active:scale-[0.98] transition-all disabled:opacity-50"
+            disabled={acceptableCars === 0 || accept.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            {accept.isPending ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                Start with {acceptableCars} Customer{acceptableCars !== 1 ? 's' : ''}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Confirmation — prevents accidental starts, reinforces confidence */}
+      {/* CONFIRMATION DIALOG */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Ready to start?</AlertDialogTitle>
-            <AlertDialogDescription>
-              More customers will be added automatically during your route.
+            <AlertDialogTitle className="text-xl font-bold">Confirm Selection</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              You are accepting {acceptableCars} customer(s) in {partner.home_area}. 
+              Your estimated earning is ₹{acceptableEarn}.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="mt-2 space-y-2 rounded-lg bg-muted/60 p-4 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Area</span><span className="font-medium">{partner.home_area}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Customers ready</span><span className="font-medium tabular-nums">{confirmCars}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Estimated today</span><span className="font-medium tabular-nums text-primary">₹{(confirmCars * rate).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Start time</span><span className="font-medium">{formatTime12(startTime)}</span></div>
+          <div className="py-4 space-y-3">
+             <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
+               <div className="h-10 w-10 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
+                 <Clock className="h-5 w-5 text-primary" />
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Start Time</p>
+                 <p className="text-sm font-bold">{formatTime12(startTime)}</p>
+               </div>
+             </div>
+             <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
+               <div className="h-10 w-10 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
+                 <Navigation className="h-5 w-5 text-primary" />
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Route Distance</p>
+                 <p className="text-sm font-bold">{estKm} km total</p>
+               </div>
+             </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => accept.mutate(confirmCars)}>Start Route</AlertDialogAction>
+          <AlertDialogFooter className="flex-row gap-3">
+            <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="flex-1 h-12 rounded-xl bg-primary text-white font-bold"
+              onClick={() => accept.mutate(acceptableCars)}
+            >
+              Confirm
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
 }
+
 
 
