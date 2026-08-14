@@ -117,7 +117,7 @@ function CustomerHome() {
    * Failed to connect to MetaMask
    * 
    * {
-   *   "timestamp": 1786739029833,
+   *   "timestamp": 1786739134281,
    *   "error_type": "UNHANDLED_PROMISE_REJECTION",
    *   "filename": "Unknown file",
    *   "lineno": 0,
@@ -127,6 +127,7 @@ function CustomerHome() {
    * }
    * ```
    */
+
   const profileQ = useQuery({
 
     queryKey: ["customer-profile"],
