@@ -148,14 +148,14 @@ function BottomNav() {
               <div
                 className={cn(
                   "grid h-[44px] w-[44px] place-items-center rounded-2xl transition-all duration-300",
-                  active ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(255,107,0,0.2)]" : "bg-transparent text-[#8A8A8A]"
+                  active ? "bg-primary text-primary-foreground shadow-[0_6px_16px_rgba(255,107,0,0.35)] scale-105" : "bg-transparent text-[#8A8A8A] opacity-60"
                 )}
               >
                 <Icon className="h-[20px] w-[20px]" strokeWidth={1.75} />
               </div>
               <span className={cn(
                 "mt-1 text-[13px] font-medium tracking-tight transition-colors",
-                active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
+                active ? "text-[#1A1A1A]" : "text-[#8A8A8A] opacity-60"
               )}>
                 {t.label}
               </span>

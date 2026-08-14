@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
-import { TodayAssignmentStatus, TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
+import { TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,793 +8,278 @@ import {
   Car,
   CheckCircle2,
   Clock,
-  Flag,
   MapPin,
-  Star,
-  Navigation,
-  PartyPopper,
   IndianRupee,
-  MessageCircle,
-  Phone,
-  BookOpen,
+  Navigation,
   ArrowRight,
-  Sparkles,
-  Route as RouteIcon,
   Wallet,
-  Gift,
-  LifeBuoy,
   Briefcase,
-  CalendarClock,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import { AnimatedNumber } from "@/components/partner/AnimatedNumber";
-
-/**
- * Rough per-partner finish estimate: start time + service time per remaining
- * customer + short travel buffer between stops. Kept intentionally simple —
- * real per-service durations aren't stored yet. Every partner still sees a
- * different value because it's driven by their own start time and stop count.
- */
-const AVG_SERVICE_MIN = 12;
-const AVG_TRAVEL_MIN = 3;
-function estimateFinishTime(startHHMM?: string | null, stops = 0): string {
-  if (!startHHMM || stops <= 0) return "";
-  const m = /^(\d{1,2}):(\d{2})/.exec(startHHMM);
-  if (!m) return "";
-  const start = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-  const total = start + stops * AVG_SERVICE_MIN + Math.max(0, stops - 1) * AVG_TRAVEL_MIN;
-  const hh = Math.floor((total / 60) % 24);
-  const mm = total % 60;
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-}
-import { toast } from "sonner";
 import { usePartner, useToggleOnline } from "@/hooks/use-partner";
-import { formatTime12 } from "@/lib/format";
 import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { cancelMyAssignment, getAssignmentCancellability } from "@/lib/assignment.functions";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-const SUPPORT_TEL_HOME = "+911800000000";
+import { formatTime12 } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: HomePage,
 });
 
 function HomePage() {
+  const navigate = useNavigate();
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
 
-  // Single source of truth: shared today-assignment query. Every partner
-  // screen (Home / Live / My Assignment) reads from the same cache so the
-  // "customers today" number cannot drift between screens.
   const todayQuery = useTodayAssignment();
   const todayData = todayQuery.data;
   const hasData = todayData !== undefined;
 
-  // Blocking loader on first load — never render "0 customers" while the
-  // API is still fetching or retrying.
   if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
   }
 
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
-
-
-
-  const completed = (today ?? []).filter((s) => s.status === "completed").length;
-  const done = (today ?? []).filter(
-    (s) => s.status === "completed" || s.status === "unavailable",
-  ).length;
-  const total = today?.length ?? 0;
+  const completed = today.filter((s) => s.status === "completed").length;
+  const done = today.filter((s) => s.status === "completed" || s.status === "unavailable").length;
+  const total = today.length;
   const remaining = total - done;
-  const expectedEarnings = (today ?? []).reduce(
-    (sum, s) => sum + Number(s.rate_per_car || 17),
-    0,
-  );
-  const earnedSoFar = (today ?? [])
+
+  const earnedSoFar = today
     .filter((s) => s.status === "completed" || s.status === "unavailable")
-    .reduce(
-      (sum, s) =>
-        sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)),
-      0,
-    );
+    .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
 
-  const started = (today ?? []).map((s) => s.started_at).filter(Boolean).sort();
-  const ended = (today ?? []).map((s) => s.completed_at).filter(Boolean).sort();
-  const hours =
-    started.length && ended.length
-      ? (
-          (new Date(ended[ended.length - 1]!).getTime() -
-            new Date(started[0]!).getTime()) /
-          3.6e6
-        ).toFixed(1)
-      : "0.0";
-
-  const handleToggle = async (on: boolean) => {
-    await toggle(on);
-    toast.success(on ? "You're Online" : "You're Offline");
-  };
-
-  const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
-  const progressPct = total ? (done / total) * 100 : 0;
+  const estimatedEarningsToday = today.reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0);
+  
+  const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;
-  const restDay = !!assignment && total === 0;
-  const nextDate = todayData?.nextDate ?? null;
-
-  // Daily customer capacity — used on rest days when today's list is empty.
-  const nextDayCustomers = nextDate
-    ? new Set(
-        (todayData?.all ?? [])
-          .filter((s: any) => s.scheduled_date === nextDate)
-          .map((s: any) => s.customer_id)
-          .filter(Boolean),
-      ).size
-    : 0;
-  const dailyCustomers =
-    nextDayCustomers ||
-    (assignment
-      ? Math.max(
-          1,
-          Math.round(
-            Number(assignment.target_cars || 0) /
-              Math.max(1, Number(assignment.working_days || 1)),
-          ),
-        )
-      : 0);
-
-  // Cancellability + cancel mutation (rest-day quick cancel).
-  const qc = useQueryClient();
-  const canFn = useServerFn(getAssignmentCancellability);
-  const cancelFn = useServerFn(cancelMyAssignment);
-  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
-  const { data: cancelInfo } = useQuery({
-    queryKey: ["cancellability", assignment?.id],
-    queryFn: () => canFn({ data: { assignment_id: assignment!.id } }),
-    enabled: !!assignment?.id,
-    refetchInterval: 60000,
-  });
-  const cancelMut = useMutation({
-    mutationFn: (id: string) => cancelFn({ data: { assignment_id: id } }),
-    onSuccess: () => {
-      toast.success("Assignment cancelled.");
-      setConfirmCancelOpen(false);
-      qc.invalidateQueries();
-    },
-    onError: (e: any) => {
-      const code = e?.code as string | undefined;
-      if (code === "ROUTE_STARTED") toast.error("Route already started. Please contact Partner Support.");
-      else if (code === "CUTOFF_PASSED") toast.error("Cancellation window closed.");
-      else toast.error(e?.message ?? "Cancel failed");
-      setConfirmCancelOpen(false);
-    },
-  });
-  void cancelInfo?.route_started;
-
-  // Assignment summary math (used on rest days). Mirrors getMyAssignment.
-  const allServices = todayData?.all ?? [];
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const distinctScheduled = Array.from(
-    new Set(allServices.map((s: any) => s.scheduled_date)),
-  ).filter(Boolean) as string[];
-  const workingDaysTotal = Number(assignment?.working_days ?? 0);
-  const workingDaysCompleted = distinctScheduled.filter((d) => d < todayStr).length;
-  const workingDaysRemaining = Math.max(0, workingDaysTotal - workingDaysCompleted);
-  const ratePerCar = Number(assignment?.rate_per_car ?? 17);
-  const expectedTotal = allServices.length * ratePerCar;
-  const nextDateLabel = nextDate
-    ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" })
-    : "Tomorrow";
-  const nextTimeLabel = assignment?.expected_start_time
-    ? formatTime12(assignment.expected_start_time)
-    : "6:30 AM";
-
-  const finishHHMM = estimateFinishTime(assignment?.expected_start_time, total);
-
+  
+  const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
+  const handleToggle = async (on: boolean) => {
+    await toggle(on);
+    if (!on) navigate({ to: "/app" });
+  };
+
   return (
-    <div className="mx-auto max-w-md px-5 pb-6 pt-3">
-      {/* Greeting */}
-      <header>
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{greeting} 👋</p>
-          <p className="text-[11px] text-muted-foreground">{dateStr}</p>
+    <div className="mx-auto max-w-md px-5 pb-8 pt-3 space-y-5">
+      {/* HEADER */}
+      <header className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{greeting} 👋</p>
+          <h1 className="text-2xl font-bold tracking-tight">{firstName}</h1>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{dateStr}</p>
         </div>
-        <h1 className="mt-0.5 text-3xl font-bold uppercase tracking-tight leading-tight">
-          {firstName}
-        </h1>
-        {!assignment && total === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">Ready to build your first route?</p>
-        ) : null}
       </header>
 
-      <TodayAssignmentStatus
-        isError={todayQuery.isError}
-        isFetching={todayQuery.isFetching}
-        isRefetching={todayQuery.isRefetching}
-        hasData={hasData}
-        onRetry={() => todayQuery.refetch()}
-        metrics={todayQuery.metrics}
-        lastSuccessAt={todayQuery.data?.fetchedAt ?? todayQuery.lastGood?.fetchedAt ?? null}
-      />
-
-      {/* Online status card — compact */}
-      <Card className="mt-3 flex items-center justify-between gap-3 px-4 py-2">
-        <div className="flex items-center gap-2.5">
-          <span
-            className={`grid h-7 w-7 place-items-center rounded-full ${
-              online ? "bg-[color:var(--success)]/15" : "bg-muted"
-            }`}
-          >
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                online ? "bg-[color:var(--success)] shadow-[0_0_0_3px_color-mix(in_oklab,var(--success)_25%,transparent)]" : "bg-muted-foreground"
-              } ${online ? "animate-pulse [animation-duration:2.4s]" : ""}`}
-            />
-          </span>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold">
-              {online ? "Online" : "Offline"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {online ? "Available for assignments" : "You're not receiving assignments"}
-            </p>
+      {/* AVAILABILITY COMPACT */}
+      <div className={cn(
+        "flex items-center justify-between p-4 rounded-2xl transition-all",
+        online ? "bg-emerald-50/50 border border-emerald-100" : "bg-neutral-50 border border-neutral-100"
+      )}>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "h-2 w-2 rounded-full shrink-0",
+            online ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" : "bg-neutral-300"
+          )} />
+          <div className="flex flex-col">
+            <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em]", online ? "text-emerald-600" : "text-neutral-400")}>
+              Status
+            </span>
+            <span className={cn("text-sm font-bold", online ? "text-emerald-900" : "text-neutral-500")}>
+              {online ? "Online & Ready" : "Currently Offline"}
+            </span>
           </div>
         </div>
-        <Switch checked={online} onCheckedChange={handleToggle} />
-      </Card>
-
-      <div className="mt-5">
-        <MarketplaceOffersList />
+        <Switch 
+          checked={online} 
+          onCheckedChange={handleToggle}
+          className="data-[state=checked]:bg-emerald-500 scale-100" 
+        />
       </div>
 
-      {/* Hero: Today's Route */}
-      {assignment ? (
-        restDay ? (
-          <>
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-              Today's Route
+      {/* PRIMARY WORK AREA */}
+      <section className="space-y-4">
+        {!online ? (
+          /* STATE: OFFLINE */
+          <Card className="flex flex-col items-center text-center p-8 py-10 border-2 border-red-100 bg-red-50/10">
+            <div className="h-20 w-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <Car className="h-10 w-10 text-red-400" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-red-900">You're Offline</h3>
+            <p className="text-sm text-red-700/70 mb-8 max-w-[240px]">
+              Go online to receive new assignments and start your journey.
             </p>
-
-            <div className="mt-1.5 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
-            </div>
-
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-background/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
-              Active Assignment
-            </div>
-
-            {/* Three-card row — consistent with working days */}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <HeroStat icon={<Car className="h-4 w-4" />} label="Today's Customers" value={dailyCustomers} />
-              <HeroStat icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={0} />
-              <HeroStat icon={<Clock className="h-4 w-4" />} label="Remaining" value={dailyCustomers} />
-            </div>
-
-            {/* Today's Status — reassuring, replaces progress bar on rest day */}
-            <div className="mt-4">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-                Today's Status
-              </p>
-              <p className="mt-1.5 text-lg font-semibold">🍃 Weekly Rest Day</p>
-              <p className="mt-0.5 text-sm text-background/70">
-                Your assignment remains active.
-              </p>
-            </div>
-
-            {/* Next Service block */}
-            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-                Next Service
-              </p>
-              <p className="mt-1 text-xl font-semibold tracking-tight">
-                {nextDateLabel} • {nextTimeLabel}
-              </p>
-              <p className="mt-0.5 text-xs text-background/60">
-                {dailyCustomers} Customer{dailyCustomers === 1 ? "" : "s"} Scheduled
-              </p>
-            </div>
-
-            {/* Today's Earnings — compact */}
-            <div className="mt-4 border-t border-background/10 pt-3">
-              <p className="text-[11px] uppercase tracking-wider text-background/60">Today's Earnings</p>
-              <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
-                <IndianRupee className="h-5 w-5" />0
-              </p>
-            </div>
-
-            <Button
-              disabled
-              size="lg"
-              className="mt-4 h-16 w-full rounded-2xl bg-background/10 text-background/60 text-lg font-semibold cursor-not-allowed hover:bg-background/10"
-            >
-              Service Unavailable Today
+            <Button onClick={() => handleToggle(true)} className="w-full h-12 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200">
+              Go Online Now
             </Button>
           </Card>
-
-          {/* Current Assignment summary — Monday is the perfect day to review progress */}
-          <Card className="mt-4 p-5">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Current Assignment
-            </p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <SummaryStat label="Working Days" value={String(workingDaysTotal)} />
-              <SummaryStat label="Completed" value={String(workingDaysCompleted)} />
-              <SummaryStat label="Remaining" value={String(workingDaysRemaining)} />
-            </div>
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-muted p-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Estimated Earnings
-                </p>
-                <p className="mt-0.5 flex items-center text-lg font-semibold">
-                  <IndianRupee className="h-4 w-4" />
-                  {expectedTotal.toLocaleString("en-IN")}
-                </p>
+        ) : inProgressService ? (
+          /* STATE: SERVICE IN PROGRESS */
+          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">In Progress</p>
+                  <h2 className="text-xl font-bold mt-1 text-white">Active Wash</h2>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                  <Navigation className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <Button asChild variant="outline" size="sm" className="rounded-full">
-                <Link to="/app/my-assignment">Assignment Details</Link>
+              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/30">
+                <Link to="/app/live">
+                  Continue Service
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </Card>
-
-          {/* Assignment Management — cancellation is easiest on rest day */}
-          <Card className="mt-4 border border-border bg-card p-5">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Assignment Management
-            </p>
-            <p className="mt-2 text-sm font-semibold">Your assignment is active.</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              No services are scheduled on {new Date().toLocaleDateString("en-IN", { weekday: "long" })}s.
-              You can continue your assignment {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }).toLowerCase() : "tomorrow"},
-              or cancel it before {nextDate ? new Date(nextDate).toLocaleDateString("en-IN", { weekday: "long" }) : "the next"}'s first service.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmCancelOpen(true)}
-              disabled={cancelMut.isPending}
-              className="mt-4 h-11 w-full rounded-xl border-[color:var(--warning,theme(colors.orange.500))] text-[color:var(--warning,theme(colors.orange.500))] hover:bg-orange-500/10"
-            >
-              Cancel Assignment
-            </Button>
-          </Card>
-
-          {/* Quick Actions — Monday is when partners have free time */}
-          <Card className="mt-4 p-4">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Quick Actions
-            </p>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              <QuickAction to="/app/my-assignment" icon={<Briefcase className="h-4 w-4" />} label="Assignment" />
-              <QuickAction to="/app/earnings" icon={<Wallet className="h-4 w-4" />} label="Wallet" />
-              <QuickAction to="/app/rewards" icon={<Gift className="h-4 w-4" />} label="Rewards" />
-              <QuickAction href={`tel:${SUPPORT_TEL_HOME}`} icon={<LifeBuoy className="h-4 w-4" />} label="Support" />
-            </div>
-          </Card>
-
-
-          <AlertDialog open={confirmCancelOpen} onOpenChange={setConfirmCancelOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Assignment?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Your current assignment will end. You may receive a new assignment depending on availability.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep Assignment</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => assignment?.id && cancelMut.mutate(assignment.id)}
-                  disabled={cancelMut.isPending}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Cancel Assignment
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          </>
-
         ) : allDone ? (
-          <Card className="mt-6 flex flex-col items-center gap-3 border-0 bg-foreground p-8 text-center text-background">
-            <PartyPopper className="h-8 w-8 text-primary" />
-            <p className="text-xl font-semibold">Great Job!</p>
-            <p className="text-sm text-background/70">
-              You've completed today's route. We'll notify you when new work
-              becomes available.
-            </p>
+          /* STATE: ALL SERVICES COMPLETED */
+          <Card className="flex flex-col items-center text-center p-8 bg-emerald-500 text-white border-0">
+             <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+               <CheckCircle2 className="h-8 w-8 text-white" />
+             </div>
+             <h2 className="text-2xl font-bold mb-2">Today Completed! 🎉</h2>
+             <p className="text-emerald-50 text-sm mb-6 max-w-[200px]">
+               {total} / {total} services completed. Great work today!
+             </p>
+             <Button asChild variant="secondary" className="w-full h-12 rounded-2xl font-bold">
+               <Link to="/app/earnings">View Earnings</Link>
+             </Button>
+          </Card>
+        ) : assignment && total > 0 ? (
+          /* STATE: ASSIGNMENT AVAILABLE */
+          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Today's Assignment</p>
+                  <h2 className="text-xl font-bold mt-1 text-white">{assignment.area}</h2>
+                </div>
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white/5 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Customers</p>
+                  <p className="text-2xl font-bold mt-1">{total}</p>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Est. Earnings</p>
+                  <p className="text-2xl font-bold mt-1 text-primary">₹{estimatedEarningsToday}</p>
+                </div>
+              </div>
+
+              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/30">
+                <Link to="/app/live">
+                  View Assignment
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              
+              {assignment.expected_start_time && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/40">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Start Before {formatTime12(assignment.expected_start_time)}</span>
+                </div>
+              )}
+            </div>
           </Card>
         ) : (
-
-
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-              Today's Route
+          /* STATE: NO ASSIGNMENT YET */
+          <Card className="flex flex-col items-center text-center p-8 py-10 border-dashed border-2">
+            <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+              <Car className="h-10 w-10 text-muted-foreground/30" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">No assignment yet</h3>
+            <p className="text-sm text-muted-foreground mb-8 max-w-[240px]">
+              You're online and ready. New work will appear here automatically.
             </p>
-
-            <div className="mt-1.5 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-semibold tracking-tight">{assignment.area}</h2>
-            </div>
-
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-background/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
-              Active Assignment
-            </div>
-
-            {/* Compact one-line summary */}
-            <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-              <p className="text-base font-semibold tracking-tight">
-                {total} Customer{total === 1 ? "" : "s"}
-              </p>
-              <p className="mt-0.5 text-xs text-background/60">
-                {done} Completed · {remaining} Remaining
-              </p>
-            </div>
-
-            {/* Progress */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-                  Today's Progress
-                </p>
-                <p className="text-xs font-medium text-background/80">
-                  {done} of {total} Completed
-                </p>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
-                <div
-                  className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Earnings + start-before */}
-            <div className="mt-4 border-t border-background/10 pt-3">
-              <p className="text-[11px] uppercase tracking-wider text-background/60">
-                Earn Today
-              </p>
-              <p className="mt-0.5 flex items-center text-2xl font-bold text-primary">
-                <IndianRupee className="h-5 w-5" />
-                {expectedEarnings}
-              </p>
-              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-background/80">
-                <Clock className="h-4 w-4 text-background/60" />
-                Start Before {formatTime12(assignment.expected_start_time)}
-              </p>
-              {finishHHMM ? (
-                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-background/80">
-                  <Flag className="h-4 w-4 text-background/60" />
-                  Estimated Finish {formatTime12(finishHHMM)}
-                </p>
-              ) : null}
-            </div>
-
-
-            {/* Primary action */}
-            <Button
-              asChild
-              size="lg"
-              className="mt-4 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
-            >
-              <Link to="/app/live">
-                <Navigation className="mr-2 h-5 w-5" />
-                Start Today's Route
-              </Link>
+            <Button asChild variant="outline" className="w-full h-12 rounded-2xl font-bold border-2">
+              <Link to="/app/assignments">View Available Work</Link>
             </Button>
-
-            {/* Support shortcut */}
-            <div className="mt-3 text-center text-xs text-background/60">
-              Need Help?{" "}
-              <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
-                Partner Support
-              </Link>
-            </div>
           </Card>
-        )
-      ) : total > 0 ? (
-        <Card className="mt-6 border-0 bg-foreground p-6 text-background">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-background/60">
-            Today's Route
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold">
-            {total} customer{total === 1 ? "" : "s"} today
-          </h2>
+        )}
+      </section>
 
-          <div className="mt-4 rounded-2xl bg-background/5 px-4 py-3">
-            <p className="text-base font-semibold tracking-tight">
-              {total} Customer{total === 1 ? "" : "s"}
+      {/* TODAY'S EARNINGS - COMPACT */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold uppercase tracking-wider">Today</h3>
+          {done > 0 && <span className="text-[10px] text-muted-foreground font-medium">{done} / {total} Done</span>}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <IndianRupee className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Earned</span>
+            </div>
+            <p className="text-2xl font-bold">
+              <AnimatedNumber value={earnedSoFar} format={(n) => `₹${n}`} />
             </p>
-            <p className="mt-0.5 text-xs text-background/60">
-              {done} Completed · {remaining} Remaining
-            </p>
+          </Card>
+          <Card className="p-4 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-emerald-500 mb-1">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Completed</span>
+            </div>
+            <p className="text-2xl font-bold">{completed}</p>
+          </Card>
+        </div>
+      </section>
+
+      {/* MARKETPLACE - AVAILABLE WORK */}
+      <MarketplaceOffersList />
+
+      {/* QUICK ACCESS */}
+      <section>
+        <h3 className="text-sm font-bold uppercase tracking-wider mb-3">Quick Access</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Link to="/app/assignments" className="flex items-center gap-3 p-4 bg-white border rounded-2xl transition-active active:scale-[0.98]">
+            <div className="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <span className="font-semibold text-sm">Assignments</span>
+          </Link>
+          <Link to="/app/earnings" className="flex items-center gap-3 p-4 bg-white border rounded-2xl transition-active active:scale-[0.98]">
+            <div className="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <span className="font-semibold text-sm">Earnings</span>
+          </Link>
+        </div>
+      </section>
+
+      {/* SUPPORT COMPACT */}
+      <section className="bg-neutral-900 rounded-[2rem] p-6 text-white overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/30 transition-colors" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-1">Assistance</p>
+            <h3 className="text-xl font-bold">Partner Support</h3>
+            <p className="text-xs text-white/30 mt-1">Available 24/7 for you</p>
           </div>
-
-
-          <Button
-            asChild
-            size="lg"
-            className="mt-6 h-16 w-full rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
-          >
-            <Link to="/app/live">
-              <Navigation className="mr-2 h-5 w-5" />
-              Start Today's Route
-            </Link>
-          </Button>
-
-          <div className="mt-4 text-center text-xs text-background/60">
-            Need Help?{" "}
-            <Link to="/app/profile" className="font-medium text-background underline-offset-4 hover:underline">
-              Partner Support
-            </Link>
+          <div className="flex gap-2">
+            <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 active:scale-95 hover:bg-white/10 transition-all">
+              <Phone className="h-5 w-5 text-primary" />
+            </a>
+            <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 active:scale-95 hover:bg-white/10 transition-all">
+              <MessageCircle className="h-5 w-5 text-emerald-400" />
+            </a>
           </div>
-        </Card>
-      ) : (
-        <>
-          {/* Hero onboarding card */}
-          <Card className="mt-5 overflow-hidden border-0 bg-foreground px-6 py-5 text-background">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary">
-              <RouteIcon className="h-7 w-7" />
-            </div>
-            <p className="mt-3 text-center text-xl font-bold">Ready for today's route?</p>
-            <p className="mt-1 text-center text-sm text-background/70">
-              Let's build it together. We'll calculate customers, earnings and route based on your availability.
-            </p>
-
-            <Button
-              asChild
-              size="lg"
-              className="mt-4 h-12 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
-            >
-              <Link to="/app/assignments">
-                <Car className="mr-2 h-5 w-5" />
-                Create Today's Route
-                <ArrowRight className="ml-4 h-4 w-4" />
-              </Link>
-            </Button>
-
-            {/* Today's Potential */}
-            <div className="mt-4 rounded-2xl bg-background/5 p-4">
-              <p className="text-[10px] font-medium uppercase tracking-widest text-background/60">
-                Today's Potential
-              </p>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="flex items-center justify-center text-lg font-bold text-primary">
-                    <IndianRupee className="h-4 w-4" />
-                    350–600
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-background/60">Earnings</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold">20–35</p>
-                  <p className="mt-0.5 text-[10px] text-background/60">Customers</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold">3–5h</p>
-                  <p className="mt-0.5 text-[10px] text-background/60">Hours</p>
-                </div>
-              </div>
-              <p className="mt-2 text-center text-[9px] text-background/50">
-                ≈ ₹17 per vehicle · varies by area
-              </p>
-            </div>
-          </Card>
-
-          {/* Benefits chips */}
-          <div className="mt-5 grid grid-cols-2 gap-1.5">
-            {["Flexible Hours", "Weekly Payout", "Daily Income", "No Fixed Schedule"].map((b) => (
-              <span key={b} className="rounded-full border border-border bg-card px-2.5 py-1 text-center text-[11px] font-medium text-muted-foreground">
-                ✓ {b}
-              </span>
-            ))}
-          </div>
-
-          {/* Journey timeline */}
-          <Card className="mt-5 p-4">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              Your Journey Today
-            </p>
-            <ol className="relative mt-3 space-y-3">
-              {/* connecting vertical line */}
-              <span
-                aria-hidden
-                className="absolute left-[11px] top-3 bottom-3 w-px bg-border/60"
-              />
-              {[
-                { n: 1, label: "Create Assignment", icon: RouteIcon },
-                { n: 2, label: "Receive Customers", icon: Car },
-                { n: 3, label: "Complete Services", icon: CheckCircle2 },
-                { n: 4, label: "Get Paid", icon: Wallet },
-              ].map((s) => {
-                const Icon = s.icon;
-                return (
-                  <li key={s.n} className="relative flex items-center gap-3">
-                    <span className="relative z-10 grid h-[22px] w-[22px] place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary ring-4 ring-card">
-                      {s.n}
-                    </span>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">{s.label}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </Card>
-
-          {/* Help card */}
-          <Card className="mt-5 p-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold">Need help?</p>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <a
-                href="tel:+919999999999"
-                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10">
-                  <Phone className="h-4 w-4 text-primary" />
-                </span>
-                <span className="text-[11px] font-medium">Support</span>
-                <span className="text-[10px] text-muted-foreground">Call our team</span>
-              </a>
-              <a
-                href="https://wa.me/919999999999"
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--success)]/15">
-                  <MessageCircle className="h-4 w-4 text-[color:var(--success)]" />
-                </span>
-                <span className="text-[11px] font-medium">WhatsApp</span>
-                <span className="text-[10px] text-muted-foreground">Quick chat</span>
-              </a>
-              <Link
-                to="/app/training"
-                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary"
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/15">
-                  <BookOpen className="h-4 w-4 text-sky-500" />
-                </span>
-                <span className="text-[11px] font-medium">Training</span>
-                <span className="text-[10px] text-muted-foreground">Learn the app</span>
-              </Link>
-            </div>
-          </Card>
-
-          {/* Community trust card */}
-          <Card className="mt-5 flex items-center gap-3 p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10">
-              <Star className="h-5 w-5 text-primary" fill="currentColor" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">Urban Wash Community</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                <span className="font-semibold text-foreground">4.9 ★</span> avg rating · <span className="font-semibold text-foreground">12,483</span> services this week
-              </p>
-            </div>
-          </Card>
-        </>
-      )}
-
-      {/* Today's Stats — the 3 that matter each morning */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        <MiniStat
-          icon={<IndianRupee className="h-4 w-4 text-primary" />}
-          label="Earn Today"
-          value={<><AnimatedNumber value={earnedSoFar} format={(n) => `₹${n}`} /></>}
-          accent
-        />
-        <MiniStat
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          label="Completed"
-          value={String(completed)}
-        />
-        <MiniStat
-          icon={<Sparkles className="h-4 w-4" />}
-          label="Reliability"
-          value={`${Math.round(Number((partner as any)?.reliability_score ?? 100))}%`}
-        />
-      </div>
-
+        </div>
+      </section>
     </div>
   );
-}
-
-function HeroStat({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-2xl bg-background/5 px-3 py-2.5">
-      <div className="flex items-center gap-1 text-background/60">
-        {icon}
-      </div>
-      <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-0.5 text-[9px] uppercase tracking-wider text-background/60">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function MiniStat({
-  icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <Card className="p-3">
-      <div className="flex items-center gap-1 text-muted-foreground">
-        {icon}
-      </div>
-      <p
-        className={`mt-1.5 text-xl font-semibold tracking-tight ${
-          accent ? "text-primary" : ""
-        }`}
-      >
-        {value}
-      </p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-    </Card>
-  );
-}
-
-function SummaryStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-muted p-3">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
-    </div>
-  );
-}
-
-function QuickAction({
-  to, href, icon, label,
-}: {
-  to?: string;
-  href?: string;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  const inner = (
-    <>
-      <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <span className="text-[10px] font-medium">{label}</span>
-    </>
-  );
-  const className =
-    "flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-2.5 text-center transition hover:border-primary";
-  if (to) return <Link to={to} className={className}>{inner}</Link>;
-  return <a href={href} className={className}>{inner}</a>;
 }

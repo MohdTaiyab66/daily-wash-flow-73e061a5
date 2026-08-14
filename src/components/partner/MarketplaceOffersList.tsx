@@ -349,7 +349,7 @@ export function MarketplaceOffersList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Marketplace</h3>
+        <h3 className="text-sm font-semibold text-foreground">Available Work</h3>
         <span className="inline-flex min-w-[24px] items-center justify-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground animate-pulse">
           {count}
         </span>

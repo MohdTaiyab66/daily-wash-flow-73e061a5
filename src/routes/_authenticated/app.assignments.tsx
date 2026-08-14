@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -382,48 +383,56 @@ function AssignmentsPage() {
 
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5 pb-32">
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Build Today's Route</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose your working hours. We'll build the best route automatically.
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-1">Schedule Builder</p>
+          <h1 className="text-2xl font-bold tracking-tight">Available Work</h1>
+          <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+            Optimize your daily goal and commitment. We'll automatically build the most efficient route for you.
           </p>
         </div>
-        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
-          <MapPin className="h-3 w-3" />{partner.home_area}<ChevronDown className="h-3 w-3 opacity-70" />
+        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-neutral-100 px-3.5 py-2 text-[11px] font-bold text-neutral-900 border border-neutral-200 active:scale-95 transition-transform">
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="uppercase tracking-wider">{partner.home_area}</span>
+          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
         </Link>
       </div>
 
-      {/* Work today — single consolidated card */}
-      <Card className="mt-5 p-5">
-        <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Work today</p>
-          <p className="text-3xl font-semibold tracking-tight">{hours}<span className="ml-1 text-base text-muted-foreground">Hours</span></p>
+      {/* Work today — Premium Dark Card */}
+      <Card className="mt-5 overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="relative z-10">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Work today</p>
+            <p className="text-3xl font-bold tracking-tight text-white">{hours}<span className="ml-1 text-sm font-medium text-white/40 uppercase">Hrs</span></p>
+          </div>
+          <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-6 mb-2" />
+          <div className="flex justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">
+            <span>{minHours}H Min</span>
+            <span>{maxHours}H Max</span>
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-6 border-t border-white/10 pt-6">
+            <div className="space-y-1">
+              <p className="text-2xl font-bold tabular-nums text-white">{animCars}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Customers</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Today's Earn</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xl font-bold tabular-nums text-white">~{estKm}<span className="ml-0.5 text-xs font-medium text-white/40">km</span></p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Distance</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xl font-bold tabular-nums text-white">{formatTime12(startTime).replace(/:00 /, " ")}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Start Time</p>
+            </div>
+          </div>
+          {isFetching && <p className="mt-4 flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-primary animate-pulse"><Loader2 className="h-3 w-3 animate-spin" />Refreshing Estimate…</p>}
         </div>
-        <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-          <span>{minHours}h</span><span>{maxHours}h</span>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
-          <div>
-            <p className="text-2xl font-bold tabular-nums">{animCars}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Today's Earnings</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums">~{estKm}<span className="ml-0.5 text-sm font-normal text-muted-foreground">km</span></p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Travel Distance</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold tabular-nums leading-7">{formatTime12(startTime).replace(/:00 /, " ")}<span className="mx-0.5 font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Working Time</p>
-          </div>
-        </div>
-        {isFetching && <p className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
       </Card>
 
       {/* Trust indicator */}
@@ -438,45 +447,49 @@ function AssignmentsPage() {
       </div>
 
 
-      {/* Commitment — compact */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-baseline justify-between">
+      {/* Commitment — Premium White Card */}
+      <Card className="mt-3 p-6 border-0 shadow-sm">
+        <div className="flex items-baseline justify-between mb-2">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-              commitment.tone === "max" ? "bg-primary/15 text-primary"
-              : commitment.tone === "reco" ? "bg-success/15 text-[color:var(--success)]"
-              : "bg-muted text-muted-foreground"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                commitment.tone === "max" ? "bg-primary"
-                : commitment.tone === "reco" ? "bg-success"
-                : "bg-muted-foreground"
-              }`} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Commitment</p>
+            <span className={cn(
+              "mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors",
+              commitment.tone === "max" ? "bg-primary/10 text-primary"
+              : commitment.tone === "reco" ? "bg-emerald-50 text-emerald-600"
+              : "bg-neutral-100 text-neutral-500"
+            )}>
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                commitment.tone === "max" ? "bg-primary animate-pulse"
+                : commitment.tone === "reco" ? "bg-emerald-500"
+                : "bg-neutral-400"
+              )} />
               {commitment.label}
             </span>
           </div>
-          <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
+          <p className="text-3xl font-bold tracking-tight">{duration}<span className="ml-1 text-sm font-medium text-muted-foreground/40 uppercase">Days</span></p>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4 opacity-90" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
-        <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-6 mb-2" />
+        <div className="flex justify-between text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest px-1">
+          <span>{minDays} Days Min</span>
+          <span>{maxDays} Days Max</span>
+        </div>
+        <p className="mt-5 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider flex items-center gap-2">
+          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+          Weekly Payout • {offDayFull}s Off
+        </p>
 
-        {/* Merged monthly estimate — premium: earnings dominate, meta stacked underneath */}
-        <div className="mt-3 rounded-xl bg-muted/60 px-4 py-4">
-          <p className="text-3xl font-semibold tracking-tight tabular-nums text-primary">
-            ₹{animMonthly.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Estimated this month
-          </p>
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] tabular-nums text-muted-foreground">
-            <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> services</span>
-            <span><span className="font-semibold text-foreground">{workingDays}</span> days</span>
-            <span><span className="font-semibold text-foreground">₹{animPerDay.toLocaleString("en-IN")}</span>/day</span>
+        {/* Monthly Estimate Stats */}
+        <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-neutral-100">
+          <div className="bg-neutral-50 rounded-2xl p-4">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Monthly Earn</p>
+            <p className="text-xl font-bold tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          </div>
+          <div className="bg-neutral-50 rounded-2xl p-4">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Avg per day</p>
+            <p className="text-xl font-bold tabular-nums">₹{animPerDay}</p>
           </div>
         </div>
-
       </Card>
 
       {previewError && (
@@ -590,74 +603,73 @@ function AssignmentsPage() {
 
       {/* Today's Goal — becomes an emotional anchor above the CTA */}
       {preview && (fullyAvailable || partialAvailable) && (
-        <Card className="mt-3 p-4">
-          <div className="flex items-center justify-between">
+        <Card className="mt-4 p-5 border-0 bg-neutral-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Goal</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">
-                0 <span className="text-base font-normal text-muted-foreground">/ {acceptableCars} Completed</span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Today's Goal</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums">
+                0 <span className="text-sm font-medium text-muted-foreground/40 uppercase">/ {acceptableCars} Customers</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Potential</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Potential</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
             </div>
           </div>
-          <Progress value={0} className="mt-3 h-1.5" />
+          <Progress value={0} className="h-1.5 bg-neutral-200" />
         </Card>
       )}
 
       {/* Sticky CTA — always primary, action varies with availability */}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto max-w-md p-4">
+      <div className="fixed inset-x-0 bottom-[64px] z-30 bg-white/95 backdrop-blur-md border-t border-neutral-100 pb-safe">
+        <div className="mx-auto max-w-md px-5 py-4">
           {accept.isPending ? (
-            <Button size="lg" className="h-auto w-full py-3 shadow-lg shadow-primary/25" disabled>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
+            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200" disabled>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />Building Route…
             </Button>
           ) : isFetching && !preview ? (
-            <Button size="lg" className="h-auto w-full py-3" variant="secondary" disabled>
-              Checking customers…
+            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-100 text-neutral-400 font-bold" disabled>
+              Finding Customers…
             </Button>
           ) : noneAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              disabled={toggleNotify.isPending || partner.notify_when_customers_added}
-              onClick={() => toggleNotify.mutate(true)}
+              className={cn(
+                "w-full h-14 rounded-2xl font-bold transition-all active:scale-[0.98]",
+                partner.notify_when_customers_added 
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                  : "bg-neutral-900 text-white shadow-xl shadow-neutral-200"
+              )}
+              disabled={toggleNotify.isPending}
+              onClick={() => !partner.notify_when_customers_added && toggleNotify.mutate(true)}
             >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  <BellRing className="h-4 w-4" />
-                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
-                </span>
-                <span className="text-[11px] font-normal opacity-70">Searching nearby in {partner.home_area}</span>
+              <span className="flex items-center justify-center gap-3">
+                {partner.notify_when_customers_added ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Monitoring Area</span>
+                  </>
+                ) : (
+                  <>
+                    <BellRing className="h-5 w-5" />
+                    <span>Notify When Open</span>
+                  </>
+                )}
               </span>
             </Button>
-          ) : partialAvailable ? (
-            <Button
-              size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => { setConfirmCars(availableInArea); setConfirmOpen(true); }}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
-                </span>
-                <span className="mt-0.5 text-[10px] font-normal opacity-70">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
-              </span>
-            </Button>
-
           ) : (
             <Button
               size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => { setConfirmCars(cars); setConfirmOpen(true); }}
+              className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-xl shadow-primary/30 transition-all active:scale-[0.98]"
+              onClick={() => { 
+                setConfirmCars(partialAvailable ? availableInArea : cars); 
+                setConfirmOpen(true); 
+              }}
             >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start Route <ArrowRight className="h-4 w-4" />
-                </span>
-                <span className="mt-0.5 text-[10px] font-normal opacity-70">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
+              <span className="flex items-center justify-center gap-2">
+                {partialAvailable ? `Start with ${availableInArea} Customers` : "Start Route Now"}
+                <ArrowRight className="h-5 w-5" />
               </span>
             </Button>
           )}
