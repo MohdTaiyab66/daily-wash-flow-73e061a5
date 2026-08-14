@@ -262,18 +262,19 @@ function HomePage() {
       </section>
 
       {/* SUPPORT COMPACT */}
-      <section className="bg-neutral-900 rounded-[2rem] p-6 text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+      <section className="bg-neutral-900 rounded-[2rem] p-6 text-white overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/30 transition-colors" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold">Need Help?</h3>
-            <p className="text-xs text-white/50 mt-1">Our support team is online</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-1">Assistance</p>
+            <h3 className="text-xl font-bold">Partner Support</h3>
+            <p className="text-xs text-white/30 mt-1">Available 24/7 for you</p>
           </div>
           <div className="flex gap-2">
-            <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+            <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 active:scale-95 hover:bg-white/10 transition-all">
               <Phone className="h-5 w-5 text-primary" />
             </a>
-            <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+            <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 active:scale-95 hover:bg-white/10 transition-all">
               <MessageCircle className="h-5 w-5 text-emerald-400" />
             </a>
           </div>
