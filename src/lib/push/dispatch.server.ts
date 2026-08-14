@@ -572,7 +572,7 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
   const fanout = offers.map(async (o: any) => {
     try {
       // 4. Resolve partner-specific monthly earning (sum of all released services)
-      const monthlyRes = await Promise.all(services.map(s => 
+      const monthlyRes = await Promise.all(services.map((s: any) => 
         resolvePartnerMonthlyEarning({
           sb,
           partnerId: o.partner_id,
