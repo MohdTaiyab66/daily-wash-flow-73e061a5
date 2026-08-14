@@ -5,8 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, CheckCircle2, PlayCircle } from "lucide-react";
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/training")({
-  component: TrainingPage,
+  component: () => (
+    <PartnerShell>
+      <TrainingPage />
+    </PartnerShell>
+  ),
 });
 
 function TrainingPage() {
