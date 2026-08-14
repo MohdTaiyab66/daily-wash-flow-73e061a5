@@ -80,20 +80,28 @@ function HomePage() {
       </header>
 
       {/* AVAILABILITY COMPACT */}
-      <div className="flex items-center justify-between px-1">
+      <div className={cn(
+        "flex items-center justify-between p-4 rounded-2xl transition-all",
+        online ? "bg-emerald-50/50 border border-emerald-100" : "bg-neutral-50 border border-neutral-100"
+      )}>
         <div className="flex items-center gap-3">
           <div className={cn(
-            "h-2.5 w-2.5 rounded-full shrink-0",
-            online ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" : "bg-muted-foreground/40"
+            "h-2 w-2 rounded-full shrink-0",
+            online ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" : "bg-neutral-300"
           )} />
-          <span className={cn("text-xs font-bold uppercase tracking-widest", online ? "text-emerald-600" : "text-muted-foreground")}>
-            {online ? "System Online" : "System Offline"}
-          </span>
+          <div className="flex flex-col">
+            <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em]", online ? "text-emerald-600" : "text-neutral-400")}>
+              Status
+            </span>
+            <span className={cn("text-sm font-bold", online ? "text-emerald-900" : "text-neutral-500")}>
+              {online ? "Online & Ready" : "Currently Offline"}
+            </span>
+          </div>
         </div>
         <Switch 
           checked={online} 
           onCheckedChange={handleToggle}
-          className="data-[state=checked]:bg-emerald-500 scale-90" 
+          className="data-[state=checked]:bg-emerald-500 scale-100" 
         />
       </div>
 
