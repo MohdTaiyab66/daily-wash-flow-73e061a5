@@ -65,7 +65,7 @@ function HomePage() {
 
   const handleToggle = async (on: boolean) => {
     await toggle(on);
-    if (!on) navigate({ to: "/app" }); // Force refresh state visually if needed, though toggle handles data.
+    if (!on) navigate({ to: "/app" });
   };
 
   return (
@@ -76,9 +76,6 @@ function HomePage() {
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{greeting} 👋</p>
           <h1 className="text-2xl font-bold tracking-tight">{firstName}</h1>
           <p className="text-[11px] text-muted-foreground mt-0.5">{dateStr}</p>
-        </div>
-        <div className="flex items-center gap-3">
-           {/* Notification Bell handled by TopBar in AppLayout, so we just provide the profile greeting space here */}
         </div>
       </header>
 
@@ -157,38 +154,40 @@ function HomePage() {
           <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
             <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Today's Assignment</p>
-                <h2 className="text-xl font-bold mt-1 text-white">{assignment.area}</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Today's Assignment</p>
+                  <h2 className="text-xl font-bold mt-1 text-white">{assignment.area}</h2>
+                </div>
+                <MapPin className="h-5 w-5 text-primary" />
               </div>
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white/5 rounded-2xl p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Customers</p>
-                <p className="text-2xl font-bold mt-1">{total}</p>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white/5 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Customers</p>
+                  <p className="text-2xl font-bold mt-1">{total}</p>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Est. Earnings</p>
+                  <p className="text-2xl font-bold mt-1 text-primary">₹{estimatedEarningsToday}</p>
+                </div>
               </div>
-              <div className="bg-white/5 rounded-2xl p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Est. Earnings</p>
-                <p className="text-2xl font-bold mt-1 text-primary">₹{estimatedEarningsToday}</p>
-              </div>
-            </div>
 
-            <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/30">
-              <Link to="/app/live">
-                View Assignment
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            
-            {assignment.expected_start_time && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/40">
-                <Clock className="h-3.5 w-3.5" />
-                <span>Start Before {formatTime12(assignment.expected_start_time)}</span>
-              </div>
-            </Card>
+              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/30">
+                <Link to="/app/live">
+                  View Assignment
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              
+              {assignment.expected_start_time && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/40">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Start Before {formatTime12(assignment.expected_start_time)}</span>
+                </div>
+              )}
+            </div>
+          </Card>
         ) : (
           /* STATE: NO ASSIGNMENT YET */
           <Card className="flex flex-col items-center text-center p-8 py-10 border-dashed border-2">
