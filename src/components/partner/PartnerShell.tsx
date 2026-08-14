@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function PartnerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const nav = [
-    { to: "/app/", label: "Home", icon: Home },
+    { to: "/app", label: "Home", icon: Home },
     { to: "/app/assignments", label: "Available", icon: Briefcase },
     { to: "/app/earnings", label: "Earnings", icon: Wallet },
     { to: "/app/rewards", label: "Rewards", icon: Gift },
@@ -29,7 +29,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
             {nav.map((n) => {
               const Icon = n.icon;
               // Check if path matches exactly or starts with it (for nested pages)
-              const active = pathname === n.to || (n.to !== "/app/" && pathname.startsWith(n.to));
+              const active = pathname === n.to || (n.to !== "/app" && pathname.startsWith(n.to));
               
               if (active) {
                 return (
