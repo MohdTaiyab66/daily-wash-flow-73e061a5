@@ -10,8 +10,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
   .handler(async () => {
     try {
-      console.log("[BOOKING-PUSH:01] BOOKING_OPEN: marketplace fan-out tick started");
-      
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { dispatchBookingPushes } = await import("./dispatch.server");
       
@@ -19,14 +17,12 @@ export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
       
       if (error) throw error;
       if (!openBookings || openBookings.length === 0) {
-        console.log("[BOOKING-PUSH:09] RETRIES_STOPPED: no open bookings found");
         return { ok: true, dispatched: 0 };
       }
 
-      console.log(`[BOOKING-PUSH:02] ELIGIBLE_PARTNERS_FOUND: scanning ${openBookings.length} bookings`);
+      console.log(`[BOOKING-PUSH:CRON] OPEN_BOOKINGS_FOUND count=${openBookings.length}`);
       const totalDispatched = await dispatchBookingPushes(openBookings);
       
-      console.log(`[BOOKING-PUSH:09] RETRIES_STOPPED: ${totalDispatched} fan-outs completed`);
       return { ok: true, totalDispatched };
     } catch (e: any) {
       console.error("[BOOKING-PUSH:ERROR] Dispatch tick failed", e);
