@@ -111,22 +111,96 @@ function CustomerHome() {
    * '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
    *                                         
    *                                             
-   *                                             For the code present, I get the error below.
+   *                                             IMPORTANT FINAL VERIFICATION — DO NOT ASSUME THE CRON WORKS
    * 
-   * Please think step-by-step in order to resolve it.
-   * ```
-   * Failed to connect to MetaMask
+   * The marketplace rebroadcast endpoint has been implemented:
    * 
-   * {
-   *   "timestamp": 1786741048480,
-   *   "error_type": "UNHANDLED_PROMISE_REJECTION",
-   *   "filename": "Unknown file",
-   *   "lineno": 0,
-   *   "colno": 0,
-   *   "stack": "i: Failed to connect to MetaMask\n    at Object.connect (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:7:84292)",
-   *   "has_blank_screen": true
-   * }
-   * ```
+   * /api/public/cron/marketplace-rebroadcast-tick
+   * 
+   * Before declaring P0 complete, verify that this endpoint is ACTUALLY INVOKED every 30 seconds in the deployed production environment.
+   * 
+   * Check the entire project for the real scheduler mechanism.
+   * 
+   * Verify:
+   * 
+   * 1. What invokes marketplace-rebroadcast-tick?
+   * 
+   * 2. Is it actually deployed?
+   * 
+   * 3. What is the exact schedule?
+   * 
+   * 4. Is the schedule truly 30 seconds?
+   * 
+   * 5. Does it run independently of the partner/customer app?
+   * 
+   * 6. Does it continue running when no partner has the app open?
+   * 
+   * 7. Does it recalculate eligible partners on every tick?
+   * 
+   * 8. Does it stop immediately after one partner accepts?
+   * 
+   * 9. Does it include partners who logged in after the original booking?
+   * 
+   * 10. Does it avoid duplicate offer rows and duplicate bookings?
+   * 
+   * CRITICAL:
+   * 
+   * Do NOT say "30-second rebroadcast is implemented" merely because the API endpoint exists.
+   * 
+   * We need proof that the scheduler actually invokes it.
+   * 
+   * Add/verify structured logs:
+   * 
+   * [BOOKING-PUSH:CRON] TICK_STARTED
+   * 
+   * [BOOKING-PUSH:CRON] OPEN_BOOKINGS_FOUND
+   * 
+   * [BOOKING-PUSH:CRON] ELIGIBLE_PARTNERS_FOUND
+   * 
+   * [BOOKING-PUSH:CRON] FANOUT_COMPLETED
+   * 
+   * [BOOKING-PUSH:CRON] NEXT_TICK
+   * 
+   * [BOOKING-PUSH:CRON] BOOKING_ACCEPTED
+   * 
+   * [BOOKING-PUSH:CRON] BROADCAST_STOPPED
+   * 
+   * Then perform this exact E2E test:
+   * 
+   * 1. Customer creates and successfully pays for a booking.
+   * 
+   * 2. Partner A receives new_booking.
+   * 
+   * 3. Partner A does NOT accept.
+   * 
+   * 4. Wait at least 60–90 seconds.
+   * 
+   * 5. Confirm backend logs show multiple rebroadcast ticks.
+   * 
+   * 6. Log in Partner B after the booking was created.
+   * 
+   * 7. Partner B must recover the still-open booking immediately.
+   * 
+   * 8. Partner B must receive the notification.
+   * 
+   * 9. Wait for another tick.
+   * 
+   * 10. Partner B accepts.
+   * 
+   * 11. Confirm the booking becomes ACCEPTED atomically.
+   * 
+   * 12. Confirm rebroadcast stops immediately.
+   * 
+   * 13. Confirm Partner A can no longer accept it.
+   * 
+   * 14. Confirm no duplicate booking was created.
+   * 15. Confirm no duplicate marketplace offer was created.
+   * 
+   * Also test:
+   * 
+   * Partner A accepts → Partner A cancels before service → assignment_released → all other eligible partners receive it immediately.
+   * 
+   * Do not modify payment, FCM native delivery, pricing, vehicle logic, or unrelated business logic.
    */
 
 
