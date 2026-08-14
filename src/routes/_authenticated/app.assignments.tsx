@@ -622,56 +622,54 @@ function AssignmentsPage() {
       )}
 
       {/* Sticky CTA — always primary, action varies with availability */}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto max-w-md p-4">
+      <div className="fixed inset-x-0 bottom-[64px] z-30 bg-white/95 backdrop-blur-md border-t border-neutral-100 pb-safe">
+        <div className="mx-auto max-w-md px-5 py-4">
           {accept.isPending ? (
-            <Button size="lg" className="h-auto w-full py-3 shadow-lg shadow-primary/25" disabled>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating route…
+            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200" disabled>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />Building Route…
             </Button>
           ) : isFetching && !preview ? (
-            <Button size="lg" className="h-auto w-full py-3" variant="secondary" disabled>
-              Checking customers…
+            <Button size="lg" className="w-full h-14 rounded-2xl bg-neutral-100 text-neutral-400 font-bold" disabled>
+              Finding Customers…
             </Button>
           ) : noneAvailable ? (
             <Button
               size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              disabled={toggleNotify.isPending || partner.notify_when_customers_added}
-              onClick={() => toggleNotify.mutate(true)}
+              className={cn(
+                "w-full h-14 rounded-2xl font-bold transition-all active:scale-[0.98]",
+                partner.notify_when_customers_added 
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                  : "bg-neutral-900 text-white shadow-xl shadow-neutral-200"
+              )}
+              disabled={toggleNotify.isPending}
+              onClick={() => !partner.notify_when_customers_added && toggleNotify.mutate(true)}
             >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                  <BellRing className="h-4 w-4" />
-                  {partner.notify_when_customers_added ? "We'll notify you" : "Notify me when routes open"}
-                </span>
-                <span className="text-[11px] font-normal opacity-70">Searching nearby in {partner.home_area}</span>
+              <span className="flex items-center justify-center gap-3">
+                {partner.notify_when_customers_added ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Monitoring Area</span>
+                  </>
+                ) : (
+                  <>
+                    <BellRing className="h-5 w-5" />
+                    <span>Notify When Open</span>
+                  </>
+                )}
               </span>
             </Button>
-          ) : partialAvailable ? (
-            <Button
-              size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => { setConfirmCars(availableInArea); setConfirmOpen(true); }}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start with {availableInArea} Customer{availableInArea === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" />
-                </span>
-                <span className="mt-0.5 text-[10px] font-normal opacity-70">Earn ₹{acceptableEarn.toLocaleString("en-IN")} now · more added automatically</span>
-              </span>
-            </Button>
-
           ) : (
             <Button
               size="lg"
-              className="h-auto w-full py-3 shadow-lg shadow-primary/25"
-              onClick={() => { setConfirmCars(cars); setConfirmOpen(true); }}
+              className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-xl shadow-primary/30 transition-all active:scale-[0.98]"
+              onClick={() => { 
+                setConfirmCars(partialAvailable ? availableInArea : cars); 
+                setConfirmOpen(true); 
+              }}
             >
-              <span className="flex flex-col items-center leading-tight">
-                <span className="inline-flex items-center gap-2 text-base font-semibold">
-                  Start Route <ArrowRight className="h-4 w-4" />
-                </span>
-                <span className="mt-0.5 text-[10px] font-normal opacity-70">{cars} customers · ₹{dailyEarn.toLocaleString("en-IN")} · {formatTime12(startTime)}</span>
+              <span className="flex items-center justify-center gap-2">
+                {partialAvailable ? `Start with ${availableInArea} Customers` : "Start Route Now"}
+                <ArrowRight className="h-5 w-5" />
               </span>
             </Button>
           )}
