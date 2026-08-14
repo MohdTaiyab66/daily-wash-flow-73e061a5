@@ -241,6 +241,7 @@ function HomePage() {
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Potential</p>
                 <p className="text-lg font-bold text-primary">₹{potentialEarnings}</p>
+                <p className="text-[9px] text-primary/60 font-bold">+₹{potentialMonthlyExtra.toLocaleString("en-IN")}/mo</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Area</p>
