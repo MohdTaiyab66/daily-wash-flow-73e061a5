@@ -387,7 +387,7 @@ export function MarketplaceOfferCard({
               <IndianRupee className="h-2.5 w-2.5" /> Earnings
             </p>
             <p className="text-xs font-bold text-primary">{earningDisplay}</p>
-            <p className="text-[10px] text-primary/70">{isRelease ? "Potential Total" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
+            <p className="text-[10px] text-primary/70">{isRelease ? "Released Batch" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
           </div>
         </div>
 
