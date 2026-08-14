@@ -525,6 +525,115 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   return sentCount;
 }
 
+/**
+ * [RELEASED-WORK-PUSH] 
+ * Specialized dispatcher for assignment cancellation/release.
+ * Fans out to all eligible partners except the cancelling one.
+ */
+export async function dispatchAssignmentReleased(pAssignmentId: string, pCancellingPartnerId: string): Promise<number> {
+  console.log(`[RELEASED-WORK-PUSH:01] BROADCAST_CREATED assignment_id=${pAssignmentId}`);
+  const sb = await admin();
+  const sendOfferPush = await sender();
+  const { resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
+
+  // 1. Resolve released work details
+  const { data: bcast } = await sb
+    .from("marketplace_broadcasts")
+    .select("id, status, service_area_id, coverage_zones(name), marketplace_offers(id, partner_id)")
+    .eq("assignment_id", pAssignmentId)
+    .maybeSingle();
+
+  if (!bcast || bcast.status !== "open") {
+    console.warn("[RELEASED-WORK-PUSH:CANCELLED] No open broadcast for assignment", pAssignmentId);
+    return 0;
+  }
+
+  // 2. Find eligible recipients (all partners in the broadcast who aren't the canceller)
+  const offers = (bcast.marketplace_offers ?? []).filter((o: any) => o.partner_id !== pCancellingPartnerId);
+  const totalEligible = offers.length;
+  console.log(`[RELEASED-WORK-PUSH:02] ELIGIBLE_PARTNERS count=${totalEligible} (excluded ${pCancellingPartnerId})`);
+
+  if (totalEligible === 0) return 0;
+
+  // 3. Resolve common work metadata (customer count, area)
+  const { data: services } = await sb
+    .from("services")
+    .select("id, rate_per_car, subscription:subscriptions(start_date, renewal_date), customer:customer_profiles(latitude, longitude)")
+    .eq("assignment_id", pAssignmentId)
+    .eq("status", "pending"); // Only unstarted work is released
+
+  const customerCount = services.length;
+  const areaName = bcast.coverage_zones?.name ?? "Nearby Area";
+
+  console.log(`[RELEASED-WORK-PUSH:03] PAYLOAD_RESOLVED customers=${customerCount} area=${areaName}`);
+  console.log(`[RELEASED-WORK-PUSH:04] FANOUT_STARTED count=${totalEligible}`);
+
+  let sentCount = 0;
+  const fanout = offers.map(async (o: any) => {
+    try {
+      // 4. Resolve partner-specific monthly earning (sum of all released services)
+      const monthlyRes = await Promise.all(services.map(s => 
+        resolvePartnerMonthlyEarning({
+          sb,
+          partnerId: o.partner_id,
+          incentive: Number(s.rate_per_car || 17),
+          startDate: s.subscription?.start_date,
+          renewalDate: s.subscription?.renewal_date
+        })
+      ));
+      const totalMonthly = monthlyRes.reduce((sum, m) => sum + m.monthlyAmount, 0);
+      const monthlyDisplay = `+₹${totalMonthly}/month`;
+
+      // 5. Resolve partner-specific distance (from first customer as representative)
+      const firstCust = services[0]?.customer;
+      const distance = await resolvePartnerBookingDistance({
+        sb,
+        partnerId: o.partner_id,
+        customerLat: firstCust?.latitude ?? null,
+        customerLng: firstCust?.longitude ?? null,
+      });
+
+      const title = `🚗 ${customerCount} Customers Available`;
+      const body = `Earn up to ${monthlyDisplay} · ${distance.display}`;
+
+      const dataPayload: Record<string, string> = {
+        type: "assignment_released",
+        broadcast_id: String(bcast.id),
+        assignment_id: String(pAssignmentId),
+        customer_count: String(customerCount),
+        monthly_earnings: monthlyDisplay,
+        area: areaName,
+        distance_km: distance.km ? String(distance.km) : "",
+        title,
+        body,
+        action_token: String(o.id),
+      };
+
+      const result = await sendOfferPush({
+        userId: o.partner_id,
+        title,
+        body,
+        data: dataPayload,
+        channelId: "assignments_v4",
+        dataOnly: true, // Native Kotlin heads-up path
+        tag: `release:${bcast.id}`
+      });
+
+      if (result.sent > 0) {
+        console.log(`[RELEASED-WORK-PUSH:05] FCM_SENT partner=${o.partner_id} message_id=${result.results[0]?.messageId}`);
+        sentCount++;
+      }
+    } catch (e) {
+      console.warn(`[RELEASED-WORK-PUSH:ERROR] Failed to send to partner ${o.partner_id}`, e);
+    }
+  });
+
+  await Promise.all(fanout);
+  console.log(`[RELEASED-WORK-PUSH:06] MARKETPLACE_VISIBLE dispatched=${sentCount}`);
+  return sentCount;
+}
+
+
 /** Dispatch unpushed admin alerts to every admin user. */
 export async function dispatchAdminAlerts(): Promise<number> {
   const sb = await admin();
