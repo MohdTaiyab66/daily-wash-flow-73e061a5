@@ -687,9 +687,8 @@ export async function dispatchAdminAlerts(): Promise<number> {
 }
 
 /**
-
-
  * Fans out new_booking pushes for a list of open bookings.
+
  * Recalculates eligibility for every partner on every tick.
  */
 export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
