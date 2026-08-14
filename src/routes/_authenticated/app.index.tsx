@@ -224,13 +224,13 @@ function HomePage() {
               </p>
             )}
           </Card>
-        ) : availableCount > 0 ? (
+        ) : (availableCount > 0 || (bookingRequests?.length ?? 0) > 0) ? (
           /* WORK AVAILABLE */
           <Card className="overflow-hidden border border-primary/20 shadow-md bg-white p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Work Available</p>
-                <h2 className="text-xl font-bold mt-1">{availableCount} Customers</h2>
+                <h2 className="text-xl font-bold mt-1">{(availableCount + (bookingRequests?.length ?? 0))} Customers</h2>
               </div>
               <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -251,11 +251,12 @@ function HomePage() {
 
             <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
               <Link to="/app/assignments">
-                View Work
+                View Available Work
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </Card>
+
         ) : (
           /* NO WORK YET */
           <Card className="flex flex-col items-center text-center p-6 border-dashed bg-neutral-50/50">
