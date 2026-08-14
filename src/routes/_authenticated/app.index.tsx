@@ -65,6 +65,7 @@ function HomePage() {
 
   const handleToggle = async (on: boolean) => {
     await toggle(on);
+    if (!on) navigate({ to: "/app" }); // Force refresh state visually if needed, though toggle handles data.
   };
 
   return (
