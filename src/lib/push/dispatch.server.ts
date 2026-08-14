@@ -711,6 +711,8 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
       continue;
     }
 
+    console.log(`[BOOKING-PUSH:CRON] ELIGIBLE_PARTNERS_FOUND broadcast_id=${b.broadcast_id}`);
+
     // 2. Fetch all PENDING offers for this broadcast
     const { data: offers, error: offersError } = await sb
       .from('marketplace_offers')
@@ -720,7 +722,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
     if (offersError) continue;
 
-    console.log(`[BOOKING-PUSH:07] BOOKING_STILL_UNCLAIMED booking_id=${b.booking_id} offer_count=${offers?.length}`);
+    console.log(`[BOOKING-PUSH:CRON] FANOUT_STARTED broadcast_id=${b.broadcast_id} offer_count=${offers?.length}`);
 
     // 3. Fan out in parallel
     const fanout = (offers || []).map(async (o: any) => {
@@ -765,7 +767,6 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
         });
 
         if (result.sent > 0) {
-          console.log(`[BOOKING-PUSH:04] PARTNER_NOTIFICATION_SENT partner=${o.partner_id} booking=${b.booking_id}`);
           totalDispatched++;
         }
       } catch (e) {
@@ -774,6 +775,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     });
 
     await Promise.all(fanout);
+    console.log(`[BOOKING-PUSH:CRON] FANOUT_COMPLETED broadcast_id=${b.broadcast_id}`);
   }
 
   return totalDispatched;
