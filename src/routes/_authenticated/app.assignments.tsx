@@ -346,6 +346,14 @@ function AssignmentsPage() {
 
   const monthlyServices = workingDays * cars;
   const monthlyEarn = workingDays * dailyEarn;
+  
+  // Potential monthly includes both currently configured assignment and extra available work
+  const potentialMonthlyExtra = (bookingRequests ?? []).reduce((sum: number, req: any) => {
+    return sum + (Number((req as any).incentive || rate) * workingDays);
+  }, 0);
+  
+  const totalPotentialMonthly = monthlyEarn + potentialMonthlyExtra;
+
   const perDayEarn = workingDays > 0 ? Math.round(monthlyEarn / workingDays) : 0;
 
   const animCars = useAnimatedNumber(cars);
