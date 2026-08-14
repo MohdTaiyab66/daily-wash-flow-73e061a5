@@ -10,8 +10,11 @@ import {
   CheckCircle2,
   X,
   Check,
+  Loader2,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -331,167 +334,123 @@ export function MarketplaceOfferCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border-2 bg-card shadow-lg ${
-        compact ? "border-primary/30" : "border-primary/70 animate-scale-in"
-      }`}
-    >
-      {/* Header bar — Uber-style attention grabber */}
-      {!compact && (
-        <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-primary-foreground">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
-            Incoming Customer
-          </div>
-        </div>
+      className={cn(
+        "relative overflow-hidden rounded-2xl border bg-white transition-all shadow-sm",
+        compact ? "border-neutral-100" : "border-primary/20 animate-scale-in"
       )}
-
+    >
       <div className="p-4">
         {/* Top row: vehicle + countdown ring */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <Car className="h-3.5 w-3.5 text-primary" />
-              New Daily Shine Customer
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+              <Car className="h-3 w-3 text-primary" />
+              Incoming Offer
             </div>
-            <div className="mt-1 truncate text-xl font-bold">{label}</div>
+            <div className="truncate text-lg font-bold text-neutral-900">{label}</div>
             {v?.registration_number && (
-              <div className="text-xs text-muted-foreground">{v.registration_number}</div>
+              <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                {v.registration_number}
+              </div>
             )}
           </div>
           {compact ? (
-            <div className="text-right">
-              <div className="text-sm font-bold text-primary">{remaining}s</div>
+            <div className="flex flex-col items-end">
+              <div className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{remaining}s Left</div>
             </div>
           ) : (
             <CountdownRing remaining={remaining} total={total} />
           )}
         </div>
 
-        {/* Key stats row */}
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div className="rounded-lg bg-muted/50 px-2.5 py-2">
-            <div className="flex items-center gap-1 text-[11px] uppercase text-muted-foreground">
-              <MapPin className="h-3 w-3" /> Distance
-            </div>
-            <div className="mt-0.5 truncate font-semibold">{distanceDisplay}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {areaName}
-            </div>
+        {/* Key stats grid */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="bg-neutral-50 rounded-xl p-2.5 border border-neutral-100">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
+              <MapPin className="h-2.5 w-2.5" /> Distance
+            </p>
+            <p className="text-xs font-bold truncate">{distanceDisplay}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{areaName}</p>
           </div>
-          <div className="rounded-lg bg-primary/10 px-2.5 py-2">
-            <div className="flex items-center gap-1 text-[11px] uppercase text-primary/80">
-              <IndianRupee className="h-3 w-3" /> Earnings
-            </div>
-            <div className="mt-0.5 font-bold text-primary">{earningDisplay}</div>
-            <div className="text-[11px] text-muted-foreground">
-              ₹{monthEarnings.toLocaleString("en-IN")} · {workingDays}d
-            </div>
+          <div className="bg-primary/5 rounded-xl p-2.5 border border-primary/10">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-primary mb-1 flex items-center gap-1">
+              <IndianRupee className="h-2.5 w-2.5" /> Earnings
+            </p>
+            <p className="text-xs font-bold text-primary">{earningDisplay}</p>
+            <p className="text-[10px] text-primary/70">₹{monthEarnings.toLocaleString("en-IN")} Monthly</p>
           </div>
         </div>
 
-
-        {/* Expandable details */}
-        {!compact && (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                traceStateCall("setState", { component: "MarketplaceOfferCard", function: "details toggle setExpanded", reason: "details toggle clicked", offer_id: offer.id });
-                setExpanded((e) => !e);
-              }}
-              className="mt-3 flex w-full items-center justify-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        {/* Actions */}
+        <div className="flex gap-2">
+          {!compact && (
+            <Button
+              variant="outline"
+              className="flex-1 h-11 rounded-xl font-bold border-neutral-200 text-neutral-600 active:scale-95 transition-all"
+              onClick={handleDecline}
+              disabled={busy}
             >
-              {expanded ? (
-                <>
-                  Hide details <ChevronUp className="h-3.5 w-3.5" />
-                </>
-              ) : (
-                <>
-                  Show details <ChevronDown className="h-3.5 w-3.5" />
-                </>
-              )}
-            </button>
-
-            {expanded && (
-              <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3 text-xs animate-fade-in">
-                {impact !== null && (
-                  <div className="flex items-center gap-2">
-                    <RouteIcon className="h-3.5 w-3.5 text-primary" />
-                    <span>Adds {fmtDist(impact)} to today's route</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5 text-primary" />
-                  <span>{workingDays} working days assignment</span>
-                </div>
-                {finishOffsetMin > 0 && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>~+{finishOffsetMin} min to finish today's route</span>
-                  </div>
-                )}
-
-                {/* Route preview: before → after */}
-                <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-2">
-                  <div>
-                    <div className="text-[10px] uppercase text-muted-foreground">
-                      Today's Route
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1 font-semibold">
-                      <span className="text-muted-foreground">{carsBefore}</span>
-                      <span className="text-primary">→</span>
-                      <span className="text-primary">{carsAfter} cars</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase text-muted-foreground">
-                      Today's Earnings
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1 font-semibold">
-                      <span className="text-muted-foreground">
-                        ₹{earnBefore.toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-primary">→</span>
-                      <span className="text-primary">
-                        ₹{earnAfter.toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {rate > 0 && (
-                  <div className="text-[10px] text-muted-foreground">
-                    Rate ₹{rate}/car
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {offer.round > 1 && (
-          <div className="mt-3 rounded-md bg-amber-100 px-2 py-1 text-center text-xs font-medium text-amber-900">
-            Round {offer.round} · Incentive raised
-          </div>
-        )}
-
-        {/* Big action buttons — Uber-style */}
-        <div className="mt-4 flex gap-2">
+              <X className="mr-2 h-4 w-4" />
+              Ignore
+            </Button>
+          )}
           <Button
-            variant="outline"
-            className="h-12 flex-1 border-2 text-base font-semibold"
-            onClick={handleDecline}
-            disabled={busy || remaining === 0}
-          >
-            <X className="mr-1 h-5 w-5" /> Decline
-          </Button>
-          <Button
-            className="h-12 flex-[1.4] bg-emerald-600 text-base font-bold hover:bg-emerald-700"
+            className="flex-1 h-11 rounded-xl font-bold bg-neutral-900 text-white active:scale-95 transition-all shadow-md shadow-neutral-100"
             onClick={handleAccept}
-            disabled={busy || remaining === 0}
+            disabled={busy}
           >
-            <Check className="mr-1 h-5 w-5" /> Accept
+            {busy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                {compact ? "Add" : "Accept Customer"}
+              </>
+            )}
           </Button>
         </div>
+
+        {/* Expandable details indicator */}
+        {!compact && (
+           <button
+             type="button"
+             onClick={() => setExpanded(!expanded)}
+             className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+           >
+             {expanded ? (
+               <>Less Details <ChevronUp className="h-3 w-3" /></>
+             ) : (
+               <>More Details <ChevronDown className="h-3 w-3" /></>
+             )}
+           </button>
+        )}
+
+        {expanded && !compact && (
+          <div className="mt-4 space-y-3 pt-4 border-t border-neutral-100 animate-in fade-in slide-in-from-top-2 duration-300">
+            {impact !== null && (
+               <div className="flex items-center gap-3">
+                 <div className="h-8 w-8 rounded-lg bg-neutral-50 flex items-center justify-center border border-neutral-100">
+                   <RouteIcon className="h-4 w-4 text-primary" />
+                 </div>
+                 <div className="flex-1">
+                   <p className="text-[9px] font-bold uppercase text-muted-foreground">Route Impact</p>
+                   <p className="text-xs font-medium">Adds {fmtDist(impact)} to today's path</p>
+                 </div>
+               </div>
+            )}
+            <div className="flex items-center gap-3">
+               <div className="h-8 w-8 rounded-lg bg-neutral-50 flex items-center justify-center border border-neutral-100">
+                 <Calendar className="h-4 w-4 text-primary" />
+               </div>
+               <div className="flex-1">
+                 <p className="text-[9px] font-bold uppercase text-muted-foreground">Commitment</p>
+                 <p className="text-xs font-medium">{workingDays} day assignment</p>
+               </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
