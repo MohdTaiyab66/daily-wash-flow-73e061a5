@@ -190,6 +190,8 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         dataOnly: true,
         tag: r.offer_id,
       });
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
 
       const successCount = result.sent;
       const failureCount = result.failed;
