@@ -22,7 +22,7 @@ const DECLINE_COOLDOWN_MS = 45_000;
  *  - Applies a 45s cooldown after Decline so partners aren't spammed with the
  *    same-or-worse offer, while still surfacing genuinely better ones.
  */
-export function MarketplaceOffersList({ onViewCustomers }: { onViewCustomers?: (assignmentId: string) => void }) {
+export function MarketplaceOffersList() {
   const qc = useQueryClient();
   const fetchOffers = useServerFn(getPartnerOpenOffers);
   const q = useQuery({
@@ -120,6 +120,18 @@ export function MarketplaceOffersList({ onViewCustomers }: { onViewCustomers?: (
       supabase.removeChannel(channel);
     };
   }, [qc]);
+  
+  const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
+  const releasedCustomers = useQuery({
+    queryKey: ["released-customers", selectedAssignment],
+    queryFn: async () => {
+      if (!selectedAssignment) return [];
+      const { getReleasedAssignmentCustomers } = await import("@/lib/marketplace.functions");
+      // @ts-ignore - Dynamic import typing
+      return getReleasedAssignmentCustomers({ data: { assignmentId: selectedAssignment } });
+    },
+    enabled: !!selectedAssignment,
+  });
 
   // Tick every second so components consuming `top` re-evaluate against
   // wall-clock (used by the sheet's countdown). The list itself trusts the
@@ -370,8 +382,8 @@ export function MarketplaceOffersList({ onViewCustomers }: { onViewCustomers?: (
               offer={o}
               compact
               onAccept={() => {
-                if ((o as any).type === "assignment_released" && onViewCustomers) {
-                  onViewCustomers(o.assignment_id);
+                if ((o as any).type === "assignment_released") {
+                  setSelectedAssignment((o as any).assignment_id);
                 } else {
                   handleAccept(o);
                 }
