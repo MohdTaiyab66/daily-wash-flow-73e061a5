@@ -419,7 +419,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
         console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
       }
-      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
+
 
 
       const result = await sendOfferPush({
