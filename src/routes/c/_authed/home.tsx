@@ -269,94 +269,25 @@ function CustomerHome() {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      {/* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+      {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            IMPORTANT — VERIFY NOTIFICATION ARCHITECTURE
+                                            For the code present, I get the error below.
 
-Before making any further changes, confirm that you understand this requirement correctly.
+Please think step-by-step in order to resolve it.
+```
+Failed to connect to MetaMask
 
-Partners receive TWO DIFFERENT TYPES OF WORK NOTIFICATIONS.
-
-1. CUSTOMER BOOKING NOTIFICATION
-
-TRIGGER:
-A customer successfully completes payment and creates a new service booking.
-
-FLOW:
-Customer payment verified → booking created → determine all eligible partners for that customer's area/location → send NEW BOOKING notification to all eligible partners in parallel.
-
-EVENT TYPE:
-new_booking
-
-This is a brand-new customer entering the marketplace.
-The notification should contain partner-specific:
-- customer/work count
-- monthly earning potential
-- distance from the partner
-- area
-- relevant booking information
-
-2. PARTNER ASSIGNMENT RELEASE NOTIFICATION
-
-TRIGGER:
-A partner cancels/releases an existing assignment.
-Example: Partner A has 20 customers assigned. Partner A taps: Cancel & Release Work
-
-FLOW:
-Partner A assignment cancelled → only eligible/unstarted work is released → one marketplace broadcast is created → Partner A is excluded → all OTHER eligible partners in that area/location receive the released-work notification in parallel.
-
-EVENT TYPE:
-assignment_released
-
-The notification should clearly communicate that this is released work, for example:
-"20 Customers Available"
-"Work released by another partner"
-"💰 +₹8,840/month"
-"📍 2.4 km away"
-
-Monthly earnings must be dynamically calculated from the actual released vehicles/cars and configured service days.
-
-DO NOT make these two notifications identical.
-The partner must be able to understand whether the opportunity came from:
-A) a NEW CUSTOMER BOOKING
-or
-B) ANOTHER PARTNER RELEASING/CANCELLING THEIR ASSIGNMENT.
-
---------------------------------------------------
-CRITICAL VERIFICATION
---------------------------------------------------
-Please inspect the CURRENT implementation and answer explicitly:
-1. Is `new_booking` currently implemented as a separate event?
-2. Is `assignment_released` currently implemented as a separate event?
-3. Are their backend triggers different?
-4. Are their FCM payloads different?
-5. Does the Android native notification service recognize both event types?
-6. Does the new-booking flow fan out to ALL eligible partners?
-7. Does the assignment-release flow fan out to ALL OTHER eligible partners?
-8. Is the cancelling partner excluded from the release notification?
-9. Are monthly earnings calculated dynamically for both?
-10. Is distance resolved separately for every recipient?
-11. Can either event be accidentally dropped as `EVENT_UNKNOWN`?
-12. Are duplicate broadcasts prevented?
-13. Does payment verification happen BEFORE `new_booking` notification dispatch?
-14. Does assignment cancellation preserve completed/in-progress work according to the existing safety rules?
-15. Does the Available Work screen receive both types correctly?
-
-IMPORTANT:
-Do NOT simply tell me "yes". Inspect the actual code, database functions/RPCs, notification dispatcher, FCM payload construction, and Android `UrbanwashMessagingService`.
-
-Report:
-- exact files/functions responsible for NEW BOOKING
-- exact files/functions responsible for ASSIGNMENT RELEASE
-- event names
-- recipient/eligibility logic
-- earnings resolver
-- distance resolver
-- Android event handling
-
-If anything is missing or both flows are currently being treated as the same event, identify it clearly before changing anything.
-DO NOT modify unrelated business logic. */}
+{
+  "timestamp": 1786733729634,
+  "error_type": "UNHANDLED_PROMISE_REJECTION",
+  "filename": "Unknown file",
+  "lineno": 0,
+  "colno": 0,
+  "stack": "i: Failed to connect to MetaMask\n    at Object.connect (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:7:84292)",
+  "has_blank_screen": true
+}
+``` */}
       <div className="min-h-screen bg-white">
 
         {/* [CUSTOMER-FCM-CONFIG] Diagnostics Panel */}
