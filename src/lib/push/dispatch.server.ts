@@ -302,6 +302,7 @@ export const PARTNER_ASSIGNMENT_TYPES = new Set<string>([
   "new_booking",
   "new_customers",
   "route_updated",
+  "assignment_released",
 ]);
 
 /**

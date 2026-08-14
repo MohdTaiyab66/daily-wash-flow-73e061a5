@@ -16,7 +16,7 @@ function calculateWorkingDays(start?: string | null, end?: string | null) {
   if (!start || !end) return 26; // Default to standard 26-day cycle
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
-  const days = Math.max(1, Math.round((e - s) / 86400000));
+  const days = Math.max(1, Math.floor((e - s) / 86400000) + 1); // Inclusive
   // Cap at 31, minimum 1
   return Math.min(Math.max(days, 1), 31);
 }
