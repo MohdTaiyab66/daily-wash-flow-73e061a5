@@ -344,15 +344,15 @@ export function MarketplaceOfferCard({
       )}
     >
       <div className="p-4">
-        {/* Top row: vehicle + countdown ring */}
+        {/* Top row: vehicle/customers + countdown ring */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
               <Car className="h-3 w-3 text-primary" />
-              Incoming Offer
+              {isRelease ? "New Work Available" : "Incoming Offer"}
             </div>
-            <div className="truncate text-lg font-bold text-neutral-900">{label}</div>
-            {v?.registration_number && (
+            <div className={cn("truncate text-lg font-bold text-neutral-900", isRelease && "text-primary")}>{label}</div>
+            {v?.registration_number && !isRelease && (
               <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
                 {v.registration_number}
               </div>
