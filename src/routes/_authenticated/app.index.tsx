@@ -154,7 +154,9 @@ function HomePage() {
           </Card>
         ) : assignment && total > 0 ? (
           /* STATE: ASSIGNMENT AVAILABLE */
-          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6">
+          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="relative z-10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Today's Assignment</p>
