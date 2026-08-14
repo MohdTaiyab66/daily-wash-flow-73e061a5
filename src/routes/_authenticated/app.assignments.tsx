@@ -391,8 +391,10 @@ function AssignmentsPage() {
             Adjust your hours and commitment. We'll automatically build the most efficient route for you.
           </p>
         </div>
-        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium text-muted-foreground">
-          <MapPin className="h-3 w-3" />{partner.home_area}<ChevronDown className="h-3 w-3 opacity-70" />
+        <Link to="/app/area" className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-neutral-100 px-3.5 py-2 text-[11px] font-bold text-neutral-900 border border-neutral-200 active:scale-95 transition-transform">
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="uppercase tracking-wider">{partner.home_area}</span>
+          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
         </Link>
       </div>
 
