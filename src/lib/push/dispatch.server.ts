@@ -151,8 +151,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }),
     ]);
 
-    const title = `🚗 New Booking • ${monthly.display}`;
-    const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
+    const title = monthly.display;
+    const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${customerCount} cars • ${distance.display}`;
+
     
     const data: Record<string, string> = {
       type: "daily_shine_offer",
