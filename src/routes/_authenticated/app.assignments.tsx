@@ -398,35 +398,40 @@ function AssignmentsPage() {
         </Link>
       </div>
 
-      {/* Work today — single consolidated card */}
-      <Card className="mt-5 p-5">
-        <div className="flex items-baseline justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Work today</p>
-          <p className="text-3xl font-semibold tracking-tight">{hours}<span className="ml-1 text-base text-muted-foreground">Hours</span></p>
+      {/* Work today — Premium Dark Card */}
+      <Card className="mt-5 overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="relative z-10">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Work today</p>
+            <p className="text-3xl font-bold tracking-tight text-white">{hours}<span className="ml-1 text-sm font-medium text-white/40 uppercase">Hrs</span></p>
+          </div>
+          <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-6 mb-2" />
+          <div className="flex justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">
+            <span>{minHours}H Min</span>
+            <span>{maxHours}H Max</span>
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-6 border-t border-white/10 pt-6">
+            <div className="space-y-1">
+              <p className="text-2xl font-bold tabular-nums text-white">{animCars}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Customers</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Today's Earn</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xl font-bold tabular-nums text-white">~{estKm}<span className="ml-0.5 text-xs font-medium text-white/40">km</span></p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Distance</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xl font-bold tabular-nums text-white">{formatTime12(startTime).replace(/:00 /, " ")}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-white/30">Start Time</p>
+            </div>
+          </div>
+          {isFetching && <p className="mt-4 flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-primary animate-pulse"><Loader2 className="h-3 w-3 animate-spin" />Refreshing Estimate…</p>}
         </div>
-        <Slider value={[hours]} min={minHours} max={maxHours} step={1} onValueChange={(v) => setHours(v[0])} className="mt-4" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-          <span>{minHours}h</span><span>{maxHours}h</span>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
-          <div>
-            <p className="text-2xl font-bold tabular-nums">{animCars}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Customers</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-primary">₹{animEarn.toLocaleString("en-IN")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Today's Earnings</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums">~{estKm}<span className="ml-0.5 text-sm font-normal text-muted-foreground">km</span></p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Travel Distance</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold tabular-nums leading-7">{formatTime12(startTime).replace(/:00 /, " ")}<span className="mx-0.5 font-normal text-muted-foreground">–</span>{formatTime12(finishTime).replace(/:00 /, " ")}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">Working Time</p>
-          </div>
-        </div>
-        {isFetching && <p className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Updating estimate…</p>}
       </Card>
 
       {/* Trust indicator */}
