@@ -168,7 +168,7 @@ function HomePage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Today's Assignment</p>
-                <h2 className="text-xl font-bold mt-1">{assignment.area}</h2>
+                <h2 className="text-xl font-bold mt-1 text-white">{assignment.area}</h2>
               </div>
               <MapPin className="h-5 w-5 text-primary" />
             </div>
