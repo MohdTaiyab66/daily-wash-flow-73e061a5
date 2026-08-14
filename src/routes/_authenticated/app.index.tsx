@@ -29,8 +29,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
 
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/")({
-  component: HomePage,
+  component: () => (
+    <PartnerShell>
+      <HomePage />
+    </PartnerShell>
+  ),
 });
 
 function HomePage() {

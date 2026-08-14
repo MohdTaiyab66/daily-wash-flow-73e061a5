@@ -6,8 +6,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Calendar, Car, IndianRupee, MapPin } from "lucide-react";
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/history")({
-  component: HistoryPage,
+  component: () => (
+    <PartnerShell>
+      <HistoryPage />
+    </PartnerShell>
+  ),
 });
 
 const RATE = 17;

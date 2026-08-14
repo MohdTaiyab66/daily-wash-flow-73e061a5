@@ -9,8 +9,14 @@ import { useI18n } from "@/lib/i18n";
 
 const RATE = 17;
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/earnings")({
-  component: EarningsPage,
+  component: () => (
+    <PartnerShell>
+      <EarningsPage />
+    </PartnerShell>
+  ),
 });
 
 function startOfWeek(d: Date) {

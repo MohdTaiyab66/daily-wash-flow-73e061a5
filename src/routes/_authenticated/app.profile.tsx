@@ -18,8 +18,14 @@ import { sendPushSelfTest } from "@/lib/push-selftest.functions";
 import { DeviceDiagnosticsCard } from "@/components/partner/DeviceDiagnosticsCard";
 import { toast } from "sonner";
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/profile")({
-  component: ProfilePage,
+  component: () => (
+    <PartnerShell>
+      <ProfilePage />
+    </PartnerShell>
+  ),
 });
 
 function ProfilePage() {

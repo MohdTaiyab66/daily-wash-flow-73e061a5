@@ -12,6 +12,7 @@ import {
   ArrowRight, ChevronDown, Clock, Navigation, Car
 } from "lucide-react";
 import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
+import { PartnerShell } from "@/components/partner/PartnerShell";
 
 
 import { toast } from "sonner";
@@ -67,7 +68,7 @@ const MOTIVATION_TIPS = [
 ];
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
-  component: () => <OfflineGuard label="assignment builder"><AssignmentsPage /></OfflineGuard>,
+  component: () => <OfflineGuard label="assignment builder"><PartnerShell><AssignmentsPage /></PartnerShell></OfflineGuard>,
 });
 
 type StartRule = { max_cars: number; start_time: string };
@@ -332,38 +333,21 @@ function AssignmentsPage() {
   const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
   const previewMessage = previewSafe ? String(previewSafe.message ?? "") : "";
 
-  // Working days across the commitment window, excluding the weekly-off day.
-  const workingDays = useMemo(() => {
-    const start = new Date();
-    let count = 0;
-    for (let i = 0; i < duration; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      if (d.getDay() !== offDayKey) count++;
-    }
-    return count;
-  }, [duration, offDayKey]);
+  // P0 Business Rule: Monthly projections lead with 26 service days.
+  const SERVICE_DAYS_PER_MONTH = 26;
 
-  const monthlyServices = workingDays * cars;
-  const monthlyEarn = workingDays * dailyEarn;
-  
   // Potential monthly includes both currently configured assignment and extra available work
-  const potentialMonthlyExtra = (bookingRequests ?? []).reduce((sum: number, req: any) => {
-    return sum + (Number((req as any).incentive || rate) * workingDays);
-  }, 0);
-  
-  const totalPotentialMonthly = monthlyEarn + potentialMonthlyExtra;
-
-  const perDayEarn = workingDays > 0 ? Math.round(monthlyEarn / workingDays) : 0;
+  const dailyTotalPotential = dailyEarn;
+  const monthlyTotalPotential = dailyTotalPotential * SERVICE_DAYS_PER_MONTH;
 
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
-  const animMonthly = useAnimatedNumber(totalPotentialMonthly);
-  const animMonthlyServices = useAnimatedNumber(monthlyServices);
-  const animPerDay = useAnimatedNumber(perDayEarn);
+  const animMonthly = useAnimatedNumber(monthlyTotalPotential);
+  const animMonthlyServices = useAnimatedNumber(SERVICE_DAYS_PER_MONTH * cars);
   const commitment = commitmentLabel(duration, minDays, maxDays);
   const tipOfDay = MOTIVATION_TIPS[new Date().getDate() % MOTIVATION_TIPS.length];
   const [confirmOpen, setConfirmOpen] = useState(false);
+
   const [confirmCars, setConfirmCars] = useState(0);
 
   // ---- Conditional early returns AFTER all hooks ----
@@ -420,53 +404,59 @@ function AssignmentsPage() {
       </section>
 
       {/* INPUT SLIDERS */}
-      <section className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">How much per day?</label>
-            <span className="text-sm font-black text-primary">{hours} HOURS / DAY</span>
+      <section className="space-y-8">
+        <div className="space-y-5">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-neutral-900">1. How many hours do you want to work?</label>
+            <p className="text-xs text-muted-foreground">{minHours}–{maxHours} hours/day</p>
           </div>
-          <Slider
-            value={[hours]}
-            min={minHours}
-            max={maxHours}
-            step={0.5}
-            onValueChange={([v]) => setHours(v)}
-            className="py-2"
-          />
-          <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase">
-            <span>{minHours} hrs</span>
-            <span>{maxHours} hrs</span>
+          <div className="px-1">
+            <Slider
+              value={[hours]}
+              min={minHours}
+              max={maxHours}
+              step={0.5}
+              onValueChange={([v]) => setHours(v)}
+              className="py-2"
+            />
+            <div className="flex justify-between mt-2">
+              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{hours} HOURS</span>
+              <span className="text-[11px] font-medium text-neutral-400">Target: {cars} Customers</span>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">For how many days?</label>
-            <span className="text-sm font-black text-primary">{duration} DAYS</span>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-neutral-900">2. How many days do you want to commit?</label>
+            <p className="text-xs text-muted-foreground">{minDays}–{maxDays} days</p>
           </div>
-          <Slider
-            value={[duration]}
-            min={minDays}
-            max={maxDays}
-            step={1}
-            onValueChange={([v]) => {
-              setDuration(v);
-              setDurationTouched(true);
-            }}
-            className="py-2"
-          />
-          <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase">
-            <span>{minDays} days</span>
-            <span>{maxDays} days</span>
+          <div className="px-1">
+            <Slider
+              value={[duration]}
+              min={minDays}
+              max={maxDays}
+              step={1}
+              onValueChange={([v]) => {
+                setDuration(v);
+                setDurationTouched(true);
+              }}
+              className="py-2"
+            />
+            <div className="flex justify-between mt-2">
+              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{duration} DAYS</span>
+              <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                {commitment.label}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* TODAY'S PLAN CARD */}
+      {/* YOUR PLAN CARD */}
       <section className="space-y-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Today's Plan</h3>
-        <Card className="p-5 border-neutral-100 shadow-sm bg-white overflow-hidden relative">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Plan</h3>
+        <Card className="p-5 border-neutral-100 shadow-sm bg-white overflow-hidden relative rounded-2xl">
           {isFetching && (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -484,7 +474,8 @@ function AssignmentsPage() {
                 <Car className="h-3 w-3" /> Customers
               </p>
               <p className={cn("text-sm font-bold", acceptableCars < cars ? "text-amber-600" : "text-neutral-900")}>
-                {acceptableCars} <span className="text-neutral-400 font-normal">/ {cars} target</span>
+                {acceptableCars} <span className="text-neutral-400 font-normal">available</span>
+                {cars > 0 && <span className="text-neutral-400 font-normal"> / {cars} target</span>}
               </p>
             </div>
             <div className="space-y-1">
@@ -501,13 +492,20 @@ function AssignmentsPage() {
             </div>
           </div>
 
+          <div className="mt-6 pt-4 border-t border-neutral-50 flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+            <p className="text-[11px] font-bold text-neutral-600 uppercase tracking-tight">
+              26 service days/month · Mondays off
+            </p>
+          </div>
+
           {acceptableCars < cars && !isFetching && (
-             <div className="mt-6 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
+             <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
                  {availableInArea === 0 
-                   ? `No customers available in ${partner.home_area} right now. More may arrive soon.`
-                   : `Only ${availableInArea} customers currently available. Your route will start with what's available.`}
+                   ? `Only 0 customers are available right now. Your route will start with what's available.`
+                   : `Only ${availableInArea} ${availableInArea === 1 ? 'customer is' : 'customers are'} available right now. Your route will start with the available work. More customers may be added as new bookings arrive.`}
                </p>
              </div>
           )}
@@ -517,42 +515,39 @@ function AssignmentsPage() {
       {/* EARNINGS DISPLAY */}
       <section className="space-y-3">
         <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
-        <Card className="overflow-hidden border-0 bg-neutral-900 text-white shadow-xl shadow-neutral-200">
+        <Card className="overflow-hidden border-0 bg-neutral-900 text-white shadow-xl shadow-neutral-200 rounded-2xl">
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-8">
               <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Estimated Today</p>
-                <p className="text-sm font-bold text-white">₹{acceptableEarn}</p>
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Today</p>
+                <p className="text-2xl font-black text-white tracking-tight">₹{acceptableEarn}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Estimated Fuel</p>
-                <p className="text-sm font-bold text-white/60">−₹{Math.round(acceptableCars * fuelPerCar)}</p>
-              </div>
-              <div className="space-y-1 text-right">
-                <p className="text-[9px] font-bold uppercase text-primary tracking-wider">Net Today</p>
-                <p className="text-sm font-bold text-primary">₹{Math.round(acceptableEarn - (acceptableCars * fuelPerCar))}</p>
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Monthly</p>
+                <p className="text-2xl font-black text-white tracking-tight">₹{Math.round(rate * SERVICE_DAYS_PER_MONTH)}<span className="text-[10px] text-white/40 ml-1 font-bold">/ CUST</span></p>
               </div>
             </div>
 
             <div className="pt-6 border-t border-white/10 flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Estimated Over Commitment</p>
-                <p className="text-2xl font-black text-white tracking-tight">₹{animMonthly.toLocaleString("en-IN")}</p>
-              </div>
-              <div className="bg-primary/20 text-primary text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">
-                {commitment.label}
+                <p className="text-[10px] font-bold uppercase text-primary tracking-wider">Over Your Plan</p>
+                <p className="text-3xl font-black text-white tracking-tight">₹{animMonthly.toLocaleString("en-IN")}</p>
               </div>
             </div>
+
+            <p className="text-[10px] text-white/30 font-medium leading-tight">
+              * Monthly projection based on 26 service days/month (Mondays off). 
+            </p>
           </div>
         </Card>
       </section>
 
       {/* STICKY BOTTOM CTA */}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-md p-4">
           <Button 
             size="lg" 
-            className="w-full h-14 rounded-2xl bg-neutral-900 text-white font-bold text-lg shadow-xl shadow-neutral-200 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
             disabled={acceptableCars === 0 || accept.isPending}
             onClick={() => setConfirmOpen(true)}
           >
@@ -560,12 +555,13 @@ function AssignmentsPage() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <>
-                Start with {acceptableCars} Customers →
+                Start with {acceptableCars} {acceptableCars === 1 ? 'Customer' : 'Customers'} →
               </>
             )}
           </Button>
         </div>
       </div>
+
 
       {/* CONFIRMATION DIALOG */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -579,12 +575,12 @@ function AssignmentsPage() {
           <div className="py-2 space-y-3">
              <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                <div>
-                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Today's Net</p>
-                 <p className="text-lg font-black text-neutral-900">₹{Math.round(acceptableEarn - (acceptableCars * fuelPerCar))}</p>
+                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Today's Earnings</p>
+                 <p className="text-lg font-black text-neutral-900">₹{acceptableEarn}</p>
                </div>
                <div className="text-right">
                  <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Total Commitment</p>
-                 <p className="text-lg font-black text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+                 <p className="text-lg font-black text-[#FF6B00]">₹{animMonthly.toLocaleString("en-IN")}</p>
                </div>
              </div>
           </div>

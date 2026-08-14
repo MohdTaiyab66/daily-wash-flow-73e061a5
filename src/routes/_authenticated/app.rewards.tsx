@@ -7,8 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Share2, Gift, Trophy, Users, Copy } from "lucide-react";
 import { toast } from "sonner";
 
+import { PartnerShell } from "@/components/partner/PartnerShell";
+
 export const Route = createFileRoute("/_authenticated/app/rewards")({
-  component: RewardsPage,
+  component: () => (
+    <PartnerShell>
+      <RewardsPage />
+    </PartnerShell>
+  ),
 });
 
 function RewardsPage() {
