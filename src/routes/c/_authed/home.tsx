@@ -111,45 +111,37 @@ function CustomerHome() {
    * '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
    *                                         
    *                                             
-   *                                             IMPORTANT FINAL VERIFICATION — DO NOT ASSUME THE CRON WORKS
+   *                                             Now verify the actual production execution of the Marketplace Re-broadcast Tick.
    * 
-   * The marketplace rebroadcast endpoint has been implemented:
+   * Do NOT make another implementation change yet.
    * 
-   * /api/public/cron/marketplace-rebroadcast-tick
+   * I need you to prove:
    * 
-   * Before declaring P0 complete, verify that this endpoint is ACTUALLY INVOKED every 30 seconds in the deployed production environment.
+   * 1. /api/public/cron/marketplace-rebroadcast-tick is actually being invoked.
    * 
-   * Check the entire project for the real scheduler mechanism.
+   * 2. What scheduler/cron mechanism invokes it?
    * 
-   * Verify:
+   * 3. Its real production frequency is 30 seconds.
    * 
-   * 1. What invokes marketplace-rebroadcast-tick?
+   * 4. Show where that schedule is configured.
    * 
-   * 2. Is it actually deployed?
+   * 5. Confirm it runs independently of the Customer/Partner apps.
    * 
-   * 3. What is the exact schedule?
+   * 6. Confirm every tick:
    * 
-   * 4. Is the schedule truly 30 seconds?
+   *    - finds OPEN/unclaimed paid bookings
    * 
-   * 5. Does it run independently of the partner/customer app?
+   *    - recalculates eligible partners
    * 
-   * 6. Does it continue running when no partner has the app open?
+   *    - sends notifications in parallel
    * 
-   * 7. Does it recalculate eligible partners on every tick?
+   *    - includes partners who logged in after the booking
    * 
-   * 8. Does it stop immediately after one partner accepts?
+   * 7. Confirm the loop stops immediately after acceptance.
    * 
-   * 9. Does it include partners who logged in after the original booking?
+   * 8. Confirm no duplicate bookings or duplicate partner-offer rows are created.
    * 
-   * 10. Does it avoid duplicate offer rows and duplicate bookings?
-   * 
-   * CRITICAL:
-   * 
-   * Do NOT say "30-second rebroadcast is implemented" merely because the API endpoint exists.
-   * 
-   * We need proof that the scheduler actually invokes it.
-   * 
-   * Add/verify structured logs:
+   * Use the new logs to verify an actual live sequence:
    * 
    * [BOOKING-PUSH:CRON] TICK_STARTED
    * 
@@ -159,48 +151,49 @@ function CustomerHome() {
    * 
    * [BOOKING-PUSH:CRON] FANOUT_COMPLETED
    * 
-   * [BOOKING-PUSH:CRON] NEXT_TICK
+   * Then test the exact E2E scenario:
    * 
-   * [BOOKING-PUSH:CRON] BOOKING_ACCEPTED
+   * Customer books and pays
    * 
-   * [BOOKING-PUSH:CRON] BROADCAST_STOPPED
+   * → Partner A receives notification
    * 
-   * Then perform this exact E2E test:
+   * → Partner A does NOT accept
    * 
-   * 1. Customer creates and successfully pays for a booking.
+   * → wait 60–90 seconds
    * 
-   * 2. Partner A receives new_booking.
+   * → verify multiple CRON ticks occurred
    * 
-   * 3. Partner A does NOT accept.
+   * → Partner B logs in
    * 
-   * 4. Wait at least 60–90 seconds.
+   * → Partner B immediately sees the still-open booking
    * 
-   * 5. Confirm backend logs show multiple rebroadcast ticks.
+   * → Partner B receives notification
    * 
-   * 6. Log in Partner B after the booking was created.
+   * → Partner B accepts
    * 
-   * 7. Partner B must recover the still-open booking immediately.
+   * → booking becomes ACCEPTED
    * 
-   * 8. Partner B must receive the notification.
+   * → rebroadcast stops
    * 
-   * 9. Wait for another tick.
+   * → Partner A can no longer accept
    * 
-   * 10. Partner B accepts.
+   * FINAL RESPONSE MUST STATE:
    * 
-   * 11. Confirm the booking becomes ACCEPTED atomically.
+   * - Exact scheduler mechanism
    * 
-   * 12. Confirm rebroadcast stops immediately.
+   * - Exact schedule
    * 
-   * 13. Confirm Partner A can no longer accept it.
+   * - Whether the scheduler is confirmed LIVE
    * 
-   * 14. Confirm no duplicate booking was created.
-   * 15. Confirm no duplicate marketplace offer was created.
+   * - Number of rebroadcast ticks observed
    * 
-   * Also test:
+   * - Number of eligible partners found
    * 
-   * Partner A accepts → Partner A cancels before service → assignment_released → all other eligible partners receive it immediately.
+   * - Whether late-login partner recovery worked
    * 
-   * Do not modify payment, FCM native delivery, pricing, vehicle logic, or unrelated business logic.
+   * - Whether acceptance stopped further broadcasts
+   * 
+   * Do not claim the 30-second system is working based only on the existence of the endpoint or logs. I need actual execution evidence.
    */
 
 
