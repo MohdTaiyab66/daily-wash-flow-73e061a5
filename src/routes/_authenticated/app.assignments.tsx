@@ -412,8 +412,8 @@ function AssignmentsPage() {
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Customers</p>
         </div>
         <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-          <p className="text-lg font-bold text-primary">₹{acceptableEarn}</p>
-          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Earnings</p>
+          <p className="text-lg font-bold text-primary">₹{Math.round(totalPotentialMonthly / 1000)}k</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Potential</p>
         </div>
         <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
           <p className="text-lg font-bold">{estKm}km</p>
