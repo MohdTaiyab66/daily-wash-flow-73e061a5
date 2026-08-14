@@ -6547,6 +6547,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_all_open_broadcast_bookings: {
+        Args: never
+        Returns: {
+          area: string
+          booking_id: string
+          broadcast_id: string
+          customer_lat: number
+          customer_lng: number
+          incentive: number
+          vehicle_category: string
+        }[]
+      }
       get_area_availability: {
         Args: { p_lat?: number; p_lng?: number; p_pincode?: string }
         Returns: {
@@ -6890,6 +6902,14 @@ export type Database = {
         }
         Returns: string
       }
+      mark_booking_accepted: {
+        Args: {
+          p_booking_id: string
+          p_broadcast_id: string
+          p_partner_id: string
+        }
+        Returns: boolean
+      }
       materialize_monthly_addons: { Args: never; Returns: number }
       modify_assignment: {
         Args: { p_assignment_id: string; p_delta: number }
@@ -6975,6 +6995,10 @@ export type Database = {
       mp_open_broadcast: {
         Args: { p_subscription_id: string }
         Returns: string
+      }
+      mp_reconcile_all_partners_for_broadcast: {
+        Args: { p_broadcast_id: string }
+        Returns: number
       }
       mp_reconcile_partner_offers: {
         Args: { p_partner_id: string }
