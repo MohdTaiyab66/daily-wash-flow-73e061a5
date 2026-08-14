@@ -430,7 +430,7 @@ function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, o
   return (
     <Wrap>
       <p className="mt-1 text-xs text-muted-foreground">
-        You can cancel your assignment before service has started. All customers will be released to other partners.
+        Need to cancel? You can release this assignment before service starts. All customers will be transferred to another partner.
       </p>
       <Button className="mt-3 w-full" variant="outline" disabled={pending} onClick={onCancel}>
         {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
