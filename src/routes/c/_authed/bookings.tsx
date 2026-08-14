@@ -15,7 +15,7 @@ import { UWHeader } from "@/components/customer/ui/UWHeader";
 
 
 export const Route = createFileRoute("/c/_authed/bookings")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "My Bookings — Urban Wash" }] }),
   component: BookingsRoute,
 });

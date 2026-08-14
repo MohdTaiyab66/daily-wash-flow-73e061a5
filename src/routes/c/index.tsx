@@ -4,7 +4,7 @@ import { sessionManager } from "@/lib/customer-auth-session";
 import logo from "@/assets/logo.jpeg";
 
 export const Route = createFileRoute("/c/")({
-  ssr: false,
+  ssr: true,
   head: () => ({
     meta: [
       { title: "Urban Wash — Doorstep Car Care" },

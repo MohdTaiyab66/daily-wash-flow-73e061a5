@@ -16,7 +16,7 @@ import { ServicePhotoViewer } from "@/components/customer/ServicePhotoViewer";
 
 
 export const Route = createFileRoute("/c/_authed/bookings/$id")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Booking — Urban Wash" }] }),
   component: BookingDetail,
 });

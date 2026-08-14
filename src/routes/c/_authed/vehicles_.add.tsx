@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/drawer";
 
 export const Route = createFileRoute("/c/_authed/vehicles_/add")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Add Your Vehicle — Urban Wash" }] }),
   component: AddVehicle,
 });

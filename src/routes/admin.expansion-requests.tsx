@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/admin/expansion-requests")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Expansion Requests — Admin" }] }),
   component: ExpansionRequestsAdmin,
 });

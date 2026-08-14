@@ -15,7 +15,7 @@ import { Download, Printer, Search, Filter, ClipboardList, Loader2 } from "lucid
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/service-leads")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Service Leads · Admin" }] }),
   component: ServiceLeadsPage,
 });

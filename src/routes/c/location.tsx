@@ -8,7 +8,7 @@ import { sessionManager } from "@/lib/customer-auth-session";
 // which silently blanked the child and left the previous page (e.g. the
 // verify-OTP screen) visible even though the URL updated correctly.
 export const Route = createFileRoute("/c/location")({
-  ssr: false,
+  ssr: true,
   beforeLoad: async ({ location }) => {
     // Rely on sessionManager to use the canonical client
     const session = await sessionManager.getSession();

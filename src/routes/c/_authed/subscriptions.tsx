@@ -33,7 +33,7 @@ import { getActiveSubscriptionForVehicle, undoCancellation } from "@/lib/subscri
 import { resolveDailyShinePrice } from "@/lib/pricing";
 
 export const Route = createFileRoute("/c/_authed/subscriptions")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "My Plan — Urban Wash" }] }),
   component: MyPlanPage,
 });

@@ -6,7 +6,7 @@ import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { useAuth } from "@/components/customer/AuthProvider";
 
 export const Route = createFileRoute("/c/_authed")({
-  ssr: false,
+  ssr: true,
   component: CustomerAuthedLayout,
 });
 

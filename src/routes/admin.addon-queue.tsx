@@ -9,7 +9,7 @@ import { Bell, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/addon-queue")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Subscription Add-on Queue · Admin" }] }),
   component: AddonQueuePage,
 });

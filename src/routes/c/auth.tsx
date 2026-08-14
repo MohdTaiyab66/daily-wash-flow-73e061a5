@@ -42,7 +42,7 @@ import logo from "@/assets/logo.jpeg";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/c/auth")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Log in — Urban Wash" }] }),
   validateSearch: (search) => z.object({ redirect: z.string().optional().catch(undefined) }).parse(search),
   component: CustomerAuth,

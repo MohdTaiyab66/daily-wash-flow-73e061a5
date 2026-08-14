@@ -34,7 +34,7 @@ const serviceSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/c/_authed/service/$slug")({
-  ssr: false,
+  ssr: true,
   validateSearch: (search) => serviceSearchSchema.parse(search),
   head: ({ params }) => ({ 
     meta: [{ title: `${params.slug.replace(/-/g, ' ').toUpperCase()} — Urban Wash` }] 

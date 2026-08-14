@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Section, Surface, ListRow, ListGroup } from "@/components/customer/ui/kit";
 
 export const Route = createFileRoute("/c/_authed/referrals")({
-  ssr: false,
+  ssr: true,
   head: () => ({ meta: [{ title: "Refer & Earn — Urban Wash" }] }),
   component: ReferralsPage,
 });
