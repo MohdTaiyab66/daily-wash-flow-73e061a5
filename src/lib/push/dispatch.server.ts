@@ -685,3 +685,97 @@ export async function dispatchAdminAlerts(): Promise<number> {
   }
   return rows.length;
 }
+
+/**
+ * Fans out new_booking pushes for a list of open bookings.
+ * Recalculates eligibility for every partner on every tick.
+ */
+export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
+  const sb = await admin();
+  const sendOfferPush = await sender();
+  const { resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
+
+  let totalDispatched = 0;
+
+  for (const b of bookings) {
+    console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
+    
+    // 1. Reconcile/Recalculate eligibility for ALL partners
+    // We run the RPC to ensure subscription_offers exist for all currently eligible partners
+    const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
+      p_broadcast_id: b.broadcast_id
+    });
+    
+    if (recError) {
+      console.error(`[BOOKING-PUSH:ERROR] Reconciliation failed for broadcast=${b.broadcast_id}`, recError);
+      continue;
+    }
+
+    // 2. Fetch all PENDING offers for this broadcast
+    const { data: offers, error: offersError } = await sb
+      .from('marketplace_offers')
+      .select('id, partner_id, incentive')
+      .eq('broadcast_id', b.broadcast_id)
+      .eq('response', 'pending');
+
+    if (offersError) continue;
+
+    console.log(`[BOOKING-PUSH:07] BOOKING_STILL_UNCLAIMED booking_id=${b.booking_id} offer_count=${offers?.length}`);
+
+    // 3. Fan out in parallel
+    const fanout = (offers || []).map(async (o: any) => {
+      try {
+        const [monthly, distance] = await Promise.all([
+          resolvePartnerMonthlyEarning({
+            sb,
+            partnerId: o.partner_id,
+            incentive: Number(o.incentive || b.incentive || 17),
+          }),
+          resolvePartnerBookingDistance({
+            sb,
+            partnerId: o.partner_id,
+            customerLat: b.customer_lat,
+            customerLng: b.customer_lng,
+          })
+        ]);
+
+        const title = `🚗 New Booking Available`;
+        const body = `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
+
+        const dataPayload: Record<string, string> = {
+          type: "new_booking",
+          broadcast_id: String(b.broadcast_id),
+          booking_id: String(b.booking_id),
+          monthly_earnings: monthly.display,
+          area: b.area || '',
+          distance_km: distance.km ? String(distance.km) : "",
+          title,
+          body,
+          action_token: String(o.id),
+        };
+
+        const result = await sendOfferPush({
+          userId: o.partner_id,
+          title,
+          body,
+          data: dataPayload,
+          channelId: "assignments_v4",
+          dataOnly: true,
+          tag: `booking:${b.broadcast_id}`
+        });
+
+        if (result.sent > 0) {
+          console.log(`[BOOKING-PUSH:04] PARTNER_NOTIFICATION_SENT partner=${o.partner_id} booking=${b.booking_id}`);
+          totalDispatched++;
+        }
+      } catch (e) {
+        console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
+      }
+    });
+
+    await Promise.all(fanout);
+  }
+
+  return totalDispatched;
+}
+

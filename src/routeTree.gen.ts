@@ -90,6 +90,7 @@ import { Route as ApiPublicHooksNotificationPushRouteImport } from './routes/api
 import { Route as ApiPublicCronOfferPushDispatchRouteImport } from './routes/api/public/cron/offer-push-dispatch'
 import { Route as ApiPublicCronMonthlyAddonsMaterializeRouteImport } from './routes/api/public/cron/monthly-addons-materialize'
 import { Route as ApiPublicCronMarketplaceTickRouteImport } from './routes/api/public/cron/marketplace-tick'
+import { Route as ApiPublicCronMarketplaceRebroadcastTickRouteImport } from './routes/api/public/cron/marketplace-rebroadcast-tick'
 import { Route as ApiPublicCronMarketplacePushDispatchRouteImport } from './routes/api/public/cron/marketplace-push-dispatch'
 import { Route as ApiPublicCronDarTimeoutsRouteImport } from './routes/api/public/cron/dar-timeouts'
 import { Route as ApiPublicCronDarOfflinePartnersRouteImport } from './routes/api/public/cron/dar-offline-partners'
@@ -519,6 +520,12 @@ const ApiPublicCronMarketplaceTickRoute =
     path: '/api/public/cron/marketplace-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronMarketplaceRebroadcastTickRoute =
+  ApiPublicCronMarketplaceRebroadcastTickRouteImport.update({
+    id: '/api/public/cron/marketplace-rebroadcast-tick',
+    path: '/api/public/cron/marketplace-rebroadcast-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronMarketplacePushDispatchRoute =
   ApiPublicCronMarketplacePushDispatchRouteImport.update({
     id: '/api/public/cron/marketplace-push-dispatch',
@@ -659,6 +666,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
+  '/api/public/cron/marketplace-rebroadcast-tick': typeof ApiPublicCronMarketplaceRebroadcastTickRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -748,6 +756,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
+  '/api/public/cron/marketplace-rebroadcast-tick': typeof ApiPublicCronMarketplaceRebroadcastTickRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -842,6 +851,7 @@ export interface FileRoutesById {
   '/api/public/cron/dar-offline-partners': typeof ApiPublicCronDarOfflinePartnersRoute
   '/api/public/cron/dar-timeouts': typeof ApiPublicCronDarTimeoutsRoute
   '/api/public/cron/marketplace-push-dispatch': typeof ApiPublicCronMarketplacePushDispatchRoute
+  '/api/public/cron/marketplace-rebroadcast-tick': typeof ApiPublicCronMarketplaceRebroadcastTickRoute
   '/api/public/cron/marketplace-tick': typeof ApiPublicCronMarketplaceTickRoute
   '/api/public/cron/monthly-addons-materialize': typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   '/api/public/cron/offer-push-dispatch': typeof ApiPublicCronOfferPushDispatchRoute
@@ -936,6 +946,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
+    | '/api/public/cron/marketplace-rebroadcast-tick'
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
@@ -1025,6 +1036,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
+    | '/api/public/cron/marketplace-rebroadcast-tick'
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
@@ -1118,6 +1130,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/dar-offline-partners'
     | '/api/public/cron/dar-timeouts'
     | '/api/public/cron/marketplace-push-dispatch'
+    | '/api/public/cron/marketplace-rebroadcast-tick'
     | '/api/public/cron/marketplace-tick'
     | '/api/public/cron/monthly-addons-materialize'
     | '/api/public/cron/offer-push-dispatch'
@@ -1150,6 +1163,7 @@ export interface RootRouteChildren {
   ApiPublicCronDarOfflinePartnersRoute: typeof ApiPublicCronDarOfflinePartnersRoute
   ApiPublicCronDarTimeoutsRoute: typeof ApiPublicCronDarTimeoutsRoute
   ApiPublicCronMarketplacePushDispatchRoute: typeof ApiPublicCronMarketplacePushDispatchRoute
+  ApiPublicCronMarketplaceRebroadcastTickRoute: typeof ApiPublicCronMarketplaceRebroadcastTickRoute
   ApiPublicCronMarketplaceTickRoute: typeof ApiPublicCronMarketplaceTickRoute
   ApiPublicCronMonthlyAddonsMaterializeRoute: typeof ApiPublicCronMonthlyAddonsMaterializeRoute
   ApiPublicCronOfferPushDispatchRoute: typeof ApiPublicCronOfferPushDispatchRoute
@@ -1726,6 +1740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronMarketplaceTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/marketplace-rebroadcast-tick': {
+      id: '/api/public/cron/marketplace-rebroadcast-tick'
+      path: '/api/public/cron/marketplace-rebroadcast-tick'
+      fullPath: '/api/public/cron/marketplace-rebroadcast-tick'
+      preLoaderRoute: typeof ApiPublicCronMarketplaceRebroadcastTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/marketplace-push-dispatch': {
       id: '/api/public/cron/marketplace-push-dispatch'
       path: '/api/public/cron/marketplace-push-dispatch'
@@ -2038,6 +2059,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronDarTimeoutsRoute: ApiPublicCronDarTimeoutsRoute,
   ApiPublicCronMarketplacePushDispatchRoute:
     ApiPublicCronMarketplacePushDispatchRoute,
+  ApiPublicCronMarketplaceRebroadcastTickRoute:
+    ApiPublicCronMarketplaceRebroadcastTickRoute,
   ApiPublicCronMarketplaceTickRoute: ApiPublicCronMarketplaceTickRoute,
   ApiPublicCronMonthlyAddonsMaterializeRoute:
     ApiPublicCronMonthlyAddonsMaterializeRoute,
