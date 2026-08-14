@@ -8,11 +8,22 @@ export const acceptMarketplaceOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => idInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await ((context as any).supabase as any).rpc("mp_accept_offer", {
+    const { data: bcast } = await ((context as any).supabase as any)
+      .from("marketplace_broadcasts")
+      .select("booking_id")
+      .eq("id", data.broadcastId)
+      .single();
+    if (!bcast) throw new Error("Broadcast not found");
+
+    const { data: res, error } = await ((context as any).supabase as any).rpc("mark_booking_accepted", {
+      p_booking_id: bcast.booking_id,
+      p_partner_id: (context as any).userId,
       p_broadcast_id: data.broadcastId,
     });
     if (error) throw new Error(error.message);
-    return res as { ok: boolean; reason?: string; assignment_id?: string; subscription_id?: string };
+    if (!res) throw new Error("Offer already accepted by another partner");
+    return { ok: true } as { ok: boolean; reason?: string; assignment_id?: string; subscription_id?: string };
+
   });
 
 export const declineMarketplaceOffer = createServerFn({ method: "POST" })
