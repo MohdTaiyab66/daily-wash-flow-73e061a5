@@ -446,38 +446,49 @@ function AssignmentsPage() {
       </div>
 
 
-      {/* Commitment — compact */}
-      <Card className="mt-3 p-5">
-        <div className="flex items-baseline justify-between">
+      {/* Commitment — Premium White Card */}
+      <Card className="mt-3 p-6 border-0 shadow-sm">
+        <div className="flex items-baseline justify-between mb-2">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Commitment</p>
-            <span className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-              commitment.tone === "max" ? "bg-primary/15 text-primary"
-              : commitment.tone === "reco" ? "bg-success/15 text-[color:var(--success)]"
-              : "bg-muted text-muted-foreground"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                commitment.tone === "max" ? "bg-primary"
-                : commitment.tone === "reco" ? "bg-success"
-                : "bg-muted-foreground"
-              }`} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Commitment</p>
+            <span className={cn(
+              "mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors",
+              commitment.tone === "max" ? "bg-primary/10 text-primary"
+              : commitment.tone === "reco" ? "bg-emerald-50 text-emerald-600"
+              : "bg-neutral-100 text-neutral-500"
+            )}>
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                commitment.tone === "max" ? "bg-primary animate-pulse"
+                : commitment.tone === "reco" ? "bg-emerald-500"
+                : "bg-neutral-400"
+              )} />
               {commitment.label}
             </span>
           </div>
-          <p className="text-3xl font-semibold tracking-tight">{duration}<span className="ml-1 text-base text-muted-foreground">Days</span></p>
+          <p className="text-3xl font-bold tracking-tight">{duration}<span className="ml-1 text-sm font-medium text-muted-foreground/40 uppercase">Days</span></p>
         </div>
-        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-4 opacity-90" />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground"><span>{minDays} days</span><span>{maxDays} days</span></div>
-        <p className="mt-3 text-[11px] text-muted-foreground">Weekly payout · Priority customers · {offDayFull}s off</p>
+        <Slider value={[duration]} min={minDays} max={maxDays} step={1} onValueChange={(v) => { setDurationTouched(true); setDuration(v[0]); }} className="mt-6 mb-2" />
+        <div className="flex justify-between text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest px-1">
+          <span>{minDays} Days Min</span>
+          <span>{maxDays} Days Max</span>
+        </div>
+        <p className="mt-5 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider flex items-center gap-2">
+          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+          Weekly Payout • {offDayFull}s Off
+        </p>
 
-        {/* Merged monthly estimate — premium: earnings dominate, meta stacked underneath */}
-        <div className="mt-3 rounded-xl bg-muted/60 px-4 py-4">
-          <p className="text-3xl font-semibold tracking-tight tabular-nums text-primary">
-            ₹{animMonthly.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Estimated this month
-          </p>
+        {/* Monthly Estimate Stats */}
+        <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-neutral-100">
+          <div className="bg-neutral-50 rounded-2xl p-4">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Monthly Earn</p>
+            <p className="text-xl font-bold tabular-nums text-primary">₹{animMonthly.toLocaleString("en-IN")}</p>
+          </div>
+          <div className="bg-neutral-50 rounded-2xl p-4">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">Avg per day</p>
+            <p className="text-xl font-bold tabular-nums">₹{animPerDay}</p>
+          </div>
+        </div>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] tabular-nums text-muted-foreground">
             <span><span className="font-semibold text-foreground">{animMonthlyServices.toLocaleString("en-IN")}</span> services</span>
             <span><span className="font-semibold text-foreground">{workingDays}</span> days</span>
