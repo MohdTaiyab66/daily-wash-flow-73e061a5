@@ -10,6 +10,8 @@
  *  - record `push_delivered` / `opened` events in `offer_delivery_events`
  */
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
+import { InAppNotification } from "@/components/ui/notification-banner";
+
 import { App as CapApp } from "@capacitor/app";
 import { Preferences } from "@capacitor/preferences";
 import { supabase } from "@/integrations/supabase/client";
