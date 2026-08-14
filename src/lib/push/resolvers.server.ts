@@ -32,7 +32,7 @@ export async function resolvePartnerBookingEarning(params: {
 }) {
   console.log(`[PARTNER-BOOKING-CONTEXT:01] BOOKING_CONTEXT_START partner=${params.partnerId} offer=${params.offerId}`);
   
-  // Existing business rule: Earning = Marketplace Incentive
+  // Existing business rule: Earning = Marketplace Incentive (Daily)
   const amount = params.incentive;
   
   console.log(`[PARTNER-BOOKING-CONTEXT:02] EARNING_RESOLVED partner=${params.partnerId} amount=${amount}`);
