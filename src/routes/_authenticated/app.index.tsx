@@ -88,7 +88,7 @@ function HomePage() {
 
   const availableCount = Number(availableWork?.available_customers ?? 0);
   const potentialEarnings = Number(availableWork?.total_earnings ?? availableWork?.daily_earnings ?? 0);
-  const potentialMonthlyExtra = Number(availableWork?.monthly_earnings ?? (potentialEarnings * 26));
+  const potentialMonthlyExtra = Number((availableWork as any)?.monthly_earnings ?? (potentialEarnings * 26));
   const areaName = partner?.home_area ?? "Your Area";
 
 
