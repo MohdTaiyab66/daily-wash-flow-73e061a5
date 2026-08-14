@@ -613,6 +613,8 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         action_token: String(o.id),
       };
 
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       const result = await sendOfferPush({
         userId: o.partner_id,
         title,
@@ -622,6 +624,8 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         dataOnly: true, // Native Kotlin heads-up path
         tag: `release:${bcast.id}`
       });
+      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+
 
       if (result.sent > 0) {
         console.log(`[RELEASED-WORK-PUSH:05] FCM_SENT partner=${o.partner_id} message_id=${result.results[0]?.messageId}`);
