@@ -52,6 +52,18 @@ function HomePage() {
     refetchInterval: 30000,
   });
 
+  const { data: bookingRequests = [] } = useQuery({
+    queryKey: ["partner-booking-requests"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_partner_booking_requests");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: online && !!partner?.home_area,
+    refetchInterval: 30000,
+  });
+
+
   if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
   }
@@ -88,6 +100,7 @@ function HomePage() {
 
   const availableCount = Number(availableWork?.available_customers ?? 0);
   const potentialEarnings = Number(availableWork?.total_earnings ?? availableWork?.daily_earnings ?? 0);
+  const potentialMonthlyExtra = Number((availableWork as any)?.monthly_earnings ?? (potentialEarnings * 26));
   const areaName = partner?.home_area ?? "Your Area";
 
 
@@ -223,13 +236,13 @@ function HomePage() {
               </p>
             )}
           </Card>
-        ) : availableCount > 0 ? (
+        ) : (availableCount > 0 || (bookingRequests?.length ?? 0) > 0) ? (
           /* WORK AVAILABLE */
           <Card className="overflow-hidden border border-primary/20 shadow-md bg-white p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Work Available</p>
-                <h2 className="text-xl font-bold mt-1">{availableCount} Customers</h2>
+                <h2 className="text-xl font-bold mt-1">{(availableCount + (bookingRequests?.length ?? 0))} Customers</h2>
               </div>
               <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -240,6 +253,7 @@ function HomePage() {
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Potential</p>
                 <p className="text-lg font-bold text-primary">₹{potentialEarnings}</p>
+                <p className="text-[9px] text-primary/60 font-bold">+₹{potentialMonthlyExtra.toLocaleString("en-IN")}/mo</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Area</p>
@@ -249,11 +263,12 @@ function HomePage() {
 
             <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
               <Link to="/app/assignments">
-                View Work
+                View Available Work
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </Card>
+
         ) : (
           /* NO WORK YET */
           <Card className="flex flex-col items-center text-center p-6 border-dashed bg-neutral-50/50">

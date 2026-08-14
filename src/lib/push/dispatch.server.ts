@@ -174,9 +174,10 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
+      const ts_dispatch_start = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch_start}`);
       console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
+
 
 
 
@@ -189,6 +190,9 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         dataOnly: true,
         tag: r.offer_id,
       });
+      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
+
+
 
       const successCount = result.sent;
       const failureCount = result.failed;
@@ -416,7 +420,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
         console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
       }
-      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
+      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
+
 
 
       const result = await sendOfferPush({
@@ -613,6 +618,8 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         action_token: String(o.id),
       };
 
+      const ts_dispatch = Date.now();
+      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       const result = await sendOfferPush({
         userId: o.partner_id,
         title,
@@ -622,6 +629,9 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         dataOnly: true, // Native Kotlin heads-up path
         tag: `release:${bcast.id}`
       });
+      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
+
+
 
       if (result.sent > 0) {
         console.log(`[RELEASED-WORK-PUSH:05] FCM_SENT partner=${o.partner_id} message_id=${result.results[0]?.messageId}`);
