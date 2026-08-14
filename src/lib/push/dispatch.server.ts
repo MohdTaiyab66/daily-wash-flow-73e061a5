@@ -581,7 +581,7 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
           renewalDate: s.subscription?.renewal_date
         })
       ));
-      const totalMonthly = monthlyRes.reduce((sum, m) => sum + m.monthlyAmount, 0);
+      const totalMonthly = monthlyRes.reduce((sum: number, m: any) => sum + m.monthlyAmount, 0);
       const monthlyDisplay = `+₹${totalMonthly}/month`;
 
       // 5. Resolve partner-specific distance (from first customer as representative)
