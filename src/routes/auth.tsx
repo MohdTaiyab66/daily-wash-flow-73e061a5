@@ -89,7 +89,7 @@ function AuthPage() {
           const digits = code.replace(/\D/g, "").slice(0, otpLength).split("");
           const next = Array(otpLength).fill("").map((_, i) => digits[i] ?? "");
           setOtpDigits(next);
-          if (next.every((d) => d !== "")) void submitOtp(next.join(""));
+          if (next.every((d) => d !== "")) await submitOtp(next.join(""));
         }
       })
       .catch(() => {});
@@ -137,6 +137,7 @@ function AuthPage() {
     haptic(20);
     setLoading(true);
     try {
+      console.log("[PARTNER-AUTH:SUBMIT_OTP_CALLED]", { code });
       console.log("[PARTNER-AUTH:05] OTP_VERIFY_STARTED", { phone, code });
       const role = isAdminLogin ? "admin" : "partner";
       const prepared = await prepareLogin({ data: { phone, otp: code, role, fullName: "" } });
@@ -191,14 +192,14 @@ function AuthPage() {
       const lastFilled = Math.min(idx + chars.length, otpLength - 1);
       otpRefs.current[lastFilled]?.focus();
       haptic(8);
-      if (next.every((d) => d !== "")) void submitOtp(next.join(""));
+      if (next.every((d) => d !== "")) await submitOtp(next.join(""));
       return;
     }
     next[idx] = clean[0];
     setOtpDigits(next);
     haptic(8);
     if (idx < otpLength - 1) otpRefs.current[idx + 1]?.focus();
-    if (next.every((d) => d !== "")) void submitOtp(next.join(""));
+    if (next.every((d) => d !== "")) await submitOtp(next.join(""));
   };
 
   const handleOtpKey = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
