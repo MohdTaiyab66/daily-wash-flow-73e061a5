@@ -116,10 +116,31 @@ function HomePage() {
     }
   };
 
-  const availableCount = Number(availableWork?.available_customers ?? 0);
+  // Recovered marketplace opportunities (new_booking + assignment_released).
+  const recoveredCount = openOffers.reduce(
+    (sum: number, o: any) => sum + Math.max(1, Number(o?.customer_count ?? 1)),
+    0,
+  );
+  const recoveredMonthly = openOffers.reduce(
+    (sum: number, o: any) =>
+      sum +
+      Number(
+        o?.earning_monthly ??
+          (Number(o?.broadcast?.subscription?.amount ?? 0) || Number(o?.incentive ?? 0) * 26),
+      ),
+    0,
+  );
+  const recoveredDistanceM = openOffers
+    .map((o: any) => Number(o?.distance_from_route_m ?? NaN))
+    .filter((d: number) => Number.isFinite(d) && d > 0)
+    .sort((a: number, b: number) => a - b)[0];
+
+  const availableCount = Number(availableWork?.available_customers ?? 0) + recoveredCount;
   const potentialEarnings = Number(availableWork?.total_earnings ?? availableWork?.daily_earnings ?? 0);
-  const potentialMonthlyExtra = Number((availableWork as any)?.monthly_earnings ?? (potentialEarnings * 26));
+  const potentialMonthlyExtra =
+    Number((availableWork as any)?.monthly_earnings ?? potentialEarnings * 26) + recoveredMonthly;
   const areaName = partner?.home_area ?? "Your Area";
+
 
 
   return (
