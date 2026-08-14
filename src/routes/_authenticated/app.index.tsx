@@ -82,31 +82,23 @@ function HomePage() {
         </div>
       </header>
 
-      {/* AVAILABILITY */}
-      <Card className={cn(
-        "flex items-center justify-between px-4 py-3 border transition-colors duration-300",
-        online ? "bg-emerald-50/50 border-emerald-100" : "bg-muted/30 border-border"
-      )}>
+      {/* AVAILABILITY COMPACT */}
+      <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
           <div className={cn(
-            "h-3 w-3 rounded-full shrink-0",
-            online ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.1)] animate-pulse" : "bg-muted-foreground/40"
+            "h-2.5 w-2.5 rounded-full shrink-0",
+            online ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" : "bg-muted-foreground/40"
           )} />
-          <div>
-            <p className={cn("text-sm font-bold uppercase tracking-wide", online ? "text-emerald-700" : "text-muted-foreground")}>
-              {online ? "You're Online" : "You're Offline"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {online ? "Available for new assignments" : "Not receiving new assignments"}
-            </p>
-          </div>
+          <span className={cn("text-xs font-bold uppercase tracking-widest", online ? "text-emerald-600" : "text-muted-foreground")}>
+            {online ? "System Online" : "System Offline"}
+          </span>
         </div>
         <Switch 
           checked={online} 
           onCheckedChange={handleToggle}
-          className="data-[state=checked]:bg-emerald-500" 
+          className="data-[state=checked]:bg-emerald-500 scale-90" 
         />
-      </Card>
+      </div>
 
       {/* PRIMARY WORK AREA */}
       <section className="space-y-4">
