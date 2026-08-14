@@ -394,6 +394,90 @@ export function MarketplaceOffersList() {
           ))}
         </div>
       )}
+      
+      {/* Released Customers Details Modal */}
+      {selectedAssignment && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b flex items-center justify-between bg-neutral-50">
+              <div>
+                <h3 className="text-lg font-bold">Released Work</h3>
+                <p className="text-xs text-muted-foreground">{releasedCustomers.data?.length ?? 0} Customers</p>
+              </div>
+              <button 
+                onClick={() => setSelectedAssignment(null)}
+                className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              {releasedCustomers.isLoading ? (
+                <div className="py-12 flex flex-col items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-neutral-200 mb-2" />
+                  <p className="text-xs text-muted-foreground">Loading customers...</p>
+                </div>
+              ) : (releasedCustomers.data ?? []).map((svc: any) => (
+                <div key={svc.id} className="p-3 rounded-2xl border border-neutral-100 bg-white flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary">
+                      <Car className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-neutral-900">
+                        {svc.vehicle?.make} {svc.vehicle?.model}
+                      </p>
+                      <p className="text-[10px] font-medium text-muted-foreground">
+                        {svc.vehicle?.registration_number} · ₹{svc.rate_per_car}/day
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-primary">+₹{Math.round(Number(svc.rate_per_car) * 26)}</p>
+                    <p className="text-[9px] font-medium text-muted-foreground uppercase">Monthly</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-5 border-t bg-neutral-50 flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-12 rounded-xl font-bold border-2"
+                onClick={() => setSelectedAssignment(null)}
+              >
+                Close
+              </Button>
+              <Button 
+                className="flex-1 h-12 rounded-xl bg-neutral-900 text-white font-bold"
+                onClick={async () => {
+                   const broadcastId = offers.find(o => (o as any).assignment_id === selectedAssignment)?.broadcast_id;
+                   if (!broadcastId) return;
+                   
+                   try {
+                     const { acceptMarketplaceOffer } = await import("@/lib/marketplace.functions");
+                     // @ts-ignore
+                     const res = await acceptMarketplaceOffer({ data: { broadcastId } });
+                     if (res.ok) {
+                       toast.success("Successfully claimed released work!");
+                       setSelectedAssignment(null);
+                       qc.invalidateQueries({ queryKey: ["marketplace-offers"] });
+                       qc.invalidateQueries({ queryKey: ["my-assignment"] });
+                     } else {
+                       toast.error(res.reason === "already_taken" ? "Work already claimed by another partner" : "Failed to claim work");
+                     }
+                   } catch (e: any) {
+                     toast.error(e.message || "Failed to claim work");
+                   }
+                }}
+              >
+                Claim All Work
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
