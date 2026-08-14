@@ -245,10 +245,10 @@ function MyAssignmentPage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel today's assignment?</AlertDialogTitle>
+            <AlertDialogTitle>Cancel assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your reserved customers will be released and assigned to another partner.
-              You can create a new assignment later if routes are still available.
+              All customers in your batch will be released to other Urban Wash partners in this area.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -430,7 +430,7 @@ function CancelSection({ canCancel, reason, deadlineAt, routeStarted, pending, o
   return (
     <Wrap>
       <p className="mt-1 text-xs text-muted-foreground">
-        Need to cancel your assignment? You can cancel before today's first service begins.
+        Need to cancel? You can release this assignment before service starts. All customers will be transferred to another partner.
       </p>
       <Button className="mt-3 w-full" variant="outline" disabled={pending} onClick={onCancel}>
         {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}

@@ -24,11 +24,12 @@ export const Route = createFileRoute("/api/public/cron/marketplace-rebroadcast-t
           await (supabaseAdmin as any).rpc("sweep_subscription_offers");
           
           // 2. Dispatch the fan-out
+          // Use the internal trigger which recalculates eligibility
           const { dispatchMarketplacePushes } = await import("@/lib/push/dispatch-trigger.functions");
           const result = await dispatchMarketplacePushes();
           
           if (result.ok) {
-            console.log("[BOOKING-PUSH:CRON] NEXT_TICK");
+            console.log(`[BOOKING-PUSH:CRON] NEXT_TICK total_dispatched=${result.totalDispatched ?? 0}`);
           }
           
           return new Response("ok");

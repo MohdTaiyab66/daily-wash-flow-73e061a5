@@ -2056,6 +2056,7 @@ export type Database = {
           distance_from_route_m: number | null
           id: string
           incentive: number
+          next_retry_at: string | null
           partner_id: string
           responded_at: string | null
           response: string
@@ -2069,6 +2070,7 @@ export type Database = {
           distance_from_route_m?: number | null
           id?: string
           incentive: number
+          next_retry_at?: string | null
           partner_id: string
           responded_at?: string | null
           response?: string
@@ -2082,6 +2084,7 @@ export type Database = {
           distance_from_route_m?: number | null
           id?: string
           incentive?: number
+          next_retry_at?: string | null
           partner_id?: string
           responded_at?: string | null
           response?: string

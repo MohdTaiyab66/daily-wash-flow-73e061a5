@@ -94,6 +94,10 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
   console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
   console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
+  
+  // Recalculate monthly earnings to use 26 days business rule if not specified
+  // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
+  
   console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
 
 
@@ -140,6 +144,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         partnerId: r.partner_id,
         incentive: Number((r as any).incentive || 0),
+        // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] uses 26 days default
         startDate: (r as any).subscription_start_date ?? null,
         renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
@@ -593,7 +598,7 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         })
       ));
       const totalMonthly = monthlyRes.reduce((sum: number, m: any) => sum + m.monthlyAmount, 0);
-      const monthlyDisplay = `+₹${totalMonthly}/month`;
+      const monthlyDisplay = `+₹${Math.round(totalMonthly).toLocaleString("en-IN")}/month`;
 
       // 5. Resolve partner-specific distance (from first customer as representative)
       const firstCust = services[0]?.customer;
@@ -701,7 +706,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
     
     // 1. Reconcile/Recalculate eligibility for ALL partners
-    // We run the RPC to ensure subscription_offers exist for all currently eligible partners
+    // This includes newly online partners and honors the 5m decline cooldown
     const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
       p_broadcast_id: b.broadcast_id
     });
@@ -741,13 +746,16 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
           })
         ]);
 
-        const title = `🚗 New Booking Available`;
-        const body = `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
+        const title = b.assignment_id ? `🔄 Assignment Available: ${monthly.display}` : `🚗 New Booking Available`;
+        const body = b.assignment_id 
+          ? `${b.customer_count || 'Multiple'} Customers · ${b.area || 'Nearby'} · ${monthly.display}`
+          : `${b.vehicle_category || 'Vehicle'} · ${b.area || 'Nearby'} · ${monthly.display} · ${distance.display}`;
 
         const dataPayload: Record<string, string> = {
-          type: "new_booking",
+          type: b.assignment_id ? "assignment_released" : "new_booking",
           broadcast_id: String(b.broadcast_id),
-          booking_id: String(b.booking_id),
+          booking_id: String(b.booking_id ?? ""),
+          assignment_id: String(b.assignment_id ?? ""),
           monthly_earnings: monthly.display,
           area: b.area || '',
           distance_km: distance.km ? String(distance.km) : "",

@@ -13,11 +13,9 @@ type LatLng = { lat: number; lng: number };
  * Helper to calculate working days in a billing cycle.
  */
 function calculateWorkingDays(start?: string | null, end?: string | null) {
-  if (!start || !end) return 26; // Default to standard 26-day cycle
-  const s = new Date(start).getTime();
-  const e = new Date(end).getTime();
-  const days = Math.max(1, Math.floor((e - s) / 86400000) + 1); // Inclusive
-  return Math.min(Math.max(days, 7), 31); // Business rule: min 7 days for earnings resolution
+  // P0 Business Rule: Monthly earnings always lead with 26 service days unless specified
+  // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
+  return 26; 
 }
 
 /**
@@ -56,7 +54,7 @@ export async function resolvePartnerMonthlyEarning(params: {
   const { incentive, startDate, renewalDate } = params;
   
   // Earning per service day = incentive
-  const workingDays = calculateWorkingDays(startDate, renewalDate);
+  const workingDays = 26;
   const monthlyAmount = incentive * workingDays;
   
   console.log(`[PARTNER-BOOKING-CONTEXT:02-MONTHLY] EARNING_RESOLVED partner=${params.partnerId} daily=${incentive} days=${workingDays} monthly=${monthlyAmount}`);

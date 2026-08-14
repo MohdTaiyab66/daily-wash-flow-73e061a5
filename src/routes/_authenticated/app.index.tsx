@@ -101,6 +101,7 @@ function HomePage() {
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;
+  const anyStarted = today.some(s => !!s.started_at);
   
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const now = new Date();
@@ -126,7 +127,7 @@ function HomePage() {
       sum +
       Number(
         o?.earning_monthly ??
-          (Number(o?.broadcast?.subscription?.amount ?? 0) || Number(o?.incentive ?? 0) * 26),
+          (Number(o?.incentive ?? 0) * 26),
       ),
     0,
   );
@@ -262,12 +263,21 @@ function HomePage() {
               </div>
             </div>
 
-            <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-              <Link to="/app/live">
-                View Assignment
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
+                <Link to="/app/live">
+                  View Assignment
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              
+              {/* CANCEL ASSIGNMENT - [PARTNER-CANCELLATION:UI] */}
+              {!anyStarted && (
+                <Button asChild variant="ghost" className="w-full text-xs text-muted-foreground font-medium uppercase tracking-wider hover:bg-red-50 hover:text-red-600 transition-colors">
+                  <Link to="/app/my-assignment">Cancel Assignment</Link>
+                </Button>
+              )}
+            </div>
             
             {assignment.expected_start_time && (
               <p className="mt-3 text-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
