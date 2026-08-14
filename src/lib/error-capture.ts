@@ -10,9 +10,20 @@ function record(error: unknown) {
 
 if (typeof globalThis.addEventListener === "function") {
   globalThis.addEventListener("error", (event) => record((event as ErrorEvent).error ?? event));
-  globalThis.addEventListener("unhandledrejection", (event) =>
-    record((event as PromiseRejectionEvent).reason),
-  );
+  globalThis.addEventListener("unhandledrejection", (event) => {
+    const reason = (event as PromiseRejectionEvent).reason;
+    // Suppress noise from browser extensions (e.g. MetaMask)
+    const isExtensionError =
+      reason?.stack?.includes("chrome-extension://") ||
+      reason?.message?.includes("MetaMask") ||
+      (typeof reason === "string" && reason.includes("MetaMask"));
+
+    if (isExtensionError) {
+      console.warn("[ERROR-CAPTURE] Suppressed extension error:", reason);
+      return;
+    }
+    record(reason);
+  });
 }
 
 export function consumeLastCapturedError(): unknown {
