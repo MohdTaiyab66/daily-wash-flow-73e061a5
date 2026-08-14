@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2 } from "lucide-react";
+import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/notifications")({
   component: NotificationsPage,
