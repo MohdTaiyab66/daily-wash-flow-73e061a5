@@ -279,7 +279,7 @@ Please think step-by-step in order to resolve it.
 Failed to connect to MetaMask
 
 {
-  "timestamp": 1786733729634,
+  "timestamp": 1786735407020,
   "error_type": "UNHANDLED_PROMISE_REJECTION",
   "filename": "Unknown file",
   "lineno": 0,
