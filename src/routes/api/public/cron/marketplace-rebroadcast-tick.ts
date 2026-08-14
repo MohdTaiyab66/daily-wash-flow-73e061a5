@@ -12,7 +12,9 @@ export const Route = createFileRoute("/api/public/cron/marketplace-rebroadcast-t
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthorizedCron(request)) return cronForbidden();
+        const isAuthorized = isAuthorizedCron(request);
+        if (!isAuthorized) return cronForbidden();
+
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
