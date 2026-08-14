@@ -108,16 +108,17 @@ function CustomerHome() {
 
 
   /**
-   * Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
-   * 
-   * For the code present, I get the error below.
+   * '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+   *                                         
+   *                                             
+   *                                             For the code present, I get the error below.
    * 
    * Please think step-by-step in order to resolve it.
    * ```
    * Failed to connect to MetaMask
    * 
    * {
-   *   "timestamp": 1786740967237,
+   *   "timestamp": 1786741048480,
    *   "error_type": "UNHANDLED_PROMISE_REJECTION",
    *   "filename": "Unknown file",
    *   "lineno": 0,
