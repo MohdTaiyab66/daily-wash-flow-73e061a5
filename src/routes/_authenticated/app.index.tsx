@@ -87,8 +87,9 @@ function HomePage() {
   };
 
   const availableCount = Number(availableWork?.available_customers ?? 0);
-  const potentialEarnings = Number(availableWork?.potential_earnings ?? 0);
+  const potentialEarnings = Number(availableWork?.total_earnings ?? availableWork?.daily_earnings ?? 0);
   const areaName = partner?.home_area ?? "Your Area";
+
 
   return (
     <div className="mx-auto max-w-md px-5 pb-8 pt-3 space-y-6">
