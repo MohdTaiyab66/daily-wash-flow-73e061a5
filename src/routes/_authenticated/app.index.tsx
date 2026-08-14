@@ -262,12 +262,21 @@ function HomePage() {
               </div>
             </div>
 
-            <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-              <Link to="/app/live">
-                View Assignment
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
+                <Link to="/app/live">
+                  View Assignment
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              
+              {/* CANCEL ASSIGNMENT - [PARTNER-CANCELLATION:UI] */}
+              {!anyStarted && (
+                <Button asChild variant="ghost" className="w-full text-xs text-muted-foreground font-medium uppercase tracking-wider hover:bg-red-50 hover:text-red-600 transition-colors">
+                  <Link to="/app/my-assignment">Cancel Assignment</Link>
+                </Button>
+              )}
+            </div>
             
             {assignment.expected_start_time && (
               <p className="mt-3 text-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider">

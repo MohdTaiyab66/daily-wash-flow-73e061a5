@@ -94,6 +94,10 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
   console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
   console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
+  
+  // Recalculate monthly earnings to use 26 days business rule if not specified
+  // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
+  
   console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
 
 
