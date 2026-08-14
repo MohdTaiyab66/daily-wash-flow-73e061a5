@@ -603,20 +603,21 @@ function AssignmentsPage() {
 
       {/* Today's Goal — becomes an emotional anchor above the CTA */}
       {preview && (fullyAvailable || partialAvailable) && (
-        <Card className="mt-3 p-4">
-          <div className="flex items-center justify-between">
+        <Card className="mt-4 p-5 border-0 bg-neutral-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Today's Goal</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">
-                0 <span className="text-base font-normal text-muted-foreground">/ {acceptableCars} Completed</span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Today's Goal</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums">
+                0 <span className="text-sm font-medium text-muted-foreground/40 uppercase">/ {acceptableCars} Customers</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Potential</p>
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Potential</p>
+              <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums text-primary">₹{acceptableEarn.toLocaleString("en-IN")}</p>
             </div>
           </div>
-          <Progress value={0} className="mt-3 h-1.5" />
+          <Progress value={0} className="h-1.5 bg-neutral-200" />
         </Card>
       )}
 
