@@ -324,6 +324,7 @@ function AssignmentsPage() {
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
   const acceptableEarn = acceptableCars * rate;
+
   const fullyAvailable = !!previewSafe && availableInArea >= cars;
   const partialAvailable = !!previewSafe && availableInArea > 0 && availableInArea < cars;
   const noneAvailable = !!previewSafe && availableInArea === 0;
@@ -345,11 +346,19 @@ function AssignmentsPage() {
 
   const monthlyServices = workingDays * cars;
   const monthlyEarn = workingDays * dailyEarn;
+  
+  // Potential monthly includes both currently configured assignment and extra available work
+  const potentialMonthlyExtra = (bookingRequests ?? []).reduce((sum: number, req: any) => {
+    return sum + (Number((req as any).incentive || rate) * workingDays);
+  }, 0);
+  
+  const totalPotentialMonthly = monthlyEarn + potentialMonthlyExtra;
+
   const perDayEarn = workingDays > 0 ? Math.round(monthlyEarn / workingDays) : 0;
 
   const animCars = useAnimatedNumber(cars);
   const animEarn = useAnimatedNumber(dailyEarn);
-  const animMonthly = useAnimatedNumber(monthlyEarn);
+  const animMonthly = useAnimatedNumber(totalPotentialMonthly);
   const animMonthlyServices = useAnimatedNumber(monthlyServices);
   const animPerDay = useAnimatedNumber(perDayEarn);
   const commitment = commitmentLabel(duration, minDays, maxDays);
@@ -403,8 +412,8 @@ function AssignmentsPage() {
           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Customers</p>
         </div>
         <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-          <p className="text-lg font-bold text-primary">₹{acceptableEarn}</p>
-          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Earnings</p>
+          <p className="text-lg font-bold text-primary">₹{Math.round(totalPotentialMonthly / 1000)}k</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Potential</p>
         </div>
         <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
           <p className="text-lg font-bold">{estKm}km</p>
@@ -447,8 +456,15 @@ function AssignmentsPage() {
 
         <div className="space-y-3">
           {/* MarketplaceOffersList handles the actual customer cards/offers */}
-          <MarketplaceOffersList />
+          <MarketplaceOffersList 
+            onViewCustomers={(assignmentId) => {
+              // This could open a dedicated modal or navigate to a details view
+              console.log("Viewing customers for assignment:", assignmentId);
+              toast.info("Loading customer details...");
+            }}
+          />
         </div>
+
       </section>
 
       {/* STICKY BOTTOM CTA */}

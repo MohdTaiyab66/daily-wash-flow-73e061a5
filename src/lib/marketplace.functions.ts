@@ -85,6 +85,29 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
     }));
   });
 
+export const getReleasedAssignmentCustomers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ assignmentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as any;
+    // Unstarted work released to marketplace is status='pending' with the assignment_id preserved
+    const { data: services, error } = await (supabase as any)
+      .from("services")
+      .select(`
+        id, 
+        status, 
+        rate_per_car,
+        vehicle:customer_vehicles ( make, model, registration_number ),
+        customer:customer_profiles ( first_name )
+      `)
+      .eq("assignment_id", data.assignmentId)
+      .eq("status", "pending");
+    
+    if (error) throw new Error(error.message);
+    return services ?? [];
+  });
+
+
 
 
 /**

@@ -22,7 +22,7 @@ const DECLINE_COOLDOWN_MS = 45_000;
  *  - Applies a 45s cooldown after Decline so partners aren't spammed with the
  *    same-or-worse offer, while still surfacing genuinely better ones.
  */
-export function MarketplaceOffersList() {
+export function MarketplaceOffersList({ onViewCustomers }: { onViewCustomers?: (assignmentId: string) => void }) {
   const qc = useQueryClient();
   const fetchOffers = useServerFn(getPartnerOpenOffers);
   const q = useQuery({
@@ -369,8 +369,15 @@ export function MarketplaceOffersList() {
               key={o.id}
               offer={o}
               compact
-              onAccept={() => handleAccept(o)}
+              onAccept={() => {
+                if ((o as any).type === "assignment_released" && onViewCustomers) {
+                  onViewCustomers(o.assignment_id);
+                } else {
+                  handleAccept(o);
+                }
+              }}
               onDecline={() => handleDecline(o)}
+
             />
           ))}
         </div>

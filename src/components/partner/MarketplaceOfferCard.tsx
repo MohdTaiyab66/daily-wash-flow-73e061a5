@@ -203,11 +203,15 @@ export function MarketplaceOfferCard({
     staleTime: 30_000,
   });
 
+  const isRelease = (offer as any).type === "assignment_released";
   const v = offer.broadcast.vehicle;
-  const label = v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
-  const areaName = offer.broadcast.service_area?.name ?? "Nearby area";
+  const label = isRelease 
+    ? `🚗 ${(offer as any).customer_count ?? "Multiple"} Customers` 
+    : v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
+  const areaName = (offer as any).area ?? offer.broadcast.service_area?.name ?? "Nearby area";
   const dist = offer.distance_from_route_m ?? null;
-  const impact = offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
+  const impact = isRelease ? null : offer.route_impact_m ?? (dist ? Math.max(50, dist * 2) : null);
+
 
   
   // Use resolved earning/distance if available (from Push payload or backend enrich)
@@ -340,15 +344,15 @@ export function MarketplaceOfferCard({
       )}
     >
       <div className="p-4">
-        {/* Top row: vehicle + countdown ring */}
+        {/* Top row: vehicle/customers + countdown ring */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
               <Car className="h-3 w-3 text-primary" />
-              Incoming Offer
+              {isRelease ? "New Work Available" : "Incoming Offer"}
             </div>
-            <div className="truncate text-lg font-bold text-neutral-900">{label}</div>
-            {v?.registration_number && (
+            <div className={cn("truncate text-lg font-bold text-neutral-900", isRelease && "text-primary")}>{label}</div>
+            {v?.registration_number && !isRelease && (
               <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
                 {v.registration_number}
               </div>
@@ -377,7 +381,7 @@ export function MarketplaceOfferCard({
               <IndianRupee className="h-2.5 w-2.5" /> Earnings
             </p>
             <p className="text-xs font-bold text-primary">{earningDisplay}</p>
-            <p className="text-[10px] text-primary/70">₹{monthEarnings.toLocaleString("en-IN")} Monthly</p>
+            <p className="text-[10px] text-primary/70">{isRelease ? "Potential Total" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
           </div>
         </div>
 
@@ -404,7 +408,7 @@ export function MarketplaceOfferCard({
             ) : (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                {compact ? "Add" : "Accept Customer"}
+                {compact ? "Add" : isRelease ? "View Customers" : "Accept Customer"}
               </>
             )}
           </Button>
