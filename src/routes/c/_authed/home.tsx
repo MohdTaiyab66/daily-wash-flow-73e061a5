@@ -107,7 +107,28 @@ function CustomerHome() {
   }, [queryClient]);
 
 
+  /**
+   * Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+   * 
+   * For the code present, I get the error below.
+   * 
+   * Please think step-by-step in order to resolve it.
+   * ```
+   * Failed to connect to MetaMask
+   * 
+   * {
+   *   "timestamp": 1786739029833,
+   *   "error_type": "UNHANDLED_PROMISE_REJECTION",
+   *   "filename": "Unknown file",
+   *   "lineno": 0,
+   *   "colno": 0,
+   *   "stack": "i: Failed to connect to MetaMask\n    at Object.connect (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:7:84292)",
+   *   "has_blank_screen": true
+   * }
+   * ```
+   */
   const profileQ = useQuery({
+
     queryKey: ["customer-profile"],
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
