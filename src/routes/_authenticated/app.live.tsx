@@ -23,6 +23,7 @@ import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } f
 
 
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
