@@ -100,7 +100,7 @@ record(
 
 
 // --- 2. Kotlin package check -------------------------------------------------
-for (const { simple } of CLASSES) {
+for (const { simple, pkg: expectedPkg } of CLASSES) {
   const file = path.join(KOTLIN_DIR, `${simple}.kt`);
   try {
     const src = fs.readFileSync(file, "utf8");
@@ -108,7 +108,7 @@ for (const { simple } of CLASSES) {
     const pkg = m ? m[1] : "(none)";
     record(
       `kotlin.package.${simple}`,
-      pkg === EXPECTED_PACKAGE,
+      pkg === expectedPkg,
       `${file} declares package ${pkg}`,
     );
   } catch (e) {
