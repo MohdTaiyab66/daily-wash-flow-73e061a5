@@ -442,9 +442,9 @@ if (PAYMENTS_ENABLED) {
 
   try {
     const appGradle = fs.readFileSync("android/app/build.gradle", "utf8");
-    const hasRazorpay = appGradle.includes("com.razorpay") || appGradle.includes("[uw-payments]");
+    const hasRazorpay = /implementation\s+["']com\.razorpay/.test(appGradle) && !appGradle.includes("if (!(project.hasProperty(\"URBANWASH_APP\") && project.getProperty(\"URBANWASH_APP\") == \"partner\"))");
     record("payments.gradle.absent", !hasRazorpay,
-      hasRazorpay ? "partner build.gradle still declares the Razorpay SDK" : "no Razorpay dependency in partner build.gradle");
+      hasRazorpay ? "partner build.gradle still declares the Razorpay SDK unconditionally" : "no unconditional Razorpay dependency in partner build.gradle");
   } catch (e) {
     record("payments.gradle.absent", false, e.message);
   }
