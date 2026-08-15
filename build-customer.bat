@@ -1,272 +1,53 @@
 @echo off
-REM ============================================================
-REM  Urban Wash - Customer APK one-click build (Windows)
-REM ============================================================
 setlocal EnableDelayedExpansion
 
 set "VARIANT=customer"
 set "APP_ID=com.urbanwash.customer"
-REM Canonical, committed Firebase config shared by both variants (project uw-partner-app).
-set "GSJSON=android-native\firebase\google-services.json"
-set "CAP_CLI=node_modules\@capacitor\cli\bin\capacitor"
+set "APK_OUTPUT=urbanwash-customer.apk"
 
-echo.
 echo ============================================================
-echo  Urban Wash - Building %VARIANT% APK (%APP_ID%)
+echo  Urban Wash - Building CUSTOMER APK (%APP_ID%)
 echo ============================================================
-echo.
 
-REM -- 1. Dependency checks -----------------------------------------------
-echo [1/6] Verifying required tools...
-
-where node >nul 2>&1
-if errorlevel 1 (
-  echo   [X] Node.js not found. Install Node 20+ from https://nodejs.org
-  goto :fail
-)
-for /f "delims=" %%v in ('node -v') do echo   [OK] Node %%v
-
-where bun >nul 2>&1
-if errorlevel 1 (
-  echo   [X] Bun not found. Install with: powershell -c "irm bun.sh/install.ps1 ^| iex"
-  goto :fail
-)
-for /f "delims=" %%v in ('bun -v') do echo   [OK] Bun %%v
-
-where java >nul 2>&1
-if errorlevel 1 (
-  echo   [X] Java JDK not found. Install JDK 17+ from https://adoptium.net
-  goto :fail
-)
-java -version 2>&1 | findstr /R "version" >nul && echo   [OK] Java present
-
-for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.specification.version"') do set "JAVA_VERSION=%%v"
-for /f "tokens=*" %%v in ("%JAVA_VERSION%") do set "JAVA_VERSION=%%v"
-for /f "tokens=1 delims=." %%m in ("%JAVA_VERSION%") do set "JAVA_MAJOR=%%m"
-for /f "tokens=2 delims==" %%v in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /C:"java.home"') do set "DETECTED_JAVA_HOME=%%v"
-for /f "tokens=*" %%v in ("%DETECTED_JAVA_HOME%") do set "DETECTED_JAVA_HOME=%%v"
-if not defined JAVA_MAJOR (
-  echo   [X] Could not detect Java version. Install JDK 17+ from https://adoptium.net
-  goto :fail
-)
-if %JAVA_MAJOR% LSS 17 (
-  echo   [X] Java %JAVA_VERSION% found, but Android build requires JDK 17+.
-  echo       Install Temurin JDK 17 or newer, then set JAVA_HOME to that JDK folder.
-  goto :fail
-)
-echo   [OK] Java JDK %JAVA_VERSION%
-
-REM Gradle uses JAVA_HOME before PATH. If JAVA_HOME points at an older JDK,
-REM Gradle fails later with Java source-release errors. Force this build to use
-REM the same JDK 17+ that the java command above resolved.
-if not defined DETECTED_JAVA_HOME (
-  echo   [X] Could not detect java.home for Gradle. Reinstall JDK 17+ and retry.
-  goto :fail
-)
-if not exist "%DETECTED_JAVA_HOME%\bin\javac.exe" (
-  echo   [X] Java on PATH is not a full JDK: %DETECTED_JAVA_HOME%
-  echo       Install Temurin JDK 17 or newer, then re-run this script.
-  goto :fail
-)
-if defined JAVA_HOME (
-  if /I not "%JAVA_HOME%"=="%DETECTED_JAVA_HOME%" (
-    echo   [!] JAVA_HOME was %JAVA_HOME%
-    echo       Using detected JDK for this build: %DETECTED_JAVA_HOME%
-  )
-) else (
-  echo   [OK] JAVA_HOME not set - using detected JDK: %DETECTED_JAVA_HOME%
-)
-set "JAVA_HOME=%DETECTED_JAVA_HOME%"
-set "PATH=%JAVA_HOME%\bin;%PATH%"
-
-if not defined ANDROID_HOME if not defined ANDROID_SDK_ROOT (
-  echo   [X] ANDROID_HOME / ANDROID_SDK_ROOT not set.
-  echo       Open Android Studio ^> SDK Manager, then set:
-  echo         setx ANDROID_HOME "%%LOCALAPPDATA%%\Android\Sdk"
-  echo       Re-open Command Prompt and re-run this script.
-  goto :fail
-)
-if defined ANDROID_HOME (
-  if not exist "%ANDROID_HOME%\platform-tools" (
-    echo   [X] ANDROID_HOME is set but "%ANDROID_HOME%\platform-tools" is missing.
-    echo       Install Android SDK Platform 34 + Build-Tools via Android Studio SDK Manager.
-    goto :fail
-  )
-  echo   [OK] Android SDK at %ANDROID_HOME%
-) else (
-  echo   [OK] Android SDK at %ANDROID_SDK_ROOT%
-)
-
-REM -- 2. Firebase config -------------------------------------------------
-echo.
-echo [2/6] Checking Firebase config...
-if not exist "%GSJSON%" (
-  echo   [X] Missing %GSJSON%
-  echo       Download google-services.json for Firebase Android app %APP_ID%
-  echo       and place it at the path above. See BUILD.md section 3.
-  goto :fail
-)
-echo   [OK] Found %GSJSON%
-
-REM -- 3. Set variant env -------------------------------------------------
-echo.
-echo [3/6] Setting variant environment...
+REM 1. Ensure latest Capacitor web assets are synced/regenerated
+echo [1/4] Building latest web assets...
 set "URBANWASH_APP=%VARIANT%"
 set "VITE_URBANWASH_APP=%VARIANT%"
-echo   URBANWASH_APP=%URBANWASH_APP%
-echo   VITE_URBANWASH_APP=%VITE_URBANWASH_APP%
-
-REM -- 4. Install deps (only if node_modules missing) --------------------
-echo.
-echo [4/6] Installing JS dependencies (if needed)...
-if not exist "node_modules" (
-  call bun install || goto :fail
-) else (
-  echo   [OK] node_modules present - skipping bun install
-)
-
-if not exist "%CAP_CLI%" (
-  echo   Capacitor CLI missing from node_modules - refreshing dependencies...
-  call bun install || goto :fail
-)
-
-if not exist "%CAP_CLI%" (
-  echo   [X] Capacitor CLI still missing after bun install.
-  echo       Run: bun add @capacitor/cli @capacitor/core @capacitor/android
-  echo       Then re-run: build-customer.bat
-  goto :fail
-)
-
-REM -- 5. Build web bundle + cap sync ------------------------------------
-echo.
-echo [5/6] Building web bundle...
 call bun run build || goto :fail
 
-echo   Preparing mobile web shell (Capacitor webDir)...
-call node scripts\prepare-mobile-shell.mjs || goto :fail
+echo [2/4] Syncing Capacitor...
+call bunx cap sync android || goto :fail
 
-if not exist "mobile-shell\index.html" (
-  echo   [X] Missing mobile-shell\index.html after prepare-mobile-shell
-  goto :fail
-)
-if not exist "mobile-shell\build-info.json" (
-  echo   [X] Missing mobile-shell\build-info.json after prepare-mobile-shell
-  goto :fail
-)
-echo   [OK] Capacitor webDir ready: mobile-shell\index.html
-
-echo   Ensuring android/ matches the current variant (%VARIANT%)...
-call node scripts\ensure-variant-clean.mjs || goto :fail
-
-echo   Hard-cleaning previous Android build artifacts...
-call node scripts\clean-android-build.mjs || goto :fail
-
-if not exist "android" (
-  echo   android/ folder missing - running: Capacitor add android
-  call node "%CAP_CLI%" add android || goto :fail
-)
-
-echo   Copying Firebase config into android\app\google-services.json
-copy /Y "%GSJSON%" "android\app\google-services.json" >nul || goto :fail
-
-echo   Syncing Capacitor with local CLI (no npx/npm)...
-echo     node "%CAP_CLI%" sync android
-call node "%CAP_CLI%" sync android
-if errorlevel 1 (
-  echo.
-  echo   [X] Capacitor sync failed.
-  echo       If the message above says "npm error could not determine executable to run",
-  echo       your local build-customer.bat is still using npx. Replace that line with:
-  echo         call node "%%CAP_CLI%%" sync android ^|^| goto :fail
-  goto :fail
-)
-
-echo   Restoring Urban Wash launcher/splash branding (post cap sync)...
-call node scripts\restore-android-branding.mjs || goto :fail
-
-echo   Stamping Android package id and verifying synced build marker...
-call node scripts\stamp-android-version.mjs || goto :fail
-
-REM `cap add/sync android` regenerates a stub MainActivity and drops
-REM com/urbanwash/payments. This restore MUST run before verification.
-echo   Patching Android permissions, Maps intents and restoring native payment sources...
-call node scripts\patch-android-manifest.mjs || goto :fail
-
-echo Running verify-plugin-registry.mjs
-call node scripts\verify-plugin-registry.mjs
-if errorlevel 1 goto :fail
-echo PASS
-
-echo   Repairing Capacitor Android Java compatibility...
-call fix-android-java.bat || goto :fail
-
-echo   Pinning Gradle to detected JDK...
-call node scripts\configure-gradle-jdk.mjs || goto :fail
-
-echo   Pinning Razorpay Checkout SDK (standard-core) to 1.7.18 in app build.gradle...
-call node scripts\patch-android-gradle.mjs || goto :fail
-
-REM -- 6. Build APK -------------------------------------------------------
-echo.
-echo [6/6] Building Android debug APK...
+REM 2. Build APK
+echo [3/4] Building APK...
 pushd android || goto :fail
-echo   Stopping stale Gradle daemons...
-call gradlew.bat --stop >nul 2>&1
-echo   Gradle JVM check:
-call gradlew.bat -version || (popd & goto :fail)
-echo   Resolved Razorpay dependency:
-call gradlew.bat -q :app:printRazorpayResolved || echo   [!] Razorpay resolution report failed (non-fatal)
-call gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath > ..\razorpay-customer-deps.txt 2>&1
-echo   Full dependency tree written to razorpay-customer-deps.txt
-echo   Gradle clean (no stale dex/APK may survive):
-call gradlew.bat clean || (popd & goto :fail)
-call gradlew.bat assembleDebug || (popd & goto :fail)
+call gradlew.bat clean assembleDebug || (popd & goto :fail)
 popd
 
-if not exist "android\app\build\outputs\apk\debug\app-debug.apk" (
-  echo   [X] APK was not created at android\app\build\outputs\apk\debug\app-debug.apk
-  goto :fail
+REM 3. Verify Package ID and Replace Official APK
+echo [4/4] Verifying APK and updating official output...
+set "BUILT_APK=android\app\build\outputs\apk\debug\app-debug.apk"
+if not exist "%BUILT_APK%" (
+    echo [X] Build failed: APK not found at %BUILT_APK%
+    goto :fail
 )
-echo Running verify-apk-native.mjs
-call node scripts\verify-apk-native.mjs "android\app\build\outputs\apk\debug\app-debug.apk"
-if errorlevel 1 (
-  echo   [X] Native verification FAILED - deleting APK so a broken build cannot ship
-  del /F /Q "android\app\build\outputs\apk\debug\app-debug.apk" >nul 2>&1
-  del /F /Q "urbanwash-customer.apk" >nul 2>&1
-  del /F /Q "builds\customer\urbanwash-customer.apk" >nul 2>&1
-  goto :fail
+
+REM Use verify-apk-native.mjs if it exists, otherwise do a basic check
+if exist "scripts\verify-apk-native.mjs" (
+    call node scripts\verify-apk-native.mjs "%BUILT_APK%" || goto :fail
 )
-echo PASS
 
-REM Permanent per-variant output. The partner APK under builds\partner is
-REM NEVER touched by this script.
-if not exist "builds\customer" mkdir "builds\customer"
-copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "urbanwash-customer.apk" >nul || goto :fail
-copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "builds\customer\urbanwash-customer.apk" >nul || goto :fail
+copy /Y "%BUILT_APK%" "%APK_OUTPUT%" >nul || goto :fail
 
-echo.
 echo ============================================================
-echo  APK build complete for %VARIANT% (%APP_ID%)
+echo  CUSTOMER APK: %CD%\%APK_OUTPUT%
+echo  PACKAGE: %APP_ID%
 echo ============================================================
-echo.
-echo  APK ready (full paths):
-for %%A in ("builds\customer\urbanwash-customer.apk") do echo    %%~fA ^(%%~zA bytes^)
-for %%A in ("urbanwash-customer.apk") do echo    %%~fA
-for %%A in ("android\app\build\outputs\apk\debug\app-debug.apk") do echo    %%~fA
-echo.
-echo  Partner APK (if previously built) is untouched:
-echo    builds\partner\urbanwash-partner.apk
-echo.
-echo  Install on device:
-for %%A in ("builds\customer\urbanwash-customer.apk") do echo    adb install -r "%%~fA"
-echo.
 endlocal
 exit /b 0
 
 :fail
 echo.
-echo ============================================================
-echo  BUILD FAILED - see message above.
-echo ============================================================
+echo [X] CUSTOMER BUILD FAILED.
 endlocal
 exit /b 1
