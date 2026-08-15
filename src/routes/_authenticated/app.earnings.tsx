@@ -103,60 +103,67 @@ function EarningsPage() {
   const milestoneGap = nextMilestone ? nextMilestone - todayEarn : 0;
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("earnings")}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{t("earnings_sub")}</p>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Wallet</h1>
+        <p className="text-sm text-muted-foreground font-medium">Your earnings and payout history</p>
+      </header>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-5">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="today">{t("today")}</TabsTrigger>
-          <TabsTrigger value="week">{t("week")}</TabsTrigger>
-          <TabsTrigger value="month">{t("month")}</TabsTrigger>
-          <TabsTrigger value="lifetime">{t("all")}</TabsTrigger>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-12 bg-neutral-100 p-1 rounded-2xl">
+          <TabsTrigger value="today" className="rounded-xl font-bold text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("today")}</TabsTrigger>
+          <TabsTrigger value="week" className="rounded-xl font-bold text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("week")}</TabsTrigger>
+          <TabsTrigger value="month" className="rounded-xl font-bold text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("month")}</TabsTrigger>
+          <TabsTrigger value="lifetime" className="rounded-xl font-bold text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("all")}</TabsTrigger>
         </TabsList>
+        
         {nextMilestone && tab === "today" && (
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/8 px-3.5 py-2.5 text-[13px]">
-            <span>🔥</span>
-            <p className="flex-1 leading-tight">
-              <span className="font-semibold">Earn ₹{milestoneGap} more today</span>
-              <span className="text-muted-foreground"> to cross ₹{nextMilestone}</span>
+          <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#FF6B00]/10 px-4 py-3 border border-[#FF6B00]/5">
+            <span className="text-xl">🔥</span>
+            <p className="text-[13px] leading-tight font-bold text-[#1A1A1A]">
+              Earn ₹{milestoneGap} more today
+              <span className="text-muted-foreground block font-medium mt-0.5">to cross your next milestone of ₹{nextMilestone}</span>
             </p>
           </div>
         )}
-        <TabsContent value="today" className="mt-4">{view(t("today"), stats?.today ?? 0, stats?.todayN ?? 0)}</TabsContent>
-        <TabsContent value="week" className="mt-4">{view(t("this_week"), stats?.week ?? 0, stats?.weekN ?? 0)}</TabsContent>
-        <TabsContent value="month" className="mt-4">{view(t("this_month"), stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
-        <TabsContent value="lifetime" className="mt-4">{view(t("lifetime"), stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
+
+        <TabsContent value="today" className="mt-6">{view(t("today"), stats?.today ?? 0, stats?.todayN ?? 0)}</TabsContent>
+        <TabsContent value="week" className="mt-6">{view(t("this_week"), stats?.week ?? 0, stats?.weekN ?? 0)}</TabsContent>
+        <TabsContent value="month" className="mt-6">{view(t("this_month"), stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
+        <TabsContent value="lifetime" className="mt-6">{view(t("lifetime"), stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
       </Tabs>
 
+      <section className="space-y-4">
+        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">{t("next_payout")}</h2>
+        <Card className="p-6 border-neutral-100 shadow-sm bg-white rounded-3xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">{t("settling_on")}</p>
+              <p className="mt-1 text-xl font-black text-[#1A1A1A]">{nextStr}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">{t("amount")}</p>
+              <p className="mt-1 text-xl font-black text-[#FF6B00]">₹{(stats?.week ?? 0).toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+          {!firstPayoutReady && (
+            <div className="mt-6 flex items-start gap-3 rounded-2xl bg-neutral-50 p-4 border border-neutral-100/50">
+              <Lock className="mt-0.5 h-4 w-4 text-[#FF6B00]" strokeWidth={3} />
+              <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                First payout releases after your first 15 active days. <span className="font-bold text-[#1A1A1A]">({15 - daysSinceJoin} days remaining)</span>.
+                Urban Wash holds your first week as a security reserve.
+              </p>
+            </div>
+          )}
+        </Card>
+      </section>
 
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("next_payout")}</h2>
-      <Card className="mt-3 p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">{t("settling_on")}</p>
-            <p className="mt-1 text-lg font-semibold">{nextStr}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">{t("amount")}</p>
-            <p className="mt-1 text-lg font-semibold">₹{stats?.week ?? 0}</p>
-          </div>
-        </div>
-        {!firstPayoutReady && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg bg-muted p-3 text-xs">
-            <Lock className="mt-0.5 h-3.5 w-3.5 text-primary" />
-            <p className="text-muted-foreground">
-              First payout releases after your first 15 active days ({15 - daysSinceJoin} days to go).
-              Urban Wash holds your first week as a security reserve.
-            </p>
-          </div>
-        )}
-      </Card>
-
-      <Card className="mt-4 p-4 text-xs text-muted-foreground">
-        <CalendarDays className="mr-1 inline h-3.5 w-3.5" />Payouts run every Monday. Bonuses settle with the same cycle.
-      </Card>
+      <div className="flex items-center gap-2 px-1 opacity-60">
+        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Payouts run every Monday</p>
+      </div>
     </div>
+
   );
 }
 
