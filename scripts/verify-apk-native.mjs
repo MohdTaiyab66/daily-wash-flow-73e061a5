@@ -231,7 +231,7 @@ try {
   }
 
   const receiverPresent = elements.some(
-    (e) => e.name === "receiver" && e.attrs["android:name"] === `${EXPECTED_PACKAGE}.OfferActionReceiver`,
+    (e) => e.name === "receiver" && e.attrs["android:name"] === `${PUSH_PACKAGE}.OfferActionReceiver`,
   );
   record("apk.merged.receiver.OfferActionReceiver", receiverPresent, receiverPresent ? "declared in merged manifest" : "missing after merge");
 } catch (e) {
