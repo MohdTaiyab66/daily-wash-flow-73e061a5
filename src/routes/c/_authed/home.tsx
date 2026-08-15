@@ -107,93 +107,11 @@ function CustomerHome() {
   }, [queryClient]);
 
 
-  /**
+   /**
    * '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
    *                                         
    *                                             
-   *                                             Now verify the actual production execution of the Marketplace Re-broadcast Tick.
-   * 
-   * Do NOT make another implementation change yet.
-   * 
-   * I need you to prove:
-   * 
-   * 1. /api/public/cron/marketplace-rebroadcast-tick is actually being invoked.
-   * 
-   * 2. What scheduler/cron mechanism invokes it?
-   * 
-   * 3. Its real production frequency is 30 seconds.
-   * 
-   * 4. Show where that schedule is configured.
-   * 
-   * 5. Confirm it runs independently of the Customer/Partner apps.
-   * 
-   * 6. Confirm every tick:
-   * 
-   *    - finds OPEN/unclaimed paid bookings
-   * 
-   *    - recalculates eligible partners
-   * 
-   *    - sends notifications in parallel
-   * 
-   *    - includes partners who logged in after the booking
-   * 
-   * 7. Confirm the loop stops immediately after acceptance.
-   * 
-   * 8. Confirm no duplicate bookings or duplicate partner-offer rows are created.
-   * 
-   * Use the new logs to verify an actual live sequence:
-   * 
-   * [BOOKING-PUSH:CRON] TICK_STARTED
-   * 
-   * [BOOKING-PUSH:CRON] OPEN_BOOKINGS_FOUND
-   * 
-   * [BOOKING-PUSH:CRON] ELIGIBLE_PARTNERS_FOUND
-   * 
-   * [BOOKING-PUSH:CRON] FANOUT_COMPLETED
-   * 
-   * Then test the exact E2E scenario:
-   * 
-   * Customer books and pays
-   * 
-   * → Partner A receives notification
-   * 
-   * → Partner A does NOT accept
-   * 
-   * → wait 60–90 seconds
-   * 
-   * → verify multiple CRON ticks occurred
-   * 
-   * → Partner B logs in
-   * 
-   * → Partner B immediately sees the still-open booking
-   * 
-   * → Partner B receives notification
-   * 
-   * → Partner B accepts
-   * 
-   * → booking becomes ACCEPTED
-   * 
-   * → rebroadcast stops
-   * 
-   * → Partner A can no longer accept
-   * 
-   * FINAL RESPONSE MUST STATE:
-   * 
-   * - Exact scheduler mechanism
-   * 
-   * - Exact schedule
-   * 
-   * - Whether the scheduler is confirmed LIVE
-   * 
-   * - Number of rebroadcast ticks observed
-   * 
-   * - Number of eligible partners found
-   * 
-   * - Whether late-login partner recovery worked
-   * 
-   * - Whether acceptance stopped further broadcasts
-   * 
-   * Do not claim the 30-second system is working based only on the existence of the endpoint or logs. I need actual execution evidence.
+   *                                             Load the security issues from the scan results and fix the selected issues.
    */
 
 
