@@ -21,7 +21,7 @@ call bunx cap sync android || goto :fail
 REM 2. Build APK
 echo [3/4] Building APK...
 pushd android || goto :fail
-call gradlew.bat clean assembleDebug || (popd & goto :fail)
+call gradlew.bat clean assembleDebug -PURBANWASH_APP=%VARIANT% || (popd & goto :fail)
 popd
 
 REM 3. Verify Package ID and Replace Official APK
