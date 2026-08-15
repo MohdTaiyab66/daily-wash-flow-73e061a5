@@ -19,15 +19,48 @@ echo [2/4] Syncing Capacitor and applying variant sources...
 call bunx cap sync android || goto :fail
 
 REM Apply variant-specific sources
-if exist "android-native\java\com\urbanwash\customer\MainActivity.java" (
-    echo [2.1] Applying Customer MainActivity...
-    copy /Y "android-native\java\com\urbanwash\customer\MainActivity.java" "android\app\src\main\java\com\urbanwash\customer\MainActivity.java" >nul
+set "DEST_PKG_DIR=android\app\src\main\java\com\urbanwash\customer"
+if not exist "%DEST_PKG_DIR%" (
+    echo [2.0] Creating destination directory...
+    mkdir "%DEST_PKG_DIR%" || (echo [FAIL] Could not create %DEST_PKG_DIR% & goto :fail)
 )
-if exist "android-native\java\com\urbanwash\payments\UrbanWashCheckoutPlugin.java" (
-    echo [2.2] Applying Payment Plugin...
-    mkdir "android\app\src\main\java\com\urbanwash\payments" 2>nul
-    copy /Y "android-native\java\com\urbanwash\payments\UrbanWashCheckoutPlugin.java" "android\app\src\main\java\com\urbanwash\payments\UrbanWashCheckoutPlugin.java" >nul
+
+echo [2.1] Applying Customer MainActivity...
+set "SRC_ACTIVITY=android-native\java\com\urbanwash\customer\MainActivity.java"
+set "DEST_ACTIVITY=%DEST_PKG_DIR%\MainActivity.java"
+
+if not exist "%SRC_ACTIVITY%" (
+    echo [FAIL] Source MainActivity not found: %SRC_ACTIVITY%
+    goto :fail
 )
+
+copy /Y "%SRC_ACTIVITY%" "%DEST_ACTIVITY%" >nul
+if errorlevel 1 (
+    echo [FAIL] Customer MainActivity injection failed
+    goto :fail
+)
+echo [PASS] Customer MainActivity injected
+
+echo [2.2] Applying Payment Plugin...
+set "PAYMENT_SRC=android-native\java\com\urbanwash\payments\UrbanWashCheckoutPlugin.java"
+set "PAYMENT_DEST_DIR=android\app\src\main\java\com\urbanwash\payments"
+set "PAYMENT_DEST=%PAYMENT_DEST_DIR%\UrbanWashCheckoutPlugin.java"
+
+if not exist "%PAYMENT_DEST_DIR%" (
+    mkdir "%PAYMENT_DEST_DIR%" || (echo [FAIL] Could not create %PAYMENT_DEST_DIR% & goto :fail)
+)
+
+if not exist "%PAYMENT_SRC%" (
+    echo [FAIL] Source Payment Plugin not found: %PAYMENT_SRC%
+    goto :fail
+)
+
+copy /Y "%PAYMENT_SRC%" "%PAYMENT_DEST%" >nul
+if errorlevel 1 (
+    echo [FAIL] Payment Plugin injection failed
+    goto :fail
+)
+echo [PASS] Payment Plugin injected
 
 REM 2. Build APK
 echo [3/4] Building APK...
