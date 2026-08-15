@@ -85,16 +85,17 @@ function EarningsPage() {
   const firstPayoutReady = daysSinceJoin >= 15;
 
   const view = (label: string, total: number, n: number) => (
-    <Card className="p-5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-4xl font-semibold tracking-tight">₹{total.toLocaleString("en-IN")}</p>
-      <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
-        <Mini icon={<Car className="h-3 w-3" />} label={t("cars")} value={String(n)} />
-        <Mini icon={<Clock className="h-3 w-3" />} label={t("avg_day")} value={n ? `₹${Math.round(total / Math.max(1, stats?.daysActive ?? 1))}` : "₹0"} />
-        <Mini icon={<MapPin className="h-3 w-3" />} label="Per car" value={`₹${RATE}`} />
+    <Card className="p-6 border-neutral-100 shadow-sm bg-white rounded-3xl">
+      <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{label}</p>
+      <p className="mt-1 text-4xl font-black tracking-tighter text-[#1A1A1A]">₹{total.toLocaleString("en-IN")}</p>
+      <div className="mt-6 grid grid-cols-3 gap-4 border-t border-neutral-50 pt-5 text-xs">
+        <Mini icon={<Car className="h-3.5 w-3.5" />} label={t("cars")} value={String(n)} />
+        <Mini icon={<Clock className="h-3.5 w-3.5" />} label="Daily Avg" value={n ? `₹${Math.round(total / Math.max(1, stats?.daysActive ?? 1))}` : "₹0"} />
+        <Mini icon={<IndianRupee className="h-3.5 w-3.5" />} label="Rate" value={`₹${RATE}`} />
       </div>
     </Card>
   );
+
 
   // Motivational milestone for today.
   const todayEarn = stats?.today ?? 0;
