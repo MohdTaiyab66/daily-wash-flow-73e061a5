@@ -15,8 +15,16 @@ set "URBANWASH_APP=%VARIANT%"
 set "VITE_URBANWASH_APP=%VARIANT%"
 call bun run build || goto :fail
 
-echo [2/4] Syncing Capacitor...
+echo [2/4] Syncing Capacitor and applying variant sources...
 call bunx cap sync android || goto :fail
+
+REM Apply variant-specific sources (Clean old variant sources)
+if exist "android\app\src\main\java\com\urbanwash\payments" rd /S /Q "android\app\src\main\java\com\urbanwash\payments"
+
+if exist "android-native\java\com\urbanwash\partner\MainActivity.java" (
+    echo [2.1] Applying Partner MainActivity...
+    copy /Y "android-native\java\com\urbanwash\partner\MainActivity.java" "android\app\src\main\java\com\urbanwash\partner\MainActivity.java" >nul
+)
 
 REM 2. Build APK
 echo [3/4] Building APK...

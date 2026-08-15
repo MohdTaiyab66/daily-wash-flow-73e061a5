@@ -59,7 +59,9 @@ dependencies {
 ext.razorpayCheckoutVersion = '1.7.18'
 
 dependencies {
-    implementation "com.razorpay:standard-core:1.7.18"
+    if (!(project.hasProperty("URBANWASH_APP") && project.getProperty("URBANWASH_APP") == "partner")) {
+        implementation "com.razorpay:standard-core:1.7.18"
+    }
 }
 
 configurations.all {
