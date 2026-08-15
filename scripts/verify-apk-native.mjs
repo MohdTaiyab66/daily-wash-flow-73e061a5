@@ -35,10 +35,11 @@ const APK = process.argv[2] || "android/app/build/outputs/apk/debug/app-debug.ap
 const MANIFEST = "android/app/src/main/AndroidManifest.xml";
 const KOTLIN_DIR = "android/app/src/main/java/com/urbanwash/push";
 
-const EXPECTED_PACKAGE = "com.urbanwash.push";
+const EXPECTED_PACKAGE = VARIANT === "partner" ? "com.urbanwash.partner" : "com.urbanwash.customer";
+const PUSH_PACKAGE = "com.urbanwash.push";
 const CLASSES = [
-  { simple: "UrbanwashMessagingService", kind: "service" },
-  { simple: "OfferActionReceiver", kind: "receiver" },
+  { simple: "UrbanwashMessagingService", kind: "service", pkg: PUSH_PACKAGE },
+  { simple: "OfferActionReceiver", kind: "receiver", pkg: PUSH_PACKAGE },
 ];
 
 const results = [];
@@ -55,10 +56,10 @@ try {
   record("manifest.readable", false, e.message);
 }
 
-for (const { simple, kind } of CLASSES) {
-  const fqcn = `${EXPECTED_PACKAGE}.${simple}`;
+for (const { simple, kind, pkg } of CLASSES) {
+  const fqcn = `${pkg}.${simple}`;
   const tagRe = new RegExp(
-    `<${kind}\\b[^>]*android:name\\s*=\\s*"(?:${EXPECTED_PACKAGE}\\.)?${simple}"`,
+    `<${kind}\\b[^>]*android:name\\s*=\\s*"(?:${pkg}\\.)?${simple}"`,
   );
   const hasFqcn = manifestXml.includes(`android:name="${fqcn}"`);
   const hasTag = tagRe.test(manifestXml);
@@ -99,7 +100,7 @@ record(
 
 
 // --- 2. Kotlin package check -------------------------------------------------
-for (const { simple } of CLASSES) {
+for (const { simple, pkg: expectedPkg } of CLASSES) {
   const file = path.join(KOTLIN_DIR, `${simple}.kt`);
   try {
     const src = fs.readFileSync(file, "utf8");
@@ -107,7 +108,7 @@ for (const { simple } of CLASSES) {
     const pkg = m ? m[1] : "(none)";
     record(
       `kotlin.package.${simple}`,
-      pkg === EXPECTED_PACKAGE,
+      pkg === expectedPkg,
       `${file} declares package ${pkg}`,
     );
   } catch (e) {
@@ -182,7 +183,7 @@ for (const { simple } of CLASSES) {
 // ships is the binary AndroidManifest.xml inside the APK, which also contains
 // everything Capacitor plugin manifests merged in. Decode it and assert that
 // exactly one service owns com.google.firebase.MESSAGING_EVENT.
-const MERGED_FCM_OWNER = `${EXPECTED_PACKAGE}.UrbanwashMessagingService`;
+const MERGED_FCM_OWNER = `${PUSH_PACKAGE}.UrbanwashMessagingService`;
 const COMPETING_SERVICES = [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
@@ -230,7 +231,7 @@ try {
   }
 
   const receiverPresent = elements.some(
-    (e) => e.name === "receiver" && e.attrs["android:name"] === `${EXPECTED_PACKAGE}.OfferActionReceiver`,
+    (e) => e.name === "receiver" && e.attrs["android:name"] === `${PUSH_PACKAGE}.OfferActionReceiver`,
   );
   record("apk.merged.receiver.OfferActionReceiver", receiverPresent, receiverPresent ? "declared in merged manifest" : "missing after merge");
 } catch (e) {
