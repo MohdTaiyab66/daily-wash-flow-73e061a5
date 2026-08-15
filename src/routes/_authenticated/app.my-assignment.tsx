@@ -155,110 +155,178 @@ function MyAssignmentPage() {
   const estMonthly = data.expected_total;
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5 pb-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Assignment Details</h1>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <MapPin className="h-3.5 w-3.5" /> {a.area}
-        <span className="mx-1">·</span>
-        <Badge variant="secondary" className="rounded-full">Active</Badge>
-      </p>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
+      </header>
 
-      {/* Assignment Summary */}
-      <Card className="mt-5 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignment Summary</p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Mini label="Duration" value={workingDaysLabel(data.working_days_total)} />
-          <Mini label="Completed" value={`${data.working_days_completed} Days`} />
-          <Mini label="Remaining" value={`${data.working_days_remaining} Days`} />
-          <Mini label="Daily route" value={`${a.target_cars} cars/day`} />
-          <Mini label="Working hours" value={workingHoursLabel} />
-          <Mini label="Estimated total" value={`₹${estMonthly.toLocaleString("en-IN")}`} />
+      {/* AREA SELECTION HEADER */}
+      <section>
+        <div className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {a.area}</p>
+            </div>
+          </div>
+          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 rounded-lg text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">Active</Badge>
         </div>
-      </Card>
+      </section>
 
-      {/* Today's Status — one state only */}
-      <TodayStatusCard
-        state={todayState}
-        shiftStart={a.expected_start_time}
-        unlockDiffMin={unlockDiffMin}
-        totalToday={todayServices.length}
-        completedToday={completedToday}
-        expectedToday={expectedToday}
-        earnedToday={earnedToday}
-        nextDate={todayQuery.data?.nextDate ?? null}
-      />
+      {/* HERO SUMMARY CARD */}
+      <section>
+        <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="p-6 space-y-6 relative z-10">
+            <div className="flex flex-col gap-1">
+              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Assignment Summary</p>
+              <div className="flex items-baseline justify-between mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🚗</span>
+                  <span className="text-2xl font-black uppercase tracking-tight">{a.target_cars} CUSTOMERS</span>
+                </div>
+              </div>
+            </div>
 
-      {/* Modifications — simplified */}
-      <Card className="mt-4 p-4">
-        <p className="text-sm font-semibold">Modify Assignment</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {data.can_modify
-            ? `${Math.max(0, data.modifications_max - data.modifications_used)} modification${(data.modifications_max - data.modifications_used) === 1 ? "" : "s"} remaining`
-            : data.cooldown_until
-            ? `Available after ${new Date(data.cooldown_until).toLocaleDateString("en-IN", { weekday: "long" })}`
-            : "No modifications remaining"}
-        </p>
-        <div className="mt-3">
-          <ModifyAssignmentDialog
-            assignmentId={a.id}
-            currentCars={a.target_cars}
-            canModify={data.can_modify}
-            modsUsed={data.modifications_used}
-            modsMax={data.modifications_max}
-            cooldownUntil={data.cooldown_until}
-          />
+            <div className="flex flex-col gap-1 border-t border-white/10 pt-6">
+              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Monthly Earning Potential</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                < IndianRupee className="h-6 w-6 text-[#FF6B00]" strokeWidth={3} />
+                <span className="text-4xl font-black tracking-tighter">₹{estMonthly.toLocaleString("en-IN")}</span>
+              </div>
+              <p className="text-[10px] text-white/30 font-bold mt-1 uppercase tracking-wider">
+                🟢 26 service days/month • Mondays OFF
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" /> Daily Hours
+                </p>
+                <p className="text-sm font-bold">{data.hours_per_day} Hours / Day</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="h-3 w-3" /> Timeline
+                </p>
+                <p className="text-sm font-bold truncate">{workingHoursLabel}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* TODAY'S STATUS */}
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Today's Status</h3>
+        <TodayStatusCard
+          state={todayState}
+          shiftStart={a.expected_start_time}
+          unlockDiffMin={unlockDiffMin}
+          totalToday={todayServices.length}
+          completedToday={completedToday}
+          expectedToday={expectedToday}
+          earnedToday={earnedToday}
+          nextDate={todayQuery.data?.nextDate ?? null}
+        />
+      </section>
+
+      {/* SECONDARY INFO */}
+      <section className="grid grid-cols-2 gap-4">
+        <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Duration</p>
+          <p className="text-sm font-bold mt-1">{workingDaysLabel(data.working_days_total)}</p>
         </div>
-      </Card>
+        <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed</p>
+          <p className="text-sm font-bold mt-1">{data.working_days_completed} Days</p>
+        </div>
+      </section>
 
-      {/* Bottom actions — Today's Route / Wallet / Support */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+      {/* MODIFICATIONS */}
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Modifications</h3>
+        <Card className="p-5 border-neutral-100 shadow-sm bg-white rounded-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-[#1A1A1A]">Change your capacity</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {data.can_modify
+                  ? `${Math.max(0, data.modifications_max - data.modifications_used)} modification${(data.modifications_max - data.modifications_used) === 1 ? "" : "s"} remaining`
+                  : data.cooldown_until
+                  ? `Available after ${new Date(data.cooldown_until).toLocaleDateString("en-IN", { weekday: "long" })}`
+                  : "No modifications remaining"}
+              </p>
+            </div>
+            <ModifyAssignmentDialog
+              assignmentId={a.id}
+              currentCars={a.target_cars}
+              canModify={data.can_modify}
+              modsUsed={data.modifications_used}
+              modsMax={data.modifications_max}
+              cooldownUntil={data.cooldown_until}
+            />
+          </div>
+        </Card>
+      </section>
+
+      {/* QUICK LINKS */}
+      <section className="grid grid-cols-3 gap-3">
+        <Button asChild variant="outline" className="h-[80px] flex-col gap-2 rounded-2xl bg-white border-neutral-100 shadow-sm">
           <Link to="/app/live">
-            <Navigation className="h-4 w-4" />
-            <span className="text-xs">Today's Route</span>
+            <Navigation className="h-5 w-5 text-primary" />
+            <span className="text-[11px] font-bold uppercase tracking-tighter">Route</span>
           </Link>
         </Button>
-        <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+        <Button asChild variant="outline" className="h-[80px] flex-col gap-2 rounded-2xl bg-white border-neutral-100 shadow-sm">
           <Link to="/app/earnings">
-            <Wallet className="h-4 w-4" />
-            <span className="text-xs">Wallet</span>
+            <Wallet className="h-5 w-5 text-primary" />
+            <span className="text-[11px] font-bold uppercase tracking-tighter">Wallet</span>
           </Link>
         </Button>
-        <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+        <Button asChild variant="outline" className="h-[80px] flex-col gap-2 rounded-2xl bg-white border-neutral-100 shadow-sm">
           <a href={`tel:${SUPPORT_TEL}`}>
-            <LifeBuoy className="h-4 w-4" />
-            <span className="text-xs">Support</span>
+            <LifeBuoy className="h-5 w-5 text-primary" />
+            <span className="text-[11px] font-bold uppercase tracking-tighter">Help</span>
           </a>
         </Button>
-      </div>
+      </section>
 
-      <CancelSection
-        canCancel={!!cancelInfo?.can_cancel}
-        reason={cancelInfo?.reason}
-        deadlineAt={cancelInfo?.deadline_at ?? null}
-        routeStarted={!!cancelInfo?.route_started}
-        pending={cancelMut.isPending}
-        onCancel={() => setConfirmOpen(true)}
-        isRestDay={todayState === "rest"}
-      />
+      {/* CANCELLATION */}
+      <section className="pt-4 border-t border-neutral-100">
+        <CancelSection
+          canCancel={!!cancelInfo?.can_cancel}
+          reason={cancelInfo?.reason}
+          deadlineAt={cancelInfo?.deadline_at ?? null}
+          routeStarted={!!cancelInfo?.route_started}
+          pending={cancelMut.isPending}
+          onCancel={() => setConfirmOpen(true)}
+          isRestDay={todayState === "rest"}
+        />
+      </section>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel assignment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              All customers in your batch will be released to other Urban Wash partners in this area.
-              This action cannot be undone.
+            <AlertDialogTitle className="text-xl font-bold">Cancel Assignment?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              All customers in your batch will be released to other Urban Wash partners in this area. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelMut.isPending}>Keep assignment</AlertDialogCancel>
+          <AlertDialogFooter className="flex-row gap-3">
+            <AlertDialogCancel disabled={cancelMut.isPending} className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Keep</AlertDialogCancel>
             <AlertDialogAction
               disabled={cancelMut.isPending}
+              className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold"
               onClick={(e) => { e.preventDefault(); if (assignmentId) cancelMut.mutate(assignmentId); }}
             >
               {cancelMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Cancel assignment
+              Cancel
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -331,47 +399,57 @@ function TodayStatusCard({
 
   if (state === "ready") {
     return (
-      <Card className="mt-4 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's Route</p>
-        <div className="mt-2 flex items-baseline gap-3">
-          <p className="text-2xl font-semibold">{totalToday} Customers</p>
-          <p className="text-sm text-muted-foreground">Expected ₹{expectedToday.toLocaleString("en-IN")}</p>
+      <Card className="p-5 border-emerald-100 bg-emerald-50 rounded-2xl border shadow-sm">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-emerald-600 tracking-wider">Today's Route</p>
+            <div className="mt-1 flex items-baseline gap-3">
+              <p className="text-2xl font-black text-emerald-900">{totalToday} Customers</p>
+              <p className="text-xs font-bold text-emerald-700/60 uppercase">Expected ₹{expectedToday.toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+          <Button asChild size="lg" className="h-12 w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-600/20">
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />START TODAY'S ROUTE</Link>
+          </Button>
         </div>
-        <Button asChild size="lg" className="mt-4 h-12 w-full rounded-2xl">
-          <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Start Today's Route</Link>
-        </Button>
       </Card>
     );
   }
 
   if (state === "in_progress") {
     return (
-      <Card className="mt-4 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's Route</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          <b className="text-foreground">{completedToday}/{totalToday}</b> completed
-        </p>
-        <Button asChild size="lg" className="mt-4 h-12 w-full rounded-2xl">
-          <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />Continue Today's Route</Link>
-        </Button>
+      <Card className="p-5 border-[#FF6B00]/10 bg-[#FF6B00]/5 rounded-2xl border shadow-sm">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-[#FF6B00] tracking-wider">In Progress</p>
+            <p className="mt-1 text-2xl font-black text-[#1A1A1A]">
+              {completedToday} / {totalToday} Done
+            </p>
+          </div>
+          <Button asChild size="lg" className="h-12 w-full rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold shadow-lg shadow-[#FF6B00]/20">
+            <Link to="/app/live"><Navigation className="mr-2 h-4 w-4" />CONTINUE ROUTE</Link>
+          </Button>
+        </div>
       </Card>
     );
   }
 
   // done
   return (
-    <Card className="mt-4 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Today's Status</p>
-      <div className="mt-2 flex items-center gap-2">
-        <CheckCircle2 className="h-5 w-5 text-[color:var(--success)]" />
-        <p className="text-lg font-semibold">Today's route completed</p>
+    <Card className="p-5 border-neutral-100 bg-neutral-50 rounded-2xl border shadow-sm">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <p className="text-lg font-black text-[#1A1A1A]">Today's Route Completed</p>
+        </div>
+        <div className="flex items-baseline gap-2">
+           <span className="text-sm font-bold text-neutral-500">{completedToday} customers served</span>
+           <span className="text-sm font-black text-emerald-600">₹{earnedToday.toLocaleString("en-IN")} earned</span>
+        </div>
+        <Button asChild size="lg" variant="outline" className="h-12 w-full rounded-2xl border-neutral-200 bg-white font-bold text-[#1A1A1A]">
+          <Link to="/app/live">View Summary</Link>
+        </Button>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {completedToday}/{totalToday} customers served · Earned ₹{earnedToday.toLocaleString("en-IN")} today
-      </p>
-      <Button asChild size="lg" variant="outline" className="mt-4 h-12 w-full rounded-2xl">
-        <Link to="/app/live">View Completed Route</Link>
-      </Button>
     </Card>
   );
 }
