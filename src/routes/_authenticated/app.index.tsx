@@ -112,7 +112,7 @@ function HomePage() {
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const greeting = hour < 12 ? "GOOD MORNING" : hour < 17 ? "GOOD AFTERNOON" : "GOOD EVENING";
   const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
   const handleToggle = async (on: boolean) => {
