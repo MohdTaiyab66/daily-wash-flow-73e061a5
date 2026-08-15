@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, CheckCircle2, Clock, Lock, Navigation, Phone, Wallet, XCircle, Loader2, LifeBuoy, MapPin } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock, Lock, Navigation, Phone, Wallet, XCircle, Loader2, LifeBuoy, MapPin, IndianRupee, TrendingUp } from "lucide-react";
 import { ModifyAssignmentDialog } from "@/components/ModifyAssignmentDialog";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
