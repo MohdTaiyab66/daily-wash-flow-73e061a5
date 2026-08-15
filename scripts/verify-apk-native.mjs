@@ -56,10 +56,10 @@ try {
   record("manifest.readable", false, e.message);
 }
 
-for (const { simple, kind } of CLASSES) {
-  const fqcn = `${EXPECTED_PACKAGE}.${simple}`;
+for (const { simple, kind, pkg } of CLASSES) {
+  const fqcn = `${pkg}.${simple}`;
   const tagRe = new RegExp(
-    `<${kind}\\b[^>]*android:name\\s*=\\s*"(?:${EXPECTED_PACKAGE}\\.)?${simple}"`,
+    `<${kind}\\b[^>]*android:name\\s*=\\s*"(?:${pkg}\\.)?${simple}"`,
   );
   const hasFqcn = manifestXml.includes(`android:name="${fqcn}"`);
   const hasTag = tagRe.test(manifestXml);
