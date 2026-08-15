@@ -23,6 +23,7 @@ import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } f
 
 
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
   component: () => <OfflineGuard label="your live route"><RoutePage /></OfflineGuard>,
@@ -273,31 +274,28 @@ function RoutePage() {
   const netOnline = isOnline();
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5 pb-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Route</h1>
-      <div className="mt-1 flex items-center gap-2">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-          isPreviewMode ? "bg-primary/10 text-primary"
-          : isEndOfDay ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
-          : done > 0 ? "bg-primary/12 text-primary"
-          : !routeUnlocked ? "bg-muted text-muted-foreground"
-          : "bg-muted text-foreground"
-        }`}>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Daily Route</h1>
+        <p className="text-sm text-muted-foreground font-medium">Your work sequence for today</p>
+      </header>
+
+      <div className="flex items-center gap-2">
+        <span className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider",
+          isPreviewMode ? "bg-[#FF6B00]/10 text-[#FF6B00]"
+          : isEndOfDay ? "bg-emerald-100 text-emerald-700"
+          : done > 0 ? "bg-[#FF6B00]/10 text-[#FF6B00]"
+          : !routeUnlocked ? "bg-neutral-100 text-neutral-400"
+          : "bg-neutral-100 text-neutral-600"
+        )}>
           {isPreviewMode && <Sparkles className="h-3 w-3" />}
           {chipLabel}
         </span>
       </div>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        {isPreviewMode
-          ? `Your route for ${previewDayLabel} is ready. Services unlock 1 hour before each customer's scheduled time.`
-          : routeUnlocked
-          ? "Your daily plan, in order."
-          : shiftClock
-          ? `Your work starts at ${shiftClock}.`
-          : "Your route will unlock before your shift starts."}
-      </p>
 
       <TodayAssignmentStatus
+
         isError={todayQuery.isError}
         isFetching={todayQuery.isFetching}
         isRefetching={todayQuery.isRefetching}

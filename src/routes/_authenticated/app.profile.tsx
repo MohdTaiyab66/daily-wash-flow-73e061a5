@@ -64,29 +64,36 @@ function ProfilePage() {
   const areaLocked = !!partner?.area_locked_until && new Date(partner.area_locked_until) > new Date();
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-5">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("profile")}</h1>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Profile</h1>
+        <p className="text-sm text-muted-foreground font-medium">Manage your account and settings</p>
+      </header>
 
-      <Card className="mt-5 p-5">
-        <div className="flex items-center gap-4">
-          <div className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground text-lg font-semibold">
+      <Card className="p-6 border-neutral-100 shadow-sm bg-white rounded-3xl">
+        <div className="flex items-center gap-5">
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#FF6B00] text-white text-xl font-black shadow-lg shadow-[#FF6B00]/20">
             {partner?.full_name?.[0] ?? "U"}
           </div>
-          <div className="min-w-0">
-            <p className="truncate font-semibold">{partner?.full_name ?? t("partner")}</p>
-            <p className="text-xs text-muted-foreground">+91 {partner?.phone}</p>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-wider text-primary">{partner?.partner_code}</span>
-              <Badge className="border-0 bg-accent text-accent-foreground"><Award className="mr-1 h-3 w-3" />{partner?.level ?? "Bronze"}</Badge>
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-xl font-black text-[#1A1A1A]">{partner?.full_name ?? t("partner")}</h2>
+            <p className="text-sm font-bold text-muted-foreground mt-0.5">+91 {partner?.phone}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">{partner?.partner_code}</span>
+              <Badge className="border-0 bg-neutral-100 text-[#1A1A1A] rounded-lg text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                <Award className="mr-1.5 h-3 w-3 text-[#FF6B00]" strokeWidth={3} />
+                {partner?.level ?? "Bronze"}
+              </Badge>
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-3 border-t border-border pt-4 text-center">
+        <div className="mt-8 grid grid-cols-3 border-t border-neutral-50 pt-6 text-center">
           <StatMini value={String(partner?.total_cars_completed ?? 0)} label={t("cars")} />
           <StatMini value={`${Number(partner?.attendance_pct ?? 100).toFixed(0)}%`} label={t("attendance")} />
-          <StatMini value={`₹${Number(partner?.lifetime_earnings ?? 0)}`} label={t("lifetime")} />
+          <StatMini value={`₹${Number(partner?.lifetime_earnings ?? 0).toLocaleString("en-IN")}`} label={t("lifetime")} />
         </div>
       </Card>
+
 
       {!partner?.home_area && (
         <Link to="/app/area">
@@ -173,12 +180,13 @@ function ProfilePage() {
 
 function StatMini({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <p className="text-lg font-semibold">{value}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    <div className="flex flex-col gap-1">
+      <p className="text-lg font-black text-[#1A1A1A] tracking-tighter">{value}</p>
+      <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{label}</p>
     </div>
   );
 }
+
 
 function PushSelfTestCard() {
   const run = useServerFn(sendPushSelfTest);

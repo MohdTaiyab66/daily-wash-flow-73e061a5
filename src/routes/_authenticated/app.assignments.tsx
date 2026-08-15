@@ -377,11 +377,10 @@ function AssignmentsPage() {
 
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-32 space-y-8">
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Assignment Builder</p>
-        <h1 className="text-3xl font-bold tracking-tight">Build your plan</h1>
-        <p className="text-xs text-muted-foreground">Choose how much you want to work.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
       </header>
 
       {/* AREA SELECTION HEADER */}
@@ -391,24 +390,68 @@ function AssignmentsPage() {
           className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <MapPin className="h-5 w-5 text-primary" />
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Your Work Area</p>
-              <p className="text-sm font-bold">{partner.home_area}</p>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner.home_area}</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-neutral-300" />
+          <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
         </Link>
       </section>
 
-      {/* INPUT SLIDERS */}
-      <section className="space-y-8">
-        <div className="space-y-5">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-neutral-900">1. How many hours do you want to work?</label>
-            <p className="text-xs text-muted-foreground">{minHours}–{maxHours} hours/day</p>
+      {/* HERO SUMMARY CARD */}
+      <section>
+        <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="p-6 space-y-6 relative z-10">
+            <div className="flex flex-col gap-1">
+              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Assignment Summary</p>
+              <div className="flex items-baseline justify-between mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🚗</span>
+                  <span className="text-2xl font-black uppercase tracking-tight">{cars} CUSTOMERS</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1 border-t border-white/10 pt-6">
+              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Total Monthly Earning</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                < IndianRupee className="h-6 w-6 text-[#FF6B00]" strokeWidth={3} />
+                <span className="text-4xl font-black tracking-tighter">₹{animMonthly.toLocaleString("en-IN")}</span>
+              </div>
+              <p className="text-[10px] text-white/30 font-bold mt-1 uppercase tracking-wider">
+                🟢 {SERVICE_DAYS_PER_MONTH} service days/month • Mondays OFF
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" /> Daily Hours
+                </p>
+                <p className="text-sm font-bold">{hours} Hours / Day</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="h-3 w-3" /> Timeline
+                </p>
+                <p className="text-sm font-bold">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* WORKING HOURS SLIDER */}
+      <section className="space-y-6">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1 px-1">
+            <label className="text-base font-bold text-[#1A1A1A]">How many hours do you want to work?</label>
+            <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{hours} HOURS / DAY</p>
           </div>
           <div className="px-1">
             <Slider
@@ -419,17 +462,34 @@ function AssignmentsPage() {
               onValueChange={([v]) => setHours(v)}
               className="py-2"
             />
-            <div className="flex justify-between mt-2">
-              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{hours} HOURS</span>
-              <span className="text-[11px] font-medium text-neutral-400">Target: {cars} Customers</span>
+            <div className="flex items-center justify-between mt-4 bg-[#F8F9FA] p-3 rounded-xl">
+              <div className="flex items-center gap-6 flex-1">
+                <div className="flex flex-col items-center">
+                   <span className="text-lg">🌅</span>
+                   <span className="text-[10px] font-bold text-muted-foreground uppercase">{formatTime12(startTime)}</span>
+                </div>
+                <div className="flex-1 h-[2px] bg-neutral-200 relative">
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 py-0.5 border border-neutral-100 rounded-full text-[9px] font-bold text-neutral-400">
+                     {hours} HRS
+                   </div>
+                </div>
+                <div className="flex flex-col items-center">
+                   <span className="text-lg">🌤️</span>
+                   <span className="text-[10px] font-bold text-muted-foreground uppercase">{formatTime12(finishTime)}</span>
+                </div>
+              </div>
             </div>
+            <p className="mt-3 text-[11px] font-medium text-muted-foreground text-center">
+              More hours = more customers = more earning potential
+            </p>
           </div>
         </div>
 
-        <div className="space-y-5">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-neutral-900">2. How many days do you want to commit?</label>
-            <p className="text-xs text-muted-foreground">{minDays}–{maxDays} days</p>
+        {/* DAYS COMMITMENT SLIDER */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1 px-1">
+            <label className="text-base font-bold text-[#1A1A1A]">How many days do you want to work?</label>
+            <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{duration} DAYS</p>
           </div>
           <div className="px-1">
             <Slider
@@ -444,8 +504,8 @@ function AssignmentsPage() {
               className="py-2"
             />
             <div className="flex justify-between mt-2">
-              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{duration} DAYS</span>
-              <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Mondays are always OFF</span>
+              <div className="bg-[#FF6B00]/10 text-[#FF6B00] text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
                 {commitment.label}
               </div>
             </div>
@@ -453,141 +513,107 @@ function AssignmentsPage() {
         </div>
       </section>
 
-      {/* YOUR PLAN CARD */}
-      <section className="space-y-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Plan</h3>
-        <Card className="p-5 border-neutral-100 shadow-sm bg-white overflow-hidden relative rounded-2xl">
-          {isFetching && (
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      {/* EARNINGS BREAKDOWN */}
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Monthly Earning</h3>
+        <Card className="p-6 border-neutral-100 shadow-sm bg-white rounded-3xl">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-baseline justify-between">
+               <span className="text-3xl font-black text-[#1A1A1A]">₹{animMonthly.toLocaleString("en-IN")}</span>
+               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">🟢 ACTIVE</span>
             </div>
-          )}
-          <div className="grid grid-cols-2 gap-y-6">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-                <Clock className="h-3 w-3" /> Working Hours
-              </p>
-              <p className="text-sm font-bold">{hours} Hours</p>
+            
+            <div className="space-y-3 pt-6 border-t border-neutral-50">
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-muted-foreground font-medium">{cars} customers</span>
+                 <span className="font-bold text-[#1A1A1A]">₹17 per customer/day</span>
+               </div>
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-muted-foreground font-medium">26 service days/month</span>
+                 <span className="font-bold text-[#1A1A1A]">Monday OFF</span>
+               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-                <Car className="h-3 w-3" /> Customers
-              </p>
-              <p className={cn("text-sm font-bold", acceptableCars < cars ? "text-amber-600" : "text-neutral-900")}>
-                {acceptableCars} <span className="text-neutral-400 font-normal">available</span>
-                {cars > 0 && <span className="text-neutral-400 font-normal"> / {cars} target</span>}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-                <TrendingUp className="h-3 w-3" /> Start
-              </p>
-              <p className="text-sm font-bold">{formatTime12(startTime)}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-                <Navigation className="h-3 w-3" /> Finish
-              </p>
-              <p className="text-sm font-bold">{formatTime12(finishTime)}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-neutral-50 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500" />
-            <p className="text-[11px] font-bold text-neutral-600 uppercase tracking-tight">
-              26 service days/month · Mondays off
+            
+            <p className="text-[11px] font-medium text-muted-foreground leading-relaxed pt-2">
+              Based on {cars} customers × ₹{rate} × {SERVICE_DAYS_PER_MONTH} service days. Earning potential updates instantly as you change your plan.
             </p>
           </div>
-
-          {acceptableCars < cars && !isFetching && (
-             <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
-               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-               <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
-                 {availableInArea === 0 
-                   ? `Only 0 customers are available right now. Your route will start with what's available.`
-                   : `Only ${availableInArea} ${availableInArea === 1 ? 'customer is' : 'customers are'} available right now. Your route will start with the available work. More customers may be added as new bookings arrive.`}
-               </p>
-             </div>
-          )}
         </Card>
       </section>
 
-      {/* EARNINGS DISPLAY */}
-      <section className="space-y-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
-        <Card className="overflow-hidden border-0 bg-neutral-900 text-white shadow-xl shadow-neutral-200 rounded-2xl">
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Today</p>
-                <p className="text-2xl font-black text-white tracking-tight">₹{acceptableEarn}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider">Monthly</p>
-                <p className="text-2xl font-black text-white tracking-tight">₹{Math.round(rate * SERVICE_DAYS_PER_MONTH)}<span className="text-[10px] text-white/40 ml-1 font-bold">/ CUST</span></p>
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-white/10 flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-primary tracking-wider">Over Your Plan</p>
-                <p className="text-3xl font-black text-white tracking-tight">₹{animMonthly.toLocaleString("en-IN")}</p>
-              </div>
-            </div>
-
-            <p className="text-[10px] text-white/30 font-medium leading-tight">
-              * Monthly projection based on 26 service days/month (Mondays off). 
-            </p>
-          </div>
+      {/* CUSTOMER AVAILABILITY */}
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Availability</h3>
+        <Card className={cn(
+          "p-5 rounded-3xl border-0",
+          availableInArea > 0 ? "bg-emerald-50 text-emerald-900" : "bg-neutral-50 text-neutral-600"
+        )}>
+           <div className="flex flex-col gap-4">
+             <div className="flex items-center justify-between">
+               <div className="flex flex-col">
+                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Customers Available</span>
+                 <span className="text-xl font-black">{availableInArea} right now</span>
+               </div>
+               <div className="flex flex-col text-right">
+                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Today's Target</span>
+                 <span className="text-xl font-black">{cars} customers</span>
+               </div>
+             </div>
+             
+             {availableInArea > 0 ? (
+               <p className="text-[11px] font-medium leading-relaxed">
+                 {availableInArea} {availableInArea === 1 ? 'customer is' : 'customers are'} ready for service in your area. More customers may be added to your route throughout the day.
+               </p>
+             ) : (
+               <p className="text-[11px] font-medium leading-relaxed">
+                 No customers available right now. Don't worry. New customers can be added to your area at any time.
+               </p>
+             )}
+           </div>
         </Card>
       </section>
 
       {/* STICKY BOTTOM CTA */}
       <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto max-w-md p-4">
+        <div className="mx-auto max-w-md p-4 space-y-2">
           <Button 
             size="lg" 
             className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
-            disabled={acceptableCars === 0 || accept.isPending}
+            disabled={availableInArea === 0 || accept.isPending}
             onClick={() => setConfirmOpen(true)}
           >
             {accept.isPending ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : availableInArea > 0 ? (
+              <>START WITH {availableInArea} CUSTOMERS →</>
             ) : (
-              <>
-                Start with {acceptableCars} {acceptableCars === 1 ? 'Customer' : 'Customers'} →
-              </>
+              <>NO CUSTOMERS AVAILABLE</>
             )}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-widest"
+            onClick={() => navigate({ to: "/app/my-assignment" })}
+          >
+            Cancel Assignment
           </Button>
         </div>
       </div>
-
 
       {/* CONFIRMATION DIALOG */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Start your assignment?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">Start Assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              You are accepting {acceptableCars} customer(s) in {partner.home_area} for a {duration}-day commitment.
+              You are accepting {acceptableCars} customers in {partner.home_area}. Monthly earning: ₹{animMonthly.toLocaleString("en-IN")}.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-2 space-y-3">
-             <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-               <div>
-                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Today's Earnings</p>
-                 <p className="text-lg font-black text-neutral-900">₹{acceptableEarn}</p>
-               </div>
-               <div className="text-right">
-                 <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider mb-0.5">Total Commitment</p>
-                 <p className="text-lg font-black text-[#FF6B00]">₹{animMonthly.toLocaleString("en-IN")}</p>
-               </div>
-             </div>
-          </div>
           <AlertDialogFooter className="flex-row gap-3">
-            <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Back</AlertDialogCancel>
             <AlertDialogAction 
-              className="flex-1 h-12 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/20"
+              className="flex-1 h-12 rounded-xl bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/20"
               onClick={() => accept.mutate(acceptableCars)}
             >
               Confirm

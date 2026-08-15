@@ -148,21 +148,98 @@ function HomePage() {
     Number((availableWork as any)?.monthly_earnings ?? potentialEarnings * 26) + recoveredMonthly;
   const areaName = partner?.home_area ?? "Your Area";
 
-
-
   return (
-    <div className="mx-auto max-w-md px-5 pb-8 pt-3 space-y-6">
+    <div className="mx-auto max-w-md px-5 pb-32 pt-3 space-y-8">
       {/* GREETING */}
-      <header className="space-y-0.5">
-        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">{greeting} 👋</p>
-        <h1 className="text-2xl font-bold tracking-tight">{firstName}</h1>
-        <p className="text-[11px] text-muted-foreground">{dateStr}</p>
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
       </header>
 
-      {/* AVAILABILITY CARD */}
+      {/* AREA SELECTION HEADER */}
+      <section>
+        <Link 
+          to="/app/area" 
+          className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {areaName}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
+        </Link>
+      </section>
+
+      {/* HERO SUMMARY CARD - [BOOKING-PUSH:UI:01] */}
+      <section>
+        <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="p-6 space-y-6 relative z-10">
+            {assignment && total > 0 ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🚗</span>
+                      <span className="text-2xl font-black uppercase tracking-tight">{total} CUSTOMERS</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 border-t border-white/10 pt-6">
+                  <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Potential Daily Earning</p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    < IndianRupee className="h-6 w-6 text-[#FF6B00]" strokeWidth={3} />
+                    <span className="text-4xl font-black tracking-tighter">₹{estimatedEarningsToday.toLocaleString("en-IN")}</span>
+                  </div>
+                  <p className="text-[10px] text-white/30 font-bold mt-1 uppercase tracking-wider">
+                    🟢 26 service days/month • Mondays OFF
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" /> Start Time
+                    </p>
+                    <p className="text-sm font-bold">{assignment.expected_start_time ? formatTime12(assignment.expected_start_time) : "—"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                      <Navigation className="h-3 w-3" /> Progress
+                    </p>
+                    <p className="text-sm font-bold">{done} / {total} Done</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="py-8 text-center space-y-4">
+                <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center mx-auto">
+                   <Car className="h-8 w-8 text-[#FF6B00]" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-bold">No Active Assignment</h2>
+                  <p className="text-sm text-white/60">Choose your hours and start earning today.</p>
+                </div>
+                <Button asChild className="bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold h-12 rounded-2xl px-8">
+                  <Link to="/app/assignments">Build Your Plan</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      </section>
+
+      {/* AVAILABILITY STATUS */}
       <div className={cn(
-        "flex items-center justify-between p-4 rounded-2xl transition-all border",
-        online ? "bg-white border-emerald-100 shadow-sm" : "bg-neutral-50 border-neutral-200"
+        "flex items-center justify-between p-4 rounded-3xl transition-all border",
+        online ? "bg-emerald-50 border-emerald-100" : "bg-neutral-50 border-neutral-100"
       )}>
         <div className="flex items-center gap-3">
           <div className={cn(
@@ -170,11 +247,11 @@ function HomePage() {
             online ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" : "bg-neutral-300"
           )} />
           <div className="flex flex-col">
-            <span className={cn("text-xs font-bold uppercase tracking-wider", online ? "text-emerald-600" : "text-neutral-500")}>
-              {online ? "ONLINE" : "OFFLINE"}
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", online ? "text-emerald-600" : "text-neutral-400")}>
+              {online ? "SYSTEM ONLINE" : "SYSTEM OFFLINE"}
             </span>
-            <span className="text-[11px] text-muted-foreground">
-              {online ? "Ready to receive work" : "Not receiving new work"}
+            <span className="text-[11px] font-bold text-neutral-500 mt-0.5">
+              {online ? "Ready to receive new customers" : "Not receiving new work"}
             </span>
           </div>
         </div>
@@ -185,208 +262,95 @@ function HomePage() {
         />
       </div>
 
-      {/* MAIN WORK CARD (Action-First) */}
-      <section>
-        {!online ? (
-          /* OFFLINE EMPTY STATE */
-          <Card className="flex flex-col items-center text-center p-6 border-dashed bg-neutral-50/50">
-            <div className="h-12 w-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-              <Car className="h-6 w-6 text-neutral-300" />
-            </div>
-            <h3 className="text-lg font-bold mb-1">Currently Offline</h3>
-            <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
-              Go online to receive new customers and start earning today.
-            </p>
-            <Button onClick={() => handleToggle(true)} className="w-full h-11 rounded-xl bg-neutral-900 text-white font-bold">
-              Go Online Now
-            </Button>
-          </Card>
-        ) : inProgressService ? (
-          /* SERVICE IN PROGRESS */
-          <Card className="overflow-hidden border-0 bg-neutral-900 text-white p-6 relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">Next Step</p>
-                  <h2 className="text-xl font-bold mt-1 text-white">Continue Service</h2>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
-                  <Navigation className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1">
-                  <p className="text-[10px] uppercase text-white/40 font-bold">Completed</p>
-                  <p className="text-lg font-bold">{done} / {total}</p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] uppercase text-white/40 font-bold">Earned</p>
-                  <p className="text-lg font-bold text-primary">₹{earnedSoFar}</p>
-                </div>
-              </div>
-              <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-                <Link to="/app/live">
-                  Continue Route
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </Card>
-        ) : allDone ? (
-          /* ALL DONE */
-          <Card className="flex flex-col items-center text-center p-6 bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-100">
-             <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center mb-3">
-               <CheckCircle2 className="h-6 w-6 text-white" />
+      {/* PRIMARY CTA / ACTION SECTION */}
+      <section className="space-y-4">
+        {online && inProgressService && (
+          <Button asChild size="lg" className="w-full h-16 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
+            <Link to="/app/live">
+              CONTINUE SERVICE
+              <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
+            </Link>
+          </Button>
+        )}
+
+        {online && allDone && (
+          <div className="p-6 bg-emerald-500 text-white rounded-3xl text-center space-y-4 shadow-xl shadow-emerald-500/20">
+             <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center mx-auto">
+               <CheckCircle2 className="h-6 w-6" strokeWidth={3} />
              </div>
-             <h2 className="text-xl font-bold mb-1">Today Completed!</h2>
-             <p className="text-emerald-50 text-xs mb-5">
-               {total} services completed. Great job!
-             </p>
-             <Button asChild variant="secondary" className="w-full h-11 rounded-xl font-bold">
-               <Link to="/app/earnings">View Today's Earnings</Link>
+             <div>
+               <h2 className="text-xl font-bold uppercase tracking-tight">Today Completed!</h2>
+               <p className="text-emerald-50/80 text-xs font-medium mt-1 uppercase tracking-wider">{total} services done · Great job!</p>
+             </div>
+             <Button asChild variant="secondary" className="w-full h-12 rounded-2xl bg-white text-emerald-600 font-black">
+               <Link to="/app/earnings">VIEW EARNINGS</Link>
              </Button>
-          </Card>
-        ) : assignment && total > 0 ? (
-          /* ASSIGNMENT READY */
-          <Card className="overflow-hidden border border-neutral-100 shadow-sm bg-white p-6 relative">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Today's Work</p>
-                <h2 className="text-xl font-bold mt-1">{total} Customers</h2>
-              </div>
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
+          </div>
+        )}
 
-            <div className="flex items-center gap-6 mb-6">
+        {online && assignment && total > 0 && !anyStarted && !allDone && (
+           <Button asChild size="lg" className="w-full h-16 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
+            <Link to="/app/live">
+              START ASSIGNMENT
+              <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
+            </Link>
+          </Button>
+        )}
+
+        {online && !assignment && (availableCount > 0 || (bookingRequests?.length ?? 0) > 0) && (
+          <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">Potential</p>
-                <p className="text-lg font-bold">₹{estimatedEarningsToday}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">Area</p>
-                <p className="text-lg font-bold truncate max-w-[120px]">{areaName}</p>
+                <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.2em]">Work Opportunities</p>
+                <h2 className="text-xl font-bold mt-1 text-[#1A1A1A]">{(availableCount + (bookingRequests?.length ?? 0))} Customers Ready</h2>
               </div>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-                <Link to="/app/live">
-                  View Assignment
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+            <div className="flex flex-col gap-3">
+              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
+                <Link to="/app/assignments">VIEW AVAILABLE WORK</Link>
               </Button>
-              
-              {/* CANCEL ASSIGNMENT - [PARTNER-CANCELLATION:UI] */}
-              {!anyStarted && (
-                <Button asChild variant="ghost" className="w-full text-xs text-muted-foreground font-medium uppercase tracking-wider hover:bg-red-50 hover:text-red-600 transition-colors">
-                  <Link to="/app/my-assignment">Cancel Assignment</Link>
-                </Button>
-              )}
             </div>
-            
-            {assignment.expected_start_time && (
-              <p className="mt-3 text-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                Start around {formatTime12(assignment.expected_start_time)}
-              </p>
-            )}
-          </Card>
-        ) : (availableCount > 0 || (bookingRequests?.length ?? 0) > 0) ? (
-          /* WORK AVAILABLE */
-          <Card className="overflow-hidden border border-primary/20 shadow-md bg-white p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-                  {recoveredCount > 0 ? "New Work Available" : "Work Available"}
-                </p>
-                <h2 className="text-xl font-bold mt-1">{(availableCount + (bookingRequests?.length ?? 0))} Customers</h2>
-              </div>
-              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6 mb-6">
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">Potential</p>
-                <p className="text-lg font-bold text-primary">₹{potentialEarnings}</p>
-                <p className="text-[9px] text-primary/60 font-bold">+₹{potentialMonthlyExtra.toLocaleString("en-IN")}/mo</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold">
-                  {Number.isFinite(recoveredDistanceM) ? "Distance" : "Area"}
-                </p>
-                <p className="text-lg font-bold truncate max-w-[120px]">
-                  {Number.isFinite(recoveredDistanceM)
-                    ? `${(Number(recoveredDistanceM) / 1000).toFixed(1)} km`
-                    : areaName}
-                </p>
-              </div>
-
-            </div>
-
-            <Button asChild size="lg" className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-              <Link to="/app/assignments">
-                View Available Work
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </Card>
-
-        ) : (
-          /* NO WORK YET */
-          <Card className="flex flex-col items-center text-center p-6 border-dashed bg-neutral-50/50">
-            <div className="h-12 w-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-              <Car className="h-6 w-6 text-neutral-300" />
-            </div>
-            <h3 className="text-lg font-bold mb-1">No work assigned yet</h3>
-            <p className="text-xs text-muted-foreground mb-5 max-w-[200px]">
-              New customers will appear here when available.
-            </p>
-            <Button asChild variant="outline" className="w-full h-11 rounded-xl font-bold border-2">
-              <Link to="/app/assignments">View Available Work</Link>
-            </Button>
-          </Card>
+          </div>
         )}
       </section>
 
       {/* TODAY SUMMARY (3-Column) */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Today's Summary</h3>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Earning Summary</h3>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-            <p className="text-lg font-bold">₹{earnedSoFar}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Earned</p>
+          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
+            <p className="text-xl font-black text-[#1A1A1A]">₹{earnedSoFar}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Earned</p>
           </div>
-          <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-            <p className="text-lg font-bold">{completed}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Completed</p>
+          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
+            <p className="text-xl font-black text-[#1A1A1A]">{completed}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Done</p>
           </div>
-          <div className="bg-white border rounded-2xl p-3 flex flex-col items-center text-center shadow-sm">
-            <p className="text-lg font-bold">{total > 0 ? remaining : availableCount}</p>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-              {total > 0 ? "Pending" : "Available"}
+          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
+            <p className="text-xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] mt-1">
+              {total > 0 ? "Pending" : "Ready"}
             </p>
           </div>
         </div>
       </section>
 
-      {/* SUPPORT (Compact White Card) */}
+      {/* SUPPORT */}
       <section>
-        <Card className="p-5 border-neutral-100 shadow-sm bg-white">
+        <Card className="p-5 border-neutral-100 shadow-sm bg-white rounded-3xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Need Help?</p>
-              <h3 className="text-sm font-bold">Partner Support</h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Need Help?</p>
+              <h3 className="text-base font-bold text-[#1A1A1A]">Partner Support</h3>
             </div>
             <div className="flex gap-2">
-              <a href="tel:+919999999999" className="h-10 w-10 rounded-xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <Phone className="h-4 w-4 text-primary" />
+              <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
+                <Phone className="h-5 w-5 text-primary" />
               </a>
-              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <MessageCircle className="h-4 w-4 text-emerald-500" />
+              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
+                <MessageCircle className="h-5 w-5 text-emerald-500" />
               </a>
             </div>
           </div>
@@ -395,4 +359,3 @@ function HomePage() {
     </div>
   );
 }
-
