@@ -6635,15 +6635,21 @@ export type Database = {
       get_partner_open_offers: {
         Args: { p_partner_id: string }
         Returns: {
+          area: string
+          assignment_id: string
           booking_id: string
           broadcast_id: string
           broadcast_status: string
           current_incentive: number
           current_radius_m: number
           current_round: number
+          customer_count: number
           customer_lat: number
           customer_lng: number
+          distance_display: string
           distance_from_route_m: number
+          earning_amount: number
+          earning_monthly: number
           id: string
           incentive: number
           partner_id: string
@@ -6959,9 +6965,7 @@ export type Database = {
             Args: { p_broadcast_id: string }
             Returns: {
               distance_from_route_m: number
-              is_exact_zone_match: boolean
               partner_id: string
-              remaining_capacity: number
               route_impact_m: number
             }[]
           }

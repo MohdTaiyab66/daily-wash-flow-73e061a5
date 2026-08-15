@@ -17,19 +17,15 @@ export const dispatchMarketplacePushes = createServerFn({ method: "POST" })
       
       if (error) throw error;
       if (!openBookings || openBookings.length === 0) {
-        return { ok: true, dispatched: 0 };
+        return { ok: true, totalDispatched: 0 };
       }
 
       console.log(`[BOOKING-PUSH:CRON] OPEN_BOOKINGS_FOUND count=${openBookings.length}`);
       
-      // RECALCULATE ELIGIBILITY ON EVERY TICK
-      // This ensures partners who just logged in or came online are included
-      // and honors the 5-minute decline cooldown
-      for (const b of openBookings) {
-        await (supabaseAdmin as any).rpc("mp_reconcile_all_partners_for_broadcast", { p_broadcast_id: b.broadcast_id });
-      }
-
+      // The reconciliation now happens INSIDE dispatchBookingPushes per-booking
+      // to ensure granular forensic logging [BOOKING-PUSH:AREA:03-04].
       const totalDispatched = await dispatchBookingPushes(openBookings);
+
       
       return { ok: true, totalDispatched };
     } catch (e: any) {

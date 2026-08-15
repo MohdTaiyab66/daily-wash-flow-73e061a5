@@ -703,10 +703,14 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
   let totalDispatched = 0;
 
   for (const b of bookings) {
-    console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
+    // [BOOKING-PUSH:AREA:01] BOOKING_OPEN
+    console.log(`[BOOKING-PUSH:AREA:01] BOOKING_OPEN booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
     
+    // [BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED
+    console.log(`[BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED area=${b.area} lat=${b.customer_lat} lng=${b.customer_lng}`);
+
     // 1. Reconcile/Recalculate eligibility for ALL partners
-    // This includes newly online partners and honors the 5m decline cooldown
+    // [BOOKING-PUSH:AREA:03] ELIGIBLE_PARTNERS_QUERY_STARTED
     const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
       p_broadcast_id: b.broadcast_id
     });
@@ -716,22 +720,27 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
       continue;
     }
 
-    console.log(`[BOOKING-PUSH:CRON] ELIGIBLE_PARTNERS_FOUND broadcast_id=${b.broadcast_id}`);
+    // [BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND
+    console.log(`[BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND broadcast_id=${b.broadcast_id}`);
 
     // 2. Fetch all PENDING offers for this broadcast
     const { data: offers, error: offersError } = await sb
       .from('marketplace_offers')
-      .select('id, partner_id, incentive')
+      .select('id, partner_id, incentive, response, next_retry_at')
       .eq('broadcast_id', b.broadcast_id)
       .eq('response', 'pending');
 
     if (offersError) continue;
 
-    console.log(`[BOOKING-PUSH:CRON] FANOUT_STARTED broadcast_id=${b.broadcast_id} offer_count=${offers?.length}`);
+    // 3. Parallel Fan-out
+    // [BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED
+    console.log(`[BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED count=${offers?.length}`);
 
-    // 3. Fan out in parallel
     const fanout = (offers || []).map(async (o: any) => {
       try {
+        // [BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY
+        console.log(`[BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY partner_id=${o.partner_id} broadcast_id=${b.broadcast_id}`);
+
         const [monthly, distance] = await Promise.all([
           resolvePartnerMonthlyEarning({
             sb,
@@ -776,6 +785,11 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
         if (result.sent > 0) {
           totalDispatched++;
+          // [BOOKING-PUSH:AREA:08] FCM_SENT
+          console.log(`[BOOKING-PUSH:AREA:08] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id}`);
+        } else {
+          // [BOOKING-PUSH:AREA:09] FCM_FAILED
+          console.log(`[BOOKING-PUSH:AREA:09] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id}`);
         }
       } catch (e) {
         console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
@@ -783,9 +797,12 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     });
 
     await Promise.all(fanout);
-    console.log(`[BOOKING-PUSH:CRON] FANOUT_COMPLETED broadcast_id=${b.broadcast_id}`);
+    
+    // [BOOKING-PUSH:AREA:10] RETRY_SCHEDULED (Tick continues)
+    console.log(`[BOOKING-PUSH:AREA:10] RETRY_SCHEDULED broadcast_id=${b.broadcast_id}`);
   }
 
   return totalDispatched;
 }
+
 

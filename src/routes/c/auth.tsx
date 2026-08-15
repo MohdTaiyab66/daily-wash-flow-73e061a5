@@ -200,11 +200,16 @@ function CustomerAuth() {
           authLog.info("[AUTH] User not found, moving to signup step");
           setStep("name");
           setVerifyState("IDLE");
-        } else {
-          setError(signInError); // Passing the raw error object to getDisplayError
-          setVerifyState("ERROR");
+          setLoading(false);
+          verifyingRef.current = false;
+          return;
         }
+        setError(signInError);
+        setVerifyState("ERROR");
+        setLoading(false);
+        verifyingRef.current = false;
         return;
+
       }
 
       authLog.info("[AUTH] STAGE 1: VERIFY_OTP_RESPONSE SUCCESS", { 
