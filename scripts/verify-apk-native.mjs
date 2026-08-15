@@ -306,7 +306,7 @@ try {
 // absent from the APK.
 const PAYMENT_PLUGIN_SRC = "android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
 const PAYMENT_PLUGIN_REPO_SRC = "android-native/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
-const MAIN_ACTIVITY = "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
+const MAIN_ACTIVITY = VARIANT === "partner" ? "android/app/src/main/java/com/urbanwash/partner/MainActivity.java" : "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
 
 record("payments.upstream-plugin.absent", !fs.existsSync("node_modules/capacitor-razorpay"),
   fs.existsSync("node_modules/capacitor-razorpay")
