@@ -38,8 +38,8 @@ const KOTLIN_DIR = "android/app/src/main/java/com/urbanwash/push";
 const EXPECTED_PACKAGE = VARIANT === "partner" ? "com.urbanwash.partner" : "com.urbanwash.customer";
 const PUSH_PACKAGE = "com.urbanwash.push";
 const CLASSES = [
-  { simple: "UrbanwashMessagingService", kind: "service" },
-  { simple: "OfferActionReceiver", kind: "receiver" },
+  { simple: "UrbanwashMessagingService", kind: "service", pkg: PUSH_PACKAGE },
+  { simple: "OfferActionReceiver", kind: "receiver", pkg: PUSH_PACKAGE },
 ];
 
 const results = [];
