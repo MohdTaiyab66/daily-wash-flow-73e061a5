@@ -111,7 +111,22 @@ function CustomerHome() {
    * '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
    *                                         
    *                                             
-   *                                             Load the security issues from the scan results and fix the selected issues.
+   *                                             For the code present, I get the error below.
+   * 
+   * Please think step-by-step in order to resolve it.
+   * ```
+   * The app returned 500 while handling GET /_serverFn/eyJmaWxlIjoiL3NyYy9saWIvbWFya2V0cGxhY2UuZnVuY3Rpb25zLnRzP3Rzcy1zZXJ2ZXJmbi1zcGxpdCIsImV4cG9ydCI6ImdldFBhcnRuZXJPcGVuT2ZmZXJzX2NyZWF0ZVNlcnZlckZuX2hhbmRsZXIifQ. The error was handled by a route or error boundary, so no stack was captured — check the failing loader/route code and the dev server output.
+   * 
+   * {
+   *   "timestamp": 1786826492623,
+   *   "error_type": "RUNTIME_ERROR",
+   *   "filename": "Unknown file",
+   *   "lineno": 0,
+   *   "colno": 0,
+   *   "stack": "Unavailable",
+   *   "has_blank_screen": true
+   * }
+   * ```
    */
 
 
