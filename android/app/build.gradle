@@ -66,15 +66,16 @@ dependencies {
 
 configurations.all {
     resolutionStrategy {
-        force 'com.razorpay:standard-core:1.7.18'
-        // Fail fast if anything ever reintroduces a dynamic Razorpay version.
-        eachDependency { details ->
-            if (details.requested.group == 'com.razorpay' && details.requested.name in ['checkout', 'standard-core']) {
-                if (details.requested.version?.contains('+')) {
-                    throw new GradleException("Dynamic Razorpay version requested (" + details.requested.version + "); only 1.7.18 is allowed")
-                }
-                if (details.requested.name == 'standard-core') {
-                    details.useVersion '1.7.18'
+        if (!(project.hasProperty("URBANWASH_APP") && project.getProperty("URBANWASH_APP") == "partner")) {
+            force 'com.razorpay:standard-core:1.7.18'
+            eachDependency { details ->
+                if (details.requested.group == 'com.razorpay' && details.requested.name in ['checkout', 'standard-core']) {
+                    if (details.requested.version?.contains('+')) {
+                        throw new GradleException("Dynamic Razorpay version requested (" + details.requested.version + "); only 1.7.18 is allowed")
+                    }
+                    if (details.requested.name == 'standard-core') {
+                        details.useVersion '1.7.18'
+                    }
                 }
             }
         }
