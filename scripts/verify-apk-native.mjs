@@ -35,7 +35,8 @@ const APK = process.argv[2] || "android/app/build/outputs/apk/debug/app-debug.ap
 const MANIFEST = "android/app/src/main/AndroidManifest.xml";
 const KOTLIN_DIR = "android/app/src/main/java/com/urbanwash/push";
 
-const EXPECTED_PACKAGE = "com.urbanwash.push";
+const EXPECTED_PACKAGE = VARIANT === "partner" ? "com.urbanwash.partner" : "com.urbanwash.customer";
+const PUSH_PACKAGE = "com.urbanwash.push";
 const CLASSES = [
   { simple: "UrbanwashMessagingService", kind: "service" },
   { simple: "OfferActionReceiver", kind: "receiver" },
