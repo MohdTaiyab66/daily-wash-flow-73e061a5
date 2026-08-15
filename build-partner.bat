@@ -19,12 +19,35 @@ echo [2/4] Syncing Capacitor and applying variant sources...
 call bunx cap sync android || goto :fail
 
 REM Apply variant-specific sources (Clean old variant sources)
-if exist "android\app\src\main\java\com\urbanwash\payments" rd /S /Q "android\app\src\main\java\com\urbanwash\payments"
-
-if exist "android-native\java\com\urbanwash\partner\MainActivity.java" (
-    echo [2.1] Applying Partner MainActivity...
-    copy /Y "android-native\java\com\urbanwash\partner\MainActivity.java" "android\app\src\main\java\com\urbanwash\partner\MainActivity.java" >nul
+echo [2.0] Cleaning Customer/Payment sources from Partner build...
+if exist "android\app\src\main\java\com\urbanwash\payments" (
+    rd /S /Q "android\app\src\main\java\com\urbanwash\payments" || (echo [FAIL] Could not remove payments dir & goto :fail)
 )
+if exist "android\app\src\main\java\com\urbanwash\customer" (
+    rd /S /Q "android\app\src\main\java\com\urbanwash\customer" || (echo [FAIL] Could not remove customer dir & goto :fail)
+)
+
+set "DEST_PKG_DIR=android\app\src\main\java\com\urbanwash\partner"
+if not exist "%DEST_PKG_DIR%" (
+    echo [2.0.1] Creating destination directory...
+    mkdir "%DEST_PKG_DIR%" || (echo [FAIL] Could not create %DEST_PKG_DIR% & goto :fail)
+)
+
+echo [2.1] Applying Partner MainActivity...
+set "SRC_ACTIVITY=android-native\java\com\urbanwash\partner\MainActivity.java"
+set "DEST_ACTIVITY=%DEST_PKG_DIR%\MainActivity.java"
+
+if not exist "%SRC_ACTIVITY%" (
+    echo [FAIL] Source MainActivity not found: %SRC_ACTIVITY%
+    goto :fail
+)
+
+copy /Y "%SRC_ACTIVITY%" "%DEST_ACTIVITY%" >nul
+if errorlevel 1 (
+    echo [FAIL] Partner MainActivity injection failed
+    goto :fail
+)
+echo [PASS] Partner MainActivity injected
 
 REM 2. Build APK
 echo [3/4] Building APK...
