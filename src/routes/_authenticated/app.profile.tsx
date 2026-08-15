@@ -180,12 +180,13 @@ function ProfilePage() {
 
 function StatMini({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <p className="text-lg font-semibold">{value}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    <div className="flex flex-col gap-1">
+      <p className="text-lg font-black text-[#1A1A1A] tracking-tighter">{value}</p>
+      <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{label}</p>
     </div>
   );
 }
+
 
 function PushSelfTestCard() {
   const run = useServerFn(sendPushSelfTest);
