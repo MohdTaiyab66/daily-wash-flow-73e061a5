@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo  Urban Wash - Sequential Build (Customer & Partner)
+echo  Urban Wash - Sequential Build (Customer + Partner)
 echo ============================================================
 
 call build-customer.bat
