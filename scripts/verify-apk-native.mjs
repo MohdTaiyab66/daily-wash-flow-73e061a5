@@ -183,7 +183,7 @@ for (const { simple } of CLASSES) {
 // ships is the binary AndroidManifest.xml inside the APK, which also contains
 // everything Capacitor plugin manifests merged in. Decode it and assert that
 // exactly one service owns com.google.firebase.MESSAGING_EVENT.
-const MERGED_FCM_OWNER = `${EXPECTED_PACKAGE}.UrbanwashMessagingService`;
+const MERGED_FCM_OWNER = `${PUSH_PACKAGE}.UrbanwashMessagingService`;
 const COMPETING_SERVICES = [
   "io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService",
   "com.capacitorjs.plugins.pushnotifications.MessagingService",
