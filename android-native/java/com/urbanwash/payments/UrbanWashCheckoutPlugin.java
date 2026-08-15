@@ -2,6 +2,8 @@ package com.urbanwash.payments;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import com.getcapacitor.JSObject;
@@ -13,6 +15,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.razorpay.Checkout;
 
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * The ONLY Razorpay bridge in this app.
@@ -31,8 +37,20 @@ public class UrbanWashCheckoutPlugin extends Plugin {
     /** The only keys forwarded to the Razorpay SDK. */
     private static final String[] KEYS = {
             "key", "order_id", "amount", "currency", "name", "description",
-            "prefill", "notes", "theme"
+            "prefill", "notes", "theme", "retry", "config", "method"
     };
+
+    /** Common Indian UPI packages to check for diagnostics. */
+    private static final String[] UPI_PACKAGES = {
+            "com.google.android.apps.nbu.paisa.user", // GPay
+            "com.phonepe.app",                        // PhonePe
+            "net.one97.paytm",                        // Paytm
+            "in.org.npci.upiapp",                     // BHIM
+            "com.sbi.upi",                            // Yono SBI
+            "com.myairtelapp",                        // Airtel
+            "com.mobikwik_new"                        // Mobikwik
+    };
+
 
     private static PluginCall PENDING = null;
 
@@ -79,12 +97,46 @@ public class UrbanWashCheckoutPlugin extends Plugin {
                 @Override
                 public void run() {
                     try {
-                        // TEMPORARY verification log — remove after checkout is confirmed.
+                        // [UW_UPI_DIAG]
+                        String prefillContact = "";
+                        JSONObject prefill = options.optJSONObject("prefill");
+                        if (prefill != null) {
+                            prefillContact = prefill.optString("contact", "");
+                        }
+
+                        List<String> detectedUpi = new ArrayList<>();
+                        PackageManager pm = activity.getPackageManager();
+                        for (String pkg : UPI_PACKAGES) {
+                            try {
+                                pm.getPackageInfo(pkg, 0);
+                                detectedUpi.add(pkg);
+                            } catch (PackageManager.NameNotFoundException ignored) {}
+                        }
+
+                        Log.d(TAG, "[UW_UPI_DIAG] platform=android targetSdk=" + activity.getApplicationInfo().targetSdkVersion);
+                        Log.d(TAG, "[UW_UPI_DIAG] orderId=" + orderId + " amount=" + amount);
+                        Log.d(TAG, "[UW_UPI_DIAG] prefillContact=" + (prefillContact.isEmpty() ? "false" : "true"));
+                        Log.d(TAG, "[UW_UPI_DIAG] upiIntentPackagesDetected=" + detectedUpi.size() + " (" + detectedUpi + ")");
+                        
+                        // [UW_UPI_DIAG] Safe diagnostic output only
+                        Log.d(TAG, "[UW_UPI_DIAG] environment=TEST");
+                        Log.d(TAG, "[UW_UPI_DIAG] keyPrefix=" + (key.length() >= 9 ? key.substring(0, 9) : key));
+                        Log.d(TAG, "[UW_UPI_DIAG] orderId=" + orderId);
+                        Log.d(TAG, "[UW_UPI_DIAG] amount=" + amount);
+                        Log.d(TAG, "[UW_UPI_DIAG] currency=" + currency);
+                        Log.d(TAG, "[UW_UPI_DIAG] contactPresent=" + (prefillContact.isEmpty() ? "false" : "true"));
+                        Log.d(TAG, "[UW_UPI_DIAG] emailPresent=" + (prefill != null && !prefill.optString("email", "").isEmpty()));
+                        Log.d(TAG, "[UW_UPI_DIAG] method=" + options.optString("method", "absent"));
+                        Log.d(TAG, "[UW_UPI_DIAG] methodType=" + (options.has("method") ? options.get("method").getClass().getSimpleName() : "none"));
+                        Log.d(TAG, "[UW_UPI_DIAG] prefillObjectPresent=" + (prefill != null));
+
                         Log.d(TAG, "checkout options -> " + maskedOptions(options));
+                        
                         Checkout checkout = new Checkout();
                         checkout.setKeyID(key);
                         checkout.open(activity, options);
                     } catch (Throwable t) {
+
                         Log.e(TAG, "checkout open failed", t);
                         PluginCall pending = PENDING;
                         PENDING = null;

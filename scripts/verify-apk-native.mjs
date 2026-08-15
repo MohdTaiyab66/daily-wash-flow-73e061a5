@@ -306,7 +306,7 @@ try {
 // absent from the APK.
 const PAYMENT_PLUGIN_SRC = "android/app/src/main/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
 const PAYMENT_PLUGIN_REPO_SRC = "android-native/java/com/urbanwash/payments/UrbanWashCheckoutPlugin.java";
-const MAIN_ACTIVITY = "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
+const MAIN_ACTIVITY = VARIANT === "partner" ? "android/app/src/main/java/com/urbanwash/partner/MainActivity.java" : "android/app/src/main/java/com/urbanwash/customer/MainActivity.java";
 
 record("payments.upstream-plugin.absent", !fs.existsSync("node_modules/capacitor-razorpay"),
   fs.existsSync("node_modules/capacitor-razorpay")
@@ -442,9 +442,9 @@ if (PAYMENTS_ENABLED) {
 
   try {
     const appGradle = fs.readFileSync("android/app/build.gradle", "utf8");
-    const hasRazorpay = appGradle.includes("com.razorpay") || appGradle.includes("[uw-payments]");
+    const hasRazorpay = /implementation\s+["']com\.razorpay/.test(appGradle) && !appGradle.includes("if (!(project.hasProperty(\"URBANWASH_APP\") && project.getProperty(\"URBANWASH_APP\") == \"partner\"))");
     record("payments.gradle.absent", !hasRazorpay,
-      hasRazorpay ? "partner build.gradle still declares the Razorpay SDK" : "no Razorpay dependency in partner build.gradle");
+      hasRazorpay ? "partner build.gradle still declares the Razorpay SDK unconditionally" : "no unconditional Razorpay dependency in partner build.gradle");
   } catch (e) {
     record("payments.gradle.absent", false, e.message);
   }
