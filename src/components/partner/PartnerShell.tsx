@@ -18,14 +18,14 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   // Compact Premium Height: 70px (Matching Customer App)
   return (
     <div className={cn(
-      "min-h-screen bg-[#FDFCFB] pb-[calc(140px+env(safe-area-inset-bottom))]",
+      "min-h-screen bg-[#FDFCFB] pb-[calc(140px+env(safe-area-inset-bottom))] w-full max-w-full overflow-x-hidden box-border",
       isFullScreen && "pb-0"
     )}>
-      <div className="mx-auto max-w-md">{children}</div>
+      <div className="mx-auto w-full max-w-md box-border">{children}</div>
       
       {!isFullScreen && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
-          <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-2">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)] w-full box-border">
+          <div className="mx-auto flex w-full max-w-md items-center justify-between h-[70px] px-2 box-border">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/app" && pathname.startsWith(n.to));
