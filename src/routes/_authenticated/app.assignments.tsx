@@ -347,21 +347,25 @@ function AssignmentsPage() {
               onValueChange={([v]) => setDuration(v)}
               className="py-2"
             />
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex justify-between text-[11px] font-bold text-neutral-400 uppercase tracking-widest">
                 <span>7 DAYS</span>
                 <span>30 DAYS</span>
               </div>
-              <p className="text-[11px] font-bold text-neutral-500">
-                Choose how many days you want to commit to your assignment.
-              </p>
-              <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                MONDAYS ARE ALWAYS OFF
+              
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider">
+                  {duration} calendar days
+                </p>
+                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {serviceDays} SERVICE DAYS • Mondays off
+                </div>
               </div>
             </div>
           </div>
         </div>
+
       </section>
 
       <section className="space-y-4 pb-8">
