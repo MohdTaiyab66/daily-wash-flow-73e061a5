@@ -128,7 +128,7 @@ function AssignmentsPage() {
   // STATE 2 — ACTIVE ASSIGNMENT
   if (activeAssignment) {
     return (
-      <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
+      <div className="mx-auto max-w-md px-5 pt-3 pb-[220px] space-y-8">
         <header className="space-y-1">
           <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">TODAY'S ASSIGNMENT</h1>
           <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
@@ -259,7 +259,7 @@ function AssignmentsPage() {
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
         <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
-        <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
+        <p className="text-sm text-muted-foreground font-medium">Configure your professional work plan.</p>
       </header>
 
       <section className="space-y-4">
@@ -281,75 +281,146 @@ function AssignmentsPage() {
             <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">CUSTOMERS AVAILABLE NOW</p>
             <p className="text-2xl font-black text-neutral-900">0</p>
           </div>
-          <p className="text-[10px] font-bold text-neutral-400 text-right max-w-[140px]">More customers can be added to your area.</p>
+          <p className="text-[10px] font-bold text-neutral-400 text-right max-w-[140px]">New customers can be added to your area at any time.</p>
         </div>
       </section>
 
-      <section className="space-y-8">
-        <div className="space-y-4">
-          <label className="text-base font-bold text-[#1A1A1A]">How many hours do you want to work?</label>
-          <div className="px-1">
-            <Slider value={[hours]} min={settings?.minHours ?? 2} max={settings?.maxHours ?? 6} step={0.5} onValueChange={([v]) => setHours(v)} />
-            <div className="flex items-center justify-between mt-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
-               <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">{hours} HOURS / DAY</p>
-                  <p className="text-sm font-bold text-neutral-900">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+      <section className="space-y-10">
+        <div className="space-y-5">
+          <div className="flex items-end justify-between px-1">
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">How many hours per day?</label>
+            <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
+          </div>
+          <div className="px-1 space-y-4">
+            <Slider 
+              value={[hours]} 
+              min={settings?.minHours ?? 2} 
+              max={settings?.maxHours ?? 6} 
+              step={0.5} 
+              onValueChange={([v]) => setHours(v)}
+              className="py-4"
+            />
+            <div className="bg-[#1A1A1A] p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-[#FF6B00]/10 rounded-full blur-2xl -mr-12 -mt-12" />
+               <div className="relative z-10 flex items-center justify-between">
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Working Hours</p>
+                    <p className="text-lg font-black text-white flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#FF6B00]" />
+                      {formatTime12(startTime)} <span className="text-white/20">→</span> {formatTime12(finishTime)}
+                    </p>
+                 </div>
+                 <div className="text-right">
+                   <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">Target</p>
+                   <p className="text-lg font-black text-white">{cars} CARS</p>
+                 </div>
                </div>
-               <p className="text-[11px] font-medium text-neutral-400">More hours = more customers</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <label className="text-base font-bold text-[#1A1A1A]">How many days do you want to work?</label>
-          <div className="px-1">
-            <Slider value={[duration]} min={7} max={30} step={1} onValueChange={([v]) => setDuration(v)} />
-            <div className="flex justify-between mt-2">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase">Mondays are always OFF</span>
-              <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{duration} DAYS</p>
+        <div className="space-y-5">
+          <div className="flex items-end justify-between px-1">
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">How many days to commit?</label>
+            <span className="text-xl font-black text-[#FF6B00]">{duration} DAYS</span>
+          </div>
+          <div className="px-1 space-y-4">
+            <Slider 
+              value={[duration]} 
+              min={7} 
+              max={30} 
+              step={1} 
+              onValueChange={([v]) => setDuration(v)}
+              className="py-4"
+            />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Mondays are always OFF
+              </div>
+              <p className="text-[11px] font-medium text-neutral-400 leading-relaxed px-1">
+                Your assignment duration is {duration} days. Monthly earning is projected using 26 service days per month.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
-        <Card className="p-6 border-0 shadow-xl bg-[#1A1A1A] text-white rounded-3xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Plan Summary</h3>
+        <div className="grid grid-cols-2 gap-3">
+           <div className="bg-white border border-neutral-100 p-4 rounded-2xl space-y-1">
+             <p className="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Area</p>
+             <p className="text-xs font-bold truncate">📍 {partner.home_area}</p>
+           </div>
+           <div className="bg-white border border-neutral-100 p-4 rounded-2xl space-y-1">
+             <p className="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Commitment</p>
+             <p className="text-xs font-bold text-[#FF6B00]">{duration} DAYS</p>
+           </div>
+        </div>
+
+        <Card className="p-6 border-0 shadow-2xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-[#FF6B00]/20 rounded-full blur-[80px] -mr-20 -mt-20" />
           <div className="flex flex-col gap-6 relative z-10">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR DAILY EARNING</p>
-                <p className="text-3xl font-black tracking-tight text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Daily Earning</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
+                  <span className="text-[10px] text-white/30 uppercase font-black">/ Day</span>
+                </div>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR MONTHLY EARNING</p>
-                <p className="text-3xl font-black tracking-tight text-white">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Monthly Earning</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-white">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+                  <span className="text-[10px] text-white/30 uppercase font-black">/ Month</span>
+                </div>
               </div>
             </div>
             
-            <div className="pt-6 border-t border-white/10 space-y-2">
-               <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium">YOUR TARGET</span>
-                 <span className="font-bold text-white uppercase tracking-tight">{cars} CUSTOMERS</span>
+            <div className="pt-6 border-t border-white/10 space-y-4">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                   <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center">
+                     <Car className="h-4 w-4 text-[#FF6B00]" />
+                   </div>
+                   <div>
+                     <p className="text-[9px] font-black text-white/40 uppercase tracking-wider">Customer Target</p>
+                     <p className="text-sm font-black uppercase">{cars} Customers</p>
+                   </div>
+                 </div>
+                 <div className="text-right">
+                   <p className="text-[9px] font-black text-white/40 uppercase tracking-wider">Rate</p>
+                   <p className="text-sm font-black text-[#FF6B00]">₹{rate}/Car</p>
+                 </div>
                </div>
-               <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium uppercase tracking-widest text-[10px]">26 SERVICE DAYS • MONDAYS OFF</span>
-                 <span className="font-bold text-[#FF6B00] uppercase tracking-tighter text-[11px]">Commitment Mode</span>
+
+               <div className="bg-white/5 p-4 rounded-2xl space-y-2">
+                 <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Calculation Model</p>
+                 <div className="flex flex-col gap-1">
+                   <p className="text-[11px] font-bold text-white/80 flex items-center justify-between">
+                     <span>26 Service Days / Month</span>
+                     <span className="text-[#FF6B00]">Mondays Off</span>
+                   </p>
+                   <p className="text-[10px] text-white/40 italic">
+                     {cars} cars × ₹{rate} × 26 days = ₹{monthlyEarn.toLocaleString("en-IN")}
+                   </p>
+                 </div>
                </div>
             </div>
           </div>
         </Card>
       </section>
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md p-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-xl p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
-          className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
+          className="w-full h-16 rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-2xl shadow-[#FF6B00]/30 active:scale-[0.97] transition-all"
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
-          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "CREATE MY ASSIGNMENT →"}
+          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "START MY ASSIGNMENT →"}
         </Button>
       </div>
 
