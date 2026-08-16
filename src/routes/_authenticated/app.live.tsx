@@ -131,7 +131,7 @@ function RoutePage() {
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
   return (
-    <div className="mx-auto w-full max-w-md pb-32 overflow-x-hidden box-border">
+    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
       {/* Page Header - Clean & Operational */}
       <header className="px-5 pt-3 pb-4">
         <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
