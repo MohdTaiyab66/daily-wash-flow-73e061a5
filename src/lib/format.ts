@@ -2,7 +2,12 @@
 
 export function formatTime12(t?: string | null): string {
   if (!t) return "";
-  const s = t.trim();
+  let s = t.trim();
+  
+  // Prevent double "Before" prefixing if it already exists in the string
+  // and handle concatenation bugs at the source
+  s = s.replace(/^Before\s+/i, "");
+
   // Accept "HH:MM" or "HH:MM:SS"
   const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s);
   if (!m) return s;
