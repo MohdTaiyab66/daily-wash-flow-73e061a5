@@ -24,7 +24,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isFullScreen && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-white/98 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
           <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
@@ -34,19 +34,19 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="flex-1 flex flex-col items-center justify-center transition-all h-full active:scale-95"
+                  className="flex-1 flex flex-col items-center justify-center transition-all h-full active:scale-95 group"
                 >
                   <div className={cn(
-                    "relative p-2 rounded-2xl transition-all",
-                    active ? "bg-[#FF6B00] text-white" : "text-[#8A8A8A]"
+                    "relative p-2 rounded-full transition-all duration-300",
+                    active ? "bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20" : "text-[#8A8A8A] group-hover:text-[#1A1A1A]"
                   )}>
                     <Icon 
-                      className="h-[22px] w-[22px]" 
+                      className="h-[20px] w-[20px]" 
                       strokeWidth={active ? 2.5 : 2} 
                     />
                   </div>
                   <span className={cn(
-                    "mt-1 text-[10px] font-bold tracking-tight transition-all whitespace-nowrap text-center",
+                    "mt-1.5 text-[10px] font-black tracking-tight transition-all whitespace-nowrap text-center uppercase",
                     active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
                   )}>
                     {n.label}
