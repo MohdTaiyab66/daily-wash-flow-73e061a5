@@ -110,6 +110,18 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const anyStarted = today.some(s => !!s.started_at);
   
+  // Explicit states for UI
+  const getExplicitStatus = () => {
+    if (!assignment) return { label: "NO ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
+    if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
+    if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
+    if (assignment.sub_status === 'waiting_for_customers') return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "Waiting for new leads in your area" };
+    if (total > 0) return { label: "ACTIVE — CUSTOMERS AVAILABLE", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    return { label: "ACTIVE", color: "text-white/40", sub: "Your assignment is active" };
+  };
+
+  const statusInfo = getExplicitStatus();
+  
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
   const now = new Date();
   const hour = now.getHours();
