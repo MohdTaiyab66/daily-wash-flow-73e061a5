@@ -415,7 +415,7 @@ function AssignmentsPage() {
       {/* Earning Card is already replaced in the previous block */}
     
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-xl p-4 pb-[calc(12px+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-xl p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
           className="w-full h-16 rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
