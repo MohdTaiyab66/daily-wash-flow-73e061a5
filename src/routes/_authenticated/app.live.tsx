@@ -227,7 +227,7 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
         </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
-          <NextCustomerHero stop={activeNext} seqNo={1} total={total} />
+          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} />
         )}
       </div>
 
@@ -399,7 +399,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
   );
 }
 
-function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
+function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: number; total: number; onClick?: () => void }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const time = stop.time_slot;
@@ -408,7 +408,10 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
 
   return (
-    <Card className="p-5 bg-[#1A1A1A] text-white rounded-[32px] border-none shadow-xl w-full box-border overflow-hidden">
+    <Card 
+      className="p-5 bg-[#1A1A1A] text-white rounded-[32px] border-none shadow-xl w-full box-border overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
+      onClick={onClick}
+    >
       <div className="flex justify-between items-center mb-5">
         <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT STOP • {seqNo} of {total}</span>
         <span className="text-emerald-400 text-[9px] font-black uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 shrink-0">Active</span>
@@ -445,7 +448,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
         </div>
       </div>
 
-      <div className="flex gap-3 w-full">
+      <div className="flex gap-3 w-full" onClick={(e) => e.stopPropagation()}>
         <Button 
           variant="outline" 
           size="icon" 
@@ -461,7 +464,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
             className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-4 h-12 text-xs shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all truncate"
           >
             <Play className="h-4 w-4 fill-current shrink-0" />
-            <span className="truncate">{inProgress ? "Resume" : "Start Service"}</span>
+            <span className="truncate">{inProgress ? "Resume" : "Start"}</span>
         </Link>
       </div>
     </Card>
