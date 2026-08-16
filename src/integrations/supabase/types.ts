@@ -6993,11 +6993,12 @@ export type Database = {
       }
       get_offer_details_by_id: { Args: { p_offer_id: string }; Returns: Json }
       get_partner_open_offers: {
-        Args: { p_pid: string }
+        Args: { p_partner_id: string }
         Returns: {
           area: string
           assignment_id: string
           booking_id: string
+          broadcast_id: string
           broadcast_status: string
           current_incentive: number
           current_radius_m: number
@@ -7010,11 +7011,10 @@ export type Database = {
           earning_amount: number
           earning_monthly: number
           id: string
-          offer_broadcast_id: string
-          offer_incentive: number
-          offer_partner_id: string
-          offer_round: number
+          incentive: number
+          partner_id: string
           response: string
+          round: number
           round_expires_at: string
           route_impact_m: number
           sent_at: string
