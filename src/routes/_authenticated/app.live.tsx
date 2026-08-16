@@ -132,16 +132,10 @@ function RoutePage() {
 
   return (
     <div className="mx-auto w-full max-w-md pb-32 overflow-x-hidden box-border">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8A8A8A]">URBAN WASH</span>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Partner</span>
-          </div>
-        </div>
-        <h1 className="text-2xl font-black text-black tracking-tight leading-none mt-2">Daily Route</h1>
-        <p className="text-xs font-medium text-muted-foreground mt-1">Your work sequence for today</p>
+      {/* Page Header - Clean & Operational */}
+      <header className="px-5 pt-3 pb-4">
+        <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
+        <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
       </header>
 
       {/* Progress Card */}
