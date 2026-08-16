@@ -194,7 +194,7 @@ function HomePage() {
             {assignment ? (
               <>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">TODAY'S ASSIGNMENT</p>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                       <Car className="h-5 w-5 text-[#FF6B00]" />
