@@ -6998,7 +6998,6 @@ export type Database = {
           area: string
           assignment_id: string
           booking_id: string
-          broadcast_id: string
           broadcast_status: string
           current_incentive: number
           current_radius_m: number
@@ -7011,10 +7010,11 @@ export type Database = {
           earning_amount: number
           earning_monthly: number
           id: string
-          incentive: number
-          partner_id: string
+          offer_broadcast_id: string
+          offer_incentive: number
+          offer_partner_id: string
+          offer_round: number
           response: string
-          round: number
           round_expires_at: string
           route_impact_m: number
           sent_at: string
