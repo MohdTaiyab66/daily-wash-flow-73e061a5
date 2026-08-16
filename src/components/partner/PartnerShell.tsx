@@ -7,7 +7,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const nav = [
     { to: "/app", label: "Home", icon: Home },
-    { to: "/app/assignments", label: "Available Work", icon: Briefcase },
+    { to: "/app/assignments", label: "Available", icon: Briefcase },
     { to: "/app/earnings", label: "Earnings", icon: Wallet },
     { to: "/app/rewards", label: "Rewards", icon: Gift },
     { to: "/app/profile", label: "Profile", icon: User },
