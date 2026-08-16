@@ -24,7 +24,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isFullScreen && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
           <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-1">
             {nav.map((n) => {
               const Icon = n.icon;
@@ -44,7 +44,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                     strokeWidth={active ? 2.5 : 2} 
                   />
                   <span className={cn(
-                    "mt-1 text-[11px] leading-tight transition-all whitespace-nowrap text-center px-1",
+                    "mt-1 text-[10px] leading-tight transition-all whitespace-nowrap text-center px-0.5",
                     active ? "font-bold text-[#FF6B00]" : "font-medium text-[#8A8A8A]"
                   )}>
                     {n.label}
