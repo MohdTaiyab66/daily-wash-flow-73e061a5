@@ -34,20 +34,34 @@ function loadGoogleMaps(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.google?.maps) return Promise.resolve();
   if (window.__lovableMapReady) return window.__lovableMapReady;
+  
+  // Try to find the key from env or window config
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   const channel = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
-  if (!key) return Promise.reject(new Error("Google Maps key missing"));
-  window.__lovableMapReady = new Promise<void>((resolve) => {
-    window.__initLovableMap = () => resolve();
+  
+  if (!key) {
+    console.error("[LiveMap] Google Maps API key missing. Check VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY.");
+    return Promise.reject(new Error("Google Maps key missing"));
+  }
+  
+  window.__lovableMapReady = new Promise<void>((resolve, reject) => {
+    window.__initLovableMap = () => {
+      console.log("[LiveMap] Google Maps library loaded successfully");
+      resolve();
+    };
     const s = document.createElement("script");
     s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
     s.async = true;
+    s.onerror = (err) => {
+      console.error("[LiveMap] Script load failed", err);
+      reject(new Error("Google Maps script failed to load"));
+    };
     document.head.appendChild(s);
   });
   return window.__lovableMapReady;
 }
 
-export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void }) {
+export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats, onStopClick }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void; onStopClick?: (stopId: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -168,6 +182,9 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats 
         map: mapRef.current,
         label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "600" },
         title: s.label,
+      });
+      marker.addListener("click", () => {
+        if (onStopClick) onStopClick(s.id);
       });
       markersRef.current.push(marker);
       bounds.extend({ lat: s.lat, lng: s.lng });
