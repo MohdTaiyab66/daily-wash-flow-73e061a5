@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getRouteVisibility } from "@/lib/assignment.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn, Lock, Sparkles, ChevronDown } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
@@ -222,6 +223,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const v = stop.vehicles as any;
   const rate = Number(stop.rate_per_car ?? 17);
   const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
+  const inProgress = stop.status === "in_progress";
 
   return (
     <Card className="p-4 bg-black text-white rounded-3xl">
@@ -247,8 +249,15 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 mt-5">
-        <Button className="rounded-full bg-white/10 text-white hover:bg-white/20">Call</Button>
-        <Button className="rounded-full bg-[#FF6B00] text-white font-bold hover:bg-[#ff8c40]">Start Service</Button>
+        <MaskedCallButton serviceId={stop.id} full />
+        <Link
+            to="/app/service/$id"
+            params={{ id: stop.id }}
+            className="flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-bold hover:bg-[#ff8c40] px-3 py-2 text-sm"
+          >
+            <Play className="h-4 w-4 fill-current" />
+            <span>{inProgress ? "Resume" : "Start Service"}</span>
+        </Link>
       </div>
     </Card>
   );
@@ -266,5 +275,34 @@ function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
       </div>
       <div className="text-sm font-bold text-[#FF6B00]">+₹17</div>
     </div>
+  );
+}
+
+export function MaskedCallButton({ serviceId, compact, full, size }: { serviceId: string; compact?: boolean; full?: boolean; size?: "sm" | "default" | "lg" }) {
+  const call = useServerFn(initiateMaskedCall);
+  const [loading, setLoading] = useState(false);
+  const onClick = async () => {
+    setLoading(true);
+    try {
+      const r = await call({ data: { service_id: serviceId } });
+      toast.success(r.message ?? "Connecting...");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not place call");
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (compact) {
+    return (
+      <Button size="sm" variant="outline" onClick={onClick} disabled={loading} aria-label="Call Customer">
+        {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />}Call
+      </Button>
+    );
+  }
+  return (
+    <Button variant="outline" size={size ?? (full ? "lg" : "sm")} className={cn("rounded-full", full ? "w-full" : "")} onClick={onClick} disabled={loading}>
+      {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />}
+      {full ? " Call Customer" : "Call"}
+    </Button>
   );
 }
