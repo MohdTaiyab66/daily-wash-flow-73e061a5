@@ -433,171 +433,181 @@ function ServiceDetail() {
         </div>
       )}
 
-      {/* ---------------- STEP 1 · ARRIVAL ---------------- */}
-      {!done && step === "arrival" && (
-        <>
-          <CustomerCard
-            service={service} c={c} v={v} timeLabel={timeLabel}
-            hasNavigation={hasNavigation} destLat={destLat} destLng={destLng}
-            serviceId={id} onOpenPhoto={() => setPhotoOpen(true)}
-          />
-          <MoreMenu open={moreOpen} onToggle={() => setMoreOpen((o) => !o)} onNeedHelp={() => { setMoreOpen(false); setStep("notfound"); }} onReportIssue={() => { setMoreOpen(false); setStep("condition"); }} />
-          <StickyBar>
-            <Button size="lg" className="h-16 w-full text-lg font-bold" onClick={() => setStep("found")}>
-              I have reached
-            </Button>
-          </StickyBar>
-        </>
-      )}
-
-      {/* ---------------- STEP 2 · FIND VEHICLE ---------------- */}
-      {!done && step === "found" && (
-        <Question
-          title="Did you find the vehicle?"
-          onBack={() => setStep("arrival")}
-          options={[
-            { label: "Yes, I found it", tone: "primary", onClick: () => setStep("condition") },
-            { label: "No, I did not", tone: "danger", onClick: () => setStep("notfound") },
-          ]}
-        />
-      )}
-
-      {/* ---------------- NOT FOUND ---------------- */}
-      {!done && step === "notfound" && (
-        <div className="mt-6">
-          <GuidedReport
-            serviceId={id}
-            assignmentId={(service as any)?.assignment_id ?? null}
-            kind="unavailable"
-            title="Why could you not do it?"
-            reasons={NOT_FOUND_REASONS}
-            angles={["front", "rear"]}
-            photos={photoRows}
-            refetch={() => void refetchPhotos()}
-            compensation={COMPENSATION}
-            onSubmitted={afterReport}
-            onBack={() => setStep("found")}
-          />
-        </div>
-      )}
-
-      {/* ---------------- CONDITION ---------------- */}
-      {!done && step === "condition" && (
-        <Question
-          title="How is the vehicle?"
-          onBack={() => setStep("found")}
-          options={[
-            { label: "Ready to clean", icon: <Sparkles className="h-6 w-6" />, tone: "primary", onClick: () => setStep("before") },
-            { label: "Very dirty", icon: <AlertTriangle className="h-6 w-6" />, tone: "warn", onClick: () => setStep("dirty") },
-            { label: "Needs admin attention", icon: <ShieldAlert className="h-6 w-6" />, tone: "danger", onClick: () => setStep("attention") },
-          ]}
-        />
-      )}
-
-      {!done && (step === "dirty" || step === "attention") && (
-        <div className="mt-6">
-          <GuidedReport
-            serviceId={id}
-            assignmentId={(service as any)?.assignment_id ?? null}
-            kind="dirty"
-            title={step === "dirty" ? "What makes it dirty?" : "What is the problem?"}
-            reasons={step === "dirty" ? DIRTY_REASONS : ATTENTION_REASONS}
-            angles={["front", "rear", "left", "right"]}
-            photos={photoRows}
-            refetch={() => void refetchPhotos()}
-            compensation={COMPENSATION}
-            onSubmitted={afterReport}
-            onBack={() => setStep("condition")}
-            onContinueAnyway={() => setStep("before")}
-            continueLabel="I can still clean it"
-          />
-        </div>
-      )}
-
-      {/* ---------------- STEP 3 · BEFORE PHOTO ---------------- */}
-      {!done && step === "before" && (
-        <div className="mt-6 space-y-5">
-          <button type="button" onClick={() => setStep("condition")} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-          <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Before photo</p>
-          <h2 className="text-2xl font-bold leading-tight">Take a photo of the full car</h2>
-          <PhotoSlot
-            serviceId={id}
-            assignmentId={(service as any)?.assignment_id ?? null}
-            stage="before"
-            angle="front"
-            slotId="before"
-            done={beforeDone}
-            label="Before"
-            variant="hero"
-            hint="Whole car, before you start"
-            onUploaded={() => { void refetchPhotos(); setStep("ready"); }}
-          />
-        </div>
-      )}
-
-      {/* ---------------- STEP 4 · START SERVICE ---------------- */}
-      {!done && step === "ready" && (
-        <>
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--success)]/40 bg-[color:var(--success)]/10 p-4">
-              <Check className="h-5 w-5 text-[color:var(--success)]" />
-              <p className="text-sm font-semibold">Before photo saved</p>
+      {/* ---------------- ONE-STEP OPERATIONAL VIEW ---------------- */}
+      {!done && status === "in_progress" && (
+        <div className="mt-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-neutral-900">Service Active</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
+                <span className="text-xs font-bold text-[#FF6B00] uppercase tracking-wider">In Progress • {elapsedLabel}</span>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold leading-tight">Ready to start cleaning?</h2>
-            <button type="button" onClick={() => setStep("before")} className="text-sm font-medium text-muted-foreground underline">
-              Take before photo again
+            <div className="flex gap-2">
+               <MaskedCallButton serviceId={id} size="icon" />
+               <Button variant="outline" size="icon" className="rounded-full border-neutral-200" onClick={() => openGoogleMapsDirections(destLat, destLng)}>
+                 <Navigation className="h-4 w-4" />
+               </Button>
+            </div>
+          </div>
+
+          {/* Customer / Vehicle Summary Card */}
+          <div className="bg-neutral-50 rounded-[24px] p-4 border border-neutral-100 flex gap-4 items-center">
+            <VehicleImage 
+              path={v?.front_image_path} 
+              className="h-16 w-16 rounded-xl object-cover border border-neutral-200 bg-white" 
+            />
+            <div className="min-w-0 flex-1">
+               <p className="text-sm font-bold text-neutral-900 truncate">{c?.full_name}</p>
+               <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
+               <p className="text-[10px] font-mono font-bold text-neutral-400 uppercase mt-0.5 tracking-wider">{v?.registration_number}</p>
+            </div>
+          </div>
+
+          {/* SERVICE TASKS SECTION */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-baseline px-1">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Service Tasks</h3>
+              {!beforeDone && <span className="text-[9px] font-bold text-[#FF6B00] uppercase">Mandatory for finish</span>}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+               <PhotoSlot
+                  serviceId={id}
+                  assignmentId={(service as any)?.assignment_id}
+                  stage="before"
+                  angle="full"
+                  done={beforeDone}
+                  label="Before Photo"
+                  onUploaded={refetchPhotos}
+                  hint="Required for audit"
+                />
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => setStep("condition")}
+                  className={cn(
+                    "h-full flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed aspect-square transition min-h-[140px]",
+                    service?.unavailable_reason === "dirty_vehicle" || service?.unavailable_notes 
+                      ? "border-amber-200 bg-amber-50 text-amber-600"
+                      : "border-neutral-100 text-neutral-500"
+                  )}
+                >
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="text-xs font-bold">Vehicle Condition</span>
+                </Button>
+            </div>
+          </div>
+
+          {/* SERVICE ACTION */}
+          <div className="pt-4">
+            <Button
+              size="lg"
+              className="h-16 w-full rounded-[24px] bg-black hover:bg-neutral-800 text-white font-black text-lg shadow-xl shadow-black/10 active:scale-95 transition-all gap-3"
+              onClick={() => setStep("after")}
+              disabled={!beforeDone}
+            >
+              <Check className="h-6 w-6" />
+              COMPLETE SERVICE
+            </Button>
+            {!beforeDone && (
+              <p className="text-[10px] text-center text-neutral-400 mt-3 font-medium italic">
+                Please take a Before Photo to enable completion.
+              </p>
+            )}
+          </div>
+
+          <div className="pt-2 flex justify-center">
+            <button 
+              onClick={() => setMoreOpen(true)}
+              className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 hover:text-neutral-600 transition-colors"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+              More Options
             </button>
           </div>
-          <StickyBar>
-            <Button size="lg" className="h-16 w-full text-lg font-bold" disabled={start.isPending} onClick={() => start.mutate()}>
-              {start.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Play className="mr-2 h-5 w-5 fill-current" />}
-              Start service
-            </Button>
-          </StickyBar>
-        </>
+        </div>
       )}
 
-      {/* ---------------- STEP 5 · IN PROGRESS ---------------- */}
-      {!done && step === "cleaning" && (
-        <>
-          <div className="mt-8 space-y-4 text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Cleaning in progress</p>
-            <p className="text-6xl font-extrabold tabular-nums tracking-tight">{elapsedLabel}</p>
-            <p className="text-sm text-muted-foreground">Average time 5–7 minutes</p>
+      {/* ---------------- FALLBACK FOR PENDING (DIRECT ACCESS) ---------------- */}
+      {!done && status === "pending" && (
+        <div className="mt-8 space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Play className="h-10 w-10 fill-current" />
           </div>
-          {withinGrace && (
-            <div className="mt-8 text-center">
-              <button type="button" onClick={() => cancelStart.mutate(null)} className="text-sm font-medium text-muted-foreground underline" disabled={cancelStart.isPending}>
-                Started by mistake? Cancel
-              </button>
-            </div>
-          )}
-          {!withinGrace && (
-            <div className="mt-8">
-              {!askCancelReason ? (
-                <button type="button" onClick={() => setAskCancelReason(true)} className="mx-auto block text-sm font-medium text-muted-foreground underline">
-                  Cancel service start
-                </button>
-              ) : (
-                <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-                  <p className="text-sm font-semibold">Why are you cancelling?</p>
-                  <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Write the reason" className="min-h-[80px] rounded-xl text-base" />
-                  <Button variant="destructive" className="h-12 w-full" disabled={!cancelReason.trim() || cancelStart.isPending} onClick={() => cancelStart.mutate(cancelReason.trim())}>
-                    {cancelStart.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Cancel service start
-                  </Button>
-                  <button type="button" onClick={() => setAskCancelReason(false)} className="block w-full text-center text-sm text-muted-foreground underline">
-                    Keep cleaning
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          <StickyBar>
-            <Button size="lg" className="h-16 w-full text-lg font-bold" onClick={() => setStep("after")}>
-              Finish cleaning
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">Ready to start?</h2>
+            <p className="text-sm text-muted-foreground px-6">You should start services from the Daily Route page for better tracking.</p>
+          </div>
+          <div className="pt-4 px-4">
+            <Button
+              size="lg"
+              className="h-16 w-full rounded-2xl text-lg font-bold shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white"
+              onClick={() => start.mutate()}
+              disabled={start.isPending}
+            >
+              {start.isPending ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Play className="mr-2 h-6 w-6 fill-current" />}
+              START NOW
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- CONDITION WIZARD (INTERNAL NAVIGATION) ---------------- */}
+      {!done && (step === "condition" || step === "notfound" || step === "dirty" || step === "attention") && (
+        <div className="mt-4">
+          <button type="button" onClick={() => setStep("cleaning")} className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 mb-4 px-1">
+            <ArrowLeft className="h-4 w-4" /> Back to Service
+          </button>
+          
+          {step === "condition" && (
+            <Question
+              title="Vehicle Condition"
+              onBack={() => setStep("cleaning")}
+              options={[
+                { label: "Ready to clean", icon: <Sparkles className="h-6 w-6" />, tone: "primary", onClick: () => setStep("cleaning") },
+                { label: "Very dirty", icon: <AlertTriangle className="h-6 w-6" />, tone: "warn", onClick: () => setStep("dirty") },
+                { label: "Problem / Issue", icon: <ShieldAlert className="h-6 w-6" />, tone: "danger", onClick: () => setStep("attention") },
+              ]}
+            />
+          )}
+
+          {step === "notfound" && (
+            <GuidedReport
+              serviceId={id}
+              assignmentId={(service as any)?.assignment_id ?? null}
+              kind="unavailable"
+              title="Vehicle Not Found"
+              reasons={NOT_FOUND_REASONS}
+              angles={["front", "rear"]}
+              photos={photoRows}
+              refetch={() => void refetchPhotos()}
+              compensation={COMPENSATION}
+              onSubmitted={afterReport}
+              onBack={() => setStep("cleaning")}
+            />
+          )}
+
+          {(step === "dirty" || step === "attention") && (
+            <GuidedReport
+              serviceId={id}
+              assignmentId={(service as any)?.assignment_id ?? null}
+              kind={step === "dirty" ? "dirty" : "unavailable"}
+              title={step === "dirty" ? "Dirty Vehicle Report" : "Attention Required"}
+              reasons={step === "dirty" ? DIRTY_REASONS : ATTENTION_REASONS}
+              angles={["front", "rear", "left", "right"]}
+              photos={photoRows}
+              refetch={() => void refetchPhotos()}
+              compensation={COMPENSATION}
+              onSubmitted={afterReport}
+              onBack={() => setStep("condition")}
+              onContinueAnyway={() => setStep("cleaning")}
+              continueLabel="Continue Cleaning"
+            />
+          )}
+        </div>
+      )}
           </StickyBar>
         </>
       )}
