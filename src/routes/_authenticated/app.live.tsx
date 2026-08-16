@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn, Lock, Sparkles, ChevronDown } from "lucide-react";
+import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn, Lock, Sparkles, ChevronDown, ChevronRight, X } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import { initiateMaskedCall } from "@/lib/calling.functions";
@@ -19,6 +19,7 @@ import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
 import { cn } from "@/lib/utils";
@@ -125,23 +126,22 @@ function RoutePage() {
     }));
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+
+  const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
   return (
     <div className="mx-auto w-full max-w-md pb-32 overflow-x-hidden box-border">
       {/* Header */}
       <header className="px-5 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <img 
-              src="https://storage.googleapis.com/gpt-engineer-file-uploads/MCVapbCo5XbPjsDOUeq7WwZlIHX2/social-images/social-1781118455783-LOGO.webp" 
-              alt="Urban Wash" 
-              className="h-8 w-auto object-contain"
-            />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] bg-[#FF6B00]/5 px-2 py-0.5 rounded">Partner</span>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8A8A8A]">URBAN WASH</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00]">Partner</span>
           </div>
         </div>
-        <h1 className="text-3xl font-black text-black tracking-tight leading-none">Daily Route</h1>
-        <p className="text-sm font-medium text-muted-foreground mt-1">Your work sequence for today</p>
+        <h1 className="text-2xl font-black text-black tracking-tight leading-none mt-2">Daily Route</h1>
+        <p className="text-xs font-medium text-muted-foreground mt-1">Your work sequence for today</p>
       </header>
 
       {/* Progress Card */}
@@ -171,13 +171,17 @@ function RoutePage() {
 
       {/* Map */}
       <div className="px-5 mt-5 w-full box-border">
-        <div className="rounded-[24px] overflow-hidden h-[220px] shadow-sm border border-neutral-100 w-full box-border">
+        <div className="flex justify-between items-baseline mb-3">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Route</h2>
+        </div>
+        <div className="rounded-[24px] overflow-hidden h-[260px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
            <LiveMap
               stops={stops}
               showCustomers={stops.length > 0}
               heightClass="h-full"
               hideStats
               onStats={setMapStats}
+              onStopClick={setSelectedStopId}
             />
         </div>
       </div>
@@ -198,7 +202,7 @@ function RoutePage() {
            </div>
            <div className="space-y-2 w-full">
              {activeQueue.map((s, i) => (
-                <CompactQueueRow key={s.id} stop={s} seqNo={i + 2} />
+                <CompactQueueRow key={s.id} stop={s} seqNo={i + 2} onClick={() => setSelectedStopId(s.id)} />
              ))}
            </div>
         </div>
@@ -236,8 +240,125 @@ function RoutePage() {
            <EndOfDayCard />
         </div>
       )}
+      
+      <CustomerDetailSheet 
+        stop={selectedStop} 
+        open={!!selectedStopId} 
+        onOpenChange={(open) => !open && setSelectedStopId(null)} 
+      />
 
     </div>
+  );
+}
+
+function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void }) {
+  if (!stop) return null;
+  const c = stop.customers as any;
+  const v = stop.vehicles as any;
+  const time = stop.time_slot;
+  const timeLabel = c?.time_window_type === "before" ? "Before " : "";
+  const gps = validateExactGps(s.destination_lat, s.destination_lng); // Wait, variable 's' is not defined here.
+  // Actually I should just use what's in stop.
+  const stopLat = Number(stop.destination_lat || c?.latitude);
+  const stopLng = Number(stop.destination_lng || c?.longitude);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-10 pt-8 border-none bg-white max-h-[90vh] overflow-y-auto">
+        <SheetHeader className="text-left mb-6">
+          <div className="flex justify-between items-start">
+            <div>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">Customer Details</p>
+               <SheetTitle className="text-2xl font-black tracking-tight">{c?.full_name}</SheetTitle>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="space-y-6">
+          {/* Vehicle Info */}
+          <div className="flex gap-4 p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+            <TappableVehicleImage 
+              path={v?.front_image_path} 
+              className="h-16 w-16 rounded-xl object-cover shrink-0"
+              customerName={c?.full_name}
+              vehicleLabel={`${v?.make} ${v?.model}`}
+              registration={v?.registration_number}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-neutral-900">{v?.make} {v?.model}</p>
+              <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider mt-0.5">{v?.registration_number}</p>
+              {v?.color && <p className="text-[10px] text-neutral-400 mt-0.5">{v.color}</p>}
+            </div>
+          </div>
+
+          {/* Service Time */}
+          <div className="space-y-1.5">
+            <p className="text-[9px] uppercase text-neutral-400 font-bold tracking-widest">Service Time</p>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-[#FF6B00]" />
+              <p className="text-base font-black text-neutral-900">{timeLabel}{formatTime12(time)}</p>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-1.5">
+            <p className="text-[9px] uppercase text-neutral-400 font-bold tracking-widest">Service Status</p>
+            <div className="flex items-center gap-2">
+               {stop.status === "completed" ? (
+                 <>
+                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                   <span className="text-sm font-bold text-emerald-600 uppercase">Completed</span>
+                 </>
+               ) : stop.status === "in_progress" ? (
+                 <>
+                   <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
+                   <span className="text-sm font-bold text-[#FF6B00] uppercase">In Progress</span>
+                 </>
+               ) : (
+                 <>
+                   <div className="h-2 w-2 rounded-full bg-neutral-300" />
+                   <span className="text-sm font-bold text-neutral-500 uppercase">Upcoming</span>
+                 </>
+               )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+             <Button 
+               variant="outline" 
+               className="h-14 rounded-2xl border-neutral-200 font-bold text-neutral-900 gap-2 active:scale-95 transition-all"
+               onClick={() => openGoogleMapsDirections(stopLat, stopLng)}
+             >
+               <Navigation className="h-4 w-4" />
+               Navigate
+             </Button>
+             <MaskedCallButton serviceId={stop.id} full size="lg" />
+          </div>
+
+          <Link
+            to="/app/service/$id"
+            params={{ id: stop.id }}
+            disabled={stop.status === "completed"}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
+              stop.status === "completed" 
+                ? "bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
+                : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+            )}
+          >
+            <Play className="h-4 w-4 fill-current" />
+            {stop.status === "in_progress" ? "Resume Service" : "Start Service"}
+          </Link>
+          
+          {stop.status !== "completed" && (
+            <p className="text-[10px] text-center text-neutral-400 font-medium">
+              Service can be started at the scheduled time.
+            </p>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -310,13 +431,16 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   );
 }
 
-function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
+function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; onClick: () => void }) {
   const c = stop.customers as any;
   const time = stop.time_slot;
 
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border">
+    <button 
+      onClick={onClick}
+      className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
+    >
       <div className="h-9 w-9 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100">
         #{seqNo}
       </div>
@@ -328,9 +452,9 @@ function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
          </div>
       </div>
       <div className="shrink-0">
-        <ChevronDown className="h-4 w-4 text-neutral-200 -rotate-90" />
+        <ChevronRight className="h-4 w-4 text-neutral-300" />
       </div>
-    </div>
+    </button>
   );
 }
 

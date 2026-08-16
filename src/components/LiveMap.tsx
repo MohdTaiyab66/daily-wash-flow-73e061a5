@@ -47,7 +47,7 @@ function loadGoogleMaps(): Promise<void> {
   return window.__lovableMapReady;
 }
 
-export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void }) {
+export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats, onStopClick }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void; onStopClick?: (stopId: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -168,6 +168,9 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats 
         map: mapRef.current,
         label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "600" },
         title: s.label,
+      });
+      marker.addListener("click", () => {
+        if (onStopClick) onStopClick(s.id);
       });
       markersRef.current.push(marker);
       bounds.extend({ lat: s.lat, lng: s.lng });
