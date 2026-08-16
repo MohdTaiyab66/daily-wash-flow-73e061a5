@@ -361,7 +361,7 @@ export function LiveMap({
           console.error("[LiveMap] Route computation failed:", err);
         });
     }
-  }, [ready, showCustomers, stableStops, stopsKey, compute]);
+  }, [ready, showCustomers, stableStops, stopsKey, compute, partnerPos]);
 
   const effectiveStats = stats ?? fallbackStats;
   useEffect(() => { onStats?.(effectiveStats ?? null); }, [effectiveStats?.km, effectiveStats?.mins]); // eslint-disable-line react-hooks/exhaustive-deps
