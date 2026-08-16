@@ -357,7 +357,7 @@ export function MarketplaceOfferCard({
               <Car className="h-3 w-3 text-[#FF6B00]" />
               {isRelease ? "New Work Available" : "Incoming Offer"}
             </div>
-            <div className={cn("truncate text-lg font-bold text-neutral-900", isRelease && "text-primary")}>{label}</div>
+            <div className={cn("truncate text-lg font-black text-neutral-900", isRelease && "text-[#FF6B00]")}>{label}</div>
             {v?.registration_number && !isRelease && (
               <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
                 {v.registration_number}
@@ -366,7 +366,7 @@ export function MarketplaceOfferCard({
           </div>
           {compact ? (
             <div className="flex flex-col items-end">
-              <div className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{remaining}s Left</div>
+              <div className="text-[10px] font-bold text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full">{remaining}s Left</div>
             </div>
           ) : (
             <CountdownRing remaining={remaining} total={total} />
@@ -382,8 +382,8 @@ export function MarketplaceOfferCard({
             <p className="text-xs font-bold truncate">{distanceDisplay}</p>
             <p className="text-[10px] text-muted-foreground truncate">{areaName}</p>
           </div>
-          <div className="bg-primary/5 rounded-xl p-2.5 border border-primary/10">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-primary mb-1 flex items-center gap-1">
+          <div className="bg-[#FF6B00]/5 rounded-xl p-2.5 border border-[#FF6B00]/10">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-[#FF6B00] mb-1 flex items-center gap-1">
               <IndianRupee className="h-2.5 w-2.5" /> Earnings
             </p>
             <p className="text-xs font-bold text-[#FF6B00]">{earningDisplay}</p>
