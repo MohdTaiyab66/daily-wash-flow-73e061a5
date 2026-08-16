@@ -341,7 +341,7 @@ function AssignmentsPage() {
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
-          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "START MY ASSIGNMENT →"}
+          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "CREATE MY ASSIGNMENT →"}
         </Button>
       </div>
 
