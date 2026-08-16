@@ -313,7 +313,7 @@ function HomePage() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
+              <Button asChild size="lg" className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
                 <Link to="/app/assignments">VIEW AVAILABLE WORK</Link>
               </Button>
             </div>
