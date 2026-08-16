@@ -114,16 +114,25 @@ function RoutePage() {
   const activeNext = pending[0] ?? null;
   const activeQueue = pending.slice(1);
   const stops = pending
-    .map((s, i) => ({
-      id: s.id,
-      sequence_no: (s as any).routeIndex ?? i + 1,
-      lat: Number(s.lat || (s.customers as any)?.latitude),
-      lng: Number(s.lng || (s.customers as any)?.longitude),
-      label: (s.customers as any)?.full_name ?? "Customer",
-      eta: (s as any).eta_at ?? null,
-      distanceKm: (s as any).distance_km ?? null,
-    }))
-    .filter(s => !isNaN(s.lat) && !isNaN(s.lng));
+    .map((s, i) => {
+      const lat = Number(s.lat || (s.customers as any)?.latitude);
+      const lng = Number(s.lng || (s.customers as any)?.longitude);
+      
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+        console.warn(`[LiveMap] Customer ${s.customers?.full_name} has invalid coordinates:`, { lat, lng });
+      }
+
+      return {
+        id: s.id,
+        sequence_no: (s as any).routeIndex ?? i + 1,
+        lat,
+        lng,
+        label: (s.customers as any)?.full_name ?? "Customer",
+        eta: (s as any).eta_at ?? null,
+        distanceKm: (s as any).distance_km ?? null,
+      };
+    })
+    .filter(s => !isNaN(s.lat) && !isNaN(s.lng) && s.lat !== 0 && s.lng !== 0);
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);

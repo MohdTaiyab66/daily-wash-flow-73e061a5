@@ -86,9 +86,14 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
 
   // Initialize map
   useEffect(() => {
+    console.log("[LiveMap] Starting initialization...");
     loadGoogleMaps()
       .then(() => {
-        if (!ref.current) return;
+        if (!ref.current) {
+          console.warn("[LiveMap] Ref is null during init");
+          return;
+        }
+        console.log("[LiveMap] Creating new google.maps.Map instance");
         mapRef.current = new window.google.maps.Map(ref.current, {
           center: { lat: 26.8467, lng: 80.9462 },
           zoom: 12,
@@ -103,7 +108,12 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
             }
           ]
         });
-        setReady(true);
+        
+        // Listen for the first idle event to confirm the map is actually rendering tiles
+        window.google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+          console.log("[LiveMap] Map is idle and ready");
+          setReady(true);
+        });
       })
       .catch((e) => {
         console.error("[LiveMap] Initialization error:", e);
@@ -191,7 +201,7 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
-        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "900" },
+        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "14px", fontWeight: "900" },
         title: s.label,
       });
       marker.addListener("click", () => {
