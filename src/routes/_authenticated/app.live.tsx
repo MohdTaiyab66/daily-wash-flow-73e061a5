@@ -390,7 +390,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
           
           {stop.status !== "completed" && (
             <p className="text-[10px] text-center text-neutral-400 font-medium">
-              Service can be started at the scheduled time.
+              Ensure you are at the customer's location before starting.
             </p>
           )}
         </div>
