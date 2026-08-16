@@ -51,7 +51,8 @@ function loadGoogleMaps(): Promise<void> {
       resolve();
     };
     const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
+    // Ensure version is specified and sensors aren't blocked
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
     s.async = true;
     s.onerror = (err) => {
       console.error("[LiveMap] Script load failed", err);
@@ -100,6 +101,8 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: "greedy",
+          // Use 'roadmap' to ensure tiles are visible in all environments
+          mapTypeId: 'roadmap',
           styles: [
             {
               featureType: "poi",
@@ -219,15 +222,23 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
           fontWeight: "900" 
         },
         title: s.label,
-        // Larger, brighter icon for the current next stop
+        // Using a standard marker if NEXT stop icon fails, but adding a distinct color
         icon: isNext ? {
-          path: g.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: 6,
+          path: g.maps.SymbolPath.CIRCLE,
+          scale: 12,
           fillColor: "#FF6B00",
           fillOpacity: 1,
           strokeColor: "#fff",
           strokeWeight: 2,
-        } : undefined,
+        } : {
+          path: g.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#64748b",
+          fillOpacity: 1,
+          strokeColor: "#fff",
+          strokeWeight: 2,
+        },
+        zIndex: isNext ? 1000 : 1,
       });
       
       marker.addListener("click", () => {
