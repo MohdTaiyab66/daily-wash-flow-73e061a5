@@ -191,7 +191,7 @@ function HomePage() {
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
           <div className="p-6 space-y-5 relative z-10">
-            {assignment && total > 0 ? (
+            {assignment ? (
               <>
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
