@@ -217,7 +217,7 @@ export function MarketplaceOfferCard({
   // Use resolved earning/distance if available (from Push payload or backend enrich)
   // Fallback to existing calculation for backwards compatibility/local UI
   const earningAmount = (offer as any).earning_amount ?? offer.incentive;
-  const earningDisplay = (offer as any).earning_monthly ?? (offer as any).earning_display ?? `+₹${Math.round(Number(earningAmount) * workingDaysBetween(offer.broadcast.subscription?.start_date, offer.broadcast.subscription?.renewal_date))}/month`;
+  const earningDisplay = (offer as any).earning_monthly ?? (offer as any).earning_display ?? `₹${Math.round(Number(earningAmount) * 26).toLocaleString("en-IN")} / Month`;
   const distanceDisplay = (offer as any).distance_display ?? fmtDist(offer.distance_from_route_m);
 
 
@@ -225,7 +225,7 @@ export function MarketplaceOfferCard({
     offer.broadcast.subscription?.start_date,
     offer.broadcast.subscription?.renewal_date,
   );
-  const monthEarnings = Math.round(Number(earningAmount) * workingDays);
+  const monthEarnings = Math.round(Number(earningAmount) * 26);
 
   const finishOffsetMin = useMemo(
     () => (impact ? Math.round((impact / 1000) * 4) : 0),
@@ -354,7 +354,7 @@ export function MarketplaceOfferCard({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
-              <Car className="h-3 w-3 text-primary" />
+              <Car className="h-3 w-3 text-[#FF6B00]" />
               {isRelease ? "New Work Available" : "Incoming Offer"}
             </div>
             <div className={cn("truncate text-lg font-bold text-neutral-900", isRelease && "text-primary")}>{label}</div>
@@ -386,8 +386,8 @@ export function MarketplaceOfferCard({
             <p className="text-[9px] font-bold uppercase tracking-wider text-primary mb-1 flex items-center gap-1">
               <IndianRupee className="h-2.5 w-2.5" /> Earnings
             </p>
-            <p className="text-xs font-bold text-primary">{earningDisplay}</p>
-            <p className="text-[10px] text-primary/70">{isRelease ? "Released Batch" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
+            <p className="text-xs font-bold text-[#FF6B00]">{earningDisplay}</p>
+            <p className="text-[10px] text-[#FF6B00]/70">{isRelease ? "Released Batch" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
           </div>
         </div>
 
@@ -405,7 +405,7 @@ export function MarketplaceOfferCard({
             </Button>
           )}
           <Button
-            className="flex-1 h-11 rounded-xl font-bold bg-neutral-900 text-white active:scale-95 transition-all shadow-md shadow-neutral-100"
+            className="flex-1 h-11 rounded-xl font-bold bg-[#FF6B00] hover:bg-[#E56000] text-white active:scale-95 transition-all shadow-md shadow-[#FF6B00]/10"
             onClick={handleAccept}
             disabled={busy}
           >

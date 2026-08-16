@@ -149,7 +149,7 @@ function HomePage() {
   const areaName = partner?.home_area ?? "Your Area";
 
   return (
-    <div className="mx-auto max-w-md px-5 pb-32 pt-3 space-y-8">
+    <div className="mx-auto max-w-md px-5 pb-[120px] pt-3 space-y-8">
       {/* GREETING */}
       <header className="space-y-1">
         <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
