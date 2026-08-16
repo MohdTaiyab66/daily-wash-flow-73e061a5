@@ -420,7 +420,7 @@ function AssignmentsPage() {
           {accept.isPending ? (
             <div className="flex items-center gap-3">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-lg">CREATING ASSIGNMENT...</span>
+              <span className="text-lg uppercase">CREATING ASSIGNMENT...</span>
             </div>
           ) : (
             <>
@@ -428,8 +428,8 @@ function AssignmentsPage() {
                 <span className="text-lg uppercase tracking-tight">START MY ASSIGNMENT</span>
                 <span className="text-2xl leading-none group-active:translate-x-1 transition-transform">→</span>
               </div>
-              <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">
-                {totalCustomers > 0 ? totalCustomers : 0} CUSTOMERS AVAILABLE
+              <span className="text-[10px] font-black text-white/90 uppercase tracking-[0.15em]">
+                {availableCount} CUSTOMERS AVAILABLE
               </span>
             </>
           )}
