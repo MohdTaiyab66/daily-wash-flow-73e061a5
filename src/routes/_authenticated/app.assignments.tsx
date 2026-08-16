@@ -125,12 +125,12 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message)
   });
 
-  // STATE B — PARTNER HAS ACTIVE ASSIGNMENT
+  // STATE 2 — ACTIVE ASSIGNMENT
   if (activeAssignment) {
     return (
       <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
         <header className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">TODAY'S ASSIGNMENT</h1>
           <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
         </header>
 
@@ -155,7 +155,7 @@ function AssignmentsPage() {
                 <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                   <Car className="h-5 w-5 text-[#FF6B00]" />
                 </div>
-                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Customers</span>
+                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Total Customers</span>
               </div>
             </div>
 
@@ -173,7 +173,7 @@ function AssignmentsPage() {
             <div className="pt-4 space-y-3">
                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {SERVICE_DAYS_PER_MONTH} service days • Mondays OFF
+                26 service days • Mondays OFF
               </p>
               
               <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
@@ -203,7 +203,7 @@ function AssignmentsPage() {
             className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 uppercase tracking-widest"
             onClick={() => setCancelOpen(true)}
           >
-            Cancel Assignment
+            CANCEL ASSIGNMENT
           </Button>
         </div>
 
@@ -236,11 +236,11 @@ function AssignmentsPage() {
     );
   }
 
-  // STATE A — NEW PARTNER / NO ACTIVE ASSIGNMENT
+  // STATE 1 — NO ACTIVE ASSIGNMENT
   if (!partner?.home_area) {
     return (
       <div className="mx-auto max-w-md px-5 pt-10 space-y-6">
-        <h1 className="text-3xl font-black text-[#1A1A1A]">Build your assignment</h1>
+        <h1 className="text-3xl font-black text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
         <Card className="p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
           <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
             <MapPin className="h-8 w-8 text-[#FF6B00]" />
