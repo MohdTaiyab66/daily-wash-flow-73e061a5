@@ -257,7 +257,7 @@ function HomePage() {
             <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", online ? "text-emerald-600" : "text-neutral-400")}>
               {online ? "SYSTEM ONLINE" : "SYSTEM OFFLINE"}
             </span>
-            <span className="text-[11px] font-bold text-neutral-500 mt-0.5">
+            <span className="text-[11px] font-bold text-neutral-500 mt-0.5 leading-none">
               {online ? "Ready to receive new customers" : "Not receiving new work"}
             </span>
           </div>
@@ -296,7 +296,7 @@ function HomePage() {
         )}
 
         {online && assignment && total > 0 && !anyStarted && !allDone && (
-           <Button asChild size="lg" className="w-full h-16 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
+           <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
               START ASSIGNMENT
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
