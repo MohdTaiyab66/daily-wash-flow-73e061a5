@@ -49,7 +49,25 @@ function addHours(hhmm: string, hours: number): string {
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const SERVICE_DAYS_PER_MONTH = 26;
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(30);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  // Mondays are always off
+  const countServiceDays = (calendarDays: number, startDate = new Date()) => {
+    let count = 0;
+    for (let i = 0; i < calendarDays; i++) {
+      const current = new Date(startDate);
+      current.setDate(startDate.getDate() + i);
+      if (current.getDay() !== 1) { // 1 is Monday
+        count++;
+      }
+    }
+    return count;
+  };
+
+  const serviceDays = countServiceDays(duration);
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
@@ -84,20 +102,17 @@ function AssignmentsPage() {
     },
   });
 
-  const [hours, setHours] = useState(4);
-  const [duration, setDuration] = useState(30);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [cancelOpen, setCancelOpen] = useState(false);
-
   const cars = Math.round(hours * (settings?.carsPerHour ?? 6));
   const rate = settings?.rate ?? 17;
   const startTime = computeStartTime(cars, DEFAULT_START_RULES);
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
-  const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
+  const assignmentEarn = dailyEarn * serviceDays;
 
   const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
-  const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
+  // For active assignments, we use 26 as the standard monthly reference for the display card
+  const activeMonthlyEarn = activeDailyEarn * 26;
+
 
   const accept = useMutation({
     mutationFn: async () => {
@@ -165,8 +180,9 @@ function AssignmentsPage() {
                 <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{activeDailyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR EARNING</p>
                 <p className="text-2xl font-black tracking-tight text-white">₹{activeMonthlyEarn.toLocaleString("en-IN")}</p>
+
               </div>
             </div>
 
@@ -194,7 +210,7 @@ function AssignmentsPage() {
           </div>
         </Card>
 
-        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 space-y-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
           <Button asChild size="lg" className="w-full h-16 rounded-[24px] bg-[#FF6B00] text-lg font-black shadow-lg shadow-[#FF6B00]/20">
             <Link to="/app/live">START ASSIGNMENT →</Link>
           </Button>
@@ -215,7 +231,8 @@ function AssignmentsPage() {
                 You are about to release:
                 <div className="mt-3 p-4 bg-neutral-50 rounded-2xl space-y-1">
                   <p className="font-bold text-[#1A1A1A]">{totalCustomers} customers</p>
-                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}/month</p>
+                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}</p>
+
                 </div>
                 <p className="mt-4">This work will become available to other eligible partners in {partner?.home_area}.</p>
               </AlertDialogDescription>
@@ -256,10 +273,11 @@ function AssignmentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-[220px] space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] leading-tight uppercase">BUILD YOUR ASSIGNMENT</h1>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[180px] space-y-6">
+      <header className="space-y-0.5">
+        <h1 className="text-[24px] font-black tracking-tight text-[#1A1A1A] leading-tight uppercase">BUILD YOUR ASSIGNMENT</h1>
       </header>
+
 
       <section className="space-y-4">
         <div className="space-y-2">
@@ -286,11 +304,12 @@ function AssignmentsPage() {
 
       <section className="space-y-8">
         {/* 1. HOURS PER DAY */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-sm font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY HOURS PER DAY?</label>
-            <span className="text-2xl font-black text-[#FF6B00]">{hours} HOURS</span>
+            <label className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY HOURS PER DAY?</label>
+            <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
           </div>
+
           <div className="px-1 space-y-5">
             <Slider 
               value={[hours]} 
@@ -318,11 +337,12 @@ function AssignmentsPage() {
         </div>
 
         {/* 2. DAYS TO COMMIT */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-sm font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY DAYS DO YOU WANT TO COMMIT?</label>
-            <span className="text-2xl font-black text-[#FF6B00]">{duration} DAYS</span>
+            <label className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY DAYS TO COMMIT?</label>
+            <span className="text-xl font-black text-[#FF6B00]">{duration} DAYS</span>
           </div>
+
           <div className="px-1 space-y-4">
             <Slider 
               value={[duration]} 
@@ -332,21 +352,25 @@ function AssignmentsPage() {
               onValueChange={([v]) => setDuration(v)}
               className="py-2"
             />
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex justify-between text-[11px] font-bold text-neutral-400 uppercase tracking-widest">
                 <span>7 DAYS</span>
                 <span>30 DAYS</span>
               </div>
-              <p className="text-[11px] font-bold text-neutral-500">
-                Choose how many days you want to commit to your assignment.
-              </p>
-              <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                MONDAYS ARE ALWAYS OFF
+              
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] font-bold text-neutral-900 uppercase tracking-wider">
+                  {duration} calendar days
+                </p>
+                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.15em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {serviceDays} SERVICE DAYS • Mondays off
+                </div>
               </div>
             </div>
           </div>
         </div>
+
       </section>
 
       <section className="space-y-4 pb-8">
@@ -367,20 +391,21 @@ function AssignmentsPage() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">MONTHLY EARNING</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">
+                  FOR YOUR {duration}-DAY ASSIGNMENT
+                </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-white">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-                  <span className="text-xs text-white/30 uppercase font-black">/ MONTH</span>
+                  <span className="text-3xl font-black text-white">₹{assignmentEarn.toLocaleString("en-IN")}</span>
                 </div>
               </div>
               
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1">
                 <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.15em] flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  26 SERVICE DAYS / MONTH
+                  {serviceDays} SERVICE DAYS
                 </p>
-                <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.15em] pl-3.5">
-                  MONDAYS OFF
+                <p className="text-[9px] text-white/30 font-bold italic pl-3.5">
+                  Calculated using your selected days. Mondays are always off.
                 </p>
               </div>
             </div>
@@ -388,10 +413,11 @@ function AssignmentsPage() {
         </div>
       </section>
 
+
       {/* Earning Card is already replaced in the previous block */}
     
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-xl p-4 pb-[calc(12px+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-xl p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
           className="w-full h-16 rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
@@ -414,10 +440,11 @@ function AssignmentsPage() {
                    <p className="text-sm font-bold uppercase">{cars} Customers</p>
                 </div>
                 <div className="flex justify-between items-center border-t border-white/10 pt-3">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Monthly Earning</p>
-                   <p className="text-lg font-black text-[#FF6B00]">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Assignment Earning</p>
+                   <p className="text-lg font-black text-[#FF6B00]">₹{assignmentEarn.toLocaleString("en-IN")}</p>
                 </div>
-                <p className="text-[9px] text-white/30 font-medium italic">Based on 26 service days.</p>
+                <p className="text-[9px] text-white/30 font-medium italic">Based on {serviceDays} service days.</p>
+
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
