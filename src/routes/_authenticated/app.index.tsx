@@ -319,8 +319,9 @@ function HomePage() {
           <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.2em]">Work Opportunities</p>
-                <h2 className="text-xl font-bold mt-1 text-[#1A1A1A]">{(availableCount + (bookingRequests?.length ?? 0))} Customers Ready</h2>
+                <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.2em]">CUSTOMERS AVAILABLE NOW</p>
+                <h2 className="text-xl font-bold mt-1 text-[#1A1A1A]">{availableCount}</h2>
+                <p className="text-[10px] font-bold text-neutral-400 mt-1">More customers can be added to your area.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
