@@ -283,6 +283,7 @@ export type Database = {
           search_radius_km: number
           start_date: string
           status: string
+          sub_status: string | null
           target_cars: number
           total_earnings: number
           working_days: number
@@ -312,6 +313,7 @@ export type Database = {
           search_radius_km?: number
           start_date?: string
           status?: string
+          sub_status?: string | null
           target_cars: number
           total_earnings?: number
           working_days?: number
@@ -341,6 +343,7 @@ export type Database = {
           search_radius_km?: number
           start_date?: string
           status?: string
+          sub_status?: string | null
           target_cars?: number
           total_earnings?: number
           working_days?: number
@@ -6020,6 +6023,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waiting_partners_view: {
+        Row: {
+          created_at: string | null
+          duration_days: number | null
+          expected_start_time: string | null
+          fulfilled_cars: number | null
+          full_name: string | null
+          home_area: string | null
+          status: string | null
+          sub_status: string | null
+          target_cars: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
