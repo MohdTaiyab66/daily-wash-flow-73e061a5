@@ -329,7 +329,7 @@ function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
   );
 }
 
-export function MaskedCallButton({ serviceId, compact, full, size }: { serviceId: string; compact?: boolean; full?: boolean; size?: "sm" | "default" | "lg" }) {
+export function MaskedCallButton({ serviceId, full, size }: { serviceId: string; full?: boolean; size?: "default" | "lg" | "sm" | "icon" }) {
   const call = useServerFn(initiateMaskedCall);
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
@@ -347,10 +347,10 @@ export function MaskedCallButton({ serviceId, compact, full, size }: { serviceId
   return (
     <Button 
       variant="outline" 
-      size={size === "icon" ? "icon" : (size ?? (full ? "lg" : "default"))} 
+      size={size ?? (full ? "lg" : "default")} 
       className={cn(
         "rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0", 
-        full ? "w-full" : "h-12 w-12"
+        full ? "w-full" : (size === "icon" || !size ? "h-12 w-12" : "")
       )} 
       onClick={onClick} 
       disabled={loading}
