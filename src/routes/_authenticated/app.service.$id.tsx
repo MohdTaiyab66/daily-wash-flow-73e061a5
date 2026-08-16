@@ -608,9 +608,6 @@ function ServiceDetail() {
           )}
         </div>
       )}
-          </StickyBar>
-        </>
-      )}
 
       {/* ---------------- STEP 6 · AFTER PHOTOS ---------------- */}
       {!done && step === "after" && (() => {
