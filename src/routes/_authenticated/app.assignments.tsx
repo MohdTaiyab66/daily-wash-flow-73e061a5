@@ -319,7 +319,7 @@ function AssignmentsPage() {
           <div className="flex flex-col gap-6 relative z-10">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR DAILY EARNING</p>
                 <p className="text-3xl font-black tracking-tight text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</p>
               </div>
               <div className="space-y-1">
