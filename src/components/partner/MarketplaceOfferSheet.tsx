@@ -113,7 +113,7 @@ export function MarketplaceOfferSheet({
     }}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-3xl border-t bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}

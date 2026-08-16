@@ -358,16 +358,18 @@ function AssignmentsPage() {
   if (!hasArea) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
-        <Card className="mt-5 p-6 text-center">
-          <MapPin className="mx-auto h-10 w-10 text-primary" />
-          <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We need to know where you'll service customers before we can show you available cars and earnings.
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Work Plan</h1>
+        <p className="mt-1 text-sm font-bold text-neutral-500 uppercase tracking-widest">Step 1: Choose Area</p>
+        <Card className="mt-5 p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
+          <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
+            <MapPin className="h-8 w-8 text-[#FF6B00]" />
+          </div>
+          <h2 className="mt-5 text-xl font-black text-[#1A1A1A]">Select your work area</h2>
+          <p className="mt-2 text-sm font-medium text-neutral-500 leading-relaxed px-2">
+            We need to know where you'll be working before showing you available customers and potential earnings.
           </p>
-          <Button asChild size="lg" className="mt-5 w-full">
-            <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Select work area / use current location</Link>
+          <Button asChild size="lg" className="mt-8 w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
+            <Link to="/app/area">SELECT WORK AREA</Link>
           </Button>
         </Card>
       </div>
@@ -379,7 +381,7 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
         <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
       </header>
 
@@ -406,40 +408,47 @@ function AssignmentsPage() {
       <section>
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
-          <div className="p-6 space-y-6 relative z-10">
+          <div className="p-6 space-y-5 relative z-10">
             <div className="flex flex-col gap-1">
-              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Assignment Summary</p>
-              <div className="flex items-baseline justify-between mt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🚗</span>
-                  <span className="text-2xl font-black uppercase tracking-tight">{cars} CUSTOMERS</span>
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Assignment Summary</p>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-[#FF6B00]" />
                 </div>
+                <span className="text-xl font-black uppercase tracking-tight">{cars} Customers</span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 border-t border-white/10 pt-6">
-              <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Total Monthly Earning</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                < IndianRupee className="h-6 w-6 text-[#FF6B00]" strokeWidth={3} />
-                <span className="text-4xl font-black tracking-tighter">₹{animMonthly.toLocaleString("en-IN")}</span>
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{animEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
               </div>
-              <p className="text-[10px] text-white/30 font-bold mt-1 uppercase tracking-wider">
-                🟢 {SERVICE_DAYS_PER_MONTH} service days/month • Mondays OFF
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-2xl font-black tracking-tight">₹{animMonthly.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+              </div>
+            </div>
+
+            <div className="pt-4 space-y-3">
+               <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {SERVICE_DAYS_PER_MONTH} service days • Mondays OFF
               </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" /> Daily Hours
-                </p>
-                <p className="text-sm font-bold">{hours} Hours / Day</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                  <TrendingUp className="h-3 w-3" /> Timeline
-                </p>
-                <p className="text-sm font-bold">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+              
+              <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Daily Hours
+                  </p>
+                  <p className="text-sm font-bold">{hours} Hours / Day</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="h-3 w-3" /> Timeline
+                  </p>
+                  <p className="text-sm font-bold">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -578,7 +587,7 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4 space-y-2">
           <Button 
             size="lg" 
-            className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
             disabled={availableInArea === 0 || accept.isPending}
             onClick={() => setConfirmOpen(true)}
           >

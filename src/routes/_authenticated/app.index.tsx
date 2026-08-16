@@ -149,11 +149,21 @@ function HomePage() {
   const areaName = partner?.home_area ?? "Your Area";
 
   return (
-    <div className="mx-auto max-w-md px-5 pb-32 pt-3 space-y-8">
+    <div className="mx-auto max-w-md px-5 pb-[120px] pt-3 space-y-8">
       {/* GREETING */}
-      <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
-        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
+      <header className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Home</h1>
+          <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest">Urban Wash Partner</p>
+        </div>
+        {partner?.home_area && (
+           <div className="flex flex-col items-end">
+             <div className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Work Area</div>
+             <Link to="/app/profile" className="text-sm font-black text-[#FF6B00] flex items-center gap-1">
+               {partner.home_area}
+             </Link>
+           </div>
+        )}
       </header>
 
       {/* AREA SELECTION HEADER */}
@@ -179,42 +189,49 @@ function HomePage() {
       <section>
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
-          <div className="p-6 space-y-6 relative z-10">
+          <div className="p-6 space-y-5 relative z-10">
             {assignment && total > 0 ? (
               <>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🚗</span>
-                      <span className="text-2xl font-black uppercase tracking-tight">{total} CUSTOMERS</span>
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Car className="h-5 w-5 text-[#FF6B00]" />
                     </div>
+                    <span className="text-xl font-black uppercase tracking-tight">{total} Customers</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1 border-t border-white/10 pt-6">
-                  <p className="text-[11px] font-bold uppercase text-white/40 tracking-[0.2em]">Potential Daily Earning</p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    < IndianRupee className="h-6 w-6 text-[#FF6B00]" strokeWidth={3} />
-                    <span className="text-4xl font-black tracking-tighter">₹{estimatedEarningsToday.toLocaleString("en-IN")}</span>
+                <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                    <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{estimatedEarningsToday.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
                   </div>
-                  <p className="text-[10px] text-white/30 font-bold mt-1 uppercase tracking-wider">
-                    🟢 26 service days/month • Mondays OFF
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                    <p className="text-2xl font-black tracking-tight">₹{(estimatedEarningsToday * 26).toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+                  </div>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                   <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    26 service days • Mondays OFF
                   </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                      <Clock className="h-3 w-3" /> Start Time
-                    </p>
-                    <p className="text-sm font-bold">{assignment.expected_start_time ? formatTime12(assignment.expected_start_time) : "—"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                      <Navigation className="h-3 w-3" /> Progress
-                    </p>
-                    <p className="text-sm font-bold">{done} / {total} Done</p>
+                  
+                  <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" /> Start Time
+                      </p>
+                      <p className="text-sm font-bold">{assignment.expected_start_time ? formatTime12(assignment.expected_start_time) : "—"}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                        <Navigation className="h-3 w-3" /> Progress
+                      </p>
+                      <p className="text-sm font-bold">{done} / {total} Completed</p>
+                    </div>
                   </div>
                 </div>
               </>
@@ -250,7 +267,7 @@ function HomePage() {
             <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", online ? "text-emerald-600" : "text-neutral-400")}>
               {online ? "SYSTEM ONLINE" : "SYSTEM OFFLINE"}
             </span>
-            <span className="text-[11px] font-bold text-neutral-500 mt-0.5">
+            <span className="text-[11px] font-bold text-neutral-500 mt-0.5 leading-none">
               {online ? "Ready to receive new customers" : "Not receiving new work"}
             </span>
           </div>
@@ -289,7 +306,7 @@ function HomePage() {
         )}
 
         {online && assignment && total > 0 && !anyStarted && !allDone && (
-           <Button asChild size="lg" className="w-full h-16 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
+           <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
               START ASSIGNMENT
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
@@ -306,7 +323,7 @@ function HomePage() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
+              <Button asChild size="lg" className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
                 <Link to="/app/assignments">VIEW AVAILABLE WORK</Link>
               </Button>
             </div>
@@ -320,18 +337,18 @@ function HomePage() {
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Earning Summary</h3>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#1A1A1A]">₹{earnedSoFar}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Earned</p>
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#1A1A1A]">₹{earnedSoFar}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Earned</p>
           </div>
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#1A1A1A]">{completed}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Done</p>
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#1A1A1A]">{completed}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Done</p>
           </div>
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] mt-1">
-              {total > 0 ? "Pending" : "Ready"}
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-1.5">
+              {total > 0 ? "Pending" : "Available"}
             </p>
           </div>
         </div>
@@ -346,11 +363,11 @@ function HomePage() {
               <h3 className="text-base font-bold text-[#1A1A1A]">Partner Support</h3>
             </div>
             <div className="flex gap-2">
-              <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <Phone className="h-5 w-5 text-primary" />
+              <a href="tel:+919999999999" className="h-10 w-10 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-90 transition-all">
+                <Phone className="h-4 w-4 text-[#FF6B00]" />
               </a>
-              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <MessageCircle className="h-5 w-5 text-emerald-500" />
+              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-90 transition-all">
+                <MessageCircle className="h-4 w-4 text-emerald-500" />
               </a>
             </div>
           </div>

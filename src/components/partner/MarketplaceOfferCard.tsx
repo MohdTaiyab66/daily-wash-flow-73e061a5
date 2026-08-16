@@ -206,7 +206,7 @@ export function MarketplaceOfferCard({
   const isRelease = (offer as any).type === "assignment_released";
   const v = offer.broadcast.vehicle;
   const label = isRelease 
-    ? `🚗 ${(offer as any).customer_count ?? "Multiple"} Customers` 
+    ? `${(offer as any).customer_count ?? "Multiple"} Customers` 
     : v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
   const areaName = (offer as any).area ?? offer.broadcast.service_area?.name ?? "Nearby area";
   const dist = offer.distance_from_route_m ?? null;
@@ -217,7 +217,7 @@ export function MarketplaceOfferCard({
   // Use resolved earning/distance if available (from Push payload or backend enrich)
   // Fallback to existing calculation for backwards compatibility/local UI
   const earningAmount = (offer as any).earning_amount ?? offer.incentive;
-  const earningDisplay = (offer as any).earning_monthly ?? (offer as any).earning_display ?? `+₹${Math.round(Number(earningAmount) * workingDaysBetween(offer.broadcast.subscription?.start_date, offer.broadcast.subscription?.renewal_date))}/month`;
+  const earningDisplay = (offer as any).earning_monthly ?? (offer as any).earning_display ?? `₹${Math.round(Number(earningAmount) * 26).toLocaleString("en-IN")} / Month`;
   const distanceDisplay = (offer as any).distance_display ?? fmtDist(offer.distance_from_route_m);
 
 
@@ -225,7 +225,7 @@ export function MarketplaceOfferCard({
     offer.broadcast.subscription?.start_date,
     offer.broadcast.subscription?.renewal_date,
   );
-  const monthEarnings = Math.round(Number(earningAmount) * workingDays);
+  const monthEarnings = Math.round(Number(earningAmount) * 26);
 
   const finishOffsetMin = useMemo(
     () => (impact ? Math.round((impact / 1000) * 4) : 0),
@@ -345,8 +345,8 @@ export function MarketplaceOfferCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-white transition-all shadow-sm",
-        compact ? "border-neutral-100" : "border-primary/20 animate-scale-in"
+        "relative overflow-hidden rounded-3xl border bg-white transition-all shadow-sm",
+        compact ? "border-neutral-100" : "border-[#FF6B00]/20 animate-scale-in"
       )}
     >
       <div className="p-4">
@@ -354,10 +354,10 @@ export function MarketplaceOfferCard({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
-              <Car className="h-3 w-3 text-primary" />
+              <Car className="h-3 w-3 text-[#FF6B00]" />
               {isRelease ? "New Work Available" : "Incoming Offer"}
             </div>
-            <div className={cn("truncate text-lg font-bold text-neutral-900", isRelease && "text-primary")}>{label}</div>
+            <div className={cn("truncate text-lg font-black text-neutral-900", isRelease && "text-[#FF6B00]")}>{label}</div>
             {v?.registration_number && !isRelease && (
               <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
                 {v.registration_number}
@@ -366,7 +366,7 @@ export function MarketplaceOfferCard({
           </div>
           {compact ? (
             <div className="flex flex-col items-end">
-              <div className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{remaining}s Left</div>
+              <div className="text-[10px] font-bold text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full">{remaining}s Left</div>
             </div>
           ) : (
             <CountdownRing remaining={remaining} total={total} />
@@ -382,12 +382,12 @@ export function MarketplaceOfferCard({
             <p className="text-xs font-bold truncate">{distanceDisplay}</p>
             <p className="text-[10px] text-muted-foreground truncate">{areaName}</p>
           </div>
-          <div className="bg-primary/5 rounded-xl p-2.5 border border-primary/10">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-primary mb-1 flex items-center gap-1">
+          <div className="bg-[#FF6B00]/5 rounded-xl p-2.5 border border-[#FF6B00]/10">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-[#FF6B00] mb-1 flex items-center gap-1">
               <IndianRupee className="h-2.5 w-2.5" /> Earnings
             </p>
-            <p className="text-xs font-bold text-primary">{earningDisplay}</p>
-            <p className="text-[10px] text-primary/70">{isRelease ? "Released Batch" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
+            <p className="text-xs font-bold text-[#FF6B00]">{earningDisplay}</p>
+            <p className="text-[10px] text-[#FF6B00]/70">{isRelease ? "Released Batch" : `₹${monthEarnings.toLocaleString("en-IN")} Monthly`}</p>
           </div>
         </div>
 
@@ -405,7 +405,7 @@ export function MarketplaceOfferCard({
             </Button>
           )}
           <Button
-            className="flex-1 h-11 rounded-xl font-bold bg-neutral-900 text-white active:scale-95 transition-all shadow-md shadow-neutral-100"
+            className="flex-1 h-11 rounded-xl font-bold bg-[#FF6B00] hover:bg-[#E56000] text-white active:scale-95 transition-all shadow-md shadow-[#FF6B00]/10"
             onClick={handleAccept}
             disabled={busy}
           >

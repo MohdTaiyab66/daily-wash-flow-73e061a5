@@ -7,7 +7,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const nav = [
     { to: "/app", label: "Home", icon: Home },
-    { to: "/app/assignments", label: "Available", icon: Briefcase },
+    { to: "/app/assignments", label: "Available Work", icon: Briefcase },
     { to: "/app/earnings", label: "Earnings", icon: Wallet },
     { to: "/app/rewards", label: "Rewards", icon: Gift },
     { to: "/app/profile", label: "Profile", icon: User },
@@ -24,8 +24,8 @@ export function PartnerShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isFullScreen && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-2">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
+          <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-1">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/app" && pathname.startsWith(n.to));
@@ -38,13 +38,13 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                 >
                   <Icon 
                     className={cn(
-                      "h-[22px] w-[22px] transition-all", 
+                      "h-[24px] w-[24px] transition-all", 
                       active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
                     )} 
                     strokeWidth={active ? 2.5 : 2} 
                   />
                   <span className={cn(
-                    "mt-1 text-[12px] leading-tight transition-all",
+                    "mt-1 text-[10px] leading-tight transition-all whitespace-nowrap text-center px-0.5",
                     active ? "font-bold text-[#FF6B00]" : "font-medium text-[#8A8A8A]"
                   )}>
                     {n.label}
