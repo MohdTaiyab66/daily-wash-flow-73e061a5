@@ -244,7 +244,8 @@ function RoutePage() {
 function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
-  const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
+  const time = stop.time_slot;
+  const timeLabel = c?.time_window_type === "before" ? "Before " : "";
   const inProgress = stop.status === "in_progress";
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
 
