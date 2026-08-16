@@ -231,7 +231,8 @@ function AssignmentsPage() {
                 You are about to release:
                 <div className="mt-3 p-4 bg-neutral-50 rounded-2xl space-y-1">
                   <p className="font-bold text-[#1A1A1A]">{totalCustomers} customers</p>
-                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}/month</p>
+                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}</p>
+
                 </div>
                 <p className="mt-4">This work will become available to other eligible partners in {partner?.home_area}.</p>
               </AlertDialogDescription>
