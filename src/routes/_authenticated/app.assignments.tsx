@@ -334,7 +334,7 @@ function AssignmentsPage() {
                  <span className="font-bold text-white uppercase tracking-tight">{cars} CUSTOMERS</span>
                </div>
                <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium">26 service days • Mondays OFF</span>
+                 <span className="text-white/40 font-medium uppercase tracking-widest text-[10px]">26 SERVICE DAYS • MONDAYS OFF</span>
                  <span className="font-bold text-white">Commitment Mode</span>
                </div>
             </div>
