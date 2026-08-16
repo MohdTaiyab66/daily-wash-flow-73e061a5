@@ -163,12 +163,12 @@ function RoutePage() {
         </Card>
       </div>
 
-      {/* Map */}
-      <div className="px-5 mt-5 w-full box-border">
-        <div className="flex justify-between items-baseline mb-3">
+      {/* Map Section */}
+      <div className="px-5 mt-4 w-full box-border">
+        <div className="flex justify-between items-baseline mb-2.5">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
-        <div className="rounded-[24px] overflow-hidden h-[260px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
+        <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
            <LiveMap
               stops={stops}
               showCustomers={stops.length > 0}
