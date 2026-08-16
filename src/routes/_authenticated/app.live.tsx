@@ -114,16 +114,16 @@ function RoutePage() {
   const activeNext = pending[0] ?? null;
   const activeQueue = pending.slice(1);
   const stops = pending
-    .filter((s) => s.lat != null && s.lng != null)
     .map((s, i) => ({
       id: s.id,
       sequence_no: (s as any).routeIndex ?? i + 1,
-      lat: Number(s.lat),
-      lng: Number(s.lng),
+      lat: Number(s.lat || (s.customers as any)?.latitude),
+      lng: Number(s.lng || (s.customers as any)?.longitude),
       label: (s.customers as any)?.full_name ?? "Customer",
       eta: (s as any).eta_at ?? null,
       distanceKm: (s as any).distance_km ?? null,
-    }));
+    }))
+    .filter(s => !isNaN(s.lat) && !isNaN(s.lng));
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
