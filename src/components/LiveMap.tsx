@@ -180,7 +180,7 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
-        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "600" },
+        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "900" },
         title: s.label,
       });
       marker.addListener("click", () => {
