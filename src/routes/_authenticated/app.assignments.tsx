@@ -429,10 +429,17 @@ function AssignmentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold">Create Assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              You are accepting {cars} customers in {partner.home_area}. 
-              <div className="mt-3 p-4 bg-neutral-50 rounded-2xl">
-                <p className="font-bold text-neutral-900">Monthly earning: ₹{monthlyEarn.toLocaleString("en-IN")}</p>
-                <p className="text-[10px] mt-1">Based on 26 service days.</p>
+              You are committing to a {duration}-day assignment in {partner.home_area}. 
+              <div className="mt-4 p-4 bg-[#1A1A1A] text-white rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Target</p>
+                   <p className="text-sm font-bold uppercase">{cars} Customers</p>
+                </div>
+                <div className="flex justify-between items-center border-t border-white/10 pt-3">
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Monthly Earning</p>
+                   <p className="text-lg font-black text-[#FF6B00]">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                </div>
+                <p className="text-[9px] text-white/30 text-center font-medium">Projected using 26 service days per month.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
