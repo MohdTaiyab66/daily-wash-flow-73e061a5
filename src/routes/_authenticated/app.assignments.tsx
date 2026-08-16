@@ -309,7 +309,6 @@ function AssignmentsPage() {
               step={0.5} 
               onValueChange={([v]) => setHours(v)}
               className="py-2"
-              variant="orange"
             />
             
             <div className="grid grid-cols-2 gap-3">
