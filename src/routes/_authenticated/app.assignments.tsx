@@ -311,7 +311,7 @@ function AssignmentsPage() {
         {/* 2. DAYS TO COMMIT */}
         <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">2. Days to commit</label>
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">How many days do you want to commit?</label>
             <span className="text-xl font-black text-[#FF6B00]">{duration} DAYS</span>
           </div>
           <div className="px-1 space-y-4">
@@ -329,7 +329,7 @@ function AssignmentsPage() {
               </p>
               <div className="flex items-center gap-2 text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Mondays are always OFF
+                🟢 Mondays are always OFF
               </div>
             </div>
           </div>
@@ -401,10 +401,10 @@ function AssignmentsPage() {
                    <p className="text-sm font-bold uppercase">{cars} Customers</p>
                 </div>
                 <div className="flex justify-between items-center border-t border-white/10 pt-3">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Monthly Earning</p>
-                   <p className="text-lg font-black text-[#FF6B00]">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total Earning</p>
+                   <p className="text-lg font-black text-[#FF6B00]">₹{commitmentEarn.toLocaleString("en-IN")}</p>
                 </div>
-                <p className="text-[9px] text-white/30 text-center font-medium">Projected using 26 service days per month.</p>
+                <p className="text-[9px] text-white/30 text-center font-medium">Selected for {duration} days.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
