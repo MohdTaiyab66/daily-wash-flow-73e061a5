@@ -330,8 +330,8 @@ function AssignmentsPage() {
             
             <div className="pt-6 border-t border-white/10 space-y-2">
                <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium">{cars} customers target</span>
-                 <span className="font-bold text-white">₹17 / customer / day</span>
+                 <span className="text-white/40 font-medium">YOUR TARGET</span>
+                 <span className="font-bold text-white uppercase tracking-tight">{cars} CUSTOMERS</span>
                </div>
                <div className="flex items-center justify-between text-sm">
                  <span className="text-white/40 font-medium">26 service days • Mondays OFF</span>
