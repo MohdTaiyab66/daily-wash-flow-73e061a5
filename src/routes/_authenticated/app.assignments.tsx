@@ -53,8 +53,8 @@ function AssignmentsPage() {
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
-  const totalCustomers = todayQuery.data?.todaysCustomers ?? 0;
-  const completedToday = todayQuery.data?.completedToday ?? 0;
+  const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
+  const completedToday = todayQuery.data?.assignmentCompleted ?? 0;
 
   const { data: partner } = useQuery({
     queryKey: ["me-partner-builder"],
@@ -125,12 +125,12 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message)
   });
 
-  // STATE B — PARTNER HAS ACTIVE ASSIGNMENT
+  // STATE 2 — ACTIVE ASSIGNMENT
   if (activeAssignment) {
     return (
       <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
         <header className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">TODAY'S ASSIGNMENT</h1>
           <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
         </header>
 
@@ -155,7 +155,7 @@ function AssignmentsPage() {
                 <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                   <Car className="h-5 w-5 text-[#FF6B00]" />
                 </div>
-                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Customers</span>
+                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Total Customers</span>
               </div>
             </div>
 
@@ -173,7 +173,7 @@ function AssignmentsPage() {
             <div className="pt-4 space-y-3">
                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {SERVICE_DAYS_PER_MONTH} service days • Mondays OFF
+                26 service days • Mondays OFF
               </p>
               
               <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
@@ -187,7 +187,7 @@ function AssignmentsPage() {
                   <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                     <Navigation className="h-3 w-3" /> Progress
                   </p>
-                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Completed</p>
+                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Done</p>
                 </div>
               </div>
             </div>
@@ -203,7 +203,7 @@ function AssignmentsPage() {
             className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 uppercase tracking-widest"
             onClick={() => setCancelOpen(true)}
           >
-            Cancel Assignment
+            CANCEL ASSIGNMENT
           </Button>
         </div>
 
@@ -236,11 +236,11 @@ function AssignmentsPage() {
     );
   }
 
-  // STATE A — NEW PARTNER / NO ACTIVE ASSIGNMENT
+  // STATE 1 — NO ACTIVE ASSIGNMENT
   if (!partner?.home_area) {
     return (
       <div className="mx-auto max-w-md px-5 pt-10 space-y-6">
-        <h1 className="text-3xl font-black text-[#1A1A1A]">Build your assignment</h1>
+        <h1 className="text-3xl font-black text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
         <Card className="p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
           <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
             <MapPin className="h-8 w-8 text-[#FF6B00]" />
@@ -258,11 +258,11 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Build your assignment</h1>
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
         <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
       </header>
 
-      <section>
+      <section className="space-y-4">
         <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
@@ -275,6 +275,14 @@ function AssignmentsPage() {
           </div>
           <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
         </Link>
+
+        <div className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-2xl">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">CUSTOMERS AVAILABLE NOW</p>
+            <p className="text-2xl font-black text-neutral-900">0</p>
+          </div>
+          <p className="text-[10px] font-bold text-neutral-400 text-right max-w-[140px]">More customers can be added to your area.</p>
+        </div>
       </section>
 
       <section className="space-y-8">
@@ -311,23 +319,23 @@ function AssignmentsPage() {
           <div className="flex flex-col gap-6 relative z-10">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR DAILY EARNING</p>
                 <p className="text-3xl font-black tracking-tight text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR MONTHLY EARNING</p>
                 <p className="text-3xl font-black tracking-tight text-white">₹{monthlyEarn.toLocaleString("en-IN")}</p>
               </div>
             </div>
             
             <div className="pt-6 border-t border-white/10 space-y-2">
                <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium">{cars} customers target</span>
-                 <span className="font-bold text-white">₹17 / customer / day</span>
+                 <span className="text-white/40 font-medium">YOUR TARGET</span>
+                 <span className="font-bold text-white uppercase tracking-tight">{cars} CUSTOMERS</span>
                </div>
                <div className="flex items-center justify-between text-sm">
-                 <span className="text-white/40 font-medium">26 service days / month</span>
-                 <span className="font-bold text-white">Monday OFF</span>
+                 <span className="text-white/40 font-medium uppercase tracking-widest text-[10px]">26 SERVICE DAYS • MONDAYS OFF</span>
+                 <span className="font-bold text-[#FF6B00] uppercase tracking-tighter text-[11px]">Commitment Mode</span>
                </div>
             </div>
           </div>
@@ -341,14 +349,14 @@ function AssignmentsPage() {
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
-          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "START MY ASSIGNMENT →"}
+          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "CREATE MY ASSIGNMENT →"}
         </Button>
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Start Assignment?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">Create Assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
               You are accepting {cars} customers in {partner.home_area}. 
               <div className="mt-3 p-4 bg-neutral-50 rounded-2xl">

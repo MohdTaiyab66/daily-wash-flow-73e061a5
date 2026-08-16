@@ -191,15 +191,15 @@ function HomePage() {
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
           <div className="p-6 space-y-5 relative z-10">
-            {assignment && total > 0 ? (
+            {assignment ? (
               <>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Current Assignment</p>
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">TODAY'S ASSIGNMENT</p>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                       <Car className="h-5 w-5 text-[#FF6B00]" />
                     </div>
-                    <span className="text-xl font-black uppercase tracking-tight">{total} Customers</span>
+                    <span className="text-xl font-black uppercase tracking-tight">{total} Total Customers</span>
                   </div>
                 </div>
 
@@ -306,7 +306,7 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && total > 0 && !anyStarted && !allDone && (
+        {online && assignment && !anyStarted && !allDone && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
               START ASSIGNMENT
@@ -319,13 +319,14 @@ function HomePage() {
           <div className="p-6 bg-white border border-neutral-100 rounded-3xl shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.2em]">Work Opportunities</p>
-                <h2 className="text-xl font-bold mt-1 text-[#1A1A1A]">{(availableCount + (bookingRequests?.length ?? 0))} Customers Ready</h2>
+                <p className="text-[10px] font-black uppercase text-[#FF6B00] tracking-[0.2em]">CUSTOMERS AVAILABLE NOW</p>
+                <h2 className="text-xl font-bold mt-1 text-[#1A1A1A]">{availableCount}</h2>
+                <p className="text-[10px] font-bold text-neutral-400 mt-1">More customers can be added to your area.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
               <Button asChild size="lg" className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
-                <Link to="/app/assignments">VIEW AVAILABLE WORK</Link>
+                <Link to="/app/assignments">BUILD YOUR ASSIGNMENT</Link>
               </Button>
             </div>
           </div>
@@ -347,9 +348,9 @@ function HomePage() {
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Done</p>
           </div>
           <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
-            <p className="text-2xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
+            <p className="text-2xl font-black text-[#FF6B00]">{assignment ? remaining : availableCount}</p>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-1.5">
-              {total > 0 ? "Pending" : "Available"}
+              {assignment ? "Pending" : "Available"}
             </p>
           </div>
         </div>
