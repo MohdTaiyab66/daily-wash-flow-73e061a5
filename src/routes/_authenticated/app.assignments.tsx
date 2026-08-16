@@ -432,18 +432,21 @@ function AssignmentsPage() {
       {/* Earning Card is already replaced in the previous block */}
     
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-[rgba(0,0,0,0.03)] bg-white/95 backdrop-blur-xl p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-[rgba(0,0,0,0.03)] bg-white/95 backdrop-blur-xl p-4 px-[30px] pb-[calc(16px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
-          className="w-full h-16 rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/25 active:scale-[0.97] transition-all flex items-center justify-center gap-3"
+          className="w-full h-[64px] rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/25 active:scale-[0.97] transition-all flex items-center justify-center gap-3"
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
           {accept.isPending ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <>
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>CREATING ASSIGNMENT...</span>
+            </>
           ) : (
             <>
-              <span>START MY ASSIGNMENT</span>
+              <span className="uppercase tracking-tight">START MY ASSIGNMENT</span>
               <span className="text-2xl leading-none">→</span>
             </>
           )}
@@ -451,32 +454,74 @@ function AssignmentsPage() {
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="rounded-3xl max-w-[90vw]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Create Assignment?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
-              You are committing to a {duration}-day assignment in {partner.home_area}. 
-              <div className="mt-4 p-4 bg-[#1A1A1A] text-white rounded-2xl space-y-3 text-left">
-                <div className="flex justify-between items-center">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Customer Target</p>
-                   <p className="text-sm font-bold uppercase">{cars} Customers</p>
-                </div>
-                <div className="flex justify-between items-center border-t border-white/10 pt-3">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Assignment Earning</p>
-                   <p className="text-lg font-black text-[#FF6B00]">₹{assignmentEarn.toLocaleString("en-IN")}</p>
-                </div>
-                <p className="text-[9px] text-white/30 font-medium italic">Based on {serviceDays} service days.</p>
-
-              </div>
+        <AlertDialogContent className="rounded-[32px] max-w-[92vw] border-0 p-6 overflow-hidden">
+          <AlertDialogHeader className="space-y-1 mb-6">
+            <AlertDialogTitle className="text-2xl font-black text-[#1A1A1A] uppercase tracking-tight">
+              CREATE ASSIGNMENT
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] font-medium text-neutral-500">
+              Review your assignment before starting.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-3">
-            <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Back</AlertDialogCancel>
-            <AlertDialogAction 
-              className="flex-1 h-12 rounded-xl bg-[#FF6B00] text-white font-bold"
-              onClick={() => accept.mutate()}
+
+          <div className="space-y-5">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 rounded-full">
+                <MapPin className="h-3.5 w-3.5 text-[#FF6B00]" />
+                <span className="text-[11px] font-bold text-[#1A1A1A]">{partner.home_area}</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 rounded-full">
+                <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
+                <span className="text-[11px] font-bold text-[#1A1A1A] uppercase">{duration} DAYS</span>
+              </div>
+            </div>
+
+            <Card className="p-6 bg-[#1A1A1A] border-0 shadow-2xl rounded-[28px] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              
+              <div className="space-y-6 relative z-10">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">ASSIGNMENT SUMMARY</p>
+                  <div className="h-px bg-white/5 w-full mt-2" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-5">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">CUSTOMER TARGET</p>
+                    <p className="text-xl font-black text-white uppercase tracking-tight">{cars} CUSTOMERS</p>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                    <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">ASSIGNMENT EARNING</p>
+                    <p className="text-3xl font-black text-[#FF6B00]">₹{assignmentEarn.toLocaleString("en-IN")}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{serviceDays} SERVICE DAYS</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-right">Mondays Off</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <AlertDialogFooter className="flex-row gap-3 mt-8 sm:space-x-0">
+            <AlertDialogCancel 
+              disabled={accept.isPending}
+              className="flex-1 h-14 rounded-[20px] mt-0 font-black text-[13px] uppercase tracking-widest border-neutral-200 text-neutral-500 bg-white"
             >
-              Confirm
+              BACK
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              disabled={accept.isPending}
+              className="flex-1 h-14 rounded-[20px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-[13px] uppercase tracking-widest shadow-lg shadow-[#FF6B00]/20"
+              onClick={(e) => {
+                e.preventDefault();
+                accept.mutate();
+              }}
+            >
+              {accept.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "CONFIRM"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
