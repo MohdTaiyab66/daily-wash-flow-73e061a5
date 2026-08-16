@@ -73,16 +73,16 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
 
     return rows.map((r) => ({
       id: r.id,
-      broadcast_id: r.broadcast_id,
-      partner_id: r.partner_id,
-      round: r.round,
-      incentive: r.incentive,
+      broadcast_id: r.offer_broadcast_id,
+      partner_id: r.offer_partner_id,
+      round: r.offer_round,
+      incentive: r.offer_incentive,
       distance_from_route_m: r.distance_from_route_m,
       route_impact_m: r.route_impact_m,
       sent_at: r.sent_at,
       response: r.response,
       broadcast: {
-        id: r.broadcast_id,
+        id: r.offer_broadcast_id,
         status: r.broadcast_status,
         current_round: r.current_round,
         current_incentive: r.current_incentive,
@@ -105,6 +105,7 @@ export const getPartnerOpenOffers = createServerFn({ method: "GET" })
       area: r.area,
       assignment_id: r.assignment_id,
     }));
+
   });
 
 export const getReleasedAssignmentCustomers = createServerFn({ method: "GET" })
