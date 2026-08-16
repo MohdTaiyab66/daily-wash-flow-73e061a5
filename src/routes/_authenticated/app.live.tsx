@@ -350,7 +350,7 @@ export function MaskedCallButton({ serviceId, full, size }: { serviceId: string;
       size={size ?? (full ? "lg" : "default")} 
       className={cn(
         "rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0", 
-        full ? "w-full" : (size === "icon" || !size ? "h-12 w-12" : "")
+        full ? "flex-1" : (size === "icon" || !size ? "h-12 w-12" : "")
       )} 
       onClick={onClick} 
       disabled={loading}
