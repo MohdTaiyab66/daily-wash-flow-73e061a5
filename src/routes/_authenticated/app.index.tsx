@@ -306,7 +306,7 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && total > 0 && !anyStarted && !allDone && (
+        {online && assignment && !anyStarted && !allDone && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
               START ASSIGNMENT
