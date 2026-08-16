@@ -206,10 +206,10 @@ function HomePage() {
             {assignment ? (
               <>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">TODAY'S ASSIGNMENT</p>
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">{statusInfo.label}</p>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                      <Car className="h-5 w-5 text-[#FF6B00]" />
+                      <Car className={cn("h-5 w-5", statusInfo.color.replace('text-', 'text-'))} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
                       {total > 0 ? `${total} Total Customers` : "WAITING FOR CUSTOMERS"}
@@ -252,7 +252,7 @@ function HomePage() {
                   ) : (
                     <div className="bg-white/5 rounded-2xl p-4">
                       <p className="text-[10px] text-white/60 font-medium leading-relaxed">
-                        No customers are available in your area right now. Your assignment is active, and you'll be notified when new leads become available. Please accept leads promptly.
+                        {statusInfo.sub}
                       </p>
                     </div>
                   )}
@@ -264,9 +264,14 @@ function HomePage() {
                    <Car className="h-8 w-8 text-[#FF6B00]" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-xl font-bold">No Active Assignment</h2>
-                  <p className="text-sm text-white/60">Choose your hours and start earning today.</p>
+                  <h2 className="text-xl font-bold">{statusInfo.label}</h2>
+                  <p className="text-sm text-white/60">{statusInfo.sub}</p>
                 </div>
+                <Button asChild className="bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold h-12 rounded-2xl px-8">
+                  <Link to="/app/assignments">Build Your Plan</Link>
+                </Button>
+              </div>
+            )}
                 <Button asChild className="bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold h-12 rounded-2xl px-8">
                   <Link to="/app/assignments">Build Your Plan</Link>
                 </Button>
