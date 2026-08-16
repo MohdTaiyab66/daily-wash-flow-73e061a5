@@ -127,41 +127,51 @@ function RoutePage() {
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
 
   return (
-    <div className="mx-auto max-w-md pb-32">
+    <div className="mx-auto w-full max-w-md pb-32 overflow-x-hidden box-border">
       {/* Header */}
-      <header className="px-5 pt-5 pb-3">
-        <h1 className="text-3xl font-black text-black tracking-tight">Daily Route</h1>
-        <p className="text-lg font-medium text-muted-foreground">Your work sequence for today</p>
+      <header className="px-5 pt-6 pb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <img 
+              src="https://storage.googleapis.com/gpt-engineer-file-uploads/MCVapbCo5XbPjsDOUeq7WwZlIHX2/social-images/social-1781118455783-LOGO.webp" 
+              alt="Urban Wash" 
+              className="h-8 w-auto object-contain"
+            />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] bg-[#FF6B00]/5 px-2 py-0.5 rounded">Partner</span>
+          </div>
+        </div>
+        <h1 className="text-3xl font-black text-black tracking-tight leading-none">Daily Route</h1>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Your work sequence for today</p>
       </header>
 
       {/* Progress Card */}
-      <div className="px-5">
-        <Card className="p-4 shadow-sm border-none bg-neutral-50">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
-            <span className="text-sm font-semibold">{done} / {total} Completed</span>
+      <div className="px-5 w-full box-border">
+        <Card className="p-4 shadow-sm border-none bg-neutral-50 w-full box-border">
+          <div className="flex items-baseline justify-between mb-3">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
+            <span className="text-xs font-bold">{done} / {total} COMPLETED</span>
           </div>
-          <Progress value={progressPct} className="h-2 mb-4" />
-          <div className="flex justify-between items-center text-center">
-            <div>
-              <p className="text-lg font-black">₹{earnedSoFar.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] uppercase text-muted-foreground">Earned</p>
+          <Progress value={progressPct} className="h-1.5 mb-5" />
+          <div className="grid grid-cols-3 gap-2 text-center w-full">
+            <div className="min-w-0">
+              <p className="text-lg font-black truncate">₹{earnedSoFar.toLocaleString("en-IN")}</p>
+              <p className="text-[9px] uppercase font-bold tracking-tighter text-muted-foreground">Earned</p>
             </div>
-            <div>
-              <p className="text-lg font-black">{done}</p>
-              <p className="text-[10px] uppercase text-muted-foreground">Completed</p>
+            <div className="min-w-0 border-x border-neutral-200">
+              <p className="text-lg font-black truncate">{done}</p>
+              <p className="text-[9px] uppercase font-bold tracking-tighter text-muted-foreground">Completed</p>
             </div>
-            <div>
-              <p className="text-lg font-black">{total - done}</p>
-              <p className="text-[10px] uppercase text-muted-foreground">Remaining</p>
+            <div className="min-w-0">
+              <p className="text-lg font-black truncate">{total - done}</p>
+              <p className="text-[9px] uppercase font-bold tracking-tighter text-muted-foreground">Remaining</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Map */}
-      <div className="px-5 mt-5">
-        <div className="rounded-3xl overflow-hidden h-[240px] shadow-sm">
+      <div className="px-5 mt-5 w-full box-border">
+        <div className="rounded-[24px] overflow-hidden h-[220px] shadow-sm border border-neutral-100 w-full box-border">
            <LiveMap
               stops={stops}
               showCustomers={stops.length > 0}
@@ -173,7 +183,7 @@ function RoutePage() {
       </div>
 
       {/* Primary Next Customer Card */}
-      <div className="px-5 mt-5">
+      <div className="px-5 mt-5 w-full box-border">
         {activeNext && !isEndOfDay && routeUnlocked && (
           <NextCustomerHero stop={activeNext} seqNo={1} total={total} />
         )}
@@ -181,12 +191,12 @@ function RoutePage() {
 
       {/* Up Next List */}
       {activeQueue.length > 0 && !isEndOfDay && (
-        <div className="px-5 mt-6">
-           <div className="flex justify-between items-baseline mb-3">
-             <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Up Next</h2>
-             <span className="text-[11px] font-semibold text-muted-foreground">{activeQueue.length} Remaining</span>
+        <div className="px-5 mt-6 w-full box-border">
+           <div className="flex justify-between items-baseline mb-4">
+             <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Up Next</h2>
+             <span className="text-[10px] font-bold text-muted-foreground uppercase">{activeQueue.length} Remaining</span>
            </div>
-           <div className="space-y-3">
+           <div className="space-y-2 w-full">
              {activeQueue.map((s, i) => (
                 <CompactQueueRow key={s.id} stop={s} seqNo={i + 2} />
              ))}
@@ -196,17 +206,17 @@ function RoutePage() {
 
       {/* Completed Section */}
       {completed.length > 0 && (
-         <div className="px-5 mt-6">
-            <details className="group border-t border-b border-border py-4">
+         <div className="px-5 mt-6 w-full box-border mb-10">
+            <details className="group border-t border-b border-neutral-100 py-4 w-full">
                <summary className="flex justify-between items-center cursor-pointer list-none">
-                  <h2 className="text-sm font-bold">Completed ({completed.length})</h2>
-                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Completed ({completed.length})</h2>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
                </summary>
-               <div className="pt-4 space-y-3">
+               <div className="pt-4 space-y-3 w-full">
                   {completed.map(s => (
-                    <div key={s.id} className="flex justify-between text-sm">
-                       <span className="text-muted-foreground">{(s.customers as any)?.full_name}</span>
-                       <span className="text-emerald-600 font-medium">✓ Done</span>
+                    <div key={s.id} className="flex justify-between items-center text-sm w-full">
+                       <span className="text-muted-foreground font-medium truncate pr-4">{(s.customers as any)?.full_name}</span>
+                       <span className="text-emerald-600 font-bold shrink-0 text-xs uppercase tracking-tighter">✓ Done</span>
                     </div>
                   ))}
                </div>
@@ -215,7 +225,7 @@ function RoutePage() {
       )}
 
       {isEndOfDay && (
-        <div className="px-5 mt-8 text-center space-y-4">
+        <div className="px-5 mt-8 text-center space-y-4 w-full box-border">
            <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
               <Trophy className="h-8 w-8 text-emerald-600" />
            </div>
@@ -234,19 +244,18 @@ function RoutePage() {
 function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; total: number }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
-  const rate = Number(stop.rate_per_car ?? 17);
   const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
   const inProgress = stop.status === "in_progress";
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
 
   return (
-    <Card className="p-5 bg-[#1A1A1A] text-white rounded-[32px] border-none shadow-xl">
+    <Card className="p-5 bg-[#1A1A1A] text-white rounded-[32px] border-none shadow-xl w-full box-border overflow-hidden">
       <div className="flex justify-between items-center mb-5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT CUSTOMER • {seqNo} of {total}</span>
-        <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider bg-emerald-400/10 px-2 py-1 rounded-full">Active</span>
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT STOP • {seqNo} of {total}</span>
+        <span className="text-emerald-400 text-[9px] font-black uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 shrink-0">Active</span>
       </div>
-      <div className="flex gap-4 mb-6">
-        <div className="relative">
+      <div className="flex gap-4 mb-6 w-full">
+        <div className="relative shrink-0">
           <TappableVehicleImage 
             path={v?.front_image_path} 
             className="h-20 w-20 rounded-2xl object-cover border border-white/10"
@@ -258,37 +267,30 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
              <Car className="h-3 w-3 text-black" />
           </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xl font-bold truncate leading-tight">{c?.full_name}</p>
-          <p className="text-sm text-white/60 truncate mt-0.5">{v?.make} {v?.model}</p>
-          <div className="mt-2 inline-flex items-center bg-yellow-400/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-400/20">
+        <div className="min-w-0 flex-1 flex flex-col justify-center">
+          <p className="text-xl font-bold truncate leading-tight tracking-tight">{c?.full_name}</p>
+          <p className="text-sm text-white/50 truncate mt-0.5 font-medium">{v?.make} {v?.model}</p>
+          <div className="mt-2 inline-flex items-center bg-white/5 text-white/80 px-2 py-0.5 rounded border border-white/10 self-start">
              <span className="text-[10px] font-mono font-bold tracking-wider">{v?.registration_number}</span>
           </div>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="mb-6 w-full">
         <div className="space-y-1">
-           <p className="text-[10px] uppercase text-white/30 font-bold tracking-wider">Reach By</p>
+           <p className="text-[9px] uppercase text-white/30 font-bold tracking-widest">Reach By</p>
            <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <p className="text-sm font-bold">{formatTime12(time)}</p>
-           </div>
-        </div>
-        <div className="space-y-1">
-           <p className="text-[10px] uppercase text-white/30 font-bold tracking-wider">Earning</p>
-           <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-              <p className="text-sm font-bold text-emerald-400">+₹{rate}</p>
+              <p className="text-base font-black tracking-tight">{formatTime12(time)}</p>
            </div>
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 w-full">
         <Button 
           variant="outline" 
           size="icon" 
-          className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0"
+          className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0 active:scale-95 transition-all"
           onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
         >
           <Navigation className="h-5 w-5 text-white" />
@@ -297,10 +299,10 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
         <Link
             to="/app/service/$id"
             params={{ id: stop.id }}
-            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-6 h-12 text-sm shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-4 h-12 text-xs shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all truncate"
           >
-            <Play className="h-4 w-4 fill-current" />
-            <span>{inProgress ? "Resume" : "Start Service"}</span>
+            <Play className="h-4 w-4 fill-current shrink-0" />
+            <span className="truncate">{inProgress ? "Resume" : "Start Service"}</span>
         </Link>
       </div>
     </Card>
@@ -311,18 +313,20 @@ function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
   const c = stop.customers as any;
   const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
   return (
-    <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all">
-      <div className="h-10 w-10 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0">
+    <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border">
+      <div className="h-9 w-9 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100">
         #{seqNo}
       </div>
       <div className="flex-1 min-w-0">
-         <p className="font-bold truncate text-neutral-900">{c?.full_name}</p>
-         <div className="flex items-center gap-1.5 mt-0.5">
+         <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
+         <div className="flex items-center gap-1 mt-0.5">
             <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[11px] font-medium text-neutral-500 uppercase">{formatTime12(time)}</p>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
          </div>
       </div>
-      <div className="text-sm font-bold text-[#FF6B00] bg-[#FF6B00]/5 px-3 py-1 rounded-full">+₹17</div>
+      <div className="shrink-0">
+        <ChevronDown className="h-4 w-4 text-neutral-200 -rotate-90" />
+      </div>
     </div>
   );
 }
