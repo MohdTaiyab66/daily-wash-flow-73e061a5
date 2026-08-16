@@ -141,6 +141,8 @@ function RoutePage() {
       </div>
     );
   }
+  
+  return (
     <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
       {/* Page Header - Clean & Operational */}
       <header className="px-5 pt-3 pb-2">
