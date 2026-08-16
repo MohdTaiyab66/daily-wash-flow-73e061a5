@@ -273,13 +273,13 @@ function AssignmentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-4 pb-[220px] space-y-6">
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[240px] space-y-4">
       <header>
-        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] uppercase leading-none">BUILD YOUR ASSIGNMENT</h1>
+        <h1 className="text-[32px] font-black tracking-tight text-[#1A1A1A] uppercase leading-tight">BUILD YOUR ASSIGNMENT</h1>
       </header>
 
       <section className="space-y-4">
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <p className="text-[10px] font-black uppercase text-neutral-400 tracking-[0.2em] px-1">WORK AREA</p>
           <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-[22px] shadow-sm active:scale-[0.98] transition-all">
             <div className="flex items-center gap-3">
@@ -291,19 +291,11 @@ function AssignmentsPage() {
             <span className="text-[11px] font-black text-[#FF6B00] uppercase tracking-widest">Change</span>
           </Link>
         </div>
-
-        <div className="flex items-center justify-between px-5 py-3 bg-neutral-50 border border-neutral-100 rounded-[20px]">
-          <div className="space-y-0.5">
-            <p className="text-[9px] font-black text-[#1A1A1A] uppercase tracking-widest">CUSTOMERS AVAILABLE NOW</p>
-            <p className="text-xl font-black text-neutral-900">0</p>
-          </div>
-          <p className="text-[9px] font-bold text-neutral-400 text-right max-w-[120px] leading-tight">"New customers can be added anytime."</p>
-        </div>
       </section>
 
       <section className="space-y-6">
         {/* 1. HOURS PER DAY */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-end justify-between px-1">
             <label className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em]">HOW MANY HOURS PER DAY?</label>
             <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
@@ -320,26 +312,20 @@ function AssignmentsPage() {
             />
             
             <div className="grid grid-cols-2 gap-3">
-               <div className="bg-[#1A1A1A] p-4 rounded-[22px] border border-white/5 shadow-lg relative overflow-hidden group">
+               <div className="bg-[#1A1A1A] p-4 rounded-[22px] border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-12 h-12 bg-[#FF6B00]/10 rounded-full blur-xl -mr-6 -mt-6" />
-                 <div className="space-y-3 relative z-10">
-                   <div className="flex flex-col gap-1">
-                     <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">WORKING HOURS</p>
-                     <Clock className="h-4 w-4 text-[#FF6B00]" />
-                   </div>
+                 <div className="space-y-2 relative z-10">
+                   <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">WORKING HOURS</p>
                    <p className="text-[13px] font-bold text-white tracking-tight leading-none whitespace-nowrap">
                      {formatTime12(startTime)} → {formatTime12(finishTime)}
                    </p>
                  </div>
                </div>
                
-               <div className="bg-[#1A1A1A] p-4 rounded-[22px] border border-white/5 shadow-lg relative overflow-hidden group">
+               <div className="bg-[#1A1A1A] p-4 rounded-[22px] border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-12 h-12 bg-[#FF6B00]/10 rounded-full blur-xl -mr-6 -mt-6" />
-                 <div className="space-y-3 relative z-10">
-                   <div className="flex flex-col gap-1">
-                     <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">CUSTOMER TARGET</p>
-                     <Car className="h-4 w-4 text-[#FF6B00]" />
-                   </div>
+                 <div className="space-y-2 relative z-10">
+                   <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">CUSTOMER TARGET</p>
                    <p className="text-[13px] font-bold text-white tracking-tight leading-none whitespace-nowrap">
                      <span className="text-[#FF6B00]">{cars}</span> CUSTOMERS
                    </p>
@@ -350,13 +336,13 @@ function AssignmentsPage() {
         </div>
 
         {/* 2. DAYS TO COMMIT */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-end justify-between px-1">
             <label className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em]">HOW MANY DAYS TO COMMIT?</label>
             <span className="text-xl font-black text-[#FF6B00]">{duration} DAYS</span>
           </div>
 
-          <div className="px-1 space-y-3">
+          <div className="px-1 space-y-2">
             <Slider 
               value={[duration]} 
               min={7} 
@@ -365,89 +351,73 @@ function AssignmentsPage() {
               onValueChange={([v]) => setDuration(v)}
               className="py-2"
             />
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-black text-neutral-400 uppercase tracking-widest px-0.5">
-                <span>7 DAYS</span>
-                <span>30 DAYS</span>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-black text-neutral-900 uppercase tracking-widest px-0.5">
-                  {duration} CALENDAR DAYS
-                </p>
-                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  {serviceDays} SERVICE DAYS • MONDAYS OFF
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-4 pb-4">
-        <div className="p-6 border-0 shadow-2xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF6B00]/20 rounded-full blur-[80px] -mr-24 -mt-24" />
-          <div className="space-y-6 relative z-10">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.3em]">YOUR EARNING</p>
-              <div className="h-px bg-white/5 w-full mt-2" />
+            <div className="flex justify-between text-[10px] font-black text-neutral-400 uppercase tracking-widest px-0.5">
+              <span>7 DAYS</span>
+              <span>30 DAYS</span>
             </div>
             
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-1.5">
-                <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">DAILY EARNING</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
-                  <span className="text-[10px] text-white/30 uppercase font-black tracking-widest">/ DAY</span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">
-                    FOR YOUR {duration}-DAY ASSIGNMENT
-                  </p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white tracking-tighter">₹{assignmentEarn.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-white/5 w-fit px-3 py-1.5 rounded-lg border border-white/5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {serviceDays} SERVICE DAYS
-                  </div>
-                  <p className="text-[9px] text-white/30 font-bold italic tracking-tight leading-tight">
-                    Calculated using your selected days. Mondays are always off.
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {serviceDays} SERVICE DAYS • MONDAYS OFF
             </div>
           </div>
         </div>
       </section>
 
+      {/* 3. YOUR EARNING - MOVED UP */}
+      <section className="pb-4">
+        <div className="p-6 border-0 shadow-2xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF6B00]/20 rounded-full blur-[80px] -mr-24 -mt-24" />
+          <div className="space-y-4 relative z-10">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.3em]">YOUR EARNING</p>
+            </div>
+            
+            <div className="space-y-5">
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
+                <span className="text-[10px] text-white/30 uppercase font-black tracking-widest">/ DAY</span>
+              </div>
 
-      {/* Earning Card is already replaced in the previous block */}
-    
+              <div className="h-px bg-white/5 w-full" />
+
+              <div className="space-y-1">
+                <span className="text-4xl font-black text-white tracking-tighter">₹{assignmentEarn.toLocaleString("en-IN")}</span>
+                <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em] mt-1">
+                  ASSIGNMENT EARNING
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-white/5 w-fit px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {serviceDays} SERVICE DAYS
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-[rgba(0,0,0,0.03)] bg-white/95 backdrop-blur-xl p-4 px-[30px] pb-[calc(16px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
-          className="w-full h-[64px] rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/25 active:scale-[0.97] transition-all flex items-center justify-center gap-3"
+          className="w-full h-[64px] rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-xl shadow-[#FF6B00]/25 active:scale-[0.97] transition-all flex flex-col items-center justify-center gap-0 group"
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
           {accept.isPending ? (
-            <>
+            <div className="flex items-center gap-3">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span>CREATING ASSIGNMENT...</span>
-            </>
+              <span className="text-lg">CREATING ASSIGNMENT...</span>
+            </div>
           ) : (
             <>
-              <span className="uppercase tracking-tight">START MY ASSIGNMENT</span>
-              <span className="text-2xl leading-none">→</span>
+              <div className="flex items-center gap-2 w-full justify-center">
+                <span className="text-lg uppercase tracking-tight">START MY ASSIGNMENT</span>
+                <span className="text-2xl leading-none group-active:translate-x-1 transition-transform">→</span>
+              </div>
+              <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">
+                {totalCustomers > 0 ? totalCustomers : 0} CUSTOMERS AVAILABLE
+              </span>
             </>
           )}
         </Button>
