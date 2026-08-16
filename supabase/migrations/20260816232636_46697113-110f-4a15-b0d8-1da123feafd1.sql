@@ -1,0 +1,102 @@
+CREATE OR REPLACE FUNCTION public.get_partner_open_offers(p_partner_id uuid)
+ RETURNS TABLE(
+   id uuid, 
+   broadcast_id uuid, 
+   partner_id uuid, 
+   round integer, 
+   incentive numeric, 
+   distance_from_route_m integer, 
+   route_impact_m integer, 
+   sent_at timestamp with time zone, 
+   response text, 
+   broadcast_status text, 
+   current_round integer, 
+   current_incentive numeric, 
+   current_radius_m integer, 
+   round_expires_at timestamp with time zone, 
+   customer_lat numeric, 
+   customer_lng numeric, 
+   vehicle_id uuid, 
+   subscription_id uuid, 
+   booking_id uuid, 
+   server_now timestamp with time zone, 
+   customer_count integer, 
+   earning_monthly numeric, 
+   earning_amount numeric, 
+   distance_display text, 
+   area text, 
+   assignment_id uuid
+ )
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+ DECLARE
+   v_partner_id uuid := p_partner_id;
+ BEGIN
+   -- Use explicit variable to avoid parameter/column name conflicts in SQL statements
+   -- Fan-in: Create 'pending' offers for the partner for all open broadcasts in their area
+   INSERT INTO public.marketplace_offers (broadcast_id, partner_id, incentive, response, round)
+   SELECT
+     mb.id,
+     v_partner_id,
+     mb.current_incentive,
+     'pending'::text,
+     mb.current_round
+   FROM public.marketplace_broadcasts mb
+   JOIN public.partners p ON p.id = v_partner_id
+   WHERE mb.status = 'open'
+     AND mb.winning_partner_id IS DISTINCT FROM v_partner_id
+     AND p.home_zone_id = mb.service_area_id
+     AND p.availability = 'online'
+     AND p.status = 'active'
+     AND NOT EXISTS (
+       SELECT 1 FROM public.marketplace_offers mo
+       WHERE mo.broadcast_id = mb.id
+         AND mo.partner_id = v_partner_id
+         AND (
+           mo.response = 'pending'
+           OR mo.response = 'accepted'
+           OR (mo.response = 'declined' AND mo.next_retry_at > now())
+         )
+     )
+   ON CONFLICT (broadcast_id, partner_id, round) DO NOTHING;
+
+   RETURN QUERY
+   SELECT
+     o.id, 
+     o.broadcast_id, 
+     o.partner_id, 
+     o.round, 
+     o.incentive,
+     o.distance_from_route_m, 
+     o.route_impact_m, 
+     o.sent_at, 
+     o.response,
+     b.status, 
+     b.current_round, 
+     b.current_incentive, 
+     b.current_radius_m,
+     b.round_expires_at, 
+     b.customer_lat, 
+     b.customer_lng,
+     b.vehicle_id, 
+     b.subscription_id, 
+     b.booking_id,
+     now(),
+     (CASE WHEN b.assignment_id IS NOT NULL THEN 26 ELSE 1 END)::integer,
+     (b.current_incentive * 26),
+     b.current_incentive,
+     'Nearby'::text,
+     cz.name,
+     b.assignment_id
+   FROM public.marketplace_offers o
+   JOIN public.marketplace_broadcasts b ON b.id = o.broadcast_id
+   LEFT JOIN public.coverage_zones cz ON cz.id = b.service_area_id
+   WHERE o.partner_id = v_partner_id
+     AND o.response = 'pending'
+     AND b.status = 'open'
+     AND (o.next_retry_at IS NULL OR o.next_retry_at <= now())
+   ORDER BY o.sent_at DESC;
+ END;
+$function$;
