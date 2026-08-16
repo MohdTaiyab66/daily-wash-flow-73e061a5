@@ -262,7 +262,7 @@ function AssignmentsPage() {
         <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
       </header>
 
-      <section>
+      <section className="space-y-4">
         <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
@@ -275,6 +275,14 @@ function AssignmentsPage() {
           </div>
           <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
         </Link>
+
+        <div className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-2xl">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">CUSTOMERS AVAILABLE NOW</p>
+            <p className="text-2xl font-black text-neutral-900">0</p>
+          </div>
+          <p className="text-[10px] font-bold text-neutral-400 text-right max-w-[140px]">More customers can be added to your area.</p>
+        </div>
       </section>
 
       <section className="space-y-8">
