@@ -166,7 +166,7 @@ function RoutePage() {
       {/* Map */}
       <div className="px-5 mt-5 w-full box-border">
         <div className="flex justify-between items-baseline mb-3">
-          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Route</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
         <div className="rounded-[24px] overflow-hidden h-[260px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
            <LiveMap
