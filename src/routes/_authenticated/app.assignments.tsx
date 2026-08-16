@@ -356,7 +356,7 @@ function AssignmentsPage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold">Start Assignment?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">Create Assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
               You are accepting {cars} customers in {partner.home_area}. 
               <div className="mt-3 p-4 bg-neutral-50 rounded-2xl">
