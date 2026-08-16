@@ -258,7 +258,7 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Build your assignment</h1>
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
         <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
       </header>
 
