@@ -18,14 +18,14 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   // Compact Premium Height: 70px (Matching Customer App)
   return (
     <div className={cn(
-      "min-h-screen bg-[#FDFCFB] pb-[calc(70px+env(safe-area-inset-bottom))]", // Changed to Light Cream background
+      "min-h-screen bg-[#FDFCFB] pb-[calc(140px+env(safe-area-inset-bottom))]",
       isFullScreen && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>
       
       {!isFullScreen && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.04)] bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
-          <div className="mx-auto flex max-w-md items-center justify-between h-[70px] px-1">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(0,0,0,0.06)] bg-white/98 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          <div className="mx-auto flex max-w-md items-center justify-between h-[65px] px-2">
             {nav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to || (n.to !== "/app" && pathname.startsWith(n.to));
@@ -34,22 +34,22 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="flex-1 flex flex-col items-center justify-center transition-all group h-full active:scale-90"
+                  className="flex-1 flex flex-col items-center justify-center transition-all h-full active:scale-95"
                 >
                   <div className={cn(
-                    "p-1.5 rounded-xl transition-all",
-                    active ? "bg-[#FF6B00]/5" : ""
+                    "relative p-1.5 rounded-xl transition-all",
+                    active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
                   )}>
                     <Icon 
-                      className={cn(
-                        "h-[22px] w-[22px] transition-all", 
-                        active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
-                      )} 
+                      className="h-[20px] w-[20px]" 
                       strokeWidth={active ? 2.5 : 2} 
                     />
+                    {active && (
+                      <div className="absolute inset-0 bg-[#FF6B00]/5 rounded-xl scale-125 -z-10 blur-[2px]" />
+                    )}
                   </div>
                   <span className={cn(
-                    "mt-0.5 text-[9px] font-black uppercase tracking-[0.1em] transition-all whitespace-nowrap text-center px-0.5",
+                    "mt-1 text-[9px] font-black uppercase tracking-[0.1em] transition-all whitespace-nowrap text-center",
                     active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
                   )}>
                     {n.label}
