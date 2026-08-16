@@ -180,8 +180,9 @@ function AssignmentsPage() {
                 <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{activeDailyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">YOUR EARNING</p>
                 <p className="text-2xl font-black tracking-tight text-white">₹{activeMonthlyEarn.toLocaleString("en-IN")}</p>
+
               </div>
             </div>
 
