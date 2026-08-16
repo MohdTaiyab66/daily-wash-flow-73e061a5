@@ -18,7 +18,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   // Compact Premium Height: 70px (Matching Customer App)
   return (
     <div className={cn(
-      "min-h-screen bg-[#FDFCFB] pb-[calc(70px+env(safe-area-inset-bottom))]", // Changed to Light Cream background
+      "min-h-screen bg-[#FDFCFB] pb-[calc(140px+env(safe-area-inset-bottom))]", // Increased padding to avoid overlap with sticky CTA
       isFullScreen && "pb-0"
     )}>
       <div className="mx-auto max-w-md">{children}</div>

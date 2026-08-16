@@ -94,9 +94,11 @@ function AssignmentsPage() {
   const startTime = computeStartTime(cars, DEFAULT_START_RULES);
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
+  const commitmentEarn = dailyEarn * duration;
   const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
 
   const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
+  const activeCommitmentEarn = activeDailyEarn * (activeAssignment?.duration_days ?? 30);
   const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
 
   const accept = useMutation({
@@ -165,8 +167,8 @@ function AssignmentsPage() {
                 <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{activeDailyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
-                <p className="text-2xl font-black tracking-tight">₹{activeMonthlyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Commitment Earning</p>
+                <p className="text-2xl font-black tracking-tight">₹{activeCommitmentEarn.toLocaleString("en-IN")}</p>
               </div>
             </div>
 
@@ -258,8 +260,8 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[220px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">BUILD YOUR ASSIGNMENT</h1>
-        <p className="text-sm text-muted-foreground font-medium">Configure your professional work plan.</p>
+        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] leading-tight">BUILD YOUR ASSIGNMENT</h1>
+        <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work and earn.</p>
       </header>
 
       <section className="space-y-4">
@@ -269,26 +271,19 @@ function AssignmentsPage() {
               <MapPin className="h-5 w-5 text-[#FF6B00]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Your Work Area</p>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
               <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner.home_area}</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
         </Link>
-
-        <div className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-2xl">
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">CUSTOMERS AVAILABLE NOW</p>
-            <p className="text-2xl font-black text-neutral-900">0</p>
-          </div>
-          <p className="text-[10px] font-bold text-neutral-400 text-right max-w-[140px]">New customers can be added to your area at any time.</p>
-        </div>
       </section>
 
-      <section className="space-y-10">
-        <div className="space-y-5">
+      <section className="space-y-8">
+        {/* 1. HOURS PER DAY */}
+        <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">How many hours per day?</label>
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">1. Hours per day</label>
             <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
           </div>
           <div className="px-1 space-y-4">
@@ -298,30 +293,25 @@ function AssignmentsPage() {
               max={settings?.maxHours ?? 6} 
               step={0.5} 
               onValueChange={([v]) => setHours(v)}
-              className="py-4"
+              className="py-2"
             />
-            <div className="bg-[#1A1A1A] p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-24 h-24 bg-[#FF6B00]/10 rounded-full blur-2xl -mr-12 -mt-12" />
-               <div className="relative z-10 flex items-center justify-between">
-                 <div className="space-y-1">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Working Hours</p>
-                    <p className="text-lg font-black text-white flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-[#FF6B00]" />
-                      {formatTime12(startTime)} <span className="text-white/20">→</span> {formatTime12(finishTime)}
-                    </p>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">Target</p>
-                   <p className="text-lg font-black text-white">{cars} CARS</p>
-                 </div>
+            <div className="flex items-center justify-between px-2 text-[13px] font-bold text-neutral-600">
+               <div className="flex items-center gap-2">
+                 <Clock className="h-4 w-4 text-[#FF6B00]" />
+                 {formatTime12(startTime)} → {formatTime12(finishTime)}
+               </div>
+               <div className="flex items-center gap-2">
+                 <Car className="h-4 w-4 text-[#FF6B00]" />
+                 {cars} Customer Target
                </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-5">
+        {/* 2. DAYS TO COMMIT */}
+        <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">How many days to commit?</label>
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">2. Days to commit</label>
             <span className="text-xl font-black text-[#FF6B00]">{duration} DAYS</span>
           </div>
           <div className="px-1 space-y-4">
@@ -331,92 +321,67 @@ function AssignmentsPage() {
               max={30} 
               step={1} 
               onValueChange={([v]) => setDuration(v)}
-              className="py-4"
+              className="py-2"
             />
-            <div className="space-y-3">
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold text-neutral-400">
+                Your total earning changes with your commitment.
+              </p>
               <div className="flex items-center gap-2 text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Mondays are always OFF
               </div>
-              <p className="text-[11px] font-medium text-neutral-400 leading-relaxed px-1">
-                Your assignment duration is {duration} days. Monthly earning is projected using 26 service days per month.
-              </p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Plan Summary</h3>
-        <div className="grid grid-cols-2 gap-3">
-           <div className="bg-white border border-neutral-100 p-4 rounded-2xl space-y-1">
-             <p className="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Area</p>
-             <p className="text-xs font-bold truncate">📍 {partner.home_area}</p>
-           </div>
-           <div className="bg-white border border-neutral-100 p-4 rounded-2xl space-y-1">
-             <p className="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Commitment</p>
-             <p className="text-xs font-bold text-[#FF6B00]">{duration} DAYS</p>
-           </div>
-        </div>
-
-        <Card className="p-6 border-0 shadow-2xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earning</h3>
+        
+        <Card className="p-6 border-0 shadow-xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-[#FF6B00]/20 rounded-full blur-[80px] -mr-20 -mt-20" />
-          <div className="flex flex-col gap-6 relative z-10">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Daily Earning</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
-                  <span className="text-[10px] text-white/30 uppercase font-black">/ Day</span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Monthly Earning</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-                  <span className="text-[10px] text-white/30 uppercase font-black">/ Month</span>
-                </div>
+          <div className="flex flex-col gap-5 relative z-10">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Daily Earning</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
+                <span className="text-xs text-white/30 uppercase font-black">/ Day</span>
               </div>
             </div>
-            
-            <div className="pt-6 border-t border-white/10 space-y-4">
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center">
-                     <Car className="h-4 w-4 text-[#FF6B00]" />
-                   </div>
-                   <div>
-                     <p className="text-[9px] font-black text-white/40 uppercase tracking-wider">Customer Target</p>
-                     <p className="text-sm font-black uppercase">{cars} Customers</p>
-                   </div>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-[9px] font-black text-white/40 uppercase tracking-wider">Rate</p>
-                   <p className="text-sm font-black text-[#FF6B00]">₹{rate}/Car</p>
-                 </div>
-               </div>
 
-               <div className="bg-white/5 p-4 rounded-2xl space-y-2">
-                 <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Calculation Model</p>
-                 <div className="flex flex-col gap-1">
-                   <p className="text-[11px] font-bold text-white/80 flex items-center justify-between">
-                     <span>26 Service Days / Month</span>
-                     <span className="text-[#FF6B00]">Mondays Off</span>
-                   </p>
-                   <p className="text-[10px] text-white/40 italic">
-                     {cars} cars × ₹{rate} × 26 days = ₹{monthlyEarn.toLocaleString("en-IN")}
-                   </p>
-                 </div>
-               </div>
+            <div className="h-px bg-white/10" />
+            
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Total for {duration} Days</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-white">₹{commitmentEarn.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+
+            <div className="h-px bg-white/10" />
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Monthly Projection</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-black text-white/90">₹{monthlyEarn.toLocaleString("en-IN")}</span>
+                <span className="text-[10px] text-white/30 uppercase font-black">/ Month</span>
+              </div>
+              <p className="text-[9px] text-white/30 font-medium italic">
+                Monthly projection uses 26 service days. Mondays off.
+              </p>
             </div>
           </div>
         </Card>
       </section>
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/90 backdrop-blur-xl p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+      {/* Earning Card is already replaced in the previous block */}
+    
+
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-xl p-4 pb-[calc(12px+env(safe-area-inset-bottom))]">
         <Button 
           size="lg" 
-          className="w-full h-16 rounded-[24px] bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-2xl shadow-[#FF6B00]/30 active:scale-[0.97] transition-all"
+          className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
           onClick={() => setConfirmOpen(true)}
           disabled={accept.isPending}
         >
