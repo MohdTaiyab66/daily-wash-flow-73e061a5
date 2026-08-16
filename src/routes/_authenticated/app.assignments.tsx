@@ -187,7 +187,7 @@ function AssignmentsPage() {
                   <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                     <Navigation className="h-3 w-3" /> Progress
                   </p>
-                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Completed</p>
+                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Done</p>
                 </div>
               </div>
             </div>
