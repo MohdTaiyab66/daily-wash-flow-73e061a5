@@ -136,7 +136,7 @@ function RoutePage() {
 
       {/* Progress Card */}
       <div className="px-5">
-        <Card className="p-4 shadow-sm">
+        <Card className="p-4 shadow-sm border-none bg-neutral-50">
           <div className="flex items-baseline justify-between mb-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
             <span className="text-sm font-semibold">{done} / {total} Completed</span>
@@ -161,7 +161,7 @@ function RoutePage() {
 
       {/* Map */}
       <div className="px-5 mt-5">
-        <div className="rounded-3xl overflow-hidden h-64">
+        <div className="rounded-3xl overflow-hidden h-[240px] shadow-sm">
            <LiveMap
               stops={stops}
               showCustomers={stops.length > 0}
@@ -205,13 +205,26 @@ function RoutePage() {
                <div className="pt-4 space-y-3">
                   {completed.map(s => (
                     <div key={s.id} className="flex justify-between text-sm">
-                       <span>{(s.customers as any)?.full_name}</span>
+                       <span className="text-muted-foreground">{(s.customers as any)?.full_name}</span>
                        <span className="text-emerald-600 font-medium">✓ Done</span>
                     </div>
                   ))}
                </div>
             </details>
          </div>
+      )}
+
+      {isEndOfDay && (
+        <div className="px-5 mt-8 text-center space-y-4">
+           <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <Trophy className="h-8 w-8 text-emerald-600" />
+           </div>
+           <div>
+              <h2 className="text-xl font-bold">Today's Route Complete!</h2>
+              <p className="text-muted-foreground text-sm">Great work, you've finished all tasks.</p>
+           </div>
+           <EndOfDayCard />
+        </div>
       )}
 
     </div>
@@ -224,36 +237,69 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
   const rate = Number(stop.rate_per_car ?? 17);
   const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
   const inProgress = stop.status === "in_progress";
+  const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
 
   return (
-    <Card className="p-4 bg-black text-white rounded-3xl">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Next Customer • {seqNo} of {total}</span>
+    <Card className="p-5 bg-[#1A1A1A] text-white rounded-[32px] border-none shadow-xl">
+      <div className="flex justify-between items-center mb-5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT CUSTOMER • {seqNo} of {total}</span>
+        <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider bg-emerald-400/10 px-2 py-1 rounded-full">Active</span>
       </div>
-      <div className="flex gap-4 mb-5">
-        <TappableVehicleImage path={v?.front_image_path} className="h-20 w-20 rounded-xl" />
-        <div>
-          <p className="text-lg font-bold">{c?.full_name}</p>
-          <p className="text-sm text-white/70">{v?.make} {v?.model}</p>
-          <span className="text-[10px] font-mono bg-white/10 px-1.5 py-0.5 rounded">{v?.registration_number}</span>
+      <div className="flex gap-4 mb-6">
+        <div className="relative">
+          <TappableVehicleImage 
+            path={v?.front_image_path} 
+            className="h-20 w-20 rounded-2xl object-cover border border-white/10"
+            customerName={c?.full_name}
+            vehicleLabel={`${v?.make} ${v?.model}`}
+            registration={v?.registration_number}
+          />
+          <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-lg">
+             <Car className="h-3 w-3 text-black" />
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xl font-bold truncate leading-tight">{c?.full_name}</p>
+          <p className="text-sm text-white/60 truncate mt-0.5">{v?.make} {v?.model}</p>
+          <div className="mt-2 inline-flex items-center bg-yellow-400/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-400/20">
+             <span className="text-[10px] font-mono font-bold tracking-wider">{v?.registration_number}</span>
+          </div>
         </div>
       </div>
-      <div className="flex justify-between items-center">
-        <div>
-           <p className="text-[10px] uppercase text-white/50">Time Window</p>
-           <p className="text-sm font-bold">{formatTime12(time)}</p>
+      
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="space-y-1">
+           <p className="text-[10px] uppercase text-white/30 font-bold tracking-wider">Reach By</p>
+           <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
+              <p className="text-sm font-bold">{formatTime12(time)}</p>
+           </div>
         </div>
-        <div className="text-right">
-           <p className="text-[10px] uppercase text-white/50">Earning</p>
-           <p className="text-sm font-bold text-[#FF6B00]">+₹{rate}</p>
+        <div className="space-y-1">
+           <p className="text-[10px] uppercase text-white/30 font-bold tracking-wider">Earning</p>
+           <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+              <p className="text-sm font-bold text-emerald-400">+₹{rate}</p>
+           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 mt-5">
-        <MaskedCallButton serviceId={stop.id} full />
+
+      <div className="flex gap-3">
+        <div className="flex gap-2">
+           <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0"
+            onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
+           >
+             <Navigation className="h-5 w-5 text-white" />
+           </Button>
+           <MaskedCallButton serviceId={stop.id} size="default" />
+        </div>
         <Link
             to="/app/service/$id"
             params={{ id: stop.id }}
-            className="flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-bold hover:bg-[#ff8c40] px-3 py-2 text-sm"
+            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-6 h-12 text-sm shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all"
           >
             <Play className="h-4 w-4 fill-current" />
             <span>{inProgress ? "Resume" : "Start Service"}</span>
@@ -267,13 +313,18 @@ function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
   const c = stop.customers as any;
   const time = c?.service_required_before ?? c?.preferred_time ?? stop.time_slot;
   return (
-    <div className="flex items-center gap-3 p-3 bg-white border border-border rounded-2xl">
-      <div className="font-black text-muted-foreground">#{seqNo}</div>
-      <div className="flex-1 min-w-0">
-         <p className="font-bold truncate">{c?.full_name}</p>
-         <p className="text-[11px] text-muted-foreground">{formatTime12(time)}</p>
+    <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all">
+      <div className="h-10 w-10 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0">
+        #{seqNo}
       </div>
-      <div className="text-sm font-bold text-[#FF6B00]">+₹17</div>
+      <div className="flex-1 min-w-0">
+         <p className="font-bold truncate text-neutral-900">{c?.full_name}</p>
+         <div className="flex items-center gap-1.5 mt-0.5">
+            <Clock className="h-3 w-3 text-neutral-400" />
+            <p className="text-[11px] font-medium text-neutral-500 uppercase">{formatTime12(time)}</p>
+         </div>
+      </div>
+      <div className="text-sm font-bold text-[#FF6B00] bg-[#FF6B00]/5 px-3 py-1 rounded-full">+₹17</div>
     </div>
   );
 }
@@ -292,17 +343,20 @@ export function MaskedCallButton({ serviceId, compact, full, size }: { serviceId
       setLoading(false);
     }
   };
-  if (compact) {
-    return (
-      <Button size="sm" variant="outline" onClick={onClick} disabled={loading} aria-label="Call Customer">
-        {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />}Call
-      </Button>
-    );
-  }
+  
   return (
-    <Button variant="outline" size={size ?? (full ? "lg" : "sm")} className={cn("rounded-full", full ? "w-full" : "")} onClick={onClick} disabled={loading}>
-      {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Phone className="mr-1.5 h-4 w-4" />}
-      {full ? " Call Customer" : "Call"}
+    <Button 
+      variant="outline" 
+      size={size === "icon" ? "icon" : (size ?? (full ? "lg" : "default"))} 
+      className={cn(
+        "rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0", 
+        full ? "w-full" : "h-12 w-12"
+      )} 
+      onClick={onClick} 
+      disabled={loading}
+    >
+      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
+      {full && (loading ? " Connecting..." : " Call Customer")}
     </Button>
   );
 }
