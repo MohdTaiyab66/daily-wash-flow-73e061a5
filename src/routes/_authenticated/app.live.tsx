@@ -200,14 +200,23 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
         <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-200 relative">
-           <LiveMap
-              stops={stops}
-              showCustomers={stops.length > 0}
-              heightClass="h-full"
-              hideStats
-              onStats={setMapStats}
-              onStopClick={setSelectedStopId}
-            />
+           {stops.length > 0 ? (
+             <LiveMap
+                stops={stops}
+                showCustomers={true}
+                heightClass="h-full"
+                hideStats
+                onStats={setMapStats}
+                onStopClick={setSelectedStopId}
+              />
+           ) : (
+             <div className="h-full w-full flex items-center justify-center bg-neutral-100">
+               <div className="text-center">
+                 <MapPin className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
+                 <p className="text-[10px] font-bold text-neutral-400 uppercase">No stops assigned</p>
+               </div>
+             </div>
+           )}
         </div>
       </div>
 

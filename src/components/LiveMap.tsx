@@ -36,12 +36,11 @@ function loadGoogleMaps(): Promise<void> {
   if (window.google?.maps) return Promise.resolve();
   if (window.__lovableMapReady) return window.__lovableMapReady;
   
-  // Try to find the key from env or window config
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   const channel = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
   
   if (!key) {
-    console.error("[LiveMap] Google Maps API key missing. Check VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY.");
+    console.error("[LiveMap] Google Maps API key missing.");
     return Promise.reject(new Error("Google Maps key missing"));
   }
   
@@ -51,9 +50,10 @@ function loadGoogleMaps(): Promise<void> {
       resolve();
     };
     const s = document.createElement("script");
-    // Ensure version is specified and sensors aren't blocked
+    // Ensure the library is loaded with explicit version and geometry library
     s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
     s.async = true;
+    s.defer = true;
     s.onerror = (err) => {
       console.error("[LiveMap] Script load failed", err);
       reject(new Error("Google Maps script failed to load"));
@@ -117,6 +117,13 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
           console.log("[LiveMap] Map is idle and ready");
           setReady(true);
         });
+
+        // Trigger a resize event to ensure the map fills its container properly
+        window.setTimeout(() => {
+          if (mapRef.current) {
+            window.google.maps.event.trigger(mapRef.current, 'resize');
+          }
+        }, 500);
       })
       .catch((e) => {
         console.error("[LiveMap] Initialization error:", e);
