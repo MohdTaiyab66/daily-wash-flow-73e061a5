@@ -271,10 +271,11 @@ function AssignmentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-[220px] space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] leading-tight uppercase">BUILD YOUR ASSIGNMENT</h1>
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[180px] space-y-6">
+      <header className="space-y-0.5">
+        <h1 className="text-[24px] font-black tracking-tight text-[#1A1A1A] leading-tight uppercase">BUILD YOUR ASSIGNMENT</h1>
       </header>
+
 
       <section className="space-y-4">
         <div className="space-y-2">
