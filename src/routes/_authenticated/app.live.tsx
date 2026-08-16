@@ -428,26 +428,27 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
 
 function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; onClick: () => void }) {
   const c = stop.customers as any;
+  const v = stop.vehicles as any;
   const time = stop.time_slot;
-
 
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
+      className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-[20px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
     >
-      <div className="h-9 w-9 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100">
+      <div className="h-8 w-8 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-[10px] shrink-0 border border-neutral-100">
         #{seqNo}
       </div>
       <div className="flex-1 min-w-0">
-         <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
-         <div className="flex items-center gap-1 mt-0.5">
-            <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+         <div className="flex justify-between items-start">
+           <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
+           <ChevronRight className="h-3.5 w-3.5 text-neutral-300 mt-0.5" />
          </div>
-      </div>
-      <div className="shrink-0">
-        <ChevronRight className="h-4 w-4 text-neutral-300" />
+         <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
+         <div className="flex items-center gap-1 mt-1">
+            <Clock className="h-3 w-3 text-neutral-400" />
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+         </div>
       </div>
     </button>
   );
