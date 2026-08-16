@@ -335,7 +335,7 @@ function AssignmentsPage() {
                </div>
                <div className="flex items-center justify-between text-sm">
                  <span className="text-white/40 font-medium uppercase tracking-widest text-[10px]">26 SERVICE DAYS • MONDAYS OFF</span>
-                 <span className="font-bold text-white">Commitment Mode</span>
+                 <span className="font-bold text-[#FF6B00] uppercase tracking-tighter text-[11px]">Commitment Mode</span>
                </div>
             </div>
           </div>
