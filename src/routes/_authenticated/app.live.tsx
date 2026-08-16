@@ -114,16 +114,25 @@ function RoutePage() {
   const activeNext = pending[0] ?? null;
   const activeQueue = pending.slice(1);
   const stops = pending
-    .map((s, i) => ({
-      id: s.id,
-      sequence_no: (s as any).routeIndex ?? i + 1,
-      lat: Number(s.lat || (s.customers as any)?.latitude),
-      lng: Number(s.lng || (s.customers as any)?.longitude),
-      label: (s.customers as any)?.full_name ?? "Customer",
-      eta: (s as any).eta_at ?? null,
-      distanceKm: (s as any).distance_km ?? null,
-    }))
-    .filter(s => !isNaN(s.lat) && !isNaN(s.lng));
+    .map((s, i) => {
+      const lat = Number(s.lat || (s.customers as any)?.latitude);
+      const lng = Number(s.lng || (s.customers as any)?.longitude);
+      
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+        console.warn(`[LiveMap] Customer ${s.customers?.full_name} has invalid coordinates:`, { lat, lng });
+      }
+
+      return {
+        id: s.id,
+        sequence_no: (s as any).routeIndex ?? i + 1,
+        lat,
+        lng,
+        label: (s.customers as any)?.full_name ?? "Customer",
+        eta: (s as any).eta_at ?? null,
+        distanceKm: (s as any).distance_km ?? null,
+      };
+    })
+    .filter(s => !isNaN(s.lat) && !isNaN(s.lng) && s.lat !== 0 && s.lng !== 0);
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
@@ -190,15 +199,24 @@ function RoutePage() {
         <div className="flex justify-between items-baseline mb-2.5">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
-        <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
-           <LiveMap
-              stops={stops}
-              showCustomers={stops.length > 0}
-              heightClass="h-full"
-              hideStats
-              onStats={setMapStats}
-              onStopClick={setSelectedStopId}
-            />
+        <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-200 relative">
+           {stops.length > 0 ? (
+             <LiveMap
+                stops={stops}
+                showCustomers={true}
+                heightClass="h-full"
+                hideStats
+                onStats={setMapStats}
+                onStopClick={setSelectedStopId}
+              />
+           ) : (
+             <div className="h-full w-full flex items-center justify-center bg-neutral-100">
+               <div className="text-center">
+                 <MapPin className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
+                 <p className="text-[10px] font-bold text-neutral-400 uppercase">No stops assigned</p>
+               </div>
+             </div>
+           )}
         </div>
       </div>
 
@@ -278,6 +296,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
   const timeLabel = c?.time_window_type === "before" ? "Before " : "";
   const stopLat = Number(stop.destination_lat || c?.latitude);
   const stopLng = Number(stop.destination_lng || c?.longitude);
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -452,6 +471,7 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const time = stop.time_slot;
+  const timeLabel = c?.time_window_type === "before" ? "Before " : "";
 
   return (
     <button 
@@ -469,7 +489,7 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
          <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
          <div className="flex items-center gap-1 mt-1">
             <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
          </div>
       </div>
     </button>

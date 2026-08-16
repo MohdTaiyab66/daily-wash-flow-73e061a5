@@ -36,12 +36,11 @@ function loadGoogleMaps(): Promise<void> {
   if (window.google?.maps) return Promise.resolve();
   if (window.__lovableMapReady) return window.__lovableMapReady;
   
-  // Try to find the key from env or window config
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   const channel = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
   
   if (!key) {
-    console.error("[LiveMap] Google Maps API key missing. Check VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY.");
+    console.error("[LiveMap] Google Maps API key missing.");
     return Promise.reject(new Error("Google Maps key missing"));
   }
   
@@ -51,8 +50,10 @@ function loadGoogleMaps(): Promise<void> {
       resolve();
     };
     const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
+    // Ensure the library is loaded with explicit version and geometry library
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly&loading=async&callback=__initLovableMap${channel ? `&channel=${channel}` : ""}&libraries=geometry`;
     s.async = true;
+    s.defer = true;
     s.onerror = (err) => {
       console.error("[LiveMap] Script load failed", err);
       reject(new Error("Google Maps script failed to load"));
@@ -86,15 +87,22 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
 
   // Initialize map
   useEffect(() => {
+    console.log("[LiveMap] Starting initialization...");
     loadGoogleMaps()
       .then(() => {
-        if (!ref.current) return;
+        if (!ref.current) {
+          console.warn("[LiveMap] Ref is null during init");
+          return;
+        }
+        console.log("[LiveMap] Creating new google.maps.Map instance");
         mapRef.current = new window.google.maps.Map(ref.current, {
           center: { lat: 26.8467, lng: 80.9462 },
           zoom: 12,
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: "greedy",
+          // Use 'roadmap' to ensure tiles are visible in all environments
+          mapTypeId: 'roadmap',
           styles: [
             {
               featureType: "poi",
@@ -103,7 +111,19 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
             }
           ]
         });
-        setReady(true);
+        
+        // Listen for the first idle event to confirm the map is actually rendering tiles
+        window.google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+          console.log("[LiveMap] Map is idle and ready");
+          setReady(true);
+        });
+
+        // Trigger a resize event to ensure the map fills its container properly
+        window.setTimeout(() => {
+          if (mapRef.current) {
+            window.google.maps.event.trigger(mapRef.current, 'resize');
+          }
+        }, 500);
       })
       .catch((e) => {
         console.error("[LiveMap] Initialization error:", e);
@@ -169,50 +189,88 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
 
   // Render customer markers + route — depends on stable stops key so it only re-runs when stops actually change
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !mapRef.current) return;
     const g = window.google;
-    // Clear existing
+    
+    console.log("[LiveMap] Rendering markers for", stableStops.length, "stops");
+
+    // Clear existing markers
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    
+    // Clear existing polyline
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
       polylineRef.current = null;
     }
 
     if (!showCustomers || stableStops.length === 0) {
+      console.log("[LiveMap] No customers to show or showCustomers is false");
       setStats(null);
       fittedRef.current = null;
       return;
     }
 
     const bounds = new g.maps.LatLngBounds();
-    if (partnerPos) bounds.extend(partnerPos);
+    if (partnerPos) {
+      bounds.extend(partnerPos);
+      console.log("[LiveMap] Extended bounds to partnerPos:", partnerPos);
+    }
+    
     stableStops.forEach((s) => {
+      const isNext = s.sequence_no === 1;
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
-        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "900" },
+        label: { 
+          text: String(s.sequence_no ?? ""), 
+          color: "#fff", 
+          fontSize: isNext ? "16px" : "14px", 
+          fontWeight: "900" 
+        },
         title: s.label,
+        // Using a standard marker if NEXT stop icon fails, but adding a distinct color
+        icon: isNext ? {
+          path: g.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: "#FF6B00",
+          fillOpacity: 1,
+          strokeColor: "#fff",
+          strokeWeight: 2,
+        } : {
+          path: g.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#64748b",
+          fillOpacity: 1,
+          strokeColor: "#fff",
+          strokeWeight: 2,
+        },
+        zIndex: isNext ? 1000 : 1,
       });
+      
       marker.addListener("click", () => {
+        console.log("[LiveMap] Marker clicked:", s.id);
         if (onStopClick) onStopClick(s.id);
       });
+      
       markersRef.current.push(marker);
       bounds.extend({ lat: s.lat, lng: s.lng });
     });
+
     // Only fit bounds the first time this stop-set is shown so the user can pan freely without snap-back
     if (fittedRef.current !== stopsKey) {
+      console.log("[LiveMap] Fitting bounds to", stableStops.length, "stops");
       mapRef.current.fitBounds(bounds, 48);
       fittedRef.current = stopsKey;
     }
 
-    // Always draw the approved Route Manager stop order immediately. This keeps
-    // numbered customer routes visible even before partner GPS or the road-route
-    // API returns. Missing GPS stops are not passed into this component.
+    // Always draw the approved Route Manager stop order immediately.
     const fallbackPath = [partnerPos, ...stableStops.map((s) => ({ lat: s.lat, lng: s.lng }))].filter(Boolean) as Array<{ lat: number; lng: number }>;
     if (fallbackPath.length >= 2) {
       const fallbackKm = fallbackPath.slice(1).reduce((sum, point, i) => sum + haversineKm(fallbackPath[i], point), 0);
       setStats({ km: Math.round(fallbackKm * 10) / 10, mins: Math.round((fallbackKm / 22) * 60) });
+      
+      console.log("[LiveMap] Drawing fallback polyline");
       polylineRef.current = new g.maps.Polyline({
         path: fallbackPath,
         map: mapRef.current,
@@ -222,14 +280,15 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
       });
     }
 
-    // Upgrade to the server-computed road route in the same approved sequence.
-    // If partner GPS isn't available yet, use the first stop as the origin so
-    // the blue driving polyline still renders between all customer stops.
+    // Upgrade to the server-computed road route
     const routeOrigin = partnerPos ?? (stableStops[0] ? { lat: stableStops[0].lat, lng: stableStops[0].lng } : null);
     const routeStops = partnerPos ? stableStops : stableStops.slice(1);
+    
     if (routeOrigin && routeStops.length >= 1) {
       const destination = routeStops[routeStops.length - 1];
       const waypoints = routeStops.slice(0, -1).map((s) => ({ lat: s.lat, lng: s.lng }));
+      
+      console.log("[LiveMap] Requesting computed road route");
       compute({
         data: {
           origin: routeOrigin,
@@ -238,9 +297,11 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
         },
       })
         .then((r) => {
-          setStats({ km: Math.round((r.distanceMeters / 1000) * 10) / 10, mins: Math.round(r.durationSeconds / 60) });
           if (r.polyline) {
+            console.log("[LiveMap] Road route received, updating polyline");
+            setStats({ km: Math.round((r.distanceMeters / 1000) * 10) / 10, mins: Math.round(r.durationSeconds / 60) });
             if (polylineRef.current) polylineRef.current.setMap(null);
+            
             const path = g.maps.geometry.encoding.decodePath(r.polyline);
             polylineRef.current = new g.maps.Polyline({
               path,
@@ -251,22 +312,32 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
             });
           }
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("[LiveMap] Route computation failed:", err);
+        });
     }
-  // Intentionally exclude partnerPos so the map doesn't refit / re-fetch the route on every GPS tick
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, showCustomers, stableStops, stopsKey, compute]);
 
   const effectiveStats = stats ?? fallbackStats;
   useEffect(() => { onStats?.(effectiveStats ?? null); }, [effectiveStats?.km, effectiveStats?.mins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className={`relative w-full bg-muted ${heightClass ?? "h-56"}`}>
-        <div ref={ref} className="h-full w-full" />
+    <Card className="overflow-hidden p-0 border-none shadow-none bg-transparent">
+      <div className={`relative w-full ${heightClass ?? "h-56"}`}>
+        <div 
+          ref={ref} 
+          className="h-full w-full" 
+          style={{ 
+            backgroundColor: '#e5e7eb', // Tailwind gray-200
+            minHeight: '280px' 
+          }} 
+        />
         {!ready && !error && (
-          <div className="absolute inset-0 grid place-items-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="absolute inset-0 grid place-items-center bg-neutral-100 z-[5]">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Initialising Map...</p>
+            </div>
           </div>
         )}
         {(error || mapRenderFailed) && <RouteFallback stops={stableStops} />}
