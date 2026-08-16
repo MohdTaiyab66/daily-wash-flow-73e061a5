@@ -6993,7 +6993,7 @@ export type Database = {
       }
       get_offer_details_by_id: { Args: { p_offer_id: string }; Returns: Json }
       get_partner_open_offers: {
-        Args: { p_pid: string }
+        Args: { p_partner_id: string }
         Returns: {
           area: string
           assignment_id: string
