@@ -272,11 +272,6 @@ function HomePage() {
                 </Button>
               </div>
             )}
-                <Button asChild className="bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold h-12 rounded-2xl px-8">
-                  <Link to="/app/assignments">Build Your Plan</Link>
-                </Button>
-              </div>
-            )}
           </div>
         </Card>
       </section>
