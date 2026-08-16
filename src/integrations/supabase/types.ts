@@ -125,6 +125,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "area_change_history_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       area_waitlist: {
@@ -204,11 +211,25 @@ export type Database = {
             referencedColumns: ["assignment_id"]
           },
           {
+            foreignKeyName: "assignment_changes_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["assignment_id"]
+          },
+          {
             foreignKeyName: "assignment_changes_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_changes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -356,6 +377,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       attendance: {
@@ -387,6 +415,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -585,6 +620,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "bookings_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -728,6 +770,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "complaints_service_id_fkey"
@@ -1195,6 +1244,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "customer_referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       customer_saved_packages: {
@@ -1514,6 +1570,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dar_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       dar_offers: {
@@ -1582,6 +1645,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dar_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -1670,6 +1740,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dirty_vehicle_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "dirty_vehicle_reports_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -1729,6 +1806,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -1909,6 +1993,13 @@ export type Database = {
             referencedColumns: ["assignment_id"]
           },
           {
+            foreignKeyName: "marketplace_broadcasts_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["assignment_id"]
+          },
+          {
             foreignKeyName: "marketplace_broadcasts_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
@@ -1999,6 +2090,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "marketplace_broadcasts_winning_partner_id_fkey"
+            columns: ["winning_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       marketplace_delivery_events: {
@@ -2050,6 +2148,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_delivery_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -2110,6 +2215,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -2308,6 +2420,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "offer_delivery_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "offer_delivery_events_queue_id_fkey"
             columns: ["queue_id"]
             isOneToOne: false
@@ -2372,6 +2491,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "parking_reports_service_id_fkey"
@@ -2542,6 +2668,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "partner_notifications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       partner_referrals: {
@@ -2587,11 +2720,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "partner_referrals_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "partner_referrals_referrer_id_fkey"
             columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -2633,6 +2780,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reliability_events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "partner_reliability_events_service_id_fkey"
@@ -2821,6 +2975,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -3207,6 +3368,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       pipeline_events: {
@@ -3516,6 +3684,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "route_change_log_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "route_change_log_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -3567,6 +3742,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "route_drafts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       route_snapshots: {
@@ -3610,6 +3792,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_snapshots_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -3699,6 +3888,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_analytics_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "service_analytics_service_id_fkey"
@@ -4134,6 +4330,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_photos_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "service_photos_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -4316,6 +4519,13 @@ export type Database = {
             referencedColumns: ["assignment_id"]
           },
           {
+            foreignKeyName: "services_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["assignment_id"]
+          },
+          {
             foreignKeyName: "services_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -4330,8 +4540,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "services_original_partner_id_fkey"
+            columns: ["original_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "services_partner_id_fkey"
             columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
+            foreignKeyName: "services_reassigned_from_fkey"
+            columns: ["reassigned_from"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
@@ -4340,8 +4571,8 @@ export type Database = {
             foreignKeyName: "services_reassigned_from_fkey"
             columns: ["reassigned_from"]
             isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "services_vehicle_id_fkey"
@@ -4572,6 +4803,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscription_assignment_queue_assigned_partner_id_fkey"
+            columns: ["assigned_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "subscription_assignment_queue_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: true
@@ -4626,6 +4864,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_assignment_queue_current_offer_partner_id_fkey"
+            columns: ["current_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -5045,6 +5290,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscription_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "subscription_offers_queue_id_fkey"
             columns: ["queue_id"]
             isOneToOne: false
@@ -5236,6 +5488,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscriptions_assigned_partner_id_fkey"
+            columns: ["assigned_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "subscriptions_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: true
@@ -5366,6 +5625,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "training_progress_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
         ]
       }
       unavailability_penalties: {
@@ -5412,11 +5678,25 @@ export type Database = {
             referencedColumns: ["assignment_id"]
           },
           {
+            foreignKeyName: "unavailability_penalties_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["assignment_id"]
+          },
+          {
             foreignKeyName: "unavailability_penalties_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unavailability_penalties_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -5477,6 +5757,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unavailability_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "unavailability_reports_service_id_fkey"
@@ -5696,11 +5983,25 @@ export type Database = {
             referencedColumns: ["assignment_id"]
           },
           {
+            foreignKeyName: "wallet_ledger_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["assignment_id"]
+          },
+          {
             foreignKeyName: "wallet_ledger_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
           {
             foreignKeyName: "wallet_ledger_service_id_fkey"
@@ -5829,11 +6130,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscription_assignment_queue_current_offer_partner_id_fkey"
+            columns: ["current_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "subscriptions_assigned_partner_id_fkey"
             columns: ["assigned_partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_assigned_partner_id_fkey"
+            columns: ["assigned_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -5891,11 +6206,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscription_assignment_queue_current_offer_partner_id_fkey"
+            columns: ["current_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
+          },
+          {
             foreignKeyName: "subscription_offers_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -5928,6 +6257,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_offers_partner_id_fkey"
+            columns: ["first_offer_partner_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_partners_view"
+            referencedColumns: ["partner_id"]
           },
         ]
       }
@@ -6026,15 +6362,22 @@ export type Database = {
       }
       waiting_partners_view: {
         Row: {
-          created_at: string | null
-          duration_days: number | null
-          expected_start_time: string | null
-          fulfilled_cars: number | null
+          assigned_customers: number | null
+          assignment_created: string | null
+          assignment_id: string | null
+          assignment_status: string | null
+          commitment_days: number | null
+          current_availability: number | null
+          customer_target: number | null
           full_name: string | null
           home_area: string | null
-          status: string | null
+          partner_availability:
+            | Database["public"]["Enums"]["availability_status"]
+            | null
+          partner_id: string | null
+          phone: string | null
           sub_status: string | null
-          target_cars: number | null
+          working_hours: string | null
         }
         Relationships: []
       }
@@ -6706,6 +7049,33 @@ export type Database = {
           total_allocated: number
           unlimited: boolean
         }[]
+      }
+      get_waiting_for_work_partners: {
+        Args: never
+        Returns: {
+          assigned_customers: number | null
+          assignment_created: string | null
+          assignment_id: string | null
+          assignment_status: string | null
+          commitment_days: number | null
+          current_availability: number | null
+          customer_target: number | null
+          full_name: string | null
+          home_area: string | null
+          partner_availability:
+            | Database["public"]["Enums"]["availability_status"]
+            | null
+          partner_id: string | null
+          phone: string | null
+          sub_status: string | null
+          working_hours: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "waiting_partners_view"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_zone_capacity: {
         Args: { p_date?: string; p_zone: string }
