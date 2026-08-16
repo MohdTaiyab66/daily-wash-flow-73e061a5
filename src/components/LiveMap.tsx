@@ -315,12 +315,22 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
   useEffect(() => { onStats?.(effectiveStats ?? null); }, [effectiveStats?.km, effectiveStats?.mins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className={`relative w-full bg-muted ${heightClass ?? "h-56"}`}>
-        <div ref={ref} className="h-full w-full" />
+    <Card className="overflow-hidden p-0 border-none shadow-none bg-transparent">
+      <div className={`relative w-full ${heightClass ?? "h-56"}`}>
+        <div 
+          ref={ref} 
+          className="h-full w-full" 
+          style={{ 
+            backgroundColor: '#e5e7eb', // Tailwind gray-200
+            minHeight: '280px' 
+          }} 
+        />
         {!ready && !error && (
-          <div className="absolute inset-0 grid place-items-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="absolute inset-0 grid place-items-center bg-neutral-100 z-[5]">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Initialising Map...</p>
+            </div>
           </div>
         )}
         {(error || mapRenderFailed) && <RouteFallback stops={stableStops} />}
