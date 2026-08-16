@@ -63,13 +63,30 @@ function loadGoogleMaps(): Promise<void> {
   return window.__lovableMapReady;
 }
 
-export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats, onStopClick }: { stops: Stop[]; showCustomers: boolean; heightClass?: string; hideStats?: boolean; onStats?: (s: { km: number; mins: number } | null) => void; onStopClick?: (stopId: string) => void }) {
+export function LiveMap({ 
+  stops, 
+  showCustomers, 
+  heightClass, 
+  hideStats, 
+  onStats, 
+  onStopClick,
+  highlightStopId 
+}: { 
+  stops: Stop[]; 
+  showCustomers: boolean; 
+  heightClass?: string; 
+  hideStats?: boolean; 
+  onStats?: (s: { km: number; mins: number } | null) => void; 
+  onStopClick?: (stopId: string) => void;
+  highlightStopId?: string | null;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const partnerMarkerRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
   const fittedRef = useRef<string | null>(null);
+  const highlightedRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mapRenderFailed, setMapRenderFailed] = useState(false);
@@ -186,6 +203,34 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
       mapRef.current.panTo(partnerPos);
     }
   }, [ready, partnerPos]);
+
+  // Recenter / Fit logic
+  const handleRecenter = () => {
+    if (!ready || !mapRef.current) return;
+    const g = window.google;
+    
+    if (partnerPos) {
+      mapRef.current.panTo(partnerPos);
+      mapRef.current.setZoom(15);
+    } else if (stableStops.length > 0) {
+      const bounds = new g.maps.LatLngBounds();
+      stableStops.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+      mapRef.current.fitBounds(bounds, 48);
+    }
+  };
+
+  // Interaction: Highlight and center on selected stop
+  useEffect(() => {
+    if (!ready || !mapRef.current || !highlightStopId) return;
+    
+    const stop = stableStops.find(s => s.id === highlightStopId);
+    if (stop && highlightedRef.current !== highlightStopId) {
+      console.log("[LiveMap] Centering on highlighted stop:", highlightStopId);
+      mapRef.current.panTo({ lat: stop.lat, lng: stop.lng });
+      mapRef.current.setZoom(16);
+      highlightedRef.current = highlightStopId;
+    }
+  }, [ready, highlightStopId, stableStops]);
 
   // Render customer markers + route — depends on stable stops key so it only re-runs when stops actually change
   useEffect(() => {
@@ -323,7 +368,7 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
 
   return (
     <Card className="overflow-hidden p-0 border-none shadow-none bg-transparent">
-      <div className={`relative w-full ${heightClass ?? "h-56"}`}>
+      <div className={`relative w-full ${heightClass ?? "h-[280px]"}`}>
         <div 
           ref={ref} 
           className="h-full w-full" 
@@ -332,6 +377,35 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
             minHeight: '280px' 
           }} 
         />
+        
+        {/* Map Controls */}
+        {ready && (
+          <div className="absolute top-4 right-4 flex flex-col gap-2 z-[5]">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10 rounded-full shadow-lg bg-white/90 backdrop-blur-sm border-none hover:bg-white"
+              onClick={handleRecenter}
+            >
+              <Navigation className="h-5 w-5 text-neutral-900" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10 rounded-full shadow-lg bg-white/90 backdrop-blur-sm border-none hover:bg-white"
+              onClick={() => {
+                if (mapRef.current) {
+                  const bounds = new window.google.maps.LatLngBounds();
+                  stableStops.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+                  if (partnerPos) bounds.extend(partnerPos);
+                  mapRef.current.fitBounds(bounds, 48);
+                }
+              }}
+            >
+              <ZoomIn className="h-5 w-5 text-neutral-900" />
+            </Button>
+          </div>
+        )}
         {!ready && !error && (
           <div className="absolute inset-0 grid place-items-center bg-neutral-100 z-[5]">
             <div className="flex flex-col items-center gap-2">

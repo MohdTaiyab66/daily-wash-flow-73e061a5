@@ -208,6 +208,7 @@ function RoutePage() {
                 hideStats
                 onStats={setMapStats}
                 onStopClick={setSelectedStopId}
+                highlightStopId={selectedStopId}
               />
            ) : (
              <div className="h-full w-full flex items-center justify-center bg-neutral-100">
