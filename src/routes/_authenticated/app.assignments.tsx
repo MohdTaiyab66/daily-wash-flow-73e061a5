@@ -5,97 +5,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
 import {
-  Loader2, MapPin, IndianRupee, CheckCircle2, BellRing, Crosshair,
-  AlertTriangle, Inbox, UserRound, TrendingUp,
-  ArrowRight, ChevronDown, Clock, Navigation, Car
+  Loader2, MapPin, IndianRupee,
+  Car, Clock, TrendingUp, Navigation, X
 } from "lucide-react";
-import { MarketplaceOffersList } from "@/components/partner/MarketplaceOffersList";
 import { PartnerShell } from "@/components/partner/PartnerShell";
-
-
 import { toast } from "sonner";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
-import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
-import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-// Small tween hook so estimates animate as sliders move — feels premium.
-function useAnimatedNumber(value: number, duration = 380) {
-  const [display, setDisplay] = useState(value);
-  const fromRef = useRef(value);
-  const startRef = useRef<number | null>(null);
-  useEffect(() => {
-    const from = display;
-    fromRef.current = from;
-    startRef.current = null;
-    let raf = 0;
-    const step = (t: number) => {
-      if (startRef.current == null) startRef.current = t;
-      const p = Math.min(1, (t - startRef.current) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(from + (value - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-  return display;
-}
-
-function commitmentLabel(days: number, min: number, max: number): { label: string; tone: "flex" | "reco" | "max" } {
-  const span = Math.max(1, max - min);
-  const ratio = (days - min) / span;
-  if (ratio >= 0.75) return { label: "Priority Partner", tone: "max" };
-  if (ratio >= 0.4) return { label: "Regular Partner", tone: "reco" };
-  if (ratio >= 0.15) return { label: "Consistent", tone: "reco" };
-  return { label: "Starter", tone: "flex" };
-}
-
-const MOTIVATION_TIPS = [
-  { emoji: "🚀", head: "High-performing partners", tail: "receive more recurring customers over time." },
-  { emoji: "🔥", head: "Complete today's route", tail: "to unlock more regular customers." },
-  { emoji: "⭐", head: "Partners with high ratings", tail: "receive priority customers." },
-  { emoji: "💰", head: "Longer commitments", tail: "increase monthly earnings." },
-  { emoji: "🏆", head: "Consistent partners", tail: "get better routes and premium areas." },
-];
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
+import { cancelMyAssignment } from "@/lib/assignment.functions";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><PartnerShell><AssignmentsPage /></PartnerShell></OfflineGuard>,
 });
 
-type StartRule = { max_cars: number; start_time: string };
-
-const DEFAULT_START_RULES: StartRule[] = [
+const DEFAULT_START_RULES = [
   { max_cars: 15, start_time: "07:00" },
-  { max_cars: 20, start_time: "06:30" },
-  { max_cars: 25, start_time: "06:00" },
-  { max_cars: 30, start_time: "05:30" },
+  { max_cars: 25, start_time: "06:30" },
+  { max_cars: 30, start_time: "06:00" },
   { max_cars: 36, start_time: "05:00" },
 ];
 
-const DAYS = [
-  { key: 1, label: "Mon", full: "Monday" },
-  { key: 2, label: "Tue", full: "Tuesday" },
-  { key: 3, label: "Wed", full: "Wednesday" },
-  { key: 4, label: "Thu", full: "Thursday" },
-  { key: 5, label: "Fri", full: "Friday" },
-  { key: 6, label: "Sat", full: "Saturday" },
-  { key: 0, label: "Sun", full: "Sunday" },
-];
-
-const DAY_NAME_TO_KEY: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
-};
-
-function computeStartTime(cars: number, rules: StartRule[]): string {
+function computeStartTime(cars: number, rules: any[]): string {
   const sorted = [...rules].sort((a, b) => a.max_cars - b.max_cars);
   for (const r of sorted) if (cars <= r.max_cars) return r.start_time;
   return sorted[sorted.length - 1]?.start_time ?? "07:00";
@@ -112,300 +49,103 @@ function addHours(hhmm: string, hours: number): string {
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { t } = useI18n();
+  const SERVICE_DAYS_PER_MONTH = 26;
 
-  useRealtimeInvalidation(["platform_settings", "customers"],
-    [["assignment-settings-v2"], ["me-partner-builder"]]);
+  const todayQuery = useTodayAssignment();
+  const activeAssignment = todayQuery.data?.assignment ?? null;
+  const totalCustomers = todayQuery.data?.todaysCustomers ?? 0;
+  const completedToday = todayQuery.data?.completedToday ?? 0;
 
-  const { data: settings } = useQuery({
-    queryKey: ["assignment-settings-v2"],
-    queryFn: async () => {
-      const { data } = await supabase.from("platform_settings").select("key,value").in("key", [
-        "min_cars_required", "max_cars_allowed", "rate_per_car",
-        "min_hours_per_day", "max_hours_per_day", "cars_per_hour",
-        "minutes_per_car", "fuel_cost_per_car", "start_time_rules", "weekly_off_day",
-        "avg_bike_mileage_kmpl", "fuel_price_per_litre", "fuel_calc_enabled",
-        "assignment_min_days", "assignment_max_days", "assignment_default_days",
-      ]);
-      const m: Record<string, any> = {};
-      (data ?? []).forEach((s: any) => (m[s.key] = s.value));
-      const rules: StartRule[] = Array.isArray(m.start_time_rules) ? m.start_time_rules : DEFAULT_START_RULES;
-      return {
-        minCars: Math.max(1, Number(m.min_cars_required ?? 1)),
-        maxCars: Number(m.max_cars_allowed ?? 30),
-        rate: Number(m.rate_per_car ?? 17),
-        minHours: Number(m.min_hours_per_day ?? 2),
-        maxHours: Number(m.max_hours_per_day ?? 6),
-        carsPerHour: Number(m.cars_per_hour ?? 6),
-        minutesPerCar: Number(m.minutes_per_car ?? 10),
-        fuelPerCar: Number(m.fuel_cost_per_car ?? 1.4),
-        avgMileage: Number(m.avg_bike_mileage_kmpl ?? 40),
-        fuelPrice: Number(m.fuel_price_per_litre ?? 105),
-        fuelEnabled: m.fuel_calc_enabled !== false,
-        startRules: rules,
-        weeklyOff: typeof m.weekly_off_day === "string" ? m.weekly_off_day.toLowerCase() : "monday",
-        minDays: Math.max(1, Number(m.assignment_min_days ?? 7)),
-        maxDays: Math.max(1, Number(m.assignment_max_days ?? 90)),
-        defaultDays: Math.max(1, Number(m.assignment_default_days ?? 30)),
-      };
-    },
-  });
-
-  const minHours = settings?.minHours ?? 2;
-  const maxHours = settings?.maxHours ?? 6;
-  const carsPerHour = settings?.carsPerHour ?? 6;
-  const rate = settings?.rate ?? 17;
-  const fuelPerCar = settings?.fuelPerCar ?? 1.4;
-  const avgMileage = settings?.avgMileage ?? 40;
-  const fuelEnabled = settings?.fuelEnabled ?? true;
-  const startRules = settings?.startRules ?? DEFAULT_START_RULES;
-  // Derive the max cars ceiling from the admin hour ceiling × cars-per-hour so
-  // "6 Hours" always yields exactly 6 × carsPerHour cars (default 36) instead of
-  // being clamped to a stale max_cars_allowed value.
-  const maxCarsCeiling = Math.max(Number(settings?.maxCars ?? 0), maxHours * carsPerHour);
-  const minCars = settings?.minCars ?? 1;
-  const offDayKey = DAY_NAME_TO_KEY[settings?.weeklyOff ?? "monday"] ?? 1;
-  const offDayFull = DAYS.find((d) => d.key === offDayKey)?.full ?? "Monday";
-
-  // Commitment window is fixed to a partner-friendly 7–30 range so the slider
-  // stays legible and consistent regardless of admin envelope.
-  const minDays = Math.max(7, settings?.minDays ?? 7);
-  const maxDays = Math.min(30, settings?.maxDays ?? 30);
-  const defaultDays = Math.min(maxDays, Math.max(minDays, settings?.defaultDays ?? 15));
-
-  const [hours, setHours] = useState(4);
-  const [duration, setDuration] = useState(defaultDays);
-  const [durationTouched, setDurationTouched] = useState(false);
-
-  useEffect(() => {
-    setHours((h) => Math.min(maxHours, Math.max(minHours, h)));
-  }, [minHours, maxHours]);
-  useEffect(() => {
-    setDuration((d) => {
-      if (!durationTouched) return defaultDays;
-      return Math.min(maxDays, Math.max(minDays, d));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minDays, maxDays, defaultDays]);
-
-  const cars = useMemo(() => {
-    const raw = Math.round(hours * carsPerHour);
-    return Math.max(minCars, Math.min(maxCarsCeiling, raw));
-  }, [hours, carsPerHour, minCars, maxCarsCeiling]);
-
-  const { data: partner, isLoading: loadingPartner } = useQuery({
+  const { data: partner } = useQuery({
     queryKey: ["me-partner-builder"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const { data } = await supabase.from("partners")
-        .select("id,home_area,notify_when_customers_added").eq("id", u.user.id).maybeSingle();
+        .select("id,home_area").eq("id", u.user.id).maybeSingle();
       return data;
     },
   });
 
-  const { data: active, isLoading: loadingActive } = useQuery({
-    queryKey: ["active-assignment-builder"],
+  const { data: settings } = useQuery({
+    queryKey: ["assignment-settings-v3"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase.from("assignments").select("id")
-        .eq("partner_id", u.user.id).eq("status", "active").gte("end_date", today).maybeSingle();
-      return data;
+      const { data } = await supabase.from("platform_settings").select("key,value").in("key", [
+        "min_hours_per_day", "max_hours_per_day", "cars_per_hour", "rate_per_car"
+      ]);
+      const m: Record<string, any> = {};
+      (data ?? []).forEach((s: any) => (m[s.key] = s.value));
+      return {
+        rate: Number(m.rate_per_car ?? 17),
+        minHours: Number(m.min_hours_per_day ?? 2),
+        maxHours: Number(m.max_hours_per_day ?? 6),
+        carsPerHour: Number(m.cars_per_hour ?? 6),
+      };
     },
   });
 
-  const { data: bookingRequests = [], isLoading: loadingBookings } = useQuery({
-    queryKey: ["partner-booking-requests"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_partner_booking_requests");
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !active && !!partner?.home_area,
-    refetchInterval: 30000,
-  });
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(30);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
-  // Active partners must NEVER see the onboarding/build flow. Send them to the
-  // live route (map + ordered customer list + navigate/complete actions) which
-  // is the single canonical "working" view for a partner with an assignment.
-  useEffect(() => {
-    if (active?.id) navigate({ to: "/app/live", replace: true });
-  }, [active?.id, navigate]);
-
-  const hasArea = !!partner?.home_area;
-
-  const { data: preview, isFetching, error: previewError, dataUpdatedAt } = useQuery({
-    queryKey: ["preview", cars, duration],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("preview_assignment", { p_cars: cars, p_duration: duration });
-      if (error) throw error;
-      return data?.[0] ?? null;
-    },
-    enabled: !active && hasArea,
-    retry: 1,
-  });
-
-  // Live "updated Xs ago" ticker for the estimates trust line.
-  const [nowTs, setNowTs] = useState(Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNowTs(Date.now()), 5000);
-    return () => window.clearInterval(id);
-  }, []);
-  const updatedAgo = dataUpdatedAt ? Math.max(0, Math.round((nowTs - dataUpdatedAt) / 1000)) : null;
-  const updatedAgoLabel = updatedAgo == null ? "" : updatedAgo < 5 ? "just now" : updatedAgo < 60 ? `${updatedAgo}s ago` : `${Math.floor(updatedAgo / 60)}m ago`;
-
-
-  const friendlyError = (raw: any): string => {
-    const msg = String(raw?.message ?? raw ?? "").toLowerCase();
-    if (!msg) return "Something went wrong. Please try again.";
-    if (msg.includes("already have an active assignment")) return "You already have an active route today.";
-    if (msg.includes("select your work area")) return "Please choose your work area first.";
-    if (msg.includes("no customers available")) return "No customers available in your area right now. Try a different area or come back soon.";
-    if (msg.includes("cars must be at most")) return "That's more customers than allowed. Reduce your working hours and try again.";
-    if (msg.includes("first assignment must be") || msg.includes("duration must be")) return "Please pick a commitment between 7 and 30 days.";
-    if (msg.includes("not authenticated")) return "Please sign in again to continue.";
-    // Never expose column/schema/DB errors to partners.
-    if (msg.includes("column") || msg.includes("relation") || msg.includes("permission") || msg.includes("violates")) {
-      return "We couldn't create your route right now. Please try again in a moment.";
-    }
-    return raw?.message ?? "Something went wrong. Please try again.";
-  };
-
-  const accept = useMutation({
-    mutationFn: async (acceptCars: number) => {
-      const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: acceptCars, p_duration: duration });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Route created · heading to your live route");
-      qc.invalidateQueries();
-      navigate({ to: "/app/live" });
-    },
-    onError: (e: any) => {
-      console.error("[accept_assignment_v2] raw error:", e);
-      toast.error(friendlyError(e));
-    },
-  });
-
-  const claimBooking = useMutation({
-    mutationFn: async (bookingId: string) => {
-      const { data, error } = await (supabase as any).rpc("claim_customer_booking", { p_booking_id: bookingId });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Booking added to today's route");
-      qc.invalidateQueries();
-      navigate({ to: "/app/live" });
-    },
-    onError: (e: any) => toast.error(e.message ?? "Could not accept booking"),
-  });
-
-  const toggleNotify = useMutation({
-    mutationFn: async (on: boolean) => {
-      const { data: u } = await supabase.auth.getUser();
-      const { error } = await supabase.from("partners").update({ notify_when_customers_added: on }).eq("id", u.user!.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("We'll notify you when new customers arrive in your area");
-      qc.invalidateQueries({ queryKey: ["me-partner-builder"] });
-    },
-    onError: (e: any) => toast.error(e.message ?? "Could not update"),
-  });
-
-  // ---- All hooks below must run on every render (no early returns above this) ----
-  const previewSafe = preview as any;
-  const availableInArea = previewSafe ? Number(previewSafe.available_customers ?? 0) : 0;
-  const acceptableCars = Math.min(cars, availableInArea);
-  const startTime = computeStartTime(cars, startRules);
+  const cars = Math.round(hours * (settings?.carsPerHour ?? 6));
+  const rate = settings?.rate ?? 17;
+  const startTime = computeStartTime(cars, DEFAULT_START_RULES);
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
-  const acceptableEarn = acceptableCars * rate;
+  const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
 
-  const fullyAvailable = !!previewSafe && availableInArea >= cars;
-  const partialAvailable = !!previewSafe && availableInArea > 0 && availableInArea < cars;
-  const noneAvailable = !!previewSafe && availableInArea === 0;
-  const growthPct = cars > 0 ? Math.min(100, Math.round((availableInArea / cars) * 100)) : 0;
-  const estKm = Math.max(1, Math.round(cars * 0.35 * 10) / 10);
-  const previewMessage = previewSafe ? String(previewSafe.message ?? "") : "";
+  const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
+  const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
 
-  // P0 Business Rule: Monthly projections lead with 26 service days.
-  const SERVICE_DAYS_PER_MONTH = 26;
+  const accept = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("accept_assignment_v2", { p_cars: cars, p_duration: duration });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      navigate({ to: "/app/live" });
+    },
+    onError: (e: any) => toast.error(e.message)
+  });
 
-  // Potential monthly includes both currently configured assignment and extra available work
-  const dailyTotalPotential = dailyEarn;
-  const monthlyTotalPotential = dailyTotalPotential * SERVICE_DAYS_PER_MONTH;
+  const cancel = useMutation({
+    mutationFn: async () => {
+      if (!activeAssignment) return;
+      return cancelMyAssignment({ data: { assignment_id: activeAssignment.id } });
+    },
+    onSuccess: () => {
+      toast.success("Assignment cancelled");
+      qc.invalidateQueries();
+      setCancelOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message)
+  });
 
-  const animCars = useAnimatedNumber(cars);
-  const animEarn = useAnimatedNumber(dailyEarn);
-  const animMonthly = useAnimatedNumber(monthlyTotalPotential);
-  const animMonthlyServices = useAnimatedNumber(SERVICE_DAYS_PER_MONTH * cars);
-  const commitment = commitmentLabel(duration, minDays, maxDays);
-  const tipOfDay = MOTIVATION_TIPS[new Date().getDate() % MOTIVATION_TIPS.length];
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const [confirmCars, setConfirmCars] = useState(0);
-
-  // ---- Conditional early returns AFTER all hooks ----
-  if (loadingActive || loadingPartner || active) {
-    return <div className="mx-auto max-w-md p-5 text-sm text-muted-foreground">Loading…</div>;
-  }
-
-  if (!hasArea) {
+  // STATE B — PARTNER HAS ACTIVE ASSIGNMENT
+  if (activeAssignment) {
     return (
-      <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Work Plan</h1>
-        <p className="mt-1 text-sm font-bold text-neutral-500 uppercase tracking-widest">Step 1: Choose Area</p>
-        <Card className="mt-5 p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
-          <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
-            <MapPin className="h-8 w-8 text-[#FF6B00]" />
-          </div>
-          <h2 className="mt-5 text-xl font-black text-[#1A1A1A]">Select your work area</h2>
-          <p className="mt-2 text-sm font-medium text-neutral-500 leading-relaxed px-2">
-            We need to know where you'll be working before showing you available customers and potential earnings.
-          </p>
-          <Button asChild size="lg" className="mt-8 w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
-            <Link to="/app/area">SELECT WORK AREA</Link>
-          </Button>
-        </Card>
-      </div>
-    );
-  }
+      <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
+        <header className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+          <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
+        </header>
 
-
-
-  return (
-    <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
-        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
-      </header>
-
-      {/* AREA SELECTION HEADER */}
-      <section>
-        <Link 
-          to="/app/area" 
-          className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all"
-        >
-          <div className="flex items-center gap-3">
+        <section>
+          <div className="flex items-center gap-3 p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
             <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
               <MapPin className="h-5 w-5 text-[#FF6B00]" />
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
-              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner.home_area}</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner?.home_area ?? "—"}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
-        </Link>
-      </section>
+        </section>
 
-      {/* HERO SUMMARY CARD */}
-      <section>
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
           <div className="p-6 space-y-5 relative z-10">
@@ -415,18 +155,18 @@ function AssignmentsPage() {
                 <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                   <Car className="h-5 w-5 text-[#FF6B00]" />
                 </div>
-                <span className="text-xl font-black uppercase tracking-tight">{cars} Customers</span>
+                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Customers</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
-                <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{animEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
+                <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{activeDailyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
-                <p className="text-2xl font-black tracking-tight">₹{animMonthly.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+                <p className="text-2xl font-black tracking-tight">₹{activeMonthlyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
               </div>
             </div>
 
@@ -439,191 +179,189 @@ function AssignmentsPage() {
               <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
                 <div className="space-y-0.5">
                   <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" /> Daily Hours
+                    <Clock className="h-3 w-3" /> Start Time
                   </p>
-                  <p className="text-sm font-bold">{hours} Hours / Day</p>
+                  <p className="text-sm font-bold">{activeAssignment.expected_start_time ? formatTime12(activeAssignment.expected_start_time) : "—"}</p>
                 </div>
                 <div className="space-y-0.5">
                   <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                    <TrendingUp className="h-3 w-3" /> Timeline
+                    <Navigation className="h-3 w-3" /> Progress
                   </p>
-                  <p className="text-sm font-bold">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Completed</p>
                 </div>
               </div>
             </div>
           </div>
         </Card>
-      </section>
 
-      {/* WORKING HOURS SLIDER */}
-      <section className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex flex-col gap-1 px-1">
-            <label className="text-base font-bold text-[#1A1A1A]">How many hours do you want to work?</label>
-            <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{hours} HOURS / DAY</p>
-          </div>
-          <div className="px-1">
-            <Slider
-              value={[hours]}
-              min={minHours}
-              max={maxHours}
-              step={0.5}
-              onValueChange={([v]) => setHours(v)}
-              className="py-2"
-            />
-            <div className="flex items-center justify-between mt-4 bg-[#F8F9FA] p-3 rounded-xl">
-              <div className="flex items-center gap-6 flex-1">
-                <div className="flex flex-col items-center">
-                   <span className="text-lg">🌅</span>
-                   <span className="text-[10px] font-bold text-muted-foreground uppercase">{formatTime12(startTime)}</span>
-                </div>
-                <div className="flex-1 h-[2px] bg-neutral-200 relative">
-                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 py-0.5 border border-neutral-100 rounded-full text-[9px] font-bold text-neutral-400">
-                     {hours} HRS
-                   </div>
-                </div>
-                <div className="flex flex-col items-center">
-                   <span className="text-lg">🌤️</span>
-                   <span className="text-[10px] font-bold text-muted-foreground uppercase">{formatTime12(finishTime)}</span>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] font-medium text-muted-foreground text-center">
-              More hours = more customers = more earning potential
-            </p>
-          </div>
-        </div>
-
-        {/* DAYS COMMITMENT SLIDER */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-1 px-1">
-            <label className="text-base font-bold text-[#1A1A1A]">How many days do you want to work?</label>
-            <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{duration} DAYS</p>
-          </div>
-          <div className="px-1">
-            <Slider
-              value={[duration]}
-              min={minDays}
-              max={maxDays}
-              step={1}
-              onValueChange={([v]) => {
-                setDuration(v);
-                setDurationTouched(true);
-              }}
-              className="py-2"
-            />
-            <div className="flex justify-between mt-2">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">Mondays are always OFF</span>
-              <div className="bg-[#FF6B00]/10 text-[#FF6B00] text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
-                {commitment.label}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* EARNINGS BREAKDOWN */}
-      <section className="space-y-4">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Your Monthly Earning</h3>
-        <Card className="p-6 border-neutral-100 shadow-sm bg-white rounded-3xl">
-          <div className="flex flex-col gap-6">
-            <div className="flex items-baseline justify-between">
-               <span className="text-3xl font-black text-[#1A1A1A]">₹{animMonthly.toLocaleString("en-IN")}</span>
-               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">🟢 ACTIVE</span>
-            </div>
-            
-            <div className="space-y-3 pt-6 border-t border-neutral-50">
-               <div className="flex items-center justify-between text-sm">
-                 <span className="text-muted-foreground font-medium">{cars} customers</span>
-                 <span className="font-bold text-[#1A1A1A]">₹17 per customer/day</span>
-               </div>
-               <div className="flex items-center justify-between text-sm">
-                 <span className="text-muted-foreground font-medium">26 service days/month</span>
-                 <span className="font-bold text-[#1A1A1A]">Monday OFF</span>
-               </div>
-            </div>
-            
-            <p className="text-[11px] font-medium text-muted-foreground leading-relaxed pt-2">
-              Based on {cars} customers × ₹{rate} × {SERVICE_DAYS_PER_MONTH} service days. Earning potential updates instantly as you change your plan.
-            </p>
-          </div>
-        </Card>
-      </section>
-
-      {/* CUSTOMER AVAILABILITY */}
-      <section className="space-y-4">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-1">Availability</h3>
-        <Card className={cn(
-          "p-5 rounded-3xl border-0",
-          availableInArea > 0 ? "bg-emerald-50 text-emerald-900" : "bg-neutral-50 text-neutral-600"
-        )}>
-           <div className="flex flex-col gap-4">
-             <div className="flex items-center justify-between">
-               <div className="flex flex-col">
-                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Customers Available</span>
-                 <span className="text-xl font-black">{availableInArea} right now</span>
-               </div>
-               <div className="flex flex-col text-right">
-                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Today's Target</span>
-                 <span className="text-xl font-black">{cars} customers</span>
-               </div>
-             </div>
-             
-             {availableInArea > 0 ? (
-               <p className="text-[11px] font-medium leading-relaxed">
-                 {availableInArea} {availableInArea === 1 ? 'customer is' : 'customers are'} ready for service in your area. More customers may be added to your route throughout the day.
-               </p>
-             ) : (
-               <p className="text-[11px] font-medium leading-relaxed">
-                 No customers available right now. Don't worry. New customers can be added to your area at any time.
-               </p>
-             )}
-           </div>
-        </Card>
-      </section>
-
-      {/* STICKY BOTTOM CTA */}
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto max-w-md p-4 space-y-2">
-          <Button 
-            size="lg" 
-            className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
-            disabled={availableInArea === 0 || accept.isPending}
-            onClick={() => setConfirmOpen(true)}
-          >
-            {accept.isPending ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : availableInArea > 0 ? (
-              <>START WITH {availableInArea} CUSTOMERS →</>
-            ) : (
-              <>NO CUSTOMERS AVAILABLE</>
-            )}
+        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 space-y-3">
+          <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] text-lg font-black shadow-lg shadow-[#FF6B00]/20">
+            <Link to="/app/live">START ASSIGNMENT →</Link>
           </Button>
-          
           <Button 
             variant="ghost" 
-            className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-widest"
-            onClick={() => navigate({ to: "/app/my-assignment" })}
+            className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 uppercase tracking-widest"
+            onClick={() => setCancelOpen(true)}
           >
             Cancel Assignment
           </Button>
         </div>
+
+        <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-bold">Cancel Assignment?</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
+                You are about to release:
+                <div className="mt-3 p-4 bg-neutral-50 rounded-2xl space-y-1">
+                  <p className="font-bold text-[#1A1A1A]">{totalCustomers} customers</p>
+                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}/month</p>
+                </div>
+                <p className="mt-4">This work will become available to other eligible partners in {partner?.home_area}.</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-3">
+              <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Keep Assignment</AlertDialogCancel>
+              <AlertDialogAction 
+                className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow-lg shadow-red-500/20"
+                onClick={() => cancel.mutate()}
+                disabled={cancel.isPending}
+              >
+                {cancel.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, Cancel"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // STATE A — NEW PARTNER / NO ACTIVE ASSIGNMENT
+  if (!partner?.home_area) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-10 space-y-6">
+        <h1 className="text-3xl font-black text-[#1A1A1A]">Build your assignment</h1>
+        <Card className="p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
+          <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
+            <MapPin className="h-8 w-8 text-[#FF6B00]" />
+          </div>
+          <h2 className="mt-5 text-xl font-black text-[#1A1A1A]">Choose your work area</h2>
+          <p className="mt-2 text-sm font-medium text-neutral-500">We need to know where you'll work before showing your potential earnings.</p>
+          <Button asChild size="lg" className="mt-8 w-full h-14 rounded-3xl bg-[#FF6B00] font-black">
+            <Link to="/app/area">SELECT WORK AREA</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Build your assignment</h1>
+        <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
+      </header>
+
+      <section>
+        <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Your Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner.home_area}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
+        </Link>
+      </section>
+
+      <section className="space-y-8">
+        <div className="space-y-4">
+          <label className="text-base font-bold text-[#1A1A1A]">How many hours do you want to work?</label>
+          <div className="px-1">
+            <Slider value={[hours]} min={settings?.minHours ?? 2} max={settings?.maxHours ?? 6} step={0.5} onValueChange={([v]) => setHours(v)} />
+            <div className="flex items-center justify-between mt-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+               <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">{hours} HOURS / DAY</p>
+                  <p className="text-sm font-bold text-neutral-900">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+               </div>
+               <p className="text-[11px] font-medium text-neutral-400">More hours = more customers</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-base font-bold text-[#1A1A1A]">How many days do you want to work?</label>
+          <div className="px-1">
+            <Slider value={[duration]} min={7} max={30} step={1} onValueChange={([v]) => setDuration(v)} />
+            <div className="flex justify-between mt-2">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase">Mondays are always OFF</span>
+              <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{duration} DAYS</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
+        <Card className="p-6 border-0 shadow-xl bg-[#1A1A1A] text-white rounded-3xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="flex flex-col gap-6 relative z-10">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-3xl font-black tracking-tight text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-3xl font-black tracking-tight text-white">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+              </div>
+            </div>
+            
+            <div className="pt-6 border-t border-white/10 space-y-2">
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-white/40 font-medium">{cars} customers target</span>
+                 <span className="font-bold text-white">₹17 / customer / day</span>
+               </div>
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-white/40 font-medium">26 service days / month</span>
+                 <span className="font-bold text-white">Monday OFF</span>
+               </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md p-4 pb-[env(safe-area-inset-bottom)]">
+        <Button 
+          size="lg" 
+          className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
+          onClick={() => setConfirmOpen(true)}
+          disabled={accept.isPending}
+        >
+          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "START MY ASSIGNMENT →"}
+        </Button>
       </div>
 
-      {/* CONFIRMATION DIALOG */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold">Start Assignment?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              You are accepting {acceptableCars} customers in {partner.home_area}. Monthly earning: ₹{animMonthly.toLocaleString("en-IN")}.
+              You are accepting {cars} customers in {partner.home_area}. 
+              <div className="mt-3 p-4 bg-neutral-50 rounded-2xl">
+                <p className="font-bold text-neutral-900">Monthly earning: ₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                <p className="text-[10px] mt-1">Based on 26 service days.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-3">
             <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Back</AlertDialogCancel>
             <AlertDialogAction 
-              className="flex-1 h-12 rounded-xl bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/20"
-              onClick={() => accept.mutate(acceptableCars)}
+              className="flex-1 h-12 rounded-xl bg-[#FF6B00] text-white font-bold"
+              onClick={() => accept.mutate()}
             >
               Confirm
             </AlertDialogAction>
@@ -633,7 +371,3 @@ function AssignmentsPage() {
     </div>
   );
 }
-
-
-
-

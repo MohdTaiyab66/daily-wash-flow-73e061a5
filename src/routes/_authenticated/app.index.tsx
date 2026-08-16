@@ -104,6 +104,7 @@ function HomePage() {
     .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
 
   const estimatedEarningsToday = today.reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0);
+  const estimatedEarningsMonthly = estimatedEarningsToday * 26;
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;
@@ -209,7 +210,7 @@ function HomePage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
-                    <p className="text-2xl font-black tracking-tight">₹{(estimatedEarningsToday * 26).toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+                    <p className="text-2xl font-black tracking-tight">₹{estimatedEarningsMonthly.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
                   </div>
                 </div>
 
