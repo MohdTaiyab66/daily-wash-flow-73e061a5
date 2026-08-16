@@ -429,7 +429,7 @@ function AssignmentsPage() {
                 <span className="text-2xl leading-none group-active:translate-x-1 transition-transform">→</span>
               </div>
               <span className="text-[10px] font-black text-white/90 uppercase tracking-[0.15em]">
-                {availableCount} CUSTOMERS AVAILABLE
+                {availableCount > 0 ? `${availableCount} CUSTOMERS AVAILABLE` : "WAITING FOR CUSTOMERS"}
               </span>
             </>
           )}
@@ -468,13 +468,23 @@ function AssignmentsPage() {
                   <div className="h-px bg-white/5 w-full mt-2" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-1">
                     <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">CUSTOMER TARGET</p>
                     <p className="text-xl font-black text-white uppercase tracking-tight">{cars} CUSTOMERS</p>
                   </div>
+                  
+                  <div className="space-y-1 text-right">
+                    <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">AVAILABLE NOW</p>
+                    <p className={cn(
+                      "text-xl font-black uppercase tracking-tight",
+                      availableCount > 0 ? "text-emerald-400" : "text-white/40"
+                    )}>
+                      {availableCount} CUSTOMERS
+                    </p>
+                  </div>
 
-                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                  <div className="space-y-1.5 pt-2 border-t border-white/5 col-span-2">
                     <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">ASSIGNMENT EARNING</p>
                     <p className="text-3xl font-black text-[#FF6B00]">₹{assignmentEarn.toLocaleString("en-IN")}</p>
                     <div className="flex items-center gap-2 mt-1">
@@ -483,9 +493,23 @@ function AssignmentsPage() {
                     </div>
                   </div>
                   
-                  <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-right">Mondays Off</p>
+                  <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-right col-span-2">Mondays Off</p>
                 </div>
               </div>
+
+              {availableCount === 0 && (
+                <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-start gap-3 relative z-10">
+                  <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">WAITING FOR CUSTOMERS</p>
+                    <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                      No customers are available right now. Your assignment will remain active, and you'll receive a notification when new leads become available.
+                    </p>
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
 
@@ -504,7 +528,7 @@ function AssignmentsPage() {
                 accept.mutate();
               }}
             >
-              {accept.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "CONFIRM"}
+              {accept.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : (availableCount > 0 ? "CONFIRM" : "CONFIRM & WAIT")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
