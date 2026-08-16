@@ -209,7 +209,7 @@ function AssignmentsPage() {
           </div>
         </Card>
 
-        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 space-y-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
           <Button asChild size="lg" className="w-full h-16 rounded-[24px] bg-[#FF6B00] text-lg font-black shadow-lg shadow-[#FF6B00]/20">
             <Link to="/app/live">START ASSIGNMENT →</Link>
           </Button>
