@@ -285,17 +285,15 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
       </div>
 
       <div className="flex gap-3">
-        <div className="flex gap-2">
-           <Button 
-            variant="outline" 
-            size="icon" 
-            className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0"
-            onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
-           >
-             <Navigation className="h-5 w-5 text-white" />
-           </Button>
-           <MaskedCallButton serviceId={stop.id} full />
-        </div>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0"
+          onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
+        >
+          <Navigation className="h-5 w-5 text-white" />
+        </Button>
+        <MaskedCallButton serviceId={stop.id} full />
         <Link
             to="/app/service/$id"
             params={{ id: stop.id }}
