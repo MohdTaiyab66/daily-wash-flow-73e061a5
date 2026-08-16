@@ -206,7 +206,7 @@ export function MarketplaceOfferCard({
   const isRelease = (offer as any).type === "assignment_released";
   const v = offer.broadcast.vehicle;
   const label = isRelease 
-    ? `🚗 ${(offer as any).customer_count ?? "Multiple"} Customers` 
+    ? `${(offer as any).customer_count ?? "Multiple"} Customers` 
     : v ? `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Vehicle" : "Vehicle";
   const areaName = (offer as any).area ?? offer.broadcast.service_area?.name ?? "Nearby area";
   const dist = offer.distance_from_route_m ?? null;
