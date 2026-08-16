@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Camera, Check, ChevronDown, Loader2, Navigation, Clock, MapPin,
   ZoomIn, Play, MoreHorizontal, LifeBuoy, Phone, ShieldAlert, Sparkles, AlertTriangle, XCircle,
@@ -480,7 +481,7 @@ function ServiceDetail() {
                   angle="full"
                   done={beforeDone}
                   label="Before Photo"
-                  onUploaded={refetchPhotos}
+                  onUploaded={() => void refetchPhotos()}
                   hint="Required for audit"
                 />
                 
