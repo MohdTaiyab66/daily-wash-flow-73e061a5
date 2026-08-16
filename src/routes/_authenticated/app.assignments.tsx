@@ -7,45 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
   Loader2, MapPin, IndianRupee,
-  Car, Clock, TrendingUp,
+  Car, Clock, TrendingUp, Navigation, X
 } from "lucide-react";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { toast } from "sonner";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OfflineGuard } from "@/components/OfflineGuard";
-import { useI18n } from "@/lib/i18n";
 import { formatTime12 } from "@/lib/format";
-import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-function useAnimatedNumber(value: number, duration = 380) {
-  const [display, setDisplay] = useState(value);
-  const fromRef = useRef(value);
-  const startRef = useRef<number | null>(null);
-  useEffect(() => {
-    const from = display;
-    fromRef.current = from;
-    startRef.current = null;
-    let raf = 0;
-    const step = (t: number) => {
-      if (startRef.current == null) startRef.current = t;
-      const p = Math.min(1, (t - startRef.current) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(from + (value - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-  return display;
-}
-
-function commitmentLabel(days: number, min: number, max: number): { label: string } {
-  return { label: days >= 21 ? "Priority Partner" : "Starter" };
-}
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
+import { cancelMyAssignment } from "@/lib/assignment.functions";
 
 export const Route = createFileRoute("/_authenticated/app/assignments")({
   component: () => <OfflineGuard label="assignment builder"><PartnerShell><AssignmentsPage /></PartnerShell></OfflineGuard>,
@@ -53,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/app/assignments")({
 
 const DEFAULT_START_RULES = [
   { max_cars: 15, start_time: "07:00" },
+  { max_cars: 25, start_time: "06:30" },
   { max_cars: 30, start_time: "06:00" },
   { max_cars: 36, start_time: "05:00" },
 ];
@@ -76,17 +51,10 @@ function AssignmentsPage() {
   const qc = useQueryClient();
   const SERVICE_DAYS_PER_MONTH = 26;
 
-  const { data: active } = useQuery({
-    queryKey: ["active-assignment-builder"],
-    queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase.from("assignments").select("id,status,end_date")
-        .eq("partner_id", u.user.id).eq("status", "active").gte("end_date", today).maybeSingle();
-      return data;
-    },
-  });
+  const todayQuery = useTodayAssignment();
+  const activeAssignment = todayQuery.data?.assignment ?? null;
+  const totalCustomers = todayQuery.data?.todaysCustomers ?? 0;
+  const completedToday = todayQuery.data?.completedToday ?? 0;
 
   const { data: partner } = useQuery({
     queryKey: ["me-partner-builder"],
@@ -100,10 +68,10 @@ function AssignmentsPage() {
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["assignment-settings-v2"],
+    queryKey: ["assignment-settings-v3"],
     queryFn: async () => {
       const { data } = await supabase.from("platform_settings").select("key,value").in("key", [
-        "min_hours_per_day", "max_hours_per_day", "cars_per_hour", "rate_per_car", "assignment_min_days", "assignment_max_days", "assignment_default_days"
+        "min_hours_per_day", "max_hours_per_day", "cars_per_hour", "rate_per_car"
       ]);
       const m: Record<string, any> = {};
       (data ?? []).forEach((s: any) => (m[s.key] = s.value));
@@ -112,7 +80,6 @@ function AssignmentsPage() {
         minHours: Number(m.min_hours_per_day ?? 2),
         maxHours: Number(m.max_hours_per_day ?? 6),
         carsPerHour: Number(m.cars_per_hour ?? 6),
-        minDays: 7, maxDays: 30, defaultDays: 30
       };
     },
   });
@@ -120,6 +87,7 @@ function AssignmentsPage() {
   const [hours, setHours] = useState(4);
   const [duration, setDuration] = useState(30);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const cars = Math.round(hours * (settings?.carsPerHour ?? 6));
   const rate = settings?.rate ?? 17;
@@ -127,6 +95,9 @@ function AssignmentsPage() {
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
   const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
+
+  const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
+  const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
 
   const accept = useMutation({
     mutationFn: async () => {
@@ -141,81 +112,259 @@ function AssignmentsPage() {
     onError: (e: any) => toast.error(e.message)
   });
 
-  if (active) {
+  const cancel = useMutation({
+    mutationFn: async () => {
+      if (!activeAssignment) return;
+      return cancelMyAssignment({ data: { assignment_id: activeAssignment.id } });
+    },
+    onSuccess: () => {
+      toast.success("Assignment cancelled");
+      qc.invalidateQueries();
+      setCancelOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message)
+  });
+
+  // STATE B — PARTNER HAS ACTIVE ASSIGNMENT
+  if (activeAssignment) {
     return (
-      <div className="mx-auto max-w-md px-5 pt-10 space-y-6 text-center">
-        <h1 className="text-3xl font-black text-[#1A1A1A]">Today's Assignment</h1>
-        <Card className="p-8 rounded-3xl bg-neutral-50 border-0">
-          <p className="font-bold">You have an active assignment.</p>
-          <Button onClick={() => navigate({ to: "/app/live" })} className="mt-4 w-full h-12 rounded-2xl bg-[#FF6B00]">Manage Today's Work</Button>
+      <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
+        <header className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+          <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
+        </header>
+
+        <section>
+          <div className="flex items-center gap-3 p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner?.home_area ?? "—"}</p>
+            </div>
+          </div>
+        </section>
+
+        <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="p-6 space-y-5 relative z-10">
+            <div className="flex flex-col gap-1">
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Assignment Summary</p>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-[#FF6B00]" />
+                </div>
+                <span className="text-xl font-black uppercase tracking-tight">{totalCustomers} Customers</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{activeDailyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-2xl font-black tracking-tight">₹{activeMonthlyEarn.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+              </div>
+            </div>
+
+            <div className="pt-4 space-y-3">
+               <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {SERVICE_DAYS_PER_MONTH} service days • Mondays OFF
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Start Time
+                  </p>
+                  <p className="text-sm font-bold">{activeAssignment.expected_start_time ? formatTime12(activeAssignment.expected_start_time) : "—"}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                    <Navigation className="h-3 w-3" /> Progress
+                  </p>
+                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Completed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4 space-y-3">
+          <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] text-lg font-black shadow-lg shadow-[#FF6B00]/20">
+            <Link to="/app/live">START ASSIGNMENT →</Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="w-full h-10 text-xs font-bold text-neutral-400 hover:text-red-500 uppercase tracking-widest"
+            onClick={() => setCancelOpen(true)}
+          >
+            Cancel Assignment
+          </Button>
+        </div>
+
+        <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-bold">Cancel Assignment?</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
+                You are about to release:
+                <div className="mt-3 p-4 bg-neutral-50 rounded-2xl space-y-1">
+                  <p className="font-bold text-[#1A1A1A]">{totalCustomers} customers</p>
+                  <p className="text-xs font-medium">₹{activeDailyEarn}/day · ₹{activeMonthlyEarn}/month</p>
+                </div>
+                <p className="mt-4">This work will become available to other eligible partners in {partner?.home_area}.</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-3">
+              <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Keep Assignment</AlertDialogCancel>
+              <AlertDialogAction 
+                className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow-lg shadow-red-500/20"
+                onClick={() => cancel.mutate()}
+                disabled={cancel.isPending}
+              >
+                {cancel.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Yes, Cancel"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // STATE A — NEW PARTNER / NO ACTIVE ASSIGNMENT
+  if (!partner?.home_area) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-10 space-y-6">
+        <h1 className="text-3xl font-black text-[#1A1A1A]">Build your assignment</h1>
+        <Card className="p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
+          <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
+            <MapPin className="h-8 w-8 text-[#FF6B00]" />
+          </div>
+          <h2 className="mt-5 text-xl font-black text-[#1A1A1A]">Choose your work area</h2>
+          <p className="mt-2 text-sm font-medium text-neutral-500">We need to know where you'll work before showing your potential earnings.</p>
+          <Button asChild size="lg" className="mt-8 w-full h-14 rounded-3xl bg-[#FF6B00] font-black">
+            <Link to="/app/area">SELECT WORK AREA</Link>
+          </Button>
         </Card>
       </div>
     );
   }
 
-  if (!partner?.home_area) return <div className="p-5">Please select your work area first.</div>;
-
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Build Your Assignment</h1>
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Build your assignment</h1>
         <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work.</p>
       </header>
 
       <section>
-        <div className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
-          <div>
-            <p className="text-[10px] font-bold uppercase text-muted-foreground">Work Area</p>
-            <p className="text-sm font-bold">{partner.home_area}</p>
+        <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
+              <MapPin className="h-5 w-5 text-[#FF6B00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Your Work Area</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">📍 {partner.home_area}</p>
+            </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/app/area" })}>Change</Button>
-        </div>
+          <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
+        </Link>
       </section>
 
-      <section className="space-y-6">
-        <div>
+      <section className="space-y-8">
+        <div className="space-y-4">
           <label className="text-base font-bold text-[#1A1A1A]">How many hours do you want to work?</label>
-          <p className="text-[13px] font-bold text-[#FF6B00]">{hours} HOURS / DAY</p>
-          <Slider value={[hours]} min={settings?.minHours ?? 2} max={settings?.maxHours ?? 6} step={0.5} onValueChange={([v]) => setHours(v)} />
-          <p className="text-xs text-neutral-400 mt-2">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+          <div className="px-1">
+            <Slider value={[hours]} min={settings?.minHours ?? 2} max={settings?.maxHours ?? 6} step={0.5} onValueChange={([v]) => setHours(v)} />
+            <div className="flex items-center justify-between mt-4 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+               <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-[#FF6B00] uppercase tracking-wider">{hours} HOURS / DAY</p>
+                  <p className="text-sm font-bold text-neutral-900">{formatTime12(startTime)} → {formatTime12(finishTime)}</p>
+               </div>
+               <p className="text-[11px] font-medium text-neutral-400">More hours = more customers</p>
+            </div>
+          </div>
         </div>
 
-        <div>
+        <div className="space-y-4">
           <label className="text-base font-bold text-[#1A1A1A]">How many days do you want to work?</label>
-          <p className="text-[13px] font-bold text-[#FF6B00]">{duration} DAYS</p>
-          <Slider value={[duration]} min={7} max={30} step={1} onValueChange={([v]) => setDuration(v)} />
+          <div className="px-1">
+            <Slider value={[duration]} min={7} max={30} step={1} onValueChange={([v]) => setDuration(v)} />
+            <div className="flex justify-between mt-2">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase">Mondays are always OFF</span>
+              <p className="text-[13px] font-bold text-[#FF6B00] uppercase tracking-wider">{duration} DAYS</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <Card className="p-6 border-0 shadow-sm bg-white rounded-3xl">
-        <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-black text-[#1A1A1A]">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">MONTHLY</span>
-        </div>
-        <div className="pt-6 border-t border-neutral-100 space-y-2">
-            <p className="text-sm">Daily earning: <span className="font-bold">₹{dailyEarn}</span></p>
-            <p className="text-sm">Target: <span className="font-bold">{cars} customers</span></p>
-            <p className="text-[11px] text-neutral-500">26 service days/month • Mondays OFF</p>
-        </div>
-      </Card>
+      <section className="space-y-4">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earnings</h3>
+        <Card className="p-6 border-0 shadow-xl bg-[#1A1A1A] text-white rounded-3xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
+          <div className="flex flex-col gap-6 relative z-10">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
+                <p className="text-3xl font-black tracking-tight text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
+                <p className="text-3xl font-black tracking-tight text-white">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+              </div>
+            </div>
+            
+            <div className="pt-6 border-t border-white/10 space-y-2">
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-white/40 font-medium">{cars} customers target</span>
+                 <span className="font-bold text-white">₹17 / customer / day</span>
+               </div>
+               <div className="flex items-center justify-between text-sm">
+                 <span className="text-white/40 font-medium">26 service days / month</span>
+                 <span className="font-bold text-white">Monday OFF</span>
+               </div>
+            </div>
+          </div>
+        </Card>
+      </section>
 
-      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 p-4">
-        <Button size="lg" className="w-full h-14 rounded-3xl bg-[#FF6B00] text-lg font-black" onClick={() => setConfirmOpen(true)}>
-          START MY ASSIGNMENT →
+      <div className="fixed inset-x-0 bottom-[70px] z-30 border-t border-neutral-100 bg-white/95 backdrop-blur-md p-4 pb-[env(safe-area-inset-bottom)]">
+        <Button 
+          size="lg" 
+          className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all"
+          onClick={() => setConfirmOpen(true)}
+          disabled={accept.isPending}
+        >
+          {accept.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : "START MY ASSIGNMENT →"}
         </Button>
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl max-w-[90vw]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Start Assignment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Accept {cars} customers in {partner.home_area}. Monthly earnings: ₹{monthlyEarn.toLocaleString("en-IN")}.
+            <AlertDialogTitle className="text-xl font-bold">Start Assignment?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              You are accepting {cars} customers in {partner.home_area}. 
+              <div className="mt-3 p-4 bg-neutral-50 rounded-2xl">
+                <p className="font-bold text-neutral-900">Monthly earning: ₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                <p className="text-[10px] mt-1">Based on 26 service days.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
-            <AlertDialogAction onClick={() => accept.mutate()}>Confirm</AlertDialogAction>
+          <AlertDialogFooter className="flex-row gap-3">
+            <AlertDialogCancel className="flex-1 h-12 rounded-xl mt-0 font-bold border-2">Back</AlertDialogCancel>
+            <AlertDialogAction 
+              className="flex-1 h-12 rounded-xl bg-[#FF6B00] text-white font-bold"
+              onClick={() => accept.mutate()}
+            >
+              Confirm
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
