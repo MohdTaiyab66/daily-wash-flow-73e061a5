@@ -333,7 +333,7 @@ function AssignmentsPage() {
             />
             <div className="space-y-2">
               <p className="text-[11px] font-bold text-neutral-400">
-                Your total earning changes with your commitment.
+                "Your total earning changes with the days you select."
               </p>
               <div className="flex items-center gap-2 text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -345,38 +345,39 @@ function AssignmentsPage() {
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Earning</h3>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">YOUR EARNING</h3>
         
         <Card className="p-6 border-0 shadow-xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-[#FF6B00]/20 rounded-full blur-[80px] -mr-20 -mt-20" />
           <div className="flex flex-col gap-5 relative z-10">
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Daily Earning</p>
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">DAILY EARNING</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black text-[#FF6B00]">₹{dailyEarn.toLocaleString("en-IN")}</span>
-                <span className="text-xs text-white/30 uppercase font-black">/ Day</span>
+                <span className="text-xs text-white/30 uppercase font-black">/ DAY</span>
               </div>
             </div>
 
             <div className="h-px bg-white/10" />
             
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Total for {duration} Days</p>
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">TOTAL FOR {duration} DAYS</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black text-white">₹{commitmentEarn.toLocaleString("en-IN")}</span>
               </div>
+              <p className="text-[9px] font-bold text-[#FF6B00] uppercase tracking-wider">TOTAL ASSIGNMENT EARNING</p>
             </div>
 
             <div className="h-px bg-white/10" />
 
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">Monthly Projection</p>
+              <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">MONTHLY PROJECTION</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-black text-white/90">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-                <span className="text-[10px] text-white/30 uppercase font-black">/ Month</span>
+                <span className="text-[10px] text-white/30 uppercase font-black">/ MONTH</span>
               </div>
               <p className="text-[9px] text-white/30 font-medium italic">
-                Monthly projection uses 26 service days. Mondays off.
+                "Monthly projection uses 26 service days. Mondays off."
               </p>
             </div>
           </div>
