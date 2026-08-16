@@ -199,7 +199,9 @@ function HomePage() {
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                       <Car className="h-5 w-5 text-[#FF6B00]" />
                     </div>
-                    <span className="text-xl font-black uppercase tracking-tight">{total} Total Customers</span>
+                    <span className="text-xl font-black uppercase tracking-tight">
+                      {total > 0 ? `${total} Total Customers` : "WAITING FOR CUSTOMERS"}
+                    </span>
                   </div>
                 </div>
 
@@ -216,24 +218,32 @@ function HomePage() {
 
                 <div className="pt-4 space-y-3">
                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    26 service days • Mondays OFF
+                    <span className={cn("h-1.5 w-1.5 rounded-full", total > 0 ? "bg-emerald-500" : "bg-[#FF6B00] animate-pulse")} />
+                    {total > 0 ? "26 service days • Mondays OFF" : "Active assignment • Waiting for leads"}
                   </p>
                   
-                  <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" /> Start Time
-                      </p>
-                      <p className="text-sm font-bold">{assignment.expected_start_time ? formatTime12(assignment.expected_start_time) : "—"}</p>
+                  {total > 0 ? (
+                    <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" /> Start Time
+                        </p>
+                        <p className="text-sm font-bold">{assignment.expected_start_time ? formatTime12(assignment.expected_start_time) : "—"}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
+                          <Navigation className="h-3 w-3" /> Progress
+                        </p>
+                        <p className="text-sm font-bold">{done} / {total} Completed</p>
+                      </div>
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
-                        <Navigation className="h-3 w-3" /> Progress
+                  ) : (
+                    <div className="bg-white/5 rounded-2xl p-4">
+                      <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                        No customers are available in your area right now. Your assignment is active, and you'll be notified when new leads become available. Please accept leads promptly.
                       </p>
-                      <p className="text-sm font-bold">{done} / {total} Completed</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -306,7 +316,7 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && !anyStarted && !allDone && (
+        {online && assignment && !anyStarted && !allDone && total > 0 && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
               START ASSIGNMENT
