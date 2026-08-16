@@ -152,7 +152,7 @@ function RoutePage() {
   }
   
   return (
-    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
+    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen">
       {/* Page Header - Clean & Operational */}
       <header className="px-5 pt-3 pb-2">
         <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
