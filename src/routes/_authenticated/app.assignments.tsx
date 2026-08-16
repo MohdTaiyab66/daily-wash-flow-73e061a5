@@ -358,16 +358,18 @@ function AssignmentsPage() {
   if (!hasArea) {
     return (
       <div className="mx-auto max-w-md px-5 pt-5 pb-32">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("build_your_assignment")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Step 1 of 2</p>
-        <Card className="mt-5 p-6 text-center">
-          <MapPin className="mx-auto h-10 w-10 text-primary" />
-          <h2 className="mt-3 text-lg font-semibold">Choose your work area first</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We need to know where you'll service customers before we can show you available cars and earnings.
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Work Plan</h1>
+        <p className="mt-1 text-sm font-bold text-neutral-500 uppercase tracking-widest">Step 1: Choose Area</p>
+        <Card className="mt-5 p-8 text-center border-neutral-100 rounded-3xl shadow-sm bg-white">
+          <div className="h-16 w-16 rounded-2xl bg-[#FF6B00]/10 flex items-center justify-center mx-auto">
+            <MapPin className="h-8 w-8 text-[#FF6B00]" />
+          </div>
+          <h2 className="mt-5 text-xl font-black text-[#1A1A1A]">Select your work area</h2>
+          <p className="mt-2 text-sm font-medium text-neutral-500 leading-relaxed px-2">
+            We need to know where you'll be working before showing you available customers and potential earnings.
           </p>
-          <Button asChild size="lg" className="mt-5 w-full">
-            <Link to="/app/area"><Crosshair className="mr-2 h-4 w-4" />Select work area / use current location</Link>
+          <Button asChild size="lg" className="mt-8 w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black shadow-lg shadow-[#FF6B00]/20">
+            <Link to="/app/area">SELECT WORK AREA</Link>
           </Button>
         </Card>
       </div>
