@@ -386,26 +386,28 @@ function AssignmentsPage() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">MONTHLY EARNING</p>
+                <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">
+                  FOR YOUR {duration}-DAY ASSIGNMENT
+                </p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-white">₹{monthlyEarn.toLocaleString("en-IN")}</span>
-                  <span className="text-xs text-white/30 uppercase font-black">/ MONTH</span>
+                  <span className="text-3xl font-black text-white">₹{assignmentEarn.toLocaleString("en-IN")}</span>
                 </div>
               </div>
               
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1">
                 <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.15em] flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  26 SERVICE DAYS / MONTH
+                  {serviceDays} SERVICE DAYS
                 </p>
-                <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.15em] pl-3.5">
-                  MONDAYS OFF
+                <p className="text-[9px] text-white/30 font-bold italic pl-3.5">
+                  Calculated using your selected days. Mondays are always off.
                 </p>
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Earning Card is already replaced in the previous block */}
     
