@@ -313,8 +313,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
 function CompactQueueRow({ stop, seqNo }: { stop: any; seqNo: number }) {
   const c = stop.customers as any;
   const time = stop.time_slot;
-  const timeLabel = c?.time_window_type === "before" ? "" : ""; // For Up Next we keep it compact as per request "10 AM"
-  // Actually, for consistency let's just use the time slot as requested in point 9
+
 
   return (
     <div className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border">
