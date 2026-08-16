@@ -461,15 +461,18 @@ function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: n
       });
     },
     onSuccess: () => {
-      const qc = new (require("@tanstack/react-query").QueryClient)(); // Not ideal but this is a child component, usually we'd pass it or use useQueryClient
-      // Using global query client is better
+      const qc = (require("@tanstack/react-query") as any).getQueryClient?.() || (require("@tanstack/react-query") as any).useQueryClient?.();
+      if (qc) {
+        qc.invalidateQueries({ queryKey: ["route-today"] });
+        qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      }
       toast.success("Service started");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not start service"),
   });
   
-  // Actually, let's use the mutation from the parent or just useQueryClient correctly.
-  const queryClient = (require("@tanstack/react-query") as any).useQueryClient();
+  // Use the hook correctly
+  const queryClient = useQueryClient();
   
   const handleStart = async (e: React.MouseEvent) => {
     e.stopPropagation();
