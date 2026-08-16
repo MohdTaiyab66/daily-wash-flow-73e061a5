@@ -109,6 +109,19 @@ function AssignmentsPage() {
   const dailyEarn = cars * rate;
   const assignmentEarn = dailyEarn * serviceDays;
 
+  // Real availability from Home page logic
+  const { data: availableWork } = useQuery({
+    queryKey: ["available-work-summary", partner?.home_area],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("preview_assignment", { p_cars: 36, p_duration: 30 });
+      if (error) return null;
+      return data?.[0] ?? null;
+    },
+    enabled: !!partner?.home_area,
+  });
+  
+  const availableCount = Number(availableWork?.available_customers ?? 0);
+
   const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
   // For active assignments, we use 26 as the standard monthly reference for the display card
   const activeMonthlyEarn = activeDailyEarn * 26;
