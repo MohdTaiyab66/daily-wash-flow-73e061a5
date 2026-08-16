@@ -49,7 +49,22 @@ function addHours(hhmm: string, hours: number): string {
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const SERVICE_DAYS_PER_MONTH = 26;
+  // Mondays are always off
+  const countServiceDays = (calendarDays: number) => {
+    let count = 0;
+    const start = new Date();
+    for (let i = 0; i < calendarDays; i++) {
+      const current = new Date(start);
+      current.setDate(start.getDate() + i);
+      if (current.getDay() !== 1) { // 1 is Monday
+        count++;
+      }
+    }
+    return count;
+  };
+
+  const serviceDays = countServiceDays(duration);
+
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
