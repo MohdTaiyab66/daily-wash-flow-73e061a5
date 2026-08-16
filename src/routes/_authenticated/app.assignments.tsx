@@ -260,12 +260,12 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[220px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] leading-tight">BUILD YOUR ASSIGNMENT</h1>
-        <p className="text-sm text-muted-foreground font-medium">Choose how much you want to work and earn.</p>
+        <h1 className="text-[28px] font-black tracking-tight text-[#1A1A1A] leading-tight uppercase">BUILD YOUR ASSIGNMENT</h1>
+        <p className="text-sm text-neutral-500 font-bold italic leading-tight">"Choose how much you want to work and earn."</p>
       </header>
 
       <section className="space-y-4">
-        <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm">
+        <Link to="/app/area" className="flex items-center justify-between p-4 bg-white border border-neutral-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center">
               <MapPin className="h-5 w-5 text-[#FF6B00]" />
@@ -277,13 +277,21 @@ function AssignmentsPage() {
           </div>
           <Button variant="ghost" size="sm" className="text-[11px] font-bold text-[#FF6B00] uppercase tracking-wider">Change</Button>
         </Link>
+
+        <div className="flex items-center justify-between px-5 py-3 bg-neutral-50 border border-neutral-100 rounded-2xl">
+          <div className="space-y-0.5">
+            <p className="text-[9px] font-black text-[#FF6B00] uppercase tracking-wider">CUSTOMERS AVAILABLE RIGHT NOW</p>
+            <p className="text-xl font-black text-neutral-900">0</p>
+          </div>
+          <p className="text-[9px] font-bold text-neutral-400 text-right max-w-[120px]">New customers can be added at any time.</p>
+        </div>
       </section>
 
       <section className="space-y-8">
         {/* 1. HOURS PER DAY */}
         <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">1. Hours per day</label>
+            <label className="text-base font-black text-[#1A1A1A] uppercase tracking-tight">HOW MANY HOURS PER DAY?</label>
             <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
           </div>
           <div className="px-1 space-y-4">
