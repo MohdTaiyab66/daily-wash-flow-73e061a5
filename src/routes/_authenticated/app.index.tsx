@@ -337,8 +337,8 @@ function HomePage() {
           </div>
           <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
             <p className="text-2xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-2">
-              {total > 0 ? "Pending" : "Ready"}
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-1.5">
+              {total > 0 ? "Pending" : "Available"}
             </p>
           </div>
         </div>
