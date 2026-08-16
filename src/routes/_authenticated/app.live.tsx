@@ -182,6 +182,9 @@ function RoutePage() {
 
       {/* Primary Next Customer Card */}
       <div className="px-5 mt-5 w-full box-border">
+        <div className="flex justify-between items-baseline mb-3">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
+        </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
           <NextCustomerHero stop={activeNext} seqNo={1} total={total} />
         )}
