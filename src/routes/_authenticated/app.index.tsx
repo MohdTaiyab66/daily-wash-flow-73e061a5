@@ -151,9 +151,19 @@ function HomePage() {
   return (
     <div className="mx-auto max-w-md px-5 pb-[120px] pt-3 space-y-8">
       {/* GREETING */}
-      <header className="space-y-1">
-        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
-        <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
+      <header className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Home</h1>
+          <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest">Urban Wash Partner</p>
+        </div>
+        {partner?.home_area && (
+           <div className="flex flex-col items-end">
+             <div className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Work Area</div>
+             <Link to="/app/profile" className="text-sm font-black text-[#FF6B00] flex items-center gap-1">
+               {partner.home_area}
+             </Link>
+           </div>
+        )}
       </header>
 
       {/* AREA SELECTION HEADER */}
