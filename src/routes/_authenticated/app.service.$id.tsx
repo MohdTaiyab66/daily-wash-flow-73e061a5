@@ -178,16 +178,27 @@ function ServiceDetail() {
   useEffect(() => {
     if (!service) return;
     if (status === "completed" || status === "unavailable") return;
+    
+    // One-step flow: if it's in progress, we should be in cleaning/active state.
+    // If it's pending (how?), it shouldn't be here in the new flow, but we handle it.
     if (status === "in_progress") {
-      if (afterAllDone) { if (step !== "summary") setStep("summary"); return; }
-      if (step !== "after" && step !== "cleaning") setStep("cleaning");
+      if (afterAllDone) { 
+        if (step !== "summary") setStep("summary"); 
+        return; 
+      }
+      // Mandatory screens removed. Go straight to cleaning.
+      if (step !== "after" && step !== "cleaning") {
+        setStep("cleaning");
+      }
       return;
     }
-    // pending
-    if (step === "cleaning" || step === "after" || step === "summary") {
-      setStep(beforeDone ? "ready" : "before");
-    } else if (step === "before" && beforeDone) {
-      setStep("ready");
+    
+    // Fallback for pending (e.g. direct URL hit)
+    if (status === "pending") {
+       // In the one-tap flow, arriving here means we might need to start it 
+       // or we were already starting it. But the requirement is START -> IN_PROGRESS.
+       // So if they are here, we default to cleaning step once started.
+       setStep("cleaning");
     }
   }, [service, status, afterAllDone, beforeDone]);
 

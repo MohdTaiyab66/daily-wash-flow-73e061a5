@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useServerFn, useMutation } from "@tanstack/react-start";
 import { getRouteVisibility } from "@/lib/assignment.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import { TodayAssignmentStatus, TodayAssignmentSkeleton } from "@/components/par
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
+import { getPosition } from "@/components/partner/service/photo-slot";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/live")({
@@ -136,6 +137,31 @@ function RoutePage() {
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  const startService = useMutation({
+    mutationFn: async (id: string) => {
+      const pos = await getPosition();
+      const { error } = await supabase.from("services").update({
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+        start_lat: pos?.lat ?? null,
+        start_lng: pos?.lng ?? null,
+      }).eq("id", id);
+      if (error) throw error;
+      
+      // Trigger notification
+      import("@/lib/push/immediate.functions").then(m => {
+        m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      toast.success("Service started");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not start service"),
+  });
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
@@ -282,14 +308,16 @@ function RoutePage() {
       <CustomerDetailSheet 
         stop={selectedStop} 
         open={!!selectedStopId} 
-        onOpenChange={(open) => !open && setSelectedStopId(null)} 
+        onOpenChange={(open) => !open && setSelectedStopId(null)}
+        onStart={() => selectedStopId && startService.mutate(selectedStopId)}
+        isStarting={startService.isPending}
       />
 
     </div>
   );
 }
 
-function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void }) {
+function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void; onStart?: () => void; isStarting?: boolean }) {
   if (!stop) return null;
   const c = stop.customers as any;
   const v = stop.vehicles as any;
@@ -373,22 +401,39 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
              <MaskedCallButton serviceId={stop.id} full size="lg" />
           </div>
 
-          <Link
-            to="/app/service/$id"
-            params={{ id: stop.id }}
-            disabled={stop.status === "completed"}
-            className={cn(
-              "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
-              stop.status === "completed" 
-                ? "bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
-                : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
-            )}
-          >
-            <Play className="h-4 w-4 fill-current" />
-            {stop.status === "in_progress" ? "Resume Service" : "Start Service"}
-          </Link>
+          {stop.status === "in_progress" ? (
+            <Link
+              to="/app/service/$id"
+              params={{ id: stop.id }}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+              )}
+            >
+              <Play className="h-4 w-4 fill-current" />
+              Resume Service
+            </Link>
+          ) : stop.status === "pending" ? (
+            <Button
+              onClick={onStart}
+              disabled={isStarting}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+              )}
+            >
+              {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
+              Start Service
+            </Button>
+          ) : (
+            <Button
+              disabled
+              className="w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Service Completed
+            </Button>
+          )}
           
-          {stop.status !== "completed" && (
+          {stop.status === "pending" && (
             <p className="text-[10px] text-center text-neutral-400 font-medium">
               Ensure you are at the customer's location before starting.
             </p>
@@ -400,6 +445,55 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
 }
 
 function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: number; total: number; onClick?: () => void }) {
+  const startService = useMutation({
+    mutationFn: async (id: string) => {
+      const pos = await getPosition();
+      const { error } = await supabase.from("services").update({
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+        start_lat: pos?.lat ?? null,
+        start_lng: pos?.lng ?? null,
+      }).eq("id", id);
+      if (error) throw error;
+      import("@/lib/push/immediate.functions").then(m => {
+        m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
+      });
+    },
+    onSuccess: () => {
+      const qc = new (require("@tanstack/react-query").QueryClient)(); // Not ideal but this is a child component, usually we'd pass it or use useQueryClient
+      // Using global query client is better
+      toast.success("Service started");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not start service"),
+  });
+  
+  // Actually, let's use the mutation from the parent or just useQueryClient correctly.
+  const queryClient = (require("@tanstack/react-query") as any).useQueryClient();
+  
+  const handleStart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const pos = await getPosition();
+    const { error } = await supabase.from("services").update({
+      status: "in_progress",
+      started_at: new Date().toISOString(),
+      start_lat: pos?.lat ?? null,
+      start_lng: pos?.lng ?? null,
+    }).eq("id", stop.id);
+    
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["route-today"] });
+    queryClient.invalidateQueries({ queryKey: ["today-assignment"] });
+    toast.success("Service started immediately");
+    
+    import("@/lib/push/immediate.functions").then(m => {
+      m.flushNotificationPush().catch(console.error);
+    });
+  };
+
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const time = stop.time_slot;
@@ -414,7 +508,11 @@ function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: n
     >
       <div className="flex justify-between items-center mb-5">
         <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT STOP • {seqNo} of {total}</span>
-        <span className="text-emerald-400 text-[9px] font-black uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 shrink-0">Active</span>
+        {inProgress ? (
+          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-wider bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20 shrink-0 animate-pulse">In Progress</span>
+        ) : (
+          <span className="text-emerald-400 text-[9px] font-black uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 shrink-0">Active</span>
+        )}
       </div>
       <div className="flex gap-4 mb-6 w-full">
         <div className="relative shrink-0">
@@ -440,10 +538,14 @@ function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: n
       
       <div className="mb-6 w-full">
         <div className="space-y-1">
-           <p className="text-[9px] uppercase text-white/30 font-bold tracking-widest">Reach By</p>
+           <p className="text-[9px] uppercase text-white/30 font-bold tracking-widest">
+             {inProgress ? "Started At" : "Reach By"}
+           </p>
            <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <p className="text-base font-black tracking-tight">{timeLabel}{formatTime12(time)}</p>
+              <p className="text-base font-black tracking-tight">
+                {inProgress ? formatTime12(new Date(stop.started_at).toISOString()) : `${timeLabel}${formatTime12(time)}`}
+              </p>
            </div>
         </div>
       </div>
@@ -458,14 +560,24 @@ function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: n
           <Navigation className="h-5 w-5 text-white" />
         </Button>
         <MaskedCallButton serviceId={stop.id} full />
-        <Link
+        {inProgress ? (
+          <Link
             to="/app/service/$id"
             params={{ id: stop.id }}
+            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-white/10 text-white font-black uppercase tracking-wider hover:bg-white/20 px-4 h-12 text-xs border border-white/20 active:scale-95 transition-all truncate"
+          >
+            <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
+            <span className="truncate">In Progress</span>
+          </Link>
+        ) : (
+          <Button
+            onClick={handleStart}
             className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-4 h-12 text-xs shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all truncate"
           >
             <Play className="h-4 w-4 fill-current shrink-0" />
-            <span className="truncate">{inProgress ? "Resume" : "Start"}</span>
-        </Link>
+            <span className="truncate">Start</span>
+          </Button>
+        )}
       </div>
     </Card>
   );
