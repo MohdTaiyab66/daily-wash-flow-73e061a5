@@ -199,7 +199,7 @@ function HomePage() {
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
                       <Car className="h-5 w-5 text-[#FF6B00]" />
                     </div>
-                    <span className="text-xl font-black uppercase tracking-tight">{total} Customers</span>
+                    <span className="text-xl font-black uppercase tracking-tight">{total} Total Customers</span>
                   </div>
                 </div>
 
