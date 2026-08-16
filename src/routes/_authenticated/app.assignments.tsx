@@ -379,7 +379,7 @@ function AssignmentsPage() {
   return (
     <div className="mx-auto max-w-md px-5 pt-3 pb-[140px] space-y-8">
       <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
+        <h1 className="text-3xl font-black tracking-tight text-[#1A1A1A]">Today's Assignment</h1>
         <p className="text-sm text-muted-foreground font-medium">Your work plan for today</p>
       </header>
 
@@ -578,7 +578,7 @@ function AssignmentsPage() {
         <div className="mx-auto max-w-md p-4 space-y-2">
           <Button 
             size="lg" 
-            className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-bold text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full h-14 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all disabled:opacity-50"
             disabled={availableInArea === 0 || accept.isPending}
             onClick={() => setConfirmOpen(true)}
           >
