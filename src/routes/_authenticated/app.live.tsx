@@ -282,7 +282,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
            <p className="text-[9px] uppercase text-white/30 font-bold tracking-widest">Reach By</p>
            <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <p className="text-base font-black tracking-tight">{formatTime12(time)}</p>
+              <p className="text-base font-black tracking-tight">{timeLabel}{formatTime12(time)}</p>
            </div>
         </div>
       </div>
