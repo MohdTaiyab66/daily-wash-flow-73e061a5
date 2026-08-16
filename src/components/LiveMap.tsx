@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Loader2, MapPin } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { computeRoute } from "@/lib/maps.functions";
@@ -94,10 +95,20 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: "greedy",
+          styles: [
+            {
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }]
+            }
+          ]
         });
         setReady(true);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        console.error("[LiveMap] Initialization error:", e);
+        setError(e.message);
+      });
   }, []);
 
   useEffect(() => {
@@ -180,7 +191,7 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
       const marker = new g.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
         map: mapRef.current,
-        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "600" },
+        label: { text: String(s.sequence_no ?? ""), color: "#fff", fontSize: "11px", fontWeight: "900" },
         title: s.label,
       });
       marker.addListener("click", () => {
@@ -286,19 +297,23 @@ function computeFallbackStats(stops: Stop[], partnerPos: { lat: number; lng: num
 function RouteFallback({ stops }: { stops: Stop[] }) {
   const first = stops[0];
   return (
-    <div className="absolute inset-0 z-10 bg-muted p-4">
-      <div className="flex h-full flex-col justify-between rounded-md border border-border bg-background p-4 shadow-sm">
-        <div>
-          <MapPin className="h-5 w-5 text-primary" />
-          <p className="mt-2 text-sm font-semibold">Route ready</p>
-          <p className="mt-1 text-xs text-muted-foreground">{stops.length} stop{stops.length === 1 ? "" : "s"} loaded from saved route order.</p>
+    <div className="absolute inset-0 z-10 bg-neutral-50 p-6 flex items-center justify-center">
+      <div className="w-full max-w-[280px] text-center space-y-4">
+        <div className="mx-auto h-12 w-12 bg-neutral-100 rounded-full flex items-center justify-center">
+          <MapPin className="h-6 w-6 text-neutral-400" />
         </div>
-        {first && (
-          <div className="rounded-md bg-muted/70 p-3 text-xs">
-            <p className="font-medium">Next: {first.label}</p>
-            <p className="mt-0.5 text-muted-foreground">Use Navigate for turn-by-turn directions.</p>
-          </div>
-        )}
+        <div>
+          <p className="text-sm font-black text-neutral-900 tracking-tight">Map could not load</p>
+          <p className="text-[11px] text-neutral-500 font-medium mt-1">We've loaded your {stops.length} stops, but the visual map is currently unavailable.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-full font-bold text-[11px] h-9 px-6 border-neutral-200"
+          onClick={() => window.location.reload()}
+        >
+          Retry Map
+        </Button>
       </div>
     </div>
   );

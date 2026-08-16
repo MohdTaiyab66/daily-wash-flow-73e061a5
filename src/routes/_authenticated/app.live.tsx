@@ -18,7 +18,7 @@ import { TappableVehicleImage } from "@/components/VehiclePhotoViewer";
 import { DarOfferCard } from "@/components/partner/DarOfferCard";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
-import { TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
+import { TodayAssignmentStatus, TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { googleMapsDirectionsUrl, openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
 import { saveRouteSnapshot, loadRouteSnapshot, isOnline } from "@/lib/offline-progress-cache";
@@ -130,12 +130,34 @@ function RoutePage() {
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
+  if (todayQuery.isLoading && !todayQuery.data) {
+    return (
+      <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
+         <header className="px-5 pt-3 pb-2">
+          <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
+          <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
+        </header>
+        <TodayAssignmentSkeleton />
+      </div>
+    );
+  }
+  
   return (
-    <div className="mx-auto w-full max-w-md pb-32 overflow-x-hidden box-border">
+    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
       {/* Page Header - Clean & Operational */}
-      <header className="px-5 pt-3 pb-4">
+      <header className="px-5 pt-3 pb-2">
         <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
         <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
+        
+        <TodayAssignmentStatus 
+          isError={!!todayQuery.isError}
+          isFetching={!!todayQuery.isFetching}
+          isRefetching={!!todayQuery.isRefetching}
+          hasData={!!services && services.length > 0}
+          onRetry={() => todayQuery.refetch()}
+          metrics={todayQuery.metrics}
+          lastSuccessAt={todayQuery.metrics.lastSuccessAt}
+        />
       </header>
 
       {/* Progress Card */}
@@ -163,12 +185,12 @@ function RoutePage() {
         </Card>
       </div>
 
-      {/* Map */}
-      <div className="px-5 mt-5 w-full box-border">
-        <div className="flex justify-between items-baseline mb-3">
+      {/* Map Section */}
+      <div className="px-5 mt-4 w-full box-border">
+        <div className="flex justify-between items-baseline mb-2.5">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
-        <div className="rounded-[24px] overflow-hidden h-[260px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
+        <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-100 relative">
            <LiveMap
               stops={stops}
               showCustomers={stops.length > 0}
@@ -428,26 +450,27 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
 
 function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; onClick: () => void }) {
   const c = stop.customers as any;
+  const v = stop.vehicles as any;
   const time = stop.time_slot;
-
 
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
+      className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-[20px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
     >
-      <div className="h-9 w-9 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100">
+      <div className="h-8 w-8 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-[10px] shrink-0 border border-neutral-100">
         #{seqNo}
       </div>
       <div className="flex-1 min-w-0">
-         <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
-         <div className="flex items-center gap-1 mt-0.5">
-            <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+         <div className="flex justify-between items-start">
+           <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
+           <ChevronRight className="h-3.5 w-3.5 text-neutral-300 mt-0.5" />
          </div>
-      </div>
-      <div className="shrink-0">
-        <ChevronRight className="h-4 w-4 text-neutral-300" />
+         <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
+         <div className="flex items-center gap-1 mt-1">
+            <Clock className="h-3 w-3 text-neutral-400" />
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+         </div>
       </div>
     </button>
   );
