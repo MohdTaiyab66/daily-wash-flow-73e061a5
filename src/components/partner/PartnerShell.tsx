@@ -34,18 +34,23 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="flex-1 flex flex-col items-center justify-center transition-all group h-full"
+                  className="flex-1 flex flex-col items-center justify-center transition-all group h-full active:scale-90"
                 >
-                  <Icon 
-                    className={cn(
-                      "h-[24px] w-[24px] transition-all", 
-                      active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
-                    )} 
-                    strokeWidth={active ? 2.5 : 2} 
-                  />
+                  <div className={cn(
+                    "p-1.5 rounded-xl transition-all",
+                    active ? "bg-[#FF6B00]/5" : ""
+                  )}>
+                    <Icon 
+                      className={cn(
+                        "h-[22px] w-[22px] transition-all", 
+                        active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
+                      )} 
+                      strokeWidth={active ? 2.5 : 2} 
+                    />
+                  </div>
                   <span className={cn(
-                    "mt-1 text-[10px] leading-tight transition-all whitespace-nowrap text-center px-0.5",
-                    active ? "font-bold text-[#FF6B00]" : "font-medium text-[#8A8A8A]"
+                    "mt-0.5 text-[9px] font-black uppercase tracking-[0.1em] transition-all whitespace-nowrap text-center px-0.5",
+                    active ? "text-[#FF6B00]" : "text-[#8A8A8A]"
                   )}>
                     {n.label}
                   </span>
