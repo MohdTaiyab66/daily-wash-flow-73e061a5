@@ -94,10 +94,20 @@ export function LiveMap({ stops, showCustomers, heightClass, hideStats, onStats,
           disableDefaultUI: true,
           zoomControl: true,
           gestureHandling: "greedy",
+          styles: [
+            {
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }]
+            }
+          ]
         });
         setReady(true);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        console.error("[LiveMap] Initialization error:", e);
+        setError(e.message);
+      });
   }, []);
 
   useEffect(() => {
