@@ -345,8 +345,8 @@ export function MarketplaceOfferCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-white transition-all shadow-sm",
-        compact ? "border-neutral-100" : "border-primary/20 animate-scale-in"
+        "relative overflow-hidden rounded-3xl border bg-white transition-all shadow-sm",
+        compact ? "border-neutral-100" : "border-[#FF6B00]/20 animate-scale-in"
       )}
     >
       <div className="p-4">
