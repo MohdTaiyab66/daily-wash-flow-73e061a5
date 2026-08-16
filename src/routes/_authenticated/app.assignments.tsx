@@ -302,11 +302,12 @@ function AssignmentsPage() {
 
       <section className="space-y-8">
         {/* 1. HOURS PER DAY */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-end justify-between px-1">
-            <label className="text-sm font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY HOURS PER DAY?</label>
-            <span className="text-2xl font-black text-[#FF6B00]">{hours} HOURS</span>
+            <label className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest">HOW MANY HOURS PER DAY?</label>
+            <span className="text-xl font-black text-[#FF6B00]">{hours} HOURS</span>
           </div>
+
           <div className="px-1 space-y-5">
             <Slider 
               value={[hours]} 
