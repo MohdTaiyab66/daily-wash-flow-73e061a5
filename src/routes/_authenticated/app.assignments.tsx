@@ -54,7 +54,7 @@ function AssignmentsPage() {
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
   const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
-  const completedToday = todayQuery.data?.completedToday ?? 0;
+  const completedToday = todayQuery.data?.assignmentCompleted ?? 0;
 
   const { data: partner } = useQuery({
     queryKey: ["me-partner-builder"],
