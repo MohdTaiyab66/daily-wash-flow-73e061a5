@@ -138,13 +138,13 @@ function RoutePage() {
         <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
         
         <TodayAssignmentStatus 
-          isError={todayQuery.isError}
-          isFetching={todayQuery.isFetching}
-          isRefetching={todayQuery.isRefetching}
-          hasData={services && services.length > 0}
+          isError={!!todayQuery.isError}
+          isFetching={!!todayQuery.isFetching}
+          isRefetching={!!todayQuery.isRefetching}
+          hasData={!!services && services.length > 0}
           onRetry={() => todayQuery.refetch()}
-          metrics={todayQuery.data?.metrics}
-          lastSuccessAt={todayQuery.data?.lastSuccessAt}
+          metrics={todayQuery.metrics}
+          lastSuccessAt={todayQuery.metrics.lastSuccessAt}
         />
       </header>
 
