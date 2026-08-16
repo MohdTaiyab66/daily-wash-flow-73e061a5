@@ -435,10 +435,11 @@ function AssignmentsPage() {
                    <p className="text-sm font-bold uppercase">{cars} Customers</p>
                 </div>
                 <div className="flex justify-between items-center border-t border-white/10 pt-3">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Monthly Earning</p>
-                   <p className="text-lg font-black text-[#FF6B00]">₹{monthlyEarn.toLocaleString("en-IN")}</p>
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Assignment Earning</p>
+                   <p className="text-lg font-black text-[#FF6B00]">₹{assignmentEarn.toLocaleString("en-IN")}</p>
                 </div>
-                <p className="text-[9px] text-white/30 font-medium italic">Based on 26 service days.</p>
+                <p className="text-[9px] text-white/30 font-medium italic">Based on {serviceDays} service days.</p>
+
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
