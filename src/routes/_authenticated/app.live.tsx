@@ -257,8 +257,6 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
   const v = stop.vehicles as any;
   const time = stop.time_slot;
   const timeLabel = c?.time_window_type === "before" ? "Before " : "";
-  const gps = validateExactGps(s.destination_lat, s.destination_lng); // Wait, variable 's' is not defined here.
-  // Actually I should just use what's in stop.
   const stopLat = Number(stop.destination_lat || c?.latitude);
   const stopLng = Number(stop.destination_lng || c?.longitude);
 
