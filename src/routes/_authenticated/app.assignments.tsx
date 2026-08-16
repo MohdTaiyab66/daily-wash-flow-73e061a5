@@ -94,11 +94,9 @@ function AssignmentsPage() {
   const startTime = computeStartTime(cars, DEFAULT_START_RULES);
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
-  const commitmentEarn = dailyEarn * duration;
   const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
 
   const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
-  const activeCommitmentEarn = activeDailyEarn * (activeAssignment?.duration_days ?? 30);
   const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
 
   const accept = useMutation({
