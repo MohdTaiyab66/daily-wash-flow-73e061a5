@@ -133,9 +133,19 @@ function RoutePage() {
   return (
     <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
       {/* Page Header - Clean & Operational */}
-      <header className="px-5 pt-3 pb-4">
+      <header className="px-5 pt-3 pb-2">
         <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
         <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
+        
+        <TodayAssignmentStatus 
+          isError={todayQuery.isError}
+          isFetching={todayQuery.isFetching}
+          isRefetching={todayQuery.isRefetching}
+          hasData={services && services.length > 0}
+          onRetry={() => todayQuery.refetch()}
+          metrics={todayQuery.data?.metrics}
+          lastSuccessAt={todayQuery.data?.lastSuccessAt}
+        />
       </header>
 
       {/* Progress Card */}
