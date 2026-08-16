@@ -294,7 +294,7 @@ function NextCustomerHero({ stop, seqNo, total }: { stop: any; seqNo: number; to
            >
              <Navigation className="h-5 w-5 text-white" />
            </Button>
-           <MaskedCallButton serviceId={stop.id} size="default" />
+           <MaskedCallButton serviceId={stop.id} full />
         </div>
         <Link
             to="/app/service/$id"
