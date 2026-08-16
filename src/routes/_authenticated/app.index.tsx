@@ -320,17 +320,17 @@ function HomePage() {
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Earning Summary</h3>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#1A1A1A]">₹{earnedSoFar}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Earned</p>
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#1A1A1A]">₹{earnedSoFar}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Earned</p>
           </div>
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#1A1A1A]">{completed}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">Done</p>
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#1A1A1A]">{completed}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Done</p>
           </div>
-          <div className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
-            <p className="text-xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] mt-1">
+          <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
+            <p className="text-2xl font-black text-[#FF6B00]">{total > 0 ? remaining : availableCount}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-2">
               {total > 0 ? "Pending" : "Ready"}
             </p>
           </div>
@@ -346,11 +346,11 @@ function HomePage() {
               <h3 className="text-base font-bold text-[#1A1A1A]">Partner Support</h3>
             </div>
             <div className="flex gap-2">
-              <a href="tel:+919999999999" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <Phone className="h-5 w-5 text-primary" />
+              <a href="tel:+919999999999" className="h-10 w-10 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-90 transition-all">
+                <Phone className="h-4 w-4 text-[#FF6B00]" />
               </a>
-              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-12 w-12 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-95 transition-all">
-                <MessageCircle className="h-5 w-5 text-emerald-500" />
+              <a href="https://wa.me/919999999999" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-full bg-neutral-50 flex items-center justify-center border border-neutral-100 active:scale-90 transition-all">
+                <MessageCircle className="h-4 w-4 text-emerald-500" />
               </a>
             </div>
           </div>
