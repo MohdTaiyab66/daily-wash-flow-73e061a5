@@ -297,6 +297,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange }: { stop: any; open: bo
   const stopLat = Number(stop.destination_lat || c?.latitude);
   const stopLng = Number(stop.destination_lng || c?.longitude);
 
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-10 pt-8 border-none bg-white max-h-[90vh] overflow-y-auto">
@@ -470,6 +471,7 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const time = stop.time_slot;
+  const timeLabel = c?.time_window_type === "before" ? "Before " : "";
 
   return (
     <button 
@@ -487,7 +489,7 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
          <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
          <div className="flex items-center gap-1 mt-1">
             <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{formatTime12(time)}</p>
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
          </div>
       </div>
     </button>
