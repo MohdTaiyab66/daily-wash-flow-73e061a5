@@ -49,13 +49,17 @@ function addHours(hhmm: string, hours: number): string {
 function AssignmentsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [hours, setHours] = useState(4);
+  const [duration, setDuration] = useState(30);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+
   // Mondays are always off
-  const countServiceDays = (calendarDays: number) => {
+  const countServiceDays = (calendarDays: number, startDate = new Date()) => {
     let count = 0;
-    const start = new Date();
     for (let i = 0; i < calendarDays; i++) {
-      const current = new Date(start);
-      current.setDate(start.getDate() + i);
+      const current = new Date(startDate);
+      current.setDate(startDate.getDate() + i);
       if (current.getDay() !== 1) { // 1 is Monday
         count++;
       }
@@ -64,7 +68,6 @@ function AssignmentsPage() {
   };
 
   const serviceDays = countServiceDays(duration);
-
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
@@ -99,20 +102,17 @@ function AssignmentsPage() {
     },
   });
 
-  const [hours, setHours] = useState(4);
-  const [duration, setDuration] = useState(30);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [cancelOpen, setCancelOpen] = useState(false);
-
   const cars = Math.round(hours * (settings?.carsPerHour ?? 6));
   const rate = settings?.rate ?? 17;
   const startTime = computeStartTime(cars, DEFAULT_START_RULES);
   const finishTime = addHours(startTime, hours);
   const dailyEarn = cars * rate;
-  const monthlyEarn = dailyEarn * SERVICE_DAYS_PER_MONTH;
+  const assignmentEarn = dailyEarn * serviceDays;
 
   const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
-  const activeMonthlyEarn = activeDailyEarn * SERVICE_DAYS_PER_MONTH;
+  // For active assignments, we use 26 as the standard monthly reference for the display card
+  const activeMonthlyEarn = activeDailyEarn * 26;
+
 
   const accept = useMutation({
     mutationFn: async () => {
