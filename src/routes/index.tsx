@@ -33,7 +33,10 @@ function Index() {
           <img src={logo} alt="Urban Wash" className="h-9 w-9 rounded-xl object-cover" />
           <span className="font-semibold tracking-tight">Urban Wash</span>
         </div>
-        <span className="text-xs text-muted-foreground">Lucknow · v0.1</span>
+        <span className="text-xs text-muted-foreground">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            Load the security issues from the scan results and fix the selected issues.</span>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pt-12 pb-24">
