@@ -79,7 +79,7 @@ function RoutePage() {
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
   
   const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
-  const total = visibleServices.length;
+  const total = visibleServices.length || (todayQuery.data?.targetCars ?? 0);
   const doneList = visibleServices.filter((s) => s.status === "completed" || s.status === "unavailable");
   const completedCount = visibleServices.filter((s) => s.status === "completed").length;
   const done = doneList.length;
@@ -227,7 +227,7 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Map</h2>
         </div>
         <div className="rounded-[24px] overflow-hidden h-[280px] shadow-sm border border-neutral-100 w-full box-border bg-neutral-200 relative">
-           {stops.length > 0 ? (
+           {stops.length > 0 || (todayQuery.data?.targetCars ?? 0) > 0 ? (
              <LiveMap
                 stops={stops}
                 showCustomers={true}
@@ -255,6 +255,13 @@ function RoutePage() {
         </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
           <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} />
+        )}
+        {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.targetCars ?? 0) > 0 && (
+          <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
+            <Clock className="h-8 w-8 text-neutral-300 mx-auto mb-3" />
+            <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Today is Monday (Off)</p>
+            <p className="text-[10px] text-neutral-400 font-medium mt-1">NO SERVICES SCHEDULED FOR TODAY</p>
+          </div>
         )}
       </div>
 

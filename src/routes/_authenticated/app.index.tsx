@@ -116,7 +116,12 @@ function HomePage() {
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
-    if (total > 0) return { label: "ACTIVE — CUSTOMERS AVAILABLE", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    if (total > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    
+    // If we have an assignment but 0 customers for today, check if it's Monday
+    const isMonday = new Date().getDay() === 1;
+    if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. New customers will appear tomorrow." };
+
     if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
   };
@@ -213,7 +218,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {total > 0 ? `${total} Customers Today` : "WAITING FOR CUSTOMERS"}
+                      {total > 0 ? `${total} Customers Today` : targetCustomers > 0 ? `${targetCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -232,10 +237,10 @@ function HomePage() {
                 <div className="pt-4 space-y-3">
                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                     <span className={cn("h-1.5 w-1.5 rounded-full", total > 0 ? "bg-emerald-500" : "bg-[#FF6B00] animate-pulse")} />
-                    {total > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
+                    {total > 0 || targetCustomers > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
-                  {total > 0 ? (
+                  {total > 0 || targetCustomers > 0 ? (
                     <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
@@ -247,7 +252,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{done} / {total} Completed</p>
+                        <p className="text-sm font-bold">{done} / {total || targetCustomers} Completed</p>
                       </div>
                     </div>
                   ) : (
