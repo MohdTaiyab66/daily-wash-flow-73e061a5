@@ -117,7 +117,7 @@ function HomePage() {
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
     if (total > 0) return { label: "ACTIVE — CUSTOMERS AVAILABLE", color: "text-emerald-400", sub: `${total} customers ready for service` };
-    if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "Your assignment is active. New customers will appear here as they are assigned." };
+    if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
   };
 
@@ -251,8 +251,11 @@ function HomePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white/5 rounded-2xl p-4">
-                      <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                      <p className="text-[11px] text-white/70 font-bold leading-relaxed">
+                        Your assignment is active.
+                      </p>
+                      <p className="text-[10px] text-white/40 font-medium mt-1 leading-relaxed">
                         {statusInfo.sub}
                       </p>
                     </div>
