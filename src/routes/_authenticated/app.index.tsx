@@ -218,7 +218,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {todayData.todaysCustomers > 0 ? `${todayData.todaysCustomers} Customers Today` : todayData.assignmentTotalCustomers > 0 ? `${todayData.assignmentTotalCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
+                      {todayData?.todaysCustomers !== undefined && todayData.todaysCustomers > 0 ? `${todayData.todaysCustomers} Customers Today` : (todayData?.assignmentTotalCustomers ?? 0) > 0 ? `${todayData?.assignmentTotalCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -240,7 +240,7 @@ function HomePage() {
                     {total > 0 || targetCustomers > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
-                  {todayData.todaysCustomers > 0 || todayData.assignmentTotalCustomers > 0 ? (
+                  {(todayData?.todaysCustomers ?? 0) > 0 || (todayData?.assignmentTotalCustomers ?? 0) > 0 ? (
                     <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
@@ -252,7 +252,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{todayData.completedToday} / {todayData.todaysCustomers || todayData.assignmentTotalCustomers} Completed</p>
+                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {(todayData?.todaysCustomers || todayData?.assignmentTotalCustomers) ?? 0} Completed</p>
                       </div>
                     </div>
                   ) : (
