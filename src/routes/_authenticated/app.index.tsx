@@ -101,9 +101,8 @@ function HomePage() {
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
-  const done = todayData?.completedToday ?? 0;
-  const total = todayData?.assignmentTotalCustomers || todayData?.targetCars || 0;
-  const remaining = Math.max(0, total - completed);
+  const total = todayData?.assignmentTotalCustomers || 0;
+  const remaining = todayData?.remainingToday ?? 0;
 
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
 
