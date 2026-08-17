@@ -218,7 +218,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {total > 0 ? `${total} Customers Today` : "WAITING FOR CUSTOMERS"}
+                      {total > 0 ? `${total} Customers Today` : targetCustomers > 0 ? `${targetCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
