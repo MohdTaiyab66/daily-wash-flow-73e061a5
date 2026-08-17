@@ -266,7 +266,9 @@ function HomePage() {
                   )}
 
                   <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
-                    <Link to="/app/live">{allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE")}</Link>
+                    <Link to="/app/live">
+                      {new Date().getDay() === 1 ? "VIEW DAILY ROUTE" : (allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE"))}
+                    </Link>
                   </Button>
                 </div>
               </>
