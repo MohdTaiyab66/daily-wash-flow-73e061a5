@@ -258,8 +258,8 @@ function RoutePage() {
         {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
           <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
             <Clock className="h-8 w-8 text-neutral-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Today is Monday (Off)</p>
-            <p className="text-[10px] text-neutral-400 font-medium mt-1">NO SERVICES SCHEDULED FOR TODAY</p>
+            <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Monday — Service Off</p>
+            <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase">No services scheduled for today</p>
           </div>
         )}
       </div>
