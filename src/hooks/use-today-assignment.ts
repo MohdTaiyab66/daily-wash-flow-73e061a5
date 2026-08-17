@@ -43,6 +43,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       assignment: null, all: [], today: [], nextDate: null,
       todaysCustomers: 0, completedToday: 0, remainingToday: 0,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
+      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
       fetchedAt: Date.now(),
     };
   }
@@ -74,6 +75,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       completedToday: tds.filter((s: any) => s.status === "completed").length,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
+      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
       fetchedAt: Date.now(),
     };
   }
