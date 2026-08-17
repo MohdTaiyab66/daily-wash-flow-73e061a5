@@ -113,6 +113,8 @@ function HomePage() {
   const getExplicitStatus = () => {
     const isMonday = new Date().getDay() === 1;
 
+    const isMonday = new Date().getDay() === 1;
+
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     
     if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. Services resume tomorrow." };
