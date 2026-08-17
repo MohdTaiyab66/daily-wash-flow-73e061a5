@@ -78,7 +78,30 @@ function RoutePage() {
 
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
   
-  const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
+  const isMonday = new Date().getDay() === 1;
+  
+  const visibleServices = (() => {
+    // If today has services, use them
+    const todays = (services ?? []).filter((s) => s.status !== "covered_by_booking");
+    if (todays.length > 0) return todays;
+    
+    // If it's Monday or today is empty but we have an assignment, derive "route" from the assignment's unique customers
+    if (todayQuery.data?.all && todayQuery.data.all.length > 0) {
+      // Create a unique set of customers/vehicles for the assignment to show as the "route"
+      const unique = new Map();
+      [...todayQuery.data.all]
+        .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime())
+        .forEach(s => {
+          const key = s.vehicle_id || s.customer_id;
+          if (key && !unique.has(key)) {
+            unique.set(key, s);
+          }
+        });
+      return Array.from(unique.values());
+    }
+    
+    return [];
+  })();
   const total = todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.todaysCustomers ?? (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
   const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
   const completedCount = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
@@ -200,7 +223,7 @@ function RoutePage() {
         <Card className="p-4 shadow-sm border-none bg-neutral-50 w-full box-border">
           <div className="flex items-baseline justify-between mb-3">
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
-            <span className="text-xs font-bold">{new Date().getDay() === 1 ? "MONDAY — SERVICE OFF" : `${done} / ${total} COMPLETED TODAY`}</span>
+            <span className="text-xs font-bold">{isMonday ? "MONDAY — SERVICE OFF" : `${done} / ${total} COMPLETED TODAY`}</span>
           </div>
           <Progress value={progressPct} className="h-1.5 mb-5" />
           <div className="grid grid-cols-3 gap-2 text-center w-full">
@@ -253,13 +276,13 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
         </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
-          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} />
+          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={isMonday} />
         )}
         {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
           <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
             <Clock className="h-8 w-8 text-neutral-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Monday — Service Off</p>
-            <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase">No services scheduled for today</p>
+            <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Assignment Active</p>
+            <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase">Loading sequence...</p>
           </div>
         )}
       </div>
@@ -322,13 +345,14 @@ function RoutePage() {
         onOpenChange={(open) => !open && setSelectedStopId(null)}
         onStart={() => selectedStopId && startService.mutate(selectedStopId)}
         isStarting={startService.isPending}
+        isMonday={isMonday}
       />
 
     </div>
   );
 }
 
-function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void; onStart?: () => void; isStarting?: boolean }) {
+function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, isMonday }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void; onStart?: () => void; isStarting?: boolean; isMonday?: boolean }) {
   if (!stop) return null;
   const c = stop.customers as any;
   const v = stop.vehicles as any;
@@ -426,13 +450,22 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: 
           ) : stop.status === "pending" ? (
             <Button
               onClick={onStart}
-              disabled={isStarting}
+              disabled={isStarting || isMonday}
               className={cn(
-                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
+                isMonday 
+                  ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200" 
+                  : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
               )}
             >
-              {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
-              Start Service
+              {isStarting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isMonday ? (
+                <Lock className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 fill-current" />
+              )}
+              {isMonday ? "Service Off (Monday)" : "Start Service"}
             </Button>
           ) : (
             <Button
@@ -446,7 +479,9 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: 
           
           {stop.status === "pending" && (
             <p className="text-[10px] text-center text-neutral-400 font-medium">
-              Ensure you are at the customer's location before starting.
+              {isMonday 
+                ? "Services are paused on Mondays. You can still view route and customer details." 
+                : "Ensure you are at the customer's location before starting."}
             </p>
           )}
         </div>
@@ -455,7 +490,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: 
   );
 }
 
-function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: number; total: number; onClick?: () => void }) {
+function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any; seqNo: number; total: number; onClick?: () => void; isMonday?: boolean }) {
   const startService = useMutation({
     mutationFn: async (id: string) => {
       const pos = await getPosition();
@@ -586,10 +621,16 @@ function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: n
         ) : (
           <Button
             onClick={handleStart}
-            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-4 h-12 text-xs shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all truncate"
+            disabled={isMonday}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 rounded-full font-black uppercase tracking-wider px-4 h-12 text-xs shadow-lg active:scale-95 transition-all truncate",
+              isMonday 
+                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700 shadow-none" 
+                : "bg-[#FF6B00] text-white hover:bg-[#ff8c40] shadow-[#FF6B00]/20"
+            )}
           >
-            <Play className="h-4 w-4 fill-current shrink-0" />
-            <span className="truncate">Start</span>
+            {isMonday ? <Lock className="h-4 w-4 shrink-0" /> : <Play className="h-4 w-4 fill-current shrink-0" />}
+            <span className="truncate">{isMonday ? "Monday Off" : "Start"}</span>
           </Button>
         )}
       </div>

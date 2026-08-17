@@ -109,17 +109,21 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const anyStarted = today.some(s => !!s.started_at);
   
+  const isMonday = new Date().getDay() === 1;
+
   // Explicit states for UI
   const getExplicitStatus = () => {
-    const isMonday = new Date().getDay() === 1;
 
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     
+    // On Monday, we show MONDAY OFF but keep the assignment visibility high
     if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. Services resume tomorrow." };
 
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
-    if (todayData?.assignmentTotalCustomers && todayData.assignmentTotalCustomers > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${todayData.assignmentTotalCustomers} customers ready for service` };
+    
+    // DERIVE state from assignmentTotalCustomers instead of todaysServices
+    if (total > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers in your sequence` };
     
     if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
@@ -342,10 +346,10 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && !allDone && total > 0 && (
+        {online && assignment && (total > 0 || (todayData?.targetCars ?? 0) > 0) && !allDone && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
-              {anyStarted ? "CONTINUE ROUTE" : "START DAILY ROUTE"}
+              {anyStarted ? "CONTINUE ROUTE" : (isMonday ? "VIEW DAILY ROUTE" : "START DAILY ROUTE")}
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
             </Link>
           </Button>
