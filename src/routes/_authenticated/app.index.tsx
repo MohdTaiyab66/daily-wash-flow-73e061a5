@@ -163,7 +163,7 @@ function HomePage() {
   const areaName = partner?.home_area ?? "Your Area";
 
   return (
-    <div className="mx-auto max-w-md px-5 pb-[120px] pt-3 space-y-8">
+    <div className="mx-auto max-w-md px-5 pb-[160px] pt-3 space-y-8">
       {/* GREETING */}
       <header className="flex items-center justify-between">
         <div className="space-y-1">
@@ -213,7 +213,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {total > 0 ? `${total} Customers Today` : `${targetCustomers} Customer Target`}
+                      {total > 0 ? `${total} Customers Today` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -225,14 +225,14 @@ function HomePage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Assignment Earning</p>
-                    <p className="text-2xl font-black tracking-tight">₹{expectedEarningsMonthly.toLocaleString("en-IN")}</p>
+                    <p className="text-2xl font-black tracking-tight text-white">₹{expectedEarningsMonthly.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
 
                 <div className="pt-4 space-y-3">
                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                     <span className={cn("h-1.5 w-1.5 rounded-full", total > 0 ? "bg-emerald-500" : "bg-[#FF6B00] animate-pulse")} />
-                    {assignment.working_days || 26} service days • {assignment.duration_days || 30} days
+                    {total > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
                   {total > 0 ? (
@@ -258,8 +258,8 @@ function HomePage() {
                     </div>
                   )}
 
-                  <Button asChild size="lg" className="w-full h-12 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold border border-white/10 mt-2">
-                    <Link to="/app/live">VIEW ROUTE</Link>
+                  <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
+                    <Link to="/app/live">VIEW DAILY ROUTE</Link>
                   </Button>
                 </div>
               </>
