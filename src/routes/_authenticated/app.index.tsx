@@ -103,8 +103,9 @@ function HomePage() {
     .filter((s) => s.status === "completed" || s.status === "unavailable")
     .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
 
-  const estimatedEarningsToday = today.reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0);
-  const estimatedEarningsMonthly = estimatedEarningsToday * 26;
+  const expectedEarningsToday = todayData?.expectedDailyEarnings ?? 0;
+  const expectedEarningsMonthly = todayData?.expectedMonthlyEarnings ?? 0;
+  const targetCustomers = todayData?.targetCars ?? 0;
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;
@@ -112,12 +113,12 @@ function HomePage() {
   
   // Explicit states for UI
   const getExplicitStatus = () => {
-    if (!assignment) return { label: "NO ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
+    if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
-    if (assignment.sub_status === 'waiting_for_customers') return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "Waiting for new leads in your area" };
     if (total > 0) return { label: "ACTIVE — CUSTOMERS AVAILABLE", color: "text-emerald-400", sub: `${total} customers ready for service` };
-    return { label: "ACTIVE", color: "text-white/40", sub: "Your assignment is active" };
+    if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
+    return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
   };
 
   const statusInfo = getExplicitStatus();
@@ -162,7 +163,7 @@ function HomePage() {
   const areaName = partner?.home_area ?? "Your Area";
 
   return (
-    <div className="mx-auto max-w-md px-5 pb-[120px] pt-3 space-y-8">
+    <div className="mx-auto max-w-md px-5 pb-[160px] pt-3 space-y-8">
       {/* GREETING */}
       <header className="flex items-center justify-between">
         <div className="space-y-1">
@@ -209,10 +210,10 @@ function HomePage() {
                   <p className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em]">{statusInfo.label}</p>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                      <Car className={cn("h-5 w-5", statusInfo.color.replace('text-', 'text-'))} />
+                      <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {total > 0 ? `${total} Total Customers` : "WAITING FOR CUSTOMERS"}
+                      {total > 0 ? `${total} Customers Today` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -220,18 +221,18 @@ function HomePage() {
                 <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
-                    <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{estimatedEarningsToday.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
+                    <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{expectedEarningsToday.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly Earning</p>
-                    <p className="text-2xl font-black tracking-tight">₹{estimatedEarningsMonthly.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Month</span></p>
+                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Assignment Earning</p>
+                    <p className="text-2xl font-black tracking-tight text-white">₹{expectedEarningsMonthly.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
 
                 <div className="pt-4 space-y-3">
                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                     <span className={cn("h-1.5 w-1.5 rounded-full", total > 0 ? "bg-emerald-500" : "bg-[#FF6B00] animate-pulse")} />
-                    {total > 0 ? "26 service days • Mondays OFF" : "Active assignment • Waiting for leads"}
+                    {total > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
                   {total > 0 ? (
@@ -250,12 +251,19 @@ function HomePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white/5 rounded-2xl p-4">
-                      <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                      <p className="text-[11px] text-white/70 font-bold leading-relaxed">
+                        Your assignment is active.
+                      </p>
+                      <p className="text-[10px] text-white/40 font-medium mt-1 leading-relaxed">
                         {statusInfo.sub}
                       </p>
                     </div>
                   )}
+
+                  <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
+                    <Link to="/app/live">VIEW DAILY ROUTE</Link>
+                  </Button>
                 </div>
               </>
             ) : (

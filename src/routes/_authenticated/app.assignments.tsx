@@ -134,7 +134,8 @@ function AssignmentsPage() {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["available-work-summary"] });
       navigate({ to: "/app/live" });
     },
     onError: (e: any) => toast.error(e.message)
