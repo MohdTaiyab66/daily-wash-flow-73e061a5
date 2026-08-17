@@ -95,11 +95,21 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   const targetCars = Number(a.target_cars || 0);
   const ratePerCar = Number(a.rate_per_car || 17);
-  const expectedDailyEarnings = targetCars * ratePerCar;
+  
+  // SINGLE SOURCE OF TRUTH: 
+  // For an active assignment, the customer count is derived from unique vehicles 
+  // CURRENTLY ATTACHED to the assignment.
+  const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
+  
+  // Earning calculation MUST use assignmentTotalCustomers (18), not targetCars (15).
+  // If no customers are assigned yet, we fall back to targetCars for projection.
+  const effectiveCustomerCount = assignmentTotalCustomers > 0 ? assignmentTotalCustomers : targetCars;
+  
+  const expectedDailyEarnings = effectiveCustomerCount * ratePerCar;
   const expectedMonthlyEarnings = expectedDailyEarnings * 26;
 
-  const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
   const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
+
 
   return {
     assignment: a,

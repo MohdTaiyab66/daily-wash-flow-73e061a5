@@ -122,9 +122,8 @@ function AssignmentsPage() {
   
   const availableCount = Number(availableWork?.available_customers ?? 0);
 
-  const activeDailyEarn = (activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers);
-  // For active assignments, we use 26 as the standard monthly reference for the display card
-  const activeMonthlyEarn = activeDailyEarn * 26;
+  const activeDailyEarn = todayQuery.data?.expectedDailyEarnings ?? ((activeAssignment?.rate_per_car ?? rate) * (activeAssignment?.target_cars ?? totalCustomers));
+  const activeMonthlyEarn = todayQuery.data?.expectedMonthlyEarnings ?? (activeDailyEarn * 26);
 
 
   const accept = useMutation({
