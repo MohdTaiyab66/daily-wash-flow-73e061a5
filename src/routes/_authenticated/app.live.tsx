@@ -697,13 +697,13 @@ export function MaskedCallButton({ serviceId, full, size }: { serviceId: string;
       variant="outline" 
       size={size ?? (full ? "lg" : "default")} 
       className={cn(
-        "rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0", 
-        full ? "flex-1" : (size === "icon" || !size ? "h-12 w-12" : "")
+        "rounded-2xl border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 shrink-0 font-bold", 
+        full ? "flex-1 h-14" : (size === "icon" || !size ? "h-12 w-12" : "")
       )} 
       onClick={onClick} 
       disabled={loading}
     >
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4 text-[#FF6B00]" />}
       {full && (loading ? " Connecting..." : " Call Customer")}
     </Button>
   );
