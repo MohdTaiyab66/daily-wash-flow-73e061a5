@@ -34,7 +34,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className="flex-1 flex flex-col items-center justify-center transition-all h-full active:scale-95 group"
+                  className="flex-1 flex flex-col items-center justify-center transition-all h-full active:scale-95 group overflow-hidden"
                 >
                   <div className={cn(
                     "relative p-2 rounded-full transition-all duration-300",
@@ -46,7 +46,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                     />
                   </div>
                   <span className={cn(
-                    "mt-1.5 text-[10px] font-black tracking-tight transition-all whitespace-nowrap text-center uppercase",
+                    "mt-1.5 text-[9px] font-black tracking-tighter transition-all truncate w-full text-center uppercase px-0.5",
                     active ? "text-[#1A1A1A]" : "text-[#8A8A8A]"
                   )}>
                     {n.label}

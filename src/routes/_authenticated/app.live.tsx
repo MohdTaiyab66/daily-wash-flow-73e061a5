@@ -301,16 +301,16 @@ function RoutePage() {
       {/* Completed Section */}
       {completed.length > 0 && (
          <div className="px-5 mt-6 w-full box-border mb-10">
-            <details className="group border-t border-b border-neutral-100 py-4 w-full">
-               <summary className="flex justify-between items-center cursor-pointer list-none">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Completed ({completed.length})</h2>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            <details className="group border-t border-b border-neutral-100 py-4 w-full cursor-pointer">
+               <summary className="flex justify-between items-center list-none">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Completed ({completed.length})</h2>
+                  <ChevronDown className="h-4 w-4 text-neutral-300 transition-transform group-open:rotate-180" />
                </summary>
-               <div className="pt-4 space-y-3 w-full">
+               <div className="pt-4 space-y-3 w-full animate-in fade-in slide-in-from-top-2">
                   {completed.map(s => (
-                    <div key={s.id} className="flex justify-between items-center text-sm w-full">
-                       <span className="text-muted-foreground font-medium truncate pr-4">{(s.customers as any)?.full_name}</span>
-                       <span className="text-emerald-600 font-bold shrink-0 text-xs uppercase tracking-tighter">✓ Done</span>
+                    <div key={s.id} className="flex justify-between items-center text-sm w-full bg-neutral-50 px-4 py-3 rounded-2xl">
+                       <span className="text-neutral-900 font-bold truncate pr-4 text-sm tracking-tight">{(s.customers as any)?.full_name}</span>
+                       <span className="text-emerald-500 font-black shrink-0 text-[10px] uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">✓ COMPLETED</span>
                     </div>
                   ))}
                </div>
