@@ -93,7 +93,7 @@ function RoutePage() {
     },
   });
   const ratePerCar = rateSetting ?? 17;
-  const earnedSoFar = todayQuery.data?.expectedDailyEarnings ? (progressPct / 100 * todayQuery.data.expectedDailyEarnings) : (done * ratePerCar);
+  const earnedSoFar = todayQuery.data?.expectedDailyEarnings ? Math.round((completedCount / total) * todayQuery.data.expectedDailyEarnings) : (done * ratePerCar);
 
   const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
