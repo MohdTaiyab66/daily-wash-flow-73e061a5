@@ -213,7 +213,9 @@ function ServiceDetail() {
             <Button variant="outline" className="flex-1 h-12 rounded-2xl border-neutral-200 font-bold gap-2" onClick={() => openGoogleMapsDirections(service.destination_lat, service.destination_lng)}>
                 <Navigation className="h-4 w-4" /> Navigate
             </Button>
-            <MaskedCallButton serviceId={id} size="lg" />
+            <div className="flex-1">
+                <MaskedCallButton serviceId={id} full size="lg" />
+            </div>
         </div>
       </div>
 
