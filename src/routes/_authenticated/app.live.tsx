@@ -364,126 +364,136 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, is
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-10 pt-8 border-none bg-white max-h-[90vh] overflow-y-auto">
-        <SheetHeader className="text-left mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-1">Customer Details</p>
-               <SheetTitle className="text-2xl font-black tracking-tight">{c?.full_name}</SheetTitle>
-            </div>
-          </div>
+      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-8 pt-6 border-none bg-white max-h-[85vh] overflow-y-auto">
+        <SheetHeader className="text-left mb-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-0.5">Customer Details</p>
+          <SheetTitle className="text-2xl font-black tracking-tight text-neutral-900">{c?.full_name}</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-6">
-          {/* Vehicle Info */}
-          <div className="flex gap-4 p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-            <TappableVehicleImage 
-              path={v?.front_image_path} 
-              className="h-16 w-16 rounded-xl object-cover shrink-0"
-              customerName={c?.full_name}
-              vehicleLabel={`${v?.make} ${v?.model}`}
-              registration={v?.registration_number}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-neutral-900">{v?.make} {v?.model}</p>
-              <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider mt-0.5">{v?.registration_number}</p>
-              {v?.color && <p className="text-[10px] text-neutral-400 mt-0.5">{v.color}</p>}
+        <div className="space-y-5">
+          {/* Vehicle Info Card */}
+          <div className="flex items-center gap-4 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
+            <div className="shrink-0 relative">
+              <TappableVehicleImage 
+                path={v?.front_image_path} 
+                className="h-14 w-14 rounded-xl object-cover border border-neutral-200"
+                customerName={c?.full_name}
+                vehicleLabel={`${v?.make} ${v?.model}`}
+                registration={v?.registration_number}
+              />
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-neutral-100">
+                <Car className="h-2.5 w-2.5 text-[#FF6B00]" />
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-neutral-900 truncate">{v?.make} {v?.model}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-[10px] font-mono font-black text-neutral-500 uppercase tracking-wider bg-neutral-200/50 px-1.5 py-0.5 rounded">
+                  {v?.registration_number}
+                </p>
+                {v?.color && (
+                  <span className="text-[10px] text-neutral-400 font-medium truncate">• {v.color}</span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Service Time */}
-          <div className="space-y-1.5">
-            <p className="text-[9px] uppercase text-neutral-400 font-bold tracking-widest">Service Time</p>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-[#FF6B00]" />
-              <p className="text-base font-black text-neutral-900">{timeLabel}{formatTime12(time)}</p>
+          {/* Service Details Grid */}
+          <div className="grid grid-cols-2 gap-4 py-1">
+            <div className="space-y-1">
+              <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest">Service Time</p>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[#FF6B00]" />
+                <p className="text-sm font-black text-neutral-900">{timeLabel}{formatTime12(time)}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest">Service Status</p>
+              <div className="flex items-center gap-2">
+                {stop.status === "completed" ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm font-black text-emerald-600 uppercase">Done</span>
+                  </>
+                ) : stop.status === "in_progress" ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
+                    <span className="text-sm font-black text-[#FF6B00] uppercase">Working</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-neutral-300" />
+                    <span className="text-sm font-black text-neutral-500 uppercase">Upcoming</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Status */}
-          <div className="space-y-1.5">
-            <p className="text-[9px] uppercase text-neutral-400 font-bold tracking-widest">Service Status</p>
-            <div className="flex items-center gap-2">
-               {stop.status === "completed" ? (
-                 <>
-                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                   <span className="text-sm font-bold text-emerald-600 uppercase">Completed</span>
-                 </>
-               ) : stop.status === "in_progress" ? (
-                 <>
-                   <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
-                   <span className="text-sm font-bold text-[#FF6B00] uppercase">In Progress</span>
-                 </>
-               ) : (
-                 <>
-                   <div className="h-2 w-2 rounded-full bg-neutral-300" />
-                   <span className="text-sm font-bold text-neutral-500 uppercase">Upcoming</span>
-                 </>
-               )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-             <Button 
-               variant="outline" 
-               className="h-14 rounded-2xl border-neutral-200 font-bold text-neutral-900 gap-2 active:scale-95 transition-all"
-               onClick={() => openGoogleMapsDirections(stopLat, stopLng)}
-             >
-               <Navigation className="h-4 w-4" />
-               Navigate
-             </Button>
-             <MaskedCallButton serviceId={stop.id} full size="lg" />
-          </div>
-
-          {stop.status === "in_progress" ? (
-            <Link
-              to="/app/service/$id"
-              params={{ id: stop.id }}
-              className={cn(
-                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
-              )}
+          {/* Interaction Actions */}
+          <div className="flex gap-3 w-full">
+            <Button 
+              variant="outline" 
+              className="flex-1 h-14 rounded-2xl border-neutral-200 font-bold text-neutral-900 gap-2 active:scale-95 transition-all bg-white"
+              onClick={() => openGoogleMapsDirections(stopLat, stopLng)}
             >
-              <Play className="h-4 w-4 fill-current" />
-              Resume Service
-            </Link>
-          ) : stop.status === "pending" ? (
-            <Button
-              onClick={onStart}
-              disabled={isStarting || isMonday}
-              className={cn(
-                "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
-                isMonday 
-                  ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200" 
-                  : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
-              )}
-            >
-              {isStarting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isMonday ? (
-                <Lock className="h-4 w-4" />
-              ) : (
+              <Navigation className="h-4 w-4 text-[#FF6B00]" />
+              Navigate
+            </Button>
+            <MaskedCallButton serviceId={stop.id} full size="lg" />
+          </div>
+
+          {/* Primary Action Button */}
+          <div className="pt-2">
+            {stop.status === "in_progress" ? (
+              <Link
+                to="/app/service/$id"
+                params={{ id: stop.id }}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+                )}
+              >
                 <Play className="h-4 w-4 fill-current" />
-              )}
-              {isMonday ? "Service Off (Monday)" : "Start Service"}
-            </Button>
-          ) : (
-            <Button
-              disabled
-              className="w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Service Completed
-            </Button>
-          )}
-          
-          {stop.status === "pending" && (
-            <p className="text-[10px] text-center text-neutral-400 font-medium">
-              {isMonday 
-                ? "Services are paused on Mondays. You can still view route and customer details." 
-                : "Ensure you are at the customer's location before starting."}
-            </p>
-          )}
+                Resume Service
+              </Link>
+            ) : stop.status === "pending" ? (
+              <Button
+                onClick={onStart}
+                disabled={isStarting || isMonday}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
+                  isMonday 
+                    ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200" 
+                    : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
+                )}
+              >
+                {isStarting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isMonday ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4 fill-current" />
+                )}
+                {isMonday ? "Service Off (Monday)" : "Start Service"}
+              </Button>
+            ) : (
+              <Button
+                disabled
+                className="w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Service Completed
+              </Button>
+            )}
+            
+            {stop.status === "pending" && (
+              <p className="text-[10px] text-center text-neutral-400 font-bold uppercase tracking-tight mt-4">
+                {isMonday 
+                  ? "Services are paused on Mondays" 
+                  : "Ensure you are at the customer's location before starting"}
+              </p>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -687,13 +697,13 @@ export function MaskedCallButton({ serviceId, full, size }: { serviceId: string;
       variant="outline" 
       size={size ?? (full ? "lg" : "default")} 
       className={cn(
-        "rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0", 
-        full ? "flex-1" : (size === "icon" || !size ? "h-12 w-12" : "")
+        "rounded-2xl border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 shrink-0 font-bold", 
+        full ? "flex-1 h-14" : (size === "icon" || !size ? "h-12 w-12" : "")
       )} 
       onClick={onClick} 
       disabled={loading}
     >
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4 text-[#FF6B00]" />}
       {full && (loading ? " Connecting..." : " Call Customer")}
     </Button>
   );
