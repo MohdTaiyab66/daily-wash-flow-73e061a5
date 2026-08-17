@@ -17,6 +17,9 @@ export type TodayAssignmentData = {
   remainingToday: number;
   assignmentTotalCustomers: number;
   assignmentCompleted: number;
+  targetCars: number;
+  expectedDailyEarnings: number;
+  expectedMonthlyEarnings: number;
   fetchedAt: number;
 };
 
@@ -88,6 +91,11 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .filter((d) => d && d > today)
     .sort()[0] ?? null;
 
+  const targetCars = Number(a.target_cars || 0);
+  const ratePerCar = Number(a.rate_per_car || 17);
+  const expectedDailyEarnings = targetCars * ratePerCar;
+  const expectedMonthlyEarnings = expectedDailyEarnings * 26;
+
   return {
     assignment: a,
     all,
@@ -98,8 +106,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     remainingToday: todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
     // Vehicles, not customers: a customer with 3 vehicles is 3 stops.
     assignmentTotalCustomers: new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size,
-
     assignmentCompleted: all.filter((s: any) => s.status === "completed").length,
+    targetCars,
+    expectedDailyEarnings,
+    expectedMonthlyEarnings,
     fetchedAt: Date.now(),
   };
 }
