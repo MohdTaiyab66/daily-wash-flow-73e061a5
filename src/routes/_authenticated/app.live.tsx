@@ -104,12 +104,18 @@ function RoutePage() {
     return [];
   })();
   const total = todayQuery.data?.assignmentTotalCustomers || 0;
+  
+  // SINGLE SOURCE OF TRUTH for outcome collections
   const completed = visibleServices.filter((s) => s.status === "completed");
+  const dirty = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
+  const unavailable = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
+  const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
+
   const done = todayQuery.data?.completedToday ?? completed.length;
   const completedCount = done;
   const isEndOfDay = total > 0 && (total - done) <= 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
-
+ 
   const { data: rateSetting } = useQuery({
     queryKey: ["route-rate-per-car"],
     queryFn: async () => {
@@ -119,13 +125,6 @@ function RoutePage() {
   });
   const ratePerCar = rateSetting ?? 17;
   const earnedSoFar = todayQuery.data?.actualEarnedToday ?? (done * ratePerCar);
-
-  const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
-  
-  // Calculate counts strictly from visible today services for consistency
-  const completed = visibleServices.filter((s) => s.status === "completed");
-  const dirty = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
-  const unavailable = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   const pending = [...pendingRaw]
     .sort((a: any, b: any) => {
