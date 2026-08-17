@@ -98,6 +98,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const expectedDailyEarnings = targetCars * ratePerCar;
   const expectedMonthlyEarnings = expectedDailyEarnings * 26;
 
+  const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
+  const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
+
   return {
     assignment: a,
     all,
@@ -106,9 +109,8 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     todaysCustomers: todays.length,
     completedToday: todays.filter((s: any) => s.status === "completed").length,
     remainingToday: todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-    // Vehicles, not customers: a customer with 3 vehicles is 3 stops.
-    assignmentTotalCustomers: new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size,
-    assignmentCompleted: all.filter((s: any) => s.status === "completed").length,
+    assignmentTotalCustomers,
+    assignmentCompleted: Math.min(assignmentCompleted, assignmentTotalCustomers),
     targetCars,
     expectedDailyEarnings,
     expectedMonthlyEarnings,

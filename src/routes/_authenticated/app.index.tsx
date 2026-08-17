@@ -94,10 +94,10 @@ function HomePage() {
 
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
-  const completed = today.filter((s) => s.status === "completed").length;
+  const completed = todayData?.completedToday ?? 0;
   const done = today.filter((s) => s.status === "completed" || s.status === "unavailable").length;
-  const total = today.length;
-  const remaining = total - done;
+  const total = todayData?.todaysCustomers ?? 0;
+  const remaining = todayData?.remainingToday ?? 0;
 
   const earnedSoFar = today
     .filter((s) => s.status === "completed" || s.status === "unavailable")
@@ -116,7 +116,7 @@ function HomePage() {
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
-    if (total > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    if (todayData?.assignmentTotalCustomers && todayData.assignmentTotalCustomers > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${todayData.assignmentTotalCustomers} customers ready for service` };
     
     // If we have an assignment but 0 customers for today, check if it's Monday
     const isMonday = new Date().getDay() === 1;
@@ -218,7 +218,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {total > 0 ? `${total} Customers Today` : targetCustomers > 0 ? `${targetCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
+                      {todayData.todaysCustomers > 0 ? `${todayData.todaysCustomers} Customers Today` : todayData.assignmentTotalCustomers > 0 ? `${todayData.assignmentTotalCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -240,7 +240,7 @@ function HomePage() {
                     {total > 0 || targetCustomers > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
-                  {total > 0 || targetCustomers > 0 ? (
+                  {todayData.todaysCustomers > 0 || todayData.assignmentTotalCustomers > 0 ? (
                     <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
@@ -252,7 +252,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{done} / {total || targetCustomers} Completed</p>
+                        <p className="text-sm font-bold">{todayData.completedToday} / {todayData.todaysCustomers || todayData.assignmentTotalCustomers} Completed</p>
                       </div>
                     </div>
                   ) : (
