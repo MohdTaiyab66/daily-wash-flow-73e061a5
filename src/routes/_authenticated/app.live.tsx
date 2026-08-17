@@ -490,7 +490,7 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, is
   );
 }
 
-function NextCustomerHero({ stop, seqNo, total, onClick }: { stop: any; seqNo: number; total: number; onClick?: () => void }) {
+function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any; seqNo: number; total: number; onClick?: () => void; isMonday?: boolean }) {
   const startService = useMutation({
     mutationFn: async (id: string) => {
       const pos = await getPosition();
