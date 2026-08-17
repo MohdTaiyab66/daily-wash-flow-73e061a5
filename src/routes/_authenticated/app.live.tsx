@@ -188,20 +188,16 @@ function RoutePage() {
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
-  if (todayQuery.isLoading && !todayQuery.data) {
-    return (
-      <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border">
+      <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
          <header className="px-5 pt-3 pb-2">
           <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
           <p className="text-xs font-medium text-muted-foreground mt-0.5">Your work sequence for today</p>
         </header>
         <TodayAssignmentSkeleton />
       </div>
-    );
-  }
   
   return (
-    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen">
+    <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
       {/* Page Header - Clean & Operational */}
       <header className="px-5 pt-3 pb-2">
         <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
@@ -566,11 +562,11 @@ function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any
       onClick={onClick}
     >
       <div className="flex justify-between items-center mb-5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">NEXT STOP • {seqNo} of {total}</span>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">NEXT STOP • {seqNo} of {total}</span>
         {inProgress ? (
-          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-wider bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20 shrink-0 animate-pulse">In Progress</span>
+          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest bg-[#FF6B00]/10 px-3 py-1 rounded-full border border-[#FF6B00]/20 shrink-0 animate-pulse">IN PROGRESS</span>
         ) : (
-          <span className="text-emerald-400 text-[9px] font-black uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 shrink-0">Active</span>
+          <span className="text-[#FF6B00] text-[9px] font-black uppercase tracking-widest bg-[#FF6B00]/10 px-3 py-1 rounded-full border border-[#FF6B00]/20 shrink-0">READY</span>
         )}
       </div>
       <div className="flex gap-4 mb-6 w-full">
@@ -603,29 +599,33 @@ function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any
            <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
               <p className="text-base font-black tracking-tight">
-                {inProgress ? formatTime12(new Date(stop.started_at).toISOString()) : `${timeLabel}${formatTime12(time)}`}
+                {inProgress 
+                  ? formatTime12(new Date(stop.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })) 
+                  : `${timeLabel}${formatTime12(time)}`}
               </p>
            </div>
         </div>
       </div>
 
-      <div className="flex gap-3 w-full" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-3 w-full" onClick={(e) => e.stopPropagation()}>
+        {/* NAVIGATION: icon-only circular compact ~22% */}
         <Button 
           variant="outline" 
           size="icon" 
-          className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0 active:scale-95 transition-all"
+          className="rounded-full h-12 w-12 bg-white/5 border-white/10 hover:bg-white/10 shrink-0 active:scale-95 transition-all flex-[0.22]"
           onClick={() => openGoogleMapsDirections(gps.lat, gps.lng)}
         >
           <Navigation className="h-5 w-5 text-white" />
         </Button>
-        <MaskedCallButton serviceId={stop.id} full />
+
+        {/* START: large primary CTA ~56% */}
         {inProgress ? (
           <Link
             to="/app/service/$id"
             params={{ id: stop.id }}
-            className="flex-1 flex items-center justify-center gap-2 rounded-full bg-white/10 text-white font-black uppercase tracking-wider hover:bg-white/20 px-4 h-12 text-xs border border-white/20 active:scale-95 transition-all truncate"
+            className="flex-[0.56] flex items-center justify-center gap-2 rounded-full bg-[#FF6B00] text-white font-black uppercase tracking-wider hover:bg-[#ff8c40] px-4 h-12 text-xs shadow-lg shadow-[#FF6B00]/20 active:scale-95 transition-all truncate"
           >
-            <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
+            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
             <span className="truncate">In Progress</span>
           </Link>
         ) : (
@@ -633,7 +633,7 @@ function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any
             onClick={handleStart}
             disabled={isMonday}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 rounded-full font-black uppercase tracking-wider px-4 h-12 text-xs shadow-lg active:scale-95 transition-all truncate",
+              "flex-[0.56] flex items-center justify-center gap-2 rounded-full font-black uppercase tracking-wider px-4 h-12 text-xs shadow-lg active:scale-95 transition-all truncate",
               isMonday 
                 ? "bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700 shadow-none" 
                 : "bg-[#FF6B00] text-white hover:bg-[#ff8c40] shadow-[#FF6B00]/20"
@@ -643,6 +643,9 @@ function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any
             <span className="truncate">{isMonday ? "Monday Off" : "Start"}</span>
           </Button>
         )}
+
+        {/* CALL: icon-only circular compact ~22% */}
+        <MaskedCallButton serviceId={stop.id} size="icon" />
       </div>
     </Card>
   );
@@ -657,22 +660,20 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-[20px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left"
+      className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left group"
     >
-      <div className="h-8 w-8 bg-neutral-50 rounded-full flex items-center justify-center font-black text-neutral-400 text-[10px] shrink-0 border border-neutral-100">
+      <div className="h-10 w-10 bg-neutral-50 rounded-2xl flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100 group-hover:bg-neutral-100 transition-colors">
         #{seqNo}
       </div>
       <div className="flex-1 min-w-0">
-         <div className="flex justify-between items-start">
-           <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
-           <ChevronRight className="h-3.5 w-3.5 text-neutral-300 mt-0.5" />
-         </div>
-         <p className="text-[11px] text-neutral-500 font-medium truncate">{v?.make} {v?.model}</p>
-         <div className="flex items-center gap-1 mt-1">
-            <Clock className="h-3 w-3 text-neutral-400" />
-            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
+         <p className="font-bold truncate text-neutral-900 text-[15px] tracking-tight">{c?.full_name}</p>
+         <p className="text-[11px] text-neutral-400 font-bold uppercase tracking-tight truncate mt-0.5">{v?.make} {v?.model}</p>
+         <div className="flex items-center gap-1.5 mt-1.5">
+            <Clock className="h-3 w-3 text-[#FF6B00]" />
+            <p className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
          </div>
       </div>
+      <ChevronRight className="h-5 w-5 text-neutral-300 shrink-0 group-hover:text-neutral-500 transition-colors" />
     </button>
   );
 }
@@ -695,16 +696,16 @@ export function MaskedCallButton({ serviceId, full, size }: { serviceId: string;
   return (
     <Button 
       variant="outline" 
-      size={size ?? (full ? "lg" : "default")} 
+      size={size === "icon" ? "icon" : (size ?? (full ? "lg" : "default"))} 
       className={cn(
-        "rounded-2xl border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 shrink-0 font-bold", 
-        full ? "flex-1 h-14" : (size === "icon" || !size ? "h-12 w-12" : "")
+        "rounded-2xl border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 shrink-0 font-bold transition-all active:scale-95", 
+        size === "icon" ? "h-12 w-12 rounded-full flex-[0.22] border-white/10 bg-white/5 text-white hover:bg-white/10" : (full ? "flex-1 h-14" : (size === "default" || !size ? "h-12 w-12" : ""))
       )} 
       onClick={onClick} 
       disabled={loading}
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4 text-[#FF6B00]" />}
-      {full && (loading ? " Connecting..." : " Call Customer")}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className={cn("h-4 w-4", size === "icon" ? "text-white" : "text-[#FF6B00]")} />}
+      {full && !loading && " Call Customer"}
     </Button>
   );
 }
