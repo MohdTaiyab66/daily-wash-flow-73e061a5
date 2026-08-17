@@ -4,6 +4,7 @@ import { Camera, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
+import { cn } from "@/lib/utils";
 
 import { deleteQueuedPhoto, loadQueuedPhoto, saveQueuedPhoto } from "@/lib/photo-upload-queue";
 
