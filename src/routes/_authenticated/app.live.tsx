@@ -31,9 +31,10 @@ export const Route = createFileRoute("/_authenticated/app/live")({
 });
 
 function RoutePage() {
+  const qc = useQueryClient();
   useRealtimeInvalidation(
-    ["services", "assignments", "customers", "vehicles", "dirty_vehicle_reports", "unavailability_reports", "wallet_ledger", "customer_notifications", "admin_alerts"],
-    [["route-today"], ["today-assignment"], ["today-assignment"], ["earnings-v3"], ["wallet-balance"]],
+    ["services", "assignments", "customers", "vehicles", "wallet_ledger"],
+    [["route-today"], ["today-assignment"], ["earnings-v3"], ["today-assignment-for-earnings"]]
   );
   
   const todayDateStr = new Date().toISOString().slice(0, 10);

@@ -46,6 +46,11 @@ function HomePage() {
   const online = partner?.availability === "online";
 
   const todayQuery = useTodayAssignment();
+  // Ensure we refetch on mount to clear any stale cache from previous sessions
+  useEffect(() => {
+    todayQuery.refetch();
+  }, []);
+  
   const todayData = todayQuery.data;
   const hasData = todayData !== undefined;
 
