@@ -80,8 +80,8 @@ function RoutePage() {
   
   const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
   const total = todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.todaysCustomers ?? (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
-  const done = todayQuery.data?.assignmentCompleted ?? todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed" || s.status === "unavailable").length;
-  const completedCount = todayQuery.data?.assignmentCompleted ?? todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
+  const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
+  const completedCount = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
   const isEndOfDay = total > 0 && (total - done) === 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
@@ -93,7 +93,7 @@ function RoutePage() {
     },
   });
   const ratePerCar = rateSetting ?? 17;
-  const earnedSoFar = todayQuery.data?.expectedDailyEarnings ? Math.round((completedCount / total) * todayQuery.data.expectedDailyEarnings) : (done * ratePerCar);
+  const earnedSoFar = todayQuery.data?.actualEarnedToday ?? (done * ratePerCar);
 
   const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
   const completed = (services ?? []).filter((s) => s.status === "completed");
