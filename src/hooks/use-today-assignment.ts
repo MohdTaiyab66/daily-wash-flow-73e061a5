@@ -92,7 +92,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   const { data: services, error: sErr } = await supabase
     .from("services")
-    .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
+    .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,scheduled_date,customer_id,vehicle_id,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
     .eq("assignment_id", a.id);
   if (sErr) throw sErr;
   const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
