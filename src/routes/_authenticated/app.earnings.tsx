@@ -30,6 +30,48 @@ function EarningsPage() {
   const { t } = useI18n();
   const [tab, setTab] = useState<"today" | "week" | "month" | "lifetime">("week");
 
+  const { data: todayQuery } = useQuery({
+    queryKey: ["today-assignment-for-earnings"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: a } = await supabase
+        .from("assignments")
+        .select("*")
+        .eq("partner_id", u.user.id)
+        .eq("status", "active")
+        .gte("end_date", today)
+        .order("start_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!a) return null;
+
+      const { data: services } = await supabase
+        .from("services")
+        .select("id,vehicle_id,status")
+        .eq("assignment_id", a.id);
+
+      const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
+      const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
+      const targetCars = Number(a.target_cars || 0);
+      const ratePerCar = Number(a.rate_per_car || 17);
+      
+      const effectiveCustomerCount = assignmentTotalCustomers > 0 ? assignmentTotalCustomers : targetCars;
+      const expectedDaily = effectiveCustomerCount * ratePerCar;
+      const expectedMonthly = expectedDaily * 26;
+
+      return {
+        daily: expectedDaily,
+        monthly: expectedMonthly,
+        rate: ratePerCar,
+        count: effectiveCustomerCount
+      };
+    }
+  });
+
   const { data: stats } = useQuery({
     queryKey: ["earnings-v3"],
     queryFn: async () => {
@@ -133,6 +175,37 @@ function EarningsPage() {
         <TabsContent value="month" className="mt-6">{view(t("this_month"), stats?.month ?? 0, stats?.monthN ?? 0)}</TabsContent>
         <TabsContent value="lifetime" className="mt-6">{view(t("lifetime"), stats?.lifetime ?? 0, stats?.lifetimeN ?? 0)}</TabsContent>
       </Tabs>
+
+      {todayQuery && (
+        <section className="space-y-4">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Active Assignment</h2>
+          <Card className="p-6 border-none shadow-xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="space-y-5 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-[#FF6B00]" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Target</p>
+                  <p className="text-lg font-black">{todayQuery.count} Customers</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily</p>
+                  <p className="text-xl font-black text-[#FF6B00]">₹{todayQuery.daily.toLocaleString("en-IN")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Monthly</p>
+                  <p className="text-xl font-black text-white">₹{todayQuery.monthly.toLocaleString("en-IN")}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">{t("next_payout")}</h2>
