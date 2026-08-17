@@ -240,7 +240,7 @@ function HomePage() {
                     {total > 0 || targetCustomers > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
-                  {total > 0 ? (
+                  {total > 0 || targetCustomers > 0 ? (
                     <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-2xl p-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
