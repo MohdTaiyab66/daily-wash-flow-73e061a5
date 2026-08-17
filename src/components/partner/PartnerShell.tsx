@@ -13,7 +13,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
     { to: "/app/profile", label: "Profile", icon: User },
   ] as const;
 
-  const isFullScreen = pathname.startsWith("/app/live") || pathname.startsWith("/app/area");
+  const isFullScreen = pathname.startsWith("/app/live") || pathname.startsWith("/app/area") || pathname.startsWith("/app/service/");
   
   // Compact Premium Height: 70px (Matching Customer App)
   return (
