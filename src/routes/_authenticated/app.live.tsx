@@ -120,9 +120,11 @@ function RoutePage() {
   const earnedSoFar = todayQuery.data?.actualEarnedToday ?? (done * ratePerCar);
 
   const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
-  const completed = (services ?? []).filter((s) => s.status === "completed");
-  const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
-  const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
+  
+  // Calculate counts strictly from visible today services for consistency
+  const completed = visibleServices.filter((s) => s.status === "completed");
+  const dirty = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
+  const unavailable = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   const pending = [...pendingRaw]
     .sort((a: any, b: any) => {
