@@ -104,7 +104,8 @@ function RoutePage() {
     return [];
   })();
   const total = todayQuery.data?.assignmentTotalCustomers || 0;
-  const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
+  const completed = visibleServices.filter((s) => s.status === "completed");
+  const done = todayQuery.data?.completedToday ?? completed.length;
   const completedCount = done;
   const isEndOfDay = total > 0 && (total - done) <= 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
