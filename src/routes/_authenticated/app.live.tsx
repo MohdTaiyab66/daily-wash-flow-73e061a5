@@ -276,7 +276,7 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
         </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
-          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} />
+          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={isMonday} />
         )}
         {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
           <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
@@ -345,13 +345,14 @@ function RoutePage() {
         onOpenChange={(open) => !open && setSelectedStopId(null)}
         onStart={() => selectedStopId && startService.mutate(selectedStopId)}
         isStarting={startService.isPending}
+        isMonday={isMonday}
       />
 
     </div>
   );
 }
 
-function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void; onStart?: () => void; isStarting?: boolean }) {
+function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, isMonday }: { stop: any; open: boolean; onOpenChange: (open: boolean) => void; onStart?: () => void; isStarting?: boolean; isMonday?: boolean }) {
   if (!stop) return null;
   const c = stop.customers as any;
   const v = stop.vehicles as any;
