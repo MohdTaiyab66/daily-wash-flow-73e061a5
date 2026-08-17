@@ -327,6 +327,17 @@ function ServiceDetail() {
                      
                      {selectedCondition === "unavailable" && (
                          <div className="space-y-4">
+                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photo</h3>
+                             <PhotoSlot 
+                                serviceId={id} 
+                                stage="unavailable" 
+                                angle="front" 
+                                label="Take evidence photo" 
+                                done={(photos ?? []).some(p => p.stage === "unavailable")} 
+                                variant="hero" 
+                                hint="Proof of why vehicle is unavailable"
+                                onUploaded={() => refetchPhotos()} 
+                             />
                              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
                              <Textarea 
                                 placeholder="Why is the vehicle unavailable?" 
@@ -338,7 +349,7 @@ function ServiceDetail() {
                                 size="lg" 
                                 className="h-16 w-full rounded-[24px] bg-red-600 hover:bg-red-700 text-white font-black text-lg shadow-xl shadow-red-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markUnavailable.mutate()}
-                                disabled={markUnavailable.isPending}
+                                disabled={markUnavailable.isPending || !(photos ?? []).some(p => p.stage === "unavailable")}
                              >
                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : "MARK UNAVAILABLE"}
                              </Button>
