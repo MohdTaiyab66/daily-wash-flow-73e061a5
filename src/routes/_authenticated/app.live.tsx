@@ -79,7 +79,7 @@ function RoutePage() {
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
   
   const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
-  const total = visibleServices.length;
+  const total = visibleServices.length || (todayQuery.data?.targetCars ?? 0);
   const doneList = visibleServices.filter((s) => s.status === "completed" || s.status === "unavailable");
   const completedCount = visibleServices.filter((s) => s.status === "completed").length;
   const done = doneList.length;
