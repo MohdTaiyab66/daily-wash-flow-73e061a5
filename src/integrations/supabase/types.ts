@@ -6998,7 +6998,6 @@ export type Database = {
           area: string
           assignment_id: string
           booking_id: string
-          broadcast_id: string
           broadcast_status: string
           current_incentive: number
           current_radius_m: number
@@ -7007,17 +7006,18 @@ export type Database = {
           customer_lat: number
           customer_lng: number
           distance_display: string
-          distance_from_route_m: number
           earning_amount: number
           earning_monthly: number
-          id: string
-          incentive: number
-          partner_id: string
-          response: string
-          round: number
+          offer_broadcast_id: string
+          offer_distance_from_route_m: number
+          offer_id: string
+          offer_incentive: number
+          offer_partner_id: string
+          offer_response: string
+          offer_round: number
+          offer_route_impact_m: number
+          offer_sent_at: string
           round_expires_at: string
-          route_impact_m: number
-          sent_at: string
           server_now: string
           subscription_id: string
           vehicle_id: string
