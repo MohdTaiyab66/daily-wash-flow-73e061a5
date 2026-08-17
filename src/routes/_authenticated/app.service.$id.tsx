@@ -98,11 +98,15 @@ function ServiceDetail() {
       return data;
     },
     onSuccess: (data) => {
+      // FORCE IMMEDIATE REFETCH OF ALL AUTHORITATIVE DATA
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
       
+      // We must wait for the invalidation to trigger or use the returned data
+      // to avoid showing stale progress in the celebration modal.
       setCelebration({
         amount: Number(data?.amount ?? 17),
         completed: (routeProgress?.completed ?? 0) + 1,

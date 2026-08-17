@@ -74,6 +74,7 @@ function EarningsPage() {
 
   const { data: stats } = useQuery({
     queryKey: ["earnings-v3"],
+    staleTime: 0, // Ensure we always get fresh data when switching to this tab
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       const id = u.user!.id;

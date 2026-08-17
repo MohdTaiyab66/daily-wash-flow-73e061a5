@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
 import { Card } from "@/components/ui/card";
@@ -46,6 +47,11 @@ function HomePage() {
   const online = partner?.availability === "online";
 
   const todayQuery = useTodayAssignment();
+  // Ensure we refetch on mount to clear any stale cache from previous sessions
+  useEffect(() => {
+    todayQuery.refetch();
+  }, []);
+  
   const todayData = todayQuery.data;
   const hasData = todayData !== undefined;
 
