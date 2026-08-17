@@ -345,10 +345,10 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && !allDone && total > 0 && (
+        {online && assignment && (total > 0 || (todayData?.targetCars ?? 0) > 0) && !allDone && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
-              {anyStarted ? "CONTINUE ROUTE" : "START DAILY ROUTE"}
+              {anyStarted ? "CONTINUE ROUTE" : (isMonday ? "VIEW DAILY ROUTE" : "START DAILY ROUTE")}
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
             </Link>
           </Button>
