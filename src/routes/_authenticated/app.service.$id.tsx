@@ -225,7 +225,12 @@ function ServiceDetail() {
     },
 
 
-    onSuccess: () => { setStep("cleaning"); qc.invalidateQueries({ queryKey: ["service", id] }); },
+    onSuccess: () => { 
+      setStep("cleaning"); 
+      qc.invalidateQueries({ queryKey: ["service", id] }); 
+      qc.invalidateQueries({ queryKey: ["route-today"] }); 
+      qc.invalidateQueries({ queryKey: ["today-assignment"] }); 
+    },
     onError: (e: any) => toast.error(e.message ?? "Could not start"),
   });
 
@@ -322,6 +327,10 @@ function ServiceDetail() {
         walletBalance: data?.wallet_balance ?? null,
         nextName: routeProgress?.nextName ?? null,
       });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["wallet-balance"] });
     },
     onError: (e: any) => {
       console.error("[CUSTOMER-E2E:COMPLETE:ERR] mutation failed", e);
