@@ -72,7 +72,7 @@ function AssignmentsPage() {
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
   const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
-  const completedToday = todayQuery.data?.assignmentCompleted ?? 0;
+  const completedOverall = todayQuery.data?.assignmentCompleted ?? 0;
 
   const { data: partner } = useQuery({
     queryKey: ["me-partner-builder"],
@@ -217,7 +217,7 @@ function AssignmentsPage() {
                   <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                     <Navigation className="h-3 w-3" /> Progress
                   </p>
-                  <p className="text-sm font-bold">{completedToday} / {totalCustomers} Done</p>
+                  <p className="text-sm font-bold">{completedOverall} / {totalCustomers} Done</p>
                 </div>
               </div>
             </div>
