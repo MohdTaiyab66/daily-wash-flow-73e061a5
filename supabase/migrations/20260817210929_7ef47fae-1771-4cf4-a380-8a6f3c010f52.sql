@@ -1,0 +1,1 @@
+ALTER TYPE public.photo_angle ADD VALUE IF NOT EXISTS 'full';
