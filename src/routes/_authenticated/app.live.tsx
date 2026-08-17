@@ -78,7 +78,30 @@ function RoutePage() {
 
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
   
-  const visibleServices = (services ?? []).filter((s) => s.status !== "covered_by_booking");
+  const isMonday = new Date().getDay() === 1;
+  
+  const visibleServices = (() => {
+    // If today has services, use them
+    const todays = (services ?? []).filter((s) => s.status !== "covered_by_booking");
+    if (todays.length > 0) return todays;
+    
+    // If it's Monday or today is empty but we have an assignment, derive "route" from the assignment's unique customers
+    if (todayQuery.data?.all && todayQuery.data.all.length > 0) {
+      // Create a unique set of customers/vehicles for the assignment to show as the "route"
+      const unique = new Map();
+      [...todayQuery.data.all]
+        .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime())
+        .forEach(s => {
+          const key = s.vehicle_id || s.customer_id;
+          if (key && !unique.has(key)) {
+            unique.set(key, s);
+          }
+        });
+      return Array.from(unique.values());
+    }
+    
+    return [];
+  })();
   const total = todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.todaysCustomers ?? (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
   const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
   const completedCount = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
