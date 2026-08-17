@@ -102,10 +102,10 @@ function RoutePage() {
     
     return [];
   })();
-  const total = todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.todaysCustomers ?? (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
+  const total = todayQuery.data?.assignmentTotalCustomers || todayQuery.data?.todaysCustomers || (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
   const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
-  const completedCount = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
-  const isEndOfDay = total > 0 && (total - done) === 0;
+  const completedCount = done;
+  const isEndOfDay = total > 0 && (total - done) <= 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   const { data: rateSetting } = useQuery({

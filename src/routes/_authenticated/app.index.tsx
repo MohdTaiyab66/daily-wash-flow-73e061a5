@@ -96,8 +96,8 @@ function HomePage() {
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
   const done = todayData?.completedToday ?? 0;
-  const total = todayData?.assignmentTotalCustomers ?? todayData?.targetCars ?? 0;
-  const remaining = todayData?.remainingToday ?? 0;
+  const total = todayData?.assignmentTotalCustomers || todayData?.targetCars || 0;
+  const remaining = Math.max(0, total - completed);
 
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
 
@@ -123,7 +123,7 @@ function HomePage() {
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
     
     // DERIVE state from assignmentTotalCustomers instead of todaysServices
-    if (total > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers in your sequence` };
+    if (total > 0 && !allDone) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers in your sequence` };
     
     if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
@@ -388,9 +388,9 @@ function HomePage() {
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-2">Done</p>
           </div>
           <div className="bg-white border border-neutral-100 rounded-3xl p-5 flex flex-col items-center text-center shadow-sm">
-            <p className="text-2xl font-black text-[#FF6B00]">{assignment ? remaining : availableCount}</p>
+            <p className="text-2xl font-black text-[#FF6B00]">{assignment ? (allDone ? 0 : remaining) : availableCount}</p>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mt-1.5">
-              {assignment ? "Pending" : "Available"}
+              {assignment ? (allDone ? "Done" : "Pending") : "Available"}
             </p>
           </div>
         </div>
