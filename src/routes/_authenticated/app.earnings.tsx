@@ -51,7 +51,7 @@ function EarningsPage() {
 
       const { data: services } = await supabase
         .from("services")
-        .select("id,vehicle_id,status")
+        .select("id,vehicle_id,status,scheduled_date")
         .eq("assignment_id", a.id);
 
       const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
@@ -65,7 +65,7 @@ function EarningsPage() {
         daily: expectedDaily,
         monthly: expectedMonthly,
         rate: ratePerCar,
-        count: effectiveCustomerCount
+        count: assignmentTotalCustomers
       };
     }
   });
