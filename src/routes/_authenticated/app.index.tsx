@@ -116,7 +116,12 @@ function HomePage() {
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
-    if (total > 0) return { label: "ACTIVE — CUSTOMERS AVAILABLE", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    if (total > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${total} customers ready for service` };
+    
+    // If we have an assignment but 0 customers for today, check if it's Monday
+    const isMonday = new Date().getDay() === 1;
+    if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. New customers will appear tomorrow." };
+
     if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
   };
