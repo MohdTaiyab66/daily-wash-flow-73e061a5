@@ -109,7 +109,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   // SINGLE SOURCE OF TRUTH: 
   // For an active assignment, the customer count is derived from unique vehicles 
   // CURRENTLY ATTACHED to the assignment.
-  const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
+  // SINGLE SOURCE OF TRUTH:
+  // For an active assignment, the customer count is derived from unique vehicles 
+  // that have at least one service scheduled for TODAY.
+  const assignmentTotalCustomers = new Set(todays.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
   
   // Earning calculation MUST use assignmentTotalCustomers (18), not targetCars (15).
   // If no customers are assigned yet, we fall back to targetCars for projection.
