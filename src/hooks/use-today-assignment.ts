@@ -15,11 +15,14 @@ export type TodayAssignmentData = {
   todaysCustomers: number;
   completedToday: number;
   remainingToday: number;
+  actualEarnedToday: number;
+  potentialDailyEarnings: number;
+  potentialMonthlyEarnings: number;
   assignmentTotalCustomers: number;
   assignmentCompleted: number;
   targetCars: number;
-  expectedDailyEarnings: number;
-  expectedMonthlyEarnings: number;
+  expectedDailyEarnings: number; // Keep for backward compatibility, will match potentialDailyEarnings
+  expectedMonthlyEarnings: number; // Keep for backward compatibility
   fetchedAt: number;
 };
 
@@ -42,6 +45,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     return {
       assignment: null, all: [], today: [], nextDate: null,
       todaysCustomers: 0, completedToday: 0, remainingToday: 0,
+      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
       targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
       fetchedAt: Date.now(),
@@ -74,8 +78,11 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       todaysCustomers: tds.length,
       completedToday: tds.filter((s: any) => s.status === "completed").length,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
+      actualEarnedToday: tds.filter((s: any) => s.status === "completed").reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0),
+      potentialDailyEarnings: tds.length * 17, // fallback
+      potentialMonthlyEarnings: (tds.length * 17) * 26,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
+      targetCars: 0, expectedDailyEarnings: tds.length * 17, expectedMonthlyEarnings: (tds.length * 17) * 26,
       fetchedAt: Date.now(),
     };
   }
@@ -105,11 +112,14 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   // If no customers are assigned yet, we fall back to targetCars for projection.
   const effectiveCustomerCount = assignmentTotalCustomers > 0 ? assignmentTotalCustomers : targetCars;
   
-  const expectedDailyEarnings = effectiveCustomerCount * ratePerCar;
-  const expectedMonthlyEarnings = expectedDailyEarnings * 26;
+  const potentialDailyEarnings = effectiveCustomerCount * ratePerCar;
+  const potentialMonthlyEarnings = potentialDailyEarnings * 26;
+
+  const actualEarnedToday = todays
+    .filter((s: any) => s.status === "completed")
+    .reduce((sum, s) => sum + Number(s.rate_per_car || ratePerCar), 0);
 
   const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
-
 
   return {
     assignment: a,
@@ -119,11 +129,14 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     todaysCustomers: todays.length,
     completedToday: todays.filter((s: any) => s.status === "completed").length,
     remainingToday: todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
+    actualEarnedToday,
+    potentialDailyEarnings,
+    potentialMonthlyEarnings,
     assignmentTotalCustomers,
     assignmentCompleted: Math.min(assignmentCompleted, assignmentTotalCustomers),
     targetCars,
-    expectedDailyEarnings,
-    expectedMonthlyEarnings,
+    expectedDailyEarnings: potentialDailyEarnings, // backwards compat
+    expectedMonthlyEarnings: potentialMonthlyEarnings, // backwards compat
     fetchedAt: Date.now(),
   };
 }

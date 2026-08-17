@@ -95,16 +95,14 @@ function HomePage() {
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
-  const done = today.filter((s) => s.status === "completed" || s.status === "unavailable").length;
+  const done = todayData?.completedToday ?? 0;
   const total = todayData?.todaysCustomers ?? 0;
   const remaining = todayData?.remainingToday ?? 0;
 
-  const earnedSoFar = today
-    .filter((s) => s.status === "completed" || s.status === "unavailable")
-    .reduce((sum, s) => sum + (s.status === "unavailable" ? 12 : Number(s.rate_per_car || 0)), 0);
+  const earnedSoFar = todayData?.actualEarnedToday ?? 0;
 
-  const expectedEarningsToday = todayData?.expectedDailyEarnings ?? 0;
-  const expectedEarningsMonthly = todayData?.expectedMonthlyEarnings ?? 0;
+  const potentialDailyEarnings = todayData?.potentialDailyEarnings ?? 0;
+  const potentialMonthlyEarnings = todayData?.potentialMonthlyEarnings ?? 0;
   const targetCustomers = todayData?.targetCars ?? 0;
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
@@ -225,12 +223,12 @@ function HomePage() {
 
                 <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-5">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Earning</p>
-                    <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{expectedEarningsToday.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Day</span></p>
+                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Today's Earned</p>
+                    <p className="text-2xl font-black tracking-tight text-[#FF6B00]">₹{earnedSoFar.toLocaleString("en-IN")}<span className="text-[10px] text-white/40 ml-1">/ Today</span></p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Assignment Earning</p>
-                    <p className="text-2xl font-black tracking-tight text-white">₹{expectedEarningsMonthly.toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] font-black uppercase text-white/40 tracking-wider">Daily Potential</p>
+                    <p className="text-2xl font-black tracking-tight text-white">₹{potentialDailyEarnings.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
 
@@ -267,7 +265,7 @@ function HomePage() {
                   )}
 
                   <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
-                    <Link to="/app/live">VIEW DAILY ROUTE</Link>
+                    <Link to="/app/live">{allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE")}</Link>
                   </Button>
                 </div>
               </>
@@ -341,10 +339,10 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && !anyStarted && !allDone && total > 0 && (
+        {online && assignment && !allDone && total > 0 && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
-              START ASSIGNMENT
+              {anyStarted ? "CONTINUE ROUTE" : "START DAILY ROUTE"}
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
             </Link>
           </Button>
