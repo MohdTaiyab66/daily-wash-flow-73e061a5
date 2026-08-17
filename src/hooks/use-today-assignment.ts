@@ -120,7 +120,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   const actualEarnedToday = todays
     .filter((s: any) => s.status === "completed")
-    .reduce((sum, s) => sum + Number(s.rate_per_car || ratePerCar), 0);
+    .reduce((sum, s) => sum + Number(s.rate_per_car || ratePerCar || 0), 0);
 
   const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
 
