@@ -109,9 +109,10 @@ function HomePage() {
   const allDone = total > 0 && remaining === 0;
   const anyStarted = today.some(s => !!s.started_at);
   
+  const isMonday = new Date().getDay() === 1;
+
   // Explicit states for UI
   const getExplicitStatus = () => {
-    const isMonday = new Date().getDay() === 1;
 
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
     
