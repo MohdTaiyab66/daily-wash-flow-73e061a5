@@ -111,15 +111,16 @@ function HomePage() {
   
   // Explicit states for UI
   const getExplicitStatus = () => {
+    const isMonday = new Date().getDay() === 1;
+
     if (!assignment) return { label: "NO ACTIVE ASSIGNMENT", color: "text-white/40", sub: "Build your plan to start earning" };
+    
+    if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. Services resume tomorrow." };
+
     if (allDone) return { label: "ACTIVE — COMPLETED", color: "text-emerald-400", sub: "All services for today are finished" };
     if (inProgressService) return { label: "ACTIVE — WORKING", color: "text-[#FF6B00]", sub: "You have a service in progress" };
     if (todayData?.assignmentTotalCustomers && todayData.assignmentTotalCustomers > 0) return { label: "ACTIVE — CUSTOMERS ASSIGNED", color: "text-emerald-400", sub: `${todayData.assignmentTotalCustomers} customers ready for service` };
     
-    // If we have an assignment but 0 customers for today, check if it's Monday
-    const isMonday = new Date().getDay() === 1;
-    if (isMonday) return { label: "ACTIVE — MONDAY OFF", color: "text-[#FF6B00]", sub: "Today is your scheduled day off. New customers will appear tomorrow." };
-
     if (assignment.sub_status === 'waiting_for_customers' || total === 0) return { label: "ACTIVE — WAITING FOR CUSTOMERS", color: "text-[#FF6B00]", sub: "New customers will appear here as they are assigned." };
     return { label: "ACTIVE ASSIGNMENT", color: "text-emerald-400", sub: "Your assignment is active" };
   };
@@ -216,7 +217,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {todayData?.todaysCustomers !== undefined && todayData.todaysCustomers > 0 ? `${todayData.todaysCustomers} Customers Today` : (todayData?.assignmentTotalCustomers ?? 0) > 0 ? `${todayData?.assignmentTotalCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
+                      {todayData?.assignmentTotalCustomers !== undefined && todayData.assignmentTotalCustomers > 0 ? `${todayData.assignmentTotalCustomers} Total Customers` : (todayData?.targetCars ?? 0) > 0 ? `${todayData?.targetCars} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -250,7 +251,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {(todayData?.todaysCustomers || todayData?.assignmentTotalCustomers) ?? 0} Completed</p>
+                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {todayData?.assignmentTotalCustomers || todayData?.targetCars || 0} Completed</p>
                       </div>
                     </div>
                   ) : (

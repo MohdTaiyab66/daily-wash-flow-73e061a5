@@ -51,7 +51,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       fetchedAt: Date.now(),
     };
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const isMonday = now.getDay() === 1;
+
   const { data: a, error: aErr } = await supabase
     .from("assignments")
     .select("*")
@@ -126,10 +129,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     all,
     today: todays,
     nextDate,
-    todaysCustomers: todays.length,
-    completedToday: todays.filter((s: any) => s.status === "completed").length,
-    remainingToday: todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-    actualEarnedToday,
+    todaysCustomers: isMonday ? 0 : todays.length,
+    completedToday: isMonday ? 0 : todays.filter((s: any) => s.status === "completed").length,
+    remainingToday: isMonday ? 0 : todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
+    actualEarnedToday: isMonday ? 0 : actualEarnedToday,
     potentialDailyEarnings,
     potentialMonthlyEarnings,
     assignmentTotalCustomers,
