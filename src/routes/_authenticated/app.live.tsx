@@ -188,6 +188,8 @@ function RoutePage() {
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
+  if (todayQuery.isLoading && !todayQuery.data) {
+    return (
       <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
          <header className="px-5 pt-3 pb-2">
           <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
@@ -195,6 +197,8 @@ function RoutePage() {
         </header>
         <TodayAssignmentSkeleton />
       </div>
+    );
+  }
   
   return (
     <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
