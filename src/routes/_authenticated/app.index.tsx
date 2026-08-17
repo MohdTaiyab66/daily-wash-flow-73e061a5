@@ -237,7 +237,7 @@ function HomePage() {
                 <div className="pt-4 space-y-3">
                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
                     <span className={cn("h-1.5 w-1.5 rounded-full", total > 0 ? "bg-emerald-500" : "bg-[#FF6B00] animate-pulse")} />
-                    {total > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
+                    {total > 0 || targetCustomers > 0 ? "26 service days • Mondays OFF" : `${assignment.working_days || 26} service days • ${assignment.duration_days || 30} days`}
                   </p>
                   
                   {total > 0 ? (
