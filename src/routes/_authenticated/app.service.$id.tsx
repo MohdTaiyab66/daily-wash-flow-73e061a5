@@ -120,11 +120,15 @@ function ServiceDetail() {
   const markUnavailable = useMutation({
     mutationFn: async () => {
       const pos = await getPosition();
+      const capturedPaths = (photos ?? [])
+        .filter(p => p.stage === "unavailable")
+        .map(p => p.storage_path);
+        
       const { data, error } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: id,
         p_reason: "vehicle_not_available",
         p_notes: notes.trim() || "Vehicle unavailable",
-        p_photos: [],
+        p_photos: capturedPaths,
         p_lat: pos?.lat ?? null,
         p_lng: pos?.lng ?? null,
       } as any);
