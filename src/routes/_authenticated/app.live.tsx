@@ -161,7 +161,7 @@ function RoutePage() {
 
   const [mapStats, setMapStats] = useState<{ km: number; mins: number } | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
-  const qc = useQueryClient();
+  // qc is already declared at the top of the component
 
   const startService = useMutation({
     mutationFn: async (id: string) => {
