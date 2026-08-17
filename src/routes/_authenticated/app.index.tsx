@@ -96,7 +96,7 @@ function HomePage() {
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
   const done = todayData?.completedToday ?? 0;
-  const total = todayData?.todaysCustomers ?? 0;
+  const total = todayData?.assignmentTotalCustomers ?? todayData?.targetCustomers ?? 0;
   const remaining = todayData?.remainingToday ?? 0;
 
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
