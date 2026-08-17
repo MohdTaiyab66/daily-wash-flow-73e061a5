@@ -6,22 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft, Camera, Check, Loader2, Navigation, Clock, Sparkles, AlertTriangle, ShieldAlert, MapPin, ZoomIn, Phone, MoreHorizontal, LifeBuoy, XCircle
+  ArrowLeft, Camera, Check, Loader2, Navigation, Clock, Sparkles, AlertTriangle, ShieldAlert, MapPin, Phone
 } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
-import { VehicleImage } from "@/components/VehicleImage";
-import { openGoogleMapsDirections, validateExactGps } from "@/lib/gps";
+import { openGoogleMapsDirections } from "@/lib/gps";
 import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
 import { PhotoSlot, getPosition, type ServicePhotoRow } from "@/components/partner/service/photo-slot";
 import { Textarea } from "@/components/ui/textarea";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
-type Angle = (typeof AFTER_ANGLES)[number];
-
-const COMPENSATION = 12;
-const SUPPORT_TEL = "+911800000000";
 
 export const Route = createFileRoute("/_authenticated/app/service/$id")({
   component: () => <OfflineGuard label="service verification"><ServiceDetail /></OfflineGuard>,
@@ -153,13 +148,13 @@ function ServiceDetail() {
   const beforeDone = (photos ?? []).some((p) => p.stage === "before");
   const afterDone = (photos ?? []).filter((p) => p.stage === "after");
   const afterAllDone = AFTER_ANGLES.every((a) => afterDone.some((p) => p.angle === a));
-  const timeLabel = formatTime12(c?.service_required_before ?? c?.preferred_time);
+  const unavailableDone = (photos ?? []).some(p => p.stage === "unavailable");
 
   useEffect(() => {
     if (service?.unavailable_reason === "dirty_vehicle") setSelectedCondition("dirty");
     else if (status === "unavailable") setSelectedCondition("unavailable");
-    else if (status === "in_progress") setSelectedCondition("ready");
-  }, [status, service?.unavailable_reason]);
+    else if (status === "in_progress" && !selectedCondition) setSelectedCondition("ready");
+  }, [status, service?.unavailable_reason, selectedCondition]);
 
   if (!service) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-[#FF6B00]" /></div>;
 
@@ -205,16 +200,21 @@ function ServiceDetail() {
         )}
       </div>
 
-      {/* Customer Header */}
+      {/* Customer Header - Simplified */}
       <div className="mb-6">
-        <h1 className="text-3xl font-black tracking-tight text-neutral-900">{c?.full_name}</h1>
+        <h1 className="text-3xl font-black tracking-tight text-neutral-900 leading-tight">{c?.full_name}</h1>
         <div className="flex items-center gap-2 mt-1">
             <span className="text-sm font-bold text-neutral-500">{v?.make} {v?.model}</span>
             <span className="h-1 w-1 rounded-full bg-neutral-300" />
             <span className="text-sm font-mono font-bold text-neutral-400">{v?.registration_number}</span>
         </div>
+        
         <div className="flex gap-2 mt-4">
-            <Button variant="outline" className="flex-1 h-12 rounded-2xl border-neutral-200 font-bold gap-2 text-neutral-900" onClick={() => openGoogleMapsDirections(service.destination_lat, service.destination_lng)}>
+            <Button 
+              variant="outline" 
+              className="flex-1 h-12 rounded-2xl border-neutral-200 font-bold gap-2 text-neutral-900 bg-white" 
+              onClick={() => openGoogleMapsDirections(service.destination_lat, service.destination_lng)}
+            >
                 <Navigation className="h-4 w-4 text-[#FF6B00]" /> Navigate
             </Button>
             <div className="flex-1">
@@ -230,7 +230,7 @@ function ServiceDetail() {
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2 text-neutral-500">
                         <Clock className="h-4 w-4" />
-                        <span className="text-sm font-bold">{timeLabel}</span>
+                        <span className="text-sm font-bold">{formatTime12(c?.service_required_before ?? c?.preferred_time)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-neutral-500">
                         <MapPin className="h-4 w-4" />
@@ -253,135 +253,152 @@ function ServiceDetail() {
       {/* Active View: IN PROGRESS */}
       {status === "in_progress" && (
         <div className="space-y-6">
+            {/* Condition Selection */}
             <div className="space-y-3">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Vehicle Condition</h3>
-                <div className="space-y-2.5">
+                <div className="grid grid-cols-1 gap-2.5">
                     <button
                         onClick={() => setSelectedCondition("ready")}
                         className={cn(
-                            "flex items-center gap-4 p-5 rounded-[24px] border-2 w-full text-left transition-all active:scale-[0.98]",
+                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
                             selectedCondition === "ready" ? "border-[#FF6B00] bg-[#FF6B00]/5 shadow-sm" : "border-neutral-100 bg-white"
                         )}
                     >
-                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", selectedCondition === "ready" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "ready" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
                             <Sparkles className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-black text-neutral-900">Ready to clean</p>
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Vehicle is present</p>
+                            <p className="font-bold text-neutral-900">Ready to clean</p>
+                            {selectedCondition === "ready" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase">✓ Selected</p>}
                         </div>
-                        {selectedCondition === "ready" && <Check className="h-5 w-5 text-[#FF6B00]" />}
                     </button>
 
                     <button
                         onClick={() => setSelectedCondition("dirty")}
                         className={cn(
-                            "flex items-center gap-4 p-5 rounded-[24px] border-2 w-full text-left transition-all active:scale-[0.98]",
+                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
                             selectedCondition === "dirty" ? "border-amber-500 bg-amber-50 shadow-sm" : "border-neutral-100 bg-white"
                         )}
                     >
-                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-400")}>
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-400")}>
                             <AlertTriangle className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-black text-neutral-900">Very dirty</p>
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Requires attention</p>
+                            <p className="font-bold text-neutral-900">Very dirty</p>
+                            {selectedCondition === "dirty" && <p className="text-[10px] font-bold text-amber-500 uppercase">✓ Selected</p>}
                         </div>
-                        {selectedCondition === "dirty" && <Check className="h-5 w-5 text-amber-500" />}
                     </button>
 
                     <button
                         onClick={() => setSelectedCondition("unavailable")}
                         className={cn(
-                            "flex items-center gap-4 p-5 rounded-[24px] border-2 w-full text-left transition-all active:scale-[0.98]",
+                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
                             selectedCondition === "unavailable" ? "border-red-500 bg-red-50 shadow-sm" : "border-neutral-100 bg-white"
                         )}
                     >
-                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-red-500 text-white" : "bg-neutral-100 text-neutral-400")}>
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-red-500 text-white" : "bg-neutral-100 text-neutral-400")}>
                             <ShieldAlert className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-black text-neutral-900">Unavailable vehicle</p>
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Cannot be serviced</p>
+                            <p className="font-bold text-neutral-900">Unavailable vehicle</p>
+                            {selectedCondition === "unavailable" && <p className="text-[10px] font-bold text-red-500 uppercase">✓ Selected</p>}
                         </div>
-                        {selectedCondition === "unavailable" && <Check className="h-5 w-5 text-red-500" />}
                     </button>
                 </div>
             </div>
 
             {selectedCondition && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-6 pt-2">
-                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Before Photo</h3>
-                        <PhotoSlot 
-                            serviceId={id} 
-                            stage="before" 
-                            angle="full" 
-                            label="Take before photo" 
-                            done={beforeDone} 
-                            variant="hero" 
-                            hint="Whole car before service"
-                            onUploaded={() => refetchPhotos()} 
-                        />
-                     </div>
-                     
-                     {selectedCondition === "unavailable" && (
-                         <div className="space-y-4">
-                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photo</h3>
-                             <PhotoSlot 
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-6 pt-2">
+                     {/* Before Photo Section */}
+                     {(selectedCondition === "ready" || selectedCondition === "dirty") && (
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Before Photo</h3>
+                            <PhotoSlot 
                                 serviceId={id} 
-                                stage="unavailable" 
-                                angle="front" 
-                                label="Take evidence photo" 
-                                done={(photos ?? []).some(p => p.stage === "unavailable")} 
+                                stage="before" 
+                                angle="full" 
+                                label={beforeDone ? "✓ Before Photo Added" : "Add Before Photo"}
+                                done={beforeDone} 
                                 variant="hero" 
-                                hint="Proof of why vehicle is unavailable"
+                                hint="Whole car visible"
                                 onUploaded={() => refetchPhotos()} 
-                             />
-                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
-                             <Textarea 
-                                placeholder="Why is the vehicle unavailable?" 
-                                className="min-h-[100px] rounded-[24px] border-neutral-100 bg-neutral-50 focus:bg-white transition-colors"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                             />
+                            />
+                        </div>
+                     )}
+                     
+                     {/* Unavailable Flow */}
+                     {selectedCondition === "unavailable" && (
+                         <div className="space-y-5">
+                             <div className="space-y-4">
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photo</h3>
+                                 <PhotoSlot 
+                                    serviceId={id} 
+                                    stage="unavailable" 
+                                    angle="front" 
+                                    label={unavailableDone ? "✓ Evidence Photo Added" : "Add Evidence Photo"}
+                                    done={unavailableDone} 
+                                    variant="hero" 
+                                    hint="Proof for unavailability"
+                                    onUploaded={() => refetchPhotos()} 
+                                 />
+                             </div>
+                             
+                             <div className="space-y-4">
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
+                                 <Textarea 
+                                    placeholder="Why is the vehicle unavailable?" 
+                                    className="min-h-[100px] rounded-[20px] border-neutral-200 bg-neutral-50 focus:bg-white transition-colors"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                 />
+                             </div>
+
                              <Button 
                                 size="lg" 
                                 className="h-16 w-full rounded-[24px] bg-red-600 hover:bg-red-700 text-white font-black text-lg shadow-xl shadow-red-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markUnavailable.mutate()}
-                                disabled={markUnavailable.isPending || !(photos ?? []).some(p => p.stage === "unavailable")}
+                                disabled={markUnavailable.isPending || !unavailableDone}
                              >
                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : "MARK UNAVAILABLE"}
                              </Button>
                          </div>
                      )}
 
-                     {(selectedCondition === "ready" || selectedCondition === "dirty") && (
-                        <div className="space-y-6">
-                            {beforeDone && (
-                                <div className="space-y-4">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">After Photos (Required)</h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {AFTER_ANGLES.map((angle) => (
+                     {/* Completion for Ready/Dirty */}
+                     {(selectedCondition === "ready" || selectedCondition === "dirty") && beforeDone && (
+                        <div className="space-y-6 pt-2">
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">After Photos (Required)</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {AFTER_ANGLES.map((angle) => {
+                                        const isDone = afterDone.some((p) => p.angle === angle);
+                                        return (
                                             <PhotoSlot 
                                                 key={angle}
                                                 serviceId={id} 
                                                 stage="after" 
                                                 angle={angle} 
                                                 label={angle} 
-                                                done={afterDone.some(p => p.angle === angle)} 
-                                                onUploaded={() => refetchPhotos()} 
+                                                done={isDone} 
+                                                onUploaded={() => refetchPhotos()}
+                                                thumbPath={photos?.find(p => p.stage === 'after' && p.angle === angle)?.storage_path}
+                                                variant={isDone ? "guided-done" : "default"}
                                             />
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
-
-                            <Button
-                                size="lg"
-                                className="h-16 w-full rounded-[24px] bg-black hover:bg-neutral-800 text-white font-black text-lg shadow-xl shadow-black/10 active:scale-[0.98] transition-all"
-                                disabled={!beforeDone || !afterAllDone || complete.isPending}
-                                onClick={() => complete.mutate()}
+                            </div>
+                            
+                            <Button 
+                                size="lg" 
+                                className={cn(
+                                    "h-16 w-full rounded-[24px] font-black text-lg active:scale-[0.98] transition-all",
+                                    afterAllDone 
+                                        ? "bg-[#FF6B00] hover:bg-[#ff8c33] text-white shadow-xl shadow-orange-500/20" 
+                                        : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                                )}
+                                onClick={() => afterAllDone && complete.mutate()}
+                                disabled={complete.isPending || !afterAllDone}
                             >
                                 {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : "COMPLETE SERVICE"}
                             </Button>
@@ -391,6 +408,9 @@ function ServiceDetail() {
             )}
         </div>
       )}
+      
+      {/* Bottom Safe Area Padding for Android */}
+      <div className="h-10 safe-bottom" />
     </div>
   );
 }
