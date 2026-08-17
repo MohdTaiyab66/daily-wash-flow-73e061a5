@@ -182,8 +182,6 @@ function ServiceDetail() {
           open
           amount={celebration.amount}
           completed={celebration.completed}
-          onDone={() => { setCelebration(null); goNext(); }}
-
           total={celebration.total}
           onDone={() => { setCelebration(null); goNext(); }}
         />
