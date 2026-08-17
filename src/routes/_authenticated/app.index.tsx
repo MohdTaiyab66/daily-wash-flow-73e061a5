@@ -101,9 +101,8 @@ function HomePage() {
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
-  const done = todayData?.completedToday ?? 0;
-  const total = todayData?.assignmentTotalCustomers || todayData?.targetCars || 0;
-  const remaining = Math.max(0, total - completed);
+  const total = todayData?.assignmentTotalCustomers || 0;
+  const remaining = todayData?.remainingToday ?? 0;
 
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
 
@@ -227,7 +226,7 @@ function HomePage() {
                       <Car className={cn("h-5 w-5", statusInfo.color)} />
                     </div>
                     <span className="text-xl font-black uppercase tracking-tight">
-                      {todayData?.assignmentTotalCustomers !== undefined && todayData.assignmentTotalCustomers > 0 ? `${todayData.assignmentTotalCustomers} Total Customers` : (todayData?.targetCars ?? 0) > 0 ? `${todayData?.targetCars} Total Customers` : "WAITING FOR CUSTOMERS"}
+                      {todayData?.assignmentTotalCustomers !== undefined && todayData.assignmentTotalCustomers > 0 ? `${todayData.assignmentTotalCustomers} Total Customers` : "WAITING FOR CUSTOMERS"}
                     </span>
                   </div>
                 </div>
@@ -261,7 +260,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {todayData?.assignmentTotalCustomers || todayData?.targetCars || 0} Completed</p>
+                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {todayData?.assignmentTotalCustomers ?? 0} Completed</p>
                       </div>
                     </div>
                   ) : (

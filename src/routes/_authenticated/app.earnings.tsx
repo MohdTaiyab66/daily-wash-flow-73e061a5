@@ -51,23 +51,21 @@ function EarningsPage() {
 
       const { data: services } = await supabase
         .from("services")
-        .select("id,vehicle_id,status")
+        .select("id,vehicle_id,status,scheduled_date")
         .eq("assignment_id", a.id);
 
       const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
-      const assignmentTotalCustomers = new Set(all.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
-      const targetCars = Number(a.target_cars || 0);
+      const assignmentTotalCustomers = new Set(all.filter(s => s.scheduled_date === today).map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
       const ratePerCar = Number(a.rate_per_car || 17);
       
-      const effectiveCustomerCount = assignmentTotalCustomers > 0 ? assignmentTotalCustomers : targetCars;
-      const expectedDaily = effectiveCustomerCount * ratePerCar;
+      const expectedDaily = assignmentTotalCustomers * ratePerCar;
       const expectedMonthly = expectedDaily * 26;
 
       return {
         daily: expectedDaily,
         monthly: expectedMonthly,
         rate: ratePerCar,
-        count: effectiveCustomerCount
+        count: assignmentTotalCustomers
       };
     }
   });

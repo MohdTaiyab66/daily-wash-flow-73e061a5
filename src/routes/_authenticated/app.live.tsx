@@ -103,12 +103,19 @@ function RoutePage() {
     
     return [];
   })();
-  const total = todayQuery.data?.assignmentTotalCustomers || todayQuery.data?.todaysCustomers || (visibleServices.length || (todayQuery.data?.targetCars ?? 0));
-  const done = todayQuery.data?.completedToday ?? visibleServices.filter((s) => s.status === "completed").length;
+  const total = todayQuery.data?.assignmentTotalCustomers || 0;
+  
+  // SINGLE SOURCE OF TRUTH for outcome collections
+  const completed = visibleServices.filter((s) => s.status === "completed");
+  const dirty = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
+  const unavailable = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
+  const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
+
+  const done = todayQuery.data?.completedToday ?? completed.length;
   const completedCount = done;
   const isEndOfDay = total > 0 && (total - done) <= 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
-
+ 
   const { data: rateSetting } = useQuery({
     queryKey: ["route-rate-per-car"],
     queryFn: async () => {
@@ -118,11 +125,6 @@ function RoutePage() {
   });
   const ratePerCar = rateSetting ?? 17;
   const earnedSoFar = todayQuery.data?.actualEarnedToday ?? (done * ratePerCar);
-
-  const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
-  const completed = (services ?? []).filter((s) => s.status === "completed");
-  const dirty = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason === "dirty_vehicle");
-  const unavailable = (services ?? []).filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
 
   const pending = [...pendingRaw]
     .sort((a: any, b: any) => {
@@ -304,18 +306,73 @@ function RoutePage() {
       )}
 
       {/* Completed Section */}
+      {/* Today's Service Summary */}
+      {!isMonday && total > 0 && (
+        <div className="px-5 mt-6 w-full box-border">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Service Summary</h2>
+          <div className="grid grid-cols-3 gap-2 w-full">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-emerald-600">{completed.length}</p>
+              <p className="text-[9px] font-bold uppercase text-emerald-600/60 tracking-tighter">Done</p>
+            </div>
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-amber-600">{dirty.length}</p>
+              <p className="text-[9px] font-bold uppercase text-amber-600/60 tracking-tighter">Dirty</p>
+            </div>
+            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-rose-600">{unavailable.length}</p>
+              <p className="text-[9px] font-bold uppercase text-rose-600/60 tracking-tighter">Unavailable</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completed List */}
       {completed.length > 0 && (
-         <div className="px-5 mt-6 w-full box-border mb-10">
+         <div className="px-5 mt-6 w-full box-border mb-6">
             <details className="group border-t border-b border-neutral-100 py-4 w-full cursor-pointer">
                <summary className="flex justify-between items-center list-none">
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Completed ({completed.length})</h2>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Completed Records ({completed.length})</h2>
                   <ChevronDown className="h-4 w-4 text-neutral-300 transition-transform group-open:rotate-180" />
                </summary>
-               <div className="pt-4 space-y-3 w-full animate-in fade-in slide-in-from-top-2">
+               <div className="pt-4 space-y-2 w-full animate-in fade-in slide-in-from-top-2">
                   {completed.map(s => (
                     <div key={s.id} className="flex justify-between items-center text-sm w-full bg-neutral-50 px-4 py-3 rounded-2xl">
-                       <span className="text-neutral-900 font-bold truncate pr-4 text-sm tracking-tight">{(s.customers as any)?.full_name}</span>
-                       <span className="text-emerald-500 font-black shrink-0 text-[10px] uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">✓ COMPLETED</span>
+                       <div className="min-w-0">
+                         <p className="text-neutral-900 font-bold truncate text-sm tracking-tight">{(s.customers as any)?.full_name}</p>
+                         <p className="text-[9px] text-muted-foreground font-medium truncate uppercase">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</p>
+                       </div>
+                       <span className="text-emerald-500 font-black shrink-0 text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">✓ COMPLETED</span>
+                    </div>
+                  ))}
+               </div>
+            </details>
+         </div>
+      )}
+
+      {/* Unavailable List */}
+      {(unavailable.length > 0 || dirty.length > 0) && (
+         <div className="px-5 w-full box-border mb-10">
+            <details className="group border-b border-neutral-100 py-4 w-full cursor-pointer">
+               <summary className="flex justify-between items-center list-none">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Other Outcomes ({unavailable.length + dirty.length})</h2>
+                  <ChevronDown className="h-4 w-4 text-neutral-300 transition-transform group-open:rotate-180" />
+               </summary>
+               <div className="pt-4 space-y-2 w-full animate-in fade-in slide-in-from-top-2">
+                  {[...dirty, ...unavailable].map(s => (
+                    <div key={s.id} className="flex justify-between items-center text-sm w-full bg-neutral-50 px-4 py-3 rounded-2xl">
+                       <div className="min-w-0">
+                         <p className="text-neutral-900 font-bold truncate text-sm tracking-tight">{(s.customers as any)?.full_name}</p>
+                         <p className="text-[9px] text-muted-foreground font-medium truncate uppercase">{(s.vehicles as any)?.make} {(s.vehicles as any)?.model}</p>
+                       </div>
+                       <span className={cn(
+                         "font-black shrink-0 text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                         (s as any).unavailable_reason === 'dirty_vehicle' 
+                          ? "text-amber-500 bg-amber-500/10 border-amber-500/20" 
+                          : "text-rose-500 bg-rose-500/10 border-rose-500/20"
+                       )}>
+                         { (s as any).unavailable_reason === 'dirty_vehicle' ? '⚠ DIRTY' : '✕ UNAVAILABLE' }
+                       </span>
                     </div>
                   ))}
                </div>
