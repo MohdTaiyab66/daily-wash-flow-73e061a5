@@ -210,8 +210,8 @@ function ServiceDetail() {
             <span className="text-sm font-mono font-bold text-neutral-400">{v?.registration_number}</span>
         </div>
         <div className="flex gap-2 mt-4">
-            <Button variant="outline" className="flex-1 h-12 rounded-2xl border-neutral-200 font-bold gap-2" onClick={() => openGoogleMapsDirections(service.destination_lat, service.destination_lng)}>
-                <Navigation className="h-4 w-4" /> Navigate
+            <Button variant="outline" className="flex-1 h-12 rounded-2xl border-neutral-200 font-bold gap-2 text-neutral-900" onClick={() => openGoogleMapsDirections(service.destination_lat, service.destination_lng)}>
+                <Navigation className="h-4 w-4 text-[#FF6B00]" /> Navigate
             </Button>
             <div className="flex-1">
                 <MaskedCallButton serviceId={id} full size="lg" />
