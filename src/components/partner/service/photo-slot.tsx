@@ -4,6 +4,7 @@ import { Camera, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CAMERA_UNAVAILABLE_MESSAGE, captureFromCamera, consumeRestoredCameraCapture } from "@/lib/camera";
 import { getCurrentGps } from "@/lib/native";
+import { cn } from "@/lib/utils";
 
 import { deleteQueuedPhoto, loadQueuedPhoto, saveQueuedPhoto } from "@/lib/photo-upload-queue";
 
@@ -250,13 +251,27 @@ export function PhotoSlot({
         type="button"
         onClick={openCamera}
         disabled={disabled || busy}
-        className="flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/50 bg-primary/5 px-5 py-12 text-center transition active:scale-[0.99] disabled:opacity-70"
+        className={cn(
+          "flex w-full flex-col items-center justify-center gap-3 rounded-[24px] border-2 border-dashed px-5 py-8 text-center transition active:scale-[0.99] disabled:opacity-70",
+          visuallyDone 
+            ? "border-emerald-500/50 bg-emerald-50/50" 
+            : "border-[#FF6B00]/40 bg-[#FF6B00]/5"
+        )}
       >
-        <span className="grid h-24 w-24 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg">
-          {busy ? <Loader2 className="h-10 w-10 animate-spin" /> : <Camera className="h-10 w-10" />}
+        <span className={cn(
+          "grid h-16 w-16 place-items-center rounded-full text-white shadow-lg transition-transform",
+          busy && "animate-pulse",
+          visuallyDone ? "bg-emerald-500" : "bg-[#FF6B00]"
+        )}>
+          {busy ? <Loader2 className="h-7 w-7 animate-spin" /> : visuallyDone ? <Check className="h-7 w-7" /> : <Camera className="h-7 w-7" />}
         </span>
-        <span className="text-xl font-bold">{busy ? "Saving…" : `Open camera`}</span>
-        {hint && !busy && <span className="text-sm text-muted-foreground">{hint}</span>}
+        <div className="space-y-0.5">
+          <p className={cn("text-base font-bold", visuallyDone ? "text-emerald-700" : "text-neutral-900")}>
+            {busy ? "Saving…" : label}
+          </p>
+          {hint && !busy && !visuallyDone && <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">{hint}</p>}
+          {visuallyDone && !busy && <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Tap to retake</p>}
+        </div>
       </button>
     );
   }
@@ -322,14 +337,22 @@ export function PhotoSlot({
     <button
       onClick={openCamera}
       disabled={disabled || busy}
-      className={`flex ${wide ? "aspect-[3/1]" : "aspect-square"} flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-xs font-medium capitalize transition ${
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-[10px] font-black uppercase tracking-wider transition active:scale-[0.98]",
+        wide ? "aspect-[3/1]" : "aspect-square",
         visuallyDone
-          ? "border-[color:var(--success)] bg-[color:var(--success)]/10 text-[color:var(--success)]"
-          : "border-border text-muted-foreground hover:border-primary hover:text-primary"
-      }`}
+          ? "border-emerald-500/40 bg-emerald-50 text-emerald-600"
+          : "border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-[#FF6B00]/40 hover:text-[#FF6B00]"
+      )}
     >
-      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : visuallyDone ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-      {busy ? "Saving…" : visuallyDone ? "✓ Captured" : label}
+      {busy ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : visuallyDone ? (
+        <Check className="h-5 w-5" />
+      ) : (
+        <Camera className="h-5 w-5" />
+      )}
+      <span className="px-2 text-center">{busy ? "Saving…" : visuallyDone ? "Retake" : label}</span>
     </button>
   );
 }

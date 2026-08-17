@@ -188,6 +188,8 @@ function RoutePage() {
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
 
+  if (todayQuery.isLoading && !todayQuery.data) {
+    return (
       <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
          <header className="px-5 pt-3 pb-2">
           <h1 className="text-[28px] sm:text-3xl font-black text-black tracking-tight leading-tight">Daily Route</h1>
@@ -195,6 +197,8 @@ function RoutePage() {
         </header>
         <TodayAssignmentSkeleton />
       </div>
+    );
+  }
   
   return (
     <div className="mx-auto w-full max-w-md pb-40 overflow-x-hidden box-border bg-white min-h-screen safe-bottom">
@@ -360,135 +364,108 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, is
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-8 pt-6 border-none bg-white max-h-[85vh] overflow-y-auto">
-        <SheetHeader className="text-left mb-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6B00] mb-0.5">Customer Details</p>
-          <SheetTitle className="text-2xl font-black tracking-tight text-neutral-900">{c?.full_name}</SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-5">
-          {/* Vehicle Info Card */}
-          <div className="flex items-center gap-4 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
-            <div className="shrink-0 relative">
-              <TappableVehicleImage 
-                path={v?.front_image_path} 
-                className="h-14 w-14 rounded-xl object-cover border border-neutral-200"
-                customerName={c?.full_name}
-                vehicleLabel={`${v?.make} ${v?.model}`}
-                registration={v?.registration_number}
-              />
-              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-neutral-100">
-                <Car className="h-2.5 w-2.5 text-[#FF6B00]" />
-              </div>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-neutral-900 truncate">{v?.make} {v?.model}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-[10px] font-mono font-black text-neutral-500 uppercase tracking-wider bg-neutral-200/50 px-1.5 py-0.5 rounded">
-                  {v?.registration_number}
-                </p>
-                {v?.color && (
-                  <span className="text-[10px] text-neutral-400 font-medium truncate">• {v.color}</span>
-                )}
-              </div>
+      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-8 pt-4 border-none bg-white max-h-[85vh] overflow-y-auto outline-none">
+        {/* Simple handle for better UX */}
+        <div className="mx-auto w-12 h-1.5 bg-neutral-100 rounded-full mb-6" />
+        
+        <div className="space-y-6">
+          {/* Header Area */}
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-neutral-900 leading-tight">{c?.full_name}</h2>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-sm font-bold text-neutral-500">{v?.make} {v?.model}</span>
+              <span className="h-1 w-1 rounded-full bg-neutral-300" />
+              <span className="text-sm font-mono font-bold text-neutral-400 uppercase tracking-wider bg-neutral-50 px-1.5 py-0.5 rounded">
+                {v?.registration_number}
+              </span>
             </div>
           </div>
 
-          {/* Service Details Grid */}
-          <div className="grid grid-cols-2 gap-4 py-1">
-            <div className="space-y-1">
-              <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest">Service Time</p>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#FF6B00]" />
-                <p className="text-sm font-black text-neutral-900">{timeLabel}{formatTime12(time)}</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest">Service Status</p>
-              <div className="flex items-center gap-2">
-                {stop.status === "completed" ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    <span className="text-sm font-black text-emerald-600 uppercase">Done</span>
-                  </>
-                ) : stop.status === "in_progress" ? (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-[#FF6B00] animate-pulse" />
-                    <span className="text-sm font-black text-[#FF6B00] uppercase">Working</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-neutral-300" />
-                    <span className="text-sm font-black text-neutral-500 uppercase">Upcoming</span>
-                  </>
-                )}
-              </div>
-            </div>
+          {/* Quick Info Grid */}
+          <div className="grid grid-cols-2 gap-3">
+             <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-100/50">
+                <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest mb-1">Time</p>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-[#FF6B00]" />
+                  <p className="text-sm font-black text-neutral-900">{timeLabel}{formatTime12(time)}</p>
+                </div>
+             </div>
+             <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-100/50">
+                <p className="text-[9px] uppercase text-neutral-400 font-black tracking-widest mb-1">Status</p>
+                <div className="flex items-center gap-2">
+                  {stop.status === "completed" ? (
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full">✓ Done</span>
+                  ) : stop.status === "in_progress" ? (
+                    <span className="text-[10px] font-black text-[#FF6B00] uppercase tracking-widest bg-[#FF6B00]/10 px-2 py-0.5 rounded-full animate-pulse">● Working</span>
+                  ) : (
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest bg-neutral-100 px-2 py-0.5 rounded-full">Upcoming</span>
+                  )}
+                </div>
+             </div>
           </div>
 
-          {/* Interaction Actions */}
-          <div className="flex gap-3 w-full">
-            <Button 
-              variant="outline" 
-              className="flex-1 h-14 rounded-2xl border-neutral-200 font-bold text-neutral-900 gap-2 active:scale-95 transition-all bg-white"
-              onClick={() => openGoogleMapsDirections(stopLat, stopLng)}
-            >
-              <Navigation className="h-4 w-4 text-[#FF6B00]" />
-              Navigate
-            </Button>
-            <MaskedCallButton serviceId={stop.id} full size="lg" />
-          </div>
-
-          {/* Primary Action Button */}
-          <div className="pt-2">
-            {stop.status === "in_progress" ? (
-              <Link
-                to="/app/service/$id"
-                params={{ id: stop.id }}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
-                )}
+          {/* Location & Navigation */}
+          {c?.address_line && (
+            <div className="space-y-3">
+              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100/50">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-[#FF6B00] shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium text-neutral-600 leading-snug">{c.address_line}</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full h-14 rounded-2xl border-neutral-200 font-bold text-neutral-900 gap-2 bg-white active:scale-[0.98] transition-all"
+                onClick={() => openGoogleMapsDirections(stopLat, stopLng)}
               >
-                <Play className="h-4 w-4 fill-current" />
-                Resume Service
-              </Link>
-            ) : stop.status === "pending" ? (
-              <Button
-                onClick={onStart}
-                disabled={isStarting || isMonday}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm shadow-lg active:scale-95 transition-all",
-                  isMonday 
-                    ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200" 
-                    : "bg-[#FF6B00] text-white shadow-[#FF6B00]/20 hover:bg-[#ff8c40]"
-                )}
-              >
-                {isStarting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isMonday ? (
-                  <Lock className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4 fill-current" />
-                )}
-                {isMonday ? "Service Off (Monday)" : "Start Service"}
+                <Navigation className="h-4 w-4 text-[#FF6B00]" />
+                Open in Maps
               </Button>
-            ) : (
-              <Button
-                disabled
-                className="w-full flex items-center justify-center gap-2 rounded-2xl font-black uppercase tracking-wider px-4 h-14 text-sm bg-neutral-100 text-neutral-400 shadow-none cursor-not-allowed"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Service Completed
-              </Button>
-            )}
-            
-            {stop.status === "pending" && (
-              <p className="text-[10px] text-center text-neutral-400 font-bold uppercase tracking-tight mt-4">
-                {isMonday 
-                  ? "Services are paused on Mondays" 
-                  : "Ensure you are at the customer's location before starting"}
-              </p>
-            )}
+            </div>
+          )}
+
+          {/* Primary Actions */}
+          <div className="space-y-3 pt-2">
+             {stop.status === "pending" ? (
+               <Button
+                 onClick={onStart}
+                 disabled={isStarting || isMonday}
+                 className={cn(
+                   "w-full h-16 rounded-[24px] font-black uppercase tracking-widest text-base shadow-xl active:scale-[0.98] transition-all",
+                   isMonday 
+                     ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200" 
+                     : "bg-[#FF6B00] text-white shadow-orange-500/20 hover:bg-[#ff8c40]"
+                 )}
+               >
+                 {isStarting ? (
+                   <Loader2 className="h-5 w-5 animate-spin" />
+                 ) : isMonday ? (
+                   <Lock className="h-5 w-5 mr-2" />
+                 ) : (
+                   <Play className="h-5 w-5 fill-current mr-2" />
+                 )}
+                 {isMonday ? "Monday Off" : "Start Service"}
+               </Button>
+             ) : stop.status === "in_progress" ? (
+               <Link
+                 to="/app/service/$id"
+                 params={{ id: stop.id }}
+                 className="w-full h-16 flex items-center justify-center gap-2 rounded-[24px] bg-[#FF6B00] text-white font-black uppercase tracking-widest text-base shadow-xl shadow-orange-500/20 hover:bg-[#ff8c40] active:scale-[0.98] transition-all"
+               >
+                 <Play className="h-5 w-5 fill-current" />
+                 Continue Service
+               </Link>
+             ) : (
+               <Button
+                 disabled
+                 className="w-full h-16 rounded-[24px] bg-emerald-50 text-emerald-600 font-black uppercase tracking-widest text-base cursor-not-allowed border border-emerald-100"
+               >
+                 <CheckCircle2 className="h-5 w-5 mr-2" />
+                 Service Completed
+               </Button>
+             )}
+
+             <MaskedCallButton serviceId={stop.id} full size="lg" />
           </div>
         </div>
       </SheetContent>
@@ -660,20 +637,20 @@ function CompactQueueRow({ stop, seqNo, onClick }: { stop: any; seqNo: number; o
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-[24px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left group"
+      className="flex items-center gap-4 p-3.5 bg-white border border-neutral-100 rounded-[20px] shadow-sm active:scale-[0.98] transition-all w-full box-border text-left group"
     >
-      <div className="h-10 w-10 bg-neutral-50 rounded-2xl flex items-center justify-center font-black text-neutral-400 text-xs shrink-0 border border-neutral-100 group-hover:bg-neutral-100 transition-colors">
-        #{seqNo}
+      <div className="h-8 w-8 bg-neutral-50 rounded-xl flex items-center justify-center font-black text-neutral-400 text-[10px] shrink-0 border border-neutral-100 group-hover:bg-neutral-100 transition-colors">
+        {seqNo}
       </div>
       <div className="flex-1 min-w-0">
-         <p className="font-bold truncate text-neutral-900 text-[15px] tracking-tight">{c?.full_name}</p>
-         <p className="text-[11px] text-neutral-400 font-bold uppercase tracking-tight truncate mt-0.5">{v?.make} {v?.model}</p>
-         <div className="flex items-center gap-1.5 mt-1.5">
-            <Clock className="h-3 w-3 text-[#FF6B00]" />
-            <p className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
+         <p className="font-bold truncate text-neutral-900 text-sm tracking-tight">{c?.full_name}</p>
+         <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight truncate">{v?.make} {v?.model}</p>
+            <span className="h-0.5 w-0.5 rounded-full bg-neutral-300" />
+            <p className="text-[9px] font-black text-neutral-500 uppercase tracking-tighter">{timeLabel}{formatTime12(time)}</p>
          </div>
       </div>
-      <ChevronRight className="h-5 w-5 text-neutral-300 shrink-0 group-hover:text-neutral-500 transition-colors" />
+      <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0 group-hover:text-neutral-500 transition-colors" />
     </button>
   );
 }
