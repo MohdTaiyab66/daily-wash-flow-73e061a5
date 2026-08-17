@@ -252,7 +252,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{done} / {total} Completed</p>
+                        <p className="text-sm font-bold">{done} / {total || targetCustomers} Completed</p>
                       </div>
                     </div>
                   ) : (
