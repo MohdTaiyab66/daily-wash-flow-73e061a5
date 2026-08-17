@@ -200,7 +200,7 @@ function RoutePage() {
         <Card className="p-4 shadow-sm border-none bg-neutral-50 w-full box-border">
           <div className="flex items-baseline justify-between mb-3">
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
-            <span className="text-xs font-bold">{done} / {total} COMPLETED</span>
+            <span className="text-xs font-bold">{done} / {total} COMPLETED TODAY</span>
           </div>
           <Progress value={progressPct} className="h-1.5 mb-5" />
           <div className="grid grid-cols-3 gap-2 text-center w-full">
@@ -308,7 +308,11 @@ function RoutePage() {
               <h2 className="text-xl font-bold">Today's Route Complete!</h2>
               <p className="text-muted-foreground text-sm">Great work, you've finished all tasks.</p>
            </div>
-           <EndOfDayCard />
+           <EndOfDayCard 
+              completed={todayQuery.data?.completedToday ?? 0}
+              total={todayQuery.data?.todaysCustomers ?? 0}
+              earnings={todayQuery.data?.actualEarnedToday ?? 0}
+            />
         </div>
       )}
       

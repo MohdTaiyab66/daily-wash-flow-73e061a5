@@ -265,7 +265,7 @@ function HomePage() {
                   )}
 
                   <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
-                    <Link to="/app/live">VIEW DAILY ROUTE</Link>
+                    <Link to="/app/live">{allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE")}</Link>
                   </Button>
                 </div>
               </>
@@ -339,10 +339,10 @@ function HomePage() {
           </div>
         )}
 
-        {online && assignment && !anyStarted && !allDone && total > 0 && (
+        {online && assignment && !allDone && total > 0 && (
            <Button asChild size="lg" className="w-full h-16 rounded-3xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-lg shadow-xl shadow-[#FF6B00]/20 active:scale-[0.98] transition-all">
             <Link to="/app/live">
-              START ASSIGNMENT
+              {anyStarted ? "CONTINUE ROUTE" : "START DAILY ROUTE"}
               <ArrowRight className="ml-2 h-5 w-5" strokeWidth={3} />
             </Link>
           </Button>
