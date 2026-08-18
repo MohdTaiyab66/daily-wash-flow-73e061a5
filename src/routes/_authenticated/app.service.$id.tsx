@@ -27,6 +27,7 @@ function ServiceDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [selectedCondition, setSelectedCondition] = useState<"ready" | "dirty" | "unavailable" | null>(null);
+  const [unavailableReason, setUnavailableReason] = useState<string>("vehicle_not_available");
   const [notes, setNotes] = useState("");
   const [celebration, setCelebration] = useState<any>(null);
 
@@ -125,7 +126,7 @@ function ServiceDetail() {
         
       const { data, error } = await supabase.rpc("submit_service_unavailable", {
         p_service_id: id,
-        p_reason: "vehicle_not_available",
+        p_reason: unavailableReason,
         p_notes: notes.trim() || "Vehicle unavailable",
         p_photos: capturedPaths,
         p_lat: pos?.lat ?? null,
@@ -143,6 +144,33 @@ function ServiceDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const markDirty = useMutation({
+    mutationFn: async () => {
+      const pos = await getPosition();
+      const dirtyPhotos = (photos ?? [])
+        .filter(p => p.stage === "dirty")
+        .map(p => p.storage_path);
+
+      const { data, error } = await supabase.rpc("submit_service_unavailable", {
+        p_service_id: id,
+        p_reason: "dirty_vehicle",
+        p_notes: notes.trim() || "Dirty vehicle reported",
+        p_photos: dirtyPhotos,
+        p_lat: pos?.lat ?? null,
+        p_lng: pos?.lng ?? null,
+      } as any);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["service", id] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      toast.success("Dirty vehicle reported");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const goNext = () => navigate({ to: "/app/live" });
 
   const status = service?.status ?? "pending";
@@ -153,6 +181,7 @@ function ServiceDetail() {
   const afterDone = (photos ?? []).filter((p) => p.stage === "after");
   const afterAllDone = AFTER_ANGLES.every((a) => afterDone.some((p) => p.angle === a));
   const unavailableDone = (photos ?? []).some(p => p.stage === "unavailable");
+  const dirtyDone = (photos ?? []).filter(p => p.stage === "dirty").length >= 4;
 
   useEffect(() => {
     if (service?.unavailable_reason === "dirty_vehicle") setSelectedCondition("dirty");
@@ -314,7 +343,7 @@ function ServiceDetail() {
             {selectedCondition && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-6 pt-2">
                      {/* Before Photo Section */}
-                     {(selectedCondition === "ready" || selectedCondition === "dirty") && (
+                     {selectedCondition === "ready" && (
                         <div className="space-y-4">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Before Photo</h3>
                             <PhotoSlot 
@@ -327,6 +356,52 @@ function ServiceDetail() {
                                 hint="Whole car visible"
                                 onUploaded={() => refetchPhotos()} 
                             />
+                        </div>
+                     )}
+
+                     {/* Dirty Vehicle Flow */}
+                     {selectedCondition === "dirty" && (
+                        <div className="space-y-6">
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Dirty Vehicle Photos (4 Required)</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {AFTER_ANGLES.map((angle) => {
+                                        const isDone = (photos ?? []).some((p) => p.stage === "dirty" && p.angle === angle);
+                                        return (
+                                            <PhotoSlot 
+                                                key={angle}
+                                                serviceId={id} 
+                                                stage="dirty" 
+                                                angle={angle} 
+                                                label={angle} 
+                                                done={isDone} 
+                                                onUploaded={() => refetchPhotos()}
+                                                thumbPath={photos?.find(p => p.stage === 'dirty' && p.angle === angle)?.storage_path}
+                                                variant={isDone ? "guided-done" : "default"}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
+                                 <Textarea 
+                                    placeholder="What makes the vehicle very dirty? (e.g. thick mud, bird droppings)" 
+                                    className="min-h-[100px] rounded-[20px] border-neutral-200 bg-neutral-50 focus:bg-white transition-colors"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                 />
+                            </div>
+
+                            <Button 
+                                size="lg" 
+                                className="h-16 w-full rounded-[24px] bg-amber-600 hover:bg-amber-700 text-white font-black text-lg shadow-xl shadow-amber-500/10 active:scale-[0.98] transition-all" 
+                                onClick={() => markDirty.mutate()}
+                                disabled={markDirty.isPending || !dirtyDone}
+                            >
+                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : "REPORT DIRTY VEHICLE"}
+                            </Button>
                         </div>
                      )}
                      
@@ -348,9 +423,28 @@ function ServiceDetail() {
                              </div>
                              
                              <div className="space-y-4">
-                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Unavailability Reason</h3>
+                                 <select 
+                                    className="w-full h-12 rounded-[20px] border-2 border-neutral-100 bg-neutral-50 px-4 font-bold text-neutral-900 focus:border-red-500 transition-colors"
+                                    value={unavailableReason}
+                                    onChange={(e) => setUnavailableReason(e.target.value)}
+                                 >
+                                    <option value="vehicle_not_available">Vehicle not available</option>
+                                    <option value="parking_locked">Parking locked</option>
+                                    <option value="customer_asked_to_skip">Customer asked to skip</option>
+                                    <option value="access_not_available">Access not available</option>
+                                    <option value="customer_not_responding">Customer not responding</option>
+                                    <option value="vehicle_taken_out">Vehicle taken out</option>
+                                    <option value="keys_not_available">Keys not available</option>
+                                    <option value="security_guard_denied">Security guard denied</option>
+                                    <option value="other">Other</option>
+                                 </select>
+                             </div>
+
+                             <div className="space-y-4">
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Additional Remarks</h3>
                                  <Textarea 
-                                    placeholder="Why is the vehicle unavailable?" 
+                                    placeholder={unavailableReason === 'other' ? "Please explain why (Required)..." : "Optional notes..."} 
                                     className="min-h-[100px] rounded-[20px] border-neutral-200 bg-neutral-50 focus:bg-white transition-colors"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
@@ -361,15 +455,15 @@ function ServiceDetail() {
                                 size="lg" 
                                 className="h-16 w-full rounded-[24px] bg-red-600 hover:bg-red-700 text-white font-black text-lg shadow-xl shadow-red-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markUnavailable.mutate()}
-                                disabled={markUnavailable.isPending || !unavailableDone}
+                                disabled={markUnavailable.isPending || !unavailableDone || (unavailableReason === 'other' && !notes.trim())}
                              >
                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : "MARK UNAVAILABLE"}
                              </Button>
                          </div>
                      )}
 
-                     {/* Completion for Ready/Dirty */}
-                     {(selectedCondition === "ready" || selectedCondition === "dirty") && beforeDone && (
+                      {/* Completion for Ready */}
+                     {selectedCondition === "ready" && beforeDone && (
                         <div className="space-y-6 pt-2">
                             <div className="space-y-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">After Photos (Required)</h3>
