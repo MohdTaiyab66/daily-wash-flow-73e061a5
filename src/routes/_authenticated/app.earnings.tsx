@@ -98,7 +98,7 @@ function EarningsPage() {
       for (const s of services ?? []) {
         let r = Number(s.rate_per_car || RATE);
         if (s.status === "unavailable") {
-          r = s.unavailable_reason === 'dirty_vehicle' ? NEED_WASH_RATE : UNAVAILABLE_RATE;
+          r = (s as any).unavailable_reason === 'dirty_vehicle' ? NEED_WASH_RATE : UNAVAILABLE_RATE;
         }
         acc.lifetime += r; acc.lifetimeN++;
         days.add(s.scheduled_date);
