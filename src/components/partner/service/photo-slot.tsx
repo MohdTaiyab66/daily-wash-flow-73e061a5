@@ -138,6 +138,15 @@ export function PhotoSlot({
             .from("service-photos")
             .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
           if (error) throw error;
+
+          // Mapping logic for Unavailable Vehicle Evidence Photos (1 -> front, 2 -> rear)
+          // to comply with DB enum: front, rear, left, right, full
+          let dbAngle = angle;
+          if (stage === "unavailable") {
+            if (angle === "1") dbAngle = "front";
+            else if (angle === "2") dbAngle = "rear";
+          }
+
           const { error: e2 } = await supabase
             .from("service_photos")
             .upsert(
@@ -145,7 +154,7 @@ export function PhotoSlot({
                 service_id: serviceId,
                 partner_id: userId,
                 stage: stage as any,
-                angle: angle as any,
+                angle: dbAngle as any,
                 storage_path: path,
                 lat: pos?.lat ?? null,
                 lng: pos?.lng ?? null,

@@ -103,7 +103,7 @@ function ServiceDetail() {
         const after = pickPhotoPaths(photos ?? [], "after", AFTER_ANGLES);
         outcomePhotos = [...before, ...after];
       } else if (vars.outcome === "unavailable") {
-        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["1", "2"]); // Enforce 2 photos per RPC/UI
+        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["front", "rear"]); // Mapped from 1, 2 to front, rear
       } else if (vars.outcome === "need_wash") {
 
         outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
@@ -394,7 +394,8 @@ function ServiceDetail() {
                                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photos (2 Required)</h3>
                                  <div className="grid grid-cols-2 gap-3">
                                      {[1, 2].map((idx) => {
-                                         const isDone = (photos ?? []).some((p) => p.stage === "unavailable" && p.angle === idx.toString());
+                                         const angle = idx === 1 ? "front" : "rear";
+                                         const isDone = (photos ?? []).some((p) => p.stage === "unavailable" && p.angle === angle);
                                          return (
                                              <PhotoSlot 
                                                  key={idx}
@@ -405,7 +406,7 @@ function ServiceDetail() {
                                                  label={`Evidence #${idx}`} 
                                                  done={isDone} 
                                                  onUploaded={() => refetchPhotos()}
-                                                 thumbPath={photos?.find(p => p.stage === 'unavailable' && p.angle === idx.toString())?.storage_path}
+                                                 thumbPath={photos?.find(p => p.stage === 'unavailable' && p.angle === angle)?.storage_path}
                                                  variant={isDone ? "guided-done" : "default"}
                                                  hint={idx === 1 ? "Mandatory" : "Required"}
                                              />
