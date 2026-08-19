@@ -142,10 +142,6 @@ function ServiceDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
-      toast.success("Dirty vehicle reported");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const goNext = () => navigate({ to: "/app/live" });
 
@@ -376,10 +372,11 @@ function ServiceDetail() {
                             <Button 
                                 size="lg" 
                                 className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
-                                onClick={() => markDirty.mutate()}
-                                disabled={markDirty.isPending || !dirtyDone}
+                               onClick={() => submitOutcome.mutate({ outcome: "need_wash" })}
+                               disabled={submitOutcome.isPending || !dirtyDone}
                             >
-                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
+                               {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
+
                             </Button>
                         </div>
                      )}
@@ -443,7 +440,7 @@ function ServiceDetail() {
                              <Button 
                                  size="lg" 
                                  className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
-                                 onClick={() => markUnavailable.mutate()}
+                                 onClick={() => submitOutcome.mutate({ outcome: "unavailable" })}
                                  disabled={markUnavailable.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
                              >
                                  {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
@@ -485,7 +482,7 @@ function ServiceDetail() {
                                         ? "bg-[#FF6B00] hover:bg-[#ff8c33] text-white shadow-xl shadow-orange-500/20" 
                                         : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
                                 )}
-                                onClick={() => afterAllDone && complete.mutate()}
+                                onClick={() => afterAllDone && submitOutcome.mutate({ outcome: "completed" })}
                                 disabled={complete.isPending || !afterAllDone}
                             >
                                 {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}

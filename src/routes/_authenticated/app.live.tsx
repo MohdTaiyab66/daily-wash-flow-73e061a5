@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Phone, Navigation, Play, AlertTriangle, Car, Loader2, CheckCircle2, Clock, Trophy, Wallet, MapPin, ZoomIn, Lock, Sparkles, ChevronDown, ChevronRight, X } from "lucide-react";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
+import { getTodayIST } from "@/lib/date-utils";
+
 import { initiateMaskedCall } from "@/lib/calling.functions";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -37,7 +39,7 @@ function RoutePage() {
     [["route-today"], ["today-assignment"], ["earnings-v3"], ["today-assignment-for-earnings"]]
   );
   
-  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const todayDateStr = getTodayIST();
   const { data: services } = useQuery({
     queryKey: ["route-today"],
     queryFn: async () => {
