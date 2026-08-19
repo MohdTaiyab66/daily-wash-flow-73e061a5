@@ -105,6 +105,7 @@ function ServiceDetail() {
       } else if (vars.outcome === "unavailable") {
         outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["full"]);
       } else if (vars.outcome === "need_wash") {
+
         outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
       }
 

@@ -102,10 +102,11 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
         throw new Error("4 photos required for Need Wash");
       }
       
-      // Validation for Unavailable (2 photos required by DB)
-      if (outcome === "unavailable" && photos.length < 2) {
-        throw new Error("2 evidence photos required for Unavailability");
+      // Validation for Unavailable (1 photo required by DB migration 20260818120034)
+      if (outcome === "unavailable" && photos.length < 1) {
+        throw new Error("At least 1 evidence photo required for Unavailability");
       }
+
 
       result = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
