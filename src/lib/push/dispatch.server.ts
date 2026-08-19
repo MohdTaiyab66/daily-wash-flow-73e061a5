@@ -368,6 +368,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     .limit(50);
 
   let sentCount = 0;
+  console.log(`[PUSH-DISPATCH:CUSTOMER] PROCESSING rows=${(rows ?? []).length}`);
   for (const r of (rows ?? [])) {
     console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
@@ -489,6 +490,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     .limit(50);
 
   let sentCount = 0;
+  console.log(`[PUSH-DISPATCH:PARTNER] PROCESSING rows=${(rows ?? []).length}`);
   for (const r of rows ?? []) {
     console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
