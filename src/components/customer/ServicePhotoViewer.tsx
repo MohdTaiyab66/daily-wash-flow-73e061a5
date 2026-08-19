@@ -111,8 +111,8 @@ export function ServicePhotoViewer({
   const stageLabels: Record<string, string> = {
     before: "BEFORE",
     after: "AFTER",
-    proof: "SERVICE PHOTO",
-    dirty: "DIRTY VEHICLE",
+    proof: "EVIDENCE",
+    dirty: "NEED WASH",
     unavailable: "UNAVAILABLE",
   };
 
@@ -194,7 +194,7 @@ export function ServicePhotoViewer({
                    </div>
                    {currentPhoto.stage && (
                      <div className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-black shadow-lg">
-                       {currentPhoto.stage}
+                       {stageLabels[currentPhoto.stage] || currentPhoto.stage}
                      </div>
                    )}
                 </div>

@@ -76,27 +76,58 @@ function BookingDetail() {
   // customer for 48h after completion; admins always see them in admin panel.
   const completion = useQuery({
     queryKey: ["customer-booking-completion", id, b?.ops_service_id, b?.partner_id, b?.status],
-    enabled: !!b && b.status === "completed" && !!b.ops_service_id,
+    enabled: !!b && (b.status === "completed" || b.status === "unavailable") && !!b.ops_service_id,
     queryFn: async () => {
       const opsId = b!.ops_service_id as string;
-      const [{ data: svc }, { data: partner }, { data: photos }] = await Promise.all([
-        (supabase as any).from("services").select("completed_at,partner_id").eq("id", opsId).maybeSingle(),
+      const [{ data: svc }, { data: partner }, { data: photos }, { data: dirty }] = await Promise.all([
+        (supabase as any).from("services").select("completed_at,partner_id,status,unavailable_reason,unavailable_notes,unavailable_photo").eq("id", opsId).maybeSingle(),
         b!.partner_id
           ? (supabase as any).from("partners").select("full_name").eq("id", b!.partner_id).maybeSingle()
           : Promise.resolve({ data: null }),
         (supabase as any).from("service_photos").select("stage,angle,storage_path,captured_at").eq("service_id", opsId),
+        (supabase as any).from("dirty_vehicle_reports").select("*").eq("service_id", opsId).maybeSingle(),
       ]);
-      const photoUrls: { stage: string; angle: string; url: string; captured_at: string }[] = [];
+
+      const photoUrls: { stage: string; angle: string; url: string; captured_at: string; storage_path: string }[] = [];
+      
+      // Add standard service photos
       for (const p of (photos ?? []) as any[]) {
         const { data: signed } = await (supabase as any).storage
           .from("service-photos")
           .createSignedUrl(p.storage_path, 60 * 60);
         if (signed?.signedUrl) {
-          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at });
+          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at, storage_path: p.storage_path });
         }
       }
+
+      // Add unavailable proof if missing from photos list
+      if (svc?.unavailable_photo && !photoUrls.some(p => p.storage_path === svc.unavailable_photo)) {
+        const { data: signed } = await (supabase as any).storage
+          .from("service-photos")
+          .createSignedUrl(svc.unavailable_photo, 60 * 60);
+        if (signed?.signedUrl) {
+          photoUrls.push({ stage: "proof", angle: "proof", url: signed.signedUrl, captured_at: svc.completed_at || svc.updated_at, storage_path: svc.unavailable_photo });
+        }
+      }
+
+      // Add dirty photos
+      const dirtyPaths = [dirty?.photo_front, dirty?.photo_rear, dirty?.photo_left, dirty?.photo_right].filter(Boolean);
+      for (const dp of dirtyPaths) {
+        if (!photoUrls.some(p => p.storage_path === dp)) {
+          const { data: signed } = await (supabase as any).storage
+            .from("service-photos")
+            .createSignedUrl(dp, 60 * 60);
+          if (signed?.signedUrl) {
+            photoUrls.push({ stage: "dirty", angle: "dirty", url: signed.signedUrl, captured_at: dirty.created_at, storage_path: dp });
+          }
+        }
+      }
+
       return {
         completed_at: svc?.completed_at ?? null,
+        status: svc?.status ?? b!.status,
+        unavailable_reason: svc?.unavailable_reason ?? null,
+        unavailable_notes: svc?.unavailable_notes ?? null,
         partner_name: partner?.full_name ?? null,
         photos: photoUrls,
       };
@@ -108,7 +139,8 @@ function BookingDetail() {
 
   const isCancelled = b.status === "cancelled";
   const isCompleted = b.status === "completed";
-  const canModify = !isCancelled && !isCompleted && b.status !== "active";
+  const isUnavailable = b.status === "unavailable" || completion.data?.status === "unavailable";
+  const canModify = !isCancelled && !isCompleted && !isUnavailable && b.status !== "active";
   const completedAt = completion.data?.completed_at
     ? new Date(completion.data.completed_at)
     : (b.updated_at && isCompleted ? new Date(b.updated_at) : null);
@@ -313,12 +345,17 @@ function BookingDetail() {
         </div>
 
         {/* Service Completion Artifacts */}
-        {isCompleted && (
+        {(isCompleted || isUnavailable) && (
           <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
              <div className="flex items-center justify-between mb-6">
                 <div>
                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Proof of work</h3>
-                   <p className="text-[15px] font-black text-success">Service Completed</p>
+                   <p className={cn(
+                     "text-[15px] font-black",
+                     isCompleted ? "text-success" : "text-neutral-500"
+                   )}>
+                     {isCompleted ? "Service Completed" : "Service Unavailable"}
+                   </p>
                 </div>
                 {completedAt && (
                   <div className="text-right">
@@ -332,26 +369,29 @@ function BookingDetail() {
                <div className="space-y-6">
                  {completion.data && completion.data.photos.length > 0 ? (
                    <>
-                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Before Service</p>
-                        <div className="grid grid-cols-4 gap-3">
-                          {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
-                            <button 
-                              key={`b-${i}`} 
-                              onClick={() => {
-                                const fullIndex = completion.data!.photos.indexOf(p);
-                                setInitialPhotoIndex(fullIndex);
-                                setViewerOpen(true);
-                              }}
-                              className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
-                            >
-                              <img src={p.url} alt="Before" className="h-full w-full object-cover" />
-                            </button>
-                          ))}
-                        </div>
-                     </div>
-                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">After Service</p>
+                        {completion.data.photos.some(p => p.stage === "before" || p.stage === "proof" || p.stage === "dirty") && (
+                          <div className="mb-6">
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Evidence Photos</p>
+                            <div className="grid grid-cols-4 gap-3">
+                              {completion.data.photos.filter((p) => ["before", "proof", "dirty"].includes(p.stage)).map((p, i) => (
+                                <button 
+                                  key={`b-${i}`} 
+                                  onClick={() => {
+                                    const fullIndex = completion.data!.photos.indexOf(p);
+                                    setInitialPhotoIndex(fullIndex);
+                                    setViewerOpen(true);
+                                  }}
+                                  className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
+                                >
+                                  <img src={p.url} alt="Evidence" className="h-full w-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      {completion.data.photos.some(p => p.stage === "after") && (
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">After Service</p>
                         <div className="grid grid-cols-4 gap-3">
                           {["front","rear","left","right"].map((ang) => {
                             const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
@@ -376,7 +416,7 @@ function BookingDetail() {
                             );
                           })}
                         </div>
-                     </div>
+                      )}
                      
                      <ServicePhotoViewer
                         open={viewerOpen}

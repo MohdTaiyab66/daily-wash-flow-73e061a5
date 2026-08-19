@@ -204,11 +204,11 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   ].filter((p): p is string => !!p);
 
   const getStatusDisplay = () => {
-    if (isUnavailable) return { label: "Skipped", tone: "neutral" as const, icon: ShieldAlert };
-    if (isMissed) return { label: "Missed", tone: "danger" as const, icon: AlertCircle };
-    if (isPending) return { label: "Scheduled", tone: "brand" as const, icon: Clock3 };
-    if (hasDirty) return { label: "Extra Dirty", tone: "warning" as const, icon: AlertCircle };
-    return { label: "Completed", tone: "success" as const, icon: CheckCircle2 };
+    if (isUnavailable) return { label: "UNAVAILABLE", tone: "neutral" as const, icon: ShieldAlert };
+    if (isMissed) return { label: "MISSED", tone: "danger" as const, icon: AlertCircle };
+    if (isPending) return { label: "SCHEDULED", tone: "brand" as const, icon: Clock3 };
+    if (hasDirty) return { label: "NEED WASH", tone: "warning" as const, icon: AlertCircle };
+    return { label: "COMPLETED", tone: "success" as const, icon: CheckCircle2 };
   };
 
   const status = getStatusDisplay();
@@ -257,18 +257,33 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         </div>
       </div>
 
-      {!isUnavailable && !isMissed && service.photos.length > 0 && (
+      {(isUnavailable || hasDirty || (!isMissed && service.photos.length > 0)) && (
         <div className="mt-5 relative">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar snap-x">
-            {service.photos.map((p, i) => (
-              <div key={i} className="snap-start">
-                <SignedPhoto path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
-              </div>
-            ))}
+            {isUnavailable || hasDirty ? (
+              <>
+                {service.unavailable_photo && (
+                  <div className="snap-start">
+                    <SignedPhoto path={service.unavailable_photo} stage="proof" onClick={() => openViewer(0)} />
+                  </div>
+                )}
+                {dirtyPhotos.map((p, i) => (
+                  <div key={`d-${i}`} className="snap-start">
+                    <SignedPhoto path={p} stage="dirty" onClick={() => openViewer(service.unavailable_photo ? i + 1 : i)} />
+                  </div>
+                ))}
+              </>
+            ) : (
+              service.photos.map((p, i) => (
+                <div key={i} className="snap-start">
+                  <SignedPhoto path={p.storage_path} stage={p.stage} onClick={() => openViewer(i)} />
+                </div>
+              ))
+            )}
           </div>
           <div className="flex justify-center mt-1">
             <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">
-              Swipe to view · {service.photos.length} photos
+              Swipe to view · {isUnavailable ? (service.unavailable_photo ? 1 : 0) : hasDirty ? dirtyPhotos.length : service.photos.length} photos
             </span>
           </div>
         </div>
