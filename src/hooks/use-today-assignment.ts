@@ -14,6 +14,8 @@ export type TodayAssignmentData = {
   nextDate: string | null;
   todaysCustomers: number;
   completedToday: number;
+  unavailableToday: number;
+  needWashToday: number;
   remainingToday: number;
   actualEarnedToday: number;
   potentialDailyEarnings: number;
@@ -21,8 +23,8 @@ export type TodayAssignmentData = {
   assignmentTotalCustomers: number;
   assignmentCompleted: number;
   targetCars: number;
-  expectedDailyEarnings: number; // Keep for backward compatibility, will match potentialDailyEarnings
-  expectedMonthlyEarnings: number; // Keep for backward compatibility
+  expectedDailyEarnings: number;
+  expectedMonthlyEarnings: number;
   fetchedAt: number;
 };
 
