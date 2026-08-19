@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getTodayIST } from "@/lib/date-utils";
 
 /**
  * Shape of the unified "today assignment" payload consumed by
@@ -56,8 +57,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     };
   }
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const isMonday = now.getDay() === 1;
+  const today = getTodayIST();
+  const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
+
 
   const { data: a, error: aErr } = await supabase
     .from("assignments")

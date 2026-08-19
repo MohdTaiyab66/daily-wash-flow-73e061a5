@@ -28,9 +28,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
+import { getTodayIST } from "@/lib/date-utils";
+
 
 
 import { PartnerShell } from "@/components/partner/PartnerShell";
+import { formatBusinessDate } from "@/lib/date-utils";
+
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: () => (
@@ -139,10 +143,8 @@ function HomePage() {
   const statusInfo = getExplicitStatus();
   
   const firstName = (partner?.full_name ?? "Partner").split(" ")[0];
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "GOOD MORNING" : hour < 17 ? "GOOD AFTERNOON" : "GOOD EVENING";
-  const dateStr = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+  const dateStr = formatBusinessDate(new Date()).split("·")[0].trim();
+
 
   const handleToggle = async (on: boolean) => {
     try {
@@ -278,7 +280,7 @@ function HomePage() {
 
                   <Button asChild size="lg" className="w-full h-14 rounded-2xl bg-[#FF6B00] hover:bg-[#E56000] text-white font-black text-sm shadow-xl shadow-[#FF6B00]/20 active:scale-[0.95] transition-all mt-2">
                     <Link to="/app/live">
-                      {new Date().getDay() === 1 ? "VIEW DAILY ROUTE" : (allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE"))}
+                      {getTodayIST().endsWith("Monday") ? "VIEW DAILY ROUTE" : (allDone ? "VIEW EARNINGS" : (anyStarted ? "RESUME DAILY ROUTE" : "VIEW DAILY ROUTE"))}
                     </Link>
                   </Button>
                 </div>

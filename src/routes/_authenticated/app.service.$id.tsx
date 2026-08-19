@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,12 @@ import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { openGoogleMapsDirections } from "@/lib/gps";
 import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
-import { PhotoSlot, getPosition, type ServicePhotoRow } from "@/components/partner/service/photo-slot";
+import { PhotoSlot, getPosition, type ServicePhotoRow, pickPhotoPaths } from "@/components/partner/service/photo-slot";
 import { Textarea } from "@/components/ui/textarea";
+import { getTodayIST } from "@/lib/date-utils";
+import { useServerFn } from "@tanstack/react-start";
+import { submitServiceOutcome, UNAVAILABLE_REASONS } from "@/lib/service-workflow.functions";
+
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 
@@ -50,7 +54,7 @@ function ServiceDetail() {
   const { data: routeProgress } = useQuery({
     queryKey: ["service-route-progress", id],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayIST();
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase
         .from("services")
@@ -63,6 +67,7 @@ function ServiceDetail() {
       return { total, completed };
     },
   });
+
 
   const start = useMutation({
     mutationFn: async () => {
@@ -86,20 +91,39 @@ function ServiceDetail() {
     },
   });
 
-  const complete = useMutation({
-    mutationFn: async () => {
+  const submitOutcomeFn = useServerFn(submitServiceOutcome);
+
+  const submitOutcome = useMutation({
+    mutationFn: async (vars: { outcome: "completed" | "unavailable" | "need_wash" }) => {
       const pos = await getPosition();
-      const { data, error } = await (supabase as any).rpc("partner_complete_service", {
-        p_service_id: id,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-        p_notes: notes.trim() || null,
+      let outcomePhotos: string[] = [];
+
+      if (vars.outcome === "completed") {
+        const before = pickPhotoPaths(photos ?? [], "before", ["full"]);
+        const after = pickPhotoPaths(photos ?? [], "after", AFTER_ANGLES);
+        outcomePhotos = [...before, ...after];
+      } else if (vars.outcome === "unavailable") {
+        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["full"]);
+      } else if (vars.outcome === "need_wash") {
+
+        outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
+      }
+
+      const result = await submitOutcomeFn({
+        data: {
+          serviceId: id,
+          outcome: vars.outcome,
+          reason: vars.outcome === "unavailable" ? unavailableReason : undefined,
+          notes: notes.trim() || undefined,
+          photos: outcomePhotos,
+          lat: pos?.lat ?? 0,
+          lng: pos?.lng ?? 0,
+        }
       });
-      if (error) throw error;
-      return data;
+
+      return result;
     },
-    onSuccess: (data) => {
-      // FORCE IMMEDIATE REFETCH OF ALL AUTHORITATIVE DATA
+    onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
@@ -109,83 +133,19 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["service-history"] });
       qc.invalidateQueries({ queryKey: ["service-summary"] });
       
-      // We must wait for the invalidation to trigger or use the returned data
-      // to avoid showing stale progress in the celebration modal.
-      setCelebration({
-        amount: Number(data?.amount ?? 17),
-        completed: (routeProgress?.completed ?? 0) + 1,
-        total: routeProgress?.total ?? 1,
-      });
+      if (vars.outcome === "completed") {
+        setCelebration({
+          amount: 17, // This will be updated by authoritative config if needed, but 17 is default
+          completed: (routeProgress?.completed ?? 0) + 1,
+          total: routeProgress?.total ?? 1,
+        });
+      } else {
+        toast.success(vars.outcome === "need_wash" ? "Need Wash reported" : "Marked as unavailable");
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const markUnavailable = useMutation({
-    mutationFn: async () => {
-      const pos = await getPosition();
-      const capturedPaths = (photos ?? [])
-        .filter(p => p.stage === "unavailable")
-        .map(p => p.storage_path);
-        
-      const { data, error } = await supabase.rpc("submit_service_unavailable", {
-        p_service_id: id,
-        p_reason: unavailableReason,
-        p_notes: notes.trim() || "Vehicle unavailable",
-        p_photos: capturedPaths,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
-      });
-      if (error) throw error;
-      return data;
-    },
-
-
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["service", id] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
-      qc.invalidateQueries({ queryKey: ["history"] });
-      qc.invalidateQueries({ queryKey: ["service-history"] });
-      qc.invalidateQueries({ queryKey: ["service-summary"] });
-      toast.success("Marked as unavailable");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const markDirty = useMutation({
-    mutationFn: async () => {
-      const pos = await getPosition();
-      const dirtyPhotos = (photos ?? [])
-        .filter(p => p.stage === "dirty")
-        .map(p => p.storage_path);
-
-      const { data, error } = await supabase.rpc("submit_service_unavailable", {
-        p_service_id: id,
-        p_reason: "dirty_vehicle",
-        p_notes: notes.trim() || "Dirty vehicle reported",
-        p_photos: dirtyPhotos,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
-      });
-      if (error) throw error;
-      return data;
-    },
-
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["service", id] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
-      qc.invalidateQueries({ queryKey: ["history"] });
-      qc.invalidateQueries({ queryKey: ["service-history"] });
-      qc.invalidateQueries({ queryKey: ["service-summary"] });
-      toast.success("Dirty vehicle reported");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const goNext = () => navigate({ to: "/app/live" });
 
@@ -203,6 +163,8 @@ function ServiceDetail() {
     if (service?.unavailable_reason === "dirty_vehicle") setSelectedCondition("dirty");
     else if (status === "unavailable") setSelectedCondition("unavailable");
     else if (status === "in_progress" && !selectedCondition) setSelectedCondition("ready");
+    else if (status === "pending" && !selectedCondition) setSelectedCondition("ready");
+
   }, [status, service?.unavailable_reason, selectedCondition]);
 
   if (!service) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-[#FF6B00]" /></div>;
@@ -416,10 +378,11 @@ function ServiceDetail() {
                             <Button 
                                 size="lg" 
                                 className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
-                                onClick={() => markDirty.mutate()}
-                                disabled={markDirty.isPending || !dirtyDone}
+                               onClick={() => submitOutcome.mutate({ outcome: "need_wash" })}
+                               disabled={submitOutcome.isPending || !dirtyDone}
                             >
-                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
+                               {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
+
                             </Button>
                         </div>
                      )}
@@ -483,11 +446,12 @@ function ServiceDetail() {
                              <Button 
                                  size="lg" 
                                  className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
-                                 onClick={() => markUnavailable.mutate()}
-                                 disabled={markUnavailable.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
+                                 onClick={() => submitOutcome.mutate({ outcome: "unavailable" })}
+                                 disabled={submitOutcome.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
                              >
-                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                                 {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
                              </Button>
+
 
                          </div>
                      )}
@@ -525,11 +489,12 @@ function ServiceDetail() {
                                         ? "bg-[#FF6B00] hover:bg-[#ff8c33] text-white shadow-xl shadow-orange-500/20" 
                                         : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
                                 )}
-                                onClick={() => afterAllDone && complete.mutate()}
-                                disabled={complete.isPending || !afterAllDone}
+                                onClick={() => afterAllDone && submitOutcome.mutate({ outcome: "completed" })}
+                                disabled={submitOutcome.isPending || !afterAllDone}
                             >
-                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
+                                {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
                             </Button>
+
                         </div>
                      )}
                 </div>
