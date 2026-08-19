@@ -38,7 +38,7 @@ export const Route = createFileRoute("/c/_authed/subscriptions")({
   component: MyPlanPage,
 });
 
-import { formatBusinessDate } from "@/lib/date-utils";
+import { formatBusinessDate, getNowIST } from "@/lib/date-utils";
 
 
 type Booking = {
@@ -80,13 +80,17 @@ function MyPlanPage() {
       qc.invalidateQueries({ queryKey: ["customer-bookings"] });
       qc.invalidateQueries({ queryKey: ["sub-queue", userId] });
       qc.invalidateQueries({ queryKey: ["customer-latest-service-notice", userId, selectedVehicleId] });
+      qc.invalidateQueries({ queryKey: ["vehicle-entitlements", selectedVehicleId] });
     };
     const ch = supabase
       .channel(`cust-live-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${userId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `customer_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscription_entitlements", filter: `user_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "entitlement_ledger", filter: `actor_user_id=eq.${userId}` }, refresh)
       .subscribe();
+
     return () => { supabase.removeChannel(ch); };
   }, [userId, qc]);
 
@@ -160,35 +164,38 @@ function MyPlanPage() {
     }
   });
 
+  const vehicleEntitlementsQ = useQuery({
+    queryKey: ["vehicle-entitlements", selectedVehicleId],
+    enabled: !!selectedVehicleId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_vehicle_entitlements", {
+        p_vehicle_id: selectedVehicleId,
+      });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const dailyExteriorEnt = vehicleEntitlementsQ.data?.find(e => e.benefit_type === 'exterior_daily');
+  const interiorEnt = vehicleEntitlementsQ.data?.find(e => e.benefit_type === 'interior');
+
+  const totalDays = dailyExteriorEnt?.total_allocated ?? 25;
+  const elapsed = dailyExteriorEnt?.consumed ?? 0;
+  const remainingDays = dailyExteriorEnt?.remaining ?? 0;
+
+  const interiorCount = interiorEnt?.consumed ?? 0;
+  const interiorTotal = interiorEnt?.total_allocated ?? 1;
+
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
-  const totalDays = 25;
-  const today = new Date();
-  const elapsed = all.filter(b => 
-    b.service_catalog?.service_type === "subscription" && 
-    (b.status === "completed" || b.status === "unavailable")
-  ).length;
+  const today = getNowIST();
   
   const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
-  const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
-  const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+  const expiringSoon = remainingDays <= 7;
 
 
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const interiorReal = all.filter(
-    (b) =>
-      (b.service_catalog?.slug?.includes("interior") || b.service_catalog?.slug?.includes("deep")) &&
-      new Date(b.scheduled_date) >= monthStart &&
-      (b.status === "completed" || b.status === "unavailable"),
-  );
-  const exteriorReal = all.filter(
-    (b) =>
-      (b.service_catalog?.slug?.includes("exterior") || b.service_catalog?.slug?.includes("basic") || b.service_catalog?.slug?.includes("daily")) &&
-      new Date(b.scheduled_date) >= monthStart &&
-      (b.status === "completed" || b.status === "unavailable"),
-  );
 
-  const interiorCount = interiorReal.length;
-  const exteriorCount = exteriorReal.length;
+  // Usage meters now come directly from entitlements RPC
+
 
   const latestNoticeQ = useQuery({
     queryKey: ["customer-latest-service-notice", selectedVehicleId],
@@ -319,7 +326,7 @@ function MyPlanPage() {
                                 
                                 ₹{Number(price).toLocaleString("en-IN")} / month
                                 <span className="h-1 w-1 rounded-full bg-black/10" />
-                                <span className="text-[13px] text-black/40 font-medium">{daysLeft} days left</span>
+                                <span className="text-[13px] text-black/40 font-medium">{remainingDays} days left</span>
                               </div>
                             </div>
                           </div>
@@ -330,12 +337,12 @@ function MyPlanPage() {
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Service Days</p>
-                            <p className="text-[12px] font-black text-[#1A1A1A]">{elapsed} / 25 USED</p>
+                            <p className="text-[12px] font-black text-[#1A1A1A]">{elapsed} / {totalDays} USED</p>
                           </div>
                           <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-[#FF6B00] rounded-full transition-all duration-500" 
-                              style={{ width: `${(elapsed / 25) * 100}%` }}
+                              style={{ width: `${(elapsed / totalDays) * 100}%` }}
                             />
                           </div>
                         </div>
@@ -347,7 +354,7 @@ function MyPlanPage() {
                               "text-[12px] font-black",
                               interiorCount > 0 ? "text-[#FF6B00]" : "text-black/30"
                             )}>
-                              {interiorCount > 0 ? "1 / 1 USED" : "0 / 1 USED"}
+                              {interiorCount} / {interiorTotal} USED
                             </p>
                           </div>
                           <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
@@ -356,7 +363,7 @@ function MyPlanPage() {
                                 "h-full rounded-full transition-all duration-500",
                                 interiorCount > 0 ? "bg-[#FF6B00]" : "bg-black/10"
                               )}
-                              style={{ width: interiorCount > 0 ? "100%" : "0%" }}
+                              style={{ width: `${(interiorCount / interiorTotal) * 100}%` }}
                             />
                           </div>
                         </div>
