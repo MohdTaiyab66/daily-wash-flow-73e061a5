@@ -162,6 +162,8 @@ function ServiceDetail() {
     if (service?.unavailable_reason === "dirty_vehicle") setSelectedCondition("dirty");
     else if (status === "unavailable") setSelectedCondition("unavailable");
     else if (status === "in_progress" && !selectedCondition) setSelectedCondition("ready");
+    else if (status === "pending" && !selectedCondition) setSelectedCondition("ready");
+
   }, [status, service?.unavailable_reason, selectedCondition]);
 
   if (!service) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-[#FF6B00]" /></div>;

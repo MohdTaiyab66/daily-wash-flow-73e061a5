@@ -87,7 +87,6 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
     let result;
     if (outcome === "completed") {
       // Logic for complete service
-      // We'll use the existing RPC but wrap it with atomic safety
       result = await supabase.rpc("partner_complete_service", {
         p_service_id: serviceId,
         p_lat: lat || 0,
@@ -102,6 +101,11 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
       if (outcome === "need_wash" && photos.length < 4) {
         throw new Error("4 photos required for Need Wash");
       }
+      
+      // Validation for Unavailable (2 photos required by DB)
+      if (outcome === "unavailable" && photos.length < 2) {
+        throw new Error("2 evidence photos required for Unavailability");
+      }
 
       result = await supabase.rpc("submit_service_unavailable", {
         p_service_id: serviceId,
@@ -112,6 +116,7 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
         p_lng: lng || 0
       });
     }
+
 
     if (result.error) throw new Error(result.error.message);
 
