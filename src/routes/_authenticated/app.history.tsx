@@ -35,7 +35,7 @@ function HistoryPage() {
         .from("services")
         .select("scheduled_date,status,rate_per_car,customers(area)")
         .eq("partner_id", u.user!.id)
-        .eq("status", "completed")
+        .in("status", ["completed", "unavailable"])
         .gte("scheduled_date", startStr)
         .order("scheduled_date", { ascending: false });
       return data ?? [];
@@ -43,10 +43,16 @@ function HistoryPage() {
   });
 
   const byDay = new Map<string, { cars: number; earnings: number; area: string }>();
+  const UNAVAILABLE_RATE = 12;
+  const NEED_WASH_RATE = 12;
   for (const r of rows ?? []) {
     const ex = byDay.get(r.scheduled_date) ?? { cars: 0, earnings: 0, area: (r.customers as any)?.area ?? "" };
     ex.cars += 1;
-    ex.earnings += Number(r.rate_per_car || RATE);
+    let rate = Number(r.rate_per_car || RATE);
+    if (r.status === "unavailable") {
+      rate = (r as any).unavailable_reason === 'dirty_vehicle' ? NEED_WASH_RATE : UNAVAILABLE_RATE;
+    }
+    ex.earnings += rate;
     byDay.set(r.scheduled_date, ex);
   }
   const days = Array.from(byDay.entries());

@@ -111,8 +111,10 @@ function RoutePage() {
   const unavailable = visibleServices.filter((s) => s.status === "unavailable" && (s as any).unavailable_reason !== "dirty_vehicle");
   const pendingRaw = visibleServices.filter((s) => s.status !== "completed" && s.status !== "unavailable");
 
-  const done = todayQuery.data?.completedToday ?? completed.length;
-  const completedCount = done;
+  const completedCount = todayQuery.data?.completedToday ?? completed.length;
+  const unavailableCount = todayQuery.data?.unavailableToday ?? unavailable.length;
+  const needWashCount = todayQuery.data?.needWashToday ?? dirty.length;
+  const done = completedCount + unavailableCount + needWashCount;
   const isEndOfDay = total > 0 && (total - done) <= 0;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
  
@@ -312,15 +314,15 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Service Summary</h2>
           <div className="grid grid-cols-3 gap-2 w-full">
             <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-emerald-600">{completed.length}</p>
+              <p className="text-xl font-black text-emerald-600">{completedCount}</p>
               <p className="text-[9px] font-bold uppercase text-emerald-600/60 tracking-tighter">Done</p>
             </div>
             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-amber-600">{dirty.length}</p>
-              <p className="text-[9px] font-bold uppercase text-amber-600/60 tracking-tighter">Dirty</p>
+              <p className="text-xl font-black text-amber-600">{needWashCount}</p>
+              <p className="text-[9px] font-bold uppercase text-amber-600/60 tracking-tighter">Need Wash</p>
             </div>
             <div className="bg-rose-50 border border-rose-100 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-rose-600">{unavailable.length}</p>
+              <p className="text-xl font-black text-rose-600">{unavailableCount}</p>
               <p className="text-[9px] font-bold uppercase text-rose-600/60 tracking-tighter">Unavailable</p>
             </div>
           </div>
@@ -371,7 +373,7 @@ function RoutePage() {
                           ? "text-amber-500 bg-amber-500/10 border-amber-500/20" 
                           : "text-rose-500 bg-rose-500/10 border-rose-500/20"
                        )}>
-                         { (s as any).unavailable_reason === 'dirty_vehicle' ? '⚠ DIRTY' : '✕ UNAVAILABLE' }
+                         { (s as any).unavailable_reason === 'dirty_vehicle' ? '⚠ NEED WASH' : '✕ UNAVAILABLE' }
                        </span>
                     </div>
                   ))}

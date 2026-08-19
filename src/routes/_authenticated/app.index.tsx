@@ -262,7 +262,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {todayData?.assignmentTotalCustomers ?? 0} Completed</p>
+                        <p className="text-sm font-bold">{completed} Done · {unavailable} Unavail · {needWash} Need Wash</p>
                       </div>
                     </div>
                   ) : (
