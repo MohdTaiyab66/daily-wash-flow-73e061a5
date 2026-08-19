@@ -14,6 +14,8 @@ export type TodayAssignmentData = {
   nextDate: string | null;
   todaysCustomers: number;
   completedToday: number;
+  unavailableToday: number;
+  needWashToday: number;
   remainingToday: number;
   actualEarnedToday: number;
   potentialDailyEarnings: number;
@@ -21,8 +23,8 @@ export type TodayAssignmentData = {
   assignmentTotalCustomers: number;
   assignmentCompleted: number;
   targetCars: number;
-  expectedDailyEarnings: number; // Keep for backward compatibility, will match potentialDailyEarnings
-  expectedMonthlyEarnings: number; // Keep for backward compatibility
+  expectedDailyEarnings: number;
+  expectedMonthlyEarnings: number;
   fetchedAt: number;
 };
 
@@ -44,7 +46,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   if (!u.user) {
     return {
       assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, remainingToday: 0,
+      todaysCustomers: 0, completedToday: 0, 
+      unavailableToday: 0, needWashToday: 0,
+      remainingToday: 0,
       actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
       targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
@@ -76,16 +80,24 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     // Same filter the Live Route screen uses — bookings covered elsewhere are
     // not part of the partner's route, so counts can never diverge.
     const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
+    const cCount = tds.filter((s: any) => s.status === "completed").length;
+    const uCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+    const nCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+    const standardRate = 17;
+    const exceptionRate = 12;
+
     return {
       assignment: null, all: [], today: tds, nextDate: null,
       todaysCustomers: tds.length,
-      completedToday: tds.filter((s: any) => s.status === "completed").length,
+      completedToday: cCount,
+      unavailableToday: uCount,
+      needWashToday: nCount,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-      actualEarnedToday: tds.filter((s: any) => s.status === "completed").reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0),
-      potentialDailyEarnings: tds.length * 17, // fallback
-      potentialMonthlyEarnings: (tds.length * 17) * 26,
+      actualEarnedToday: (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate),
+      potentialDailyEarnings: tds.length * standardRate,
+      potentialMonthlyEarnings: (tds.length * standardRate) * 26,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: tds.length * 17, expectedMonthlyEarnings: (tds.length * 17) * 26,
+      targetCars: 0, expectedDailyEarnings: tds.length * standardRate, expectedMonthlyEarnings: (tds.length * standardRate) * 26,
       fetchedAt: Date.now(),
     };
   }
@@ -121,9 +133,14 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const potentialDailyEarnings = effectiveCustomerCount * ratePerCar;
   const potentialMonthlyEarnings = potentialDailyEarnings * 26;
 
-  const actualEarnedToday = todays
-    .filter((s: any) => s.status === "completed")
-    .reduce((sum, s) => sum + Number(s.rate_per_car || ratePerCar || 0), 0);
+  const standardRate = ratePerCar || 17;
+  const exceptionRate = 12;
+
+  const cCount = todays.filter((s: any) => s.status === "completed").length;
+  const uCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+  const nCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+
+  const actualEarnedToday = (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate);
 
   const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
 
@@ -133,7 +150,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     today: todays,
     nextDate,
     todaysCustomers: isMonday ? 0 : todays.length,
-    completedToday: isMonday ? 0 : todays.filter((s: any) => s.status === "completed").length,
+    completedToday: isMonday ? 0 : cCount,
+    unavailableToday: isMonday ? 0 : uCount,
+    needWashToday: isMonday ? 0 : nCount,
     remainingToday: isMonday ? 0 : todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
     actualEarnedToday: isMonday ? 0 : actualEarnedToday,
     potentialDailyEarnings,
@@ -141,8 +160,8 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     assignmentTotalCustomers,
     assignmentCompleted: Math.min(assignmentCompleted, assignmentTotalCustomers),
     targetCars,
-    expectedDailyEarnings: potentialDailyEarnings, // backwards compat
-    expectedMonthlyEarnings: potentialMonthlyEarnings, // backwards compat
+    expectedDailyEarnings: potentialDailyEarnings,
+    expectedMonthlyEarnings: potentialMonthlyEarnings,
     fetchedAt: Date.now(),
   };
 }

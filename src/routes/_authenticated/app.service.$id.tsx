@@ -26,7 +26,7 @@ function ServiceDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [selectedCondition, setSelectedCondition] = useState<"ready" | "dirty" | "unavailable" | null>(null);
+  const [selectedCondition, setSelectedCondition] = useState<"ready" | "unavailable" | "dirty" | null>(null);
   const [unavailableReason, setUnavailableReason] = useState<string>("vehicle_not_available");
   const [notes, setNotes] = useState("");
   const [celebration, setCelebration] = useState<any>(null);
@@ -105,6 +105,9 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["service-history"] });
+      qc.invalidateQueries({ queryKey: ["service-summary"] });
       
       // We must wait for the invalidation to trigger or use the returned data
       // to avoid showing stale progress in the celebration modal.
@@ -139,6 +142,11 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["service-history"] });
+      qc.invalidateQueries({ queryKey: ["service-summary"] });
       toast.success("Marked as unavailable");
     },
     onError: (e: any) => toast.error(e.message),
@@ -166,6 +174,11 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["service-history"] });
+      qc.invalidateQueries({ queryKey: ["service-summary"] });
       toast.success("Dirty vehicle reported");
     },
     onError: (e: any) => toast.error(e.message),
@@ -301,24 +314,9 @@ function ServiceDetail() {
                             <Sparkles className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Ready to clean</p>
-                            {selectedCondition === "ready" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase">✓ Selected</p>}
-                        </div>
-                    </button>
-
-                    <button
-                        onClick={() => setSelectedCondition("dirty")}
-                        className={cn(
-                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
-                            selectedCondition === "dirty" ? "border-amber-500 bg-amber-50 shadow-sm" : "border-neutral-100 bg-white"
-                        )}
-                    >
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-400")}>
-                            <AlertTriangle className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Very dirty</p>
-                            {selectedCondition === "dirty" && <p className="text-[10px] font-bold text-amber-500 uppercase">✓ Selected</p>}
+                            <p className="font-bold text-neutral-900">READY TO CLEAN</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Vehicle is present</p>
+                            {selectedCondition === "ready" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
                         </div>
                     </button>
 
@@ -326,15 +324,33 @@ function ServiceDetail() {
                         onClick={() => setSelectedCondition("unavailable")}
                         className={cn(
                             "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
-                            selectedCondition === "unavailable" ? "border-red-500 bg-red-50 shadow-sm" : "border-neutral-100 bg-white"
+                            selectedCondition === "unavailable" ? "border-[#FF6B00] bg-[#FF6B00]/5 shadow-sm" : "border-neutral-100 bg-white"
                         )}
                     >
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-red-500 text-white" : "bg-neutral-100 text-neutral-400")}>
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
                             <ShieldAlert className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Unavailable vehicle</p>
-                            {selectedCondition === "unavailable" && <p className="text-[10px] font-bold text-red-500 uppercase">✓ Selected</p>}
+                            <p className="font-bold text-neutral-900">UNAVAILABLE VEHICLE</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Cannot be serviced</p>
+                            {selectedCondition === "unavailable" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedCondition("dirty")}
+                        className={cn(
+                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
+                            selectedCondition === "dirty" ? "border-[#FF6B00] bg-[#FF6B00]/5 shadow-sm" : "border-neutral-100 bg-white"
+                        )}
+                    >
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
+                            <AlertTriangle className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold text-neutral-900">NEED WASH</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Requires additional attention</p>
+                            {selectedCondition === "dirty" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
                         </div>
                     </button>
                 </div>
@@ -359,11 +375,11 @@ function ServiceDetail() {
                         </div>
                      )}
 
-                     {/* Dirty Vehicle Flow */}
+                     {/* Need Wash Flow */}
                      {selectedCondition === "dirty" && (
                         <div className="space-y-6">
                             <div className="space-y-4">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Dirty Vehicle Photos (4 Required)</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Need Wash Photos (4 Required)</h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     {AFTER_ANGLES.map((angle) => {
                                         const isDone = (photos ?? []).some((p) => p.stage === "dirty" && p.angle === angle);
@@ -387,7 +403,7 @@ function ServiceDetail() {
                             <div className="space-y-4">
                                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
                                  <Textarea 
-                                    placeholder="What makes the vehicle very dirty? (e.g. thick mud, bird droppings)" 
+                                    placeholder="What makes the vehicle need wash? (e.g. thick mud, bird droppings)" 
                                     className="min-h-[100px] rounded-[20px] border-neutral-200 bg-neutral-50 focus:bg-white transition-colors"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
@@ -396,11 +412,11 @@ function ServiceDetail() {
 
                             <Button 
                                 size="lg" 
-                                className="h-16 w-full rounded-[24px] bg-amber-600 hover:bg-amber-700 text-white font-black text-lg shadow-xl shadow-amber-500/10 active:scale-[0.98] transition-all" 
+                                className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markDirty.mutate()}
                                 disabled={markDirty.isPending || !dirtyDone}
                             >
-                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : "REPORT DIRTY VEHICLE"}
+                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
                             </Button>
                         </div>
                      )}
@@ -453,12 +469,12 @@ function ServiceDetail() {
 
                              <Button 
                                 size="lg" 
-                                className="h-16 w-full rounded-[24px] bg-red-600 hover:bg-red-700 text-white font-black text-lg shadow-xl shadow-red-500/10 active:scale-[0.98] transition-all" 
+                                className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markUnavailable.mutate()}
                                 disabled={markUnavailable.isPending || !unavailableDone || (unavailableReason === 'other' && !notes.trim())}
-                             >
-                                {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : "MARK UNAVAILABLE"}
-                             </Button>
+                            >
+                                {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : (!unavailableDone ? "ADD EVIDENCE PHOTO TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                            </Button>
                          </div>
                      )}
 
@@ -498,7 +514,7 @@ function ServiceDetail() {
                                 onClick={() => afterAllDone && complete.mutate()}
                                 disabled={complete.isPending || !afterAllDone}
                             >
-                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : "COMPLETE SERVICE"}
+                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
                             </Button>
                         </div>
                      )}

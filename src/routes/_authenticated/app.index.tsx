@@ -101,6 +101,8 @@ function HomePage() {
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
+  const unavailable = todayData?.unavailableToday ?? 0;
+  const needWash = todayData?.needWashToday ?? 0;
   const total = todayData?.assignmentTotalCustomers || 0;
   const remaining = todayData?.remainingToday ?? 0;
 
@@ -260,7 +262,7 @@ function HomePage() {
                         <p className="text-[9px] font-black uppercase text-white/40 tracking-wider flex items-center gap-1.5">
                           <Navigation className="h-3 w-3" /> Progress
                         </p>
-                        <p className="text-sm font-bold">{todayData?.completedToday ?? 0} / {todayData?.assignmentTotalCustomers ?? 0} Completed</p>
+                        <p className="text-sm font-bold">{completed} Done · {unavailable} Unavail · {needWash} Need Wash</p>
                       </div>
                     </div>
                   ) : (
