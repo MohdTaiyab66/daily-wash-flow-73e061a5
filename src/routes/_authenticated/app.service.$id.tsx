@@ -54,7 +54,7 @@ function ServiceDetail() {
   const { data: routeProgress } = useQuery({
     queryKey: ["service-route-progress", id],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayIST();
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase
         .from("services")
@@ -67,6 +67,7 @@ function ServiceDetail() {
       return { total, completed };
     },
   });
+
 
   const start = useMutation({
     mutationFn: async () => {
