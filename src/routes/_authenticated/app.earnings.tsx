@@ -9,6 +9,9 @@ import { useI18n } from "@/lib/i18n";
 import { getTodayIST } from "@/lib/date-utils";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 
+const RATE = 17;
+
+
 
 export const Route = createFileRoute("/_authenticated/app/earnings")({
   component: () => (
@@ -76,7 +79,8 @@ function EarningsPage() {
       const { data: u } = await supabase.auth.getUser();
       const id = u.user!.id;
       const today = new Date();
-      const todayStr = today.toISOString().slice(0, 10);
+      const todayStr = getTodayIST();
+
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
       const weekStart = startOfWeek(today);
 
