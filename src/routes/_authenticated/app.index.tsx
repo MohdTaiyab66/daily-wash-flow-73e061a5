@@ -28,6 +28,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getPartnerOpenOffers } from "@/lib/marketplace.functions";
+import { getTodayIST } from "@/lib/date-utils";
+
 
 
 import { PartnerShell } from "@/components/partner/PartnerShell";
