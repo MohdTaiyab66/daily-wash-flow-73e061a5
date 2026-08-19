@@ -103,7 +103,7 @@ function ServiceDetail() {
         const after = pickPhotoPaths(photos ?? [], "after", AFTER_ANGLES);
         outcomePhotos = [...before, ...after];
       } else if (vars.outcome === "unavailable") {
-        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["full"]);
+        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["full", "side"]); // Enforce 2 photos (Full + Side)
       } else if (vars.outcome === "need_wash") {
 
         outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
@@ -156,7 +156,7 @@ function ServiceDetail() {
   const beforeDone = (photos ?? []).some((p) => p.stage === "before");
   const afterDone = (photos ?? []).filter((p) => p.stage === "after");
   const afterAllDone = AFTER_ANGLES.every((a) => afterDone.some((p) => p.angle === a));
-  const unavailableDone = (photos ?? []).some(p => p.stage === "unavailable");
+  const unavailableDone = (photos ?? []).filter(p => p.stage === "unavailable").length >= 2;
   const dirtyDone = (photos ?? []).filter(p => p.stage === "dirty").length >= 4;
 
   useEffect(() => {
