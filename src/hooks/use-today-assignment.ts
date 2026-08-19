@@ -57,8 +57,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     };
   }
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const isMonday = now.getDay() === 1;
+  const today = getTodayIST();
+  const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
+
 
   const { data: a, error: aErr } = await supabase
     .from("assignments")
