@@ -196,13 +196,6 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const isPending = service.status === "pending" || service.status === "in_progress";
   const hasDirty = !!service.dirty_report;
 
-  const dirtyPhotos = [
-    service.dirty_report?.photo_front,
-    service.dirty_report?.photo_rear,
-    service.dirty_report?.photo_left,
-    service.dirty_report?.photo_right,
-  ].filter((p): p is string => !!p);
-
   const getStatusDisplay = () => {
     if (isUnavailable) return { label: "UNAVAILABLE", tone: "neutral" as const, icon: ShieldAlert };
     if (isMissed) return { label: "MISSED", tone: "danger" as const, icon: AlertCircle };
@@ -210,6 +203,7 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
     if (hasDirty) return { label: "NEED WASH", tone: "warning" as const, icon: AlertCircle };
     return { label: "COMPLETED", tone: "success" as const, icon: CheckCircle2 };
   };
+
 
   const status = getStatusDisplay();
   const StatusIcon = status.icon;
