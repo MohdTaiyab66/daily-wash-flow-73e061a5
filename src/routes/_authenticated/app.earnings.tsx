@@ -6,10 +6,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarDays, Lock, Car, Clock, MapPin, IndianRupee } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { getTodayIST } from "@/lib/date-utils";
+import { getTodayIST, formatBusinessDate } from "@/lib/date-utils";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 
 const RATE = 17;
+
 
 
 
@@ -125,7 +126,8 @@ function EarningsPage() {
 
   const next = new Date();
   next.setDate(next.getDate() + ((1 + 7 - next.getDay()) % 7 || 7));
-  const nextStr = next.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  const nextStr = formatBusinessDate(next).split("·")[0].trim();
+
 
   // First payout only after 15 active days from joining
   const joined = partner?.joined_on ? new Date(partner.joined_on) : new Date();
