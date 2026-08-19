@@ -134,10 +134,11 @@ function ServiceDetail() {
         p_photos: capturedPaths,
         p_lat: pos?.lat ?? null,
         p_lng: pos?.lng ?? null,
-      } as any);
+      });
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
