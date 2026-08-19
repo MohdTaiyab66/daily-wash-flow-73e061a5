@@ -91,20 +91,35 @@ function ServiceDetail() {
     },
   });
 
-  const complete = useMutation({
-    mutationFn: async () => {
+  const submitOutcomeFn = useServerFn(submitServiceOutcome);
+
+  const submitOutcome = useMutation({
+    mutationFn: async (vars: { outcome: "completed" | "unavailable" | "need_wash" }) => {
       const pos = await getPosition();
-      const { data, error } = await (supabase as any).rpc("partner_complete_service", {
-        p_service_id: id,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-        p_notes: notes.trim() || null,
+      let outcomePhotos: string[] = [];
+
+      if (vars.outcome === "completed") {
+        const before = pickPhotoPaths(photos ?? [], "before", ["full"]);
+        const after = pickPhotoPaths(photos ?? [], "after", AFTER_ANGLES);
+        outcomePhotos = [...before, ...after];
+      } else if (vars.outcome === "unavailable") {
+        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["full"]);
+      } else if (vars.outcome === "need_wash") {
+        outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
+      }
+
+      const result = await submitOutcomeFn({
+        serviceId: id,
+        outcome: vars.outcome,
+        reason: vars.outcome === "unavailable" ? unavailableReason : undefined,
+        notes: notes.trim() || undefined,
+        photos: outcomePhotos,
+        lat: pos?.lat ?? 0,
+        lng: pos?.lng ?? 0,
       });
-      if (error) throw error;
-      return data;
+      return result;
     },
-    onSuccess: (data) => {
-      // FORCE IMMEDIATE REFETCH OF ALL AUTHORITATIVE DATA
+    onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
@@ -114,79 +129,19 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["service-history"] });
       qc.invalidateQueries({ queryKey: ["service-summary"] });
       
-      // We must wait for the invalidation to trigger or use the returned data
-      // to avoid showing stale progress in the celebration modal.
-      setCelebration({
-        amount: Number(data?.amount ?? 17),
-        completed: (routeProgress?.completed ?? 0) + 1,
-        total: routeProgress?.total ?? 1,
-      });
+      if (vars.outcome === "completed") {
+        setCelebration({
+          amount: 17, // This will be updated by authoritative config if needed, but 17 is default
+          completed: (routeProgress?.completed ?? 0) + 1,
+          total: routeProgress?.total ?? 1,
+        });
+      } else {
+        toast.success(vars.outcome === "need_wash" ? "Need Wash reported" : "Marked as unavailable");
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const markUnavailable = useMutation({
-    mutationFn: async () => {
-      const pos = await getPosition();
-      const capturedPaths = (photos ?? [])
-        .filter(p => p.stage === "unavailable")
-        .map(p => p.storage_path);
-        
-      const { data, error } = await supabase.rpc("submit_service_unavailable", {
-        p_service_id: id,
-        p_reason: unavailableReason,
-        p_notes: notes.trim() || "Vehicle unavailable",
-        p_photos: capturedPaths,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
-      });
-      if (error) throw error;
-      return data;
-    },
-
-
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["service", id] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
-      qc.invalidateQueries({ queryKey: ["history"] });
-      qc.invalidateQueries({ queryKey: ["service-history"] });
-      qc.invalidateQueries({ queryKey: ["service-summary"] });
-      toast.success("Marked as unavailable");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const markDirty = useMutation({
-    mutationFn: async () => {
-      const pos = await getPosition();
-      const dirtyPhotos = (photos ?? [])
-        .filter(p => p.stage === "dirty")
-        .map(p => p.storage_path);
-
-      const { data, error } = await supabase.rpc("submit_service_unavailable", {
-        p_service_id: id,
-        p_reason: "dirty_vehicle",
-        p_notes: notes.trim() || "Dirty vehicle reported",
-        p_photos: dirtyPhotos,
-        p_lat: pos?.lat ?? 0,
-        p_lng: pos?.lng ?? 0,
-      });
-      if (error) throw error;
-      return data;
-    },
-
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["service", id] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
-      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
-      qc.invalidateQueries({ queryKey: ["history"] });
-      qc.invalidateQueries({ queryKey: ["service-history"] });
-      qc.invalidateQueries({ queryKey: ["service-summary"] });
       toast.success("Dirty vehicle reported");
     },
     onError: (e: any) => toast.error(e.message),
