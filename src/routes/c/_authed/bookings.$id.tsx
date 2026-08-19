@@ -367,74 +367,76 @@ function BookingDetail() {
 
              {photosVisible ? (
                <div className="space-y-6">
-                 {completion.data && completion.data.photos.length > 0 ? (
-                   <>
-                        {completion.data.photos.some(p => p.stage === "before" || p.stage === "proof" || p.stage === "dirty") && (
-                          <div className="mb-6">
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Evidence Photos</p>
-                            <div className="grid grid-cols-4 gap-3">
-                              {completion.data.photos.filter((p) => ["before", "proof", "dirty"].includes(p.stage)).map((p, i) => (
-                                <button 
-                                  key={`b-${i}`} 
-                                  onClick={() => {
-                                    const fullIndex = completion.data!.photos.indexOf(p);
-                                    setInitialPhotoIndex(fullIndex);
-                                    setViewerOpen(true);
-                                  }}
-                                  className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
-                                >
-                                  <img src={p.url} alt="Evidence" className="h-full w-full object-cover" />
-                                </button>
-                              ))}
-                            </div>
+                <div className="space-y-6">
+                  {completion.data && completion.data.photos.length > 0 ? (
+                    <>
+                      {completion.data.photos.some(p => ["before", "proof", "dirty"].includes(p.stage)) && (
+                        <div className="mb-6">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Evidence Photos</p>
+                          <div className="grid grid-cols-4 gap-3">
+                            {completion.data.photos.filter((p) => ["before", "proof", "dirty"].includes(p.stage)).map((p, i) => (
+                              <button 
+                                key={`b-${i}`} 
+                                onClick={() => {
+                                  const fullIndex = completion.data!.photos.indexOf(p);
+                                  setInitialPhotoIndex(fullIndex);
+                                  setViewerOpen(true);
+                                }}
+                                className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
+                              >
+                                <img src={p.url} alt="Evidence" className="h-full w-full object-cover" />
+                              </button>
+                            ))}
                           </div>
-                        )}
+                        </div>
+                      )}
+                      
                       {completion.data.photos.some(p => p.stage === "after") && (
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">After Service</p>
-                        <div className="grid grid-cols-4 gap-3">
-                          {["front","rear","left","right"].map((ang) => {
-                            const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
-                            return (
-                              <button 
-                                key={ang} 
-                                onClick={() => {
-                                  if (p) {
-                                    const fullIndex = completion.data!.photos.indexOf(p);
-                                    setInitialPhotoIndex(fullIndex);
-                                    setViewerOpen(true);
-                                  }
-                                }}
-                                className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 relative group active:scale-95 transition-transform"
-                              >
-                                {p ? (
-                                  <img src={p.url} alt={ang} className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">{ang}</div>
-                                )}
-                              </button>
-                            );
-                          })}
+                          <div className="grid grid-cols-4 gap-3">
+                            {["front","rear","left","right"].map((ang) => {
+                              const p = completion.data!.photos.find((x) => x.stage === "after" && x.angle === ang);
+                              return (
+                                <button 
+                                  key={ang} 
+                                  onClick={() => {
+                                    if (p) {
+                                      const fullIndex = completion.data!.photos.indexOf(p);
+                                      setInitialPhotoIndex(fullIndex);
+                                      setViewerOpen(true);
+                                    }
+                                  }}
+                                  className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 relative group active:scale-95 transition-transform"
+                                >
+                                  {p ? (
+                                    <img src={p.url} alt={ang} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">{ang}</div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
-                     
-                     <ServicePhotoViewer
+                      
+                      <ServicePhotoViewer
                         open={viewerOpen}
                         onOpenChange={setViewerOpen}
                         photos={completion.data.photos.map(p => ({
                           stage: p.stage,
                           angle: p.angle,
-                          storage_path: p.url.split('?')[0].split('/').pop() || '', // Simplified for UI recovery
+                          storage_path: p.storage_path,
                           captured_at: p.captured_at,
-                          url: p.url // Pass signed URL directly to avoid re-signing
+                          url: p.url
                         }))}
                         initialIndex={initialPhotoIndex}
                         serviceName={b.service_catalog?.name ?? "Wash"}
                         serviceDate={completion.data.completed_at || undefined}
-                     />
-
-                   </>
-                 ) : completion.isLoading ? (
+                      />
+                    </>
+                  ) : completion.isLoading ? (
                    <div className="grid grid-cols-4 gap-3">
                       {[1,2,3,4].map(i => <div key={i} className="aspect-square animate-pulse rounded-2xl bg-black/5" />)}
                    </div>
