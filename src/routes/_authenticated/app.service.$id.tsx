@@ -19,7 +19,6 @@ import { getTodayIST } from "@/lib/date-utils";
 import { useServerFn } from "@tanstack/react-start";
 import { submitServiceOutcome, UNAVAILABLE_REASONS } from "@/lib/service-workflow.functions";
 
-import { Textarea } from "@/components/ui/textarea";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
 
