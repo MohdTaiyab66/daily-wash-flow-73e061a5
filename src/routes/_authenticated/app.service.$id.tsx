@@ -469,12 +469,12 @@ function ServiceDetail() {
 
                              <Button 
                                 size="lg" 
-                                className="h-16 w-full rounded-[24px] bg-red-600 hover:bg-red-700 text-white font-black text-lg shadow-xl shadow-red-500/10 active:scale-[0.98] transition-all" 
+                                className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markUnavailable.mutate()}
                                 disabled={markUnavailable.isPending || !unavailableDone || (unavailableReason === 'other' && !notes.trim())}
-                             >
-                                {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : "MARK UNAVAILABLE"}
-                             </Button>
+                            >
+                                {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : (!unavailableDone ? "ADD EVIDENCE PHOTO TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                            </Button>
                          </div>
                      )}
 
