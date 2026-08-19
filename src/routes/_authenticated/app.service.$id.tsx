@@ -105,6 +105,9 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["earnings-v3"] });
       qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["service-history"] });
+      qc.invalidateQueries({ queryKey: ["service-summary"] });
       
       // We must wait for the invalidation to trigger or use the returned data
       // to avoid showing stale progress in the celebration modal.
