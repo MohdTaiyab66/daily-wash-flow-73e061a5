@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ArrowLeft, Calendar, Car, MapPin, MessageCircleWarning, Phone, Loader2,
-  CheckCircle2, Circle, Clock, X, Pencil, Receipt, Printer, Sparkles,
+  CheckCircle2, Clock, Printer,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ServicePhotoViewer } from "@/components/customer/ServicePhotoViewer";
 
+const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
+
 
 export const Route = createFileRoute("/c/_authed/bookings/$id")({
   ssr: true,
@@ -21,19 +23,13 @@ export const Route = createFileRoute("/c/_authed/bookings/$id")({
   component: BookingDetail,
 });
 
-const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
-
 const TIMELINE = [
   { key: "pending_payment", label: "Booking confirmed", desc: "We've received your booking" },
   { key: "paid", label: "Scheduled", desc: "Your service is scheduled within your selected window" },
   { key: "completed", label: "Service completed", desc: "Hope your car sparkles!" },
 ] as const;
 
-// `active` (service in progress) collapses into the "Partner assigned" step
-// because customers do not see live progress; the final step turns on at completion.
-
 function statusIndex(s: string) {
-  // `active` is treated as the assigned step for customer view.
   const effective = s === "active" ? "paid" : s;
   const i = TIMELINE.findIndex((t) => t.key === effective);
   return i < 0 ? 0 : i;
@@ -49,7 +45,6 @@ function BookingDetail() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [initialPhotoIndex, setInitialPhotoIndex] = useState(0);
-
 
   const q = useQuery({
     queryKey: ["customer-booking", id],
@@ -72,31 +67,57 @@ function BookingDetail() {
 
   const b = q.data;
 
-  // Completion details — service row + partner name + photos. Photos visible to
-  // customer for 48h after completion; admins always see them in admin panel.
   const completion = useQuery({
     queryKey: ["customer-booking-completion", id, b?.ops_service_id, b?.partner_id, b?.status],
-    enabled: !!b && b.status === "completed" && !!b.ops_service_id,
+    enabled: !!b && (b.status === "completed" || b.status === "unavailable") && !!b.ops_service_id,
     queryFn: async () => {
       const opsId = b!.ops_service_id as string;
-      const [{ data: svc }, { data: partner }, { data: photos }] = await Promise.all([
-        (supabase as any).from("services").select("completed_at,partner_id").eq("id", opsId).maybeSingle(),
+      const [{ data: svc }, { data: partner }, { data: photos }, { data: dirty }] = await Promise.all([
+        (supabase as any).from("services").select("completed_at,updated_at,partner_id,status,unavailable_reason,unavailable_notes,unavailable_photo").eq("id", opsId).maybeSingle(),
         b!.partner_id
           ? (supabase as any).from("partners").select("full_name").eq("id", b!.partner_id).maybeSingle()
           : Promise.resolve({ data: null }),
         (supabase as any).from("service_photos").select("stage,angle,storage_path,captured_at").eq("service_id", opsId),
+        (supabase as any).from("dirty_vehicle_reports").select("*").eq("service_id", opsId).maybeSingle(),
       ]);
-      const photoUrls: { stage: string; angle: string; url: string; captured_at: string }[] = [];
+
+      const photoUrls: { stage: string; angle: string; url: string; captured_at: string; storage_path: string }[] = [];
+      
       for (const p of (photos ?? []) as any[]) {
         const { data: signed } = await (supabase as any).storage
           .from("service-photos")
           .createSignedUrl(p.storage_path, 60 * 60);
         if (signed?.signedUrl) {
-          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at });
+          photoUrls.push({ stage: p.stage, angle: p.angle, url: signed.signedUrl, captured_at: p.captured_at, storage_path: p.storage_path });
         }
       }
+
+      if (svc?.unavailable_photo && !photoUrls.some(p => p.storage_path === svc.unavailable_photo)) {
+        const { data: signed } = await (supabase as any).storage
+          .from("service-photos")
+          .createSignedUrl(svc.unavailable_photo, 60 * 60);
+        if (signed?.signedUrl) {
+          photoUrls.push({ stage: "proof", angle: "proof", url: signed.signedUrl, captured_at: svc.completed_at || svc.updated_at, storage_path: svc.unavailable_photo });
+        }
+      }
+
+      const dirtyPaths = [dirty?.photo_front, dirty?.photo_rear, dirty?.photo_left, dirty?.photo_right].filter(Boolean);
+      for (const dp of dirtyPaths) {
+        if (!photoUrls.some(p => p.storage_path === dp)) {
+          const { data: signed } = await (supabase as any).storage
+            .from("service-photos")
+            .createSignedUrl(dp, 60 * 60);
+          if (signed?.signedUrl) {
+            photoUrls.push({ stage: "dirty", angle: "dirty", url: signed.signedUrl, captured_at: dirty.created_at, storage_path: dp });
+          }
+        }
+      }
+
       return {
-        completed_at: svc?.completed_at ?? null,
+        completed_at: svc?.completed_at ?? svc?.updated_at ?? null,
+        status: svc?.status ?? b!.status,
+        unavailable_reason: svc?.unavailable_reason ?? null,
+        unavailable_notes: svc?.unavailable_notes ?? null,
         partner_name: partner?.full_name ?? null,
         photos: photoUrls,
       };
@@ -108,7 +129,8 @@ function BookingDetail() {
 
   const isCancelled = b.status === "cancelled";
   const isCompleted = b.status === "completed";
-  const canModify = !isCancelled && !isCompleted && b.status !== "active";
+  const isUnavailable = b.status === "unavailable" || completion.data?.status === "unavailable";
+  const canModify = !isCancelled && !isCompleted && !isUnavailable && b.status !== "active";
   const completedAt = completion.data?.completed_at
     ? new Date(completion.data.completed_at)
     : (b.updated_at && isCompleted ? new Date(b.updated_at) : null);
@@ -117,10 +139,8 @@ function BookingDetail() {
   const photosVisible = hoursSinceCompletion !== null && hoursSinceCompletion < 48;
   const activeIdx = isCancelled ? -1 : statusIndex(b.status);
 
-
   return (
     <div className="min-h-screen bg-[#FFF9F3] pb-10">
-      {/* Header */}
       <div className="sticky top-0 z-30 bg-[#FFF9F3]/90 px-5 pt-8 pb-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <button 
@@ -140,7 +160,6 @@ function BookingDetail() {
       </div>
 
       <div className="px-5 space-y-4">
-        {/* Hero Card - Status & Quick Info */}
         <div className="mt-4 overflow-hidden rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -177,7 +196,6 @@ function BookingDetail() {
             )}
           </div>
 
-          {/* Progress Visualizer */}
           {!isCancelled && (
             <div className="mt-8 border-t border-black/5 pt-8">
                <div className="flex items-center justify-between">
@@ -186,14 +204,12 @@ function BookingDetail() {
                     const current = i === activeIdx;
                     return (
                       <div key={step.key} className="relative flex flex-col items-center flex-1">
-                        {/* Connector line */}
                         {i < TIMELINE.length - 1 && (
                           <div className={cn(
                             "absolute left-1/2 top-4 h-[2px] w-full",
                             i < activeIdx ? "bg-primary" : "bg-black/5"
                           )} />
                         )}
-                        
                         <div className={cn(
                           "relative z-10 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-500",
                           done ? "bg-primary text-white scale-110" : 
@@ -222,12 +238,9 @@ function BookingDetail() {
           )}
         </div>
 
-        {/* Details Section */}
         <div className="grid grid-cols-1 gap-4">
-           {/* Vehicle & Address */}
            <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
              <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-4">Details</h3>
-             
              <div className="space-y-6">
                 {b.customer_vehicles && (
                   <div className="flex items-start gap-4">
@@ -242,7 +255,6 @@ function BookingDetail() {
                     </div>
                   </div>
                 )}
-
                 {b.customer_addresses && (
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF9F3] text-primary">
@@ -259,7 +271,6 @@ function BookingDetail() {
                   </div>
                 )}
              </div>
-
              {b.notes && (
                <div className="mt-6 rounded-2xl bg-[#FFF9F3] p-4 border border-black/5">
                  <p className="text-[11px] font-bold uppercase tracking-widest text-primary/60 mb-1">Notes to partner</p>
@@ -268,7 +279,6 @@ function BookingDetail() {
              )}
            </div>
 
-           {/* Payment Details */}
            <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
              <div className="flex items-center justify-between mb-4">
                <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Payment Summary</h3>
@@ -276,32 +286,27 @@ function BookingDetail() {
                  View Receipt
                </button>
              </div>
-
              <div className="space-y-3">
                 <div className="flex items-center justify-between text-[14px] font-bold text-muted-foreground/70">
                   <span>Base Amount</span>
                   <span>₹{b.base_amount}</span>
                 </div>
-                
                 {(addons.data?.length ?? 0) > 0 && (
                   <div className="flex items-center justify-between text-[14px] font-bold text-muted-foreground/70">
                     <span>Add-ons</span>
                     <span>₹{b.addon_amount}</span>
                   </div>
                 )}
-
                 {Number(b.discount_amount) > 0 && (
                   <div className="flex items-center justify-between text-[14px] font-bold text-success">
                     <span>Discount</span>
                     <span>−₹{b.discount_amount}</span>
                   </div>
                 )}
-
                 <div className="pt-3 border-t border-black/5 flex items-center justify-between">
                   <span className="text-[16px] font-black text-[#1a1a1a]">Total Amount</span>
                   <span className="text-[20px] font-black text-[#1a1a1a]">₹{b.total_amount}</span>
                 </div>
-
                 <div className="mt-2 flex items-center gap-2">
                    <PaymentBadge status={b.payment_status} />
                    <span className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-widest">
@@ -312,30 +317,35 @@ function BookingDetail() {
            </div>
         </div>
 
-        {/* Service Completion Artifacts */}
-        {isCompleted && (
+        {(isCompleted || isUnavailable) && (
           <div className="rounded-[32px] bg-white p-6 shadow-sm border border-black/5">
-             <div className="flex items-center justify-between mb-6">
-                <div>
-                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Proof of work</h3>
-                   <p className="text-[15px] font-black text-success">Service Completed</p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Proof of work</h3>
+                <p className={cn(
+                  "text-[15px] font-black",
+                  isCompleted ? "text-success" : "text-neutral-500"
+                )}>
+                  {isCompleted ? "Service Completed" : "Service Unavailable"}
+                </p>
+              </div>
+              {completedAt && (
+                <div className="text-right">
+                  <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                  <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</p>
                 </div>
-                {completedAt && (
-                  <div className="text-right">
-                    <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
-                    <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</p>
-                  </div>
-                )}
-             </div>
+              )}
+            </div>
 
-             {photosVisible ? (
-               <div className="space-y-6">
-                 {completion.data && completion.data.photos.length > 0 ? (
-                   <>
-                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Before Service</p>
+            {photosVisible ? (
+              <div className="space-y-6">
+                {completion.data && completion.data.photos.length > 0 ? (
+                  <>
+                    {completion.data.photos.some(p => ["before", "proof", "dirty"].includes(p.stage)) && (
+                      <div className="mb-6">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">Evidence Photos</p>
                         <div className="grid grid-cols-4 gap-3">
-                          {completion.data.photos.filter((p) => p.stage === "before").map((p, i) => (
+                          {completion.data.photos.filter((p) => ["before", "proof", "dirty"].includes(p.stage)).map((p, i) => (
                             <button 
                               key={`b-${i}`} 
                               onClick={() => {
@@ -345,12 +355,15 @@ function BookingDetail() {
                               }}
                               className="aspect-square overflow-hidden rounded-2xl bg-[#FFF9F3] border border-black/5 active:scale-95 transition-transform"
                             >
-                              <img src={p.url} alt="Before" className="h-full w-full object-cover" />
+                              <img src={p.url} alt="Evidence" className="h-full w-full object-cover" />
                             </button>
                           ))}
                         </div>
-                     </div>
-                     <div>
+                      </div>
+                    )}
+                    
+                    {completion.data.photos.some(p => p.stage === "after") && (
+                      <div>
                         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-3">After Service</p>
                         <div className="grid grid-cols-4 gap-3">
                           {["front","rear","left","right"].map((ang) => {
@@ -376,45 +389,56 @@ function BookingDetail() {
                             );
                           })}
                         </div>
-                     </div>
-                     
-                     <ServicePhotoViewer
-                        open={viewerOpen}
-                        onOpenChange={setViewerOpen}
-                        photos={completion.data.photos.map(p => ({
-                          stage: p.stage,
-                          angle: p.angle,
-                          storage_path: p.url.split('?')[0].split('/').pop() || '', // Simplified for UI recovery
-                          captured_at: p.captured_at,
-                          url: p.url // Pass signed URL directly to avoid re-signing
-                        }))}
-                        initialIndex={initialPhotoIndex}
-                        serviceName={b.service_catalog?.name ?? "Wash"}
-                        serviceDate={completion.data.completed_at || undefined}
-                     />
+                      </div>
+                    )}
+                    
+                    <ServicePhotoViewer
+                      open={viewerOpen}
+                      onOpenChange={setViewerOpen}
+                      photos={completion.data.photos.map(p => ({
+                        stage: p.stage,
+                        angle: p.angle,
+                        storage_path: p.storage_path,
+                        captured_at: p.captured_at,
+                        url: p.url
+                      }))}
+                      initialIndex={initialPhotoIndex}
+                      serviceName={b.service_catalog?.name ?? "Wash"}
+                      serviceDate={completion.data.completed_at || undefined}
+                    />
+                  </>
+                ) : completion.isLoading ? (
+                  <div className="grid grid-cols-4 gap-3">
+                    {[1,2,3,4].map(i => <div key={i} className="aspect-square animate-pulse rounded-2xl bg-black/5" />)}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-[#FFF9F3] p-8 text-center border border-dashed border-black/10">
+                    <p className="text-[13px] font-bold text-muted-foreground/60">No photos were uploaded for this service.</p>
+                  </div>
+                )}
 
-                   </>
-                 ) : completion.isLoading ? (
-                   <div className="grid grid-cols-4 gap-3">
-                      {[1,2,3,4].map(i => <div key={i} className="aspect-square animate-pulse rounded-2xl bg-black/5" />)}
-                   </div>
-                 ) : (
-                   <div className="rounded-2xl bg-[#FFF9F3] p-8 text-center border border-dashed border-black/10">
-                     <p className="text-[13px] font-bold text-muted-foreground/60">No photos were uploaded for this service.</p>
-                   </div>
-                 )}
-               </div>
-             ) : (
-               <div className="rounded-2xl bg-[#FFF9F3] p-6 border border-black/5">
-                 <p className="text-[13px] font-bold text-muted-foreground/60 leading-relaxed">
-                   Service photos are archived after 48 hours. If you need them for your records, please contact our support team.
-                 </p>
-               </div>
-             )}
+                {isUnavailable && completion.data && (
+                  <div className="mt-4 rounded-2xl bg-[#FFF9F3] p-4 border border-black/5">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mb-1">UNAVAILABLE REASON</p>
+                    <p className="text-[13px] font-bold text-[#1a1a1a] capitalize">
+                      {completion.data.unavailable_reason?.replace(/_/g, ' ')}
+                    </p>
+                    {completion.data.unavailable_notes && (
+                      <p className="mt-2 text-[12px] text-neutral-500 italic">"{completion.data.unavailable_notes}"</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-[#FFF9F3] p-6 border border-black/5">
+                <p className="text-[13px] font-bold text-muted-foreground/60 leading-relaxed">
+                  Service photos are archived after 48 hours. If you need them for your records, please contact our support team.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="flex flex-col gap-3 pt-4">
            <Button 
              variant="outline" 
@@ -465,9 +489,6 @@ function formatDate(s: string | null) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  // Per product policy, customers see only 4 high-level states. Internal
-  // ops statuses (pending_payment, paid, queued, offered, etc.) are mapped
-  // to a customer-friendly label.
   const label =
     status === "completed" ? "Completed"
     : status === "cancelled" ? "Cancelled"
@@ -491,7 +512,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-
 function PaymentBadge({ status }: { status: string | null }) {
   const s = status ?? "pending";
   const map: Record<string, string> = {
@@ -503,108 +523,22 @@ function PaymentBadge({ status }: { status: string | null }) {
   return <span className={`font-semibold capitalize ${map[s] ?? "text-muted-foreground"}`}>{s}</span>;
 }
 
-function Line({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return <div className="flex items-start gap-2"><span className="mt-0.5 text-muted-foreground">{icon}</span><div className="flex-1">{children}</div></div>;
-}
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="flex items-baseline justify-between text-sm"><span className="text-muted-foreground">{label}</span>{children}</div>;
-}
-
-function RescheduleDialog({ open, onOpenChange, bookingId, currentDate, currentSlot, onDone }: {
-  open: boolean; onOpenChange: (v: boolean) => void; bookingId: string; currentDate: string | null; currentSlot: string | null; onDone: () => void;
-}) {
-  const [date, setDate] = useState(currentDate ?? new Date().toISOString().slice(0, 10));
-  const [slot, setSlot] = useState(currentSlot ?? TIME_SLOTS[3]);
-  const m = useMutation({
-    mutationFn: async () => {
-      const { error } = await (supabase as any).from("bookings").update({
-        scheduled_date: date, scheduled_time: slot, preferred_before_time: slot,
-      }).eq("id", bookingId);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Booking rescheduled"); onDone(); onOpenChange(false); },
-    onError: (e: any) => toast.error(e.message),
-  });
-  const today = new Date().toISOString().slice(0, 10);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Reschedule booking</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <div className="mb-1 text-xs font-medium text-muted-foreground">Date</div>
-            <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-muted-foreground">Time slot</div>
-            <div className="grid grid-cols-2 gap-2">
-              {TIME_SLOTS.map((s) => (
-                <button key={s} type="button" onClick={() => setSlot(s)}
-                  className={`rounded-xl border py-2 text-xs font-medium ${slot === s ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending}>
-            {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+function ReceiptDialog({ open, onOpenChange, booking, addons }: { open: boolean; onOpenChange: (v: boolean) => void; booking: any; addons: any[] }) {
+  const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex justify-between py-1 text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{children}</span>
+    </div>
   );
-}
 
-function CancelDialog({ open, onOpenChange, bookingId, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; bookingId: string; onDone: () => void }) {
-  const m = useMutation({
-    mutationFn: async () => {
-      const { error } = await (supabase as any).rpc("customer_cancel_booking", {
-        p_booking_id: bookingId,
-        p_reason: null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Booking cancelled"); onDone(); onOpenChange(false); },
-    onError: (e: any) => toast.error(e.message ?? "Could not cancel booking"),
-  });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>Cancel this booking?</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Cancellation is only allowed within the window set by the admin
-          (defaults to 60 minutes after booking). After that, please contact support.
-        </p>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep booking</Button>
-          <Button variant="destructive" onClick={() => m.mutate()} disabled={m.isPending}>
-            {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Yes, cancel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ReceiptDialog({ open, onOpenChange, booking, addons }: { open: boolean; onOpenChange: (v: boolean) => void; booking: any; addons: any[] }) {
-  const idShort = String(booking.id).slice(0, 8).toUpperCase();
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md print:shadow-none">
-        <DialogHeader><DialogTitle>Payment receipt</DialogTitle></DialogHeader>
-        <div id="receipt" className="rounded-2xl border border-border bg-card p-5 text-sm">
-          <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
-            <div>
-              <div className="text-base font-semibold">Urban Wash</div>
-              <div className="text-[11px] text-muted-foreground">Lucknow · GST pending</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] text-muted-foreground">Receipt</div>
-              <div className="font-mono text-xs">#{idShort}</div>
-            </div>
+        <DialogHeader><DialogTitle>Booking Receipt</DialogTitle></DialogHeader>
+        <div className="rounded-lg border border-border bg-muted/30 p-4 font-mono">
+          <div className="text-center border-b border-dashed border-border pb-3">
+            <div className="text-sm font-bold">URBAN WASH</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Receipt #{String(booking.id).slice(0,8).toUpperCase()}</div>
           </div>
           <div className="mt-3 space-y-1 text-xs text-muted-foreground">
             <div>Date: <span className="text-foreground">{formatDate(booking.scheduled_date)}</span></div>
@@ -683,6 +617,75 @@ function ComplaintDialog({ open, onOpenChange, serviceId, customerId, partnerId 
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CancelDialog({ open, onOpenChange, bookingId, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; bookingId: string; onDone: () => void }) {
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any).from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Booking cancelled."); onOpenChange(false); onDone(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Cancel Booking?</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep it</Button>
+          <Button variant="destructive" onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Cancel Booking
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RescheduleDialog({ open, onOpenChange, bookingId, currentDate, currentSlot, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; bookingId: string; currentDate: string; currentSlot: string | null; onDone: () => void }) {
+  const [date, setDate] = useState(currentDate);
+  const [slot, setSlot] = useState(currentSlot || TIME_SLOTS[0]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any).from("bookings").update({ scheduled_date: date, preferred_before_time: slot }).eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Booking rescheduled."); onOpenChange(false); onDone(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Reschedule Booking</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">New Date</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">New Slot</label>
+            <div className="grid grid-cols-2 gap-2">
+              {TIME_SLOTS.map((s) => (
+                <button key={s} onClick={() => setSlot(s)}
+                  className={`rounded-xl border p-2 text-[10px] font-bold ${slot === s ? "border-primary bg-primary/5 text-primary" : "border-black/5 text-muted-foreground"}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Reschedule
           </Button>
         </DialogFooter>
       </DialogContent>

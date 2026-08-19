@@ -132,12 +132,14 @@ function ServiceDetail() {
         p_reason: unavailableReason,
         p_notes: notes.trim() || "Vehicle unavailable",
         p_photos: capturedPaths,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-      } as any);
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
+      });
       if (error) throw error;
       return data;
     },
+
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -164,12 +166,13 @@ function ServiceDetail() {
         p_reason: "dirty_vehicle",
         p_notes: notes.trim() || "Dirty vehicle reported",
         p_photos: dirtyPhotos,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-      } as any);
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
+      });
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -425,17 +428,27 @@ function ServiceDetail() {
                      {selectedCondition === "unavailable" && (
                          <div className="space-y-5">
                              <div className="space-y-4">
-                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photo</h3>
-                                 <PhotoSlot 
-                                    serviceId={id} 
-                                    stage="unavailable" 
-                                    angle="front" 
-                                    label={unavailableDone ? "✓ Evidence Photo Added" : "Add Evidence Photo"}
-                                    done={unavailableDone} 
-                                    variant="hero" 
-                                    hint="Proof for unavailability"
-                                    onUploaded={() => refetchPhotos()} 
-                                 />
+                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Evidence Photos (2 Required)</h3>
+                                 <div className="grid grid-cols-2 gap-3">
+                                     {[1, 2].map((idx) => {
+                                         const isDone = (photos ?? []).some((p) => p.stage === "unavailable" && p.angle === idx.toString());
+                                         return (
+                                             <PhotoSlot 
+                                                 key={idx}
+                                                 serviceId={id} 
+                                                 workflow="unavailable_vehicle"
+                                                 stage="unavailable" 
+                                                 angle={idx.toString()} 
+                                                 label={`Evidence #${idx}`} 
+                                                 done={isDone} 
+                                                 onUploaded={() => refetchPhotos()}
+                                                 thumbPath={photos?.find(p => p.stage === 'unavailable' && p.angle === idx.toString())?.storage_path}
+                                                 variant={isDone ? "guided-done" : "default"}
+                                                 hint={idx === 1 ? "Mandatory" : "Required"}
+                                             />
+                                         );
+                                     })}
+                                 </div>
                              </div>
                              
                              <div className="space-y-4">
@@ -468,13 +481,14 @@ function ServiceDetail() {
                              </div>
 
                              <Button 
-                                size="lg" 
-                                className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
-                                onClick={() => markUnavailable.mutate()}
-                                disabled={markUnavailable.isPending || !unavailableDone || (unavailableReason === 'other' && !notes.trim())}
-                            >
-                                {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : (!unavailableDone ? "ADD EVIDENCE PHOTO TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
-                            </Button>
+                                 size="lg" 
+                                 className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
+                                 onClick={() => markUnavailable.mutate()}
+                                 disabled={markUnavailable.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
+                             >
+                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                             </Button>
+
                          </div>
                      )}
 
