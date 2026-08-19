@@ -379,6 +379,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       "dirty": "vehicle_dirty",
       "completed": "service_completed",
       "assigned": "partner_assigned",
+      "unavailable_report": "vehicle_unavailable",
+      "dirty_vehicle_report": "vehicle_dirty",
     };
     const mappedType = canonicalTypeMap[type] || type;
 

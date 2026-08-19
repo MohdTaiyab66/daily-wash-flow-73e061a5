@@ -13,7 +13,7 @@
 import { SignJWT, importPKCS8 } from "jose";
 
 type AccessToken = { token: string; exp: number };
-let cachedToken: AccessToken | null = null;
+const tokenCache = new Map<string, AccessToken>();
 
 export function normalizePem(raw: string): string {
   let pem = raw.trim().replace(/^\uFEFF/, "");
@@ -143,16 +143,26 @@ export function inspectPrivateKey(raw: string | undefined) {
 
 }
 
-async function getAccessToken(): Promise<string> {
+async function getAccessToken(appType: string = "partner"): Promise<{ token: string; projectId: string }> {
   const now = Math.floor(Date.now() / 1000);
-  if (cachedToken && cachedToken.exp - 60 > now) return cachedToken.token;
+  
+  // App-specific overrides (for project split)
+  let projectId = process.env.FIREBASE_PROJECT_ID;
+  let clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error("FCM is not configured: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY");
+  if (appType === "customer" && process.env.CUSTOMER_FIREBASE_PROJECT_ID) {
+    projectId = process.env.CUSTOMER_FIREBASE_PROJECT_ID;
+    clientEmail = process.env.CUSTOMER_FIREBASE_CLIENT_EMAIL;
+    privateKey = process.env.CUSTOMER_FIREBASE_PRIVATE_KEY;
   }
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(`FCM is not configured for app=${appType}: missing FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY`);
+  }
+
+  const cached = tokenCache.get(projectId);
+  if (cached && cached.exp - 60 > now) return { token: cached.token, projectId };
 
   let key;
   try {
@@ -160,7 +170,7 @@ async function getAccessToken(): Promise<string> {
   } catch (e) {
     const shape = inspectPrivateKey(privateKey);
     throw new Error(
-      `FCM private key parse failed: ${(e as Error).message}. shape=${JSON.stringify(shape)}`,
+      `FCM private key parse failed for ${projectId}: ${(e as Error).message}. shape=${JSON.stringify(shape)}`,
     );
   }
   const jwt = await new SignJWT({
@@ -182,10 +192,10 @@ async function getAccessToken(): Promise<string> {
       assertion: jwt,
     }),
   });
-  if (!res.ok) throw new Error(`FCM oauth failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`FCM oauth failed for ${projectId}: ${res.status} ${await res.text()}`);
   const json = (await res.json()) as { access_token: string; expires_in: number };
-  cachedToken = { token: json.access_token, exp: now + json.expires_in };
-  return cachedToken.token;
+  tokenCache.set(projectId, { token: json.access_token, exp: now + json.expires_in });
+  return { token: json.access_token, projectId };
 }
 
 export type FcmSendResult = {
@@ -202,6 +212,7 @@ type SendInput = {
   body: string;
   data: Record<string, string>;
   channelId?: string;
+  appType?: string;
   android?: { priority?: "HIGH" | "NORMAL"; ttl?: string };
   /** When true, send a data-only message with no visible notification block —
    * the native service uses this to update the existing heads-up in place
@@ -220,11 +231,9 @@ type SendInput = {
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const ts_start = Date.now();
-  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)}`);
+  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)} app=${input.appType ?? "partner"}`);
 
-  const projectId = process.env.FIREBASE_PROJECT_ID!;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY!;
+  const { token: accessToken, projectId } = await getAccessToken(input.appType);
 
   console.log(`[DIRECT-FCM-PAYLOAD] PROJECT_ID: ${projectId}`);
   console.log(`[DIRECT-FCM-PAYLOAD] TOKEN_LAST_6: ${input.token.slice(-6)}`);
@@ -233,13 +242,6 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
   console.log(`[DIRECT-FCM-PAYLOAD] DATA_TYPE: ${input.data.type}`);
   console.log(`[DIRECT-FCM-PAYLOAD] ANDROID_CHANNEL_ID: ${input.channelId ?? "general"}`);
   console.log(`[DIRECT-FCM-PAYLOAD] MESSAGE_TYPE: ${(!input.silent && !input.dataOnly) ? "notification + data" : "data-only"}`);
-
-  if (privateKey) {
-    const shape = inspectPrivateKey(privateKey);
-    console.log(`[DIRECT-FCM-PAYLOAD] PRIVATE_KEY_INSPECT: length=${shape.rawLength} beginsWithPem=${shape.rawBeginsWithPem} normalizedBeginsWithPem=${shape.normalizedBeginsWithPem}`);
-  }
-
-  const accessToken = await getAccessToken();
 
   const dataOnly = input.dataOnly === true;
   const androidBlock: Record<string, unknown> = {
@@ -353,7 +355,7 @@ export async function sendOfferPush(args: {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: tokens, error } = await (supabaseAdmin as any)
     .from("push_tokens")
-    .select("id, token")
+    .select("id, token, app")
     .eq("user_id", args.userId)
     .is("invalid_at", null);
   if (error) throw error;
@@ -390,9 +392,10 @@ export async function sendOfferPush(args: {
 
 
   const results = await Promise.all(
-    tokens.map((t: { token: string }) =>
+    tokens.map((t: { token: string; app: string }) =>
       sendOne({
         token: t.token,
+        appType: t.app,
         title: args.title,
         body: args.body,
         data: args.data,
