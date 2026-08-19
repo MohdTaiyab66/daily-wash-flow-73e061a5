@@ -102,9 +102,9 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
         throw new Error("4 photos required for Need Wash");
       }
       
-      // Validation for Unavailable (1 photo required by DB migration 20260818120034)
-      if (outcome === "unavailable" && photos.length < 1) {
-        throw new Error("At least 1 evidence photo required for Unavailability");
+      // Validation for Unavailable (2 photos required by DB migration 20260702220818)
+      if (outcome === "unavailable" && photos.length < 2) {
+        throw new Error("At least 2 evidence photos required for Unavailability");
       }
 
 
@@ -118,8 +118,40 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
       });
     }
 
-
     if (result.error) throw new Error(result.error.message);
+
+    // 3. Entitlement Deduction (Safety check/Trigger)
+    // If the service belongs to a subscription, we ensure 1 Daily Shine is deducted.
+    // The RPCs partner_complete_service and submit_service_unavailable currently handle earnings and records,
+    // but try_consume_entitlement is the source of truth for the '25 service days' meter.
+    
+    // Fetch the service details to get vehicle_id and service_id (for type check)
+    const { data: updatedSvc } = await supabase
+      .from("services")
+      .select("vehicle_id, service_id, scheduled_date, status, unavailable_reason")
+      .eq("id", serviceId)
+      .single();
+
+    if (updatedSvc && updatedSvc.vehicle_id) {
+      const { data: catalog } = await supabase
+        .from("service_catalog")
+        .select("service_type, slug")
+        .eq("id", updatedSvc.service_id)
+        .single();
+
+      if (catalog?.service_type === 'subscription') {
+        const benefitType = catalog.slug?.includes('interior') ? 'interior' : 'exterior_daily';
+        
+        // We call try_consume_entitlement. 
+        // Note: The RPC itself prevents double-deduction per service day by using the ledger/uniqueness.
+        await supabase.rpc("try_consume_entitlement", {
+          p_vehicle_id: updatedSvc.vehicle_id,
+          p_benefit: benefitType,
+          p_reason: `service_${outcome}`,
+          p_booking_id: null // We don't necessarily have the booking ID here, but vehicle + benefit + cycle handles it
+        });
+      }
+    }
 
     return { ok: true, outcome, serviceId };
   });

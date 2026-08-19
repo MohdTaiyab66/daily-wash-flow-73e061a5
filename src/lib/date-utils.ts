@@ -3,11 +3,17 @@ import { format, toZonedTime } from "date-fns-tz";
 const IST_TIMEZONE = "Asia/Kolkata";
 
 /**
+ * Returns the current date in IST as a Date object.
+ */
+export function getNowIST(): Date {
+  return toZonedTime(new Date(), IST_TIMEZONE);
+}
+
+/**
  * Returns the current date in IST as an ISO string (YYYY-MM-DD).
  */
 export function getTodayIST(): string {
-  const now = new Date();
-  const zonedDate = toZonedTime(now, IST_TIMEZONE);
+  const zonedDate = getNowIST();
   return format(zonedDate, "yyyy-MM-dd", { timeZone: IST_TIMEZONE });
 }
 

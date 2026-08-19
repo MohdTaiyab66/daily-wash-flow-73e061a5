@@ -164,6 +164,7 @@ export function PhotoSlot({
       await deleteQueuedPhoto(queueKey);
       try { window.localStorage.removeItem(pathKey); } catch { /* noop */ }
       setQueuedPath(null);
+      retryingRef.current = false; // Reset before callback
       onUploaded(path);
       if (workflow === "service_photo") toast.success(`✓ ${label} saved`, { duration: 1100 });
     } catch (err) {
