@@ -375,11 +375,11 @@ function ServiceDetail() {
                         </div>
                      )}
 
-                     {/* Dirty Vehicle Flow */}
+                     {/* Need Wash Flow */}
                      {selectedCondition === "dirty" && (
                         <div className="space-y-6">
                             <div className="space-y-4">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Dirty Vehicle Photos (4 Required)</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Need Wash Photos (4 Required)</h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     {AFTER_ANGLES.map((angle) => {
                                         const isDone = (photos ?? []).some((p) => p.stage === "dirty" && p.angle === angle);
@@ -403,7 +403,7 @@ function ServiceDetail() {
                             <div className="space-y-4">
                                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 ml-1">Reason / Note</h3>
                                  <Textarea 
-                                    placeholder="What makes the vehicle very dirty? (e.g. thick mud, bird droppings)" 
+                                    placeholder="What makes the vehicle need wash? (e.g. thick mud, bird droppings)" 
                                     className="min-h-[100px] rounded-[20px] border-neutral-200 bg-neutral-50 focus:bg-white transition-colors"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
@@ -412,11 +412,11 @@ function ServiceDetail() {
 
                             <Button 
                                 size="lg" 
-                                className="h-16 w-full rounded-[24px] bg-amber-600 hover:bg-amber-700 text-white font-black text-lg shadow-xl shadow-amber-500/10 active:scale-[0.98] transition-all" 
+                                className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                 onClick={() => markDirty.mutate()}
                                 disabled={markDirty.isPending || !dirtyDone}
                             >
-                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : "REPORT DIRTY VEHICLE"}
+                                {markDirty.isPending ? <Loader2 className="animate-spin mr-2" /> : (!dirtyDone ? "ADD 4 PHOTOS TO CONTINUE" : "REPORT NEED WASH")}
                             </Button>
                         </div>
                      )}
