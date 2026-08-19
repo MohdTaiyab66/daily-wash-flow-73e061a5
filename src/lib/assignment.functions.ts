@@ -1,12 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getTodayIST } from "@/lib/date-utils";
 
 // ============== My Assignment (partner) ==============
 export const getMyAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayIST();
+
     const { data: a } = await supabase
       .from("assignments")
       .select("*")
@@ -217,7 +219,8 @@ export const getEndOfDaySummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayIST();
+
     const { data: services } = await supabase
       .from("services")
       .select("id,status,started_at,completed_at,rate_per_car,start_lat,start_lng,complete_lat,complete_lng")
@@ -272,7 +275,8 @@ export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const userId = (context as any).userId;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayIST();
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: released } = await supabaseAdmin
       .from("services")
@@ -322,7 +326,7 @@ export const validateTodayAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {
     const { supabase, userId } = context as any;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayIST();
     const { data: a } = await supabase
       .from("assignments")
       .select("id,partner_id,status,end_date")
