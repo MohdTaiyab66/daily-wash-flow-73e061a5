@@ -26,7 +26,7 @@ function ServiceDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [selectedCondition, setSelectedCondition] = useState<"ready" | "dirty" | "unavailable" | null>(null);
+  const [selectedCondition, setSelectedCondition] = useState<"ready" | "unavailable" | "dirty" | null>(null);
   const [unavailableReason, setUnavailableReason] = useState<string>("vehicle_not_available");
   const [notes, setNotes] = useState("");
   const [celebration, setCelebration] = useState<any>(null);
