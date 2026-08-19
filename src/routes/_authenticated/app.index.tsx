@@ -101,6 +101,8 @@ function HomePage() {
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
   const completed = todayData?.completedToday ?? 0;
+  const unavailable = todayData?.unavailableToday ?? 0;
+  const needWash = todayData?.needWashToday ?? 0;
   const total = todayData?.assignmentTotalCustomers || 0;
   const remaining = todayData?.remainingToday ?? 0;
 
