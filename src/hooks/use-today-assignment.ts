@@ -80,16 +80,24 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     // Same filter the Live Route screen uses — bookings covered elsewhere are
     // not part of the partner's route, so counts can never diverge.
     const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
+    const cCount = tds.filter((s: any) => s.status === "completed").length;
+    const uCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+    const nCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+    const standardRate = 17;
+    const exceptionRate = 12;
+
     return {
       assignment: null, all: [], today: tds, nextDate: null,
       todaysCustomers: tds.length,
-      completedToday: tds.filter((s: any) => s.status === "completed").length,
+      completedToday: cCount,
+      unavailableToday: uCount,
+      needWashToday: nCount,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-      actualEarnedToday: tds.filter((s: any) => s.status === "completed").reduce((sum, s) => sum + Number(s.rate_per_car || 17), 0),
-      potentialDailyEarnings: tds.length * 17, // fallback
-      potentialMonthlyEarnings: (tds.length * 17) * 26,
+      actualEarnedToday: (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate),
+      potentialDailyEarnings: tds.length * standardRate,
+      potentialMonthlyEarnings: (tds.length * standardRate) * 26,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: tds.length * 17, expectedMonthlyEarnings: (tds.length * 17) * 26,
+      targetCars: 0, expectedDailyEarnings: tds.length * standardRate, expectedMonthlyEarnings: (tds.length * standardRate) * 26,
       fetchedAt: Date.now(),
     };
   }
