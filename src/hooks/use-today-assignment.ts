@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getTodayIST } from "@/lib/date-utils";
 
 /**
  * Shape of the unified "today assignment" payload consumed by
