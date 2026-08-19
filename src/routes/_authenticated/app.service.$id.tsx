@@ -166,12 +166,13 @@ function ServiceDetail() {
         p_reason: "dirty_vehicle",
         p_notes: notes.trim() || "Dirty vehicle reported",
         p_photos: dirtyPhotos,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
-      } as any);
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
+      });
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
