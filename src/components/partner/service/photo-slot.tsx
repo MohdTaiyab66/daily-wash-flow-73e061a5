@@ -168,8 +168,30 @@ export function PhotoSlot({
       if (workflow === "service_photo") toast.success(`✓ ${label} saved`, { duration: 1100 });
     } catch (err) {
       console.error(`${errTag} Upload failed · slot=${slot} · ${(err as any)?.message ?? err}`);
-      toast.error(typeof navigator !== "undefined" && navigator.onLine === false ? "Photo saved offline. It will retry automatically." : ((err as any)?.message ?? "Photo saved locally. Upload will retry."));
+      toast.error(
+        <div className="flex flex-col gap-2">
+          <p className="font-bold text-xs uppercase tracking-wider">Upload Failed</p>
+          <p className="text-[10px] leading-relaxed opacity-80">
+            {typeof navigator !== "undefined" && navigator.onLine === false 
+              ? "Saved offline. It will retry automatically." 
+              : "Saved locally. Tap to retry manually."}
+          </p>
+          <button 
+            onClick={() => {
+              const fileKey = `${serviceId}:${slot}`;
+              loadQueuedPhoto(fileKey).then(f => {
+                if (f) uploadCapturedFile(f, Date.now(), queuedPath || path);
+              });
+            }}
+            className="mt-1 w-fit rounded-lg bg-black px-3 py-1 text-[10px] font-black uppercase text-white active:scale-95"
+          >
+            Retry Now
+          </button>
+        </div>,
+        { duration: 5000 }
+      );
     } finally {
+
       setUploading(false);
       retryingRef.current = false;
     }
