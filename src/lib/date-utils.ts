@@ -20,8 +20,10 @@ export function formatBusinessDate(date: string | Date | null | undefined): stri
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   const zonedDate = toZonedTime(d, IST_TIMEZONE);
-  return format(zonedDate, "d MMM · h:mm a", { timeZone: IST_TIMEZONE });
+  // Example: "20 Aug · 2:16 AM" or "Thursday, 20 Aug · 2:16 AM"
+  return format(zonedDate, "EEEE, d MMM · h:mm a", { timeZone: IST_TIMEZONE });
 }
+
 
 /**
  * Returns a standard business date string (YYYY-MM-DD) for any UTC timestamp in IST.
