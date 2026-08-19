@@ -46,7 +46,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   if (!u.user) {
     return {
       assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, remainingToday: 0,
+      todaysCustomers: 0, completedToday: 0, 
+      unavailableToday: 0, needWashToday: 0,
+      remainingToday: 0,
       actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
       assignmentTotalCustomers: 0, assignmentCompleted: 0,
       targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
