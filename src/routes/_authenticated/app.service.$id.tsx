@@ -486,8 +486,9 @@ function ServiceDetail() {
                                  onClick={() => markUnavailable.mutate()}
                                  disabled={markUnavailable.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
                              >
-                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 EVIDENCE PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
                              </Button>
+
                          </div>
                      )}
 
