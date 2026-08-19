@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,12 @@ import { MaskedCallButton } from "./app.live";
 import { formatTime12 } from "@/lib/format";
 import { openGoogleMapsDirections } from "@/lib/gps";
 import { ServiceCelebration } from "@/components/partner/ServiceCelebration";
-import { PhotoSlot, getPosition, type ServicePhotoRow } from "@/components/partner/service/photo-slot";
+import { PhotoSlot, getPosition, type ServicePhotoRow, pickPhotoPaths } from "@/components/partner/service/photo-slot";
+import { Textarea } from "@/components/ui/textarea";
+import { getTodayIST } from "@/lib/date-utils";
+import { useServerFn } from "@tanstack/react-start";
+import { submitServiceOutcome, UNAVAILABLE_REASONS } from "@/lib/service-workflow.functions";
+
 import { Textarea } from "@/components/ui/textarea";
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
