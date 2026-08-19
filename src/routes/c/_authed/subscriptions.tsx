@@ -162,7 +162,6 @@ function MyPlanPage() {
 
   const planStart = activeSub ? new Date(activeSub.scheduled_date) : null;
   const totalDays = 25;
-  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
   const elapsed = all.filter(b => 
     b.service_catalog?.service_type === "subscription" && 
@@ -172,6 +171,7 @@ function MyPlanPage() {
   const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
+
 
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const interiorReal = all.filter(
