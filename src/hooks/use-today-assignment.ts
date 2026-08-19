@@ -133,9 +133,14 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const potentialDailyEarnings = effectiveCustomerCount * ratePerCar;
   const potentialMonthlyEarnings = potentialDailyEarnings * 26;
 
-  const actualEarnedToday = todays
-    .filter((s: any) => s.status === "completed")
-    .reduce((sum, s) => sum + Number(s.rate_per_car || ratePerCar || 0), 0);
+  const standardRate = ratePerCar || 17;
+  const exceptionRate = 12;
+
+  const cCount = todays.filter((s: any) => s.status === "completed").length;
+  const uCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+  const nCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+
+  const actualEarnedToday = (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate);
 
   const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
 
@@ -145,7 +150,9 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     today: todays,
     nextDate,
     todaysCustomers: isMonday ? 0 : todays.length,
-    completedToday: isMonday ? 0 : todays.filter((s: any) => s.status === "completed").length,
+    completedToday: isMonday ? 0 : cCount,
+    unavailableToday: isMonday ? 0 : uCount,
+    needWashToday: isMonday ? 0 : nCount,
     remainingToday: isMonday ? 0 : todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
     actualEarnedToday: isMonday ? 0 : actualEarnedToday,
     potentialDailyEarnings,
@@ -153,8 +160,8 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     assignmentTotalCustomers,
     assignmentCompleted: Math.min(assignmentCompleted, assignmentTotalCustomers),
     targetCars,
-    expectedDailyEarnings: potentialDailyEarnings, // backwards compat
-    expectedMonthlyEarnings: potentialMonthlyEarnings, // backwards compat
+    expectedDailyEarnings: potentialDailyEarnings,
+    expectedMonthlyEarnings: potentialMonthlyEarnings,
     fetchedAt: Date.now(),
   };
 }
