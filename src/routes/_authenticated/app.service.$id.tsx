@@ -314,24 +314,9 @@ function ServiceDetail() {
                             <Sparkles className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Ready to clean</p>
-                            {selectedCondition === "ready" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase">✓ Selected</p>}
-                        </div>
-                    </button>
-
-                    <button
-                        onClick={() => setSelectedCondition("dirty")}
-                        className={cn(
-                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
-                            selectedCondition === "dirty" ? "border-amber-500 bg-amber-50 shadow-sm" : "border-neutral-100 bg-white"
-                        )}
-                    >
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-400")}>
-                            <AlertTriangle className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Very dirty</p>
-                            {selectedCondition === "dirty" && <p className="text-[10px] font-bold text-amber-500 uppercase">✓ Selected</p>}
+                            <p className="font-bold text-neutral-900">READY TO CLEAN</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Vehicle is present</p>
+                            {selectedCondition === "ready" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
                         </div>
                     </button>
 
@@ -339,15 +324,33 @@ function ServiceDetail() {
                         onClick={() => setSelectedCondition("unavailable")}
                         className={cn(
                             "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
-                            selectedCondition === "unavailable" ? "border-red-500 bg-red-50 shadow-sm" : "border-neutral-100 bg-white"
+                            selectedCondition === "unavailable" ? "border-[#FF6B00] bg-[#FF6B00]/5 shadow-sm" : "border-neutral-100 bg-white"
                         )}
                     >
-                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-red-500 text-white" : "bg-neutral-100 text-neutral-400")}>
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "unavailable" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
                             <ShieldAlert className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-neutral-900">Unavailable vehicle</p>
-                            {selectedCondition === "unavailable" && <p className="text-[10px] font-bold text-red-500 uppercase">✓ Selected</p>}
+                            <p className="font-bold text-neutral-900">UNAVAILABLE VEHICLE</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Cannot be serviced</p>
+                            {selectedCondition === "unavailable" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedCondition("dirty")}
+                        className={cn(
+                            "flex items-center gap-4 p-4 rounded-[20px] border-2 w-full text-left transition-all active:scale-[0.98]",
+                            selectedCondition === "dirty" ? "border-[#FF6B00] bg-[#FF6B00]/5 shadow-sm" : "border-neutral-100 bg-white"
+                        )}
+                    >
+                        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", selectedCondition === "dirty" ? "bg-[#FF6B00] text-white" : "bg-neutral-100 text-neutral-400")}>
+                            <AlertTriangle className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold text-neutral-900">NEED WASH</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Requires additional attention</p>
+                            {selectedCondition === "dirty" && <p className="text-[10px] font-bold text-[#FF6B00] uppercase mt-1">✓ Selected</p>}
                         </div>
                     </button>
                 </div>
