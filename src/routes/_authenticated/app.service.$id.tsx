@@ -142,6 +142,11 @@ function ServiceDetail() {
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["earnings-v3"] });
+      qc.invalidateQueries({ queryKey: ["today-assignment-for-earnings"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+      qc.invalidateQueries({ queryKey: ["service-history"] });
+      qc.invalidateQueries({ queryKey: ["service-summary"] });
       toast.success("Marked as unavailable");
     },
     onError: (e: any) => toast.error(e.message),
