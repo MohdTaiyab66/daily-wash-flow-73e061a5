@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ServicePhotoViewer } from "@/components/customer/ServicePhotoViewer";
+import { formatBusinessDate } from "@/lib/date-utils";
+
 
 const TIME_SLOTS = ["Before 7 AM", "Before 8 AM", "Before 9 AM", "Before 10 AM", "Before 11 AM", "Before 12 PM"];
 
@@ -127,16 +129,18 @@ function BookingDetail() {
   if (q.isLoading) return <div className="px-5 pt-10"><div className="h-40 animate-pulse rounded-2xl bg-muted" /></div>;
   if (!b) return <div className="px-5 pt-10 text-center text-sm text-muted-foreground">Booking not found.</div>;
 
+  const isUnavailable = (b.status === "unavailable" || completion.data?.status === "unavailable") && completion.data?.unavailable_reason !== "dirty_vehicle";
+  const hasDirty = (b.status === "unavailable" || completion.data?.status === "unavailable") && completion.data?.unavailable_reason === "dirty_vehicle";
   const isCancelled = b.status === "cancelled";
   const isCompleted = b.status === "completed";
-  const isUnavailable = b.status === "unavailable" || completion.data?.status === "unavailable";
-  const canModify = !isCancelled && !isCompleted && !isUnavailable && b.status !== "active";
+  const canModify = !isCancelled && !isCompleted && !isUnavailable && !hasDirty && b.status !== "active";
   const completedAt = completion.data?.completed_at
     ? new Date(completion.data.completed_at)
     : (b.updated_at && isCompleted ? new Date(b.updated_at) : null);
   const hoursSinceCompletion = completedAt ? (Date.now() - completedAt.getTime()) / (60 * 60 * 1000) : null;
   const canComplain = hoursSinceCompletion !== null && hoursSinceCompletion < 2;
   const photosVisible = hoursSinceCompletion !== null && hoursSinceCompletion < 48;
+
   const activeIdx = isCancelled ? -1 : statusIndex(b.status);
 
   return (
@@ -165,7 +169,7 @@ function BookingDetail() {
             <div>
               <div className="flex items-center gap-2">
                  <Calendar className="h-4 w-4 text-primary" />
-                 <span className="text-[15px] font-black text-[#1a1a1a]">{formatDate(b.scheduled_date)}</span>
+                 <span className="text-[15px] font-black text-[#1a1a1a]">{formatBusinessDate(b.scheduled_date).split(' · ')[0]}</span>
               </div>
               {b.preferred_before_time && (
                 <div className="mt-1 flex items-center gap-2 text-[13px] font-bold text-muted-foreground/60">
@@ -324,15 +328,20 @@ function BookingDetail() {
                 <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">Proof of work</h3>
                 <p className={cn(
                   "text-[15px] font-black",
-                  isCompleted ? "text-success" : "text-neutral-500"
+                  isCompleted ? "text-success" : hasDirty ? "text-orange-500" : "text-neutral-500"
                 )}>
-                  {isCompleted ? "Service Completed" : "Service Unavailable"}
+                  {isCompleted ? "Daily Shine COMPLETED ✓" : hasDirty ? "Daily Shine NEED WASH" : "Daily Shine UNAVAILABLE"}
+                </p>
+                <p className="text-[13px] font-medium text-black/60 mt-1">
+                  {isCompleted ? "Your vehicle has been cleaned." : hasDirty ? "Your vehicle is dirty and requires a wash." : "Your vehicle was unavailable."}
                 </p>
               </div>
+
               {completedAt && (
                 <div className="text-right">
-                  <p className="text-[13px] font-black text-[#1a1a1a]">{completedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
-                  <p className="text-[11px] font-bold text-muted-foreground/60">{completedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</p>
+                  <p className="text-[13px] font-black text-[#1a1a1a]">{formatBusinessDate(completedAt).split(' · ')[0]}</p>
+                  <p className="text-[11px] font-bold text-muted-foreground/60">{formatBusinessDate(completedAt).split(' · ')[1]}</p>
+
                 </div>
               )}
             </div>

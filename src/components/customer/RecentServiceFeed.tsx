@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Clock3, ShieldAlert, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ServicePhotoViewer } from "./ServicePhotoViewer";
+import { formatBusinessDate } from "@/lib/date-utils";
+
 import { cn } from "@/lib/utils";
 
 type Photo = { stage: string; angle: string; storage_path: string; captured_at: string; partner_name?: string | null };
@@ -191,10 +193,10 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   const minutesLeft = Math.max(0, Math.floor(msLeft / 60000));
   const canComplain = service.can_complain && msLeft > 0 && !service.has_complaint;
 
-  const isUnavailable = service.status === "unavailable";
+  const isUnavailable = service.status === "unavailable" && service.unavailable_reason !== "dirty_vehicle";
   const isMissed = service.status === "skipped";
   const isPending = service.status === "pending" || service.status === "in_progress";
-  const hasDirty = !!service.dirty_report;
+  const hasDirty = service.status === "unavailable" && service.unavailable_reason === "dirty_vehicle";
 
   const dirtyPhotos = [
     service.dirty_report?.photo_front,
@@ -204,16 +206,15 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
   ].filter((p): p is string => !!p);
 
   const getStatusDisplay = () => {
-
-    if (isUnavailable) return { label: "UNAVAILABLE", tone: "neutral" as const, icon: ShieldAlert };
-    if (isMissed) return { label: "MISSED", tone: "danger" as const, icon: AlertCircle };
-    if (isPending) return { label: "SCHEDULED", tone: "brand" as const, icon: Clock3 };
-    if (hasDirty) return { label: "NEED WASH", tone: "warning" as const, icon: AlertCircle };
-    return { label: "COMPLETED", tone: "success" as const, icon: CheckCircle2 };
+    if (hasDirty) return { label: "NEED WASH", tone: "warning" as const, icon: AlertCircle, message: "Your vehicle is dirty and requires a wash." };
+    if (isUnavailable) return { label: "UNAVAILABLE", tone: "neutral" as const, icon: ShieldAlert, message: "Your vehicle was unavailable." };
+    if (isMissed) return { label: "MISSED", tone: "danger" as const, icon: AlertCircle, message: "Service missed." };
+    if (isPending) return { label: "SCHEDULED", tone: "brand" as const, icon: Clock3, message: "Service is scheduled." };
+    return { label: "COMPLETED", tone: "success" as const, icon: CheckCircle2, message: "Your vehicle has been cleaned." };
   };
 
-
   const status = getStatusDisplay();
+
   const StatusIcon = status.icon;
 
   // Clean human-friendly reasons
@@ -251,11 +252,17 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
             </div>
           </div>
           
+          <p className="mt-1 text-[13px] font-bold text-[#1A1A1A] leading-tight">
+            {status.message}
+          </p>
+
           <p className="mt-2 text-[12px] font-medium text-black/40">
-            {new Date(service.scheduled_date).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+            {formatBusinessDate(service.scheduled_date).split(' · ')[0]}
+
             {!isPending && !isMissed && ` · ${completed.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
             {` · ${service.vehicle_label}`}
           </p>
+
         </div>
       </div>
 
@@ -295,9 +302,10 @@ function ServiceCard({ service, onSubmitted }: { service: RecentService; onSubmi
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-black/30">
           <Clock3 className="h-3 w-3" />
           <span>
-             {isMissed ? "Plan extended" : isUnavailable ? "No wash deducted" : service.has_complaint ? "Issue reported" : msLeft > 0 ? "Report an issue" : "Issue reporting closed"}
+             {isMissed ? "Plan extended" : (isUnavailable || hasDirty || !isPending) ? "1 Daily Shine service used" : "No wash deducted"}
           </span>
         </div>
+
         {!isUnavailable && !isMissed && !isPending && service.photos.length > 0 && (
           <button onClick={() => openViewer(0)} className="text-[12px] font-black text-[#FF6B00] active:opacity-60 transition-all uppercase tracking-wider">
             View all →

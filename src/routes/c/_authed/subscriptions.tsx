@@ -38,6 +38,9 @@ export const Route = createFileRoute("/c/_authed/subscriptions")({
   component: MyPlanPage,
 });
 
+import { formatBusinessDate } from "@/lib/date-utils";
+
+
 type Booking = {
   id: string;
   scheduled_date: string;
@@ -161,7 +164,12 @@ function MyPlanPage() {
   const totalDays = 25;
   const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const today = new Date();
-  const elapsed = planStart ? Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - planStart.getTime()) / 86400000))) : 0;
+  const elapsed = all.filter(b => 
+    b.service_catalog?.service_type === "subscription" && 
+    (b.status === "completed" || b.status === "unavailable")
+  ).length;
+  
+  const planEnd = planStart ? new Date(planStart.getTime() + 28 * 24 * 60 * 60 * 1000) : null;
   const daysLeft = planEnd ? Math.max(0, Math.ceil((planEnd.getTime() - today.getTime()) / 86400000)) : 0;
   const expiringSoon = daysLeft > 0 && daysLeft <= 7;
 
@@ -170,14 +178,15 @@ function MyPlanPage() {
     (b) =>
       (b.service_catalog?.slug?.includes("interior") || b.service_catalog?.slug?.includes("deep")) &&
       new Date(b.scheduled_date) >= monthStart &&
-      b.status === "completed",
+      (b.status === "completed" || b.status === "unavailable"),
   );
   const exteriorReal = all.filter(
     (b) =>
       (b.service_catalog?.slug?.includes("exterior") || b.service_catalog?.slug?.includes("basic") || b.service_catalog?.slug?.includes("daily")) &&
       new Date(b.scheduled_date) >= monthStart &&
-      b.status === "completed",
+      (b.status === "completed" || b.status === "unavailable"),
   );
+
   const interiorCount = interiorReal.length;
   const exteriorCount = exteriorReal.length;
 
@@ -357,7 +366,7 @@ function MyPlanPage() {
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/20">Next Renewal</p>
                           <p className="text-[14px] font-semibold text-[#1A1A1A] mt-1">
-                            {planEnd?.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })} · {cancelScheduled ? "Scheduled to end" : "Auto-renew"}
+                            {formatBusinessDate(planEnd).split(' · ')[0]} · {cancelScheduled ? "Scheduled to end" : "Auto-renew"}
                           </p>
                         </div>
                       </div>
