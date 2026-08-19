@@ -514,7 +514,7 @@ function ServiceDetail() {
                                 onClick={() => afterAllDone && complete.mutate()}
                                 disabled={complete.isPending || !afterAllDone}
                             >
-                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : "COMPLETE SERVICE"}
+                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
                             </Button>
                         </div>
                      )}
