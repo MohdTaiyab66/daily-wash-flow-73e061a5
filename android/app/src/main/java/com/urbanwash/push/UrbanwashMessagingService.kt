@@ -77,7 +77,9 @@ class UrbanwashMessagingService : FirebaseMessagingService() {
             "vehicle_unavailable",
             "service_unavailable",
             "dirty_vehicle",
-            "vehicle_dirty"
+            "vehicle_dirty",
+            "booking_confirmed",
+            "entitlement_exhausted"
         )
 
     }
