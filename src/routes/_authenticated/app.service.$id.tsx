@@ -447,10 +447,9 @@ function ServiceDetail() {
                                  size="lg" 
                                  className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                  onClick={() => submitOutcome.mutate({ outcome: "unavailable" })}
-                                 disabled={submitOutcome.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
+                                 disabled={submitOutcome.isPending || !unavailableDone || (unavailableReason === 'other' && !notes.trim())}
                              >
-                                 {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
-                             </Button>
+                                 {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : (!unavailableDone ? "ADD 2 PHOTOS TO CONTINUE" : "MARK UNAVAILABLE")}</Button>
 
 
                          </div>
