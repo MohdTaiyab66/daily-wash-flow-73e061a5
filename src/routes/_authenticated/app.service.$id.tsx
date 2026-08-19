@@ -132,12 +132,13 @@ function ServiceDetail() {
         p_reason: unavailableReason,
         p_notes: notes.trim() || "Vehicle unavailable",
         p_photos: capturedPaths,
-        p_lat: pos?.lat ?? null,
-        p_lng: pos?.lng ?? null,
+        p_lat: pos?.lat ?? 0,
+        p_lng: pos?.lng ?? 0,
       });
       if (error) throw error;
       return data;
     },
+
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service", id] });
