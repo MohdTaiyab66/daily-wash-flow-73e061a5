@@ -103,7 +103,7 @@ function ServiceDetail() {
         const after = pickPhotoPaths(photos ?? [], "after", AFTER_ANGLES);
         outcomePhotos = [...before, ...after];
       } else if (vars.outcome === "unavailable") {
-        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["1", "2"]); // Enforce 2 photos per RPC/UI
+        outcomePhotos = pickPhotoPaths(photos ?? [], "unavailable", ["front", "rear"]); // Mapped from 1, 2 to front, rear
       } else if (vars.outcome === "need_wash") {
 
         outcomePhotos = pickPhotoPaths(photos ?? [], "dirty", ["front", "rear", "left", "right"]);
