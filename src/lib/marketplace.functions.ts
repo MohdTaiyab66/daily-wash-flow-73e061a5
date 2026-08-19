@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getTodayIST } from "@/lib/date-utils";
+
 
 const idInput = z.object({ broadcastId: z.string().uuid() });
 
@@ -143,7 +145,7 @@ export const getPartnerRoutePreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayIST();
     const { data: a } = await (supabase as any)
       .from("assignments")
       .select("id, rate_per_car")
