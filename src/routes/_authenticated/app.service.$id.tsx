@@ -109,14 +109,17 @@ function ServiceDetail() {
       }
 
       const result = await submitOutcomeFn({
-        serviceId: id,
-        outcome: vars.outcome,
-        reason: vars.outcome === "unavailable" ? unavailableReason : undefined,
-        notes: notes.trim() || undefined,
-        photos: outcomePhotos,
-        lat: pos?.lat ?? 0,
-        lng: pos?.lng ?? 0,
+        data: {
+          serviceId: id,
+          outcome: vars.outcome,
+          reason: vars.outcome === "unavailable" ? unavailableReason : undefined,
+          notes: notes.trim() || undefined,
+          photos: outcomePhotos,
+          lat: pos?.lat ?? 0,
+          lng: pos?.lng ?? 0,
+        }
       });
+
       return result;
     },
     onSuccess: (data, vars) => {
@@ -441,10 +444,11 @@ function ServiceDetail() {
                                  size="lg" 
                                  className="h-16 w-full rounded-[24px] bg-[#FF6B00] hover:bg-[#ff8c33] text-white font-black text-lg shadow-xl shadow-orange-500/10 active:scale-[0.98] transition-all" 
                                  onClick={() => submitOutcome.mutate({ outcome: "unavailable" })}
-                                 disabled={markUnavailable.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
+                                 disabled={submitOutcome.isPending || (photos ?? []).filter(p => p.stage === "unavailable").length < 2 || (unavailableReason === 'other' && !notes.trim())}
                              >
-                                 {markUnavailable.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
+                                 {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : ((photos ?? []).filter(p => p.stage === "unavailable").length < 2 ? "ADD 2 PHOTOS TO CONTINUE" : (unavailableReason === 'other' && !notes.trim() ? "ADD REMARKS TO CONTINUE" : "MARK UNAVAILABLE"))}
                              </Button>
+
 
                          </div>
                      )}
@@ -483,10 +487,11 @@ function ServiceDetail() {
                                         : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
                                 )}
                                 onClick={() => afterAllDone && submitOutcome.mutate({ outcome: "completed" })}
-                                disabled={complete.isPending || !afterAllDone}
+                                disabled={submitOutcome.isPending || !afterAllDone}
                             >
-                                {complete.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
+                                {submitOutcome.isPending ? <Loader2 className="animate-spin mr-2" /> : (!afterAllDone ? "ADD 4 AFTER PHOTOS TO CONTINUE" : "COMPLETE SERVICE")}
                             </Button>
+
                         </div>
                      )}
                 </div>

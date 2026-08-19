@@ -6,10 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarDays, Lock, Car, Clock, MapPin, IndianRupee } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
-
-const RATE = 17;
-
+import { getTodayIST } from "@/lib/date-utils";
 import { PartnerShell } from "@/components/partner/PartnerShell";
+
 
 export const Route = createFileRoute("/_authenticated/app/earnings")({
   component: () => (
@@ -36,7 +35,7 @@ function EarningsPage() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayIST();
       const { data: a } = await supabase
         .from("assignments")
         .select("*")
