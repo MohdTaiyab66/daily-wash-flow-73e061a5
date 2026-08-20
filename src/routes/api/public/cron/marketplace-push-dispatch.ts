@@ -32,12 +32,11 @@ async function dispatchPending() {
   const { data: offerRows, error } = await (supabaseAdmin as any)
     .from("marketplace_offers")
     .select("id, partner_id, broadcast_id, round, incentive, distance_from_route_m, route_impact_m, sent_at")
-
     .eq("response", "pending")
     .is("viewed_at", null)
-    .gt("sent_at", new Date(Date.now() - 5 * 60_000).toISOString())
+    .gt("sent_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .order("sent_at", { ascending: false })
-    .limit(100);
+    .limit(200);
   if (error) {
     console.error("[BOOKING-PUSH:ERROR] FAILED_TO_FETCH_OFFERS", error);
     throw error;
