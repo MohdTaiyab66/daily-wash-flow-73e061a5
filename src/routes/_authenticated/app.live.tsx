@@ -185,12 +185,16 @@ function RoutePage() {
         m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       toast.success("Service started");
+      
+      // Navigate to detail page immediately to prevent intermediate state
+      navigate({ to: "/_authenticated/app/service/$id", params: { id: variables } });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not start service"),
+
   });
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
