@@ -45,7 +45,7 @@ export async function dispatchAssignmentReminders(): Promise<number> {
       continue;
     }
 
-    console.log(`[ASSIGNMENT-REMINDER] Sending reminder for assignment=${a.id} partner=${a.partner_id}`);
+    console.log(`[PARTNER-E2E:11-REMINDER] Sending reminder for assignment=${a.id} partner=${a.partner_id}`);
 
     try {
       const result = await sendOfferPush({

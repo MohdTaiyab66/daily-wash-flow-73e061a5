@@ -741,8 +741,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     if (offersError) continue;
 
     // 3. Parallel Fan-out
-    // [BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED
-    console.log(`[BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED count=${offers?.length}`);
+    console.log(`[PARTNER-E2E:07-FANOUT] FCM_FANOUT_STARTED count=${offers?.length} broadcast_id=${b.broadcast_id}`);
 
     const fanout = (offers || []).map(async (o: any) => {
       try {
@@ -793,11 +792,9 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
         if (result.sent > 0) {
           totalDispatched++;
-          // [BOOKING-PUSH:AREA:08] FCM_SENT
-          console.log(`[BOOKING-PUSH:AREA:08] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id}`);
+          console.log(`[PARTNER-E2E:08-FCM] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
         } else {
-          // [BOOKING-PUSH:AREA:09] FCM_FAILED
-          console.log(`[BOOKING-PUSH:AREA:09] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id}`);
+          console.log(`[PARTNER-E2E:09-FCM] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
         }
       } catch (e) {
         console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);

@@ -386,10 +386,10 @@ export async function sendOfferPush(args: {
   console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=${tokens.length} (user_id=${args.userId})`);
 
   const ts_resolved = Date.now();
-  if (isUnavailable) console.log(`[UNAVAILABLE-E2E:07] FCM_SEND_STARTED type=${type}`);
-  if (isDS) console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=${type}`);
+  if (isUnavailable) console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED type=${type}`);
+  if (isDS) console.log(`[PARTNER-E2E:10-FCM] FCM_SEND_STARTED type=${type}`);
   console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${ts_resolved}`);
-  console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+  console.log(`[CUSTOMER-E2E:07-DIAG] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
 
 
   const results = await Promise.all(
