@@ -362,10 +362,9 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   const { data: rows } = await sb
     .from("customer_notifications")
     .select("id,user_id,title,body,type,link,vehicle_id,metadata")
-
     .is("pushed_at", null)
     .order("created_at", { ascending: false })
-    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;
@@ -493,7 +492,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     // Daily Shine offer pushes are owned exclusively by dispatchPendingOffers,
     // keyed by offer_id and logged in offer_delivery_events.
     .neq("type", "daily_shine_offer")
-    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;

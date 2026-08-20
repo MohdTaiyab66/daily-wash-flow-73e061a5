@@ -316,7 +316,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
       return { token: input.token, ok: true, messageId: msgId };
     }
     const text = await res.text();
-    console.error(`[DIRECT-FCM-E2E:FAILURE] status=${res.status} body=${text} token=${input.token.slice(-8)} app=${input.appType}`);
+    console.error(`[FCM-DELIVERY:FAILURE] status=${res.status} body=${text} token=${input.token.slice(-8)} app=${input.appType} type=${input.data.type}`);
     let code: string | undefined;
     try {
       const j = JSON.parse(text);
@@ -328,7 +328,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     
     // Permanent failures — bail immediately so caller can mark token invalid.
     if (code && ["UNREGISTERED", "INVALID_ARGUMENT", "SENDER_ID_MISMATCH", "NOT_FOUND"].includes(code)) {
-      console.warn(`[DIRECT-FCM-E2E:TERMINAL] code=${code} msg=${lastErr.message}`);
+      console.warn(`[FCM-DELIVERY:TERMINAL] code=${code} msg=${lastErr.message} token=${input.token.slice(-8)}`);
       return { token: input.token, ok: false, errorCode: code, errorMessage: lastErr.message };
     }
     

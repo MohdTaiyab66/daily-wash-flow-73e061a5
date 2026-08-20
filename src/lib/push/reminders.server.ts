@@ -26,7 +26,8 @@ export async function dispatchAssignmentReminders(): Promise<number> {
     .eq("status", "active")
     .gte("end_date", today)
     .lt("created_at", fifteenMinsAgo)
-    .is("accepted_at", null);
+    .is("accepted_at", null)
+    .neq("status", "cancelled");
 
   if (error) throw error;
   if (!assignments || assignments.length === 0) return 0;
@@ -52,10 +53,12 @@ export async function dispatchAssignmentReminders(): Promise<number> {
         title: "Assignment Reminder",
         body: "You have a pending service assignment. Please accept it now to start your route.",
         data: {
-          type: "new_assignment", // Use new_assignment to trigger Kotlin heads-up
+          type: "new_assignment",
           assignment_id: a.id,
           is_reminder: "true",
-          link: "/app/live"
+          link: "/app/live",
+          broadcast_id: `reminder:${a.id}`,
+          action_token: `reminder:${a.id}`
         },
         channelId: "assignments_v4",
         dataOnly: true,
