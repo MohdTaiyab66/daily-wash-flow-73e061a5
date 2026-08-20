@@ -34,7 +34,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     console.log(`[UNAVAILABLE-PUSH:01] DIRECT_BYPASS_TRIGGERED service_id=${data.serviceId}`);
 
     // 1. Resolve status & vehicle_id
-    const { data: svc } = await supabaseAdmin.from("services").select("status, vehicle_id, booking_id, customer_id").eq("id", data.serviceId).maybeSingle();
+    const { data: svc } = await supabaseAdmin.from("services").select("status, vehicle_id, customer_id").eq("id", data.serviceId).maybeSingle();
     
     if (!svc) {
       console.warn(`[UNAVAILABLE-PUSH:ERROR] Service not found id=${data.serviceId}`);
@@ -72,7 +72,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     if (!notif) return { ok: false };
 
     // 4. Immediate Push to ALL active tokens for this account
-    console.log(`[CUSTOMER-E2E:05-DIAG] IMMEDIATE_DISPATCH_STARTED notif_id=${notif.id} customer_id=${customerId} vehicle_id=${svc.vehicle_id} booking_id=${svc.booking_id} type=${type}`);
+    console.log(`[CUSTOMER-E2E:05-DIAG] IMMEDIATE_DISPATCH_STARTED notif_id=${notif.id} customer_id=${customerId} vehicle_id=${svc.vehicle_id} type=${type}`);
     
     // We use sendOfferPush which internally fetches all active tokens for the user_id
     // and routes to the correct Firebase project using the 'app' column.
