@@ -133,8 +133,9 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   started = true;
 
   console.log(`[CUSTOMER-FCM-ANDROID:01] Firebase initialized (Capacitor)`);
-  console.log(`[CUSTOMER-FCM-ANDROID:02] Firebase project ID: uw-partner-app`);
-  console.log(`[CUSTOMER-FCM-ANDROID:03] Application/package ID: com.urbanwash.customer`);
+  console.log(`[CUSTOMER-FCM-ANDROID:02] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);
+  console.log(`[CUSTOMER-FCM-ANDROID:03] Application/package ID: ${app === 'partner' ? 'com.urbanwash.partner' : 'com.urbanwash.customer'}`);
+
   console.log(`[CUSTOMER-FCM-ANDROID:04] Firebase Sender ID: 781422718869`);
   console.log(`[CUSTOMER-FCM-REGISTRATION:01] AUTH_SESSION_AVAILABLE. user: ${userId}, app: ${app}`);
 
