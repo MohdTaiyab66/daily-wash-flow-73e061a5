@@ -231,7 +231,7 @@ type SendInput = {
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const ts_start = Date.now();
-  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)} app=${input.appType ?? "partner"}`);
+  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)} app=${input.appType ?? "partner"} type=${input.data.type}`);
 
   const { token: accessToken, projectId } = await getAccessToken(input.appType);
 
@@ -316,7 +316,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
       return { token: input.token, ok: true, messageId: msgId };
     }
     const text = await res.text();
-    console.error(`[DIRECT-FCM-E2E:FAILURE] status=${res.status} body=${text} token=${input.token.slice(-8)} app=${input.appType}`);
+    console.error(`[FCM-DELIVERY:FAILURE] status=${res.status} body=${text} token=${input.token.slice(-8)} app=${input.appType} type=${input.data.type}`);
     let code: string | undefined;
     try {
       const j = JSON.parse(text);
@@ -328,7 +328,7 @@ async function sendOne(input: SendInput): Promise<FcmSendResult> {
     
     // Permanent failures — bail immediately so caller can mark token invalid.
     if (code && ["UNREGISTERED", "INVALID_ARGUMENT", "SENDER_ID_MISMATCH", "NOT_FOUND"].includes(code)) {
-      console.warn(`[DIRECT-FCM-E2E:TERMINAL] code=${code} msg=${lastErr.message}`);
+      console.warn(`[FCM-DELIVERY:TERMINAL] code=${code} msg=${lastErr.message} token=${input.token.slice(-8)}`);
       return { token: input.token, ok: false, errorCode: code, errorMessage: lastErr.message };
     }
     
@@ -386,10 +386,10 @@ export async function sendOfferPush(args: {
   console.log(`[CUSTOMER-PROD-E2E:06] ACTIVE_TOKEN_RESOLVED count=${tokens.length} (user_id=${args.userId})`);
 
   const ts_resolved = Date.now();
-  if (isUnavailable) console.log(`[UNAVAILABLE-E2E:07] FCM_SEND_STARTED type=${type}`);
-  if (isDS) console.log(`[PARTNER-BOOKING-E2E:06] FCM_SEND_STARTED type=${type}`);
+  if (isUnavailable) console.log(`[CUSTOMER-E2E:10-FCM] FCM_SEND_STARTED type=${type}`);
+  if (isDS) console.log(`[PARTNER-E2E:10-FCM] FCM_SEND_STARTED type=${type}`);
   console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${ts_resolved}`);
-  console.log(`[CUSTOMER-PROD-E2E:07] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
+  console.log(`[CUSTOMER-E2E:07-DIAG] FCM_SEND_STARTED type=${type} tokens=[${tokens.map((t: { token: string }) => t.token.slice(-8)).join(", ")}]`);
 
 
   const results = await Promise.all(

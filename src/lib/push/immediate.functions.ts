@@ -72,7 +72,7 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     if (!notif) return { ok: false };
 
     // 4. Immediate Push to ALL active tokens for this account
-    console.log(`[CUSTOMER-PUSH-E2E:05] IMMEDIATE_DISPATCH_STARTED notif_id=${notif.id} customer_id=${customerId} vehicle_id=${svc.vehicle_id}`);
+    console.log(`[CUSTOMER-E2E:05-DIAG] IMMEDIATE_DISPATCH_STARTED notif_id=${notif.id} customer_id=${customerId} vehicle_id=${svc.vehicle_id} type=${type}`);
     
     // We use sendOfferPush which internally fetches all active tokens for the user_id
     // and routes to the correct Firebase project using the 'app' column.
@@ -96,9 +96,9 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
 
     if (result.sent > 0) {
       await supabaseAdmin.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", notif.id);
-      console.log(`[CUSTOMER-PUSH-E2E:07] FCM_ACCEPTED count=${result.sent} sample_msg_id=${result.results.find(r => r.ok)?.messageId}`);
+      console.log(`[CUSTOMER-E2E:08-FCM] FCM_ACCEPTED count=${result.sent} sample_msg_id=${result.results.find(r => r.ok)?.messageId}`);
     } else {
-      console.error(`[CUSTOMER-PUSH-E2E:FAILURE] Push failed for customer=${customerId}. tokens_found=${result.results.length}`);
+      console.error(`[CUSTOMER-E2E:09-FCM] FCM_FAILED for customer=${customerId}. tokens_found=${result.results.length}`);
     }
 
     return { ok: result.sent > 0 };

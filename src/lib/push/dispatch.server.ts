@@ -81,7 +81,7 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=daily_shine_offer`);
   const sb = await admin();
 
   const sendOfferPush = await sender();
@@ -355,17 +355,16 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=customer_notification`);
   const sb = await admin();
 
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
     .select("id,user_id,title,body,type,link,vehicle_id,metadata")
-
     .is("pushed_at", null)
     .order("created_at", { ascending: false })
-    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;
@@ -482,7 +481,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=partner_notification`);
   const sb = await admin();
 
   const sendOfferPush = await sender();
@@ -493,7 +492,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     // Daily Shine offer pushes are owned exclusively by dispatchPendingOffers,
     // keyed by offer_id and logged in offer_delivery_events.
     .neq("type", "daily_shine_offer")
-    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;
@@ -742,8 +741,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
     if (offersError) continue;
 
     // 3. Parallel Fan-out
-    // [BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED
-    console.log(`[BOOKING-PUSH:AREA:07] FCM_FANOUT_STARTED count=${offers?.length}`);
+    console.log(`[PARTNER-E2E:07-FANOUT] FCM_FANOUT_STARTED count=${offers?.length} broadcast_id=${b.broadcast_id}`);
 
     const fanout = (offers || []).map(async (o: any) => {
       try {
@@ -794,11 +792,9 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
         if (result.sent > 0) {
           totalDispatched++;
-          // [BOOKING-PUSH:AREA:08] FCM_SENT
-          console.log(`[BOOKING-PUSH:AREA:08] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id}`);
+          console.log(`[PARTNER-E2E:08-FCM] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
         } else {
-          // [BOOKING-PUSH:AREA:09] FCM_FAILED
-          console.log(`[BOOKING-PUSH:AREA:09] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id}`);
+          console.log(`[PARTNER-E2E:09-FCM] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
         }
       } catch (e) {
         console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
