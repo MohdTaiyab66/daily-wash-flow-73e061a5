@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/app/live")({
 
 function RoutePage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
   useRealtimeInvalidation(
     ["services", "assignments", "customers", "vehicles", "wallet_ledger"],
     [["route-today"], ["today-assignment"], ["earnings-v3"], ["today-assignment-for-earnings"]]
@@ -185,12 +187,16 @@ function RoutePage() {
         m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       toast.success("Service started");
+      
+      // Navigate to detail page immediately to prevent intermediate state
+      navigate({ to: "/_authenticated/app/service/$id" as any, params: { id: variables } as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not start service"),
+
   });
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);

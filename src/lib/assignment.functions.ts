@@ -190,12 +190,13 @@ export const cancelMyAssignment = createServerFn({ method: "POST" })
     
     // Trigger re-broadcast fan-out notification
     // We import dynamically to avoid circular dependencies in server fns
-    import("@/lib/push/immediate.functions").then(m => {
+    import("@/lib/push/dispatch-trigger.functions").then(m => {
       console.log(`[CANCEL-ASSIGNMENT:10] TRIGGER_RELEASE_PUSH assignment_id=${data.assignment_id}`);
-      m.flushReleasedWorkPush({ data: { assignmentId: data.assignment_id } }).catch(e => 
+      m.flushReleasedWorkPush({ data: { assignmentId: data.assignment_id } }).catch((e: any) => 
         console.error("[cancelMyAssignment] release push failed", e)
       );
     });
+
 
 
     return { ok: true };

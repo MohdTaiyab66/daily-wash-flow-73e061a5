@@ -361,7 +361,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
-    .select("id,user_id,title,body,type,link")
+    .select("id,user_id,title,body,type,link,vehicle_id,metadata")
+
     .is("pushed_at", null)
     .order("created_at", { ascending: false })
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
@@ -424,7 +425,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         broadcast_id: `customer:${r.id}`,
         action_token: String(r.id),
         offer_id: String(r.id),
+        ...(r.vehicle_id ? { vehicle_id: String(r.vehicle_id) } : {}),
+        ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
+        ...(r.metadata?.subscription_id ? { subscription_id: String(r.metadata.subscription_id) } : {}),
       };
+
 
       if (isUnavailable) {
         console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
