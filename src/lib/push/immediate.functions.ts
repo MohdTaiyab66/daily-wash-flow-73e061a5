@@ -60,9 +60,10 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     const { sendOfferPush } = await import("./send.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Resolve status
-    const { data: svc } = await supabaseAdmin.from("services").select("status").eq("id", data.serviceId).maybeSingle();
-    console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED status=${svc?.status}`);
+    // 1. Resolve status & vehicle_id
+    const { data: svc } = await supabaseAdmin.from("services").select("status, vehicle_id").eq("id", data.serviceId).maybeSingle();
+    console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED status=${svc?.status} vehicle_id=${svc?.vehicle_id}`);
+
 
     // 2. Resolve user_id
     const { data: customer } = await (supabaseAdmin as any)
