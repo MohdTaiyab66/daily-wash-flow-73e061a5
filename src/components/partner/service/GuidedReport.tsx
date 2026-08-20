@@ -128,19 +128,13 @@ export function GuidedReport({
         // Direct Send (Proven Path)
         console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
         m.sendDirectCompletionPush({
-
           data: {
-            customerId: r.customer_id,
             serviceId,
-            type: kind === "dirty" ? "vehicle_dirty" : "vehicle_unavailable",
-            title: kind === "dirty" ? "Vehicle needs attention" : "Service update",
-            body: kind === "dirty" 
-              ? "Your vehicle requires attention. View details in My Plan."
-              : "We couldn't complete your service today. View details in My Plan."
           }
         }).then(res => {
           console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE (direct send finished)`);
         }).catch(e => console.error("[UNAVAILABLE-PUSH:ERR] direct send failed", e));
+
 
         // Background queue flush
         m.flushNotificationPush().catch(e => console.error("[UNAVAILABLE-PUSH:ERR] flush failed", e));
