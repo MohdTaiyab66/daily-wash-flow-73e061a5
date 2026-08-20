@@ -425,7 +425,11 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         broadcast_id: `customer:${r.id}`,
         action_token: String(r.id),
         offer_id: String(r.id),
+        ...(r.vehicle_id ? { vehicle_id: String(r.vehicle_id) } : {}),
+        ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
+        ...(r.metadata?.subscription_id ? { subscription_id: String(r.metadata.subscription_id) } : {}),
       };
+
 
       if (isUnavailable) {
         console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
