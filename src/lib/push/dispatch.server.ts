@@ -81,7 +81,7 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=daily_shine_offer`);
   const sb = await admin();
 
   const sendOfferPush = await sender();
@@ -355,7 +355,7 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=customer_notification`);
   const sb = await admin();
 
   const sendOfferPush = await sender();
@@ -481,7 +481,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
   const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event}`);
+  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=partner_notification`);
   const sb = await admin();
 
   const sendOfferPush = await sender();

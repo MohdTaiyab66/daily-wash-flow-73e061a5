@@ -231,7 +231,7 @@ type SendInput = {
 
 async function sendOne(input: SendInput): Promise<FcmSendResult> {
   const ts_start = Date.now();
-  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)} app=${input.appType ?? "partner"}`);
+  console.log(`[PUSH-LATENCY:05] FCM_SEND_STARTED ts=${ts_start} token=${input.token.slice(-8)} app=${input.appType ?? "partner"} type=${input.data.type}`);
 
   const { token: accessToken, projectId } = await getAccessToken(input.appType);
 
