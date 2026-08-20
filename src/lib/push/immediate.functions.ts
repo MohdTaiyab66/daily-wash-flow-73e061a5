@@ -34,18 +34,18 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
     console.log(`[UNAVAILABLE-PUSH:01] DIRECT_BYPASS_TRIGGERED service_id=${data.serviceId}`);
 
     // 1. Resolve status & vehicle_id
-    const { data: svc } = await supabaseAdmin.from("services").select("status, vehicle_id").eq("id", data.serviceId).maybeSingle();
+    const { data: svc } = await supabaseAdmin.from("services").select("status, vehicle_id, customer_id").eq("id", data.serviceId).maybeSingle();
     
     if (!svc) {
       console.warn(`[UNAVAILABLE-PUSH:ERROR] Service not found id=${data.serviceId}`);
       return { ok: false };
     }
     
-    console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED status=${svc.status} vehicle_id=${svc.vehicle_id}`);
+    console.log(`[UNAVAILABLE-PUSH:02] STATUS_UPDATED status=${svc.status} vehicle_id=${svc.vehicle_id} customer_id=${svc.customer_id}`);
 
     // 2. Fetch owner
     const { data: vehicle } = await supabaseAdmin.from("customer_vehicles").select("user_id").eq("id", svc.vehicle_id).maybeSingle();
-    const customerId = vehicle?.user_id;
+    const customerId = svc.customer_id || vehicle?.user_id;
 
     if (!customerId) {
       console.warn(`[UNAVAILABLE-PUSH:ERROR] No customer found for vehicle=${svc.vehicle_id}`);

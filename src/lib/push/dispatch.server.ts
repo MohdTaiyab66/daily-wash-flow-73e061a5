@@ -87,13 +87,13 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
   const sendOfferPush = await sender();
   
   if (pBookingId) {
-    console.log(`[BOOKING-PUSH:02] AREA_RESOLVED booking_id=${pBookingId}`);
+    console.log(`[PARTNER-E2E:01-DIAG] DISPATCH_STARTED booking_id=${pBookingId}`);
   }
   const rows = await listPendingOffers(sb);
   const ts_dispatch = Date.now();
   console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
-  console.log(`[BOOKING-PUSH:03] ELIGIBLE_PARTNERS count=${totalEligible}`);
+  console.log(`[PARTNER-E2E:02-DIAG] ELIGIBLE_OFFERS count=${totalEligible} partners=[${rows.map(r => r.partner_id.slice(-8)).join(", ")}]`);
   
   // Recalculate monthly earnings to use 26 days business rule if not specified
   // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
