@@ -91,7 +91,7 @@ async function dispatchPending() {
   }
 
   let dispatchedCount = 0;
-  console.log(`[BOOKING-PUSH:06] FCM_FANOUT_STARTED count=${rows.length}`);
+  console.log(`[PARTNER-E2E:06-FANOUT] FCM_FANOUT_STARTED count=${rows.length} ids=[${rows.map(r => r.id.slice(-8)).join(", ")}]`);
   
   for (const r of rows ?? []) {
     if ((r as any).broadcast?.status !== "open") {
