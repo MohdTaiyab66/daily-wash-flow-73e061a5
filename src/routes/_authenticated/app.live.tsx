@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/app/live")({
 
 function RoutePage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
   useRealtimeInvalidation(
     ["services", "assignments", "customers", "vehicles", "wallet_ledger"],
     [["route-today"], ["today-assignment"], ["earnings-v3"], ["today-assignment-for-earnings"]]
