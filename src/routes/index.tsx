@@ -33,10 +33,7 @@ function Index() {
           <img src={logo} alt="Urban Wash" className="h-9 w-9 rounded-xl object-cover" />
           <span className="font-semibold tracking-tight">Urban Wash</span>
         </div>
-        <span className="text-xs text-muted-foreground">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            Load the security issues from the scan results and fix the selected issues.</span>
+        <span className="text-xs text-muted-foreground">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            For the code present, I get the error below.\n\nPlease think step-by-step in order to resolve it.\n\`\`\`\nFailed to connect to MetaMask\n\n{\n  "timestamp": 1787209932059,\n  "error_type": "UNHANDLED_PROMISE_REJECTION",\n  "filename": "Unknown file",\n  "lineno": 0,\n  "colno": 0,\n  "stack": "i: Failed to connect to MetaMask\\n    at Object.connect (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:7:84292)",\n  "has_blank_screen": true\n}\n\`\`\``}</span>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pt-12 pb-24">
