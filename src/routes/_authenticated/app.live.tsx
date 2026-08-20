@@ -193,7 +193,7 @@ function RoutePage() {
       toast.success("Service started");
       
       // Navigate to detail page immediately to prevent intermediate state
-      navigate({ to: "/_authenticated/app/service/$id", params: { id: variables } });
+      navigate({ to: "/_authenticated/app/service/$id" as any, params: { id: variables } as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not start service"),
 
