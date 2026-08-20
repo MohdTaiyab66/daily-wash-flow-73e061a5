@@ -361,7 +361,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("customer_notifications")
-    .select("id,user_id,title,body,type,link")
+    .select("id,user_id,title,body,type,link,vehicle_id,metadata")
+
     .is("pushed_at", null)
     .order("created_at", { ascending: false })
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
