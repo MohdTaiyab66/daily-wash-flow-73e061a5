@@ -181,22 +181,21 @@ function RoutePage() {
         start_lng: pos?.lng ?? null,
       }).eq("id", id);
       if (error) throw error;
+
+      // START OF E2E UI FIX: Immediate navigation before async push flush
+      navigate({ to: "/_authenticated/app/service/$id" as any, params: { id } as any });
       
-      // Trigger notification
+      // Trigger notification in background
       import("@/lib/push/immediate.functions").then(m => {
         m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
       });
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       toast.success("Service started");
-      
-      // Navigate to detail page immediately to prevent intermediate state
-      navigate({ to: "/_authenticated/app/service/$id" as any, params: { id: variables } as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not start service"),
-
   });
 
   const selectedStop = visibleServices.find(s => s.id === selectedStopId);
