@@ -71,6 +71,14 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         
         // Immediate admin notification and system synchronization
         try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await supabaseAdmin.from("admin_notifications").insert({
+            category: "bookings",
+            title: "DAILY SHINE PAID",
+            body: `New Daily Shine booking for customer ${booking.id.slice(-8)}.`,
+            metadata: { booking_id: booking.id },
+            link: `/admin/assign-booking/${booking.id}`
+          });
           const { dispatchAdminAlerts } = await import("@/lib/push/dispatch.server");
           await dispatchAdminAlerts();
         } catch (e) { console.warn("[razorpay-webhook] immediate admin alert failed", e); }
