@@ -13,11 +13,11 @@ export function useFcmRegistration(userId: string | null | undefined, app: "part
     }
 
     const runRegistration = async () => {
-      console.log(`[PARTNER-LIFECYCLE] Triggering startFcm for user ${userId}`);
+      console.log(`[PARTNER-FCM] Hook mounted/focused. Triggering startFcm for user ${userId}`);
       try {
         await startFcm(userId, app);
       } catch (err) {
-        console.error("[PARTNER-LIFECYCLE:ERR] startFcm failed:", err);
+        console.error("[PARTNER-FCM] startFcm fatal error:", err);
       }
     };
 
