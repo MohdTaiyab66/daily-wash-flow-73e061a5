@@ -37,8 +37,8 @@ function RoutePage() {
   const navigate = useNavigate();
 
   useRealtimeInvalidation(
-    ["services", "assignments", "customers", "vehicles", "wallet_ledger"],
-    [["route-today"], ["today-assignment"], ["earnings-v3"], ["today-assignment-for-earnings"]]
+    ["services", "assignments", "partner_notifications", "customers", "vehicles", "wallet_ledger"],
+    [["route-today"], ["today-assignment"], ["partner-notifications-unread"], ["earnings-v3"], ["today-assignment-for-earnings"]]
   );
   
   const todayDateStr = getTodayIST();
