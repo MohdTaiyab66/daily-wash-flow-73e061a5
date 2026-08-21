@@ -78,7 +78,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           
           // Verify customer profile exists for the user
           const { data: bookingDetails } = await supabaseAdmin.from("bookings").select("user_id").eq("id", booking.id).single();
-          const { data: customer } = await supabaseAdmin.from("customers").select("full_name, area").eq("id", bookingDetails?.user_id).maybeSingle();
+          const userId = bookingDetails?.user_id as string;
+          const { data: customer } = await supabaseAdmin.from("customers").select("full_name, area").eq("id", userId).maybeSingle();
           
           const title = "DAILY SHINE PAID";
           const body = `New Daily Shine booking for ${customer?.full_name || 'Customer'} in ${customer?.area || 'unknown area'}.`;
