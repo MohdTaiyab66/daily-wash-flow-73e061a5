@@ -80,8 +80,20 @@ function TopBar() {
       if (error || !u.user || cancelled) return;
       channel = supabase
         .channel(`topbar-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
-          () => qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] }))
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
+          (payload) => {
+            const notif = payload.new as any;
+            qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
+            
+            // P0 FIX: Immediate sync for critical assignment changes
+            if (notif?.type === "new_assignment" || notif?.type === "assignment_new") {
+              console.log("[SYNC] New assignment detected, invalidating today-assignment and route-today");
+              qc.invalidateQueries({ queryKey: ["today-assignment"] });
+              qc.invalidateQueries({ queryKey: ["route-today"] });
+              qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
+              qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
+            }
+          })
         .subscribe();
     })();
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
