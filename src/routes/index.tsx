@@ -26,103 +26,179 @@ function Index() {
 
   const replacementText = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-                                            URBAN WASH — P0 FIX: BOOKINGS STATUS CONSTRAINT DURING PARTNER ASSIGNMENT
+                                            URBAN WASH — P0 FORENSIC FIX: "COLUMN booking_id DOES NOT EXIST"
 
-The previous partner_profiles problem is now gone.
+The previous issues are now resolved:
 
-The Admin booking page loads.
+- Booking loads correctly
 
-The partner can be selected.
+- partner_profiles error is resolved
 
-The ASSIGN PARTNER action is now reaching the backend.
+- partner selection works
 
-NEW REAL ERROR:
+- bookings_status_check issue is resolved
 
-new row for relation "bookings" violates check constraint "bookings_status_check"
+- booking status is now correctly handled as "active"
 
-This means the assignment transaction is attempting to write an INVALID
+NEW REAL ERROR WHEN CLICKING "ASSIGN PARTNER":
 
-bookings.status value.
+column "booking_id" does not exist
 
-DO NOT GUESS THE STATUS VALUE.
+DO NOT MAKE UI CHANGES.
 
-Inspect the actual database constraint and existing status lifecycle first.
-
-==================================================
-
-1. INSPECT THE REAL bookings_status_check CONSTRAINT
+This is now a DATABASE SCHEMA MISMATCH inside the assignment transaction.
 
 ==================================================
 
-Read the live database definition of:
-
-bookings_status_check
-
-Determine the EXACT allowed values for:
-
-bookings.status
-
-Return the complete allowed status set.
-
-Do not assume values such as:
-
-assigned
-
-accepted
-
-confirmed
-
-in_progress
-
-unless they are actually allowed by the live schema.
+1. FIND THE EXACT SOURCE
 
 ==================================================
 
-2. INSPECT EXISTING BOOKING STATUS LIFECYCLE
+Search the COMPLETE call chain:
+
+Admin Assign Partner button
+
+→ assignPartnerToBooking
+
+→ admin_assign_partner_to_booking
+
+→ helper functions
+
+→ assignment INSERT/UPDATE
+
+→ service INSERT/UPDATE
+
+→ subscription UPDATE
+
+→ triggers
+
+→ notification functions
+
+→ audit functions
+
+Find the EXACT SQL statement producing:
+
+column "booking_id" does not exist
+
+Do not assume the error is directly inside the top-level RPC.
 
 ==================================================
 
-Audit the current booking lifecycle used by the existing application.
-
-Trace:
-
-Customer booking
-
-→ payment success
-
-→ booking status
-
-→ partner assignment
-
-→ service start
-
-→ service completion
-
-→ unavailable
-
-→ need wash
-
-→ cancelled
-
-Find which status is ALREADY used elsewhere to represent:
-
-"partner assigned"
-
-Reuse the existing authoritative status.
-
-Do NOT invent a new status if an existing one already exists.
+2. INSPECT THE LIVE DATABASE SCHEMA
 
 ==================================================
 
-3. INSPECT admin_assign_partner_to_booking
+Inspect the actual live columns for these tables:
+
+public.bookings
+
+public.assignments
+
+public.services
+
+public.subscriptions
+
+public.partner_assignments
+
+public.admin_notifications
+
+and any other table touched by:
+
+admin_assign_partner_to_booking
+
+For every relevant table, return the actual column names.
+
+Especially determine:
+
+Which table stores the booking relationship?
+
+Which column references the booking?
+
+Examples might be:
+
+booking_id
+
+service_id
+
+subscription_id
+
+id
+
+request_id
+
+assignment_id
+
+BUT DO NOT ASSUME.
+
+Use the REAL live schema.
 
 ==================================================
 
-Inspect the LIVE deployed definition of:
+3. CHECK THE ASSIGNMENTS TABLE
 
-public.admin_assign_partner_to_booking
+==================================================
 
-INCLUDING BOTH OVERLOADS:
+The most important investigation is the table where the partner assignment
+
+record is created.
+
+Inspect its live definition.
+
+Determine:
+
+Does assignments have:
+
+booking_id?
+
+service_id?
+
+subscription_id?
+
+or another foreign key?
+
+If assignments does NOT have booking_id, the RPC must use the correct
+
+existing relationship.
+
+Do not add a duplicate booking_id column just to make the RPC work unless
+
+the existing architecture genuinely requires it.
+
+==================================================
+
+4. CHECK SERVICES TABLE
+
+==================================================
+
+Daily Shine may be represented through the service record rather than a
+
+direct booking relationship.
+
+Determine the real relationship:
+
+booking
+
+→ subscription
+
+→ service
+
+or:
+
+booking
+
+→ service
+
+or whatever the current application actually uses.
+
+Then make the assignment RPC follow that existing relationship.
+
+==================================================
+
+5. CHECK THE PREVIOUSLY MODIFIED RPC
+
+==================================================
+
+Inspect BOTH LIVE overloads:
 
 admin_assign_partner_to_booking(
 
@@ -142,269 +218,217 @@ admin_assign_partner_to_booking(
 
 )
 
-Find the exact statement updating:
+Show every INSERT and UPDATE they perform.
 
-bookings.status
+Find every occurrence of:
 
-Identify the value currently being written.
+booking_id
 
-Compare that value against:
+inside SQL expressions.
 
-bookings_status_check
+For each occurrence, state:
 
-Fix the RPC to write a VALID existing booking status.
+TABLE:
 
-==================================================
+COLUMN:
 
-4. DO NOT HIDE THE CONSTRAINT ERROR
+PURPOSE:
 
-==================================================
-
-Do not:
-
-- remove the bookings_status_check constraint
-
-- weaken the constraint
-
-- allow arbitrary statuses
-
-- silently catch the database error
-
-The database constraint is protecting the booking lifecycle.
-
-Fix the business logic to use the correct existing status.
+Then verify that column actually exists in that table.
 
 ==================================================
 
-5. VERIFY THE COMPLETE ASSIGNMENT TRANSACTION
+6. CHECK TRIGGERS AND HELPERS
 
 ==================================================
 
-After the correct booking status is determined, the Admin assignment must
+Even if both RPCs are correct, a trigger/helper can still produce:
 
-atomically:
+column "booking_id" does not exist
 
-1. verify booking exists
+Inspect every trigger/function executed by the assignment transaction.
 
-2. verify booking is paid
+Especially check:
 
-3. verify booking is unassigned
+assignment creation
 
-4. verify selected partner exists
+service creation
 
-5. verify partner is eligible
+subscription activation
 
-6. create assignment
+notification creation
 
-7. update booking with the correct VALID status
+admin audit logging
 
-8. set assigned_partner_id correctly if that is the existing model
-
-9. create/update service record correctly
-
-10. create partner notification
-
-11. create customer notification
-
-12. create admin audit record
-
-If FCM fails:
-
-THE DATABASE ASSIGNMENT MUST STILL SUCCEED.
-
-Push delivery must not roll back the assignment transaction.
+The goal is to identify the EXACT statement generating the error.
 
 ==================================================
 
-6. CHECK WHETHER booking.status SHOULD CHANGE AT ALL
+7. DO NOT PATCH BY ADDING RANDOM COLUMNS
 
 ==================================================
 
-Important:
+Do NOT create:
 
-Determine whether partner assignment is represented by:
+booking_id
 
-booking.status
+on an unrelated table just to suppress the error.
 
-OR:
+First determine the existing canonical relationship.
 
-assigned_partner_id
+Urban Wash must have ONE authoritative relationship between:
 
-OR:
+booking
 
-an assignment.status
+customer
 
-OR a combination of the existing fields.
+vehicle
 
-Do not update booking.status merely because it "sounds right".
+subscription
 
-Use the existing application architecture.
+service
 
-If the booking status should remain:
+assignment
 
-PAID
+partner
 
-while assignment is represented separately, keep it that way.
-
-If the authoritative system uses:
-
-ASSIGNED
-
-or another existing value, use that valid value.
+Reuse the existing model.
 
 ==================================================
 
-7. REAL CURRENT TEST BOOKING
+8. VERIFY PARTNER ASSIGNMENT DATA
 
 ==================================================
 
-Use the current booking:
-
-c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
-
-Selected partner:
+The selected partner is:
 
 P0 Trial Partner 891379
 
-Reproduce the exact assignment operation.
+Booking:
 
-Capture:
+c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
 
-current booking.status
+Test the exact assignment again.
 
-attempted new booking.status
+Verify:
 
-allowed booking.status values
+booking exists
 
-assignment result
+partner exists
 
-==================================================
+partner is eligible
 
-8. CHECK ALL TRIGGERS
-
-==================================================
-
-Even after fixing the RPC itself, inspect triggers on:
-
-public.bookings
-
-because a trigger may also change bookings.status after assignment.
-
-Search all booking triggers/functions for:
-
-status =
-
-NEW.status
-
-UPDATE bookings
-
-INSERT INTO bookings
-
-UPDATE public.bookings
-
-Ensure no trigger writes an invalid status.
+assignment relationship is valid
 
 ==================================================
 
-9. FIX "NO AREA" AT THE SAME TIME
+9. TRANSACTION REQUIREMENT
 
 ==================================================
 
-The partner list still shows entries such as:
+The Admin assignment must atomically:
 
-P0 Trial Partner 849454 · No area
+1. Verify booking exists
 
-P0 Trial Partner 872916 · No area
+2. Verify payment is successful
 
-P0 Trial Partner 885614 · No area
+3. Verify booking is currently unassigned
 
-while another partner shows:
+4. Verify partner exists
 
-Vikram Singh · Gomti Nagar
+5. Verify partner eligibility
 
-Verify the actual:
+6. Create assignment using the REAL assignment schema
 
-public.partners.home_area
+7. Set booking/assignment state using VALID existing fields
 
-for these partners.
+8. Create/update service record using REAL relationships
 
-Do not display "No area" when the lookup itself failed.
+9. Update subscription if required by existing lifecycle
 
-Use:
+10. Create partner notification
 
-actual home_area → display it
+11. Create customer notification
 
-NULL home_area → "AREA NOT ASSIGNED"
+12. Create admin audit record
 
-query failure → show/log real query error
-
-Also make sure only partners eligible for:
-
-Kalyanpur (West)
-
-are selectable for this booking.
+FCM failure must NOT roll back the database assignment.
 
 ==================================================
 
-10. VERIFY REAL PARTNER ID
+10. ADMIN FLOW MUST REMAIN INDEPENDENT
 
 ==================================================
 
-Confirm the selected partner ID corresponds to:
+Admin must be able to assign a paid Daily Shine booking even if:
 
-public.partners.id
+- partner push failed
 
-and that the same ID is valid for:
+- FCM token does not exist
 
-assignments.partner_id
+- marketplace is disabled
 
-and partner notification targeting.
+- no marketplace_offer exists
+
+- partner is offline
+
+The database assignment is authoritative.
 
 ==================================================
 
-11. REQUIRED DATABASE FORENSICS
+11. REQUIRED FORENSIC OUTPUT
 
 ==================================================
+
+Do NOT respond with "fixed" only.
 
 Return:
 
-bookings_status_check definition:
+EXACT ERROR SOURCE:
 
 ____
 
-Allowed booking statuses:
+TABLE CAUSING ERROR:
 
 ____
 
-Current booking.status:
+INVALID COLUMN:
+
+booking_id
+
+SQL STATEMENT:
 
 ____
 
-Attempted new booking.status:
+ACTUAL TABLE COLUMNS:
 
 ____
 
-Correct status for assignment:
+CORRECT BOOKING RELATIONSHIP:
 
 ____
 
-admin_assign_partner_to_booking 2-arg current definition:
+ASSIGNMENTS TABLE PRIMARY KEY:
 
 ____
 
-admin_assign_partner_to_booking 3-arg current definition:
+ASSIGNMENTS → BOOKING RELATIONSHIP:
 
 ____
 
-Booking triggers checked:
+SERVICE → BOOKING RELATIONSHIP:
 
 ____
 
-Invalid status source:
+RPC OVERLOAD USED:
 
 ____
 
-Corrected status:
+HELPER/TRIGGER RESPONSIBLE:
+
+____
+
+FIX APPLIED:
 
 ____
 
@@ -414,31 +438,21 @@ ____
 
 ==================================================
 
-After fixing:
+Using the same booking:
 
-Customer:
+c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
 
-book Daily Shine
+select:
 
-→ payment successful
+P0 Trial Partner 891379
 
-Admin:
+click:
 
-notification
-
-→ sound
-
-→ Open
-
-→ exact booking
-
-→ partner list
-
-→ select partner
-
-→ Assign Partner
+ASSIGN PARTNER
 
 Expected:
+
+NO booking_id column error
 
 NO partner_profiles error
 
@@ -448,41 +462,39 @@ Assignment succeeds.
 
 Then verify:
 
-booking status correct
-
-assigned_partner_id correct
-
 assignment record exists
 
-service record exists
+booking assignment state updated
 
-Partner sees assignment
+service state updated
 
-Customer sees assigned partner
+partner receives assignment
 
-Admin sees ASSIGNED
+customer receives Partner Assigned
+
+admin sees assigned partner
 
 ==================================================
 
 FINAL ACCEPTANCE
 
-The following exact operation MUST succeed:
+The exact operation must succeed:
 
 PAID DAILY SHINE BOOKING
 
-→ ADMIN SELECTS ELIGIBLE PARTNER
+→ SELECT PARTNER
 
 → ASSIGN PARTNER
 
-→ DATABASE COMMIT SUCCESSFULLY
+→ DATABASE COMMIT
 
-Do not change the database constraint just to make the test pass.
+Do not modify UI.
 
-Use the REAL existing booking-status lifecycle.
+Do not invent columns.
 
-Return the exact root cause, exact corrected status value, exact RPC changed,
+Find the exact live table/function where booking_id is being referenced
 
-and exact final E2E result.`;
+incorrectly and correct it using the existing database schema.`;
 
   return (
     <div className="min-h-screen bg-background">
