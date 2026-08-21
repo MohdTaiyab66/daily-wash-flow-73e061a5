@@ -121,6 +121,8 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   // P0 FIX: Force re-registration for EVERY user on mount/login.
   // We do NOT check "started" here anymore; the component mount/focus trigger
   // ensures we have a fresh REAL token from the device and sync it to the backend.
+  // This is critical for Vikram/Imran/Aarav to recover their "ghost" status.
+  started = false; 
   (window as any)._fcm_last_user = userId;
   
   console.log(`[PARTNER-PARITY] startFcm initializing for user: ${userId}`);
