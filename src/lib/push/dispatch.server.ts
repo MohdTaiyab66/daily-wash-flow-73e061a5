@@ -368,7 +368,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         ...(r.metadata?.subscription_id ? { subscription_id: String(r.metadata.subscription_id) } : {}),
       };
 
-
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
