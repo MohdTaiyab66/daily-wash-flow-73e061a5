@@ -25,476 +25,421 @@ function Index() {
   }, [navigate]);
 
   const replacementText = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            URBAN WASH — P0 E2E FIX — PART 1
 
-                                            URBAN WASH — P0 FORENSIC FIX: "COLUMN booking_id DOES NOT EXIST"
+ADMIN ASSIGNMENT → PARTNER APP + ADMIN NOTIFICATION
 
-The previous issues are now resolved:
+DO NOT make unrelated UI changes.
 
-- Booking loads correctly
+CURRENT ISSUE:
 
-- partner_profiles error is resolved
+Admin successfully assigns a partner.
 
-- partner selection works
+Admin shows:
 
-- bookings_status_check issue is resolved
+"Partner Manually Assigned"
 
-- booking status is now correctly handled as "active"
+Customer already shows:
 
-NEW REAL ERROR WHEN CLICKING "ASSIGN PARTNER":
+"Partner X has been assigned"
 
-column "booking_id" does not exist
+BUT THE ASSIGNED PARTNER APP DOES NOT UPDATE.
 
-DO NOT MAKE UI CHANGES.
+The partner does not see the new assignment in:
 
-This is now a DATABASE SCHEMA MISMATCH inside the assignment transaction.
+- Partner notifications
 
-==================================================
+- Home
 
-1. FIND THE EXACT SOURCE
+- Available
 
-==================================================
+- Daily Route
 
-Search the COMPLETE call chain:
+- customer list
 
-Admin Assign Partner button
+- route
 
-→ assignPartnerToBooking
+- map
 
-→ admin_assign_partner_to_booking
+- service count
 
-→ helper functions
+- progress
 
-→ assignment INSERT/UPDATE
+- earnings
 
-→ service INSERT/UPDATE
+The database assignment exists, but Partner App is not consuming the new
 
-→ subscription UPDATE
-
-→ triggers
-
-→ notification functions
-
-→ audit functions
-
-Find the EXACT SQL statement producing:
-
-column "booking_id" does not exist
-
-Do not assume the error is directly inside the top-level RPC.
+assignment state.
 
 ==================================================
 
-2. INSPECT THE LIVE DATABASE SCHEMA
+1. TRACE THE AUTHORITATIVE ASSIGNMENT
 
 ==================================================
 
-Inspect the actual live columns for these tables:
+Trace:
 
-public.bookings
+CUSTOMER BOOKING
 
-public.assignments
+→ PAYMENT
 
-public.services
+→ ADMIN NOTIFICATION
 
-public.subscriptions
+→ ADMIN ASSIGNS PARTNER
 
-public.partner_assignments
+→ DATABASE ASSIGNMENT
 
-public.admin_notifications
+→ PARTNER APP
 
-and any other table touched by:
+Identify the exact authoritative records containing:
 
-admin_assign_partner_to_booking
+booking_id
 
-For every relevant table, return the actual column names.
+assignment_id
 
-Especially determine:
+service_id
 
-Which table stores the booking relationship?
+partner_id
 
-Which column references the booking?
+customer_id
 
-Examples might be:
+vehicle_id
+
+area
+
+service time
+
+assignment status
+
+Do NOT create another assignment model.
+
+==================================================
+
+2. PARTNER APP MUST REFLECT ADMIN ASSIGNMENT
+
+==================================================
+
+Immediately after Admin assigns Partner X, the assigned Partner App must show
+
+the new assignment.
+
+Update:
+
+HOME
+
+AVAILABLE
+
+DAILY ROUTE
+
+NOTIFICATIONS
+
+EARNINGS
+
+No manual refresh should be required.
+
+Partner must see:
+
+Customer
+
+Vehicle
+
+Vehicle number
+
+Service
+
+Service time
+
+Area
+
+Assignment status
+
+==================================================
+
+3. REALTIME / QUERY INVALIDATION
+
+==================================================
+
+Audit the current Partner App data-refresh system.
+
+Inspect:
+
+Supabase realtime subscriptions
+
+TanStack Query keys
+
+today-assignment
+
+partner home queries
+
+daily route queries
+
+earnings queries
+
+notification queries
+
+When Admin assignment is created, invalidate/refetch the correct Partner
+
+queries immediately.
+
+Also ensure updates occur after:
+
+assignment
+
+service start
+
+service completion
+
+unavailable
+
+need wash
+
+Do NOT rely only on FCM.
+
+DATABASE ASSIGNMENT = SOURCE OF TRUTH.
+
+PUSH = NOTIFICATION CHANNEL ONLY.
+
+Even if FCM fails, Partner App must still update from database/realtime state.
+
+==================================================
+
+4. PARTNER NOTIFICATION
+
+==================================================
+
+After Admin assigns Partner X:
+
+Create partner in-app notification:
+
+NEW SERVICE ASSIGNED
+
+Include:
+
+Customer
+
+Vehicle
+
+Area
+
+Service time
+
+Payload must contain:
 
 booking_id
 
 service_id
 
-subscription_id
-
-id
-
-request_id
-
 assignment_id
 
-BUT DO NOT ASSUME.
+vehicle_id
 
-Use the REAL live schema.
+partner_id
 
-==================================================
+Push notification should also be sent when a valid FCM token exists.
 
-3. CHECK THE ASSIGNMENTS TABLE
+Tapping notification must open the exact assigned service.
 
-==================================================
-
-The most important investigation is the table where the partner assignment
-
-record is created.
-
-Inspect its live definition.
-
-Determine:
-
-Does assignments have:
-
-booking_id?
-
-service_id?
-
-subscription_id?
-
-or another foreign key?
-
-If assignments does NOT have booking_id, the RPC must use the correct
-
-existing relationship.
-
-Do not add a duplicate booking_id column just to make the RPC work unless
-
-the existing architecture genuinely requires it.
+Push failure must NOT prevent the assignment from appearing in Partner App.
 
 ==================================================
 
-4. CHECK SERVICES TABLE
+5. PARTNER HOME
 
 ==================================================
 
-Daily Shine may be represented through the service record rather than a
+After assignment, Partner Home must immediately update:
 
-direct booking relationship.
+Total assigned customers
 
-Determine the real relationship:
+Today's customer count
 
-booking
+Daily potential
 
-→ subscription
+Assignment earning
 
-→ service
+Progress
 
-or:
+Assignment status
 
-booking
+Use the same authoritative assignment data.
 
-→ service
-
-or whatever the current application actually uses.
-
-Then make the assignment RPC follow that existing relationship.
+Do not use stale marketplace data.
 
 ==================================================
 
-5. CHECK THE PREVIOUSLY MODIFIED RPC
+6. DAILY ROUTE
 
 ==================================================
 
-Inspect BOTH LIVE overloads:
+Assigned customer must immediately appear in Daily Route with:
 
-admin_assign_partner_to_booking(
+Customer
 
-  booking_id,
+Vehicle
 
-  partner_id
+Vehicle number
 
-)
+Service time
 
-admin_assign_partner_to_booking(
+Location
 
-  booking_id,
+Update:
 
-  partner_id,
+Today's Progress
 
-  admin_id
+Total Customers
 
-)
+Remaining
 
-Show every INSERT and UPDATE they perform.
+Map markers
 
-Find every occurrence of:
+Next Stop
 
-booking_id
+Up Next
 
-inside SQL expressions.
-
-For each occurrence, state:
-
-TABLE:
-
-COLUMN:
-
-PURPOSE:
-
-Then verify that column actually exists in that table.
+The customer must appear even when FCM notification is unavailable.
 
 ==================================================
 
-6. CHECK TRIGGERS AND HELPERS
+7. MAP
 
 ==================================================
 
-Even if both RPCs are correct, a trigger/helper can still produce:
+The customer's location must appear on the Partner Daily Route map.
 
-column "booking_id" does not exist
-
-Inspect every trigger/function executed by the assignment transaction.
-
-Especially check:
-
-assignment creation
-
-service creation
-
-subscription activation
-
-notification creation
-
-admin audit logging
-
-The goal is to identify the EXACT statement generating the error.
-
-==================================================
-
-7. DO NOT PATCH BY ADDING RANDOM COLUMNS
-
-==================================================
-
-Do NOT create:
-
-booking_id
-
-on an unrelated table just to suppress the error.
-
-First determine the existing canonical relationship.
-
-Urban Wash must have ONE authoritative relationship between:
-
-booking
-
-customer
-
-vehicle
-
-subscription
-
-service
+Use the authoritative:
 
 assignment
 
-partner
+→ vehicle/customer
 
-Reuse the existing model.
+→ service location
 
-==================================================
-
-8. VERIFY PARTNER ASSIGNMENT DATA
+Do not use stale marketplace records.
 
 ==================================================
 
-The selected partner is:
-
-P0 Trial Partner 891379
-
-Booking:
-
-c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
-
-Test the exact assignment again.
-
-Verify:
-
-booking exists
-
-partner exists
-
-partner is eligible
-
-assignment relationship is valid
+8. EARNINGS
 
 ==================================================
 
-9. TRANSACTION REQUIREMENT
+After assignment, show the correct assignment potential/expected earning.
+
+Do NOT count it as completed yet.
+
+After completion, actual earnings must update.
+
+COMPLETED
+
+UNAVAILABLE
+
+NEED WASH
+
+must use the existing earning rules consistently across:
+
+Home
+
+Daily Route
+
+Earnings
 
 ==================================================
 
-The Admin assignment must atomically:
-
-1. Verify booking exists
-
-2. Verify payment is successful
-
-3. Verify booking is currently unassigned
-
-4. Verify partner exists
-
-5. Verify partner eligibility
-
-6. Create assignment using the REAL assignment schema
-
-7. Set booking/assignment state using VALID existing fields
-
-8. Create/update service record using REAL relationships
-
-9. Update subscription if required by existing lifecycle
-
-10. Create partner notification
-
-11. Create customer notification
-
-12. Create admin audit record
-
-FCM failure must NOT roll back the database assignment.
+9. CUSTOMER STATE
 
 ==================================================
 
-10. ADMIN FLOW MUST REMAIN INDEPENDENT
+Customer must continue receiving:
+
+"Partner X has been assigned to your Daily Shine service."
+
+Notification must be account-based.
+
+Multi-vehicle customers must receive the notification regardless of the
+
+currently selected vehicle.
 
 ==================================================
 
-Admin must be able to assign a paid Daily Shine booking even if:
-
-- partner push failed
-
-- FCM token does not exist
-
-- marketplace is disabled
-
-- no marketplace_offer exists
-
-- partner is offline
-
-The database assignment is authoritative.
+10. REAL E2E TEST
 
 ==================================================
 
-11. REQUIRED FORENSIC OUTPUT
+Use one fresh Daily Shine booking.
+
+Test:
+
+1. Customer books.
+
+2. Payment succeeds.
+
+3. Admin assigns Partner X.
+
+4. Assignment record is created.
+
+5. Partner App updates without refresh.
+
+6. Partner notification appears.
+
+7. Partner Daily Route updates.
+
+8. Map updates.
+
+9. Partner Home updates.
+
+10. Partner earnings/potential updates.
+
+11. Customer receives Partner Assigned notification.
+
+Also test:
+
+PARTNER PUSH FAILS
+
+Even with FCM failure, Partner App MUST update from database/realtime state.
 
 ==================================================
 
-Do NOT respond with "fixed" only.
+FINAL REPORT
+
+==================================================
 
 Return:
 
-EXACT ERROR SOURCE:
-
-____
-
-TABLE CAUSING ERROR:
-
-____
-
-INVALID COLUMN:
-
 booking_id
 
-SQL STATEMENT:
+assignment_id
 
-____
+service_id
 
-ACTUAL TABLE COLUMNS:
+partner_id
 
-____
+customer_id
 
-CORRECT BOOKING RELATIONSHIP:
+vehicle_id
 
-____
+Partner assignment DB = PASS/FAIL
 
-ASSIGNMENTS TABLE PRIMARY KEY:
+Partner in-app notification = PASS/FAIL
 
-____
+Partner push = PASS/FAIL
 
-ASSIGNMENTS → BOOKING RELATIONSHIP:
+Partner Home = PASS/FAIL
 
-____
+Available = PASS/FAIL
 
-SERVICE → BOOKING RELATIONSHIP:
+Daily Route = PASS/FAIL
 
-____
+Map = PASS/FAIL
 
-RPC OVERLOAD USED:
+Earnings = PASS/FAIL
 
-____
+Customer notification = PASS/FAIL
 
-HELPER/TRIGGER RESPONSIBLE:
+Also identify the exact realtime/query source used by Partner App.
 
-____
-
-FIX APPLIED:
-
-____
-
-==================================================
-
-12. FINAL E2E TEST
-
-==================================================
-
-Using the same booking:
-
-c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
-
-select:
-
-P0 Trial Partner 891379
-
-click:
-
-ASSIGN PARTNER
-
-Expected:
-
-NO booking_id column error
-
-NO partner_profiles error
-
-NO bookings_status_check error
-
-Assignment succeeds.
-
-Then verify:
-
-assignment record exists
-
-booking assignment state updated
-
-service state updated
-
-partner receives assignment
-
-customer receives Partner Assigned
-
-admin sees assigned partner
-
-==================================================
-
-FINAL ACCEPTANCE
-
-The exact operation must succeed:
-
-PAID DAILY SHINE BOOKING
-
-→ SELECT PARTNER
-
-→ ASSIGN PARTNER
-
-→ DATABASE COMMIT
-
-Do not modify UI.
-
-Do not invent columns.
-
-Find the exact live table/function where booking_id is being referenced
-
-incorrectly and correct it using the existing database schema.`;
+Do not say "fixed" from code inspection only.`;
 
   return (
     <div className="min-h-screen bg-background">
