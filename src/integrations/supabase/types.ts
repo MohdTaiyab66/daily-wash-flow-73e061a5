@@ -6618,10 +6618,19 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_assign_partner_to_booking: {
-        Args: { p_admin_id: string; p_booking_id: string; p_partner_id: string }
-        Returns: Json
-      }
+      admin_assign_partner_to_booking:
+        | {
+            Args: { p_booking_id: string; p_partner_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_admin_id: string
+              p_booking_id: string
+              p_partner_id: string
+            }
+            Returns: Json
+          }
       admin_cancel_assignment: {
         Args: { p_assignment_id: string; p_note?: string }
         Returns: undefined
