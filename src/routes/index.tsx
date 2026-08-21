@@ -1,10 +1,14 @@
 import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, ChevronRight, Layout, Phone, User } from "lucide-react";
 
-export default function LandingPage() {
+export const Route = createFileRoute("/")({
+  component: LandingPage,
+});
+
+function LandingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
