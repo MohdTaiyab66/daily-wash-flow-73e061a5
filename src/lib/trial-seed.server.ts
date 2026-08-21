@@ -225,8 +225,9 @@ export async function runTrialSeed(): Promise<SeedReport> {
       });
       inc("partners");
 
-      // P0 FIX: Do NOT create trial/fake FCM tokens.
+      // P0 UNIVERSAL: Do NOT create trial/fake FCM tokens.
       // Every partner app must register its own REAL FCM token on login.
+      // This applies to all partners regardless of type.
       inc("partners");
     }
     wf("partners.upsert", "PASS");

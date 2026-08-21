@@ -122,7 +122,8 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     return;
   }
   
-  // P0 FIX: Force re-registration for EVERY user on mount/login.
+  // P0 UNIVERSAL: Force initialization for EVERY user on mount/login.
+  // This ensures we always have a valid token and active sync for all partners.
   started = false; 
   (window as any)._fcm_last_user = userId;
   
