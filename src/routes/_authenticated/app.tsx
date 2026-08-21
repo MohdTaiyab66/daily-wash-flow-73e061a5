@@ -80,16 +80,17 @@ function TopBar() {
       if (error || !u.user || cancelled) return;
       console.log(`[PARTNER-REALTIME] Mounting listener for partner: ${u.user.id}`);
       channel = supabase
-        .channel(`topbar-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${u.user.id}` },
+        .channel(`partner-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications" },
           (payload) => {
             const notif = payload.new as any;
+            // Server-side RLS already filters for this user, but we log for forensics
             console.log(`[PARTNER-REALTIME] Event received: ${notif?.type}`, notif);
             
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
             // P0 FIX: Immediate sync for critical assignment changes
-            if (notif?.type === "new_assignment" || notif?.type === "assignment_new") {
+            if (notif?.type === "new_assignment" || notif?.type === "assignment_new" || notif?.type === "new_assignments") {
               console.log("[PARTNER-REALTIME] [SYNC] New assignment detected, invalidating authoritative queries");
               qc.invalidateQueries({ queryKey: ["today-assignment"] });
               qc.invalidateQueries({ queryKey: ["route-today"] });
