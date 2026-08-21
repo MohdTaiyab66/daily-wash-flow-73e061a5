@@ -80,21 +80,19 @@ function TopBar() {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
       const partnerId = u.user.id;
-      console.log(`[PARTNER-LIFECYCLE] auth partner id: ${partnerId}`);
-      console.log(`[PARTNER-LIFECYCLE] realtime connecting...`);
       channel = supabase
         .channel(`partner-notif-${partnerId}`) // Use a stable channel name for easier debugging
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
           (payload) => {
             const notif = payload.new as any;
             // Server-side RLS already filters for this user, but we log for forensics
-            console.log(`[PARTNER-REALTIME] Event received: ${notif?.type}`, notif);
+            
             
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
             // P0 FIX: Immediate sync for critical assignment changes
             if (notif?.type === "new_assignment" || notif?.type === "assignment_new" || notif?.type === "new_assignments") {
-              console.log("[PARTNER-REALTIME] [SYNC] New assignment detected, invalidating authoritative queries");
+              
               qc.invalidateQueries({ queryKey: ["today-assignment"] });
               qc.invalidateQueries({ queryKey: ["route-today"] });
               qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
@@ -102,9 +100,6 @@ function TopBar() {
             }
           })
         .subscribe((status) => {
-          console.log(`[PARTNER-LIFECYCLE] realtime status: ${status}`);
-          if (status === "SUBSCRIBED") {
-            console.log(`[PARTNER-LIFECYCLE] realtime connected`);
             // UNIVERSAL: authoritative recovery fetch on successful connection for ALL partners
             qc.invalidateQueries({ queryKey: ["today-assignment"] });
             qc.invalidateQueries({ queryKey: ["route-today"] });
@@ -118,7 +113,7 @@ function TopBar() {
     return () => { 
       cancelled = true; 
       if (channel) {
-        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${partner?.id}`);
+        
         supabase.removeChannel(channel);
       }
     };
