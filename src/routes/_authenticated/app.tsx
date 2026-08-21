@@ -81,11 +81,11 @@ function TopBar() {
       if (error || !u.user || cancelled) return;
       const partnerId = u.user.id;
       channel = supabase
-        .channel(`partner-notif-${partnerId}`) // Use a stable channel name for easier debugging
+        .channel(`partner-notif-${partnerId}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
           (payload) => {
             const notif = payload.new as any;
-            // Server-side RLS already filters for this user, but we log for forensics
+            // Server-side RLS already filters for this user
             
             
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
