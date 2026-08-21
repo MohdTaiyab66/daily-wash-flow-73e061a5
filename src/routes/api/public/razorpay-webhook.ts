@@ -79,8 +79,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             metadata: { booking_id: booking.id },
             link: `/admin/assign-booking/${booking.id}`
           });
-          const { dispatchAdminAlerts } = await import("@/lib/push/dispatch.server");
-          await dispatchAdminAlerts();
+          const { dispatchAdminNotifications } = await import("@/lib/push/dispatch.server");
+          await dispatchAdminNotifications();
         } catch (e) { console.warn("[razorpay-webhook] immediate admin alert failed", e); }
         
         return Response.json({ ok: true, result: data });
