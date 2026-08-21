@@ -53,7 +53,7 @@ function HomePage() {
 
   const todayQuery = useTodayAssignment();
   
-  // P0 REALTIME FALLBACK: Direct listener on Home page for assignments
+  // Realtime listener on Home page for assignments
   useRealtimeInvalidation(["assignments", "services", "partner_notifications"], [
     ["today-assignment"],
     ["partner-open-offers-home"],
