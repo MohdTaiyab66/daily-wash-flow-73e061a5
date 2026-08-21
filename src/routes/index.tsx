@@ -27,305 +27,551 @@ function Index() {
   const replacementText = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 FINAL VERIFICATION — ADMIN MANUAL DAILY SHINE ASSIGNMENT
+                                            URBAN WASH — P0 FORENSIC ROOT-CAUSE AUDIT
 
-DO NOT CHANGE CODE UNLESS A TEST FAILS.
+ADMIN ASSIGN PARTNER STILL FAILS
 
-The legacy partner_profiles issue has now been fixed and the authoritative
+STOP MAKING UI CHANGES.
 
-partner source is public.partners.
+I tested again after your previous fix.
 
-Run a completely fresh Daily Shine E2E test.
+REAL RESULT:
 
-==================================================
+The booking page loads correctly.
 
-1. CUSTOMER BOOKING
+The partner list loads.
 
-==================================================
-
-Create a NEW Daily Shine booking.
-
-Verify:
-
-payment = SUCCESS
-
-booking status = PAID / UNASSIGNED
-
-booking_id exists
-
-==================================================
-
-2. ADMIN NOTIFICATION
-
-==================================================
-
-Verify Admin receives:
-
-NEW PAID BOOKING
-
-unread count increases
-
-sound plays once
-
-Click OPEN.
-
-Expected:
-
-exact booking assignment page opens
-
-NO "Booking not found"
-
-==================================================
-
-3. BOOKING DETAILS
-
-==================================================
-
-Verify the page shows the exact:
-
-Customer
-
-Vehicle
-
-Daily Shine
-
-Area
-
-Booking ID
-
-Amount
-
-Payment status
-
-==================================================
-
-4. PARTNER LIST
-
-==================================================
-
-The partner list must now use:
-
-public.partners
-
-Verify:
-
-- partner name is correct
-
-- phone is correct
-
-- home_area is correct
-
-- active/approved status is correct
-
-- eligible Kalyanpur (West) partners are shown
-
-- unrelated-area partners are excluded
-
-- "No area" is NOT shown when home_area exists
-
-==================================================
-
-5. ASSIGN PARTNER
-
-==================================================
-
-Select ONE eligible Kalyanpur (West) partner.
-
-Click:
+When I click:
 
 ASSIGN PARTNER
 
-Verify:
+the Admin Console STILL throws:
 
-NO partner_profiles error
+relation "public.partner_profiles" does not exist
 
-NO database error
+The page also still shows many partners as:
 
-assignment succeeds
+"No area"
 
-==================================================
+Therefore the previous backend fix was NOT actually complete.
 
-6. DATABASE VERIFICATION
+This time do a COMPLETE DATABASE + SERVER-SIDE CALL-CHAIN AUDIT.
 
-==================================================
-
-After assignment verify:
-
-booking.assigned_partner_id
-
-assignment record
-
-service record
-
-booking status
-
-subscription/service state
-
-All must point to the same:
-
-booking_id
-
-partner_id
-
-service_id
-
-customer_id
-
-vehicle_id
+DO NOT simply rewrite the same RPC again.
 
 ==================================================
 
-7. PARTNER APP
+1. IDENTIFY THE EXACT SOURCE OF THE ERROR
 
 ==================================================
 
-Verify the assigned partner sees the booking in the Partner App.
+Search the entire project AND database for:
 
-If FCM token exists:
+partner_profiles
 
-real Android push = RECEIVED
+public.partner_profiles
 
-Even if push fails:
+partner_profiles.user_id
 
-in-app assignment MUST still appear.
+Search in:
 
-==================================================
+- admin_assign_partner_to_booking
 
-8. CUSTOMER APP
+- all SQL functions called by it
 
-==================================================
+- triggers called by assignment
 
-Customer must receive:
+- notification functions
 
-PARTNER ASSIGNED
+- audit functions
 
-with:
+- assignment functions
 
-partner name
+- server functions
 
-vehicle
+- views
 
-Daily Shine service
+- RPCs
 
-Verify it targets the customer's account, not only the currently selected
+- stored procedures
 
-vehicle.
+- policies
 
-==================================================
+- helper functions
 
-9. ADMIN STATE
+I want the EXACT statement that is producing:
 
-==================================================
+relation "public.partner_profiles" does not exist
 
-Admin should now show:
-
-ASSIGNED
-
-Partner: [selected partner]
-
-The same partner must appear everywhere.
+Do not assume the error comes directly from the top-level RPC.
 
 ==================================================
 
-10. SERVICE TEST
+2. INSPECT THE DEPLOYED DATABASE FUNCTION
 
 ==================================================
 
-Partner performs:
+Do not inspect only source files.
 
-START
+Inspect the ACTUAL LIVE/DATABASE definition of:
 
-→ vehicle condition
+public.admin_assign_partner_to_booking
 
-→ photo
+Get its current SQL definition from the database.
 
-→ COMPLETE
+Verify whether the deployed function still contains:
 
-Then verify:
+public.partner_profiles
 
-Partner progress updated
+or any reference to partner_profiles.
 
-Partner earnings updated
+If the source code says it was replaced but the live database function still
 
-Customer service history updated
+contains the old reference, then the migration was not applied correctly.
 
-Customer entitlement updated
-
-Admin booking/service status updated
-
-Customer completion notification sent
+FIX THE ACTUAL DEPLOYED DATABASE FUNCTION.
 
 ==================================================
 
-11. FAILURE TEST
+3. TRACE ALL DEPENDENCIES
 
 ==================================================
 
-Also verify the important fallback:
+Trace:
 
-Disable/fail partner push delivery.
+Admin button
 
-Admin must STILL be able to:
+→ assignPartnerToBooking
 
-OPEN BOOKING
+→ admin_assign_partner_to_booking
 
-→ SELECT PARTNER
+→ every function called by RPC
 
-→ ASSIGN PARTNER
+→ every trigger fired
 
-The assignment must not depend on FCM.
+→ notification creation
+
+→ audit creation
+
+For EVERY dependency inspect its live database definition.
+
+The error may come from a trigger or helper function even if the main RPC
+
+has already been changed.
+
+Do not stop when admin_assign_partner_to_booking looks correct.
 
 ==================================================
 
-FINAL REPORT
+4. FIND THE REAL PARTNER DATA SOURCE
 
-Provide actual IDs:
+==================================================
 
-booking_id
+The authoritative partner table is:
 
-service_id
+public.partners
 
-assignment_id
+Use the existing Partner App schema.
 
-customer_id
+Find the actual columns for:
 
-vehicle_id
+partner ID
 
-partner_id
+name
 
-And:
+phone
 
-Admin notification = PASS/FAIL
+home_area
 
-Admin sound = PASS/FAIL
+zone/area
 
-Open booking = PASS/FAIL
+status
 
-Correct partners = PASS/FAIL
+approval
 
-Area matching = PASS/FAIL
+availability
 
-Assign Partner = PASS/FAIL
+Do NOT create:
 
-Partner app update = PASS/FAIL
+public.partner_profiles
 
-Partner push = PASS/FAIL
+Do NOT recreate the legacy schema.
 
-Customer update = PASS/FAIL
+Remove every live dependency on it from the Admin assignment path.
 
-Customer push = PASS/FAIL
+==================================================
 
-Service completion = PASS/FAIL
+5. FIX THE "NO AREA" PROBLEM
 
-Earnings update = PASS/FAIL
+==================================================
 
-Customer history = PASS/FAIL
+The Admin partner list is still displaying:
 
-If anything fails, provide the exact error and failing layer before making
+"No area"
 
-another change.
+for many partners.
 
-Do not declare success from code inspection alone.`;
+This means partner-area resolution is ALSO incorrect.
+
+Find the exact authoritative area field used by the existing Partner App.
+
+Use that same source in the Admin Console.
+
+For booking area:
+
+Kalyanpur (West)
+
+only eligible Kalyanpur (West) partners should be shown as eligible.
+
+A partner with no area must be shown as:
+
+AREA NOT ASSIGNED
+
+NOT:
+
+No area
+
+if "No area" is actually caused by a failed lookup.
+
+Differentiate:
+
+DATA EXISTS
+
+→ display actual area
+
+DATA MISSING
+
+→ Area not assigned
+
+QUERY FAILURE
+
+→ display/return actual query error
+
+==================================================
+
+6. VERIFY THE PARTNER ID MAPPING
+
+==================================================
+
+Earlier analysis claimed:
+
+partner_profiles.user_id → partners.id
+
+Verify whether that statement is ACTUALLY true in the database.
+
+Check:
+
+partners.id
+
+partners.user_id
+
+auth.users.id
+
+profiles.id
+
+user_roles.user_id
+
+Determine the correct canonical partner identity.
+
+Do NOT rely on assumptions from previous responses.
+
+The selected partner_id passed to:
+
+admin_assign_partner_to_booking
+
+must be the exact ID expected by:
+
+assignments.partner_id
+
+and the notification system.
+
+==================================================
+
+7. TEST THE RPC DIRECTLY
+
+==================================================
+
+Do NOT test only through the Admin UI.
+
+Using a controlled test booking and real partner ID, invoke:
+
+admin_assign_partner_to_booking(
+
+  booking_id,
+
+  partner_id
+
+)
+
+directly.
+
+Capture the exact PostgreSQL error.
+
+If it fails:
+
+identify the exact SQL statement/function responsible.
+
+If it succeeds directly but fails through the Admin UI:
+
+trace the server-function payload and parameter mapping.
+
+Check for:
+
+wrong partner_id
+
+wrong booking_id
+
+wrong argument order
+
+wrong UUID
+
+wrong environment
+
+different DB connection
+
+different Supabase project
+
+==================================================
+
+8. VERIFY DATABASE MIGRATIONS
+
+==================================================
+
+Check whether the migration that supposedly replaced:
+
+partner_profiles
+
+was actually executed in the current Supabase project.
+
+Verify the live database, not only migration source files.
+
+If migration is missing:
+
+apply the correct migration.
+
+Then verify the live function definition again.
+
+Do not claim success simply because the migration file exists in the repo.
+
+==================================================
+
+9. CHECK ENVIRONMENT
+
+==================================================
+
+Verify the Admin Console and database are pointing to the same project:
+
+qsnzrdoomakackspawjv
+
+Confirm:
+
+Admin
+
+Webhook
+
+Server functions
+
+RPC
+
+Partner App
+
+are all using the same production/preview database environment being tested.
+
+Do not assume this is correct.
+
+==================================================
+
+10. ASSIGNMENT MUST BE ATOMIC
+
+==================================================
+
+Once the schema issue is fixed, the assignment operation must atomically:
+
+1. Verify booking exists
+
+2. Verify booking is paid
+
+3. Verify booking is unassigned
+
+4. Verify partner exists
+
+5. Verify partner eligibility
+
+6. Create assignment
+
+7. Update booking.assigned_partner_id
+
+8. Update assignment/service state
+
+9. Create partner notification
+
+10. Create customer notification
+
+11. Create admin audit record
+
+If push notification fails:
+
+THE ASSIGNMENT MUST STILL SUCCEED.
+
+FCM must NEVER cause the database assignment transaction to roll back.
+
+==================================================
+
+11. DAILY SHINE MUST NOT DEPEND ON MARKETPLACE
+
+==================================================
+
+Manual Admin assignment must work even when:
+
+partner has no FCM token
+
+partner is offline
+
+marketplace is disabled
+
+marketplace_offer does not exist
+
+automatic partner broadcast fails
+
+Flow:
+
+PAID BOOKING
+
+→ ADMIN SELECTS PARTNER
+
+→ ASSIGNMENT CREATED
+
+==================================================
+
+12. USE THIS REAL CURRENT TEST
+
+==================================================
+
+Current booking page:
+
+/admin/assign-booking/c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
+
+Use the actual booking ID from this page.
+
+Select one real eligible Kalyanpur (West) partner.
+
+Click ASSIGN PARTNER.
+
+Record the exact failure if it still occurs.
+
+==================================================
+
+13. REQUIRED FORENSIC OUTPUT
+
+==================================================
+
+DO NOT respond with "fixed" without evidence.
+
+Return:
+
+CURRENT BOOKING ID:
+
+____
+
+SELECTED PARTNER ID:
+
+____
+
+ACTUAL PARTNER TABLE:
+
+____
+
+ACTUAL PARTNER AREA FIELD:
+
+____
+
+LIVE admin_assign_partner_to_booking DEFINITION:
+
+____
+
+OLD partner_profiles REFERENCES FOUND:
+
+____
+
+FUNCTION/TRIGGER CONTAINING OLD REFERENCE:
+
+____
+
+MIGRATION APPLIED:
+
+YES/NO
+
+ADMIN PROJECT:
+
+____
+
+DATABASE PROJECT:
+
+____
+
+DIRECT RPC TEST:
+
+PASS/FAIL
+
+ADMIN UI TEST:
+
+PASS/FAIL
+
+ASSIGNMENT RECORD CREATED:
+
+YES/NO
+
+BOOKING.assigned_partner_id UPDATED:
+
+YES/NO
+
+PARTNER NOTIFICATION:
+
+YES/NO
+
+CUSTOMER NOTIFICATION:
+
+YES/NO
+
+AUDIT RECORD:
+
+YES/NO
+
+==================================================
+
+FINAL ACCEPTANCE
+
+==================================================
+
+The task is NOT complete until this exact action works:
+
+Admin opens paid Daily Shine booking
+
+→ correct Kalyanpur (West) partners appear
+
+→ Admin selects partner
+
+→ clicks ASSIGN PARTNER
+
+→ NO partner_profiles error
+
+→ assignment is created
+
+→ booking becomes assigned
+
+→ partner/customer/admin state updates
+
+Most important:
+
+DO NOT create public.partner_profiles.
+
+DO NOT patch the UI.
+
+DO NOT hide the database exception.
+
+Find EVERY live database dependency on partner_profiles and remove it from
+
+the Admin assignment execution chain.`;
 
   return (
     <div className="min-h-screen bg-background">
