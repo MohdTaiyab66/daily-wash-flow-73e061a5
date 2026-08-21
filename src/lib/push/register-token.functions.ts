@@ -67,7 +67,7 @@ export const registerPushToken = createServerFn({ method: "POST" })
       .neq("token", data.token);
 
     const { data: currentTokens } = await sb.from("push_tokens").select("id").eq("user_id", userId).is("invalid_at", null);
-    console.log(`[PARTNER-LIFECYCLE:06] active token count after upsert = ${currentTokens?.length || 0}`);
+    console.log(`[PARTNER-FCM] active token count after upsert = ${currentTokens?.length || 0}`);
 
     return { ok: true as const, user_id: userId };
 
