@@ -705,7 +705,7 @@ export async function dispatchAdminAlerts(): Promise<number> {
           userId: uid,
           title: r.title,
           body: r.body ?? "",
-          data: r.data,
+          data: { ...r.data, click_action: "FLUTTER_NOTIFICATION_CLICK" },
           channelId: "general",
         });
       } catch {

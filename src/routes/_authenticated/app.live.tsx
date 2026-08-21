@@ -289,7 +289,7 @@ function RoutePage() {
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
         </div>
         {activeNext && !isEndOfDay && routeUnlocked && (
-          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={isMonday} onStart={() => startServiceMutation.mutate(activeNext.id)} isStarting={startServiceMutation.isPending} />
+          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={isMonday} />
         )}
         {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
           <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
