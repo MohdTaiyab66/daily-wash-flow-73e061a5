@@ -158,9 +158,9 @@ function ProfilePage() {
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
-      <DeviceDiagnosticsCard userId={partner?.id ?? null} />
+      {/* Diagnostics removed from public production view */}
 
-      <PushSelfTestCard />
+      {/* Push diagnostic cards removed from public production view */}
 
 
 
