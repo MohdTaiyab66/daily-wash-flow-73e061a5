@@ -35,8 +35,6 @@ function AssignBookingPage() {
     queryFn: async () => {
       const result = await resolveBooking({ data: { booking_id: bookingId } });
       return result;
-      
-      return result;
     },
   });
 
