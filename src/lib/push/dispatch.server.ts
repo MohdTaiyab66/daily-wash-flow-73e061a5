@@ -384,14 +384,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       };
 
 
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
-        console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
-      }
-      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
-
-
-
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -403,24 +395,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        if (isUnavailable) {
-          console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
-          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED`);
-        } else {
-          console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
-        }
-
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      } else {
-        console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
-      }
-
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
-        console.log(`[UNAVAILABLE-E2E:09] ANDROID_RECEIVED (pending receipt)`);
       }
 
 
