@@ -80,7 +80,8 @@ function TopBar() {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
       const partnerId = u.user.id;
-      console.log(`[PARTNER-REALTIME] Establishing authoritative channel: partner-${partnerId}`);
+      console.log(`[PARTNER-LIFECYCLE] auth partner id: ${partnerId}`);
+      console.log(`[PARTNER-LIFECYCLE] realtime connecting...`);
       channel = supabase
         .channel(`partner-notif-${partnerId}`) // Use a stable channel name for easier debugging
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
@@ -101,7 +102,16 @@ function TopBar() {
             }
           })
         .subscribe((status) => {
-          console.log(`[PARTNER-REALTIME] Subscription status: ${status}`);
+          console.log(`[PARTNER-LIFECYCLE] realtime status: ${status}`);
+          if (status === "SUBSCRIBED") {
+            console.log(`[PARTNER-LIFECYCLE] realtime connected`);
+            // authoritative recovery fetch on successful connection
+            qc.invalidateQueries({ queryKey: ["today-assignment"] });
+            qc.invalidateQueries({ queryKey: ["route-today"] });
+            qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
+            qc.invalidateQueries({ queryKey: ["partner-services"] });
+            qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+          }
         });
 
     })();
