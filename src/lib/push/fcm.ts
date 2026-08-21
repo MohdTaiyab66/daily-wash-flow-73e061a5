@@ -118,19 +118,12 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     return;
   }
   
-  // Reset started to false if it's a new user to allow re-registration
-  const lastUser = (window as any)._fcm_last_user;
-  if (lastUser && lastUser !== userId) {
-    console.log(`[CUSTOMER-FCM-REGISTRATION] User changed from ${lastUser} to ${userId}, resetting registration state`);
-    started = false;
-  }
+  // P0 FIX: Force re-registration for EVERY user on mount/login.
+  // We do NOT check "started" here anymore; the component mount/focus trigger
+  // ensures we have a fresh REAL token from the device and sync it to the backend.
   (window as any)._fcm_last_user = userId;
-
-  if (started && lastUser === userId) {
-    console.log(`[CUSTOMER-FCM-REGISTRATION:01] startFcm already started for user: ${userId}`);
-    return;
-  }
-  started = true;
+  
+  console.log(`[PARTNER-PARITY] startFcm initializing for user: ${userId}`);
 
   console.log(`[CUSTOMER-FCM-ANDROID:01] Firebase initialized (Capacitor)`);
   console.log(`[CUSTOMER-FCM-ANDROID:02] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);

@@ -78,10 +78,11 @@ function TopBar() {
     (async () => {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
-      console.log(`[PARTNER-REALTIME] Mounting listener for partner: ${u.user.id}`);
+      const partnerId = u.user.id;
+      console.log(`[PARTNER-REALTIME] Establishing authoritative channel: partner-${partnerId}`);
       channel = supabase
-        .channel(`partner-notif-${u.user.id}-${Math.random().toString(36).slice(2, 8)}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications" },
+        .channel(`partner-notif-${partnerId}`) // Use a stable channel name for easier debugging
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
           (payload) => {
             const notif = payload.new as any;
             // Server-side RLS already filters for this user, but we log for forensics
@@ -103,8 +104,14 @@ function TopBar() {
         });
 
     })();
-    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [qc]);
+    return () => { 
+      cancelled = true; 
+      if (channel) {
+        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${u.user.id}`);
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [qc, partner?.id]);
 
   return (
     <div className="mx-auto flex max-w-md items-center gap-2 px-5 pt-4">
