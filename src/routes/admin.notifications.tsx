@@ -70,9 +70,11 @@ function AdminNotifications() {
     }
     
     // Check for Daily Shine Unassigned booking notifications
-    const isUnassigned = n.title?.includes("PAID") || n.title?.includes("UNASSIGNED") || n.title?.includes("DAILY SHINE");
-    if (n.category === "bookings" && isUnassigned && n.metadata?.booking_id) {
-      navigate({ to: "/admin/assign-booking/$id" as any, params: { id: n.metadata.booking_id } as any });
+    const isBooking = n.category === "bookings" || n.category === "daily_shine";
+    const bookingId = n.metadata?.booking_id;
+    
+    if (isBooking && bookingId) {
+      navigate({ to: "/admin/assign-booking/$id" as any, params: { id: bookingId } as any });
       return;
     }
 
