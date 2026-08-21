@@ -80,26 +80,11 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=daily_shine_offer`);
   const sb = await admin();
-
   const sendOfferPush = await sender();
   
-  if (pBookingId) {
-    console.log(`[PARTNER-UNIVERSAL:01] DISPATCH_STARTED booking_id=${pBookingId}`);
-  }
   const rows = await listPendingOffers(sb);
-  const ts_dispatch = Date.now();
-  console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
-  console.log(`[PARTNER-E2E:02-DIAG] ELIGIBLE_OFFERS count=${totalEligible} partners=[${rows.map(r => r.partner_id.slice(-8)).join(", ")}]`);
-  
-  // Recalculate monthly earnings to use 26 days business rule if not specified
-  // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
-  
-  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
-
 
   let dispatched = 0;
   // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
