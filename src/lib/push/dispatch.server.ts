@@ -108,9 +108,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }
       return false;
     }
-    
-
-
     const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
     
     // Resolve Partner-specific Earnings and Distance
