@@ -729,16 +729,12 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
         if (result.sent > 0) {
           totalDispatched++;
         }
-        }
       } catch (e) {
-        console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
+        // Push failed
       }
     });
 
     await Promise.all(fanout);
-    
-    // [BOOKING-PUSH:AREA:10] RETRY_SCHEDULED (Tick continues)
-    console.log(`[BOOKING-PUSH:AREA:10] RETRY_SCHEDULED broadcast_id=${b.broadcast_id}`);
   }
 
   return totalDispatched;
