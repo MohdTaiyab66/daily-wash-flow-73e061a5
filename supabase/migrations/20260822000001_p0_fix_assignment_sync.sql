@@ -1,3 +1,7 @@
+-- URBAN WASH — P0 E2E FIX: ADMIN ASSIGNMENT REALTIME SYNC
+-- 1. Redefine admin_assign_partner_to_booking (3-arg) to use 'new_assignment' type and full metadata.
+-- 2. Update 2-arg overload for consistency.
+
 CREATE OR REPLACE FUNCTION public.admin_assign_partner_to_booking(p_booking_id uuid, p_partner_id uuid, p_admin_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -63,7 +67,7 @@ BEGIN
       SELECT * INTO v_service FROM public.services WHERE vehicle_id = v_booking.vehicle_id ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  -- 7. Create Partner Notification (P0 FIX: Correct type and metadata)
+  -- 7. Create Partner Notification (P0 FIX: Correct type and metadata for immediate Partner App sync)
   BEGIN
     INSERT INTO public.partner_notifications (
       partner_id,
