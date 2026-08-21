@@ -9,12 +9,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const flushNotificationPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { dispatchCustomerNotifications, dispatchPartnerNotifications } = await import("./dispatch.server");
-    const [c, p] = await Promise.all([
+    const { dispatchCustomerNotifications, dispatchPartnerNotifications, dispatchAdminNotifications } = await import("./dispatch.server");
+    const [c, p, a] = await Promise.all([
       dispatchCustomerNotifications(),
       dispatchPartnerNotifications(),
+      dispatchAdminNotifications(),
     ]);
-    return { customerSent: c, partnerSent: p };
+    return { customerSent: c, partnerSent: p, adminSent: a };
   });
 
 /**

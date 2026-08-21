@@ -7404,16 +7404,26 @@ export type Database = {
       }
       mp_tick: { Args: never; Returns: number }
       offer_next_for_queue: { Args: { p_queue_id: string }; Returns: string }
-      partner_complete_service: {
-        Args: {
-          p_force_override?: boolean
-          p_lat?: number
-          p_lng?: number
-          p_notes?: string
-          p_service_id: string
-        }
-        Returns: Json
-      }
+      partner_complete_service:
+        | {
+            Args: {
+              p_lat?: number
+              p_lng?: number
+              p_notes?: string
+              p_service_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_force_override?: boolean
+              p_lat?: number
+              p_lng?: number
+              p_notes?: string
+              p_service_id: string
+            }
+            Returns: Json
+          }
       partner_reliability: { Args: { p_partner_id: string }; Returns: Json }
       pick_next_partner_for_queue: {
         Args: { p_queue_id: string; p_radius_km?: number; p_scope?: string }
@@ -7592,17 +7602,29 @@ export type Database = {
         }
         Returns: string
       }
-      submit_service_unavailable: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_notes: string
-          p_photos: string[]
-          p_reason: string
-          p_service_id: string
-        }
-        Returns: Json
-      }
+      submit_service_unavailable:
+        | {
+            Args: {
+              p_lat?: number
+              p_lng?: number
+              p_notes?: string
+              p_photos?: string[]
+              p_reason: string
+              p_service_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_lat: number
+              p_lng: number
+              p_notes: string
+              p_photos: string[]
+              p_reason: string
+              p_service_id: string
+            }
+            Returns: Json
+          }
       sweep_regenerate_active_assignments: { Args: never; Returns: number }
       sweep_subscription_offers: { Args: never; Returns: number }
       try_consume_entitlement: {
