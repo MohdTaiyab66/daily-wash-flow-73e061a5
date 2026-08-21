@@ -68,7 +68,14 @@ function AdminNotifications() {
       await (supabase as any).from("admin_notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
       qc.invalidateQueries({ queryKey: ["admin-notifications"] });
     }
-    if (n.link) navigate({ to: n.link as any });
+    
+    // Check for Daily Shine Unassigned booking notifications
+    if (n.category === "bookings" && n.title.includes("DAILY SHINE") && n.metadata?.booking_id) {
+      navigate({ to: "/admin/assign-booking/$id" as any, params: { id: n.metadata.booking_id } as any });
+      return;
+    }
+
+    if (n.link) navigate({ to: n.link as any, params: {} as any });
   };
 
   return (

@@ -668,35 +668,53 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
 export async function dispatchAdminAlerts(): Promise<number> {
   const sb = await admin();
   const sendOfferPush = await sender();
-  const { data: rows } = await sb
+  
+  // 1. Fetch unpushed admin_alerts (Legacy/Direct)
+  const { data: alerts } = await sb
     .from("admin_alerts")
     .select("id,title,body,kind,meta")
     .is("pushed_at", null)
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(20);
-  if (!rows?.length) return 0;
+
+  // 2. Fetch unpushed admin_notifications (New Unified Feed)
+  const { data: notifications } = await sb
+    .from("admin_notifications")
+    .select("id,title,body,category,metadata")
+    .is("pushed_at", null)
+    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .limit(20);
+
+  const allToPush = [
+    ...(alerts ?? []).map((a: any) => ({ id: a.id, table: 'admin_alerts', title: a.title, body: a.body, data: { type: 'admin_alert', kind: a.kind ?? "" } })),
+    ...(notifications ?? []).map((n: any) => ({ id: n.id, table: 'admin_notifications', title: n.title, body: n.body, data: { type: 'admin_notification', category: n.category ?? "", booking_id: n.metadata?.booking_id ?? "" } }))
+  ];
+
+  if (allToPush.length === 0) return 0;
+
   const admins = await sb
     .rpc("get_admin_user_ids")
     .then((res: any) => res.data)
     .catch(() => null);
   const adminIds: string[] = (admins ?? []).map((x: any) => x.user_id ?? x);
-  for (const r of rows) {
+
+  for (const r of allToPush) {
     for (const uid of adminIds) {
       try {
         await sendOfferPush({
           userId: uid,
           title: r.title,
           body: r.body ?? "",
-          data: { type: "admin_alert", kind: r.kind ?? "" },
+          data: r.data,
           channelId: "general",
         });
       } catch {
         /* noop */
       }
     }
-    await sb.from("admin_alerts").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+    await sb.from(r.table).update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
   }
-  return rows.length;
+  return allToPush.length;
 }
 
 /**

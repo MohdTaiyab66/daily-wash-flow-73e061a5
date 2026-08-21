@@ -323,6 +323,50 @@ export type AssignmentIntegrityReport = {
   mismatches: string[];
 };
 
+export const startService = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { service_id: string; lat?: number; lng?: number }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 4. Atomic service-start navigation fix (E2E)
+    const { data: svc, error } = await (supabaseAdmin as any)
+      .from("services")
+      .update({
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+        start_lat: data.lat ?? null,
+        start_lng: data.lng ?? null,
+      })
+      .eq("id", data.service_id)
+      .select("id, status")
+      .single();
+
+    if (error) throw error;
+
+    // Trigger Admin Notification for Service Started
+    try {
+      const { data: sRow } = await supabaseAdmin
+        .from("services")
+        .select("id")
+        .eq("id", data.service_id)
+        .maybeSingle();
+      
+      if (sRow) {
+        await supabaseAdmin.from("admin_notifications").insert({
+          category: "assignments",
+          title: "SERVICE STARTED",
+          body: `Service ${data.service_id.slice(-8)} has been started.`,
+          metadata: { service_id: data.service_id }
+        });
+        const { dispatchAdminAlerts } = await import("@/lib/push/dispatch.server");
+        await dispatchAdminAlerts();
+      }
+    } catch (e) { console.warn("[start-service] admin notification failed", e); }
+
+    return svc as { id: string; status: string };
+  });
+
 export const validateTodayAssignment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {

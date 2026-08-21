@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft, Volume2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: true,
@@ -139,10 +139,32 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const unread = useUnreadCount();
   const [email, setEmail] = useState<string>("");
+  const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
   }, []);
+
+  // Admin Notification Sound & Toast Logic
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-alerts-rt")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "admin_notifications" },
+        (payload) => {
+          const n = payload.new as any;
+          if (n.id !== lastNotificationId) {
+            setLastNotificationId(n.id);
+            // Play sound - Use a system standard or hosted URL
+            const audio = new Audio("https://daily-wash-flow.lovable.app/notification.mp3");
+            audio.play().catch(() => console.log("Sound blocked by browser"));
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [lastNotificationId]);
 
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "short", day: "numeric", month: "short",

@@ -1,7 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAdmin } from "@/lib/admin-middleware";
 
-// =================== Manual Assignment (trial mode) ===================
+// =================== Manual Assignment & Partner Flow ===================
+export const adminAssignPartnerToBooking = createServerFn({ method: "POST" }).middleware([requireAdmin])
+  .inputValidator((d: { booking_id: string; partner_id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { userId } = context as any;
+    
+    const { data: result, error } = await supabaseAdmin.rpc("admin_assign_partner_to_booking" as any, {
+      p_booking_id: data.booking_id,
+      p_partner_id: data.partner_id,
+      p_admin_id: userId,
+    });
+    
+    if (error) throw new Error(error.message);
+    const res = result as any as { ok: boolean; error?: string; customer_notif_id?: string; partner_notif_id?: string };
+    if (!res.ok) throw new Error(res.error || "Assignment failed");
+
+    // Trigger immediate push dispatch
+    const { flushNotificationPush } = await import("@/lib/push/immediate.functions");
+    await flushNotificationPush().catch(e => console.error("[admin-assign] push flush failed", e));
+
+    return res;
+  });
+
 export const adminCreateManualAssignment = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { partner_id: string; customer_ids: string[]; duration_days: number }) => d)
   .handler(async ({ data }) => {
