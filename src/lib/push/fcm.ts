@@ -113,8 +113,12 @@ function dispatchInAppNotification(data: Record<string, any>, notif: any) {
  * already started or running on web).
  */
 export async function startFcm(userId: string, app: "partner" | "customer" = appVariant()) {
-  if (!isNative() || !userId) {
-    console.log(`[CUSTOMER-FCM-ANDROID:00] startFcm aborted: native=${isNative()}, userId=${!!userId}`);
+  const native = isNative();
+  const platform = nativePlatform();
+  console.log(`[PARTNER-FCM] hook mounted. userId: ${userId}, app: ${app}, isNative: ${native}, platform: ${platform}`);
+
+  if (!native || !userId) {
+    console.log(`[PARTNER-FCM] startFcm aborted: native=${native}, userId=${!!userId}`);
     return;
   }
   
@@ -127,31 +131,37 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   
   console.log(`[PARTNER-PARITY] startFcm initializing for user: ${userId}`);
 
-  console.log(`[CUSTOMER-FCM-ANDROID:01] Firebase initialized (Capacitor)`);
-  console.log(`[CUSTOMER-FCM-ANDROID:02] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);
-  console.log(`[CUSTOMER-FCM-ANDROID:03] Application/package ID: ${app === 'partner' ? 'com.urbanwash.partner' : 'com.urbanwash.customer'}`);
-
-  console.log(`[CUSTOMER-FCM-ANDROID:04] Firebase Sender ID: 781422718869`);
-  console.log(`[CUSTOMER-FCM-REGISTRATION:01] AUTH_SESSION_AVAILABLE. user: ${userId}, app: ${app}`);
+  console.log(`[PARTNER-FCM] Firebase initialized (Capacitor wrapper check)`);
+  console.log(`[PARTNER-FCM] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);
+  console.log(`[PARTNER-FCM] Application/package ID: ${app === 'partner' ? 'com.urbanwash.partner' : 'com.urbanwash.customer'}`);
+  console.log(`[PARTNER-FCM] Firebase Sender ID: 781422718869`);
+  console.log(`[PARTNER-FCM] auth user available: ${userId}`);
 
 
   // 1) Permission
-  console.log(`[CUSTOMER-FCM-ANDROID:05] getToken started`);
-  let perm = await FirebaseMessaging.checkPermissions();
-  console.log(`[CUSTOMER-FCM-ANDROID:04] Notification permission: ${perm.receive}`);
-  console.log(`[CUSTOMER-FCM-REGISTRATION:02] NOTIFICATION_PERMISSION_STATUS: ${JSON.stringify(perm)}`);
-
-  
-  if (perm.receive !== "granted") {
-    console.log(`[CUSTOMER-FCM-REGISTRATION] requesting permissions...`);
-    perm = await FirebaseMessaging.requestPermissions();
-    console.log(`[CUSTOMER-FCM-REGISTRATION] requestPermissions result: ${JSON.stringify(perm)}`);
+  console.log(`[PARTNER-FCM] notification permission check started`);
+  let perm;
+  try {
+    perm = await FirebaseMessaging.checkPermissions();
+    console.log(`[PARTNER-FCM] notification permission status: ${perm.receive}`);
+  } catch (e: any) {
+    console.error(`[PARTNER-FCM] checkPermissions failed: ${e?.message ?? String(e)}`);
+    // Non-fatal, try to request anyway
   }
   
-  if (perm.receive !== "granted") {
-    console.warn(`[CUSTOMER-FCM-REGISTRATION] permission DENIED`);
-    started = false;
-    return;
+  if (!perm || perm.receive !== "granted") {
+    console.log(`[PARTNER-FCM] requesting notification permissions...`);
+    try {
+      perm = await FirebaseMessaging.requestPermissions();
+      console.log(`[PARTNER-FCM] requestPermissions result: ${perm.receive}`);
+    } catch (e: any) {
+      console.error(`[PARTNER-FCM] requestPermissions failed: ${e?.message ?? String(e)}`);
+    }
+  }
+  
+  // Note: Permission denial does NOT block token retrieval for diagnostics
+  if (perm?.receive !== "granted") {
+    console.warn(`[PARTNER-FCM] permission status: ${perm?.receive || 'unknown'}`);
   }
 
   // 2) Notification channels (Android)
@@ -191,15 +201,12 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
     if (!token) {
-      console.error("[CUSTOMER-FCM-ANDROID:06] getToken failed: empty token");
-      console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED: empty token");
+      console.error("[PARTNER-FCM] getToken failed: empty token returned");
       return;
     }
     
-    console.log(`[CUSTOMER-FCM-ANDROID:06] getToken success`);
-    console.log(`[CUSTOMER-FCM-REGISTRATION:02] token received = true`);
-    console.log(`[CUSTOMER-FCM-REGISTRATION:03] platform = ${nativePlatform()}`);
-    console.log(`[CUSTOMER-FCM-REGISTRATION:05] TOKEN_BACKEND_REGISTRATION_STARTED. user_id: ${userId}, platform: ${nativePlatform()}, app: ${app}, token_len: ${token.length}, tail: ${token.slice(-4)}`);
+    console.log(`[PARTNER-FCM] getToken succeeded. length: ${token.length}, tail: ${token.slice(-4)}`);
+    console.log(`[PARTNER-FCM] registerPushToken called for user: ${userId}`);
 
 
     try {
@@ -224,17 +231,19 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      console.log(`[CUSTOMER-FCM-REGISTRATION:04] upsert started`);
+      console.log(`[PARTNER-FCM] registerPushToken RPC starting...`);
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log(`[PARTNER-FCM] auth session present: ${!!session}`);
+      
       const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
-      console.log(`[CUSTOMER-FCM-ANDROID:07] backend registration success`);
-      console.log(`[CUSTOMER-FCM-REGISTRATION:05] upsert success`);
+      console.log(`[PARTNER-FCM] registerPushToken succeeded:`, res);
       await markOk();
       return;
 
     } catch (e: any) {
-      console.error(`[CUSTOMER-FCM-REGISTRATION] RPC catch: ${e?.message ?? String(e)}`);
+      console.error(`[PARTNER-FCM] registerPushToken failed: ${e?.message ?? String(e)}`);
       await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);
     }
 
@@ -267,12 +276,16 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   };
 
   try {
-    console.log(`[CUSTOMER-FCM-REGISTRATION:03] FCM_TOKEN_REQUEST_STARTED`);
+    console.log(`[PARTNER-FCM] getToken started`);
     const { token } = await FirebaseMessaging.getToken();
-    console.log(`[CUSTOMER-FCM-REGISTRATION:04] FCM_TOKEN_RECEIVED. exists: ${!!token}, len: ${token?.length || 0}`);
-    if (token) await upsertToken(token);
+    console.log(`[PARTNER-FCM] getToken success = ${!!token}`);
+    if (token) {
+      console.log(`[PARTNER-FCM] token present: length=${token.length}`);
+      await upsertToken(token);
+    }
   } catch (e: any) {
-    console.error(`[CUSTOMER-FCM-REGISTRATION] getToken failed: ${e?.message ?? String(e)}`);
+    console.error(`[PARTNER-FCM] getToken failed with native exception: ${e?.message ?? String(e)}`);
+    console.error(`[PARTNER-FCM] error details:`, e);
   }
 
   FirebaseMessaging.addListener("tokenReceived", async ({ token }) => {
