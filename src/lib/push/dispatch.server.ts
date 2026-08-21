@@ -535,7 +535,6 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         dataOnly: true,
         tag: `release:${bcast.id}`
       });
-
       if (result.sent > 0) {
         sentCount++;
       }
