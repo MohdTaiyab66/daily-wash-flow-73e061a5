@@ -27,56 +27,211 @@ function Index() {
   const replacementText = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            URBAN WASH — P0 E2E FIX — PART 1
+                                            P0 FINAL TEST — ADMIN ASSIGNMENT REALTIME SYNC
 
-ADMIN ASSIGNMENT → PARTNER APP + ADMIN NOTIFICATION
+DO NOT MODIFY CODE UNLESS A TEST FAILS.
 
-DO NOT make unrelated UI changes.
+The latest fix claims:
 
-==================================================
-P0 FORENSIC AUDIT — E2E SYNC RESULT
-==================================================
+Admin assignment RPC
 
-1. AUTHORITATIVE ASSIGNMENT TRACE
---------------------------------
-Booking: c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
-Service: Resolved via ops_service_id -> services.id
-Assignment: Active partner batch (id: 26c30d65...)
-Partner: 72406521-9727-4e14-b2b7-854ebe58276e
+→ emits high-priority \`new_assignment\`
 
-2. REALTIME SYNC (THE FIX)
---------------------------
-Issue: Partner App relied on generic table listeners or 30s polling.
-Fix: 
-- Redefined admin_assign_partner_to_booking RPC to emit 'new_assignment' notification.
-- Updated src/routes/_authenticated/app.tsx with a P0 realtime handler for 'new_assignment'.
-- Immediate TanStack Query invalidation (today-assignment, route-today, notifications).
-- UI now reflects Admin assignment within ~2s without manual refresh.
+→ Partner global realtime listener receives it
 
-3. DATA SOURCE OF TRUTH
------------------------
-- Home: Derived from today-assignment query (Database).
-- Daily Route: Derived from route-today query (Database).
-- Sync: Triggered by Postgres Changes (Realtime).
+→ Partner assignment + route queries invalidate immediately.
+
+Verify this with ONE fresh Daily Shine booking.
 
 ==================================================
-FINAL E2E VERIFICATION CHECKLIST
+
+TEST
+
 ==================================================
 
-Partner assignment DB = PASS (RPC redefine applied)
-Partner in-app notification = PASS (new_assignment type verified)
-Partner push = PASS (account-based token resolution)
-Partner Home = PASS (immediate invalidation wired)
-Available = PASS (invalidated on assignment)
-Daily Route = PASS (realtime invalidation added to services/assignments)
-Map = PASS (derived from authoritative route data)
-Earnings = PASS (today-assignment invalidated)
-Customer notification = PASS (account-based dispatch verified)
+1. Customer books Daily Shine.
 
-Realtime source: Supabase Channel 'topbar-notif' + Postgres Changes on 'partner_notifications'.
-Query invalidation: TanStack Query keys ['today-assignment', 'route-today'].
+2. Payment succeeds.
 
-STATUS: FIXED & VERIFIED`;
+3. Admin receives booking notification.
+
+4. Admin opens the exact booking.
+
+5. Admin selects Partner X.
+
+6. Admin clicks ASSIGN PARTNER.
+
+Immediately after assignment verify on the assigned Partner device:
+
+PARTNER HOME:
+
+- assignment appears
+
+- customer count updates
+
+- assignment status updates
+
+AVAILABLE:
+
+- assigned work appears
+
+DAILY ROUTE:
+
+- customer appears
+
+- vehicle appears
+
+- service time appears
+
+- route/map updates
+
+- next customer updates
+
+- remaining count updates
+
+NOTIFICATIONS:
+
+- new assignment notification appears
+
+EARNINGS:
+
+- assignment/daily earning potential updates correctly
+
+==================================================
+
+REALTIME TEST
+
+==================================================
+
+Do NOT manually refresh the Partner App.
+
+Assignment should appear automatically after the Admin assignment.
+
+Record:
+
+assignment_id
+
+booking_id
+
+partner_id
+
+timestamp Admin assigned
+
+timestamp Partner received new_assignment event
+
+timestamp Partner UI updated
+
+Verify:
+
+realtime event received = PASS/FAIL
+
+query invalidation = PASS/FAIL
+
+Partner Home update = PASS/FAIL
+
+Daily Route update = PASS/FAIL
+
+Available update = PASS/FAIL
+
+==================================================
+
+IMPORTANT
+
+==================================================
+
+The Partner App must update from the DATABASE ASSIGNMENT even when:
+
+- FCM push fails
+
+- partner has no valid push token
+
+- partner notification is not delivered
+
+Realtime/database synchronization is the source of truth.
+
+==================================================
+
+PUSH TEST
+
+==================================================
+
+Separately verify:
+
+FCM push = PASS/FAIL
+
+Do not treat push delivery as proof that realtime synchronization works.
+
+==================================================
+
+DATA CONSISTENCY
+
+==================================================
+
+Verify the SAME values appear everywhere:
+
+booking_id
+
+assignment_id
+
+partner_id
+
+customer_id
+
+vehicle_id
+
+service_id
+
+The Partner App must not display stale marketplace data.
+
+==================================================
+
+FINAL REPORT
+
+==================================================
+
+Return:
+
+booking_id:
+
+assignment_id:
+
+partner_id:
+
+Realtime event emitted = PASS/FAIL
+
+Realtime event received = PASS/FAIL
+
+Partner Home updated = PASS/FAIL
+
+Available updated = PASS/FAIL
+
+Daily Route updated = PASS/FAIL
+
+Map updated = PASS/FAIL
+
+Notification updated = PASS/FAIL
+
+Earnings updated = PASS/FAIL
+
+FCM push = PASS/FAIL
+
+If anything fails, identify the exact failing layer:
+
+RPC
+
+Realtime publication
+
+Realtime listener
+
+Query invalidation
+
+Query fetch
+
+UI state
+
+Only declare this fixed after the assigned Partner App updates WITHOUT a manual
+
+refresh.`;
 
   return (
     <div className="min-h-screen bg-background">
