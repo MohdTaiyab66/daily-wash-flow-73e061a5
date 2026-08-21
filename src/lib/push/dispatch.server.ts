@@ -681,13 +681,8 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
     if (offersError) continue;
 
-    // 3. Parallel Fan-out
-    console.log(`[PARTNER-E2E:07-FANOUT] FCM_FANOUT_STARTED count=${offers?.length} broadcast_id=${b.broadcast_id}`);
-
     const fanout = (offers || []).map(async (o: any) => {
       try {
-        // [BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY
-        console.log(`[BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY partner_id=${o.partner_id} broadcast_id=${b.broadcast_id}`);
 
         const [monthly, distance] = await Promise.all([
           resolvePartnerMonthlyEarning({
