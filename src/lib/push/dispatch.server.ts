@@ -87,7 +87,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
   const sendOfferPush = await sender();
   
   if (pBookingId) {
-    console.log(`[PARTNER-E2E:01-DIAG] DISPATCH_STARTED booking_id=${pBookingId}`);
+    console.log(`[PARTNER-UNIVERSAL:01] DISPATCH_STARTED booking_id=${pBookingId}`);
   }
   const rows = await listPendingOffers(sb);
   const ts_dispatch = Date.now();

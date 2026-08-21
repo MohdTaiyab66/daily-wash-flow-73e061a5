@@ -105,7 +105,7 @@ function TopBar() {
           console.log(`[PARTNER-LIFECYCLE] realtime status: ${status}`);
           if (status === "SUBSCRIBED") {
             console.log(`[PARTNER-LIFECYCLE] realtime connected`);
-            // authoritative recovery fetch on successful connection
+            // UNIVERSAL: authoritative recovery fetch on successful connection for ALL partners
             qc.invalidateQueries({ queryKey: ["today-assignment"] });
             qc.invalidateQueries({ queryKey: ["route-today"] });
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
