@@ -664,33 +664,20 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
 }
 
 
-/** Dispatch unpushed admin alerts to every admin user. */
-export async function dispatchAdminAlerts(): Promise<number> {
+/** Dispatch unpushed admin notifications. */
+export async function dispatchAdminNotifications(): Promise<number> {
   const sb = await admin();
   const sendOfferPush = await sender();
   
-  // 1. Fetch unpushed admin_alerts (Legacy/Direct)
-  const { data: alerts } = await sb
-    .from("admin_alerts")
-    .select("id,title,body,kind,meta")
-    .is("pushed_at", null)
-    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
-    .limit(20);
-
-  // 2. Fetch unpushed admin_notifications (New Unified Feed)
-  const { data: notifications } = await sb
+  // Fetch unpushed admin_notifications
+  const { data: rows } = await sb
     .from("admin_notifications")
     .select("id,title,body,category,metadata")
     .is("pushed_at", null)
     .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
     .limit(20);
 
-  const allToPush = [
-    ...(alerts ?? []).map((a: any) => ({ id: a.id, table: 'admin_alerts', title: a.title, body: a.body, data: { type: 'admin_alert', kind: a.kind ?? "" } })),
-    ...(notifications ?? []).map((n: any) => ({ id: n.id, table: 'admin_notifications', title: n.title, body: n.body, data: { type: 'admin_notification', category: n.category ?? "", booking_id: n.metadata?.booking_id ?? "" } }))
-  ];
-
-  if (allToPush.length === 0) return 0;
+  if (!rows || rows.length === 0) return 0;
 
   const admins = await sb
     .rpc("get_admin_user_ids")
@@ -698,23 +685,70 @@ export async function dispatchAdminAlerts(): Promise<number> {
     .catch(() => null);
   const adminIds: string[] = (admins ?? []).map((x: any) => x.user_id ?? x);
 
-  for (const r of allToPush) {
+  let sentTotal = 0;
+  for (const r of rows) {
     for (const uid of adminIds) {
       try {
         await sendOfferPush({
           userId: uid,
           title: r.title,
           body: r.body ?? "",
-          data: { ...r.data, click_action: "FLUTTER_NOTIFICATION_CLICK" },
+          data: { 
+            type: 'admin_notification', 
+            category: r.category ?? "", 
+            booking_id: r.metadata?.booking_id ?? "",
+            link: `/admin/notifications`,
+            click_action: "FLUTTER_NOTIFICATION_CLICK" 
+          },
           channelId: "general",
         });
       } catch {
         /* noop */
       }
     }
-    await sb.from(r.table).update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+    await sb.from("admin_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+    sentTotal++;
   }
-  return allToPush.length;
+  return sentTotal;
+}
+
+/** Dispatch unpushed admin alerts (Legacy). */
+export async function dispatchAdminAlerts(): Promise<number> {
+  const sb = await admin();
+  const sendOfferPush = await sender();
+  
+  const { data: alerts } = await sb
+    .from("admin_alerts")
+    .select("id,title,body,kind,meta")
+    .is("pushed_at", null)
+    .gt("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .limit(20);
+
+  if (!alerts || alerts.length === 0) return 0;
+
+  const admins = await sb
+    .rpc("get_admin_user_ids")
+    .then((res: any) => res.data)
+    .catch(() => null);
+  const adminIds: string[] = (admins ?? []).map((x: any) => x.user_id ?? x);
+
+  for (const r of alerts) {
+    for (const uid of adminIds) {
+      try {
+        await sendOfferPush({
+          userId: uid,
+          title: r.title,
+          body: r.body ?? "",
+          data: { type: 'admin_alert', kind: r.kind ?? "", click_action: "FLUTTER_NOTIFICATION_CLICK" },
+          channelId: "general",
+        });
+      } catch {
+        /* noop */
+      }
+    }
+    await sb.from("admin_alerts").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
+  }
+  return alerts.length;
 }
 
 /**
