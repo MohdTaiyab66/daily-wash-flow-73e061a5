@@ -669,7 +669,6 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
     const fanout = (offers || []).map(async (o: any) => {
       try {
-
         const [monthly, distance] = await Promise.all([
           resolvePartnerMonthlyEarning({
             sb,
