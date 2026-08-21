@@ -33,14 +33,7 @@ function AssignBookingPage() {
   const { data: resolverResult, isLoading: loadingBooking, error: bookingError } = useQuery({
     queryKey: ["admin-booking-detail-resolver", bookingId],
     queryFn: async () => {
-      console.log(`[ADMIN-BOOKING-PAGE] Requesting resolution for: ${bookingId}`);
       const result = await resolveBooking({ data: { booking_id: bookingId } });
-      
-      // Secondary check for RLS issues if the server function works but client direct doesn't
-      // We also check current user to log forensics
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log(`[ADMIN-BOOKING-PAGE] Current user: ${user?.id} (${user?.email})`);
-      
       return result;
     },
   });

@@ -80,26 +80,11 @@ async function listPendingOffers(sb: any): Promise<PendingOfferRow[]> {
  * @param claimedBy label recorded in offer_delivery_events.meta
  */
 export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", pBookingId?: string): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=daily_shine_offer`);
   const sb = await admin();
-
   const sendOfferPush = await sender();
   
-  if (pBookingId) {
-    console.log(`[PARTNER-UNIVERSAL:01] DISPATCH_STARTED booking_id=${pBookingId}`);
-  }
   const rows = await listPendingOffers(sb);
-  const ts_dispatch = Date.now();
-  console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
   const totalEligible = rows.length;
-  console.log(`[PARTNER-E2E:02-DIAG] ELIGIBLE_OFFERS count=${totalEligible} partners=[${rows.map(r => r.partner_id.slice(-8)).join(", ")}]`);
-  
-  // Recalculate monthly earnings to use 26 days business rule if not specified
-  // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] daily * 26
-  
-  console.log(`[BOOKING-PUSH:05] FANOUT_STARTED count=${totalEligible} claimed_by=${claimedBy}`);
-
 
   let dispatched = 0;
   // FAN OUT IN PARALLEL: One bad token or timeout must not stop others.
@@ -123,12 +108,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       }
       return false;
     }
-    
-    const ts_created = Date.now();
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${ts_created}`);
-    console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
-
-
     const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
     
     // Resolve Partner-specific Earnings and Distance
@@ -137,8 +116,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         offerId: r.offer_id,
         partnerId: r.partner_id,
-        incentive: Number((r as any).incentive || 0), 
-
+        incentive: Number((r as any).incentive || 0),
       }),
       resolvePartnerMonthlyEarning({
         sb,
@@ -160,7 +138,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
 
 
-    
     const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
@@ -181,13 +158,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      const ts_dispatch_start = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch_start}`);
-      console.log(`[BOOKING-PUSH:07] FCM_BATCH_DISPATCH_STARTED partner_id=${r.partner_id} offer_id=${r.offer_id}`);
-
-
-
-
       const result = await sendOfferPush({
         userId: r.partner_id,
         title,
@@ -197,13 +167,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         dataOnly: true,
         tag: r.offer_id,
       });
-      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
-
-
-
-      const successCount = result.sent;
-      const failureCount = result.failed;
-      console.log(`[BOOKING-PUSH:08] FCM_BATCH_DISPATCH_RESULT success=${successCount} failed=${failureCount} offer_id=${r.offer_id}`);
 
       const { error: logError } = await sb
         .from("offer_delivery_events")
@@ -229,7 +192,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       
       return result.sent > 0;
     } catch (e: any) {
-      console.error(`[BOOKING-PUSH:ERROR] Dispatch failed for partner_id=${r.partner_id}`, e);
       const { error: failLogError } = await sb
         .from("offer_delivery_events")
         .update({
@@ -386,36 +348,13 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
     const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle" || mappedType === "vehicle_not_found" || mappedType === "dirty";
     
-    if (isUnavailable) {
-      console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
-      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
-      console.log(`[UNAVAILABLE-E2E:03] EVENT_TYPE_RESOLVED type=${mappedType}`);
-      console.log(`[UNAVAILABLE-E2E:04] CUSTOMER_NOTIFICATION_CREATED`);
-    } else {
-
-      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
-      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
-      console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
-    }
-
     if (!CUSTOMER_ALLOWED_TYPES.has(mappedType)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${mappedType}" id=${r.id}`);
       continue;
     }
     
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
-      const ts_dispatch = Date.now();
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
-        console.log(`[UNAVAILABLE-E2E:05] IMMEDIATE_DISPATCH_TRIGGERED`);
-        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      } else {
-        console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
-        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      }
-
 
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
@@ -429,15 +368,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
         ...(r.metadata?.subscription_id ? { subscription_id: String(r.metadata.subscription_id) } : {}),
       };
 
-
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:06] CUSTOMER_TOKEN_RESOLVED`);
-        console.log(`[UNAVAILABLE-E2E:06] CUSTOMER_TOKEN_RESOLVED`);
-      }
-      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
-
-
-
       const result = await sendOfferPush({
         userId: r.user_id,
         title: r.title,
@@ -449,24 +379,10 @@ export async function dispatchCustomerNotifications(): Promise<number> {
       });
 
       if (result.sent > 0) {
-        if (isUnavailable) {
-          console.log(`[UNAVAILABLE-PUSH:07] FCM_ACCEPTED message_id=${result.results[0]?.messageId}`);
-          console.log(`[UNAVAILABLE-E2E:08] FCM_SERVER_ACCEPTED`);
-        } else {
-          console.log(`[CUSTOMER-PROD-E2E:08] FCM_SERVER_ACCEPTED id=${r.id} message_id=${result.results[0]?.messageId}`);
-        }
-
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
         sentCount++;
       } else if (result.failed === 0) {
         await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      } else {
-        console.error(`[CUSTOMER-PROD-E2E:FAILURE] NOTIFICATION_SEND_FAILED id=${r.id} failed=${result.failed}`);
-      }
-
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:08] DISPATCH_COMPLETE id=${r.id}`);
-        console.log(`[UNAVAILABLE-E2E:09] ANDROID_RECEIVED (pending receipt)`);
       }
 
 
@@ -480,43 +396,28 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=partner_notification`);
   const sb = await admin();
-
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("partner_notifications")
     .select("id,partner_id,title,body,type,link,metadata")
     .is("pushed_at", null)
-    // Daily Shine offer pushes are owned exclusively by dispatchPendingOffers,
-    // keyed by offer_id and logged in offer_delivery_events.
     .neq("type", "daily_shine_offer")
     .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;
-  console.log(`[PUSH-DISPATCH:PARTNER] PROCESSING rows=${(rows ?? []).length}`);
   for (const r of rows ?? []) {
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
-
-    // Canonical mapping for P0-B Reliability
     const canonicalTypeMap: Record<string, string> = {
       "new_assignments": "new_booking",
       "assignment_created": "new_booking",
       "partner_assigned": "new_booking",
     };
     const mappedType = canonicalTypeMap[type] || type;
-    
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
-      const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
-      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
-
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
@@ -550,17 +451,14 @@ export async function dispatchPartnerNotifications(): Promise<number> {
 }
 
 /**
- * [RELEASED-WORK-PUSH] 
  * Specialized dispatcher for assignment cancellation/release.
  * Fans out to all eligible partners except the cancelling one.
  */
 export async function dispatchAssignmentReleased(pAssignmentId: string, pCancellingPartnerId: string): Promise<number> {
-  console.log(`[RELEASED-WORK-PUSH:01] BROADCAST_CREATED assignment_id=${pAssignmentId}`);
   const sb = await admin();
   const sendOfferPush = await sender();
   const { resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
 
-  // 1. Resolve released work details
   const { data: bcast } = await sb
     .from("marketplace_broadcasts")
     .select("id, status, service_area_id, coverage_zones(name), marketplace_offers(id, partner_id)")
@@ -568,29 +466,22 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
     .maybeSingle();
 
   if (!bcast || bcast.status !== "open") {
-    console.warn("[RELEASED-WORK-PUSH:CANCELLED] No open broadcast for assignment", pAssignmentId);
     return 0;
   }
 
-  // 2. Find eligible recipients (all partners in the broadcast who aren't the canceller)
   const offers = (bcast.marketplace_offers ?? []).filter((o: any) => o.partner_id !== pCancellingPartnerId);
   const totalEligible = offers.length;
-  console.log(`[RELEASED-WORK-PUSH:02] ELIGIBLE_PARTNERS count=${totalEligible} (excluded ${pCancellingPartnerId})`);
 
   if (totalEligible === 0) return 0;
 
-  // 3. Resolve common work metadata (customer count, area)
   const { data: services } = await sb
     .from("services")
     .select("id, rate_per_car, subscription:subscriptions(start_date, renewal_date), customer:customer_profiles(latitude, longitude)")
     .eq("assignment_id", pAssignmentId)
-    .eq("status", "pending"); // Only unstarted work is released
+    .eq("status", "pending");
 
   const customerCount = services.length;
   const areaName = bcast.coverage_zones?.name ?? "Nearby Area";
-
-  console.log(`[RELEASED-WORK-PUSH:03] PAYLOAD_RESOLVED customers=${customerCount} area=${areaName}`);
-  console.log(`[RELEASED-WORK-PUSH:04] FANOUT_STARTED count=${totalEligible}`);
 
   let sentCount = 0;
   const fanout = offers.map(async (o: any) => {
@@ -634,32 +525,24 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         action_token: String(o.id),
       };
 
-      const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       const result = await sendOfferPush({
         userId: o.partner_id,
         title,
         body,
         data: dataPayload,
         channelId: "assignments_v4",
-        dataOnly: true, // Native Kotlin heads-up path
+        dataOnly: true,
         tag: `release:${bcast.id}`
       });
-      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
-
-
-
       if (result.sent > 0) {
-        console.log(`[RELEASED-WORK-PUSH:05] FCM_SENT partner=${o.partner_id} message_id=${result.results[0]?.messageId}`);
         sentCount++;
       }
     } catch (e) {
-      console.warn(`[RELEASED-WORK-PUSH:ERROR] Failed to send to partner ${o.partner_id}`, e);
+      // Failed to send to partner
     }
   });
 
   await Promise.all(fanout);
-  console.log(`[RELEASED-WORK-PUSH:06] MARKETPLACE_VISIBLE dispatched=${sentCount}`);
   return sentCount;
 }
 
@@ -763,25 +646,13 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
   let totalDispatched = 0;
 
   for (const b of bookings) {
-    // [BOOKING-PUSH:AREA:01] BOOKING_OPEN
-    console.log(`[BOOKING-PUSH:AREA:01] BOOKING_OPEN booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
-    
-    // [BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED
-    console.log(`[BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED area=${b.area} lat=${b.customer_lat} lng=${b.customer_lng}`);
-
-    // 1. Reconcile/Recalculate eligibility for ALL partners
-    // [BOOKING-PUSH:AREA:03] ELIGIBLE_PARTNERS_QUERY_STARTED
     const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
       p_broadcast_id: b.broadcast_id
     });
     
     if (recError) {
-      console.error(`[BOOKING-PUSH:ERROR] Reconciliation failed for broadcast=${b.broadcast_id}`, recError);
       continue;
     }
-
-    // [BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND
-    console.log(`[BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND broadcast_id=${b.broadcast_id}`);
 
     // 2. Fetch all PENDING offers for this broadcast
     const { data: offers, error: offersError } = await sb
@@ -792,14 +663,8 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
     if (offersError) continue;
 
-    // 3. Parallel Fan-out
-    console.log(`[PARTNER-E2E:07-FANOUT] FCM_FANOUT_STARTED count=${offers?.length} broadcast_id=${b.broadcast_id}`);
-
     const fanout = (offers || []).map(async (o: any) => {
       try {
-        // [BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY
-        console.log(`[BOOKING-PUSH:AREA:05] PARTNER_ELIGIBILITY partner_id=${o.partner_id} broadcast_id=${b.broadcast_id}`);
-
         const [monthly, distance] = await Promise.all([
           resolvePartnerMonthlyEarning({
             sb,
@@ -813,7 +678,6 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
             customerLng: b.customer_lng,
           })
         ]);
-
         const title = b.assignment_id ? `🔄 Assignment Available: ${monthly.display}` : `🚗 New Booking Available`;
         const body = b.assignment_id 
           ? `${b.customer_count || 'Multiple'} Customers · ${b.area || 'Nearby'} · ${monthly.display}`
@@ -844,19 +708,13 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
         if (result.sent > 0) {
           totalDispatched++;
-          console.log(`[PARTNER-E2E:08-FCM] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
-        } else {
-          console.log(`[PARTNER-E2E:09-FCM] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
         }
       } catch (e) {
-        console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
+        // Push failed
       }
     });
 
     await Promise.all(fanout);
-    
-    // [BOOKING-PUSH:AREA:10] RETRY_SCHEDULED (Tick continues)
-    console.log(`[BOOKING-PUSH:AREA:10] RETRY_SCHEDULED broadcast_id=${b.broadcast_id}`);
   }
 
   return totalDispatched;
