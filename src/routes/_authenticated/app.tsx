@@ -85,14 +85,9 @@ function TopBar() {
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
           (payload) => {
             const notif = payload.new as any;
-            // Server-side RLS already filters for this user
-            
-            
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
-            // P0 FIX: Immediate sync for critical assignment changes
             if (notif?.type === "new_assignment" || notif?.type === "assignment_new" || notif?.type === "new_assignments") {
-              
               qc.invalidateQueries({ queryKey: ["today-assignment"] });
               qc.invalidateQueries({ queryKey: ["route-today"] });
               qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
@@ -101,7 +96,6 @@ function TopBar() {
           })
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            // UNIVERSAL: authoritative recovery fetch on successful connection for ALL partners
             qc.invalidateQueries({ queryKey: ["today-assignment"] });
             qc.invalidateQueries({ queryKey: ["route-today"] });
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
