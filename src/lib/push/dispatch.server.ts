@@ -728,9 +728,7 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
 
         if (result.sent > 0) {
           totalDispatched++;
-          console.log(`[PARTNER-E2E:08-FCM] FCM_SENT partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
-        } else {
-          console.log(`[PARTNER-E2E:09-FCM] FCM_FAILED partner_id=${o.partner_id} offer_id=${o.id} broadcast_id=${b.broadcast_id}`);
+        }
         }
       } catch (e) {
         console.warn(`[BOOKING-PUSH:ERROR] Push failed for partner ${o.partner_id}`, e);
