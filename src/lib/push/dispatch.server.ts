@@ -116,8 +116,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         offerId: r.offer_id,
         partnerId: r.partner_id,
-        incentive: Number((r as any).incentive || 0), 
-
+        incentive: Number((r as any).incentive || 0),
       }),
       resolvePartnerMonthlyEarning({
         sb,
