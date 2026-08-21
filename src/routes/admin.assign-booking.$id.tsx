@@ -33,7 +33,11 @@ function AssignBookingPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, customers!inner(full_name, phone, area, address_line)")
+        .select(`
+          *,
+          customers!inner(full_name, phone, area, address_line),
+          service_catalog!inner(name, category)
+        `)
         .eq("id", bookingId)
         .single();
       if (error) throw error;
@@ -95,10 +99,13 @@ function AssignBookingPage() {
           <Card className="p-5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Booking Details</h3>
             <div className="space-y-3">
+              <DetailRow label="Booking ID" value={<span className="font-mono text-[10px]">{booking.id}</span>} />
               <DetailRow label="Customer" value={customer?.full_name} />
-              <DetailRow label="Service" value={booking.service_type?.replace("_", " ")} />
+              <DetailRow label="Service" value={booking.service_catalog?.name || booking.service_type?.replace("_", " ")} />
+              <DetailRow label="Amount" value={`₹${booking.total_amount}`} />
               <DetailRow label="Area" value={customer?.area} />
               <DetailRow label="Phone" value={customer?.phone ? `+91 ${customer.phone}` : "—"} />
+              <DetailRow label="Payment" value={<Badge variant={booking.payment_status === "paid" ? "secondary" : "destructive"} className="capitalize">{booking.payment_status}</Badge>} />
               <DetailRow label="Status" value={<Badge variant="outline" className="capitalize">{booking.status}</Badge>} />
             </div>
           </Card>
