@@ -542,32 +542,25 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         action_token: String(o.id),
       };
 
-      const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
       const result = await sendOfferPush({
         userId: o.partner_id,
         title,
         body,
         data: dataPayload,
         channelId: "assignments_v4",
-        dataOnly: true, // Native Kotlin heads-up path
+        dataOnly: true,
         tag: `release:${bcast.id}`
       });
-      // console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`); // Moved into sendOfferPush
-
-
 
       if (result.sent > 0) {
-        console.log(`[RELEASED-WORK-PUSH:05] FCM_SENT partner=${o.partner_id} message_id=${result.results[0]?.messageId}`);
         sentCount++;
       }
     } catch (e) {
-      console.warn(`[RELEASED-WORK-PUSH:ERROR] Failed to send to partner ${o.partner_id}`, e);
+      // Failed to send to partner
     }
   });
 
   await Promise.all(fanout);
-  console.log(`[RELEASED-WORK-PUSH:06] MARKETPLACE_VISIBLE dispatched=${sentCount}`);
   return sentCount;
 }
 
