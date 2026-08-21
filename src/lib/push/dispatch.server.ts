@@ -109,9 +109,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
       return false;
     }
     
-    const ts_created = Date.now();
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${ts_created}`);
-    console.log(`[BOOKING-PUSH:04] NOTIFICATION_ROWS_CREATED offer_id=${r.offer_id}`);
 
 
     const { resolvePartnerBookingEarning, resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
