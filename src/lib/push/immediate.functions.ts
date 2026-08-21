@@ -101,5 +101,19 @@ export const sendDirectCompletionPush = createServerFn({ method: "POST" })
       console.error(`[CUSTOMER-E2E:09-FCM] FCM_FAILED for customer=${customerId}. tokens_found=${result.results.length}`);
     }
 
+    // Admin Notification for Completion
+    try {
+      await supabaseAdmin.from("admin_notifications").insert({
+        category: "assignments",
+        title: svc.status === "completed" ? "SERVICE COMPLETED" : "UNAVAILABLE",
+        body: svc.status === "completed" 
+          ? `Service ${data.serviceId.slice(-8)} completed.` 
+          : `Service ${data.serviceId.slice(-8)} reported unavailable.`,
+        metadata: { service_id: data.serviceId, status: svc.status }
+      });
+      const { dispatchAdminAlerts } = await import("@/lib/push/dispatch.server");
+      await dispatchAdminAlerts();
+    } catch (e) { console.warn("[direct-push] admin notification failed", e); }
+
     return { ok: result.sent > 0 };
   });

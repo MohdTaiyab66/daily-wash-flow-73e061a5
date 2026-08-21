@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRouteVisibility } from "@/lib/assignment.functions";
+import { getRouteVisibility, startService } from "@/lib/assignment.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,16 +171,17 @@ function RoutePage() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   // qc is already declared at the top of the component
 
-  const startService = useMutation({
+  const startSvc = useServerFn(startService);
+  const startServiceMutation = useMutation({
     mutationFn: async (id: string) => {
       const pos = await getPosition();
-      const { error } = await supabase.from("services").update({
-        status: "in_progress",
-        started_at: new Date().toISOString(),
-        start_lat: pos?.lat ?? null,
-        start_lng: pos?.lng ?? null,
-      }).eq("id", id);
-      if (error) throw error;
+      const res = await startSvc({ data: {
+        service_id: id,
+        lat: pos?.lat ?? undefined,
+        lng: pos?.lng ?? undefined,
+      }});
+      
+      if (!res) throw new Error("Failed to start service");
 
       // START OF E2E UI FIX: Immediate navigation before async push flush
       navigate({ to: "/_authenticated/app/service/$id" as any, params: { id } as any });
@@ -410,8 +411,8 @@ function RoutePage() {
         stop={selectedStop} 
         open={!!selectedStopId} 
         onOpenChange={(open) => !open && setSelectedStopId(null)}
-        onStart={() => selectedStopId && startService.mutate(selectedStopId)}
-        isStarting={startService.isPending}
+        onStart={() => selectedStopId && startServiceMutation.mutate(selectedStopId)}
+        isStarting={startServiceMutation.isPending}
         isMonday={isMonday}
       />
 
@@ -540,65 +541,18 @@ function CustomerDetailSheet({ stop, open, onOpenChange, onStart, isStarting, is
   );
 }
 
-function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any; seqNo: number; total: number; onClick?: () => void; isMonday?: boolean }) {
-  const startService = useMutation({
-    mutationFn: async (id: string) => {
-      const pos = await getPosition();
-      const { error } = await supabase.from("services").update({
-        status: "in_progress",
-        started_at: new Date().toISOString(),
-        start_lat: pos?.lat ?? null,
-        start_lng: pos?.lng ?? null,
-      }).eq("id", id);
-      if (error) throw error;
-      import("@/lib/push/immediate.functions").then(m => {
-        m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));
-      });
-    },
-    onSuccess: () => {
-      const qc = (require("@tanstack/react-query") as any).getQueryClient?.() || (require("@tanstack/react-query") as any).useQueryClient?.();
-      if (qc) {
-        qc.invalidateQueries({ queryKey: ["route-today"] });
-        qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      }
-      toast.success("Service started");
-    },
-    onError: (e: any) => toast.error(e.message ?? "Could not start service"),
-  });
-  
-  // Use the hook correctly
-  const queryClient = useQueryClient();
-  
-  const handleStart = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const pos = await getPosition();
-    const { error } = await supabase.from("services").update({
-      status: "in_progress",
-      started_at: new Date().toISOString(),
-      start_lat: pos?.lat ?? null,
-      start_lng: pos?.lng ?? null,
-    }).eq("id", stop.id);
-    
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    
-    queryClient.invalidateQueries({ queryKey: ["route-today"] });
-    queryClient.invalidateQueries({ queryKey: ["today-assignment"] });
-    toast.success("Service started immediately");
-    
-    import("@/lib/push/immediate.functions").then(m => {
-      m.flushNotificationPush().catch(console.error);
-    });
-  };
-
+function NextCustomerHero({ stop, seqNo, total, onClick, isMonday, onStart, isStarting }: { stop: any; seqNo: number; total: number; onClick?: () => void; isMonday?: boolean; onStart?: () => void; isStarting?: boolean }) {
   const c = stop.customers as any;
   const v = stop.vehicles as any;
   const time = stop.time_slot;
   const timeLabel = c?.time_window_type === "before" ? "Before " : "";
   const inProgress = stop.status === "in_progress";
   const gps = { lat: (stop as any).lat, lng: (stop as any).lng };
+
+  const handleStart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onStart) onStart();
+  };
 
   return (
     <Card 
@@ -683,8 +637,8 @@ function NextCustomerHero({ stop, seqNo, total, onClick, isMonday }: { stop: any
                 : "bg-[#FF6B00] text-white hover:bg-[#ff8c40] shadow-[#FF6B00]/20"
             )}
           >
-            {isMonday ? <Lock className="h-4 w-4 shrink-0" /> : <Play className="h-4 w-4 fill-current shrink-0" />}
-            <span className="truncate">{isMonday ? "Monday Off" : "Start"}</span>
+            {isStarting ? <Loader2 className="h-4 w-4 animate-spin shrink-0" /> : isMonday ? <Lock className="h-4 w-4 shrink-0" /> : <Play className="h-4 w-4 fill-current shrink-0" />}
+            <span className="truncate">{isStarting ? "Starting..." : isMonday ? "Monday Off" : "Start"}</span>
           </Button>
         )}
 

@@ -69,19 +69,13 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         }
         console.log(`[PAYMENT-E2E:06] ACTIVATION_RESULT webhook_success`);
         
-        // Phase 2 shadow: log payment_verified in the new pipeline in parallel with legacy.
-        try { await (supabaseAdmin as any).rpc("ds_on_payment_verified", { p_booking_id: booking.id }); } catch {}
-        
-        // Instant partner dispatch: don't wait for the cron tick.
+        // Immediate admin notification and system synchronization
         try {
-          console.log(`[BOOKING-PUSH:01] PAYMENT_VERIFIED_TRIGGER webhook booking_id=${booking.id}`);
-          await (supabaseAdmin as any).rpc("sweep_subscription_offers");
-          
-          // Immediate FCM push for the offers just created; cron is the retry path.
-          const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
-          console.log(`[BOOKING-PUSH:03] FANOUT_STARTED booking_id=${booking.id}`);
-          await dispatchPendingOffers("immediate:razorpay-webhook", booking.id);
-        } catch (e) { console.warn("[razorpay-webhook] immediate push dispatch failed", e); }
+          const { dispatchAdminAlerts } = await import("@/lib/push/dispatch.server");
+          await dispatchAdminAlerts();
+        } catch (e) { console.warn("[razorpay-webhook] immediate admin alert failed", e); }
+        
+        return Response.json({ ok: true, result: data });
         
         return Response.json({ ok: true, result: data });
       },

@@ -71,6 +71,7 @@ import { Route as AdminPartnerAssignmentIdRouteImport } from './routes/admin.par
 import { Route as AdminOfferDeliveryIdRouteImport } from './routes/admin.offer-delivery.$id'
 import { Route as AdminMarketplaceIdRouteImport } from './routes/admin.marketplace.$id'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
+import { Route as AdminAssignBookingIdRouteImport } from './routes/admin.assign-booking.$id'
 import { Route as AuthenticatedAppTrainingRouteImport } from './routes/_authenticated/app.training'
 import { Route as AuthenticatedAppRewardsRouteImport } from './routes/_authenticated/app.rewards'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
@@ -416,6 +417,11 @@ const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminCustomersRoute,
 } as any)
+const AdminAssignBookingIdRoute = AdminAssignBookingIdRouteImport.update({
+  id: '/assign-booking/$id',
+  path: '/assign-booking/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AuthenticatedAppTrainingRoute =
   AuthenticatedAppTrainingRouteImport.update({
     id: '/training',
@@ -647,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/assign-booking/$id': typeof AdminAssignBookingIdRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
@@ -738,6 +745,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/assign-booking/$id': typeof AdminAssignBookingIdRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
@@ -834,6 +842,7 @@ export interface FileRoutesById {
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/rewards': typeof AuthenticatedAppRewardsRoute
   '/_authenticated/app/training': typeof AuthenticatedAppTrainingRoute
+  '/admin/assign-booking/$id': typeof AdminAssignBookingIdRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/marketplace/$id': typeof AdminMarketplaceIdRoute
   '/admin/offer-delivery/$id': typeof AdminOfferDeliveryIdRoute
@@ -930,6 +939,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/assign-booking/$id'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
     | '/admin/offer-delivery/$id'
@@ -1021,6 +1031,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/rewards'
     | '/app/training'
+    | '/admin/assign-booking/$id'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
     | '/admin/offer-delivery/$id'
@@ -1116,6 +1127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/profile'
     | '/_authenticated/app/rewards'
     | '/_authenticated/app/training'
+    | '/admin/assign-booking/$id'
     | '/admin/customers/$id'
     | '/admin/marketplace/$id'
     | '/admin/offer-delivery/$id'
@@ -1621,6 +1633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCustomersIdRouteImport
       parentRoute: typeof AdminCustomersRoute
     }
+    '/admin/assign-booking/$id': {
+      id: '/admin/assign-booking/$id'
+      path: '/assign-booking/$id'
+      fullPath: '/admin/assign-booking/$id'
+      preLoaderRoute: typeof AdminAssignBookingIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_authenticated/app/training': {
       id: '/_authenticated/app/training'
       path: '/training'
@@ -1944,6 +1963,7 @@ interface AdminRouteChildren {
   AdminVehicleAuditRoute: typeof AdminVehicleAuditRoute
   AdminWalletRoute: typeof AdminWalletRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminAssignBookingIdRoute: typeof AdminAssignBookingIdRoute
   AdminOfferDeliveryIdRoute: typeof AdminOfferDeliveryIdRoute
   AdminPartnerAssignmentIdRoute: typeof AdminPartnerAssignmentIdRoute
   AdminServiceIdRoute: typeof AdminServiceIdRoute
@@ -1985,6 +2005,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminVehicleAuditRoute: AdminVehicleAuditRoute,
   AdminWalletRoute: AdminWalletRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminAssignBookingIdRoute: AdminAssignBookingIdRoute,
   AdminOfferDeliveryIdRoute: AdminOfferDeliveryIdRoute,
   AdminPartnerAssignmentIdRoute: AdminPartnerAssignmentIdRoute,
   AdminServiceIdRoute: AdminServiceIdRoute,
