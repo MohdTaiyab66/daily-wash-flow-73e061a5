@@ -74,7 +74,7 @@ function AdminNotifications() {
     const bookingId = n.metadata?.booking_id;
     
     if (isBooking && bookingId) {
-      navigate({ to: "/admin/assign-booking/$id" as any, params: { id: bookingId } as any });
+      navigate({ to: "/admin/assign-booking/$id", params: { id: bookingId } });
       return;
     }
 
