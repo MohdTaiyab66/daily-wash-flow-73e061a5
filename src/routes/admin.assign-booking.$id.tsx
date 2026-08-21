@@ -178,7 +178,7 @@ function AssignBookingPage() {
                         <span className="font-semibold text-sm truncate">{p.full_name}</span>
                         {isAreaMatch && <Badge variant="secondary" className="text-[9px] h-4">Area Match</Badge>}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">+91 {p.phone} · {p.home_area || "No area"}</p>
+                      <p className="text-xs text-muted-foreground truncate">+91 {p.phone} · {p.home_area || "AREA NOT ASSIGNED"}</p>
                     </div>
                     {active && <Check className="h-5 w-5 text-primary" />}
                   </button>
