@@ -353,21 +353,8 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
     const isUnavailable = mappedType === "service_unavailable" || mappedType === "vehicle_unavailable" || mappedType === "vehicle_dirty" || mappedType === "dirty_vehicle" || mappedType === "vehicle_not_found" || mappedType === "dirty";
     
-    if (isUnavailable) {
-      console.log(`[UNAVAILABLE-PUSH:03] EVENT_RESOLVED type=${mappedType} original=${type}`);
-      console.log(`[UNAVAILABLE-PUSH:04] CUSTOMER_NOTIFICATION_CREATED id=${r.id}`);
-      console.log(`[UNAVAILABLE-E2E:03] EVENT_TYPE_RESOLVED type=${mappedType}`);
-      console.log(`[UNAVAILABLE-E2E:04] CUSTOMER_NOTIFICATION_CREATED`);
-    } else {
-
-      console.log(`[CUSTOMER-PROD-E2E:03] CUSTOMER_NOTIFICATION_CREATED id=${r.id} type=${mappedType} user_id=${r.user_id}`);
-      console.log(`[CUSTOMER-PROD-E2E:04] NOTIFICATION_TYPE_RESOLVED type=${mappedType}`);
-      console.log(`[CUSTOMER-PROD-E2E:05] CUSTOMER_USER_RESOLVED user_id=${r.user_id}`);
-    }
-
     if (!CUSTOMER_ALLOWED_TYPES.has(mappedType)) {
       await sb.from("customer_notifications").update({ pushed_at: new Date().toISOString() }).eq("id", r.id);
-      console.warn(`[CUSTOMER-PROD-E2E:DISPATCH:BLOCKED] blocked type="${mappedType}" id=${r.id}`);
       continue;
     }
     
