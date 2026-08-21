@@ -27,43 +27,305 @@ function Index() {
   const replacementText = `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 FINAL VERIFICATION — ADMIN MANUAL ASSIGNMENT
+                                            P0 FINAL VERIFICATION — ADMIN MANUAL DAILY SHINE ASSIGNMENT
 
-DO NOT MODIFY CODE UNLESS THE TEST FAILS.
+DO NOT CHANGE CODE UNLESS A TEST FAILS.
 
-The deterministic server-side resolver and the corrected assignment RPC are now implemented.
-The relation "public.partner_profiles" does not exist error has been resolved by mapping to the correct partners table.
+The legacy partner_profiles issue has now been fixed and the authoritative
 
-Run a BRAND-NEW end-to-end test using a fresh Daily Shine booking.
+partner source is public.partners.
 
-TEST:
-1. Create a fresh Daily Shine booking (Customer App).
-2. Complete payment (Razorpay).
-3. Admin receives push notification "New Daily Shine Booking".
-4. Admin clicks OPEN on notification.
-5. Admin reaches: /admin/assign-booking/[BOOKING_ID]
-6. The exact booking loads (verified by ID).
-7. Partner list loads.
-8. Verify "Kalyanpur (West)" partners appear first.
-9. Verify partners show their correct area (e.g., "Kalyanpur (West)") instead of "No area".
-10. Select a valid partner from the list.
-11. Click "ASSIGN PARTNER".
-12. Operation succeeds (Toast: "Partner assigned successfully").
-13. Database verification: bookings.partner_id is updated.
-14. Database verification: services record exists and is linked to partner.
-15. Partner Home shows the assigned service in the "TODAY" list.
+Run a completely fresh Daily Shine E2E test.
 
-REQUIRED PROOF REPORT:
-| Step | Result | Evidence/ID |
-| :--- | :--- | :--- |
-| Fresh Booking ID | | |
-| Admin Page Loads | PASS/FAIL | |
-| Partner List Area Correct | PASS/FAIL | |
-| Assign Mutation | PASS/FAIL | |
-| Database Assignment | PASS/FAIL | |
-| Partner App Visibility | PASS/FAIL | |
+==================================================
 
-Only call the feature fixed after a fresh booking can be manually assigned by Admin without "partner_profiles" error.`;
+1. CUSTOMER BOOKING
+
+==================================================
+
+Create a NEW Daily Shine booking.
+
+Verify:
+
+payment = SUCCESS
+
+booking status = PAID / UNASSIGNED
+
+booking_id exists
+
+==================================================
+
+2. ADMIN NOTIFICATION
+
+==================================================
+
+Verify Admin receives:
+
+NEW PAID BOOKING
+
+unread count increases
+
+sound plays once
+
+Click OPEN.
+
+Expected:
+
+exact booking assignment page opens
+
+NO "Booking not found"
+
+==================================================
+
+3. BOOKING DETAILS
+
+==================================================
+
+Verify the page shows the exact:
+
+Customer
+
+Vehicle
+
+Daily Shine
+
+Area
+
+Booking ID
+
+Amount
+
+Payment status
+
+==================================================
+
+4. PARTNER LIST
+
+==================================================
+
+The partner list must now use:
+
+public.partners
+
+Verify:
+
+- partner name is correct
+
+- phone is correct
+
+- home_area is correct
+
+- active/approved status is correct
+
+- eligible Kalyanpur (West) partners are shown
+
+- unrelated-area partners are excluded
+
+- "No area" is NOT shown when home_area exists
+
+==================================================
+
+5. ASSIGN PARTNER
+
+==================================================
+
+Select ONE eligible Kalyanpur (West) partner.
+
+Click:
+
+ASSIGN PARTNER
+
+Verify:
+
+NO partner_profiles error
+
+NO database error
+
+assignment succeeds
+
+==================================================
+
+6. DATABASE VERIFICATION
+
+==================================================
+
+After assignment verify:
+
+booking.assigned_partner_id
+
+assignment record
+
+service record
+
+booking status
+
+subscription/service state
+
+All must point to the same:
+
+booking_id
+
+partner_id
+
+service_id
+
+customer_id
+
+vehicle_id
+
+==================================================
+
+7. PARTNER APP
+
+==================================================
+
+Verify the assigned partner sees the booking in the Partner App.
+
+If FCM token exists:
+
+real Android push = RECEIVED
+
+Even if push fails:
+
+in-app assignment MUST still appear.
+
+==================================================
+
+8. CUSTOMER APP
+
+==================================================
+
+Customer must receive:
+
+PARTNER ASSIGNED
+
+with:
+
+partner name
+
+vehicle
+
+Daily Shine service
+
+Verify it targets the customer's account, not only the currently selected
+
+vehicle.
+
+==================================================
+
+9. ADMIN STATE
+
+==================================================
+
+Admin should now show:
+
+ASSIGNED
+
+Partner: [selected partner]
+
+The same partner must appear everywhere.
+
+==================================================
+
+10. SERVICE TEST
+
+==================================================
+
+Partner performs:
+
+START
+
+→ vehicle condition
+
+→ photo
+
+→ COMPLETE
+
+Then verify:
+
+Partner progress updated
+
+Partner earnings updated
+
+Customer service history updated
+
+Customer entitlement updated
+
+Admin booking/service status updated
+
+Customer completion notification sent
+
+==================================================
+
+11. FAILURE TEST
+
+==================================================
+
+Also verify the important fallback:
+
+Disable/fail partner push delivery.
+
+Admin must STILL be able to:
+
+OPEN BOOKING
+
+→ SELECT PARTNER
+
+→ ASSIGN PARTNER
+
+The assignment must not depend on FCM.
+
+==================================================
+
+FINAL REPORT
+
+Provide actual IDs:
+
+booking_id
+
+service_id
+
+assignment_id
+
+customer_id
+
+vehicle_id
+
+partner_id
+
+And:
+
+Admin notification = PASS/FAIL
+
+Admin sound = PASS/FAIL
+
+Open booking = PASS/FAIL
+
+Correct partners = PASS/FAIL
+
+Area matching = PASS/FAIL
+
+Assign Partner = PASS/FAIL
+
+Partner app update = PASS/FAIL
+
+Partner push = PASS/FAIL
+
+Customer update = PASS/FAIL
+
+Customer push = PASS/FAIL
+
+Service completion = PASS/FAIL
+
+Earnings update = PASS/FAIL
+
+Customer history = PASS/FAIL
+
+If anything fails, provide the exact error and failing layer before making
+
+another change.
+
+Do not declare success from code inspection alone.`;
 
   return (
     <div className="min-h-screen bg-background">
