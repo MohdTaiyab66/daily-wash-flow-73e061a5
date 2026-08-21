@@ -6625,7 +6625,7 @@ export type Database = {
           }
         | {
             Args: {
-              p_admin_id: string
+              p_admin_id?: string
               p_booking_id: string
               p_partner_id: string
             }
