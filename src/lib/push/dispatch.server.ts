@@ -472,12 +472,10 @@ export async function dispatchPartnerNotifications(): Promise<number> {
  * Fans out to all eligible partners except the cancelling one.
  */
 export async function dispatchAssignmentReleased(pAssignmentId: string, pCancellingPartnerId: string): Promise<number> {
-  console.log(`[RELEASED-WORK-PUSH:01] BROADCAST_CREATED assignment_id=${pAssignmentId}`);
   const sb = await admin();
   const sendOfferPush = await sender();
   const { resolvePartnerBookingDistance, resolvePartnerMonthlyEarning } = await resolvers();
 
-  // 1. Resolve released work details
   const { data: bcast } = await sb
     .from("marketplace_broadcasts")
     .select("id, status, service_area_id, coverage_zones(name), marketplace_offers(id, partner_id)")
@@ -485,29 +483,22 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
     .maybeSingle();
 
   if (!bcast || bcast.status !== "open") {
-    console.warn("[RELEASED-WORK-PUSH:CANCELLED] No open broadcast for assignment", pAssignmentId);
     return 0;
   }
 
-  // 2. Find eligible recipients (all partners in the broadcast who aren't the canceller)
   const offers = (bcast.marketplace_offers ?? []).filter((o: any) => o.partner_id !== pCancellingPartnerId);
   const totalEligible = offers.length;
-  console.log(`[RELEASED-WORK-PUSH:02] ELIGIBLE_PARTNERS count=${totalEligible} (excluded ${pCancellingPartnerId})`);
 
   if (totalEligible === 0) return 0;
 
-  // 3. Resolve common work metadata (customer count, area)
   const { data: services } = await sb
     .from("services")
     .select("id, rate_per_car, subscription:subscriptions(start_date, renewal_date), customer:customer_profiles(latitude, longitude)")
     .eq("assignment_id", pAssignmentId)
-    .eq("status", "pending"); // Only unstarted work is released
+    .eq("status", "pending");
 
   const customerCount = services.length;
   const areaName = bcast.coverage_zones?.name ?? "Nearby Area";
-
-  console.log(`[RELEASED-WORK-PUSH:03] PAYLOAD_RESOLVED customers=${customerCount} area=${areaName}`);
-  console.log(`[RELEASED-WORK-PUSH:04] FANOUT_STARTED count=${totalEligible}`);
 
   let sentCount = 0;
   const fanout = offers.map(async (o: any) => {
