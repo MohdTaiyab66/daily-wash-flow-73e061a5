@@ -28,20 +28,47 @@ function AssignBookingPage() {
   const [partnerId, setPartnerId] = useState("");
   const [search, setSearch] = useState("");
 
-  const { data: booking, isLoading: loadingBooking } = useQuery({
+  const { data: booking, isLoading: loadingBooking, error: bookingError } = useQuery({
     queryKey: ["admin-booking-detail", bookingId],
     queryFn: async () => {
+      console.log(`[ADMIN-BOOKING-E2E] Fetching booking ID: ${bookingId}`);
+      
+      // Use the newly created view for robust joining without FK constraints
       const { data, error } = await supabase
-        .from("bookings")
-        .select(`
-          *,
-          customers!inner(full_name, phone, area, address_line),
-          service_catalog!inner(name, category)
-        `)
+        .from("admin_booking_details")
+        .select("*")
         .eq("id", bookingId)
-        .single();
-      if (error) throw error;
-      return data as any;
+        .maybeSingle();
+
+      if (error) {
+        console.error(`[ADMIN-BOOKING-E2E] DB Error:`, error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.warn(`[ADMIN-BOOKING-E2E] No booking found for ID: ${bookingId}`);
+        // Forensic check: does it exist in the raw table?
+        const { count } = await supabase.from("bookings").select("id", { count: 'exact', head: true }).eq("id", bookingId);
+        console.log(`[ADMIN-BOOKING-E2E] Raw table existence check count: ${count}`);
+        return null;
+      }
+
+      console.log(`[ADMIN-BOOKING-E2E] Found booking:`, data);
+      
+      // Map view fields to expected object structure for compatibility
+      return {
+        ...data,
+        customers: {
+          full_name: data.customer_name,
+          phone: data.customer_phone,
+          area: data.customer_area,
+          address_line: data.customer_address
+        },
+        service_catalog: {
+          name: data.service_name,
+          category: data.service_category
+        }
+      } as any;
     },
   });
 

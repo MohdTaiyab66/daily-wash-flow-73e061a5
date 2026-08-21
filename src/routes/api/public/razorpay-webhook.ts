@@ -56,6 +56,7 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         if (bookingError) return Response.json({ ok: false, error: bookingError.message }, { status: 500 });
         if (!booking) return Response.json({ ok: true, ignored: true, reason: "booking_not_found" });
 
+        console.log(`[ADMIN-BOOKING-E2E] Activating booking_id: ${booking.id} for order: ${orderId}`);
         const { data, error } = await (supabaseAdmin as any).rpc("activate_paid_booking", {
           p_booking_id: booking.id,
           p_provider_order_id: orderId,
@@ -63,25 +64,47 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           p_signature: signature,
           p_raw_payload: event,
         });
+
         if (error) {
-          console.error(`[PAYMENT-E2E:06] ACTIVATION_RESULT webhook_error=${error.message}`);
+          console.error(`[PAYMENT-E2E:06] ACTIVATION_RESULT error=${error.message} booking_id=${booking.id}`);
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
-        console.log(`[PAYMENT-E2E:06] ACTIVATION_RESULT webhook_success`);
+        
+        console.log(`[PAYMENT-E2E:06] ACTIVATION_SUCCESS booking_id=${booking.id}`);
         
         // Immediate admin notification and system synchronization
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          
+          // Verify customer profile exists for the user
+          const { data: bookingDetails } = await supabaseAdmin.from("bookings").select("user_id").eq("id", booking.id).single();
+          const userId = bookingDetails?.user_id as string;
+          const { data: customer } = await supabaseAdmin.from("customers").select("full_name, area").eq("id", userId).maybeSingle();
+          
+          const title = "DAILY SHINE PAID";
+          const body = `New Daily Shine booking for ${customer?.full_name || 'Customer'} in ${customer?.area || 'unknown area'}.`;
+          
+          console.log(`[ADMIN-BOOKING-E2E] Creating admin notification for booking_id: ${booking.id}`);
+          
           await supabaseAdmin.from("admin_notifications").insert({
             category: "bookings",
-            title: "DAILY SHINE PAID",
-            body: `New Daily Shine booking for customer ${booking.id.slice(-8)}.`,
-            metadata: { booking_id: booking.id },
+            title,
+            body,
+            metadata: { 
+              booking_id: booking.id,
+              customer_name: customer?.full_name,
+              area: customer?.area,
+              amount: payment?.amount ? payment.amount / 100 : 0
+            },
             link: `/admin/assign-booking/${booking.id}`
           });
+          
           const { dispatchAdminNotifications } = await import("@/lib/push/dispatch.server");
           await dispatchAdminNotifications();
-        } catch (e) { console.warn("[razorpay-webhook] immediate admin alert failed", e); }
+          console.log(`[ADMIN-BOOKING-E2E] Admin notification dispatched for booking_id: ${booking.id}`);
+        } catch (e) { 
+          console.error("[ADMIN-BOOKING-E2E] admin alert failed", e); 
+        }
         
         return Response.json({ ok: true, result: data });
         
