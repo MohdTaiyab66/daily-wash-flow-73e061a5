@@ -664,25 +664,13 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
   let totalDispatched = 0;
 
   for (const b of bookings) {
-    // [BOOKING-PUSH:AREA:01] BOOKING_OPEN
-    console.log(`[BOOKING-PUSH:AREA:01] BOOKING_OPEN booking_id=${b.booking_id} broadcast_id=${b.broadcast_id}`);
-    
-    // [BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED
-    console.log(`[BOOKING-PUSH:AREA:02] CUSTOMER_AREA_RESOLVED area=${b.area} lat=${b.customer_lat} lng=${b.customer_lng}`);
-
-    // 1. Reconcile/Recalculate eligibility for ALL partners
-    // [BOOKING-PUSH:AREA:03] ELIGIBLE_PARTNERS_QUERY_STARTED
     const { data: reconciledCount, error: recError } = await sb.rpc('mp_reconcile_all_partners_for_broadcast', {
       p_broadcast_id: b.broadcast_id
     });
     
     if (recError) {
-      console.error(`[BOOKING-PUSH:ERROR] Reconciliation failed for broadcast=${b.broadcast_id}`, recError);
       continue;
     }
-
-    // [BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND
-    console.log(`[BOOKING-PUSH:AREA:04] ELIGIBLE_PARTNERS_FOUND broadcast_id=${b.broadcast_id}`);
 
     // 2. Fetch all PENDING offers for this broadcast
     const { data: offers, error: offersError } = await sb
