@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, CheckCheck, Sparkles, ClipboardList, Wallet, ShieldAlert, IndianRupee, Globe } from "lucide-react";
+import { Bell, CheckCheck, Sparkles, ClipboardList, Wallet, ShieldAlert, IndianRupee, Globe, Search } from "lucide-react";
 
 export const Route = createFileRoute("/admin/notifications")({
   component: AdminNotifications,
@@ -25,6 +26,17 @@ function AdminNotifications() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState("all");
+  const [searchBookingId, setSearchBookingId] = useState("");
+
+  const handleManualSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchBookingId.trim()) return;
+    const cleanId = searchBookingId.trim();
+    // Validate UUID-ish shape
+    if (cleanId.length > 30) {
+      navigate({ to: "/admin/assign-booking/$id", params: { id: cleanId } });
+    }
+  };
 
   const { data: rows, isLoading } = useQuery({
     queryKey: ["admin-notifications"],
@@ -83,16 +95,27 @@ function AdminNotifications() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Admin Notifications</h1>
           <p className="mt-1 text-sm text-muted-foreground">{unread} unread</p>
         </div>
-        {unread > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => markAll.mutate()}>
-            <CheckCheck className="mr-1 h-4 w-4" />Mark all read
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <form onSubmit={handleManualSearch} className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input 
+              placeholder="Search Booking ID..." 
+              className="pl-8 h-9 text-xs w-48 lg:w-64"
+              value={searchBookingId}
+              onChange={(e) => setSearchBookingId(e.target.value)}
+            />
+          </form>
+          {unread > 0 && (
+            <Button size="sm" variant="ghost" onClick={() => markAll.mutate()}>
+              <CheckCheck className="mr-1 h-4 w-4" />Mark all read
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-4">
