@@ -58,6 +58,7 @@ function PartnerRuntime() {
 function TopBar() {
   const { lang, setLang } = useI18n();
   const qc = useQueryClient();
+  const { data: partner } = usePartner();
   const { data: unread = 0 } = useQuery({
     queryKey: ["partner-notifications-unread"],
     queryFn: async () => {
@@ -107,7 +108,7 @@ function TopBar() {
     return () => { 
       cancelled = true; 
       if (channel) {
-        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${u.user.id}`);
+        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${partnerId}`);
         supabase.removeChannel(channel);
       }
     };
