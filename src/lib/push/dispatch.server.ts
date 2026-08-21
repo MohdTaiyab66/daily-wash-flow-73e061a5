@@ -138,7 +138,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
 
 
-    
     const data: Record<string, string> = {
       type: "daily_shine_offer",
       offer_id: r.offer_id,
