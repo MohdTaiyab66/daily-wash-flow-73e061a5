@@ -100,6 +100,7 @@ function TopBar() {
             }
           })
         .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
             // UNIVERSAL: authoritative recovery fetch on successful connection for ALL partners
             qc.invalidateQueries({ queryKey: ["today-assignment"] });
             qc.invalidateQueries({ queryKey: ["route-today"] });
