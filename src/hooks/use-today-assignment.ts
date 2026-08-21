@@ -192,7 +192,8 @@ export function useTodayAssignment() {
   const q = useQuery<TodayAssignmentData>({
     queryKey: ["today-assignment"],
     queryFn: fetchTodayAssignment,
-    staleTime: 15_000,
+    staleTime: 5_000,
+    refetchOnMount: "always",
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
