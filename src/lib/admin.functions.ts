@@ -431,6 +431,7 @@ export const getAdminBookingForAssignment = createServerFn({ method: "GET" }).mi
     };
   });
 
+export const markMonthlyWash = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string; kind: "interior" | "exterior"; done_date: string; partner_id: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -443,6 +444,7 @@ export const getAdminBookingForAssignment = createServerFn({ method: "GET" }).mi
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 
 export const listSettings = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
