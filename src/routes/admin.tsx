@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useLocation, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ADMIN_NAV } from "@/components/admin/admin-nav";
 import { GlobalSearch } from "@/components/admin/GlobalSearch";
@@ -9,15 +9,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft, Volume2 } from "lucide-react";
+import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: true,
   head: () => ({ meta: [{ title: "Urban Wash · Admin" }] }),
   beforeLoad: async () => {
-    // Admin gate – designed to NEVER sign the user out on transient errors
-    // (network blips, refresh-token races). We only redirect to /auth when
-    // there is definitively no session or the email is not an admin email.
+    // Admin gate
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) throw redirect({ to: "/auth", search: { redirect: "/admin" } });
     const email = sess.session.user.email || "";
@@ -33,7 +31,7 @@ export const Route = createFileRoute("/admin")({
         throw redirect({ to: "/auth", search: { redirect: "/admin" } });
       }
     } catch {
-      // swallow transient RPC errors – the session itself is valid
+      // swallow transient RPC errors
     }
   },
   component: AdminLayout,
@@ -100,8 +98,8 @@ function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: 
                         collapsed ? "justify-center" : ""
                       } ${
                         active
-                          ? "bg-primary/12 font-medium text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                           ? "bg-primary/12 font-medium text-primary"
+                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -139,13 +137,14 @@ function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const unread = useUnreadCount();
   const [email, setEmail] = useState<string>("");
-  const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
+  const lastNotifIdRef = useRef<string | null>(null);
+  const qc = useQueryClient();
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
   }, []);
 
-  // Admin Notification Sound & Toast Logic
+  // Admin Notification Sound & RT Logic
   useEffect(() => {
     const channel = supabase
       .channel("admin-alerts-rt")
@@ -154,17 +153,25 @@ function AdminLayout() {
         { event: "INSERT", schema: "public", table: "admin_notifications" },
         (payload) => {
           const n = payload.new as any;
-          if (n.id !== lastNotificationId) {
-            setLastNotificationId(n.id);
-            // Play sound - Use a system standard or hosted URL
-            const audio = new Audio("https://daily-wash-flow.lovable.app/notification.mp3");
-            audio.play().catch(() => console.log("Sound blocked by browser"));
+          if (n.id !== lastNotifIdRef.current) {
+            lastNotifIdRef.current = n.id;
+            
+            // Invalidate counts immediately
+            qc.invalidateQueries({ queryKey: ["admin-notifications-unread"] });
+            qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+
+            // Play sound - High-quality standard system sound
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            audio.play().catch(() => {
+              // Browser block - user hasn't interacted yet. Noop.
+              console.log("[admin] Sound notification blocked by browser policy");
+            });
           }
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [lastNotificationId]);
+  }, [qc]);
 
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "short", day: "numeric", month: "short",
