@@ -7,12 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   adminAssignPartnerToBooking,
   listAdminPartnersBrief,
+  getAdminBookingForAssignment,
 } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, Loader2, Search, UserCheck } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Search, UserCheck, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/admin/assign-booking/$id")({
   component: AssignBookingPage,
@@ -24,51 +25,23 @@ function AssignBookingPage() {
   const qc = useQueryClient();
   const listPartners = useServerFn(listAdminPartnersBrief);
   const assignFn = useServerFn(adminAssignPartnerToBooking);
+  const resolveBooking = useServerFn(getAdminBookingForAssignment);
 
   const [partnerId, setPartnerId] = useState("");
   const [search, setSearch] = useState("");
 
-  const { data: booking, isLoading: loadingBooking, error: bookingError } = useQuery({
-    queryKey: ["admin-booking-detail", bookingId],
+  const { data: resolverResult, isLoading: loadingBooking, error: bookingError } = useQuery({
+    queryKey: ["admin-booking-detail-resolver", bookingId],
     queryFn: async () => {
-      console.log(`[ADMIN-BOOKING-E2E] Fetching booking ID: ${bookingId}`);
+      console.log(`[ADMIN-BOOKING-PAGE] Requesting resolution for: ${bookingId}`);
+      const result = await resolveBooking({ data: { booking_id: bookingId } });
       
-      // Use the newly created view for robust joining without FK constraints
-      const { data, error } = await supabase
-        .from("admin_booking_details")
-        .select("*")
-        .eq("id", bookingId)
-        .maybeSingle();
-
-      if (error) {
-        console.error(`[ADMIN-BOOKING-E2E] DB Error:`, error);
-        throw error;
-      }
+      // Secondary check for RLS issues if the server function works but client direct doesn't
+      // We also check current user to log forensics
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log(`[ADMIN-BOOKING-PAGE] Current user: ${user?.id} (${user?.email})`);
       
-      if (!data) {
-        console.warn(`[ADMIN-BOOKING-E2E] No booking found for ID: ${bookingId}`);
-        // Forensic check: does it exist in the raw table?
-        const { count } = await supabase.from("bookings").select("id", { count: 'exact', head: true }).eq("id", bookingId);
-        console.log(`[ADMIN-BOOKING-E2E] Raw table existence check count: ${count}`);
-        return null;
-      }
-
-      console.log(`[ADMIN-BOOKING-E2E] Found booking:`, data);
-      
-      // Map view fields to expected object structure for compatibility
-      return {
-        ...data,
-        customers: {
-          full_name: data.customer_name,
-          phone: data.customer_phone,
-          area: data.customer_area,
-          address_line: data.customer_address
-        },
-        service_catalog: {
-          name: data.service_name,
-          category: data.service_category
-        }
-      } as any;
+      return result;
     },
   });
 
@@ -77,10 +50,12 @@ function AssignBookingPage() {
     queryFn: () => listPartners() 
   });
 
+  const booking = resolverResult?.found ? resolverResult.data : null;
+
   const filteredPartners = useMemo(() => {
     const term = search.trim().toLowerCase();
     const list = (partners ?? []) as any[];
-    const areaMatch = booking?.customers?.area;
+    const areaMatch = (booking as any)?.customers?.area;
     
     let result = list;
     if (term) {
@@ -94,23 +69,53 @@ function AssignBookingPage() {
       const bMatch = b.home_area === areaMatch ? 1 : 0;
       return bMatch - aMatch;
     });
-  }, [partners, search, booking?.customers?.area]);
+  }, [partners, search, (booking as any)?.customers?.area]);
 
   const mut = useMutation({
     mutationFn: () => assignFn({ data: { booking_id: bookingId, partner_id: partnerId } }),
     onSuccess: () => {
       toast.success("Partner assigned successfully");
       qc.invalidateQueries({ queryKey: ["admin-notifications"] });
-      qc.invalidateQueries({ queryKey: ["admin-booking-detail", bookingId] });
+      qc.invalidateQueries({ queryKey: ["admin-booking-detail-resolver", bookingId] });
       navigate({ to: "/admin/notifications" });
     },
     onError: (e: any) => toast.error(e?.message ?? "Assignment failed"),
   });
 
-  if (loadingBooking) return <div className="p-8 text-center text-muted-foreground">Loading booking...</div>;
-  if (!booking) return <div className="p-8 text-center text-muted-foreground">Booking not found</div>;
+  if (loadingBooking) return <div className="p-12 text-center flex flex-col items-center gap-4">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <span className="text-muted-foreground">Resolving booking status...</span>
+  </div>;
 
-  const customer = booking.customers;
+  if (bookingError) {
+    return (
+      <Card className="m-8 p-12 border-destructive/20 bg-destructive/5 text-center flex flex-col items-center gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-bold">Resolution Error</h2>
+        <p className="text-muted-foreground">The system encountered an error while trying to resolve the booking.</p>
+        <code className="bg-background p-2 rounded text-xs font-mono">{String(bookingError)}</code>
+        <Button onClick={() => window.location.reload()} variant="outline">Retry</Button>
+      </Card>
+    );
+  }
+
+  if (!resolverResult?.found) {
+    return (
+      <Card className="m-8 p-12 border-orange-500/20 bg-orange-500/5 text-center flex flex-col items-center gap-4">
+        <Search className="h-12 w-12 text-orange-500" />
+        <h2 className="text-xl font-bold">Booking Not Found</h2>
+        <p className="text-muted-foreground max-w-md">
+          The booking ID <span className="font-mono bg-background px-1 rounded">{bookingId}</span> does not exist in the authoritative database.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" asChild><Link to="/admin/notifications">Back to Notifications</Link></Button>
+          <Button onClick={() => window.location.reload()}>Refresh Check</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const customer = (booking as any).customers;
 
   return (
     <div className="space-y-6">
@@ -126,14 +131,14 @@ function AssignBookingPage() {
           <Card className="p-5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Booking Details</h3>
             <div className="space-y-3">
-              <DetailRow label="Booking ID" value={<span className="font-mono text-[10px]">{booking.id}</span>} />
+              <DetailRow label="Booking ID" value={<span className="font-mono text-[10px]">{(booking as any).id}</span>} />
               <DetailRow label="Customer" value={customer?.full_name} />
-              <DetailRow label="Service" value={booking.service_catalog?.name || booking.service_type?.replace("_", " ")} />
-              <DetailRow label="Amount" value={`₹${booking.total_amount}`} />
+              <DetailRow label="Service" value={(booking as any).service_catalog?.name || (booking as any).service_type?.replace("_", " ")} />
+              <DetailRow label="Amount" value={`₹${(booking as any).total_amount}`} />
               <DetailRow label="Area" value={customer?.area} />
               <DetailRow label="Phone" value={customer?.phone ? `+91 ${customer.phone}` : "—"} />
-              <DetailRow label="Payment" value={<Badge variant={booking.payment_status === "paid" ? "secondary" : "destructive"} className="capitalize">{booking.payment_status}</Badge>} />
-              <DetailRow label="Status" value={<Badge variant="outline" className="capitalize">{booking.status}</Badge>} />
+              <DetailRow label="Payment" value={<Badge variant={(booking as any).payment_status === "paid" ? "secondary" : "destructive"} className="capitalize">{(booking as any).payment_status}</Badge>} />
+              <DetailRow label="Status" value={<Badge variant="outline" className="capitalize">{(booking as any).status}</Badge>} />
             </div>
           </Card>
         </div>

@@ -379,7 +379,56 @@ export const adminCancelAssignment = createServerFn({ method: "POST" }).middlewa
     return { ok: true };
   });
 
-// Monthly wash
+
+export const getAdminBookingForAssignment = createServerFn({ method: "GET" }).middleware([requireAdmin])
+  .inputValidator((d: { booking_id: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    console.log(`[ADMIN-BOOKING-RESOLVER] Resolving booking_id: ${data.booking_id}`);
+    
+    // Step 1: Fetch core booking directly (RLS bypass via admin client)
+    const { data: booking, error: bErr } = await supabaseAdmin
+      .from("bookings")
+      .select("*")
+      .eq("id", data.booking_id)
+      .maybeSingle();
+      
+    if (bErr) {
+      console.error(`[ADMIN-BOOKING-RESOLVER] DB Error:`, bErr);
+      throw new Error(`Database error: ${bErr.message}`);
+    }
+    
+    if (!booking) {
+      console.warn(`[ADMIN-BOOKING-RESOLVER] Booking not found in DB: ${data.booking_id}`);
+      return { found: false, error: "BOOKING_NOT_EXIST" };
+    }
+
+    // Step 2: Fetch relations separately for robustness
+    const [customerRes, serviceRes] = await Promise.all([
+      supabaseAdmin.from("customers").select("*").eq("id", booking.user_id).maybeSingle(),
+      supabaseAdmin.from("service_catalog").select("*").eq("id", booking.service_id).maybeSingle()
+    ]);
+
+    console.log(`[ADMIN-BOOKING-RESOLVER] Successfully resolved booking and relations`);
+
+    return {
+      found: true,
+      data: {
+        ...booking,
+        customers: customerRes.data ? {
+          full_name: customerRes.data.full_name,
+          phone: customerRes.data.phone,
+          area: customerRes.data.area,
+          address_line: customerRes.data.address_line
+        } : null,
+        service_catalog: serviceRes.data ? {
+          name: serviceRes.data.name,
+          category: serviceRes.data.category
+        } : null
+      }
+    };
+  });
+
 export const markMonthlyWash = createServerFn({ method: "POST" }).middleware([requireAdmin])
   .inputValidator((d: { customer_id: string; kind: "interior" | "exterior"; done_date: string; partner_id: string }) => d)
   .handler(async ({ data }) => {
@@ -393,6 +442,7 @@ export const markMonthlyWash = createServerFn({ method: "POST" }).middleware([re
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 
 export const listSettings = createServerFn({ method: "GET" }).middleware([requireAdmin]).handler(async () => {
