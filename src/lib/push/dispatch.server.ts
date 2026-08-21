@@ -356,7 +356,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
 
-
       // Checkpointed Payload (Checkpoint 9)
       const dataPayload: Record<string, string> = {
         type: mappedType,
