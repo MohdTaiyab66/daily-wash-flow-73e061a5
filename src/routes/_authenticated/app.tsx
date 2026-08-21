@@ -108,7 +108,7 @@ function TopBar() {
     return () => { 
       cancelled = true; 
       if (channel) {
-        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${partnerId}`);
+        console.log(`[PARTNER-REALTIME] Unmounting listener for partner: ${partner?.id}`);
         supabase.removeChannel(channel);
       }
     };
