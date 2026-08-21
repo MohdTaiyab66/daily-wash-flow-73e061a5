@@ -225,12 +225,9 @@ export async function runTrialSeed(): Promise<SeedReport> {
       });
       inc("partners");
 
-      await admin.from("push_tokens").upsert({
-        user_id: id, token: `TRIAL-FCM-${key}-${id.slice(0, 8)}`,
-        platform: "android", app: "partner", device_id: `trial-${key}`,
-        last_seen: new Date().toISOString(),
-      }, { onConflict: "token" } as never);
-      inc("push_tokens");
+      // P0 FIX: Do NOT create trial/fake FCM tokens.
+      // Every partner app must register its own REAL FCM token on login.
+      inc("partners");
     }
     wf("partners.upsert", "PASS");
 
