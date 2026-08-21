@@ -34,6 +34,7 @@ import { getTodayIST } from "@/lib/date-utils";
 
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { formatBusinessDate } from "@/lib/date-utils";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -51,6 +52,14 @@ function HomePage() {
   const online = partner?.availability === "online";
 
   const todayQuery = useTodayAssignment();
+  
+  // P0 REALTIME FALLBACK: Direct listener on Home page for assignments
+  useRealtimeInvalidation(["assignments", "services", "partner_notifications"], [
+    ["today-assignment"],
+    ["partner-open-offers-home"],
+    ["available-work-summary", partner?.home_area]
+  ]);
+
   // Ensure we refetch on mount to clear any stale cache from previous sessions
   useEffect(() => {
     todayQuery.refetch();
