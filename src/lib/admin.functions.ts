@@ -379,8 +379,6 @@ export const adminCancelAssignment = createServerFn({ method: "POST" }).middlewa
     return { ok: true };
   });
 
-// Monthly wash
-export const markMonthlyWash = createServerFn({ method: "POST" }).middleware([requireAdmin])
 
 export const getAdminBookingForAssignment = createServerFn({ method: "GET" }).middleware([requireAdmin])
   .inputValidator((d: { booking_id: string }) => d)
