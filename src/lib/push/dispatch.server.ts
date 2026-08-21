@@ -679,7 +679,6 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
             customerLng: b.customer_lng,
           })
         ]);
-
         const title = b.assignment_id ? `🔄 Assignment Available: ${monthly.display}` : `🚗 New Booking Available`;
         const body = b.assignment_id 
           ? `${b.customer_count || 'Multiple'} Customers · ${b.area || 'Nearby'} · ${monthly.display}`
