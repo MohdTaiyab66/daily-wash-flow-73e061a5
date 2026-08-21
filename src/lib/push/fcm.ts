@@ -123,15 +123,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   }
   
   // P0 FIX: Force re-registration for EVERY user on mount/login.
-  // We do NOT check "started" here anymore; the component mount/focus trigger
-  // ensures we have a fresh REAL token from the device and sync it to the backend.
-  // This is critical for Vikram/Imran/Aarav to recover their "ghost" status.
   started = false; 
   (window as any)._fcm_last_user = userId;
   
-  console.log(`[PARTNER-PARITY] startFcm initializing for user: ${userId}`);
-
-  console.log(`[PARTNER-FCM] Firebase initialized (Capacitor wrapper check)`);
+  console.log(`[PARTNER-FCM] startFcm initializing for user: ${userId}`);
+  console.log(`[PARTNER-FCM] isNative=${native}, platform=${platform}`);
   console.log(`[PARTNER-FCM] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);
   console.log(`[PARTNER-FCM] Application/package ID: ${app === 'partner' ? 'com.urbanwash.partner' : 'com.urbanwash.customer'}`);
   console.log(`[PARTNER-FCM] Firebase Sender ID: 781422718869`);
