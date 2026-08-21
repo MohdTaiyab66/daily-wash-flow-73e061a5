@@ -158,9 +158,6 @@ function ProfilePage() {
 
       <p className="mt-6 text-center text-[10px] text-muted-foreground">{t("member_since")} {partner?.joined_on ? new Date(partner.joined_on).toLocaleDateString("en-IN") : "—"}</p>
 
-      {/* Diagnostics removed from public production view */}
-
-      {/* Push diagnostic cards removed from public production view */}
 
 
 
